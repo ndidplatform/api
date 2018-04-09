@@ -1,3 +1,3 @@
 export default {
-  serverPort: 8080
+  serverPort: 8000
 }
