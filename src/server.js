@@ -29,3 +29,6 @@ const server = http.createServer(app);
 server.listen(config.serverPort);
 
 console.log(`Server listening on port ${config.serverPort}`);
+
+// For testing
+module.exports = server;
