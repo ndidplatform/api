@@ -3,19 +3,28 @@
   "version": "0.1.0",
   "description": "",
   "scripts": {
-    "build": "./node_modules/.bin/babel src -d ./build/ --source-maps inline",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npx babel src -d ./build/ --source-maps inline",
+    "start": "npm run build && node build/server.js",
+    "test": "npm run build && npx mocha build/test/test.js"
   },
   "dependencies": {
+    "body-parser": "^1.18.2",
     "express": "^4.16.3",
     "http": "0.0.0",
-    "node-fetch": "^2.1.2"
+    "morgan": "^1.9.0",
+    "node-fetch": "^2.1.2",
+    "source-map-support": "^0.5.4"
   },
   "devDependencies": {
-    "babel-cli": "^6.24.1",
-    "babel-eslint": "^7.2.3",
-    "babel-plugin-transform-object-rest-spread": "^6.23.0",
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^8.2.2",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-env": "^1.4.0"
+    "babel-preset-env": "^1.6.1",
+    "chai": "^4.1.2",
+    "chai-http": "^4.0.0",
+    "eslint": "^4.19.1",
+    "eslint-plugin-babel": "^5.0.0",
+    "mocha": "^5.0.5"
   }
 }
