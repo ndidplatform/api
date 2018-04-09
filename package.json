@@ -3,6 +3,19 @@
   "version": "0.1.0",
   "description": "",
   "scripts": {
+    "build": "./node_modules/.bin/babel src -d ./build/ --source-maps inline",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.16.3",
+    "http": "0.0.0",
+    "node-fetch": "^2.1.2"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-eslint": "^7.2.3",
+    "babel-plugin-transform-object-rest-spread": "^6.23.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.4.0"
   }
 }
