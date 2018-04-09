@@ -13,7 +13,9 @@
     npm install
     ```
 
-2.  Run a server
+2.  Run Node Logic server (tendermint ABCI) in `ndid-node-logic` repository
+
+3.  Run a server
 
     ```
     npm start
