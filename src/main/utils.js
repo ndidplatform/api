@@ -16,7 +16,7 @@ export async function createSignature(privkey,message) {
 }
 
 export async function createRequestId(privkey,data,nonce) {
-  return await createSignature(privkey,JSON.stringify(data) + '|' + nonce);
+  return await createSignature(privkey,JSON.stringify(data) + '_with_nonce(' + nonce + ')');
 }
 
 export function getNonce() {
@@ -35,7 +35,7 @@ export async function queryChain(fnName,data) {
   ).toString('base64');
   
   let result = await fetch(logicUrl + '/abci_query?data=' + encoded);
-  return retrieveResult(JSON.parse((await result.text())),true);
+  return retrieveResult(await result.json(),true);
 }
 
 export async function updateChain(fnName,data,nonce) {
@@ -46,5 +46,5 @@ export async function updateChain(fnName,data,nonce) {
   ).toString('base64');
 
   let result = await fetch(logicUrl + '/broadcast_tx_commit?tx=' + encoded);
-  return retrieveResult(JSON.parse((await result.text())));
+  return retrieveResult(await result.json());
 }
