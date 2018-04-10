@@ -21,7 +21,13 @@
     npm start
     ```
 
-(OPTIONAL) set enviroment variable when run as IDP
+4.  (OPTIONAL) set environment variable for node-logic
+
+    ```
+    NODE_LOGIC_ADDRESS=http://192.168.1.10:25001 npm start
+    ```
+
+5.  (OPTIONAL) set enviroment variable when run as IDP
 
     ```
     IDP=true run as IDP,
