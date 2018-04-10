@@ -1,9 +1,14 @@
 import fetch from 'node-fetch';
 
-var nonce = 1;
+var nonce = Date.now()%10000;
 var logicUrl = process.env.NODE_LOGIC_ADDRESS || 'http://localhost:8000';
 
 function retrieveResult(obj,isQuery) {
+  //console.log('===>',obj)
+  if(obj.error) {
+    console.error(obj.error);
+    return obj.error;
+  }
   if(isQuery) {
     let result = Buffer.from(obj.result.response.value,'base64').toString();
     return JSON.parse(result);
@@ -34,7 +39,7 @@ export async function queryChain(fnName,data) {
     JSON.stringify(data)
   ).toString('base64');
   
-  let result = await fetch(logicUrl + '/abci_query?data=' + encoded);
+  let result = await fetch(logicUrl + '/abci_query?data="' + encoded + '"');
   return retrieveResult(await result.json(),true);
 }
 
@@ -45,6 +50,6 @@ export async function updateChain(fnName,data,nonce) {
     nonce
   ).toString('base64');
 
-  let result = await fetch(logicUrl + '/broadcast_tx_commit?tx=' + encoded);
+  let result = await fetch(logicUrl + '/broadcast_tx_commit?tx="' + encoded + '"');
   return retrieveResult(await result.json());
 }

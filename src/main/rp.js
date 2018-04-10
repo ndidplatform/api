@@ -1,6 +1,5 @@
 import * as utils from './utils';
-import send from '../msq/index';
-
+import * as msq from '../msq/index';
 
 var privKey = 'RP_PrivateKey';
 /*
@@ -23,7 +22,8 @@ export async function createRequest({ namespace, identifier, ...data }) {
   const idpList = await getMsqDestination({
     namespace, identifier
   });
-  await send(idpList,data);
+  if(!idpList) idpList = [];
+  await msq.send(idpList,data);
   
   return requestId;
 }
