@@ -18,7 +18,6 @@ export async function createRequest(data) {
     minIdp: data.minIdp ? data.minIdp : 1
   };
   utils.updateChain('CreateRequest',dataToSend,nonce);
-  //send message queue to idp
   return requestId;
 }
 

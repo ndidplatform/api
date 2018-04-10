@@ -1,4 +1,6 @@
 import express from 'express';
+import * as rp from './rp';
+import * as share from './share';
 
 const router = express.Router();
 
@@ -13,11 +15,20 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
       request_message,
       // min_ial,
       // min_aal,
-      // min_idp,
+      min_idp,
       request_timeout,
     } = req.body;
 
+    let requestId = await rp.createRequest({
+      message: request_message,
+      minIdp: min_idp
+    });
+
+    let idpList = await rp.getMsqDestination({
+      namespace, identifier
+    });
     // TO-DO
+    //send message to IDPs via message queue
 
     res.status(200).send({});
   } catch (error) {
@@ -30,6 +41,9 @@ router.get('/requests/:request_id', async (req, res, next) => {
     const { request_id } = req.params;
 
     // TO-DO
+    let request = await share.getRequest({
+      requestId: request_id
+    });
 
     res.status(200).send({});
   } catch (error) {
