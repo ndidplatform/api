@@ -30,7 +30,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
     // TO-DO
     //send message to IDPs via message queue
 
-    res.status(200).send({});
+    res.status(200).send(requestId);
   } catch (error) {
     res.status(500).end();
   }
@@ -45,7 +45,7 @@ router.get('/requests/:request_id', async (req, res, next) => {
       requestId: request_id
     });
 
-    res.status(200).send({});
+    res.status(200).send(request);
   } catch (error) {
     res.status(500).end();
   }

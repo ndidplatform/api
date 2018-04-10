@@ -40,12 +40,12 @@ router.post('/response', async (req, res, next) => {
     } = req.body;
 
     // TO-DO
-    let result = await idp.createIdpResponse({
+    let isSuccess = await idp.createIdpResponse({
       requestId: request_id,
       status
     });
 
-    res.status(200).send({});
+    res.status(200).send(isSuccess);
   } catch (error) {
     res.status(500).end();
   }
