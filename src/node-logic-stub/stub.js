@@ -14,7 +14,7 @@ let blockchainMock = {
 };
 
 async function CreateRequest(data) {
-  let [ requestId, messageHash ] = data;
+  let [ requestId, messageHash, minIdp ] = data;
   if(blockchainMock.request[requestId]) throw 'Duplicate';
   blockchainMock.request[requestId] = {
     status: 'pending'
@@ -38,7 +38,7 @@ async function GetRequestStatus(data) {
 }
 
 async function CreateIdpResponse(data) {
-  let [ requestId, status ] = data;
+  let [ requestId, status, signature ] = data;
   if(!blockchainMock.request[requestId]) throw 'NotExist';
   blockchainMock.request[requestId].status = (
     (status === 'accept') ? 'complete' : 'reject'

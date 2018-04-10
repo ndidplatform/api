@@ -9,7 +9,15 @@ function getNonce() {
 
 async function hash(stringToHash) {
   //to be implemented
-  return stringToHash;
+  return 'Hash(' + stringToHash + ')';
+}
+
+function retrieveResult(obj,isQuery) {
+  if(isQuery) {
+    let result = Buffer.from(obj.result.response.value,'base64').toString();
+    return JSON.parse(result);
+  }
+  else return obj.result.deliver_tx.log === 'success';
 }
 
 async function queryChain(fnName,data) {
@@ -19,7 +27,7 @@ async function queryChain(fnName,data) {
   ).toString('base64');
   
   let result = await fetch(logicUrl + '/abci_query?data=' + encoded);
-  return JSON.parse((await result.text()));
+  return retrieveResult(JSON.parse((await result.text())),true);
 }
 
 async function updateChain(fnName,data) {
@@ -30,7 +38,7 @@ async function updateChain(fnName,data) {
   ).toString('base64');
 
   let result = await fetch(logicUrl + '/broadcast_tx_commit?tx=' + encoded);
-  return JSON.parse((await result.text()));
+  return retrieveResult(JSON.parse((await result.text())));
 }
 
 export default {
