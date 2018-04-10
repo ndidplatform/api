@@ -1,6 +1,6 @@
 import express from 'express';
-import * as idp from './idp';
-import * as share from './share';
+import * as nodeLogicIdpApi from '../main/idp';
+import * as nodeLogicCommonApi from '../main/share';
 
 const router = express.Router();
 
@@ -40,7 +40,7 @@ router.post('/response', async (req, res, next) => {
     } = req.body;
 
     // TO-DO
-    let isSuccess = await idp.createIdpResponse({
+    let isSuccess = await nodeLogicIdpApi.createIdpResponse({
       requestId: request_id,
       status
     });

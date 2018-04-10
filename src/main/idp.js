@@ -13,3 +13,18 @@ export async function createIdpResponse(data) {
   let result = await utils.updateChain('CreateIdpResponse',data,utils.getNonce());
   return result;
 }
+
+/*
+  data = {
+    users: [{
+      namespace:
+      identifier:
+    },...]
+    ip: string,
+    port: string
+  }
+*/
+export async function registerMsqDestination(data) {
+  let result = await utils.updateChain('RegisterMsqDestination',data,utils.getNonce());
+  return result;
+}
