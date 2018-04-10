@@ -1,5 +1,7 @@
 import express from 'express';
 
+import nodeLogicApi from '../main/rp';
+
 const router = express.Router();
 
 router.post('/requests/:namespace/:identifier', async (req, res, next) => {
@@ -7,19 +9,29 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
     const { namespace, identifier } = req.params;
     const {
       reference_number,
-      // idp_list,
+      idp_list,
       callback_url,
-      // as_service_list,
+      as_service_list,
       request_message,
-      // min_ial,
-      // min_aal,
-      // min_idp,
+      min_ial,
+      min_aal,
+      min_idp,
       request_timeout,
     } = req.body;
 
-    // TO-DO
+    const requestId = await nodeLogicApi.createRequest({
+      reference_number,
+      idp_list,
+      callback_url,
+      as_service_list,
+      request_message,
+      min_ial,
+      min_aal,
+      min_idp,
+      request_timeout,
+    });
 
-    res.status(200).send({});
+    res.status(200).send({ requestId });
   } catch (error) {
     res.status(500).end();
   }
