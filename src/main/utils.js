@@ -3,15 +3,6 @@ import fetch from 'node-fetch';
 var nonce = 1;
 var logicUrl = process.env.NODE_LOGIC_ADDRESS || 'http://localhost:8000';
 
-function getNonce() {
-  return (nonce++).toString();
-}
-
-async function hash(stringToHash) {
-  //to be implemented
-  return 'Hash(' + stringToHash + ')';
-}
-
 function retrieveResult(obj,isQuery) {
   if(isQuery) {
     let result = Buffer.from(obj.result.response.value,'base64').toString();
@@ -20,7 +11,24 @@ function retrieveResult(obj,isQuery) {
   else return obj.result.deliver_tx.log === 'success';
 }
 
-async function queryChain(fnName,data) {
+export async function createSignature(privkey,message) {
+  return await hash( 'Encrypt_with_' + privkey + '(' + message + ')' )
+}
+
+export async function createRequestId(privkey,data,nonce) {
+  return await createSignature(privkey,JSON.stringify(data) + '|' + nonce);
+}
+
+export function getNonce() {
+  return (nonce++).toString();
+}
+
+export async function hash(stringToHash) {
+  //to be implemented
+  return 'Hash(' + stringToHash + ')';
+}
+
+export async function queryChain(fnName,data) {
   let encoded = Buffer.from(
     fnName + '|' + 
     JSON.stringify(data)
@@ -30,17 +38,13 @@ async function queryChain(fnName,data) {
   return retrieveResult(JSON.parse((await result.text())),true);
 }
 
-async function updateChain(fnName,data) {
+export async function updateChain(fnName,data,nonce) {
   let encoded = Buffer.from(
     fnName + '|' + 
     JSON.stringify(data) + '|' + 
-    getNonce()
+    nonce
   ).toString('base64');
 
   let result = await fetch(logicUrl + '/broadcast_tx_commit?tx=' + encoded);
   return retrieveResult(JSON.parse((await result.text())));
-}
-
-export default {
-  hash,queryChain,updateChain
 }

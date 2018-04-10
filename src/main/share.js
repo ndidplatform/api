@@ -1,5 +1,8 @@
 import utils from './utils';
 
-export async function getRequest(input) {
-  return await utils.queryChain('GetRequest',input);
+/*
+  data = { requestId }
+*/
+export async function getRequest(data) {
+  return await utils.queryChain('GetRequest',data);
 }
