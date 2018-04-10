@@ -9,8 +9,7 @@ import express from 'express';
 import morgan from 'morgan';
 import routes from './routes';
 
-import fs from 'fs';
-import registerMsqDestination from './main/idp'
+import idpInit from './idpInit';
 
 process.on('unhandledRejection', function(reason, p) {
   console.error('Unhandled Rejection:', p, '\nreason:', reason.stack || reason);
@@ -34,15 +33,7 @@ server.listen(config.serverPort);
 console.log(`Server listening on port ${config.serverPort}`);
 
 if(config.isIdp) {
-  //TODO register as IDP of some users
-  let userList = JSON.parse(
-    fs.readFileSync(process.env.ASSOC_USERS,'utf8').toString()
-  );
-  registerMsqDestination({
-    users: userList,
-    ip: config.msqRegister.ip,
-    port: config.msqRegister.port
-  });
+  idpInit();
 }
 
 // For testing

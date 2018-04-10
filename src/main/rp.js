@@ -1,4 +1,5 @@
 import * as utils from './utils';
+import send from '../msq/index';
 
 
 var privKey = 'RP_PrivateKey';
@@ -17,14 +18,12 @@ export async function createRequest({ namespace, identifier, ...data }) {
     messageHash: await utils.hash(data.message),
     minIdp: data.minIdp ? data.minIdp : 1
   };
-  utils.updateChain('CreateRequest',dataToSend,nonce);
+  await utils.updateChain('CreateRequest',dataToSend,nonce);
 
   const idpList = await getMsqDestination({
     namespace, identifier
   });
-
-  // TODO
-  // Send message using message queue
+  await send(idpList,data);
   
   return requestId;
 }
