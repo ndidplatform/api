@@ -24,7 +24,7 @@ export const send = (receivers, message) => {
     // TO BE REVISED
     // When should we disconnect the socket?
     // If the socket is disconnected, all the messages in queue will be lost. 
-    // Hence, the receiver won't get the messages.
+    // Hence, the receiver may not get the messages.
     sendingSocket.disconnect(`tcp://${receiver.ip}:${receiver.port}`);
   });
 };
