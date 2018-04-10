@@ -13,32 +13,52 @@ let blockchainMock = {
   }
 };
 
+function querySuccess(data) {
+  return JSON.stringify({
+    result: {
+      response: {
+        value: Buffer.from(JSON.stringify(data)).toString('base64')
+      }
+    }
+  })
+}
+
+function updateSuccess() {
+  return JSON.stringify({
+    result: {
+      deliver_tx: {
+        log: 'success'
+      }
+    }
+  })
+}
+
 async function CreateRequest(data) {
-  let [ requestId, messageHash, minIdp ] = data;
+  let { requestId, messageHash, minIdp } = data;
   if(blockchainMock.request[requestId]) throw 'Duplicate';
   blockchainMock.request[requestId] = {
     status: 'pending'
   }
-  return;
+  return updateSuccess();
 }
 
 async function GetMsqDestination(data) {
   let { namespace, sid } = data;
   try {
-    return blockchainMock.msqDestination[namespace][sid];
+    return querySuccess(blockchainMock.msqDestination[namespace][sid]);
   }
   catch(error) {
-    return [];
+    return querySuccess([]);
   }
 }
 
-async function GetRequestStatus(data) {
+async function GetRequest(data) {
   if(!blockchainMock.request[data.requestId]) throw 'NotExist';
-  return blockchainMock.request[data.requestId];
+  return querySuccess(blockchainMock.request[data.requestId]);
 }
 
 async function CreateIdpResponse(data) {
-  let [ requestId, status, signature ] = data;
+  let { requestId, status, signature } = data;
   if(!blockchainMock.request[requestId]) throw 'NotExist';
   blockchainMock.request[requestId].status = (
     (status === 'accept') ? 'complete' : 'reject'
@@ -46,7 +66,7 @@ async function CreateIdpResponse(data) {
   if(process.env.RP_CALLBACK_URI) {
     fetch(process.env.RP_CALLBACK_URI, {method: 'POST', body: { requestId }});
   }
-  return;
+  return updateSuccess();
 }
 
 async function RegisterMsqDestination(data) {
@@ -68,7 +88,7 @@ async function RegisterMsqDestination(data) {
 
     if(!alreadyIn) destination.push({ ip, port });
   });
-  return;
+  return updateSuccess();
 }
 
 async function handle(decodedString, res) {
@@ -78,6 +98,7 @@ async function handle(decodedString, res) {
     res.status(200).send( await (fnList[fnName](JSON.parse(data))) );
   }
   catch(error) {
+    console.error(error)
     res.status(500).send();
   }
 }
@@ -85,7 +106,7 @@ async function handle(decodedString, res) {
 var fnList = {
   CreateRequest,
   GetMsqDestination,
-  GetRequestStatus,
+  GetRequest,
   CreateIdpResponse,
   RegisterMsqDestination
 }

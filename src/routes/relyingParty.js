@@ -1,6 +1,7 @@
 import express from 'express';
 
-import nodeLogicApi from '../main/rp';
+import * as nodeLogicRpApi from '../main/rp';
+import * as nodeLogicCommonApi from '../main/share';
 
 const router = express.Router();
 
@@ -19,7 +20,9 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
       request_timeout,
     } = req.body;
 
-    const requestId = await nodeLogicApi.createRequest({
+    const requestId = await nodeLogicRpApi.createRequest({
+      namespace,
+      identifier,
       reference_number,
       idp_list,
       callback_url,
@@ -42,8 +45,11 @@ router.get('/requests/:request_id', async (req, res, next) => {
     const { request_id } = req.params;
 
     // TO-DO
+    const request = await nodeLogicCommonApi.getRequest({
+      requestId: request_id
+    });
 
-    res.status(200).send({});
+    res.status(200).send(request);
   } catch (error) {
     res.status(500).end();
   }

@@ -1,4 +1,6 @@
 import express from 'express';
+import * as idp from './idp';
+import * as share from './share';
 
 const router = express.Router();
 
@@ -38,8 +40,12 @@ router.post('/response', async (req, res, next) => {
     } = req.body;
 
     // TO-DO
+    let isSuccess = await idp.createIdpResponse({
+      requestId: request_id,
+      status
+    });
 
-    res.status(200).send({});
+    res.status(200).send(isSuccess);
   } catch (error) {
     res.status(500).end();
   }

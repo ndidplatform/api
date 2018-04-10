@@ -1,4 +1,4 @@
-import utils from './utils';
+import * as utils from './utils';
 
 
 var privKey = 'RP_PrivateKey';
@@ -8,10 +8,24 @@ var privKey = 'RP_PrivateKey';
     minIdp: default 1 (optional)
   }
 */
-export async function createRequest(data) {
+export async function createRequest({ namespace, identifier, ...data }) {
   let nonce = utils.getNonce();
-  let requestId = utils.createRequestId(privKey,data,nonce);
-  utils.updateChain('CreateRequest',data,nonce);
+  let requestId = await utils.createRequestId(privKey,data,nonce);
+
+  let dataToSend = {
+    requestId,
+    messageHash: await utils.hash(data.message),
+    minIdp: data.minIdp ? data.minIdp : 1
+  };
+  utils.updateChain('CreateRequest',dataToSend,nonce);
+
+  const idpList = await getMsqDestination({
+    namespace, identifier
+  });
+
+  // TODO
+  // Send message using message queue
+  
   return requestId;
 }
 
