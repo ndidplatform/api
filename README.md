@@ -21,19 +21,20 @@
     npm start
     ```
 
-4.  (OPTIONAL) set environment variable for node-logic
+4.  (OPTIONAL) you can set environment variable for node-logic
 
     ```
-    NODE_LOGIC_ADDRESS=http://192.168.1.10:25001 npm start
+    NODE_LOGIC_ADDRESS=http://192.168.1.10:45001 npm start
     ```
 
-5.  (OPTIONAL) set enviroment variable when run as IDP
+5.  (OPTIONAL) you can set enviroment variable when run as IDP
 
     ```
     IDP=true run as IDP,
     IDP_IP=____ register IP for message queue (IDP only)
     IDP_PORT=___ register PORT for message queue (IDP only)
     ASSOC_USERS=___ json file path, array of { namespace, identifier } this IDP associate with
+    
     Ex.
     IDP=true IDP_IP=192.168.1.1 IDP_PORT=3000 ASSOC_USERS=users.json npm start
     ```
