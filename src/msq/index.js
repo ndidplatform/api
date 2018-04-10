@@ -19,10 +19,16 @@ receivingSocket.on('message', function(jsonMessageStr){
 
 export const send = (receivers, message) => {
   const jsonMessageStr = JSON.stringify(message);
+
   receivers.forEach(receiver => {
     const sendingSocket = zmq.socket('push');
     sendingSocket.connect(`tcp://${receiver.ip}:${receiver.port}`);
-    sendingSocket.send(jsonMessageStr);
+
+    //TODO proper encrypt
+    sendingSocket.send('Encrypt_with_' + receiver.publicKey + '(' +
+      jsonMessageStr + ')'
+    );
+
 
     // TO BE REVISED
     // When should we disconnect the socket?

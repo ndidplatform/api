@@ -33,10 +33,11 @@ router.post('/response', async (req, res, next) => {
       request_id,
       namespace,
       identifier,
-      // secret,
-      // aal,
-      // signature,
-      // accessor_id,
+      secret,
+      ial,
+      aal,
+      signature,
+      accessor_id,
     } = req.body;
 
     // TO-DO
