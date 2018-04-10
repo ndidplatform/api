@@ -17,12 +17,12 @@ function retrieveResult(obj,isQuery) {
 }
 
 export async function createSignature(privkey,message) {
-  return await hash( 'Encrypt_with_' + privkey + '(' + message + ')' )
+  return await hash( 'Encrypt_with_' + privkey + '(' + Buffer.from(message).toString('base64') + ')' )
 }
 
 export async function createRequestId(privkey,data,nonce) {
   return await createSignature(privkey,
-    'Concat_with_nonce_' + nonce + '(' + JSON.stringify(data) + ')'
+    'Concat_with_nonce_' + nonce + '(' + Buffer.from(JSON.stringify(data)).toString('base64') + ')'
   );
 }
 

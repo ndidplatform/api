@@ -14,7 +14,7 @@ export async function createRequest({ namespace, identifier, ...data }) {
 
   let dataToSend = {
     requestId,
-    messageHash: await utils.hash(data.message),
+    messageHash: await utils.hash(data.request_message),
     minIdp: data.minIdp ? data.minIdp : 1
   };
   await utils.updateChain('CreateRequest',dataToSend,nonce);

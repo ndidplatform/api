@@ -12,6 +12,7 @@ receivingSocket.on('message', function(jsonMessageStr){
   // In case of messages arrive before listener function is added.
 
   const message = JSON.parse(jsonMessageStr);
+  //check hash, if hash match then pass to app layer
 
   eventEmitter.emit('message', message);
 });

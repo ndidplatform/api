@@ -36,6 +36,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
 
     res.status(200).send({ requestId });
   } catch (error) {
+    console.error(error)
     res.status(500).end();
   }
 });
