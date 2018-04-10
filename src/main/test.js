@@ -4,7 +4,9 @@ import * as share from './share';
 
 async function run() {
   let requestId = await rp.createRequest({
-    message: 'test message'
+    message: 'test message',
+    namespace: 'cid',
+    identifier: '1234567890123'
   });
   console.log('Create request with ID:',requestId);
 

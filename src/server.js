@@ -9,7 +9,7 @@ import express from 'express';
 import morgan from 'morgan';
 import routes from './routes';
 
-import idpInit from './idpInit';
+import * as idpInit from './idpInit';
 
 process.on('unhandledRejection', function(reason, p) {
   console.error('Unhandled Rejection:', p, '\nreason:', reason.stack || reason);
@@ -33,7 +33,7 @@ server.listen(config.serverPort);
 console.log(`Server listening on port ${config.serverPort}`);
 
 if(config.isIdp) {
-  idpInit();
+  idpInit.init();
 }
 
 // For testing

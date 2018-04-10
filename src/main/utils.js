@@ -21,7 +21,9 @@ export async function createSignature(privkey,message) {
 }
 
 export async function createRequestId(privkey,data,nonce) {
-  return await createSignature(privkey,JSON.stringify(data) + '_with_nonce(' + nonce + ')');
+  return await createSignature(privkey,
+    'Concat_with_nonce_' + nonce + '(' + JSON.stringify(data) + ')'
+  );
 }
 
 export function getNonce() {

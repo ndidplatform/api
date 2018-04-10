@@ -1,7 +1,9 @@
 import EventEmitter from 'events';
 import zmq from 'zeromq';
+import * as config from '../config';
 
 const receivingSocket = zmq.socket('pull');
+if(config.isIdp) receivingSocket.bindSync('tcp://*:' + config.msqRegister.port);
 
 export const eventEmitter = new EventEmitter();
 

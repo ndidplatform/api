@@ -23,7 +23,9 @@ export async function createRequest({ namespace, identifier, ...data }) {
     namespace, identifier
   });
   if(!idpList) idpList = [];
-  await msq.send(idpList,data);
+  await msq.send(idpList,{
+    namespace,identifier,...data,requestId
+  });
   
   return requestId;
 }

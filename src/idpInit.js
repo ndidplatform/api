@@ -1,8 +1,9 @@
 import fs from 'fs';
-import registerMsqDestination from './main/idp';
-import eventEmitter from './msq/index';
+import { registerMsqDestination } from './main/idp';
+import { eventEmitter } from './msq/index';
+import * as config from './config';
 
-export async function idpInit() {
+export async function init() {
   let userList = JSON.parse(
     fs.readFileSync(process.env.ASSOC_USERS,'utf8').toString()
   );
