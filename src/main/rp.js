@@ -2,74 +2,40 @@ import * as utils from './utils';
 import * as msq from '../msq/index';
 
 var privKey = 'RP_PrivateKey';
-
-let referenceMapping = {};
-let callbackMapping = {};
-
+/*
+  data = {
+    message:
+    minIdp: default 1 (optional)
+  }
+*/
 export async function createRequest({ namespace, identifier, ...data }) {
-  if(referenceMapping[reference_id]) return referenceMapping[reference_id];
-
   let nonce = utils.getNonce();
-  let request_id = await utils.createRequestId(privKey,data,nonce);
+  let requestId = await utils.createRequestId(privKey,data,nonce);
 
-  let dataToBlockchain = {
-    request_id,
-    min_idp: data.minIdp ? data.minIdp : 1,
-    min_aal: data.min_aal,
-    min_ial: data.min_ial,
-    timeout: data.timeout,
-    data_request_list: data.data_request_list,
-    message_hash: await utils.hash(data.request_message),
+  let dataToSend = {
+    requestId,
+    messageHash: await utils.hash(data.request_message),
+    minIdp: data.minIdp ? data.minIdp : 1
   };
-  utils.updateChain('CreateRequest',dataToBlockchain,nonce);
+  await utils.updateChain('CreateRequest',dataToSend,nonce);
 
-  getMsqDestination({
-    namespace,
-    identifier, 
-    min_ial: data.min_ial, 
-    min_aal: data.min_aal
-  })
-  .then((idpList) => {
-    let receivers = [];
-    idpList.forEach((idp) => {
-      receivers.push({
-        ip: idp.split(':')[0],
-        port: idp.split(':')[1],
-        publicKey: idp.split(':')[2]
-      })
-    });
-
-    msq.send(receivers, {
-      namespace,
-      identifier,
-      request_id,
-      min_idp: data.minIdp ? data.minIdp : 1,
-      min_aal: data.min_aal,
-      min_ial: data.min_ial,
-      timeout: data.timeout,
-      data_request_list: data.data_request_list,
-      request_message: data.request_message
-    });
-
+  const idpList = await getMsqDestination({
+    namespace, identifier
+  });
+  if(!idpList) idpList = [];
+  await msq.send(idpList,{
+    namespace,identifier,...data,requestId
   });
   
-  referenceMapping[data.reference_id] = request_id;
-  callbackMapping[request_id] = data.callback_url;
-  return request_id;
+  return requestId;
 }
 
 /*
   data = {
     namespace:
-    identifier:
-    min_ial:
-    min_aal:
+    identifier
   }
 */
 export async function getMsqDestination(data) {
   return await utils.queryChain('GetMsqDestination',data);
-}
-
-export async function handleCallback(data) {
-  
 }

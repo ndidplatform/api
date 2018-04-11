@@ -4,6 +4,7 @@ var nonce = Date.now()%10000;
 var logicUrl = process.env.NODE_LOGIC_ADDRESS || 'http://localhost:8000';
 
 function retrieveResult(obj,isQuery) {
+  //console.log('===>',obj)
   if(obj.error) {
     console.error(obj.error);
     return obj.error;
@@ -15,16 +16,11 @@ function retrieveResult(obj,isQuery) {
   else return obj.result.deliver_tx.log === 'success';
 }
 
-export function getAccessorId(namespace,identifier) {
-  return 'some-awesome-accessor';
-}
-
-export function generateIdentityProof(data) {
-  return '<some-voodoo-happen-here>';
+export async function createSignature(privkey,message) {
+  return await hash( 'Encrypt_with_' + privkey + '(' + Buffer.from(message).toString('base64') + ')' )
 }
 
 export async function createRequestId(privkey,data,nonce) {
-  //TODO implement request_id generating algorithm
   return await createSignature(privkey,
     'Concat_with_nonce_' + nonce + '(' + Buffer.from(JSON.stringify(data)).toString('base64') + ')'
   );
@@ -35,7 +31,7 @@ export function getNonce() {
 }
 
 export async function hash(stringToHash) {
-  //TODO implement secure hashing
+  //to be implemented
   return 'Hash(' + stringToHash + ')';
 }
 
