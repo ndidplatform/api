@@ -1,5 +1,9 @@
 describe('Test All APIs', () => {
 
+  describe('Main logic', () => {
+    require('./main');
+  });
+
   describe('RP APIs', () => {
     require('./rpApi');
   });
