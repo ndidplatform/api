@@ -2,8 +2,8 @@
 
 ## Prerequisites
 
-- Node.js 8.9 or later
-- npm 5.6.0 or later
+* Node.js 8.9 or later
+* npm 5.6.0 or later
 
 ## Getting started
 
@@ -22,20 +22,22 @@
     ```
 
     **Environment variable options**
-    - `ROLE`: `idp`, `rp`, or `as`,
-    - `NODE_LOGIC_ADDRESS`: Address to contact Node Logic [Default: `http://localhost:45001`]
-    - `MSQ_BINDING_IP`: register IP for message queue (IDP only) [Default: *]
-    - `MSQ_BINDING_PORT`: register PORT for message queue (IDP only) [Default: 3001]
-    - `ASSOC_USERS`: json file path, array of { namespace, identifier } this IDP associate with
+
+    * `ROLE`: `idp`, `rp`, or `as`,
+    * `NODE_LOGIC_ADDRESS`: Address to contact Node Logic [Default: `http://localhost:45001`]
+    * `MSQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted (IDP only) [Required]
+    * `MSQ_BINDING_PORT`: A port to bind message queue (IDP only) [Default: `3001`]
+    * `ASSOC_USERS`: json file path, array of { namespace, identifier } this IDP associate with
 
     **Examples**
-    - Run a server as an IDP
 
-        ```
-        ROLE=idp \
-        NODE_LOGIC_ADDRESS=http://192.168.1.10:45001 \
-        MSQ_BINDING_IP=192.168.1.1 \
-        MSQ_BINDING_PORT=3000 \
-        ASSOC_USERS=users.json \
-        npm start
-        ```
+    * Run a server as an IDP
+
+      ```
+      ROLE=idp \
+      NODE_LOGIC_ADDRESS=http://192.168.1.10:45001 \
+      MSQ_BINDING_IP=192.168.1.1 \
+      MSQ_BINDING_PORT=3000 \
+      ASSOC_USERS=users.json \
+      npm start
+      ```
