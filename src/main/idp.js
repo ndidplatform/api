@@ -31,16 +31,6 @@ export async function createIdpResponse(data) {
   return result;
 }
 
-/*
-  data = {
-    users: [{
-      namespace:
-      identifier:
-    },...]
-    ip: string,
-    port: string
-  }
-*/
 export async function registerMsqDestination(data) {
   let result = await utils.updateChain('RegisterMsqDestination',data,utils.getNonce());
   return result;
@@ -53,10 +43,10 @@ export async function addNodePubKey(data) {
 
 export async function handleMessageFromQueue(encryptedMessage) {
   //TODO
-  //decrypyted with private_key
+  //decrypted with private_key
   //wait for blockchain to update and query blockchain with request_id
-  //check integrity of message and from blockchain
-  //notify user and request consent
+  //check integrity of message from msq and from blockchain
+  //contact user and ask for consent
 }
 
 //===================== Initialize before flow can start =======================
@@ -77,7 +67,7 @@ export async function init() {
 
   //register node id, which is substituted with ip,port for demo
   registerMsqDestination({
-    user,
+    users,
     node_id,
   });
 
