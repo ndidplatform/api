@@ -50,6 +50,10 @@ export async function handleMessageFromQueue(encryptedMessage) {
   //contact user and ask for consent
 }
 
+export async handleNodeLogicCallback() {
+  //TODO
+}
+
 //===================== Initialize before flow can start =======================
 
 export async function init() {
@@ -83,6 +87,6 @@ export async function init() {
   });
 }
 
-if(config.isIdp) {
+if(config.role === 'idp') {
   init();
 }

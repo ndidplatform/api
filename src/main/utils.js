@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 var nonce = Date.now()%10000;
-var logicUrl = process.env.NODE_LOGIC_ADDRESS || 'http://localhost:8000';
+var logicUrl = process.env.NODE_LOGIC_ADDRESS || 'http://localhost:45001';
 
 function retrieveResult(obj,isQuery) {
   if(obj.error) {

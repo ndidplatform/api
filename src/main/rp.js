@@ -4,7 +4,35 @@ import * as msq from '../msq/index';
 var privKey = 'RP_PrivateKey';
 
 let referenceMapping = {};
-let callbackMapping = {};
+let callbackUrls = {};
+
+export const handleNodeLogicCallback = async (requestId) => {
+  if(callbackUrls[requestId]) {
+    const request = await utils.queryChain('GetRequest', { requestId });
+
+    try {
+      await fetch(callbackUrls[requestId], {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          request,
+        }),
+      });
+    } catch (error) {
+      console.log(
+        'Cannot send callback to client application with the following error:',
+        error
+      );
+    }
+    
+    // Clear callback url mapping when the request is no longer going to have further events
+    if (request.status === 'completed' || request.status === 'rejected') {
+      delete callbackUrls[requestId];
+    }
+  }
+};
 
 export async function createRequest({ namespace, identifier, ...data }) {
   //existing reference_id, return
@@ -61,7 +89,7 @@ export async function createRequest({ namespace, identifier, ...data }) {
   
   //maintain mapping
   referenceMapping[data.reference_id] = request_id;
-  callbackMapping[request_id] = data.callback_url;
+  callbackUrls[request_id] = data.callback_url;
   return request_id;
 }
 
