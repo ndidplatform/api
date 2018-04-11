@@ -70,7 +70,7 @@ export async function init() {
   let users = userList.map((elem) => {
     return {
       hash_id: utils.hash(elem.namespace + ':' + elem.identifier),
-      ial: 1
+      ial: elem.ial
     }
   });
   let node_id = config.msqRegister.ip + ':' + config.msqRegister.port;

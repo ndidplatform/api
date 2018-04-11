@@ -1,6 +1,7 @@
 [
   {
     "namespace": "cid",
-    "identifier": "1234567890123"
+    "identifier": "1234567890123",
+    "ial": 1
   }
 ]
