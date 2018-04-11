@@ -11,8 +11,7 @@ export async function init() {
   registerMsqDestination({
     users: userList,
     ip: config.msqRegister.ip,
-    port: config.msqRegister.port,
-    publicKey: 'super-secure-publicKey'
+    port: config.msqRegister.port
   });
 
   eventEmitter.on('message',function(message) {
