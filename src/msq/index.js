@@ -25,7 +25,7 @@ export const send = (receivers, message) => {
     sendingSocket.connect(`tcp://${receiver.ip}:${receiver.port}`);
 
     //TODO proper encrypt
-    sendingSocket.send('Encrypt_with_' + receiver.publicKey + '(' +
+    sendingSocket.send('Encrypt_with_' + receiver.public_key + '(' +
       jsonMessageStr + ')'
     );
 

@@ -67,15 +67,18 @@ export async function init() {
     fs.readFileSync(process.env.ASSOC_USERS,'utf8').toString()
   );
 
-  let hash_id_list = userList.map((elem) => {
-    return utils.hash(elem.namespace + ':' + elem.identifier);
+  let users = userList.map((elem) => {
+    return {
+      hash_id: utils.hash(elem.namespace + ':' + elem.identifier),
+      ial: 1
+    }
   });
   let node_id = config.msqRegister.ip + ':' + config.msqRegister.port;
 
   //register node id, which is substituted with ip,port for demo
   registerMsqDestination({
-    hash_id_list,
-    node_id
+    user,
+    node_id,
   });
 
   addNodePubKey({
