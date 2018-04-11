@@ -22,7 +22,6 @@
     ```
 
     **Environment variable options**
-
     * `ROLE`: `idp`, `rp`, or `as`,
     * `NODE_LOGIC_ADDRESS`: Address to contact Node Logic [Default: `http://localhost:45001`]
     * `MSQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted (IDP only) [Required]
@@ -30,14 +29,13 @@
     * `ASSOC_USERS`: json file path, array of { namespace, identifier } this IDP associate with
 
     **Examples**
-
     * Run a server as an IDP
 
-      ```
-      ROLE=idp \
-      NODE_LOGIC_ADDRESS=http://192.168.1.10:45001 \
-      MSQ_BINDING_IP=192.168.1.1 \
-      MSQ_BINDING_PORT=3000 \
-      ASSOC_USERS=users.json \
-      npm start
-      ```
+        ```
+        ROLE=idp \
+        NODE_LOGIC_ADDRESS=http://192.168.1.10:45001 \
+        MSQ_BINDING_IP=192.168.1.1 \
+        MSQ_BINDING_PORT=3000 \
+        ASSOC_USERS=users.json \
+        npm start
+        ```
