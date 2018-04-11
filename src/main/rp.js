@@ -9,13 +9,7 @@ const callbackUrls = {};
 
 export const handleNodeLogicCallback = async (requestId) => {
   if (callbackUrls[requestId]) {
-    const queryResponse = await utils.queryChain('GetRequest', { requestId });
-
-    const jsonStr = Buffer.from(
-      queryResponse.result.response.value,
-      'base64'
-    ).toString();
-    const request = JSON.parse(jsonStr);
+    const request = await utils.queryChain('GetRequest', { requestId });
 
     try {
       await fetch(callbackUrls[requestId], {
