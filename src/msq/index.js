@@ -8,7 +8,7 @@ if(config.isIdp) receivingSocket.bindSync('tcp://*:' + config.msqRegister.port);
 export const eventEmitter = new EventEmitter();
 
 receivingSocket.on('message', function(jsonMessageStr){
-  // TODO - Receiving Queue
+  // TODO - Receiving Queue [NOT NECESSARY?]
   // In case of messages arrive before listener function is added.
 
   const message = JSON.parse(jsonMessageStr);
