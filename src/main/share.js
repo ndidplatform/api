@@ -1,7 +1,8 @@
 import express from 'express';
+import bodyParser from 'body-parser';
 
-import rp from './rp';
-import idp from './idp';
+import * as rp from './rp';
+import * as idp from './idp';
 // import as from './as';
 import * as utils from './utils';
 import { role } from '../config';
@@ -17,6 +18,8 @@ export async function getRequest(data) {
 const app = express();
 const NODE_LOGIC_CALLBACK_PORT = process.env.NODE_LOGIC_CALLBACK_PORT || 3001;
 const NODE_LOGIC_CALLBACK_PATH = process.env.NODE_LOGIC_CALLBACK_PATH || '/callback';
+
+app.use(bodyParser.json({ limit: '2mb' }));
 
 app.post(NODE_LOGIC_CALLBACK_PATH, (req, res) => {
   const { requestId } = req.body;
