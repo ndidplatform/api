@@ -41,10 +41,11 @@ router.post('/response', async (req, res, next) => {
     } = req.body;
 
     // TO-DO
-    let isSuccess = await nodeLogicIdpApi.createIdpResponse({
-      requestId: request_id,
+    /*let isSuccess = await nodeLogicIdpApi.createIdpResponse({
+      request_id,
       status
-    });
+    });*/
+    let isSuccess = await nodeLogicIdpApi.createIdpResponse(req.body);
 
     res.status(200).send(isSuccess);
   } catch (error) {
