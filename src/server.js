@@ -8,6 +8,7 @@ import bodyParser from 'body-parser';
 import express from 'express';
 import morgan from 'morgan';
 import routes from './routes';
+import { init } from './main/idp';
 
 process.on('unhandledRejection', function(reason, p) {
   console.error('Unhandled Rejection:', p, '\nreason:', reason.stack || reason);
@@ -29,6 +30,10 @@ const server = http.createServer(app);
 server.listen(config.serverPort);
 
 console.log(`Server listening on port ${config.serverPort}`);
+
+if(config.role === 'idp') {
+  init();
+}
 
 // For testing
 module.exports = server;

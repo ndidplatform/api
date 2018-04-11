@@ -34,7 +34,7 @@ export const handleNodeLogicCallback = async (requestId) => {
   }
 };
 
-export async function createRequest({ namespace, identifier, ...data }) {
+export async function createRequest({ namespace, identifier, reference_id, ...data }) {
   //existing reference_id, return
   if(referenceMapping[reference_id]) return referenceMapping[reference_id];
 
@@ -59,18 +59,19 @@ export async function createRequest({ namespace, identifier, ...data }) {
     identifier, 
     min_ial: data.min_ial, 
   })
-  .then((nodeIdList) => {
+  .then(async ({ node_id }) => {
     let receivers = [];
 
     //prepare data for msq
-    nodeIdList.forEach((nodeId) => {
-      let [ ip,port ] nodeId.split(':');
+    for(let i in node_id) {
+      let nodeId = node_id[i];
+      let [ ip,port ] = nodeId.split(':');
       receivers.push({
         ip,
         port,
         ...(await getNodePubKey(nodeId))
       })
-    });
+    }
 
     //send via msq
     msq.send(receivers, {
@@ -100,11 +101,6 @@ export async function getMsqDestination(data) {
   });
 }
 
-export async getNodePubKey(node_id) {
+export async function getNodePubKey(node_id) {
   return await utils.queryChain('GetNodePublicKey',{node_id});
-}
-
-//when blockchain notify that some request is updated, call callback
-export async function handleCallback(data) {
-  //TODO use callbackMapping[data.request_id]
 }

@@ -50,7 +50,7 @@ export async function handleMessageFromQueue(encryptedMessage) {
   //contact user and ask for consent
 }
 
-export async handleNodeLogicCallback() {
+export async function handleNodeLogicCallback() {
   //TODO
 }
 
@@ -62,12 +62,14 @@ export async function init() {
     fs.readFileSync(process.env.ASSOC_USERS,'utf8').toString()
   );
 
-  let users = userList.map((elem) => {
-    return {
-      hash_id: utils.hash(elem.namespace + ':' + elem.identifier),
+  let users = [];
+  for(let i in userList) {
+    let elem = userList[i];
+    users.push({
+      hash_id: await utils.hash(elem.namespace + ':' + elem.identifier),
       ial: elem.ial
-    }
-  });
+    })
+  }
   let node_id = config.msqRegister.ip + ':' + config.msqRegister.port;
 
   //register node id, which is substituted with ip,port for demo
@@ -85,8 +87,4 @@ export async function init() {
     console.log('IDP receive encrypted message from msq:',message);
     handleMessageFromQueue(message);
   });
-}
-
-if(config.role === 'idp') {
-  init();
 }
