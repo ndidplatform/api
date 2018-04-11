@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { registerMsqDestination, handleMessageFromQueue } from './main/idp';
+import { registerMsqDestination } from './main/idp';
 import { eventEmitter } from './msq/index';
 import * as config from './config';
 
@@ -15,7 +15,7 @@ export async function init() {
   });
 
   eventEmitter.on('message',function(message) {
+    //Handle message here
     console.log('IDP receive message from msq:',message);
-    handleMessageFromQueue(message);
   });
 }
