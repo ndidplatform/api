@@ -15,8 +15,9 @@ function retrieveResult(obj,isQuery) {
   else return obj.result.deliver_tx.log === 'success';
 }
 
-export function getAccessorId(namespace,identifier) {
-  return 'some-awesome-accessor';
+export async function hash(stringToHash) {
+  //TODO implement secure hashing
+  return 'Hash(' + stringToHash + ')';
 }
 
 export function generateIdentityProof(data) {
@@ -24,19 +25,15 @@ export function generateIdentityProof(data) {
 }
 
 export async function createRequestId(privkey,data,nonce) {
-  //TODO implement request_id generating algorithm
-  return await createSignature(privkey,
-    'Concat_with_nonce_' + nonce + '(' + Buffer.from(JSON.stringify(data)).toString('base64') + ')'
+  //TODO implement real request_id generating algorithm
+  return await hash( 'Concat_with_nonce_' + nonce + '(' + 
+      Buffer.from(JSON.stringify(data)).toString('base64') + 
+    ')'
   );
 }
 
 export function getNonce() {
   return (nonce++).toString();
-}
-
-export async function hash(stringToHash) {
-  //TODO implement secure hashing
-  return 'Hash(' + stringToHash + ')';
 }
 
 export async function queryChain(fnName,data) {

@@ -13,7 +13,8 @@ export async function createIdpResponse(data) {
     aal,
     ial,
     status,
-    signature
+    signature,
+    accessor_id
   } = data;
 
   let dataToBlockchain = {
@@ -22,7 +23,7 @@ export async function createIdpResponse(data) {
     ial,
     status,
     signature,
-    accessor_id: utils.getAccessorId(namespace,identifier),
+    accessor_id,
     identity_proof: utils.generateIdentityProof(data)
   }
   let result = await utils.updateChain(
