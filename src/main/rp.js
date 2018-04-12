@@ -1,5 +1,6 @@
 import * as utils from './utils';
 import * as msq from '../msq/index';
+import fetch from 'node-fetch';
 
 var privKey = 'RP_PrivateKey';
 

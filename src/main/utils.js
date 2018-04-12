@@ -12,7 +12,11 @@ function retrieveResult(obj,isQuery) {
     let result = Buffer.from(obj.result.response.value,'base64').toString();
     return JSON.parse(result);
   }
-  else return obj.result.deliver_tx.log === 'success';
+  else if(obj.result.deliver_tx.log === 'success') return true;
+  else {
+    console.error('Update chain failed:',obj);
+    return false;
+  }
 }
 
 export async function hash(stringToHash) {

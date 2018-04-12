@@ -50,8 +50,9 @@ export async function handleMessageFromQueue(encryptedMessage) {
   //contact user and ask for consent
 }
 
-export async function handleNodeLogicCallback() {
+export async function handleNodeLogicCallback(requestId) {
   //TODO
+  console.log('IDP get callback from node logic with requestId:',requestId)
 }
 
 //===================== Initialize before flow can start =======================
