@@ -5,6 +5,16 @@ import fs from 'fs';
 
 var privKey = 'IDP_PrivateKey';
 
+let callbackUrl = null;
+
+export const setCallbackUrl = (url) => {
+  callbackUrl = url;
+};
+
+export const getCallbackUrl = () => {
+  return callbackUrl;
+};
+
 export async function createIdpResponse(data) {
   let {
     request_id,

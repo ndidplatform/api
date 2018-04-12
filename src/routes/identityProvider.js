@@ -6,9 +6,9 @@ const router = express.Router();
 
 router.get('/callback', async (req, res, next) => {
   try {
-    // TO-DO
+    const url = nodeLogicIdpApi.getCallbackUrl();
 
-    res.status(200).send({});
+    res.status(200).send({ url });
   } catch (error) {
     res.status(500).end();
   }
@@ -18,9 +18,9 @@ router.post('/callback', async (req, res, next) => {
   try {
     const url = req.body;
 
-    // TO-DO
+    nodeLogicIdpApi.setCallbackUrl(url);
 
-    res.status(200).send({});
+    res.status(200).end();
   } catch (error) {
     res.status(500).end();
   }
