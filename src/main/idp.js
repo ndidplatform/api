@@ -54,7 +54,6 @@ export async function addNodePubKey(data) {
 
 export async function handleMessageFromQueue(encryptedMessage) {
   //TODO
-  //decrypted with private_key
   //wait for blockchain to update and query blockchain with request_id
   //check integrity of message from msq and from blockchain
   //contact user and ask for consent

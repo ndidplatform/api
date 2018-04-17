@@ -8,8 +8,7 @@ if(config.role === 'idp') receivingSocket.bindSync('tcp://*:' + config.msqRegist
 export const eventEmitter = new EventEmitter();
 
 receivingSocket.on('message', function(jsonMessageStr){
-  // TODO - Receiving Queue
-  // In case of messages arrive before listener function is added.
+  // TODO - Decrypt with provate key
 
   const message = JSON.parse(jsonMessageStr);
   //check hash, if hash match then pass to app layer
