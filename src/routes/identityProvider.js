@@ -16,7 +16,7 @@ router.get('/callback', async (req, res, next) => {
 
 router.post('/callback', async (req, res, next) => {
   try {
-    const url = req.body;
+    const { url } = req.body;
 
     nodeLogicIdpApi.setCallbackUrl(url);
 
