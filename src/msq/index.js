@@ -33,8 +33,10 @@ async function checkIntegrity(requestId) {
 
 receivingSocket.on('message', function(jsonMessageStr){
   // TODO - Proper decrypt with private key
+  jsonMessageStr = jsonMessageStr.toString().split('\\"').join('"');
   let decrypted = jsonMessageStr.slice(jsonMessageStr.indexOf('(') + 1
     , jsonMessageStr.length - 1);
+  console.log('===>',decrypted);
 
   const message = JSON.parse(decrypted);
   msqQueue[message.request_id] = message;
