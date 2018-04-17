@@ -44,9 +44,7 @@ receivingSocket.on('message', function(jsonMessageStr){
 });
 
 export const nodeLogicCallback = async (requestId) => {
-  blockchainQueue[requestId] = await share.getRequest({
-    requestId: message.request_id
-  });
+  blockchainQueue[requestId] = await share.getRequest({ requestId });
   checkIntegrity(requestId);
 }
 
