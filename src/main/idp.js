@@ -70,7 +70,7 @@ export async function handleMessageFromQueue(message) {
 export async function handleNodeLogicCallback(requestId) {
   //TODO
   console.log('IDP get callback from node logic with requestId:',requestId);
-  await nodeLogicCallback();
+  await nodeLogicCallback(requestId);
 }
 
 //===================== Initialize before flow can start =======================
