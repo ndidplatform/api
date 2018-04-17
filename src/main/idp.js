@@ -1,6 +1,6 @@
 import * as utils from './utils';
 import * as config from '../config';
-import { eventEmitter, checkIntegrity } from '../msq/index';
+import { eventEmitter, nodeLogicCallback } from '../msq/index';
 import fetch from 'node-fetch';
 import fs from 'fs';
 
@@ -70,7 +70,7 @@ export async function handleMessageFromQueue(message) {
 export async function handleNodeLogicCallback(requestId) {
   //TODO
   console.log('IDP get callback from node logic with requestId:',requestId);
-  await checkIntegrity();
+  await nodeLogicCallback();
 }
 
 //===================== Initialize before flow can start =======================
