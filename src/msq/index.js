@@ -1,20 +1,52 @@
 import EventEmitter from 'events';
 import zmq from 'zeromq';
 import * as config from '../config';
+import * as utils from '../main/utils';
+import * as share from '../main/share';
 
 const receivingSocket = zmq.socket('pull');
 if(config.role === 'idp') receivingSocket.bindSync('tcp://*:' + config.msqRegister.port);
 
 export const eventEmitter = new EventEmitter();
 
-receivingSocket.on('message', function(jsonMessageStr){
-  // TODO - Decrypt with private key
+let msqQueue = {};
+let blockchainQueue = {};
 
-  const message = JSON.parse(jsonMessageStr);
+async function checkIntegrity(requestId) {
   //check hash, if hash match then pass to app layer
+  if(msqQueue[requestId] && blockchainQueue[requestId]) {
+    
+    let msgBlockchain = blockchainQueue[requestId];
+    let msqMsq = msqQueue[requestId];
 
-  eventEmitter.emit('message', message);
+    if(msgBlockchain.messageHash === await utils.hash(message.request_message)) {
+      eventEmitter.emit('message', message);
+    }
+    else {
+      console.error('Msq and blockchain not matched!!',hashedMsq,hashedBlockchain);
+    }
+
+    delete blockchainQueue[requestId];
+    delete msqQueue[requestId];
+  }
+}
+
+receivingSocket.on('message', function(jsonMessageStr){
+  // TODO - Proper decrypt with private key
+  let decrypted = jsonMessageStr.slice(jsonMessageStr.indexOf('(') + 1
+    , jsonMessageStr.length - 1);
+
+  const message = JSON.parse(decrypted);
+  msqQueue[message.request_id] = message;
+  checkIntegrity(message.request_id)
 });
+
+export const nodeLogicCallback = async (requestId) => {
+  blockchainQueue[requestId] = await share.getRequest({
+    requestId: message.request_id
+  });
+  checkIntegrity(requestId);
+}
 
 export const send = (receivers, message) => {
   receivers.forEach(receiver => {

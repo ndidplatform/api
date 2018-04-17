@@ -1,7 +1,9 @@
 import * as utils from './utils';
 import * as config from '../config';
 import { eventEmitter } from '../msq/index';
+import fetch from 'node-fetch';
 import fs from 'fs';
+import * as msq from '../msq/index';
 
 var privKey = 'IDP_PrivateKey';
 
@@ -52,16 +54,24 @@ export async function addNodePubKey(data) {
   return result;
 }
 
-export async function handleMessageFromQueue(encryptedMessage) {
-  //TODO
-  //wait for blockchain to update and query blockchain with request_id
-  //check integrity of message from msq and from blockchain
-  //contact user and ask for consent
+export async function handleMessageFromQueue(message) {
+  if(!callbackUrl) {
+    console.error('callbackUrl for IDP not set');
+    return;
+  }
+  fetch(callbackUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(message)
+  })
 }
 
 export async function handleNodeLogicCallback(requestId) {
   //TODO
-  console.log('IDP get callback from node logic with requestId:',requestId)
+  console.log('IDP get callback from node logic with requestId:',requestId);
+  await msq.checkIntegrity();
 }
 
 //===================== Initialize before flow can start =======================
@@ -94,7 +104,7 @@ export async function init() {
   });
 
   eventEmitter.on('message',function(message) {
-    console.log('IDP receive encrypted message from msq:',message);
+    console.log('IDP receive message from msq:',message);
     handleMessageFromQueue(message);
   });
 }
