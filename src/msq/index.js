@@ -17,7 +17,7 @@ async function checkIntegrity(requestId) {
   if(msqQueue[requestId] && blockchainQueue[requestId]) {
     
     let msgBlockchain = blockchainQueue[requestId];
-    let msqMsq = msqQueue[requestId];
+    let message = msqQueue[requestId];
 
     if(msgBlockchain.messageHash === await utils.hash(message.request_message)) {
       eventEmitter.emit('message', message);
