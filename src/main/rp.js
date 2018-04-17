@@ -90,7 +90,7 @@ export async function createRequest({ namespace, identifier, reference_id, ...da
   });
   
   //maintain mapping
-  referenceMapping[data.reference_id] = request_id;
+  referenceMapping[reference_id] = request_id;
   callbackUrls[request_id] = data.callback_url;
   return request_id;
 }
