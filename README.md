@@ -24,7 +24,7 @@
     **Environment variable options**
     * `ROLE`: `idp`, `rp`, or `as`,
     * `NODE_LOGIC_ADDRESS`: Address to contact Node Logic [Default: `http://localhost:45001`]
-    * `MSQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted (IDP only) [Required]
+    * `MSQ_BINDING_IP`: An IP address where this NDID node message queue can be contacted (IDP only) [Required]
     * `MSQ_BINDING_PORT`: A port to bind message queue (IDP only) [Default: `5555`]
     * `ASSOC_USERS`: json file path, array of { namespace, identifier } this IDP associate with
     * `SERVER_PORT`: API server port [Default: `8080`]
