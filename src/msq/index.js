@@ -12,7 +12,7 @@ export const eventEmitter = new EventEmitter();
 let msqQueue = {};
 let blockchainQueue = {};
 
-async function checkIntegrity(requestId) {
+export checkIntegrity = async function(requestId) {
   //check hash, if hash match then pass to app layer
   if(msqQueue[requestId] && blockchainQueue[requestId]) {
     
