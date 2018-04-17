@@ -53,7 +53,7 @@ export async function addNodePubKey(data) {
   return result;
 }
 
-export async function handleMessageFromQueue(message) {
+export async function handleMessageFromQueue(request) {
   if(!callbackUrl) {
     console.error('callbackUrl for IDP not set');
     return;
@@ -63,7 +63,7 @@ export async function handleMessageFromQueue(message) {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(message)
+    body: JSON.stringify({ request })
   })
 }
 
