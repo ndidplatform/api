@@ -9,7 +9,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
   try {
     const { namespace, identifier } = req.params;
     const {
-      reference_number,
+      reference_id,
       idp_list,
       callback_url,
       as_service_list,
@@ -23,7 +23,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
     const requestId = await nodeLogicRpApi.createRequest({
       namespace,
       identifier,
-      reference_number,
+      reference_id,
       idp_list,
       callback_url,
       as_service_list,
