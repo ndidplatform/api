@@ -1,7 +1,8 @@
 import fetch from 'node-fetch';
 
 var nonce = Date.now()%10000;
-var logicUrl = process.env.NODE_LOGIC_ADDRESS || 'http://localhost:45001';
+var logicUrl = process.env.NODE_LOGIC_ADDRESS || 'http://localhost:' + 
+  ( process.env.ROLE === 'rp' ? '45001' : '45000');
 
 function retrieveResult(obj,isQuery) {
   if(obj.error) {
