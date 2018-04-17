@@ -1,9 +1,8 @@
 import * as utils from './utils';
 import * as config from '../config';
-import { eventEmitter } from '../msq/index';
+import { eventEmitter, checkIntegrity } from '../msq/index';
 import fetch from 'node-fetch';
 import fs from 'fs';
-import * as msq from '../msq/index';
 
 var privKey = 'IDP_PrivateKey';
 
@@ -71,7 +70,7 @@ export async function handleMessageFromQueue(message) {
 export async function handleNodeLogicCallback(requestId) {
   //TODO
   console.log('IDP get callback from node logic with requestId:',requestId);
-  await msq.checkIntegrity();
+  await checkIntegrity();
 }
 
 //===================== Initialize before flow can start =======================
