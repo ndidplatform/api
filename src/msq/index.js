@@ -31,12 +31,13 @@ async function checkIntegrity(requestId) {
   }
 }
 
-receivingSocket.on('message', function(jsonMessageStr){
+receivingSocket.on('message', async function(jsonMessageStr){
   // TODO - Proper decrypt with private key
   jsonMessageStr = jsonMessageStr.toString().split('\\"').join('"');
-  let decrypted = jsonMessageStr.slice(jsonMessageStr.indexOf('(') + 1
-    , jsonMessageStr.length - 2);
-  //console.log('===>',decrypted);
+  jsonMessageStr = jsonMessageStr.slice(1,jsonMessageStr.length - 1); //remove quote
+
+  //TODO - retrive private key to decrypt
+  let decrypted = await utils.decryptAsymetricKey(null,jsonMessageStr);
 
   const message = JSON.parse(decrypted);
   msqQueue[message.request_id] = message;
@@ -48,15 +49,13 @@ export const nodeLogicCallback = async (requestId) => {
   checkIntegrity(requestId);
 }
 
-export const send = (receivers, message) => {
-  receivers.forEach(receiver => {
+export const send = async (receivers, message) => {
+  receivers.forEach(async (receiver) => {
     const sendingSocket = zmq.socket('push');
     sendingSocket.connect(`tcp://${receiver.ip}:${receiver.port}`);
 
     //TODO proper encrypt
-    let encryptedMessage = 'Encrypt_with_' + receiver.public_key + '(' + 
-      JSON.stringify(message) + 
-    ')'
+    let encryptedMessage = await utils.encryptAsymetricKey(receiver.public_key,JSON.stringify(message));
     sendingSocket.send(JSON.stringify(encryptedMessage));
 
     // TO BE REVISED

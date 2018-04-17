@@ -25,6 +25,16 @@ export async function hash(stringToHash) {
   return 'Hash(' + stringToHash + ')';
 }
 
+export async function decryptAsymetricKey(key,message) {
+  //TODO implement decryption
+  return message.slice(message.indexOf('(') + 1, message.length - 1);
+}
+
+export async function encryptAsymetricKey(key,message) {
+  //TODO implement encryption
+  return 'Encrypt_with_' + key + '(' + message + ')';
+}
+
 export function generateIdentityProof(data) {
   return '<some-voodoo-happen-here>';
 }
