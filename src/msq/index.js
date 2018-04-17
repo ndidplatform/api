@@ -36,7 +36,7 @@ receivingSocket.on('message', function(jsonMessageStr){
   jsonMessageStr = jsonMessageStr.toString().split('\\"').join('"');
   let decrypted = jsonMessageStr.slice(jsonMessageStr.indexOf('(') + 1
     , jsonMessageStr.length - 2);
-  console.log('===>',decrypted);
+  //console.log('===>',decrypted);
 
   const message = JSON.parse(decrypted);
   msqQueue[message.request_id] = message;
