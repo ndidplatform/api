@@ -1,6 +1,6 @@
 import fs from 'fs';
 import fetch from 'node-fetch';
-import * as share from '../main/share';
+import * as common from '../main/common';
 import * as utils from './utils';
 import { eventEmitter } from '../mq';
 import * as config from '../config';
@@ -112,7 +112,7 @@ export async function handleMessageFromQueue(request) {
 
 export async function handleNodeLogicCallback(requestId) {
   console.log('Callback (event) from node logic; requestId:', requestId);
-  blockchainQueue[requestId] = await share.getRequest({ requestId });
+  blockchainQueue[requestId] = await common.getRequest({ requestId });
   checkIntegrity(requestId);
 }
 

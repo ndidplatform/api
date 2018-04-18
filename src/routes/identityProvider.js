@@ -1,12 +1,12 @@
 import express from 'express';
-import * as nodeLogicIdpApi from '../main/idp';
-import * as nodeLogicCommonApi from '../main/share';
+import * as smartContractIdpApi from '../main/idp';
+import * as smartContractCommonApi from '../main/common';
 
 const router = express.Router();
 
 router.get('/callback', async (req, res, next) => {
   try {
-    const url = nodeLogicIdpApi.getCallbackUrl();
+    const url = smartContractIdpApi.getCallbackUrl();
 
     res.status(200).send({ url });
   } catch (error) {
@@ -18,7 +18,7 @@ router.post('/callback', async (req, res, next) => {
   try {
     const { url } = req.body;
 
-    nodeLogicIdpApi.setCallbackUrl(url);
+    smartContractIdpApi.setCallbackUrl(url);
 
     res.status(200).end();
   } catch (error) {
@@ -40,7 +40,7 @@ router.post('/response', async (req, res, next) => {
       accessor_id,
     } = req.body;
 
-    let isSuccess = await nodeLogicIdpApi.createIdpResponse(req.body);
+    let isSuccess = await smartContractIdpApi.createIdpResponse(req.body);
 
     res.status(200).send(isSuccess);
   } catch (error) {

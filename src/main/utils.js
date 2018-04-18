@@ -36,6 +36,7 @@ export async function encryptAsymetricKey(key, message) {
 }
 
 export function generateIdentityProof(data) {
+  // TODO
   return '<some-voodoo-happen-here>';
 }
 
@@ -51,6 +52,7 @@ export async function createRequestId(privkey, data, nonce) {
 }
 
 export function getNonce() {
+  // TODO
   return (nonce++).toString();
 }
 

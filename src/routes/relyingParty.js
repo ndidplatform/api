@@ -1,7 +1,7 @@
 import express from 'express';
 
-import * as nodeLogicRpApi from '../main/rp';
-import * as nodeLogicCommonApi from '../main/share';
+import * as smartContractRpApi from '../main/rp';
+import * as smartContractCommonApi from '../main/common';
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
       request_timeout,
     } = req.body;
 
-    const requestId = await nodeLogicRpApi.createRequest({
+    const requestId = await smartContractRpApi.createRequest({
       namespace,
       identifier,
       reference_id,
@@ -45,7 +45,7 @@ router.get('/requests/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    const request = await nodeLogicCommonApi.getRequest({
+    const request = await smartContractCommonApi.getRequest({
       requestId: request_id,
     });
 
