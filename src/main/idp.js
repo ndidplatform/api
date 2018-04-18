@@ -5,7 +5,7 @@ import * as utils from './utils';
 import { eventEmitter } from '../mq';
 import * as config from '../config';
 
-var privKey = 'IDP_PrivateKey';
+const privKey = 'IDP_PrivateKey';
 let msqQueue = {};
 let blockchainQueue = {};
 

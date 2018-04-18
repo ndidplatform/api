@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import * as utils from './utils';
 import * as mq from '../mq';
 
-var privKey = 'RP_PrivateKey';
+const privKey = 'RP_PrivateKey';
 
 let referenceMapping = {};
 let callbackUrls = {};
