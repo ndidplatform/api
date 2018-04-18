@@ -13,7 +13,12 @@
     npm install
     ```
 
-2.  Run Node Logic server (tendermint ABCI) in `ndid-smart-contract` repository
+2.  Run Node Logic server (tendermint ABCI) in `ndid-smart-contract` repository and wait for
+    ```
+    Commit
+    Commit
+    ```
+    to show in output before start `ndid-api` process.
 
 3.  Run a server
 
