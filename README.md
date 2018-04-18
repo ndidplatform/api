@@ -60,5 +60,5 @@
 
 Don't forget to
 
-1.  Set `SERVER_PORT` and `NODE_LOGIC_CALLBACK_PORT` when running on the same machine to avoid port collision.
+1.  Set `SERVER_PORT` and `SMART_CONTRACT_CALLBACK_PORT` when running on the same machine to avoid port collision.
 2.  Set `SMART_CONTRACT_ADDRESS` when running `ndid-smart-contract` on another machine.
