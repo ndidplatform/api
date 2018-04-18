@@ -1,7 +1,7 @@
 import express from 'express';
 
-import * as smartContractRpApi from '../main/rp';
-import * as smartContractCommonApi from '../main/common';
+import * as abciAppRpApi from '../main/rp';
+import * as abciAppCommonApi from '../main/common';
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
       request_timeout,
     } = req.body;
 
-    const requestId = await smartContractRpApi.createRequest({
+    const requestId = await abciAppRpApi.createRequest({
       namespace,
       identifier,
       reference_id,
@@ -45,7 +45,7 @@ router.get('/requests/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    const request = await smartContractCommonApi.getRequest({
+    const request = await abciAppCommonApi.getRequest({
       requestId: request_id,
     });
 

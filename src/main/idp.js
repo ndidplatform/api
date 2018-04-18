@@ -110,8 +110,8 @@ export async function handleMessageFromQueue(request) {
   checkIntegrity(requestJson.request_id);
 }
 
-export async function handleNodeLogicCallback(requestId) {
-  console.log('Callback (event) from node logic; requestId:', requestId);
+export async function handleABCIAppCallback(requestId) {
+  console.log('Callback (event) from ABCI app; requestId:', requestId);
   blockchainQueue[requestId] = await common.getRequest({ requestId });
   checkIntegrity(requestId);
 }

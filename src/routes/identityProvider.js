@@ -1,12 +1,12 @@
 import express from 'express';
-import * as smartContractIdpApi from '../main/idp';
-import * as smartContractCommonApi from '../main/common';
+import * as abciAppIdpApi from '../main/idp';
+import * as abciAppCommonApi from '../main/common';
 
 const router = express.Router();
 
 router.get('/callback', async (req, res, next) => {
   try {
-    const url = smartContractIdpApi.getCallbackUrl();
+    const url = abciAppIdpApi.getCallbackUrl();
 
     res.status(200).send({ url });
   } catch (error) {
@@ -18,7 +18,7 @@ router.post('/callback', async (req, res, next) => {
   try {
     const { url } = req.body;
 
-    smartContractIdpApi.setCallbackUrl(url);
+    abciAppIdpApi.setCallbackUrl(url);
 
     res.status(200).end();
   } catch (error) {
@@ -40,7 +40,7 @@ router.post('/response', async (req, res, next) => {
       accessor_id,
     } = req.body;
 
-    let isSuccess = await smartContractIdpApi.createIdpResponse(req.body);
+    let isSuccess = await abciAppIdpApi.createIdpResponse(req.body);
 
     res.status(200).send(isSuccess);
   } catch (error) {

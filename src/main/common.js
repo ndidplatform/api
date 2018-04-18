@@ -14,35 +14,35 @@ export async function getRequest(data) {
   return await utils.queryChain('GetRequest', data);
 }
 
-// Listen for callbacks (events) from Node Logic
+// Listen for callbacks (events) from ABCI app
 const app = express();
-const SMART_CONTRACT_CALLBACK_PORT = process.env.SMART_CONTRACT_CALLBACK_PORT || 3001;
-const SMART_CONTRACT_CALLBACK_PATH =
-  process.env.SMART_CONTRACT_CALLBACK_PATH || '/callback';
+const ABCI_APP_CALLBACK_PORT = process.env.ABCI_APP_CALLBACK_PORT || 3001;
+const ABCI_APP_CALLBACK_PATH =
+  process.env.ABCI_APP_CALLBACK_PATH || '/callback';
 
 app.use(bodyParser.json({ limit: '2mb' }));
 
-app.post(SMART_CONTRACT_CALLBACK_PATH, (req, res) => {
+app.post(ABCI_APP_CALLBACK_PATH, (req, res) => {
   const { requestId } = req.body;
 
-  let handleNodeLogicCallback;
+  let handleABCIAppCallback;
   if (role === 'rp') {
-    handleNodeLogicCallback = rp.handleNodeLogicCallback;
+    handleABCIAppCallback = rp.handleABCIAppCallback;
   } else if (role === 'idp') {
-    handleNodeLogicCallback = idp.handleNodeLogicCallback;
+    handleABCIAppCallback = idp.handleABCIAppCallback;
   } else if (role === 'as') {
-    handleNodeLogicCallback = as.handleNodeLogicCallback;
+    handleABCIAppCallback = as.handleABCIAppCallback;
   }
 
-  if (handleNodeLogicCallback) {
-    handleNodeLogicCallback(requestId);
+  if (handleABCIAppCallback) {
+    handleABCIAppCallback(requestId);
   }
 
   res.status(200).end();
 });
 
-app.listen(SMART_CONTRACT_CALLBACK_PORT, () =>
+app.listen(ABCI_APP_CALLBACK_PORT, () =>
   console.log(
-    `Listening to Node Logic callbacks on port ${SMART_CONTRACT_CALLBACK_PORT}`
+    `Listening to ABCI app callbacks on port ${ABCI_APP_CALLBACK_PORT}`
   )
 );

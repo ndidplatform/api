@@ -7,7 +7,7 @@ const privKey = 'RP_PrivateKey';
 let referenceMapping = {};
 let callbackUrls = {};
 
-export const handleNodeLogicCallback = async (requestId) => {
+export const handleABCIAppCallback = async (requestId) => {
   if (callbackUrls[requestId]) {
     const request = await utils.queryChain('GetRequest', { requestId });
 

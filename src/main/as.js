@@ -1,7 +1,7 @@
 // TODO
 
-export async function handleNodeLogicCallback(requestId) {
-  console.log('Callback (event) from node logic; requestId:', requestId);
+export async function handleABCIAppCallback(requestId) {
+  console.log('Callback (event) from ABCI app; requestId:', requestId);
   // TODO
   
 }

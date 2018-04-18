@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 
 let nonce = Date.now() % 10000;
 const logicUrl =
-  process.env.SMART_CONTRACT_ADDRESS ||
+  process.env.TENDERMINT_ADDRESS ||
   'http://localhost:' + (process.env.ROLE === 'rp' ? '45001' : '45000');
 
 function retrieveResult(obj, isQuery) {
