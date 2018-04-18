@@ -39,7 +39,7 @@ export async function createIdpResponse(data) {
     signature,
     accessor_id,
     identity_proof: utils.generateIdentityProof(data)
-  }
+  };
   let result = await utils.updateChain(
     'CreateIdpResponse',dataToBlockchain,utils.getNonce()
   );
@@ -117,7 +117,7 @@ export async function init() {
     users.push({
       hash_id: await utils.hash(elem.namespace + ':' + elem.identifier),
       ial: elem.ial
-    })
+    });
   }
   let node_id = config.msqRegister.ip + ':' + config.msqRegister.port;
 

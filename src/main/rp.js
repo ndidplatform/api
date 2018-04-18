@@ -71,7 +71,7 @@ export async function createRequest({ namespace, identifier, reference_id, ...da
         ip,
         port,
         ...(await getNodePubKey(nodeId))
-      })
+      });
     }
 
     //send via msq
