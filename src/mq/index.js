@@ -11,7 +11,7 @@ export const eventEmitter = new EventEmitter();
 receivingSocket.on('message', async function(jsonMessageStr){
   const jsonMessage = JSON.parse(jsonMessageStr);
 
-  //TODO - Retrieve private key and proper decrypt
+  // TODO Retrieve private key and proper decrypt
   let decrypted = await utils.decryptAsymetricKey(null,jsonMessage);
   eventEmitter.emit('message', decrypted);
 });
@@ -21,7 +21,7 @@ export const send = async (receivers, message) => {
     const sendingSocket = zmq.socket('push');
     sendingSocket.connect(`tcp://${receiver.ip}:${receiver.port}`);
 
-    //TODO proper encrypt
+    // TODO proper encrypt
     let encryptedMessage = await utils.encryptAsymetricKey(receiver.public_key,JSON.stringify(message));
     sendingSocket.send(JSON.stringify(encryptedMessage));
 

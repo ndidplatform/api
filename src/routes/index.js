@@ -3,6 +3,8 @@ import rpRouter from './relyingParty';
 import idpRouter from './identityProvider';
 import asRouter from './authoritativeSource';
 
+import * as config from '../config';
+
 const router = express.Router();
 
 const env = process.env.NODE_ENV || 'development';
@@ -20,9 +22,13 @@ if (env === 'development') {
   });
 }
 
-router.use('/rp', rpRouter);
-router.use('/idp', idpRouter);
-router.use('/as', asRouter);
+if (config.role === 'rp') {
+  router.use('/rp', rpRouter);
+} else if (config.role === 'idp') {
+  router.use('/idp', idpRouter);
+} else if (config.role === 'as') {
+  router.use('/as', asRouter);
+}
 
 // All other paths besides stated above are invalid
 router.get('*', function(req, res) {

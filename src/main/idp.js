@@ -1,9 +1,9 @@
-import * as utils from './utils';
-import * as config from '../config';
-import { eventEmitter } from '../msq/index';
-import fetch from 'node-fetch';
 import fs from 'fs';
+import fetch from 'node-fetch';
 import * as share from '../main/share';
+import * as utils from './utils';
+import { eventEmitter } from '../mq';
+import * as config from '../config';
 
 var privKey = 'IDP_PrivateKey';
 let msqQueue = {};
@@ -98,7 +98,7 @@ export async function handleMessageFromQueue(request) {
 }
 
 export async function handleNodeLogicCallback(requestId) {
-  console.log('IDP get callback from node logic with requestId:',requestId);
+  console.log('Callback (event) from node logic; requestId:', requestId);
   blockchainQueue[requestId] = await share.getRequest({ requestId });
   checkIntegrity(requestId);
 }

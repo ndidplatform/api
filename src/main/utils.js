@@ -21,17 +21,17 @@ function retrieveResult(obj,isQuery) {
 }
 
 export async function hash(stringToHash) {
-  //TODO implement secure hashing
+  // TODO implement secure hashing
   return 'Hash(' + stringToHash + ')';
 }
 
 export async function decryptAsymetricKey(key,message) {
-  //TODO implement decryption
+  // TODO implement decryption
   return message.slice(message.indexOf('(') + 1, message.length - 1);
 }
 
 export async function encryptAsymetricKey(key,message) {
-  //TODO implement encryption
+  // TODO implement encryption
   return 'Encrypt_with_' + key + '(' + message + ')';
 }
 
@@ -40,7 +40,7 @@ export function generateIdentityProof(data) {
 }
 
 export async function createRequestId(privkey,data,nonce) {
-  //TODO implement real request_id generating algorithm
+  // TODO implement real request_id generating algorithm
   return await hash( 'Concat_with_nonce_' + nonce + '(' + 
       Buffer.from(JSON.stringify(data)).toString('base64') + 
     ')'

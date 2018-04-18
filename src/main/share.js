@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 
 import * as rp from './rp';
 import * as idp from './idp';
-// import as from './as';
+import * as as from './as';
 import * as utils from './utils';
 import { role } from '../config';
 
@@ -30,7 +30,7 @@ app.post(NODE_LOGIC_CALLBACK_PATH, (req, res) => {
   } else if (role === 'idp') {
     handleNodeLogicCallback = idp.handleNodeLogicCallback;
   } else if (role === 'as') {
-    // handleNodeLogicCallback = as.handleNodeLogicCallback;
+    handleNodeLogicCallback = as.handleNodeLogicCallback;
   }
 
   if (handleNodeLogicCallback) {

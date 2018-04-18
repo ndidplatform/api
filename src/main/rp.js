@@ -1,6 +1,6 @@
-import * as utils from './utils';
-import * as msq from '../msq/index';
 import fetch from 'node-fetch';
+import * as utils from './utils';
+import * as mq from '../mq';
 
 var privKey = 'RP_PrivateKey';
 
@@ -74,8 +74,8 @@ export async function createRequest({ namespace, identifier, reference_id, ...da
       })
     }
 
-    //send via msq
-    msq.send(receivers, {
+    //send via message queue
+    mq.send(receivers, {
       namespace,
       identifier,
       request_id,

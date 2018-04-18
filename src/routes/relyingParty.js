@@ -45,7 +45,7 @@ router.get('/requests/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    // TO-DO
+    // TODO
     const request = await nodeLogicCommonApi.getRequest({
       requestId: request_id
     });
@@ -59,7 +59,7 @@ router.get('/requests/:request_id', async (req, res, next) => {
 router.get('/requests/reference/:reference_number', async (req, res, next) => {
   try {
     // Not Implemented
-    // TO-DO
+    // TODO
 
     res.status(501).end();
   } catch (error) {
@@ -70,7 +70,7 @@ router.get('/requests/reference/:reference_number', async (req, res, next) => {
 router.get('/requests/data/:request_id', async (req, res, next) => {
   try {
     // Not Implemented
-    // TO-DO
+    // TODO
 
     res.status(501).end();
   } catch (error) {
