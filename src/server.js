@@ -31,7 +31,7 @@ server.listen(config.serverPort);
 
 console.log(`Server listening on port ${config.serverPort}`);
 
-if(config.role === 'idp') {
+if (config.role === 'idp') {
   init();
 }
 

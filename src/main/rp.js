@@ -8,7 +8,7 @@ let referenceMapping = {};
 let callbackUrls = {};
 
 export const handleNodeLogicCallback = async (requestId) => {
-  if(callbackUrls[requestId]) {
+  if (callbackUrls[requestId]) {
     const request = await utils.queryChain('GetRequest', { requestId });
 
     try {
@@ -27,7 +27,7 @@ export const handleNodeLogicCallback = async (requestId) => {
         error
       );
     }
-    
+
     // Clear callback url mapping when the request is no longer going to have further events
     if (request.status === 'completed' || request.status === 'rejected') {
       delete callbackUrls[requestId];
@@ -35,12 +35,17 @@ export const handleNodeLogicCallback = async (requestId) => {
   }
 };
 
-export async function createRequest({ namespace, identifier, reference_id, ...data }) {
+export async function createRequest({
+  namespace,
+  identifier,
+  reference_id,
+  ...data
+}) {
   //existing reference_id, return
-  if(referenceMapping[reference_id]) return referenceMapping[reference_id];
+  if (referenceMapping[reference_id]) return referenceMapping[reference_id];
 
   let nonce = utils.getNonce();
-  let request_id = await utils.createRequestId(privKey,data,nonce);
+  let request_id = await utils.createRequestId(privKey, data, nonce);
 
   //add data to blockchain
   let dataToBlockchain = {
@@ -52,26 +57,25 @@ export async function createRequest({ namespace, identifier, reference_id, ...da
     data_request_list: data.data_request_list,
     message_hash: await utils.hash(data.request_message),
   };
-  utils.updateChain('CreateRequest',dataToBlockchain,nonce);
+  utils.updateChain('CreateRequest', dataToBlockchain, nonce);
 
   //query node_id and public_key to send data via msq
   getMsqDestination({
     namespace,
-    identifier, 
-    min_ial: data.min_ial, 
-  })
-  .then(async ({ node_id }) => {
+    identifier,
+    min_ial: data.min_ial,
+  }).then(async ({ node_id }) => {
     let receivers = [];
 
     //prepare data for msq
-    for(let i in node_id) {
+    for (let i in node_id) {
       let nodeId = node_id[i];
-      let [ ip,port ] = nodeId.split(':');
+      let [ip, port] = nodeId.split(':');
       receivers.push({
         ip,
         port,
-        ...(await getNodePubKey(nodeId))
-      })
+        ...(await getNodePubKey(nodeId)),
+      });
     }
 
     //send via message queue
@@ -84,11 +88,10 @@ export async function createRequest({ namespace, identifier, reference_id, ...da
       min_ial: data.min_ial ? data.min_ial : 1,
       timeout: data.timeout,
       data_request_list: data.data_request_list,
-      request_message: data.request_message
+      request_message: data.request_message,
     });
-
   });
-  
+
   //maintain mapping
   referenceMapping[reference_id] = request_id;
   callbackUrls[request_id] = data.callback_url;
@@ -96,12 +99,12 @@ export async function createRequest({ namespace, identifier, reference_id, ...da
 }
 
 export async function getMsqDestination(data) {
-  return await utils.queryChain('GetMsqDestination',{
+  return await utils.queryChain('GetMsqDestination', {
     hash_id: await utils.hash(data.namespace + ':' + data.identifier),
-    min_ial: data.min_ial
+    min_ial: data.min_ial,
   });
 }
 
 export async function getNodePubKey(node_id) {
-  return await utils.queryChain('GetNodePublicKey',{node_id});
+  return await utils.queryChain('GetNodePublicKey', { node_id });
 }

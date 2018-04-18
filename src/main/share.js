@@ -11,17 +11,18 @@ import { role } from '../config';
   data = { requestId }
 */
 export async function getRequest(data) {
-  return await utils.queryChain('GetRequest',data);
+  return await utils.queryChain('GetRequest', data);
 }
 
 // Listen for callbacks (events) from Node Logic
 const app = express();
-const NODE_LOGIC_CALLBACK_PORT = process.env.NODE_LOGIC_CALLBACK_PORT || 3001;
-const NODE_LOGIC_CALLBACK_PATH = process.env.NODE_LOGIC_CALLBACK_PATH || '/callback';
+const SMART_CONTRACT_CALLBACK_PORT = process.env.SMART_CONTRACT_CALLBACK_PORT || 3001;
+const SMART_CONTRACT_CALLBACK_PATH =
+  process.env.SMART_CONTRACT_CALLBACK_PATH || '/callback';
 
 app.use(bodyParser.json({ limit: '2mb' }));
 
-app.post(NODE_LOGIC_CALLBACK_PATH, (req, res) => {
+app.post(SMART_CONTRACT_CALLBACK_PATH, (req, res) => {
   const { requestId } = req.body;
 
   let handleNodeLogicCallback;
@@ -40,8 +41,8 @@ app.post(NODE_LOGIC_CALLBACK_PATH, (req, res) => {
   res.status(200).end();
 });
 
-app.listen(NODE_LOGIC_CALLBACK_PORT, () =>
+app.listen(SMART_CONTRACT_CALLBACK_PORT, () =>
   console.log(
-    `Listening to Node Logic callbacks on port ${NODE_LOGIC_CALLBACK_PORT}`
+    `Listening to Node Logic callbacks on port ${SMART_CONTRACT_CALLBACK_PORT}`
   )
 );

@@ -36,7 +36,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
 
     res.status(200).send({ requestId });
   } catch (error) {
-    console.error(error)
+    console.error(error);
     res.status(500).end();
   }
 });
@@ -45,13 +45,13 @@ router.get('/requests/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    // TODO
     const request = await nodeLogicCommonApi.getRequest({
-      requestId: request_id
+      requestId: request_id,
     });
 
     res.status(200).send(request);
   } catch (error) {
+    console.error(error);
     res.status(500).end();
   }
 });
