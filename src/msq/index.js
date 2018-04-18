@@ -9,11 +9,10 @@ if(config.role === 'idp') receivingSocket.bindSync('tcp://*:' + config.msqRegist
 export const eventEmitter = new EventEmitter();
 
 receivingSocket.on('message', async function(jsonMessageStr){
-  jsonMessageStr = jsonMessageStr.toString().split('\\"').join('"'); //de-escape double quote
-  jsonMessageStr = jsonMessageStr.slice(1,jsonMessageStr.length - 1); //remove quote
+  const jsonMessage = JSON.parse(jsonMessageStr);
 
   //TODO - Retrieve private key and proper decrypt
-  let decrypted = await utils.decryptAsymetricKey(null,jsonMessageStr);
+  let decrypted = await utils.decryptAsymetricKey(null,jsonMessage);
   eventEmitter.emit('message', decrypted);
 });
 
