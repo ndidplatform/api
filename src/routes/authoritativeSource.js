@@ -7,7 +7,7 @@ router.post('/service/:service_id', async (req, res, next) => {
     const { service_id, service_name, min_ial, min_aal, url } = req.body;
 
     // Not Implemented
-    // TO-DO
+    // TODO
 
     res.status(501).end();
   } catch (error) {
@@ -20,7 +20,7 @@ router.get('/service/:service_id', async (req, res, next) => {
     const { service_id } = req.params;
 
     // Not Implemented
-    // TO-DO
+    // TODO
 
     res.status(501).end();
   } catch (error) {

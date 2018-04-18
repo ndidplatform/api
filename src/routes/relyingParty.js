@@ -36,7 +36,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
 
     res.status(200).send({ requestId });
   } catch (error) {
-    console.error(error)
+    console.error(error);
     res.status(500).end();
   }
 });
@@ -45,13 +45,13 @@ router.get('/requests/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    // TO-DO
     const request = await nodeLogicCommonApi.getRequest({
-      requestId: request_id
+      requestId: request_id,
     });
 
     res.status(200).send(request);
   } catch (error) {
+    console.error(error);
     res.status(500).end();
   }
 });
@@ -59,7 +59,7 @@ router.get('/requests/:request_id', async (req, res, next) => {
 router.get('/requests/reference/:reference_number', async (req, res, next) => {
   try {
     // Not Implemented
-    // TO-DO
+    // TODO
 
     res.status(501).end();
   } catch (error) {
@@ -70,7 +70,7 @@ router.get('/requests/reference/:reference_number', async (req, res, next) => {
 router.get('/requests/data/:request_id', async (req, res, next) => {
   try {
     // Not Implemented
-    // TO-DO
+    // TODO
 
     res.status(501).end();
   } catch (error) {
