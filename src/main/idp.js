@@ -1,10 +1,13 @@
 import * as utils from './utils';
 import * as config from '../config';
-import { eventEmitter, nodeLogicCallback } from '../msq/index';
+import { eventEmitter } from '../msq/index';
 import fetch from 'node-fetch';
 import fs from 'fs';
+import * as share from '../main/share';
 
 var privKey = 'IDP_PrivateKey';
+let msqQueue = {};
+let blockchainQueue = {};
 
 let callbackUrl = null;
 
@@ -43,6 +46,40 @@ export async function createIdpResponse(data) {
   return result;
 }
 
+async function notifyByCallback(request) {
+  if(!callbackUrl) {
+    console.error('callbackUrl for IDP not set');
+    return;
+  }
+  fetch(callbackUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ request })
+  });
+}
+
+async function checkIntegrity(requestId) {
+  //check hash, if hash match then pass to app layer
+  if(msqQueue[requestId] && blockchainQueue[requestId]) {
+    
+    let msgBlockchain = blockchainQueue[requestId];
+    let message = msqQueue[requestId];
+
+    if(msgBlockchain.messageHash === await utils.hash(message.request_message)) {
+      notifyByCallback(message);
+    }
+    else {
+      console.error('Msq and blockchain not matched!!',
+        message.request_message, msgBlockchain.messageHash);
+    }
+
+    delete blockchainQueue[requestId];
+    delete msqQueue[requestId];
+  }
+}
+
 export async function registerMsqDestination(data) {
   let result = await utils.updateChain('RegisterMsqDestination',data,utils.getNonce());
   return result;
@@ -54,23 +91,16 @@ export async function addNodePubKey(data) {
 }
 
 export async function handleMessageFromQueue(request) {
-  if(!callbackUrl) {
-    console.error('callbackUrl for IDP not set');
-    return;
-  }
-  fetch(callbackUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ request })
-  })
+  console.log('IDP receive message from msq:',request);
+  let requestJson = JSON.parse(request);
+  msqQueue[requestJson.request_id] = requestJson;
+  checkIntegrity(requestJson.request_id);
 }
 
 export async function handleNodeLogicCallback(requestId) {
-  //TODO
   console.log('IDP get callback from node logic with requestId:',requestId);
-  await nodeLogicCallback(requestId);
+  blockchainQueue[requestId] = await share.getRequest({ requestId });
+  checkIntegrity(requestId);
 }
 
 //===================== Initialize before flow can start =======================
@@ -103,7 +133,6 @@ export async function init() {
   });
 
   eventEmitter.on('message',function(message) {
-    console.log('IDP receive message from msq:',message);
     handleMessageFromQueue(message);
   });
 }
