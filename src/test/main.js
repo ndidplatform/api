@@ -5,6 +5,8 @@ import * as common from '../main/common';
 const chai = require('chai');
 const expect = chai.expect;
 
+// TODO
+
 describe('Identity proof flow', () => {
   it('should have no error', async () => {
     let requestId = await rp.createRequest({
