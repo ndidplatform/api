@@ -1,68 +1,22 @@
-import * as mq from '../mq';
-import * as utils from './utils';
 import { eventEmitter } from '../mq';
 
-async function handleMessageFromQueue(request) {
-  console.log('AS receive message from mq:', request);
-  let requestJson = JSON.parse(request);
+import * as mq from '../mq';
+import * as utils from './utils';
+import * as config from '../config';
+import * as common from '../main/common';
 
-  const requestDetail = await utils.queryChain('GetRequestDetail', {
-    requestId: requestJson.request_id
-  });
-
-  // TODO
-  // Verify that (number of consent ≥ min_idp in request).
-  // For each consent with matching request ID:
-  // Verify the identity proof.
-  // Verify the signature.
-  // Verify that the message_hash is matching with the request.
-
-  // Get all signature
-  let signatures = [];
-  requestDetail.responses.forEach(response => {
-    signatures.push(response.signature);
-  });
-
-  // Calculate max ial && max aal
-  let max_ial = 0;
-  let max_aal = 0;
-  requestDetail.responses.forEach(response => {
-    if (response.aal > max_aal) max_aal = response.aal;
-    if (response.ial > max_ial) max_ial = response.ial;
-  });
-
-  // Then callback to AS.
-  console.log('Callback to AS', {
-    request_id: requestJson.request_id,
-    request_params: requestJson.request_params,
-    signatures,
-    max_ial,
-    max_aal
-  });
-
-  // AS→Platform
-  // The AS replies synchronously with the requested data
-
-  // When received data
-  let data = 'mock data';
-  let as_id = 'AS1';
-  let signature = 'sign(<PDF BINARY DATA>, AS1’s private key)';
-  // AS node encrypts the response and sends it back to RP via NSQ.
-  sendDataToRP({ rp_node_id: requestJson.rp_node_id, as_id, data });
-
-  // AS node adds transaction to blockchain
-  signData({ as_id, request_id: requestJson.request_id, signature });
-}
+const privKey = 'AS_PrivateKey';
+let mqReceivingQueue = {};
+let blockchainQueue = {};
 
 async function sendDataToRP(data) {
-  console.log(data);
   let receivers = [];
   let nodeId = data.rp_node_id;
   let [ip, port] = nodeId.split(':');
   receivers.push({
     ip,
     port,
-    public_key: 'public_key'
+    ...(await common.getNodePubKey(nodeId))
   });
   mq.send(receivers, {
     as_id: data.as_id,
@@ -80,43 +34,121 @@ async function signData(data) {
   utils.updateChain('SignData', dataToBlockchain, nonce);
 }
 
+async function registerServiceDestination(data) {
+  let nonce = utils.getNonce();
+  let dataToBlockchain = {
+    as_id: data.as_id,
+    service_id: data.service_id,
+    node_id: data.node_id
+  };
+  utils.updateChain('RegisterServiceDestination', dataToBlockchain, nonce);
+}
+
+async function checkIntegrity(requestId) {
+  if (mqReceivingQueue[requestId] && blockchainQueue[requestId]) {
+    let msgBlockchain = blockchainQueue[requestId];
+    let message = mqReceivingQueue[requestId];
+
+    if (
+      msgBlockchain.messageHash === (await utils.hash(message.request_message))
+    ) {
+      const requestDetail = await utils.queryChain('GetRequestDetail', {
+        requestId: message.request_id
+      });
+
+      // TODO
+      // Verify that (number of consent ≥ min_idp in request).
+      // For each consent with matching request ID:
+      // Verify the identity proof.
+      // Verify the signature.
+      // Verify that the message_hash is matching with the request.
+
+      // Get all signature
+      let signatures = [];
+      requestDetail.responses.forEach(response => {
+        signatures.push(response.signature);
+      });
+
+      // Calculate max ial && max aal
+      let max_ial = 0;
+      let max_aal = 0;
+      requestDetail.responses.forEach(response => {
+        if (response.aal > max_aal) max_aal = response.aal;
+        if (response.ial > max_ial) max_ial = response.ial;
+      });
+
+      // Then callback to AS.
+      console.log('Callback to AS', {
+        request_id: message.request_id,
+        request_params: message.request_params,
+        signatures,
+        max_ial,
+        max_aal
+      });
+
+      // AS→Platform
+      // The AS replies synchronously with the requested data
+
+      // When received data
+      let data = 'mock data';
+      let as_id = config.asID;
+      let signature = 'sign(' + data + ',' + privKey + ')';
+      // AS node encrypts the response and sends it back to RP via NSQ.
+      sendDataToRP({ rp_node_id: message.rp_node_id, as_id, data });
+
+      // AS node adds transaction to blockchain
+      signData({ as_id, request_id: message.request_id, signature });
+    } else {
+      console.error(
+        'Mq and blockchain not matched!!',
+        message.request_message,
+        msgBlockchain.messageHash
+      );
+    }
+
+    delete blockchainQueue[requestId];
+    delete mqReceivingQueue[requestId];
+  }
+}
+
+async function handleMessageFromQueue(request) {
+  console.log('AS receive message from mq:', request);
+  let requestJson = JSON.parse(request);
+  mqReceivingQueue[requestJson.request_id] = requestJson;
+  checkIntegrity(requestJson.request_id);
+}
+
 export async function handleABCIAppCallback(requestId) {
   console.log('Callback (event) from ABCI app; requestId:', requestId);
-  // TODO
+  const request = await common.getRequest({ requestId });
+  if (request.status === 'completed') {
+    blockchainQueue[requestId] = await request;
+    checkIntegrity(requestId);
+  }
 }
 
 //===================== Initialize before flow can start =======================
 
 export async function init() {
-  // Users associate with this idp
-  // In production environment, this should be done with onboarding process.
+  // In production environment, this should be done with register service process.
   // TODO
-  // let userList = JSON.parse(
-  //   fs.readFileSync(process.env.ASSOC_USERS, 'utf8').toString()
-  // );
+  //register node id, which is substituted with ip,port for demo
+  let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
+  // Hard code add back statement service for demo
+  registerServiceDestination({
+    as_id: config.asID,
+    service_id: 'bank_statement',
+    node_id: node_id
+  });
 
-  // let users = [];
-  // for (let i in userList) {
-  //   let elem = userList[i];
-  //   users.push({
-  //     hash_id: await utils.hash(elem.namespace + ':' + elem.identifier),
-  //     ial: elem.ial,
-  //   });
-  // }
-  // let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
-
-  // //register node id, which is substituted with ip,port for demo
-  // registerMqDestination({
-  //   users,
-  //   node_id,
-  // });
-
-  // addNodePubKey({
-  //   node_id,
-  //   public_key: 'very_secure_public_key',
-  // });
+  common.addNodePubKey({
+    node_id,
+    public_key: 'very_secure_public_key'
+  });
 }
 
-eventEmitter.on('message', function(message) {
-  handleMessageFromQueue(message);
-});
+if (config.role === 'as') {
+  eventEmitter.on('message', function(message) {
+    handleMessageFromQueue(message);
+  });
+}

@@ -1,7 +1,10 @@
 import fetch from 'node-fetch';
+import { eventEmitter } from '../mq';
+
 import * as utils from './utils';
 import * as mq from '../mq';
-import { eventEmitter } from '../mq';
+import * as config from '../config';
+import * as common from '../main/common';
 
 const privKey = 'RP_PrivateKey';
 
@@ -48,24 +51,28 @@ export const handleABCIAppCallback = async requestId => {
 };
 
 async function getASReceiverList(data_request) {
-  let receivers = [];
-  data_request.as.forEach(async as => {
-    getAsMqDestination({
-      as_id: as,
-      as_service_id: data_request.as_service_id
-    }).then(async nodeId => {
+  const receivers = await Promise.all(
+    data_request.as_id_list.map(async as => {
+      const node = await getAsMqDestination({
+        as_id: as,
+        service_id: data_request.service_id
+      });
+
+      let nodeId = node.node_id;
       let [ip, port] = nodeId.split(':');
-      receivers.push({
+      return {
         ip,
         port,
-        public_key: 'public_key'
-      });
-    });
-  });
+        ...(await common.getNodePubKey(nodeId))
+      };
+    })
+  );
   return receivers;
 }
 
 async function sendRequestToAS(requestData) {
+  // node id, which is substituted with ip,port for demo
+  let rp_node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
   requestData.data_request_list.forEach(async data_request => {
     let receivers = await getASReceiverList(data_request);
     mq.send(receivers, {
@@ -74,7 +81,7 @@ async function sendRequestToAS(requestData) {
       identifier: requestData.identifier,
       service_id: data_request.service_id,
       request_params: data_request.request_params,
-      rp_node_id: '127.0.0.1:5554',
+      rp_node_id: rp_node_id,
       request_message: requestData.request_message
     });
   });
@@ -133,7 +140,7 @@ export async function createRequest({
       receivers.push({
         ip,
         port,
-        ...(await getNodePubKey(nodeId))
+        ...(await common.getNodePubKey(nodeId))
       });
     }
 
@@ -165,15 +172,10 @@ export async function getIdpMqDestination(data) {
 }
 
 export async function getAsMqDestination(data) {
-  return '127.0.0.1:5556';
-  // return await utils.queryChain('GetMsqServiceDestination', {
-  //   as_id: data.as_id,
-  //   as_service_id: data.as_service_id
-  // });
-}
-
-export async function getNodePubKey(node_id) {
-  return await utils.queryChain('GetNodePublicKey', { node_id });
+  return await utils.queryChain('GetServiceDestination', {
+    as_id: data.as_id,
+    service_id: data.service_id
+  });
 }
 
 async function handleMessageFromQueue(request) {
@@ -183,7 +185,8 @@ async function handleMessageFromQueue(request) {
   // Call callback to RP.
 }
 
-eventEmitter.on('message', function(message) {
-  console.log('message');
-  handleMessageFromQueue(message);
-});
+if (config.role === 'rp') {
+  eventEmitter.on('message', function(message) {
+    handleMessageFromQueue(message);
+  });
+}

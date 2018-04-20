@@ -1,9 +1,11 @@
 import fs from 'fs';
 import fetch from 'node-fetch';
+
 import * as common from '../main/common';
 import * as utils from './utils';
-import { eventEmitter } from '../mq';
 import * as config from '../config';
+
+import { eventEmitter } from '../mq';
 
 const privKey = 'IDP_PrivateKey';
 let mqReceivingQueue = {};
@@ -11,7 +13,7 @@ let blockchainQueue = {};
 
 let callbackUrl = null;
 
-export const setCallbackUrl = (url) => {
+export const setCallbackUrl = url => {
   callbackUrl = url;
 };
 
@@ -28,7 +30,7 @@ export async function createIdpResponse(data) {
     ial,
     status,
     signature,
-    accessor_id,
+    accessor_id
   } = data;
 
   let dataToBlockchain = {
@@ -38,7 +40,7 @@ export async function createIdpResponse(data) {
     status,
     signature,
     accessor_id,
-    identity_proof: utils.generateIdentityProof(data),
+    identity_proof: utils.generateIdentityProof(data)
   };
   let result = await utils.updateChain(
     'CreateIdpResponse',
@@ -56,9 +58,9 @@ async function notifyByCallback(request) {
   fetch(callbackUrl, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ request }),
+    body: JSON.stringify({ request })
   });
 }
 
@@ -94,15 +96,6 @@ export async function registerMqDestination(data) {
   return result;
 }
 
-export async function addNodePubKey(data) {
-  let result = await utils.updateChain(
-    'AddNodePublicKey',
-    data,
-    utils.getNonce()
-  );
-  return result;
-}
-
 async function handleMessageFromQueue(request) {
   console.log('IDP receive message from mq:', request);
   let requestJson = JSON.parse(request);
@@ -131,7 +124,7 @@ export async function init() {
     let elem = userList[i];
     users.push({
       hash_id: await utils.hash(elem.namespace + ':' + elem.identifier),
-      ial: elem.ial,
+      ial: elem.ial
     });
   }
   let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
@@ -139,15 +132,17 @@ export async function init() {
   //register node id, which is substituted with ip,port for demo
   registerMqDestination({
     users,
-    node_id,
+    node_id
   });
 
-  addNodePubKey({
+  common.addNodePubKey({
     node_id,
-    public_key: 'very_secure_public_key',
+    public_key: 'very_secure_public_key'
   });
 }
 
-eventEmitter.on('message', function(message) {
-  handleMessageFromQueue(message);
-});
+if (config.role === 'idp') {
+  eventEmitter.on('message', function(message) {
+    handleMessageFromQueue(message);
+  });
+}
