@@ -2,6 +2,8 @@ import express from 'express';
 import * as abciAppIdpApi from '../main/idp';
 import * as abciAppCommonApi from '../main/common';
 
+import validate from './validator';
+
 const router = express.Router();
 
 router.get('/callback', async (req, res, next) => {
@@ -17,6 +19,16 @@ router.get('/callback', async (req, res, next) => {
 router.post('/callback', async (req, res, next) => {
   try {
     const { url } = req.body;
+
+    const validationResult = validate({
+      method: req.method,
+      path: `${req.baseUrl}${req.route.path}`,
+      body: req.body,
+    });
+    if (!validationResult.valid) {
+      res.status(400).send(validationResult);
+      return;
+    }
 
     abciAppIdpApi.setCallbackUrl(url);
 
