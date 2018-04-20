@@ -8,7 +8,7 @@ ajv.addFormat(
   'url-with-local-ip',
   '^' +
     // protocol identifier
-    '(?:(?:https?|ftp)://)' +
+    '(?:https?://)' +
     // user:pass authentication
     '(?:\\S+(?::\\S*)?@)?' +
     '(?:' +
@@ -17,10 +17,14 @@ ajv.addFormat(
     // "(?!(?:10|127)(?:\\.\\d{1,3}){3})" +
     // "(?!(?:169\\.254|192\\.168)(?:\\.\\d{1,3}){2})" +
     // "(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3}){2})" +
+
+    // Allow localhost
+    '(?:localhost)' +
+    '|' +
     // IP address dotted notation octets
     // excludes loopback network 0.0.0.0
     // excludes reserved space >= 224.0.0.0
-    // excludes network & broacast addresses
+    // excludes network & broadcast addresses
     // (first & last IP address of each class)
     '(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])' +
     '(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}' +

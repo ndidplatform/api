@@ -2,7 +2,7 @@
 export default {
   GET: {},
   POST: {
-    '/requests/:namespace/:identifier': {
+    '/rp/requests/:namespace/:identifier': {
       params: {
         properties: {
           namespace: { type: 'string', minLength: 1 },
