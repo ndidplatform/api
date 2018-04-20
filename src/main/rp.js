@@ -39,6 +39,7 @@ export async function createRequest({
   namespace,
   identifier,
   reference_id,
+  data_request_list,
   ...data
 }) {
   //existing reference_id, return
@@ -54,7 +55,12 @@ export async function createRequest({
     min_aal: data.min_aal,
     min_ial: data.min_ial,
     timeout: data.timeout,
-    data_request_list: data.data_request_list,
+    data_request_list: {
+      service_id: data_request_list.service_id, 
+      as_id_list: data_request_list.as_id_list,
+      count: data_request_list.count,
+      request_params_hash: await utils.hash(JSON.stringify(data_request_list.request_params))
+    },
     message_hash: await utils.hash(data.request_message),
   };
   utils.updateChain('CreateRequest', dataToBlockchain, nonce);
@@ -87,7 +93,7 @@ export async function createRequest({
       min_aal: data.min_aal ? data.min_aal : 1,
       min_ial: data.min_ial ? data.min_ial : 1,
       timeout: data.timeout,
-      data_request_list: data.data_request_list,
+      data_request_list: data_request_list,
       request_message: data.request_message,
     });
   });

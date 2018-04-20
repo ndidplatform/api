@@ -15,7 +15,7 @@ try {
   callbackUrl = fs.readFileSync(path.join(__dirname, '../../idp-callback-url.json'), 'utf8');
 } catch (error) {
   if (error.code !== 'ENOENT') {
-    console.log(error)
+    console.log(error);
   }
 }
 
