@@ -47,6 +47,16 @@ export async function createRequest({
 
   let nonce = utils.getNonce();
   let request_id = await utils.createRequestId(privKey, data, nonce);
+  
+  let data_request_list_to_blockchain = [];
+  for(let i in data_request_list) {
+    data_request_list_to_blockchain.push({
+      service_id: data_request_list[i].service_id, 
+      as_id_list: data_request_list[i].as_id_list,
+      count: data_request_list[i].count,
+      request_params_hash: await utils.hash(JSON.stringify(data_request_list[i].request_params))
+    });
+  }
 
   //add data to blockchain
   let dataToBlockchain = {
@@ -55,12 +65,7 @@ export async function createRequest({
     min_aal: data.min_aal,
     min_ial: data.min_ial,
     timeout: data.timeout,
-    data_request_list: {
-      service_id: data_request_list.service_id, 
-      as_id_list: data_request_list.as_id_list,
-      count: data_request_list.count,
-      request_params_hash: await utils.hash(JSON.stringify(data_request_list.request_params))
-    },
+    data_request_list: data_request_list_to_blockchain,
     message_hash: await utils.hash(data.request_message),
   };
   utils.updateChain('CreateRequest', dataToBlockchain, nonce);
