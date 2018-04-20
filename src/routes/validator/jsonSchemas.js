@@ -22,7 +22,7 @@ export default {
           min_idp: { type: 'number', minimum: 1 },
           request_timeout: { type: 'number', minimum: 0 },
         },
-        required: ['reference_id', 'callback_url', 'min_ial', 'min_aal'],
+        required: ['reference_id', 'min_ial', 'min_aal'],
       },
     },
     '/idp/callback': {

@@ -71,6 +71,7 @@ async function getASReceiverList(data_request) {
 }
 
 async function sendRequestToAS(requestData) {
+  // console.log(requestData);
   // node id, which is substituted with ip,port for demo
   let rp_node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
   requestData.data_request_list.forEach(async data_request => {
@@ -99,14 +100,16 @@ export async function createRequest({
 
   let nonce = utils.getNonce();
   let request_id = await utils.createRequestId(privKey, data, nonce);
-  
+
   let data_request_list_to_blockchain = [];
-  for(let i in data_request_list) {
+  for (let i in data_request_list) {
     data_request_list_to_blockchain.push({
-      service_id: data_request_list[i].service_id, 
+      service_id: data_request_list[i].service_id,
       as_id_list: data_request_list[i].as_id_list,
       count: data_request_list[i].count,
-      request_params_hash: await utils.hash(JSON.stringify(data_request_list[i].request_params))
+      request_params_hash: await utils.hash(
+        JSON.stringify(data_request_list[i].request_params)
+      )
     });
   }
 
@@ -120,7 +123,7 @@ export async function createRequest({
     min_aal: data.min_aal ? data.min_aal : 1,
     min_ial: data.min_ial ? data.min_ial : 1,
     timeout: data.timeout,
-    data_request_list: data.data_request_list,
+    data_request_list: data_request_list,
     request_message: data.request_message
   };
 
@@ -132,7 +135,7 @@ export async function createRequest({
     min_ial: data.min_ial,
     timeout: data.timeout,
     data_request_list: data_request_list_to_blockchain,
-    message_hash: await utils.hash(data.request_message),
+    message_hash: await utils.hash(data.request_message)
   };
   utils.updateChain('CreateRequest', dataToBlockchain, nonce);
 
@@ -165,7 +168,7 @@ export async function createRequest({
       min_ial: data.min_ial ? data.min_ial : 1,
       timeout: data.timeout,
       data_request_list: data_request_list,
-      request_message: data.request_message,
+      request_message: data.request_message
     });
   });
 

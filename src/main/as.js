@@ -45,6 +45,8 @@ async function registerServiceDestination(data) {
 }
 
 async function checkIntegrity(requestId) {
+  console.log('checkIntegrity');
+
   if (mqReceivingQueue[requestId] && blockchainQueue[requestId]) {
     let msgBlockchain = blockchainQueue[requestId];
     let message = mqReceivingQueue[requestId];
@@ -77,6 +79,7 @@ async function checkIntegrity(requestId) {
         if (response.ial > max_ial) max_ial = response.ial;
       });
 
+      // TODO
       // Then callback to AS.
       console.log('Callback to AS', {
         request_id: message.request_id,
