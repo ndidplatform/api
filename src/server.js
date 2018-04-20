@@ -8,7 +8,6 @@ import bodyParser from 'body-parser';
 import express from 'express';
 import morgan from 'morgan';
 import routes from './routes';
-import { init as rp_init } from './main/rp';
 import { init as idp_init } from './main/idp';
 import { init as as_init } from './main/as';
 
@@ -33,12 +32,13 @@ server.listen(config.serverPort);
 
 console.log(`Server listening on port ${config.serverPort}`);
 
+// TO BE REMOVED
+// Not needed in production environment
+// It should be done in onboarding process
 if (config.role === 'idp') {
   idp_init();
 } else if (config.role === 'as') {
   as_init();
-} else if (config.role === 'rp') {
-  rp_init();
 }
 
 // For testing

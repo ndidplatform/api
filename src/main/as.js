@@ -2,8 +2,8 @@ import * as mq from '../mq';
 import * as utils from './utils';
 import { eventEmitter } from '../mq';
 
-export async function handleMessageFromQueue(request) {
-  console.log('AS receive message from msq:', request);
+async function handleMessageFromQueue(request) {
+  console.log('AS receive message from mq:', request);
   let requestJson = JSON.parse(request);
 
   const requestDetail = await utils.queryChain('GetRequestDetail', {
@@ -103,10 +103,10 @@ export async function init() {
   //     ial: elem.ial,
   //   });
   // }
-  // let node_id = config.msqRegister.ip + ':' + config.msqRegister.port;
+  // let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
 
   // //register node id, which is substituted with ip,port for demo
-  // registerMsqDestination({
+  // registerMqDestination({
   //   users,
   //   node_id,
   // });
@@ -115,8 +115,8 @@ export async function init() {
   //   node_id,
   //   public_key: 'very_secure_public_key',
   // });
-
-  eventEmitter.on('message', function(message) {
-    handleMessageFromQueue(message);
-  });
 }
+
+eventEmitter.on('message', function(message) {
+  handleMessageFromQueue(message);
+});

@@ -6,7 +6,7 @@ import { eventEmitter } from '../mq';
 import * as config from '../config';
 
 const privKey = 'IDP_PrivateKey';
-let msqQueue = {};
+let mqReceivingQueue = {};
 let blockchainQueue = {};
 
 let callbackUrl = null;
@@ -64,9 +64,9 @@ async function notifyByCallback(request) {
 
 async function checkIntegrity(requestId) {
   //check hash, if hash match then pass to app layer
-  if (msqQueue[requestId] && blockchainQueue[requestId]) {
+  if (mqReceivingQueue[requestId] && blockchainQueue[requestId]) {
     let msgBlockchain = blockchainQueue[requestId];
-    let message = msqQueue[requestId];
+    let message = mqReceivingQueue[requestId];
 
     if (
       msgBlockchain.messageHash === (await utils.hash(message.request_message))
@@ -74,18 +74,18 @@ async function checkIntegrity(requestId) {
       notifyByCallback(message);
     } else {
       console.error(
-        'Msq and blockchain not matched!!',
+        'Mq and blockchain not matched!!',
         message.request_message,
         msgBlockchain.messageHash
       );
     }
 
     delete blockchainQueue[requestId];
-    delete msqQueue[requestId];
+    delete mqReceivingQueue[requestId];
   }
 }
 
-export async function registerMsqDestination(data) {
+export async function registerMqDestination(data) {
   let result = await utils.updateChain(
     'RegisterMsqDestination',
     data,
@@ -103,10 +103,10 @@ export async function addNodePubKey(data) {
   return result;
 }
 
-export async function handleMessageFromQueue(request) {
-  console.log('IDP receive message from msq:', request);
+async function handleMessageFromQueue(request) {
+  console.log('IDP receive message from mq:', request);
   let requestJson = JSON.parse(request);
-  msqQueue[requestJson.request_id] = requestJson;
+  mqReceivingQueue[requestJson.request_id] = requestJson;
   checkIntegrity(requestJson.request_id);
 }
 
@@ -134,10 +134,10 @@ export async function init() {
       ial: elem.ial,
     });
   }
-  let node_id = config.msqRegister.ip + ':' + config.msqRegister.port;
+  let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
 
   //register node id, which is substituted with ip,port for demo
-  registerMsqDestination({
+  registerMqDestination({
     users,
     node_id,
   });
@@ -146,8 +146,8 @@ export async function init() {
     node_id,
     public_key: 'very_secure_public_key',
   });
-
-  eventEmitter.on('message', function(message) {
-    handleMessageFromQueue(message);
-  });
 }
+
+eventEmitter.on('message', function(message) {
+  handleMessageFromQueue(message);
+});

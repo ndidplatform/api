@@ -4,8 +4,8 @@ import * as config from '../config';
 import * as utils from '../main/utils';
 
 const receivingSocket = zmq.socket('pull');
-console.log(config.msqRegister.port);
-receivingSocket.bindSync('tcp://*:' + config.msqRegister.port);
+console.log(config.mqRegister.port);
+receivingSocket.bindSync('tcp://*:' + config.mqRegister.port);
 
 export const eventEmitter = new EventEmitter();
 

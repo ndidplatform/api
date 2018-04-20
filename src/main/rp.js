@@ -50,7 +50,7 @@ export const handleABCIAppCallback = async requestId => {
 async function getASReceiverList(data_request) {
   let receivers = [];
   data_request.as.forEach(async as => {
-    getMsqServiceDestination({
+    getAsMqDestination({
       as_id: as,
       as_service_id: data_request.as_service_id
     }).then(async nodeId => {
@@ -118,15 +118,15 @@ export async function createRequest({
   };
   utils.updateChain('CreateRequest', dataToBlockchain, nonce);
 
-  //query node_id and public_key to send data via msq
-  getMsqDestination({
+  //query node_id and public_key to send data via mq
+  getIdpMqDestination({
     namespace,
     identifier,
     min_ial: data.min_ial
   }).then(async ({ node_id }) => {
     let receivers = [];
 
-    //prepare data for msq
+    //prepare data for mq
     for (let i in node_id) {
       let nodeId = node_id[i];
       let [ip, port] = nodeId.split(':');
@@ -157,14 +157,14 @@ export async function createRequest({
   return request_id;
 }
 
-export async function getMsqDestination(data) {
+export async function getIdpMqDestination(data) {
   return await utils.queryChain('GetMsqDestination', {
     hash_id: await utils.hash(data.namespace + ':' + data.identifier),
     min_ial: data.min_ial
   });
 }
 
-export async function getMsqServiceDestination(data) {
+export async function getAsMqDestination(data) {
   return '127.0.0.1:5556';
   // return await utils.queryChain('GetMsqServiceDestination', {
   //   as_id: data.as_id,
@@ -176,18 +176,14 @@ export async function getNodePubKey(node_id) {
   return await utils.queryChain('GetNodePublicKey', { node_id });
 }
 
-export async function handleMessageFromQueue(request) {
-  console.log('RP receive message from msq:', request);
+async function handleMessageFromQueue(request) {
+  console.log('RP receive message from mq:', request);
   // Verifies signature in blockchain.
   // RP node updates the request status
   // Call callback to RP.
 }
 
-//===================== Initialize =======================
-
-export async function init() {
-  eventEmitter.on('message', function(message) {
-    console.log('message');
-    handleMessageFromQueue(message);
-  });
-}
+eventEmitter.on('message', function(message) {
+  console.log('message');
+  handleMessageFromQueue(message);
+});
