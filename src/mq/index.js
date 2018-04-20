@@ -4,8 +4,8 @@ import * as config from '../config';
 import * as utils from '../main/utils';
 
 const receivingSocket = zmq.socket('pull');
-if (config.role === 'idp')
-  receivingSocket.bindSync('tcp://*:' + config.msqRegister.port);
+console.log(config.msqRegister.port);
+receivingSocket.bindSync('tcp://*:' + config.msqRegister.port);
 
 export const eventEmitter = new EventEmitter();
 
@@ -18,7 +18,7 @@ receivingSocket.on('message', async function(jsonMessageStr) {
 });
 
 export const send = async (receivers, message) => {
-  receivers.forEach(async (receiver) => {
+  receivers.forEach(async receiver => {
     const sendingSocket = zmq.socket('push');
     sendingSocket.connect(`tcp://${receiver.ip}:${receiver.port}`);
 
