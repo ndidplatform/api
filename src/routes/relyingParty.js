@@ -3,6 +3,8 @@ import express from 'express';
 import * as abciAppRpApi from '../main/rp';
 import * as abciAppCommonApi from '../main/common';
 
+import validate from './validator';
+
 const router = express.Router();
 
 router.post('/requests/:namespace/:identifier', async (req, res, next) => {
@@ -19,6 +21,26 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
       min_idp,
       request_timeout,
     } = req.body;
+
+    const paramsValidationResult = validate({
+      method: req.method,
+      path: `${req.baseUrl}${req.route.path}`,
+      params: req.params,
+    });
+    if (!paramsValidationResult.valid) {
+      res.status(400).send(paramsValidationResult);
+      return;
+    }
+
+    const bodyValidationResult = validate({
+      method: req.method,
+      path: `${req.baseUrl}${req.route.path}`,
+      body: req.body,
+    });
+    if (!bodyValidationResult.valid) {
+      res.status(400).send(bodyValidationResult);
+      return;
+    }
 
     const requestId = await abciAppRpApi.createRequest({
       namespace,

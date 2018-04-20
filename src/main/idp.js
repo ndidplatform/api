@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import fetch from 'node-fetch';
 
 import * as common from '../main/common';
@@ -12,9 +13,21 @@ let mqReceivingQueue = {};
 let blockchainQueue = {};
 
 let callbackUrl = null;
+try {
+  callbackUrl = fs.readFileSync(path.join(__dirname, '../../idp-callback-url.json'), 'utf8');
+} catch (error) {
+  if (error.code !== 'ENOENT') {
+    console.log(error);
+  }
+}
 
 export const setCallbackUrl = url => {
   callbackUrl = url;
+  fs.writeFile(path.join(__dirname, '../../idp-callback-url.json'), url, (err) => {
+    if (err) {
+      console.error('Error writing IDP callback url file');
+    }
+  });
 };
 
 export const getCallbackUrl = () => {
