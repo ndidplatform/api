@@ -140,6 +140,7 @@ export async function createRequest({
   utils.updateChain('CreateRequest', dataToBlockchain, nonce);
 
   //query node_id and public_key to send data via mq
+  //TODO change mq node to libp2p
   getIdpMqDestination({
     namespace,
     identifier,
@@ -179,6 +180,7 @@ export async function createRequest({
 }
 
 export async function getIdpMqDestination(data) {
+  //TODO get new nodeId
   return await utils.queryChain('GetMsqDestination', {
     hash_id: await utils.hash(data.namespace + ':' + data.identifier),
     min_ial: data.min_ial
@@ -186,6 +188,7 @@ export async function getIdpMqDestination(data) {
 }
 
 export async function getAsMqDestination(data) {
+  //TODO this will get some nodeId from chain
   return await utils.queryChain('GetServiceDestination', {
     as_id: data.as_id,
     service_id: data.service_id
