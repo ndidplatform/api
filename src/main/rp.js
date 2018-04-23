@@ -45,7 +45,9 @@ export const handleABCIAppCallback = async requestId => {
 
     if (request.status === 'completed') {
       // Send request to AS when completed
-      sendRequestToAS(requestData);
+      setTimeout(function() {
+        sendRequestToAS(requestData);
+      }, 1000);
     }
   }
 };
