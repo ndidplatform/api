@@ -68,8 +68,7 @@ async function getASReceiverList(data_request) {
           port,
           ...(await common.getNodePubKey(nodeId))
         };
-      }
-      catch(error) {
+      } catch (error) {
         return null;
       }
     })
@@ -81,18 +80,20 @@ async function sendRequestToAS(requestData) {
   // console.log(requestData);
   // node id, which is substituted with ip,port for demo
   let rp_node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
-  requestData.data_request_list.forEach(async data_request => {
-    let receivers = await getASReceiverList(data_request);
-    mq.send(receivers, {
-      request_id: requestData.request_id,
-      namespace: requestData.namespace,
-      identifier: requestData.identifier,
-      service_id: data_request.service_id,
-      request_params: data_request.request_params,
-      rp_node_id: rp_node_id,
-      request_message: requestData.request_message
+  if (requestData.data_request_list != undefined) {
+    requestData.data_request_list.forEach(async data_request => {
+      let receivers = await getASReceiverList(data_request);
+      mq.send(receivers, {
+        request_id: requestData.request_id,
+        namespace: requestData.namespace,
+        identifier: requestData.identifier,
+        service_id: data_request.service_id,
+        request_params: data_request.request_params,
+        rp_node_id: rp_node_id,
+        request_message: requestData.request_message
+      });
     });
-  });
+  }
 }
 
 export async function createRequest({
