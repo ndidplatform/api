@@ -32,7 +32,7 @@
 **Environment variable options**
 
 * `ROLE`: Can be `idp`, `rp`, or `as`
-* `TENDERMINT_ADDRESS`: Address to contact `ndid-smart-contract` [Default: `http://localhost:45000` for IDP, `http://localhost:45001` for RP, and `http://localhost:45001` for AS]
+* `TENDERMINT_ADDRESS`: Address to contact `ndid-smart-contract` [Default: `http://localhost:45000` for IDP, `http://localhost:45001` for RP, and `http://localhost:45002` for AS]
 * `MQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted [Required]
 * `MQ_BINDING_PORT`: A port to bind message queue [Default: `5555`]
 * `SERVER_PORT`: API server port [Default: `8080`]
@@ -57,6 +57,8 @@
 
   ```sh
   ROLE=rp \
+  MQ_CONTACT_IP=192.168.1.1 \
+  MQ_BINDING_PORT=5555 \
   npm start
   ```
 
@@ -64,6 +66,8 @@
 
   ```sh
   ROLE=as \
+  MQ_CONTACT_IP=192.168.1.1 \
+  MQ_BINDING_PORT=5555 \
   AS_ID=AS1 \
   npm start
   ```
