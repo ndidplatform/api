@@ -1,9 +1,13 @@
 import fetch from 'node-fetch';
 
 let nonce = Date.now() % 10000;
-const logicUrl =
-  process.env.TENDERMINT_ADDRESS ||
-  'http://localhost:' + (process.env.ROLE === 'rp' ? '45001' : '45000');
+const logicUrl = process.env.TENDERMINT_ADDRESS || ('http://localhost:' + defaultTendermintPort()) ;
+  
+function defaultTendermintPort() {
+  if(process.env.ROLE === 'rp') return '45000';
+  if(process.env.ROLE === 'idp') return '45001';
+  if(process.env.ROLE === 'as') return '45002';
+}
 
 function retrieveResult(obj, isQuery) {
   if (obj.error) {
