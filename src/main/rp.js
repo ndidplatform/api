@@ -14,7 +14,7 @@ let requestsData = {};
 
 export const handleABCIAppCallback = async requestId => {
   if (callbackUrls[requestId]) {
-    const request = await utils.queryChain('GetRequest', { requestId });
+    const request = await common.getRequest({ requestId });
 
     try {
       await fetch(callbackUrls[requestId], {
@@ -40,8 +40,8 @@ export const handleABCIAppCallback = async requestId => {
   }
 
   if (requestsData[requestId]) {
-    const request = await utils.queryChain('GetRequest', { requestId });
-    let requestData = await requestsData[requestId];
+    const request = await common.getRequest({ requestId });
+    let requestData = requestsData[requestId];
 
     if (request.status === 'completed') {
       // Send request to AS when completed
@@ -53,22 +53,27 @@ export const handleABCIAppCallback = async requestId => {
 };
 
 async function getASReceiverList(data_request) {
-  const receivers = await Promise.all(
+  const receivers = (await Promise.all(
     data_request.as_id_list.map(async as => {
-      const node = await getAsMqDestination({
-        as_id: as,
-        service_id: data_request.service_id
-      });
+      try {
+        const node = await getAsMqDestination({
+          as_id: as,
+          service_id: data_request.service_id
+        });
 
-      let nodeId = node.node_id;
-      let [ip, port] = nodeId.split(':');
-      return {
-        ip,
-        port,
-        ...(await common.getNodePubKey(nodeId))
-      };
+        let nodeId = node.node_id;
+        let [ip, port] = nodeId.split(':');
+        return {
+          ip,
+          port,
+          ...(await common.getNodePubKey(nodeId))
+        };
+      }
+      catch(error) {
+        return null;
+      }
     })
-  );
+  )).filter(elem => elem !== null);
   return receivers;
 }
 
