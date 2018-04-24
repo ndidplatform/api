@@ -166,6 +166,12 @@ export async function createRequest({
       });
     }
 
+    //TODO filter receivers by idp_list
+    if(receivers.length === 0) {
+      //TODO handle when this user not on board or all IDPs in idp_list
+      //not associate with this user
+      console.error('NO IDP FOUND');
+    }
     //send via message queue
     mq.send(receivers, {
       namespace,
