@@ -46,7 +46,8 @@ async function sendDataToRP(data) {
   });
   mq.send(receivers, {
     as_id: data.as_id,
-    data: data.data
+    data: data.data,
+    request_id: data.request_id
   });
 }
 
@@ -146,7 +147,7 @@ async function checkIntegrity(requestId) {
       let as_id = config.asID;
       let signature = 'sign(' + data + ',' + privKey + ')';
       // AS node encrypts the response and sends it back to RP via NSQ.
-      sendDataToRP({ rp_node_id: message.rp_node_id, as_id, data });
+      sendDataToRP({ rp_node_id: message.rp_node_id, as_id, data, request_id: message.request_id });
 
       // AS node adds transaction to blockchain
       signData({ as_id, request_id: message.request_id, signature });

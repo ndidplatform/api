@@ -34,7 +34,7 @@ export const handleABCIAppCallback = async requestId => {
     }
 
     // Clear callback url mapping when the request is no longer going to have further events
-    if (request.status === 'completed' || request.status === 'rejected') {
+    if (request.status === 'rejected') {
       delete callbackUrls[requestId];
     }
   }
@@ -47,6 +47,7 @@ export const handleABCIAppCallback = async requestId => {
       // Send request to AS when completed
       setTimeout(function() {
         sendRequestToAS(requestData);
+        delete requestsData[requestId]; 
       }, 1000);
     }
   }
@@ -121,19 +122,21 @@ export async function createRequest({
     });
   }
 
-  //save request data to DB
-  requestsData[request_id] = {
-    namespace,
-    identifier,
-    reference_id,
-    request_id,
-    min_idp: data.minIdp ? data.minIdp : 1,
-    min_aal: data.min_aal ? data.min_aal : 1,
-    min_ial: data.min_ial ? data.min_ial : 1,
-    timeout: data.timeout,
-    data_request_list: data_request_list,
-    request_message: data.request_message
-  };
+  //save request data to DB to send to AS via msq when authen complete
+  if(data_request_list.length !== 0) {
+    requestsData[request_id] = {
+      namespace,
+      identifier,
+      reference_id,
+      request_id,
+      min_idp: data.minIdp ? data.minIdp : 1,
+      min_aal: data.min_aal ? data.min_aal : 1,
+      min_ial: data.min_ial ? data.min_ial : 1,
+      timeout: data.timeout,
+      data_request_list: data_request_list,
+      request_message: data.request_message
+    };
+  }
 
   //add data to blockchain
   let dataToBlockchain = {
@@ -206,11 +209,34 @@ export async function getAsMqDestination(data) {
   });
 }
 
-async function handleMessageFromQueue(request) {
-  console.log('RP receive message from mq:', request);
+async function handleMessageFromQueue(data) {
+  console.log('RP receive message from mq:', data);
   // Verifies signature in blockchain.
   // RP node updates the request status
   // Call callback to RP.
+
+  //receive data from AS
+  data = JSON.parse(data);
+  if(data.data) {
+    try {
+      await fetch(callbackUrls[data.request_id], {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          data: data.data,
+          as_id: data.as_id,
+        })
+      });
+      delete callbackUrls[data.request_id];
+    } catch (error) {
+      console.log(
+        'Cannot send callback to client application with the following error:',
+        error
+      );
+    }
+  }
 }
 
 if (config.role === 'rp') {
