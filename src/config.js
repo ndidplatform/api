@@ -4,4 +4,8 @@ export const mqRegister = {
   ip: process.env.MQ_CONTACT_IP,
   port: process.env.MQ_BINDING_PORT || 5555
 };
+export const peerRegister = {
+  ip: process.env.PEER_IP,
+  port: process.env.PEER_PORT || 10333
+};
 export const asID = process.env.AS_ID || null;
