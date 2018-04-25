@@ -100,15 +100,6 @@ async function checkIntegrity(requestId) {
   }
 }
 
-export async function registerMqDestination(data) {
-  let result = await utils.updateChain(
-    'RegisterMsqDestination',
-    data,
-    utils.getNonce()
-  );
-  return result;
-}
-
 async function handleMessageFromQueue(request) {
   console.log('IDP receive message from mq:', request);
   let requestJson = JSON.parse(request);
@@ -125,29 +116,11 @@ export async function handleABCIAppCallback(requestId) {
 //===================== Initialize before flow can start =======================
 
 export async function init() {
-  // Users associate with this idp
-  // In production environment, this should be done with onboarding process.
-  // TODO
-  let userList = JSON.parse(
-    fs.readFileSync(process.env.ASSOC_USERS, 'utf8').toString()
-  );
-
-  let users = [];
-  for (let i in userList) {
-    let elem = userList[i];
-    users.push({
-      hash_id: await utils.hash(elem.namespace + ':' + elem.identifier),
-      ial: elem.ial
-    });
-  }
+  //TODO
+  //In production this should be done only once in phase 1,
+  //when IDP request to join approved NDID
+  //after first approved, IDP can add other key and node and endorse themself
   let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
-
-  //register node id, which is substituted with ip,port for demo
-  registerMqDestination({
-    users,
-    node_id
-  });
-
   common.addNodePubKey({
     node_id,
     public_key: 'very_secure_public_key'

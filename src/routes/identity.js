@@ -1,4 +1,5 @@
 import express from 'express';
+import * as abciAppIdentityApi from '../main/identity';
 
 const router = express.Router();
 
@@ -13,10 +14,16 @@ router.post('/', async (req, res, next) => {
       accessor_id,
     } = req.body;
 
-    // Not Implemented
-    // TODO
+    let isSuccess = await abciAppIdentityApi.createNewIdentity({
+      namespace,
+      identifier,
+      secret,
+      accessor_type,
+      accessor_key,
+      accessor_id
+    });
 
-    res.status(501).end();
+    res.status(200).send(isSuccess);
   } catch (error) {
     res.status(500).end();
   }
