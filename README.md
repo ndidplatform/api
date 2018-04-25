@@ -38,7 +38,6 @@
 * `SERVER_PORT`: API server port [Default: `8080`]
 * `ABCI_APP_CALLBACK_PORT`: port which `ndid-smart-contract` send callback [Default: `3001`] (must match `ndid-smart-contract`)
 * `ABCI_APP_CALLBACK_PATH`: path which `ndid-smart-contract` send callback [Default: `/callback`] (must match `ndid-smart-contract`)
-* `ASSOC_USERS`: json file path, array of { namespace, identifier } this IDP associate with (In production environment, this will be done by onboarding process)
 * `AS_ID`: AS ID for register service (AS only)
 
 **_Examples_**
