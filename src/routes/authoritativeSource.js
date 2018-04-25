@@ -1,6 +1,41 @@
 import express from 'express';
 
+import * as abciAppAsApi from '../main/as';
+import validate from './validator';
+
 const router = express.Router();
+
+router.get('/callback', async (req, res, next) => {
+  try {
+    const url = abciAppAsApi.getCallbackUrl();
+
+    res.status(200).send({ url });
+  } catch (error) {
+    res.status(500).end();
+  }
+});
+
+router.post('/callback', async (req, res, next) => {
+  try {
+    const { url } = req.body;
+
+    const validationResult = validate({
+      method: req.method,
+      path: `${req.baseUrl}${req.route.path}`,
+      body: req.body,
+    });
+    if (!validationResult.valid) {
+      res.status(400).send(validationResult);
+      return;
+    }
+
+    abciAppAsApi.setCallbackUrl(url);
+
+    res.status(200).end();
+  } catch (error) {
+    res.status(500).end();
+  }
+});
 
 router.post('/service/:service_id', async (req, res, next) => {
   try {

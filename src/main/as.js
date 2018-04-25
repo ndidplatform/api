@@ -1,3 +1,7 @@
+import fs from 'fs';
+import path from 'path';
+import fetch from 'node-fetch';
+
 import { eventEmitter } from '../mq';
 
 import * as mq from '../mq';
@@ -8,6 +12,28 @@ import * as common from '../main/common';
 const privKey = 'AS_PrivateKey';
 let mqReceivingQueue = {};
 let blockchainQueue = {};
+
+let callbackUrl = null;
+try{
+  callbackUrl = fs.readFileSync(path.join(__dirname,'../../as-callback-url.json'),'utf8');
+} catch(error){
+  if(error.code !== 'ENOENT'){
+    console.log(error);
+  }
+}
+
+export const setCallbackUrl = url => {
+  callbackUrl = url;
+  fs.writeFile(path.join(__dirname,'../../as-callback-url.json'),url,(err) =>{
+    if (err){
+      console.error('Error writing AS callback url file');
+    }
+  });
+};
+
+export const getCallbackUrl = () =>{
+  return callbackUrl;
+}
 
 async function sendDataToRP(data) {
   let receivers = [];
@@ -42,6 +68,22 @@ async function registerServiceDestination(data) {
     node_id: data.node_id
   };
   utils.updateChain('RegisterServiceDestination', dataToBlockchain, nonce);
+}
+
+async function notifyByCallback(request){
+  if (!callbackUrl){
+    console.error('callbackUrl for AS not set');
+    return;
+  }
+  let data = await fetch(callbackUrl, {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json'
+    },
+    body: JSON.stringify({request})
+  });
+  let result = await data.json();
+  return result.data;
 }
 
 async function checkIntegrity(requestId) {
@@ -89,11 +131,18 @@ async function checkIntegrity(requestId) {
         max_aal
       });
 
+      let data = await notifyByCallback({
+        request_id: message.request_id,
+        request_params: message.request_params,
+        signatures,
+        max_ial,
+        max_aal
+      });
       // AS→Platform
       // The AS replies synchronously with the requested data
 
       // When received data
-      let data = 'mock data';
+      //let data = 'mock data';
       let as_id = config.asID;
       let signature = 'sign(' + data + ',' + privKey + ')';
       // AS node encrypts the response and sends it back to RP via NSQ.
