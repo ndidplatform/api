@@ -19,15 +19,16 @@ router.post('/callback', async (req, res, next) => {
   try {
     const { url } = req.body;
 
-    const validationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!validationResult.valid) {
-      res.status(400).send(validationResult);
-      return;
-    }
+    // const validationResult = validate({
+    //   method: req.method,
+    //   path: `${req.baseUrl}${req.route.path}`,
+    //   body: req.body,
+    // });
+    // if (!validationResult.valid) {
+    //   res.status(400).send(validationResult);
+      
+    //   return;
+    // }
 
     abciAppAsApi.setCallbackUrl(url);
 
