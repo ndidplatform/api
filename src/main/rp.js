@@ -11,6 +11,7 @@ const privKey = 'RP_PrivateKey';
 let referenceMapping = {};
 let callbackUrls = {};
 let requestsData = {};
+let dataFromAS = {};
 
 export const handleABCIAppCallback = async requestId => {
   if (callbackUrls[requestId]) {
@@ -209,6 +210,10 @@ export async function getAsMqDestination(data) {
   });
 }
 
+export function getDataFromAS(request_id) {
+  return dataFromAS[request_id];
+}
+
 async function handleMessageFromQueue(data) {
   console.log('RP receive message from mq:', data);
   // Verifies signature in blockchain.
@@ -237,6 +242,12 @@ async function handleMessageFromQueue(data) {
       );
     }
   }
+
+  dataFromAS[data.request_id] = {
+    data: data.data,
+    as_id: data.as_id,
+  };
+
 }
 
 if (config.role === 'rp') {

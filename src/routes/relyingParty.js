@@ -91,10 +91,7 @@ router.get('/requests/reference/:reference_number', async (req, res, next) => {
 
 router.get('/requests/data/:request_id', async (req, res, next) => {
   try {
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
+    res.status(200).send(abciAppRpApi.getDataFromAS(req.params.request_id));
   } catch (error) {
     res.status(500).end();
   }
