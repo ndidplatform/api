@@ -13,9 +13,9 @@ let callbackUrls = {};
 let requestsData = {};
 let dataFromAS = {};
 
-export const handleABCIAppCallback = async requestId => {
+export const handleABCIAppCallback = async (requestId, height) => {
   if (callbackUrls[requestId]) {
-    const request = await common.getRequest({ requestId });
+    const request = await common.getRequestRequireHeight({ requestId }, height);
 
     try {
       await fetch(callbackUrls[requestId], {
