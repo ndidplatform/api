@@ -16,6 +16,11 @@ function retrieveResult(obj, isQuery) {
     return obj.error;
   }
   if (isQuery) {
+    let log = Buffer.from(obj.result.response.value, 'base64').toString();
+    if(log === 'not found') {
+      //query until next block
+      return log;
+    }
     let result = Buffer.from(obj.result.response.value, 'base64').toString();
     return JSON.parse(result);
   } else if (obj.result.deliver_tx.log === 'success') return true;
@@ -53,13 +58,37 @@ export function getNonce() {
   return (nonce++).toString();
 }
 
+export async function getBlockHeight() {
+  let response = await fetch(logicUrl + '/status');
+  let jsonResponse = await response.json();
+  return parseInt(jsonResponse.result.latest_block_height);
+} 
+
 export async function queryChain(fnName, data) {
   let encoded = Buffer.from(fnName + '|' + JSON.stringify(data)).toString(
     'base64'
   );
 
-  let result = await fetch(logicUrl + '/abci_query?data="' + encoded + '"');
-  return retrieveResult(await result.json(), true);
+  //workaround when event was fired before block was commited to chain, should fix
+  let terminateHeight = await getBlockHeight() + 2;
+  let blockHeight,bcResult;
+
+  do {
+    let [result, _blockHeight] = await Promise.all([
+      fetch(logicUrl + '/abci_query?data="' + encoded + '"'),
+      getBlockHeight()
+    ]);
+    bcResult = retrieveResult(await result.json(), true);
+    blockHeight = _blockHeight;
+    if(bcResult !== 'not found') { 
+      return bcResult;
+    }
+    else {
+      await new Promise((resolve) => { setTimeout(resolve,1000) });
+    }
+  }
+  while(blockHeight < terminateHeight);
+  return 'not found'; //block is really lost
 }
 
 export async function updateChain(fnName, data, nonce) {
