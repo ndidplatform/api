@@ -183,7 +183,7 @@ export default {
         required: ['url'],
       },
     },
-    '/identity': {
+    '/identity/': {
       body: {
         properties: {
           namespace: { type: 'string', minLength: 1 },
