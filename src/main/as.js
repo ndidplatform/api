@@ -187,6 +187,7 @@ export async function init() {
   // TODO
   //register node id, which is substituted with ip,port for demo
   let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
+  process.env.nodeId = node_id;
   // Hard code add back statement service for demo
   registerServiceDestination({
     as_id: config.asID,
@@ -196,7 +197,7 @@ export async function init() {
 
   common.addNodePubKey({
     node_id,
-    public_key: 'very_secure_public_key'
+    public_key: 'very_secure_public_key_for_as'
   });
 }
 

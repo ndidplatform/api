@@ -121,9 +121,10 @@ export async function init() {
   //when IDP request to join approved NDID
   //after first approved, IDP can add other key and node and endorse themself
   let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
+  process.env.nodeId = node_id;
   common.addNodePubKey({
     node_id,
-    public_key: 'very_secure_public_key'
+    public_key: 'very_secure_public_key_for_idp'
   });
 }
 
