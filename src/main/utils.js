@@ -12,17 +12,22 @@ function defaultTendermintPort() {
 function retrieveResult(obj, isQuery) {
   if (obj.error) {
     console.error(obj.error);
-    return obj.error;
+    return [obj.error, -1];
   }
+
   if (isQuery) {
-    if(obj.result.response.log === 'not found') return;
+    if(obj.result.response.log === 'not found') {
+      return [undefined, -1];
+    }
     let result = Buffer.from(obj.result.response.value, 'base64').toString();
     return [JSON.parse(result), parseInt(obj.result.response.height)];
-  } else if (obj.result.deliver_tx.log === 'success') return true;
-  else {
-    console.error('Update chain failed:', obj);
-    return false;
   }
+
+  if (obj.result.deliver_tx.log !== 'success') {
+    console.error('Update chain failed:', obj);
+  }
+  return [obj.result.deliver_tx.log === 'success', obj.result.height];
+
 }
 
 export async function hash(stringToHash) {

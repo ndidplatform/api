@@ -23,7 +23,7 @@ export async function getRequestRequireHeight(data, requireHeight) {
     //sleep
     await new Promise(resolve => { setTimeout(resolve,1000); });
   }
-  while(currentHeight < requireHeight);
+  while(currentHeight < requireHeight + 2); //magic number...
   return request;
 }
 
