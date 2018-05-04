@@ -1,9 +1,21 @@
 import express from 'express';
 
+import validate from './validator';
+
 const router = express.Router();
 
 router.post('/node/create', async (req, res, next) => {
   try {
+    const bodyValidationResult = validate({
+      method: req.method,
+      path: `${req.baseUrl}${req.route.path}`,
+      body: req.body,
+    });
+    if (!bodyValidationResult.valid) {
+      res.status(400).send(bodyValidationResult);
+      return;
+    }
+
     const {
       node_id,
       node_name,
@@ -26,6 +38,16 @@ router.post('/node/create', async (req, res, next) => {
 
 router.post('/node/update', async (req, res, next) => {
   try {
+    const bodyValidationResult = validate({
+      method: req.method,
+      path: `${req.baseUrl}${req.route.path}`,
+      body: req.body,
+    });
+    if (!bodyValidationResult.valid) {
+      res.status(400).send(bodyValidationResult);
+      return;
+    }
+
     const {
       node_id,
       node_name,
@@ -48,6 +70,16 @@ router.post('/node/update', async (req, res, next) => {
 
 router.post('/node/register_callback', async (req, res, next) => {
   try {
+    const bodyValidationResult = validate({
+      method: req.method,
+      path: `${req.baseUrl}${req.route.path}`,
+      body: req.body,
+    });
+    if (!bodyValidationResult.valid) {
+      res.status(400).send(bodyValidationResult);
+      return;
+    }
+
     const { url } = req.body;
 
     // Not Implemented
@@ -61,6 +93,16 @@ router.post('/node/register_callback', async (req, res, next) => {
 
 router.post('/node/register_callback_master', async (req, res, next) => {
   try {
+    const bodyValidationResult = validate({
+      method: req.method,
+      path: `${req.baseUrl}${req.route.path}`,
+      body: req.body,
+    });
+    if (!bodyValidationResult.valid) {
+      res.status(400).send(bodyValidationResult);
+      return;
+    }
+
     const { url } = req.body;
 
     // Not Implemented

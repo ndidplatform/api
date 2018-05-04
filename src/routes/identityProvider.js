@@ -40,19 +40,39 @@ router.post('/callback', async (req, res, next) => {
 
 router.post('/response', async (req, res, next) => {
   try {
+    const bodyValidationResult = validate({
+      method: req.method,
+      path: `${req.baseUrl}${req.route.path}`,
+      body: req.body,
+    });
+    if (!bodyValidationResult.valid) {
+      res.status(400).send(bodyValidationResult);
+      return;
+    }
+
     const {
-      status,
       request_id,
       namespace,
       identifier,
-      secret,
       ial,
       aal,
+      secret,
+      status,
       signature,
       accessor_id,
     } = req.body;
 
-    let isSuccess = await abciAppIdpApi.createIdpResponse(req.body);
+    let isSuccess = await abciAppIdpApi.createIdpResponse({
+      request_id,
+      namespace,
+      identifier,
+      ial,
+      aal,
+      secret,
+      status,
+      signature,
+      accessor_id,
+    });
 
     res.status(200).send(isSuccess);
   } catch (error) {
