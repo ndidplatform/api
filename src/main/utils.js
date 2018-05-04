@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import crypto from 'crypto';
 
 let nonce = Date.now() % 10000;
 const logicUrl = process.env.TENDERMINT_ADDRESS || ('http://localhost:' + defaultTendermintPort()) ;
@@ -25,8 +26,7 @@ function retrieveResult(obj, isQuery) {
 }
 
 export async function hash(stringToHash) {
-  // TODO implement secure hashing
-  return 'Hash(' + stringToHash + ')';
+  return crypto.createHash('sha256').update(stringToHash, 'utf8').digest().toString('base64');
 }
 
 export async function decryptAsymetricKey(key, message) {
@@ -44,15 +44,8 @@ export function generateIdentityProof(data) {
   return '<some-voodoo-happen-here>';
 }
 
-export async function createRequestId(privkey, data, nonce) {
-  // TODO implement real request_id generating algorithm
-  return await hash(
-    'Concat_with_nonce_' +
-      nonce +
-      '(' +
-      Buffer.from(JSON.stringify(data)).toString('base64') +
-      ')'
-  );
+export async function createRequestId() {
+  return crypto.randomBytes(32).toString('hex');
 }
 
 export function getNonce() {
