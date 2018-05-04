@@ -1,4 +1,5 @@
 import express from 'express';
+import * as abciAppCommonApi from '../main/common';
 
 const router = express.Router();
 
@@ -50,10 +51,8 @@ router.post('/node/register_callback', async (req, res, next) => {
   try {
     const { url } = req.body;
 
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
+    await abciAppCommonApi.setSignatureCallback(url);
+    res.status(200).end();
   } catch (error) {
     res.status(500).end();
   }

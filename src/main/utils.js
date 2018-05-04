@@ -3,6 +3,8 @@ import crypto from 'crypto';
 
 let nonce = Date.now() % 10000;
 const logicUrl = process.env.TENDERMINT_ADDRESS || ('http://localhost:' + defaultTendermintPort()) ;
+
+let dpkiCallback = {};
   
 function defaultTendermintPort() {
   if(process.env.ROLE === 'rp') return '45000';
@@ -25,9 +27,30 @@ function retrieveResult(obj, isQuery) {
   }
 }
 
+export async function setSignatureCallback(url) {
+  dpkiCallback.signature = url;
+}
+
 export async function createSignatue(stringData) {
   //TODO
-  return 'signature_of_' + stringData;
+  //return 'signature_of_' + stringData;
+  if(!dpkiCallback.signature) return false;
+  let response = await fetch(dpkiCallback.signature, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      node_id: process.env.nodeId,
+      //request_message: ,
+      //request_hash: ,
+      hash_method: 'SHA256',
+      //key_type: ,
+      //sign_method: ,
+      data: stringData //for sign other operation?
+    })
+  });
+  return await response.text();
 }
 
 export async function hash(stringToHash) {

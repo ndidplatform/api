@@ -33,6 +33,10 @@ export async function getNodePubKey(node_id) {
   return await utils.queryChain('GetNodePublicKey', { node_id });
 }
 
+export async function setSignatureCallback(url) {
+  await utils.setSignatureCallback(url);
+}
+
 // Listen for callbacks (events) from ABCI app
 const app = express();
 const ABCI_APP_CALLBACK_PORT = process.env.ABCI_APP_CALLBACK_PORT || 3001;
