@@ -142,6 +142,16 @@ router.get(
   '/:namespace/:identifier/requests/history',
   async (req, res, next) => {
     try {
+      const queryValidationResult = validate({
+        method: req.method,
+        path: `${req.baseUrl}${req.route.path}`,
+        query: req.query,
+      });
+      if (!queryValidationResult.valid) {
+        res.status(400).send(queryValidationResult);
+        return;
+      }
+
       const { namespace, identifier } = req.params;
       const { count } = req.query;
 

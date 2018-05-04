@@ -1,5 +1,44 @@
 export default {
-  GET: {},
+  GET: {
+    '/identity/:namespace/:identifier/requests/history': {
+      query: {
+        properties: {
+          count: {
+            type: 'string',
+            pattern: '^\\d*[1-9]\\d*$', // number (int) > 0
+          },
+        },
+      },
+    },
+    '/utility/idp': {
+      query: {
+        properties: {
+          min_ial: {
+            type: 'string',
+            pattern: '^\\d*[1-9]\\d*$', // number (int) > 0
+          },
+          min_aal: {
+            type: 'string',
+            pattern: '^\\d*[1-9]\\d*$', // number (int) > 0
+          },
+        },
+      },
+    },
+    '/utility/idp/:namespace/:identifier': {
+      query: {
+        properties: {
+          min_ial: {
+            type: 'string',
+            pattern: '^\\d*[1-9]\\d*$', // number (int) > 0
+          },
+          min_aal: {
+            type: 'string',
+            pattern: '^\\d*[1-9]\\d*$', // number (int) > 0
+          },
+        },
+      },
+    },
+  },
   POST: {
     '/rp/requests/:namespace/:identifier': {
       params: {
