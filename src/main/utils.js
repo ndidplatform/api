@@ -25,6 +25,11 @@ function retrieveResult(obj, isQuery) {
   }
 }
 
+export async function createSignatue(stringData) {
+  //TODO
+  return 'signature_of_' + stringData;
+}
+
 export async function hash(stringToHash) {
   return crypto.createHash('sha256').update(stringToHash, 'utf8').digest().toString('base64');
 }
@@ -63,8 +68,10 @@ export async function queryChain(fnName, data) {
 }
 
 export async function updateChain(fnName, data, nonce) {
+  let signature = createSignatue(JSON.stringify(data) + nonce);
+
   let encoded = Buffer.from(
-    fnName + '|' + JSON.stringify(data) + '|' + nonce
+    fnName + '|' + JSON.stringify(data) + '|' + nonce + '|' + signature + '|' + process.env.nodeId
   ).toString('base64');
 
   let result = await fetch(
