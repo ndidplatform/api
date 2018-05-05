@@ -171,9 +171,9 @@ async function handleMessageFromQueue(request) {
   checkIntegrity(requestJson.request_id);
 }
 
-export async function handleABCIAppCallback(requestId) {
+export async function handleABCIAppCallback(requestId, height) {
   console.log('Callback (event) from ABCI app; requestId:', requestId);
-  const request = await common.getRequest({ requestId });
+  const request = await common.getRequestRequireHeight({ requestId }, height);
   if (request.status === 'completed') {
     blockchainQueue[requestId] = await request;
     checkIntegrity(requestId);
