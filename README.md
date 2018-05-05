@@ -28,6 +28,15 @@
     ROLE=$ROLE \
     npm start
     ```
+## Run in Docker
+Required
+- Docker CE [Install docker](https://docs.docker.com/install/)
+- docker-compose [Install docker-compose](https://docs.docker.com/compose/install/)
+
+```
+docker network create ndidplatform
+docker-compose up
+```
 
 **Environment variable options**
 

@@ -1,0 +1,32 @@
+version: '3'
+services:
+  api-idp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ROLE: idp
+      MQ_CONTACT_IP: 0.0.0.0
+      MQ_BINDING_PORT: 5555
+      ASSOC_USERS: users.json
+      TENDERMINT_ADDRESS: http://tm-idp:45000
+      SERVER_PORT: 8080
+    ports:
+      - 8080:8080
+  api-rp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ROLE: rp
+      MQ_CONTACT_IP: 0.0.0.0
+      MQ_BINDING_PORT: 5556
+      ABCI_APP_CALLBACK_PORT: 3002
+      TENDERMINT_ADDRESS: http://tm-rp:45001
+      SERVER_PORT: 8081
+    ports:
+      - 8081:8081
+networks:
+  default:
+    external:
+      name: ndidplatform
