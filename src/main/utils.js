@@ -62,6 +62,27 @@ export function getNonce() {
   return (nonce++).toString();
 }
 
+export function getTransactionListFromTendermintNewBlockEvent(result) {
+  const txs = result.data.data.block.data.txs; // array of transactions in the block base64 encoded
+  //const height = result.data.data.block.header.height;
+  
+  const transactions = txs.map((tx) => {
+    // Decode base64 2 times because we send transactions to tendermint in base64 format
+    const txContentBase64 = Buffer.from(tx, 'base64').toString();
+    const txContent = Buffer.from(txContentBase64, 'base64').toString().split('|');
+    return {
+      fnName: txContent[0],
+      args: JSON.parse(txContent[1])
+    };
+  });
+
+  return transactions;
+}
+
+export function getHeightFromTendermintNewBlockEvent(result) {
+  return result.data.data.block.header.height;
+}
+
 export async function queryChain(fnName, data, requireHeight) {
   let encoded = Buffer.from(fnName + '|' + JSON.stringify(data)).toString(
     'base64'

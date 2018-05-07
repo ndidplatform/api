@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path';
+import path, { format } from 'path';
 import fetch from 'node-fetch';
 
 import * as common from '../main/common';
@@ -10,7 +10,8 @@ import { eventEmitter } from '../mq';
 
 const privKey = 'IDP_PrivateKey';
 let mqReceivingQueue = {};
-let blockchainQueue = {};
+let waitForHeight = {};
+let blockHeight = 0;
 
 let callbackUrl = null;
 try {
@@ -78,53 +79,78 @@ async function notifyByCallback(request) {
 }
 
 async function checkIntegrity(requestId) {
-  //check hash, if hash match then pass to app layer
-  if (mqReceivingQueue[requestId] && blockchainQueue[requestId]) {
-    let msgBlockchain = blockchainQueue[requestId];
-    let message = mqReceivingQueue[requestId];
+  
+  let msgBlockchain = await common.getRequest({ requestId });
+  let message = mqReceivingQueue[requestId];
+  let valid = false;
 
-    if (
-      msgBlockchain.messageHash === (await utils.hash(message.request_message))
-    ) {
-      notifyByCallback(message);
-    } else {
-      console.error(
-        'Mq and blockchain not matched!!',
-        message.request_message,
-        msgBlockchain.messageHash
-      );
-    }
+  valid = msgBlockchain.messageHash === (await utils.hash(message.request_message));
+  if(!valid) console.error(
+    'Mq and blockchain not matched!!',
+    message.request_message,
+    msgBlockchain.messageHash
+  );
 
-    delete blockchainQueue[requestId];
-    delete mqReceivingQueue[requestId];
-  }
+  return valid;
+
 }
 
 async function handleMessageFromQueue(request) {
   console.log('IDP receive message from mq:', request);
   let requestJson = JSON.parse(request);
   mqReceivingQueue[requestJson.request_id] = requestJson;
-  checkIntegrity(requestJson.request_id);
+
+  if(blockHeight < requestJson.height) {
+    if(!waitForHeight[requestJson.height])
+      waitForHeight[requestJson.height] = [requestJson.request_id];
+    else
+      waitForHeight[requestJson.height].push(requestJson.request_id);
+    return;
+  }
+
+  let valid = await checkIntegrity(requestJson.request_id);
+  if(valid) notifyByCallback(requestJson);
 }
 
 export async function handleTendermintNewBlockEvent (error, result) {
-  const txs = result.data.data.block.data.txs; // array of transactions in the block base64 encoded
-  
-  const transactions = txs.map((tx) => {
-    // Decode base64 2 times because we send transactions to tendermint in base64 format
-    const txContentBase64 = Buffer.from(tx, 'base64').toString();
-    const txContent = Buffer.from(txContentBase64, 'base64').toString();
-    return txContent;
-  });
+  //let [transactions, height] = utils.getTransactionListFromTendermintNewBlockEvent(result);
+  let height = utils.getHeightFromTendermintNewBlockEvent(result);
+  blockHeight = height;
 
+  //msq arrive before newBlock event
+  if(waitForHeight[height]) {
+    let requestIdsToCheck = waitForHeight[height];
+    delete waitForHeight[height];
+    
+    requestIdsToCheck.forEach(async function(requestId) {
+      let valid = await checkIntegrity(requestId);
+      if(valid) notifyByCallback(mqReceivingQueue[requestId]);
+      delete mqReceivingQueue[requestId];
+    });
+  }  
   // console.log(transactions);
 }
 
-export async function handleABCIAppCallback(requestId, height) {
+/*export async function handleNewBlockEvent(data) {
+  let height = -1; //derive from data;
+  let requestId = -1; //derive from data;
+  blockHeight = height;
+  for(let tx in data.txs) {
+    blockchainQueue[requestId] = data.txs.request.body; //derive from data
+    //msq may not arrive yet, or else, this tx do not concern this idp
+    //TODO: should have mechanism to clear blockchainQueue that do not concern this idp
+    if(!mqReceivingQueue[requestId]) continue; 
+    checkIntegrity(tx.request_id).then((valid) => {
+      if(valid) notifyByCallback(mqReceivingQueue[requestId]);
+    });
+  }
+}*/
+
+/*export async function handleABCIAppCallback(requestId, height) {
   console.log('Callback (event) from ABCI app; requestId:', requestId);
   blockchainQueue[requestId] = await common.getRequestRequireHeight({ requestId }, height);
   checkIntegrity(requestId);
-}
+}*/
 
 //===================== Initialize before flow can start =======================
 

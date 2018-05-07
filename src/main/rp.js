@@ -13,11 +13,52 @@ let callbackUrls = {};
 let requestsData = {};
 let dataFromAS = {};
 
-export async function handleTendermintNewBlockEvent (error, result) {
+export const handleTendermintNewBlockEvent = async(error, result) => {
+  let transactions = utils.getTransactionListFromTendermintNewBlockEvent(result);
+  for(let tx in transactions) { //all tx
+    let requestId = tx.args.request_id; //derive from tx;
 
+    //this request is not concern this RP
+    if(!callbackUrls[requestId]) continue;
+
+    common.getRequest({ requestId }).then(async (request) => {
+      try {
+        await fetch(callbackUrls[requestId], {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            request
+          })
+        });
+      } catch (error) {
+        console.log(
+          'Cannot send callback to client application with the following error:',
+          error
+        );
+      }
+
+      // Clear callback url mapping when the request is no longer going to have further events
+      if (request.status === 'rejected') {
+        delete callbackUrls[requestId];
+      }
+
+      if (requestsData[requestId]) {
+        let requestData = requestsData[requestId];
+        if (request.status === 'completed') {
+          // Send request to AS when completed
+          setTimeout(function() {
+            sendRequestToAS(requestData);
+            delete requestsData[requestId]; 
+          }, 1000);
+        }
+      }
+    });
+  }
 }
 
-export const handleABCIAppCallback = async (requestId, height) => {
+/*export const handleABCIAppCallback = async (requestId, height) => {
   if (callbackUrls[requestId]) {
     const request = await common.getRequestRequireHeight({ requestId }, height);
 
@@ -56,7 +97,7 @@ export const handleABCIAppCallback = async (requestId, height) => {
       }, 1000);
     }
   }
-};
+};*/
 
 async function getASReceiverList(data_request) {
   const receivers = (await Promise.all(
@@ -153,7 +194,8 @@ export async function createRequest({
     data_request_list: data_request_list_to_blockchain,
     message_hash: await utils.hash(data.request_message)
   };
-  utils.updateChain('CreateRequest', dataToBlockchain, nonce);
+  let [success, height] = await utils.updateChain('CreateRequest', dataToBlockchain, nonce);
+  if(!success) return false;
 
   //query node_id and public_key to send data via mq
   getIdpMqDestination({
@@ -190,7 +232,8 @@ export async function createRequest({
       min_ial: data.min_ial ? data.min_ial : 1,
       timeout: data.timeout,
       data_request_list: data_request_list,
-      request_message: data.request_message
+      request_message: data.request_message,
+      height
     });
   });
 

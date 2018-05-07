@@ -31,7 +31,7 @@ export async function getRequest(data) {
   return await utils.queryChain('GetRequest', data);
 }
 
-export async function getRequestRequireHeight(data, requireHeight) {
+/*export async function getRequestRequireHeight(data, requireHeight) {
   let currentHeight,request;
   do {
     let [ _request, _currentHeight ] = await utils.queryChain('GetRequest', data, true);
@@ -42,7 +42,7 @@ export async function getRequestRequireHeight(data, requireHeight) {
   }
   while(currentHeight < requireHeight + 2); //magic number...
   return request;
-}
+}*/
 
 /*
   data = { node_id, public_key }
@@ -73,7 +73,7 @@ const ABCI_APP_CALLBACK_PATH =
 app.use(bodyParser.json({ limit: '2mb' }));
 
 app.post(ABCI_APP_CALLBACK_PATH, (req, res) => {
-  const { requestId, height } = req.body;
+  /*const { requestId, height } = req.body;
 
   let handleABCIAppCallback;
   if (role === 'rp') {
@@ -86,7 +86,7 @@ app.post(ABCI_APP_CALLBACK_PATH, (req, res) => {
 
   if (handleABCIAppCallback) {
     handleABCIAppCallback(requestId, height);
-  }
+  }*/
 
   res.status(200).end();
 });
