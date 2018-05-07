@@ -203,7 +203,7 @@ export async function createRequest({
     identifier,
     min_ial: data.min_ial
   }).then(async (idpList) => {
-    let nodeIdList = idpList.node_id || [];
+    let nodeIdList = idpList ? (idpList.node_id || []) : [];
     let receivers = [];
     //prepare data for mq
     for (let i in nodeIdList) {
