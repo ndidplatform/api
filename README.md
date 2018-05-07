@@ -37,8 +37,6 @@
 * `MQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted [Required]
 * `MQ_BINDING_PORT`: A port to bind message queue [Default: `5555`]
 * `SERVER_PORT`: API server port [Default: `8080`]
-* `ABCI_APP_CALLBACK_PORT`: port which `ndid-smart-contract` send callback [Default: `3001`] (must match `ndid-smart-contract`)
-* `ABCI_APP_CALLBACK_PATH`: path which `ndid-smart-contract` send callback [Default: `/callback`] (must match `ndid-smart-contract`)
 * `AS_ID`: AS ID for register service (AS only)
 
 **_Examples_**
@@ -74,5 +72,5 @@
 
 Don't forget to
 
-1.  Set `SERVER_PORT` and `ABCI_APP_CALLBACK_PORT` when running on the same machine to avoid port collision.
-2.  Set `TENDERMINT_IP` and/or `TENDERMINT_PORT` when running `ndid-smart-contract`/`tendermint` on another machine.
+1.  Set `SERVER_PORT` when running on the same machine to avoid port collision.
+2.  Set `TENDERMINT_IP` and/or `TENDERMINT_PORT` when running `smart-contract`/`tendermint` on another machine.
