@@ -15,8 +15,8 @@ let dataFromAS = {};
 
 export const handleTendermintNewBlockEvent = async(error, result) => {
   let transactions = utils.getTransactionListFromTendermintNewBlockEvent(result);
-  for(let tx in transactions) { //all tx
-    let requestId = tx.args.request_id; //derive from tx;
+  for(let i in transactions) { //all tx
+    let requestId = transactions[i].args.request_id; //derive from tx;
 
     //this request is not concern this RP
     if(!callbackUrls[requestId]) continue;
