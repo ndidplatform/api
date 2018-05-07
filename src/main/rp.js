@@ -56,7 +56,7 @@ export const handleTendermintNewBlockEvent = async(error, result) => {
       }
     });
   }
-}
+};
 
 /*export const handleABCIAppCallback = async (requestId, height) => {
   if (callbackUrls[requestId]) {

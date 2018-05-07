@@ -1,6 +1,3 @@
-import express from 'express';
-import bodyParser from 'body-parser';
-
 import TendermintEvent from '../tendermint/event';
 import * as rp from './rp';
 import * as idp from './idp';

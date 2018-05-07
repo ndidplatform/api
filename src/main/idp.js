@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path, { format } from 'path';
+import path from 'path';
 import fetch from 'node-fetch';
 
 import * as common from '../main/common';
@@ -115,6 +115,10 @@ async function handleMessageFromQueue(request) {
 export async function handleTendermintNewBlockEvent (error, result) {
   //let [transactions, height] = utils.getTransactionListFromTendermintNewBlockEvent(result);
   let height = utils.getHeightFromTendermintNewBlockEvent(result);
+  
+  if(height !== blockHeight + 1) {
+    //TODO handle missing events
+  }
   blockHeight = height;
 
   //msq arrive before newBlock event
