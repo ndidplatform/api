@@ -10,7 +10,7 @@ import { eventEmitter } from '../mq';
 
 const privKey = 'IDP_PrivateKey';
 let mqReceivingQueue = {};
-let waitForHeight = {};
+let requestIdsInTendermintBlock = {};
 let blockHeight = 0;
 
 let callbackUrl = null;
@@ -101,10 +101,10 @@ async function handleMessageFromQueue(request) {
   mqReceivingQueue[requestJson.request_id] = requestJson;
 
   if(blockHeight < requestJson.height) {
-    if(!waitForHeight[requestJson.height])
-      waitForHeight[requestJson.height] = [requestJson.request_id];
+    if(!requestIdsInTendermintBlock[requestJson.height])
+      requestIdsInTendermintBlock[requestJson.height] = [requestJson.request_id];
     else
-      waitForHeight[requestJson.height].push(requestJson.request_id);
+      requestIdsInTendermintBlock[requestJson.height].push(requestJson.request_id);
     return;
   }
 
@@ -118,9 +118,9 @@ export async function handleTendermintNewBlockEvent (error, result) {
   blockHeight = height;
 
   //msq arrive before newBlock event
-  if(waitForHeight[height]) {
-    let requestIdsToCheck = waitForHeight[height];
-    delete waitForHeight[height];
+  if(requestIdsInTendermintBlock[height]) {
+    let requestIdsToCheck = requestIdsInTendermintBlock[height];
+    delete requestIdsInTendermintBlock[height];
     
     requestIdsToCheck.forEach(async function(requestId) {
       let valid = await checkIntegrity(requestId);
