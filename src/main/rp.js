@@ -202,12 +202,12 @@ export async function createRequest({
     namespace,
     identifier,
     min_ial: data.min_ial
-  }).then(async ({ node_id }) => {
+  }).then(async (idpList) => {
+    let nodeIdList = idpList.node_id || [];
     let receivers = [];
-
     //prepare data for mq
-    for (let i in node_id) {
-      let nodeId = node_id[i];
+    for (let i in nodeIdList) {
+      let nodeId = nodeIdList[i];
       let [ip, port] = nodeId.split(':');
       receivers.push({
         ip,
