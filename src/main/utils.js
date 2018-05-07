@@ -84,21 +84,25 @@ export function getHeightFromTendermintNewBlockEvent(result) {
 }
 
 export async function queryChain(fnName, data, requireHeight) {
-  let encoded = Buffer.from(fnName + '|' + JSON.stringify(data)).toString(
+  let base64Encoded = Buffer.from(fnName + '|' + JSON.stringify(data)).toString(
     'base64'
   );
 
-  let result = await fetch(`http://${TENDERMINT_ADDRESS}/abci_query?data="${encoded}"`);
+  let uriEncoded = encodeURIComponent(base64Encoded);
+
+  let result = await fetch(`http://${TENDERMINT_ADDRESS}/abci_query?data="${uriEncoded}"`);
   let [value, currentHeight] = retrieveResult(await result.json(), true);
   if(requireHeight) return [value, currentHeight];
   return value;
 }
 
 export async function updateChain(fnName, data, nonce) {
-  let encoded = Buffer.from(
+  let base64Encoded = Buffer.from(
     fnName + '|' + JSON.stringify(data) + '|' + nonce
   ).toString('base64');
 
-  let result = await fetch(`http://${TENDERMINT_ADDRESS}/broadcast_tx_commit?tx="${encoded}"`);
+  let uriEncoded = encodeURIComponent(base64Encoded);
+
+  let result = await fetch(`http://${TENDERMINT_ADDRESS}/broadcast_tx_commit?tx="${uriEncoded}"`);
   return retrieveResult(await result.json());
 }
