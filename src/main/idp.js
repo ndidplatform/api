@@ -107,6 +107,19 @@ async function handleMessageFromQueue(request) {
   checkIntegrity(requestJson.request_id);
 }
 
+export async function handleTendermintNewBlockEvent (error, result) {
+  const txs = result.data.data.block.data.txs; // array of transactions in the block base64 encoded
+  
+  const transactions = txs.map((tx) => {
+    // Decode base64 2 times because we send transactions to tendermint in base64 format
+    const txContentBase64 = Buffer.from(tx, 'base64').toString();
+    const txContent = Buffer.from(txContentBase64, 'base64').toString();
+    return txContent;
+  });
+
+  // console.log(transactions);
+}
+
 export async function handleABCIAppCallback(requestId, height) {
   console.log('Callback (event) from ABCI app; requestId:', requestId);
   blockchainQueue[requestId] = await common.getRequestRequireHeight({ requestId }, height);

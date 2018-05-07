@@ -1,13 +1,9 @@
 import fetch from 'node-fetch';
 
+import { TENDERMINT_ADDRESS } from '../config';
+
 let nonce = Date.now() % 10000;
-const logicUrl = process.env.TENDERMINT_ADDRESS || ('http://localhost:' + defaultTendermintPort()) ;
-  
-function defaultTendermintPort() {
-  if(process.env.ROLE === 'rp') return '45000';
-  if(process.env.ROLE === 'idp') return '45001';
-  if(process.env.ROLE === 'as') return '45002';
-}
+
 
 function retrieveResult(obj, isQuery) {
   if (obj.error) {
@@ -71,7 +67,7 @@ export async function queryChain(fnName, data, requireHeight) {
     'base64'
   );
 
-  let result = await fetch(logicUrl + '/abci_query?data="' + encoded + '"');
+  let result = await fetch(`http://${TENDERMINT_ADDRESS}/abci_query?data="${encoded}"`);
   let [value, currentHeight] = retrieveResult(await result.json(), true);
   if(requireHeight) return [value, currentHeight];
   return value;
@@ -82,8 +78,6 @@ export async function updateChain(fnName, data, nonce) {
     fnName + '|' + JSON.stringify(data) + '|' + nonce
   ).toString('base64');
 
-  let result = await fetch(
-    logicUrl + '/broadcast_tx_commit?tx="' + encoded + '"'
-  );
+  let result = await fetch(`http://${TENDERMINT_ADDRESS}/broadcast_tx_commit?tx="${encoded}"`);
   return retrieveResult(await result.json());
 }

@@ -171,6 +171,10 @@ async function handleMessageFromQueue(request) {
   checkIntegrity(requestJson.request_id);
 }
 
+export async function handleTendermintNewBlockEvent (error, result) {
+
+}
+
 export async function handleABCIAppCallback(requestId, height) {
   console.log('Callback (event) from ABCI app; requestId:', requestId);
   const request = await common.getRequestRequireHeight({ requestId }, height);

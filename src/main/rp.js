@@ -13,6 +13,10 @@ let callbackUrls = {};
 let requestsData = {};
 let dataFromAS = {};
 
+export async function handleTendermintNewBlockEvent (error, result) {
+
+}
+
 export const handleABCIAppCallback = async (requestId, height) => {
   if (callbackUrls[requestId]) {
     const request = await common.getRequestRequireHeight({ requestId }, height);

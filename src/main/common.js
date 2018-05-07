@@ -1,11 +1,28 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 
+import TendermintEvent from '../tendermint/event';
 import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';
 import * as utils from './utils';
 import { role } from '../config';
+
+const tendermintEvent = new TendermintEvent();
+tendermintEvent.on('newBlock#event', (error, result) => {
+  let handleTendermintNewBlockEvent;
+  if (role === 'rp') {
+    handleTendermintNewBlockEvent = rp.handleTendermintNewBlockEvent;
+  } else if (role === 'idp') {
+    handleTendermintNewBlockEvent = idp.handleTendermintNewBlockEvent;
+  } else if (role === 'as') {
+    handleTendermintNewBlockEvent = as.handleTendermintNewBlockEvent;
+  }
+
+  if (handleTendermintNewBlockEvent) {
+    handleTendermintNewBlockEvent(error, result);
+  }
+});
 
 /*
   data = { requestId }
@@ -46,6 +63,7 @@ export async function getNodePubKey(node_id) {
   return await utils.queryChain('GetNodePublicKey', { node_id });
 }
 
+// FIXME: Remove HTTP server for ABCI app callback. Use tendermint event instead.
 // Listen for callbacks (events) from ABCI app
 const app = express();
 const ABCI_APP_CALLBACK_PORT = process.env.ABCI_APP_CALLBACK_PORT || 3001;
