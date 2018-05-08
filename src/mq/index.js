@@ -17,7 +17,7 @@ receivingSocket.on('message', async function(jsonMessageStr) {
 });
 
 export const send = async (receivers, message) => {
-  receivers.forEach(async receiver => {
+  receivers.forEach(async (receiver) => {
     const sendingSocket = zmq.socket('push');
     sendingSocket.connect(`tcp://${receiver.ip}:${receiver.port}`);
 
