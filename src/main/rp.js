@@ -179,7 +179,7 @@ export async function createRequest({
       identifier,
       reference_id,
       request_id,
-      min_idp: data.minIdp ? data.minIdp : 1,
+      min_idp: data.min_idp ? data.min_idp : 1,
       min_aal: data.min_aal ? data.min_aal : 1,
       min_ial: data.min_ial ? data.min_ial : 1,
       timeout: data.timeout,
@@ -191,7 +191,7 @@ export async function createRequest({
   //add data to blockchain
   let dataToBlockchain = {
     request_id,
-    min_idp: data.minIdp ? data.minIdp : 1,
+    min_idp: data.min_idp ? data.min_idp : 1,
     min_aal: data.min_aal,
     min_ial: data.min_ial,
     timeout: data.timeout,
@@ -235,7 +235,7 @@ export async function createRequest({
       namespace,
       identifier,
       request_id,
-      min_idp: data.minIdp ? data.minIdp : 1,
+      min_idp: data.min_idp ? data.min_idp : 1,
       min_aal: data.min_aal ? data.min_aal : 1,
       min_ial: data.min_ial ? data.min_ial : 1,
       timeout: data.timeout,
