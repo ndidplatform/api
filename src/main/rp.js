@@ -6,13 +6,9 @@ import * as utils from './utils';
 import * as mq from '../mq';
 import * as config from '../config';
 import * as common from '../main/common';
+import * as db from '../db';
 
 const privKey = 'RP_PrivateKey';
-
-let referenceMapping = {};
-let callbackUrls = {};
-let requestsData = {};
-let dataFromAS = {};
 
 export const handleTendermintNewBlockEvent = async (error, result) => {
   let transactions = tendermint.getTransactionListFromTendermintNewBlockEvent(
@@ -22,12 +18,13 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
     //all tx
     let requestId = transactions[i].args.request_id; //derive from tx;
 
+    const callbackUrl = db.get('rp-callbackUrls', requestId);
     //this request is not concern this RP
-    if (!callbackUrls[requestId]) continue;
+    if (!callbackUrl) continue;
 
     common.getRequest({ requestId }).then(async (request) => {
       try {
-        await fetch(callbackUrls[requestId], {
+        await fetch(callbackUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -45,16 +42,16 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
 
       // Clear callback url mapping when the request is no longer going to have further events
       if (request.status === 'rejected') {
-        delete callbackUrls[requestId];
+        db.del('rp-callbackUrls', requestId);
       }
 
-      if (requestsData[requestId]) {
-        let requestData = requestsData[requestId];
+      const requestData = db.get('rp-requestsData', requestId);
+      if (requestData) {
         if (request.status === 'completed') {
           // Send request to AS when completed
           setTimeout(function() {
             sendRequestToAS(requestData);
-            delete requestsData[requestId];
+            db.del('rp-requestsData', requestId);
           }, 1000);
         }
       }
@@ -155,7 +152,10 @@ export async function createRequest({
   ...data
 }) {
   //existing reference_id, return
-  if (referenceMapping[reference_id]) return referenceMapping[reference_id];
+  const requestId = db.get('rp-requestReferenceMapping', reference_id);
+  if (requestId) {
+    return requestId;
+  }
 
   let nonce = utils.getNonce();
   let request_id = utils.createRequestId(privKey, data, nonce);
@@ -174,7 +174,7 @@ export async function createRequest({
 
   //save request data to DB to send to AS via msq when authen complete
   if (data_request_list.length !== 0) {
-    requestsData[request_id] = {
+    db.put('rp-requestsData', request_id, {
       namespace,
       identifier,
       reference_id,
@@ -185,7 +185,7 @@ export async function createRequest({
       timeout: data.timeout,
       data_request_list: data_request_list,
       request_message: data.request_message,
-    };
+    });
   }
 
   //add data to blockchain
@@ -246,8 +246,8 @@ export async function createRequest({
   });
 
   //maintain mapping
-  referenceMapping[reference_id] = request_id;
-  callbackUrls[request_id] = data.callback_url;
+  db.put('rp-requestReferenceMapping', reference_id, request_id);
+  db.put('rp-callbackUrls', request_id, data.callback_url);
   return request_id;
 }
 
@@ -266,7 +266,7 @@ export async function getAsMqDestination(data) {
 }
 
 export function getDataFromAS(request_id) {
-  return dataFromAS[request_id];
+  return db.get('dataFromAS', request_id);
 }
 
 async function handleMessageFromQueue(data) {
@@ -279,7 +279,9 @@ async function handleMessageFromQueue(data) {
   data = JSON.parse(data);
   if (data.data) {
     try {
-      await fetch(callbackUrls[data.request_id], {
+      const callbackUrl = db.get('rp-callbackUrls', data.request_id);
+
+      await fetch(callbackUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -289,7 +291,7 @@ async function handleMessageFromQueue(data) {
           as_id: data.as_id,
         }),
       });
-      delete callbackUrls[data.request_id];
+      db.del('rp-callbackUrls', data.request_id);
     } catch (error) {
       console.log(
         'Cannot send callback to client application with the following error:',
@@ -298,10 +300,10 @@ async function handleMessageFromQueue(data) {
     }
   }
 
-  dataFromAS[data.request_id] = {
+  db.put('rp-dataFromAS', data.request_id, {
     data: data.data,
     as_id: data.as_id,
-  };
+  });
 }
 
 if (config.role === 'rp') {
