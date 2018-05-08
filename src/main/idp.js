@@ -10,7 +10,8 @@ import { eventEmitter } from '../mq';
 
 const privKey = 'IDP_PrivateKey';
 let mqReceivingQueue = {};
-let blockchainQueue = {};
+let requestIdsInTendermintBlock = {};
+let blockHeight = 0;
 
 let callbackUrl = null;
 try {
@@ -78,44 +79,86 @@ async function notifyByCallback(request) {
 }
 
 async function checkIntegrity(requestId) {
-  //check hash, if hash match then pass to app layer
-  if (mqReceivingQueue[requestId] && blockchainQueue[requestId]) {
-    let msgBlockchain = blockchainQueue[requestId];
-    let message = mqReceivingQueue[requestId];
+  
+  let msgBlockchain = await common.getRequest({ requestId });
+  let message = mqReceivingQueue[requestId];
+  let valid = false;
 
-    if (
-      msgBlockchain.messageHash === (await utils.hash(message.request_message))
-    ) {
-      notifyByCallback(message);
-    } else {
-      console.error(
-        'Mq and blockchain not matched!!',
-        message.request_message,
-        msgBlockchain.messageHash
-      );
-    }
+  valid = msgBlockchain.messageHash === (await utils.hash(message.request_message));
+  if(!valid) console.error(
+    'Mq and blockchain not matched!!',
+    message.request_message,
+    msgBlockchain.messageHash
+  );
 
-    delete blockchainQueue[requestId];
-    delete mqReceivingQueue[requestId];
-  }
+  return valid;
+
 }
 
 async function handleMessageFromQueue(request) {
   console.log('IDP receive message from mq:', request);
   let requestJson = JSON.parse(request);
   mqReceivingQueue[requestJson.request_id] = requestJson;
-  checkIntegrity(requestJson.request_id);
+
+  if(blockHeight < requestJson.height) {
+    if(!requestIdsInTendermintBlock[requestJson.height])
+      requestIdsInTendermintBlock[requestJson.height] = [requestJson.request_id];
+    else
+      requestIdsInTendermintBlock[requestJson.height].push(requestJson.request_id);
+    return;
+  }
+
+  let valid = await checkIntegrity(requestJson.request_id);
+  if(valid) notifyByCallback(requestJson);
 }
 
-export async function handleABCIAppCallback(requestId, height) {
+export async function handleTendermintNewBlockEvent (error, result) {
+  //let [transactions, height] = utils.getTransactionListFromTendermintNewBlockEvent(result);
+  let height = utils.getHeightFromTendermintNewBlockEvent(result);
+  
+  if(height !== blockHeight + 1) {
+    //TODO handle missing events
+  }
+  blockHeight = height;
+
+  //msq arrive before newBlock event
+  if(requestIdsInTendermintBlock[height]) {
+    let requestIdsToCheck = requestIdsInTendermintBlock[height];
+    delete requestIdsInTendermintBlock[height];
+    
+    requestIdsToCheck.forEach(async function(requestId) {
+      let valid = await checkIntegrity(requestId);
+      if(valid) notifyByCallback(mqReceivingQueue[requestId]);
+      delete mqReceivingQueue[requestId];
+    });
+  }  
+  // console.log(transactions);
+}
+
+/*export async function handleNewBlockEvent(data) {
+  let height = -1; //derive from data;
+  let requestId = -1; //derive from data;
+  blockHeight = height;
+  for(let tx in data.txs) {
+    blockchainQueue[requestId] = data.txs.request.body; //derive from data
+    //msq may not arrive yet, or else, this tx do not concern this idp
+    //TODO: should have mechanism to clear blockchainQueue that do not concern this idp
+    if(!mqReceivingQueue[requestId]) continue; 
+    checkIntegrity(tx.request_id).then((valid) => {
+      if(valid) notifyByCallback(mqReceivingQueue[requestId]);
+    });
+  }
+}*/
+
+/*export async function handleABCIAppCallback(requestId, height) {
   console.log('Callback (event) from ABCI app; requestId:', requestId);
   blockchainQueue[requestId] = await common.getRequestRequireHeight({ requestId }, height);
   checkIntegrity(requestId);
-}
+}*/
 
 //===================== Initialize before flow can start =======================
 
-export async function init() {
+/*export async function init() {
   //TODO
   //In production this should be done only once in phase 1,
   //when IDP request to join approved NDID
@@ -126,7 +169,7 @@ export async function init() {
     node_id,
     public_key: 'very_secure_public_key_for_idp'
   });
-}
+}*/
 
 if (config.role === 'idp') {
   eventEmitter.on('message', function(message) {

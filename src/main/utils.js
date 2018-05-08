@@ -1,16 +1,10 @@
 import fetch from 'node-fetch';
 import crypto from 'crypto';
 
-let nonce = Date.now() % 10000;
-const logicUrl = process.env.TENDERMINT_ADDRESS || ('http://localhost:' + defaultTendermintPort()) ;
-
+import { TENDERMINT_ADDRESS } from '../config';
 let dpkiCallback = {};
-  
-function defaultTendermintPort() {
-  if(process.env.ROLE === 'rp') return '45000';
-  if(process.env.ROLE === 'idp') return '45001';
-  if(process.env.ROLE === 'as') return '45002';
-}
+
+let nonce = Date.now() % 10000;
 
 function retrieveResult(obj, isQuery) {
   if (obj.error) {
@@ -87,12 +81,35 @@ export function getNonce() {
   return (nonce++).toString();
 }
 
+export function getTransactionListFromTendermintNewBlockEvent(result) {
+  const txs = result.data.data.block.data.txs; // array of transactions in the block base64 encoded
+  //const height = result.data.data.block.header.height;
+  
+  const transactions = txs.map((tx) => {
+    // Decode base64 2 times because we send transactions to tendermint in base64 format
+    const txContentBase64 = Buffer.from(tx, 'base64').toString();
+    const txContent = Buffer.from(txContentBase64, 'base64').toString().split('|');
+    return {
+      fnName: txContent[0],
+      args: JSON.parse(txContent[1])
+    };
+  });
+
+  return transactions;
+}
+
+export function getHeightFromTendermintNewBlockEvent(result) {
+  return result.data.data.block.header.height;
+}
+
 export async function queryChain(fnName, data, requireHeight) {
-  let encoded = Buffer.from(fnName + '|' + JSON.stringify(data)).toString(
+  let base64Encoded = Buffer.from(fnName + '|' + JSON.stringify(data)).toString(
     'base64'
   );
 
-  let result = await fetch(logicUrl + '/abci_query?data="' + encoded + '"');
+  let uriEncoded = encodeURIComponent(base64Encoded);
+
+  let result = await fetch(`http://${TENDERMINT_ADDRESS}/abci_query?data="${uriEncoded}"`);
   let [value, currentHeight] = retrieveResult(await result.json(), true);
   if(requireHeight) return [value, currentHeight];
   return value;
@@ -101,12 +118,12 @@ export async function queryChain(fnName, data, requireHeight) {
 export async function updateChain(fnName, data, nonce) {
   let signature = createSignatue(JSON.stringify(data) + nonce);
 
-  let encoded = Buffer.from(
+  let base64Encoded = Buffer.from(
     fnName + '|' + JSON.stringify(data) + '|' + nonce + '|' + signature + '|' + process.env.nodeId
   ).toString('base64');
 
-  let result = await fetch(
-    logicUrl + '/broadcast_tx_commit?tx="' + encoded + '"'
-  );
+  let uriEncoded = encodeURIComponent(base64Encoded);
+
+  let result = await fetch(`http://${TENDERMINT_ADDRESS}/broadcast_tx_commit?tx="${uriEncoded}"`);
   return retrieveResult(await result.json());
 }

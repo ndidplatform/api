@@ -5,6 +5,7 @@ import asRouter from './authoritativeSource';
 import identityRouter from './identity';
 import utilityRouter from './utility';
 import dpkiRouter from './dpki';
+import ndidRouter from './nationalDigitalIdentity';
 
 import * as config from '../config';
 
@@ -35,6 +36,8 @@ if (config.role === 'rp') {
 router.use('/identity', identityRouter);
 router.use('/utility', utilityRouter);
 router.use('/dpki', dpkiRouter);
+// can be call from any role for now
+router.use('/ndid', ndidRouter);
 
 // All other paths besides stated above are invalid
 router.get('*', function(req, res) {
