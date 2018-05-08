@@ -1,3 +1,4 @@
+import * as tendermint from '../tendermint/ndid';
 import TendermintEvent from '../tendermint/event';
 import * as rp from './rp';
 import * as idp from './idp';
@@ -25,7 +26,7 @@ tendermintEvent.on('newBlock#event', (error, result) => {
   data = { requestId }
 */
 export async function getRequest(data) {
-  return await utils.queryChain('GetRequest', data);
+  return await tendermint.query('GetRequest', data);
 }
 
 /*export async function getRequestRequireHeight(data, requireHeight) {
@@ -45,7 +46,7 @@ export async function getRequest(data) {
   data = { node_id, public_key }
 */
 export async function addNodePubKey(data) {
-  let result = await utils.updateChain(
+  let result = await tendermint.transact(
     'AddNodePublicKey',
     data,
     utils.getNonce()
@@ -57,5 +58,5 @@ export async function addNodePubKey(data) {
   node_id
 */
 export async function getNodePubKey(node_id) {
-  return await utils.queryChain('GetNodePublicKey', { node_id });
+  return await tendermint.query('GetNodePublicKey', { node_id });
 }

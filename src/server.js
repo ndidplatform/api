@@ -11,6 +11,7 @@ import routes from './routes';
 import { init as idp_init } from './main/idp';
 import { init as as_init } from './main/as';
 import { init as rp_init } from './main/rp';
+import { init as devKey_init } from './main/devKeyInit';
 
 process.on('unhandledRejection', function(reason, p) {
   console.error('Unhandled Rejection:', p, '\nreason:', reason.stack || reason);
@@ -36,15 +37,14 @@ console.log(`Server listening on port ${config.serverPort}`);
 // TO BE REMOVED
 // Not needed in production environment
 // It should be done in onboarding process
-/*if (config.role === 'idp') {
+if (config.role === 'idp') {
   idp_init();
 } else if (config.role === 'as') {
   as_init();
 } else if (config.role === 'rp') {
   rp_init();
-}*/
-if (config.role === 'as') {
-  as_init();
+} else if (config.role === 'ndid') {
+  devKey_init();
 }
 
 // For testing

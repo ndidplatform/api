@@ -32,12 +32,12 @@ if (config.role === 'rp') {
   router.use('/idp', idpRouter);
 } else if (config.role === 'as') {
   router.use('/as', asRouter);
+} else if (config.role === 'ndid') {
+  router.use('/ndid', ndidRouter);
 }
 router.use('/identity', identityRouter);
 router.use('/utility', utilityRouter);
 router.use('/dpki', dpkiRouter);
-// can be call from any role for now
-router.use('/ndid', ndidRouter);
 
 // All other paths besides stated above are invalid
 router.get('*', function(req, res) {

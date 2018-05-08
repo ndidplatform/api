@@ -297,18 +297,18 @@ async function handleMessageFromQueue(data) {
 
 }
 
-/*export async function init() {
+export async function init() {
   //TODO
   //In production this should be done only once in phase 1,
   //when RP request to join approved NDID
   //after first approved, RP can add other key and node and endorse themself
-  let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
+  /*let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
   process.env.nodeId = node_id;
   common.addNodePubKey({
     node_id,
     public_key: 'very_secure_public_key_for_rp'
-  })
-}*/
+  });*/
+}
 
 if (config.role === 'rp') {
   eventEmitter.on('message', function(message) {

@@ -5,7 +5,8 @@
   "scripts": {
     "build": "npx babel src -d ./build/ --source-maps inline",
     "start": "npm run build && node build/server.js",
-    "test": "npm run build && npx mocha build/test/test.js"
+    "test": "npm run build && npx mocha build/test/test.js",
+    "initKey": "npm run build && role=ndid node build/server.js"
   },
   "dependencies": {
     "ajv": "^6.4.0",
