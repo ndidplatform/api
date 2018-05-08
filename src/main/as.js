@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 
 import { eventEmitter } from '../mq';
 
+import * as tendermint from '../tendermint/ndid';
 import * as mq from '../mq';
 import * as utils from './utils';
 import * as config from '../config';
@@ -59,7 +60,7 @@ async function signData(data) {
     request_id: data.request_id,
     signature: data.signature
   };
-  utils.updateChain('SignData', dataToBlockchain, nonce);
+  tendermint.transact('SignData', dataToBlockchain, nonce);
 }
 
 async function registerServiceDestination(data) {
@@ -69,7 +70,7 @@ async function registerServiceDestination(data) {
     service_id: data.service_id,
     node_id: data.node_id
   };
-  utils.updateChain('RegisterServiceDestination', dataToBlockchain, nonce);
+  tendermint.transact('RegisterServiceDestination', dataToBlockchain, nonce);
 }
 
 async function notifyByCallback(request){
@@ -104,7 +105,7 @@ async function checkIntegrity(requestId) {
     return false;
   }
 
-  const requestDetail = await utils.queryChain('GetRequestDetail', {
+  const requestDetail = await tendermint.query('GetRequestDetail', {
     requestId: message.request_id
   });
 
@@ -184,7 +185,7 @@ async function handleMessageFromQueue(request) {
 }
 
 export async function handleTendermintNewBlockEvent (error, result) {
-  let height = utils.getHeightFromTendermintNewBlockEvent(result);
+  let height = tendermint.getHeightFromTendermintNewBlockEvent(result);
 
   if(height !== blockHeight + 1) {
     //TODO handle missing events

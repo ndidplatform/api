@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import { eventEmitter } from '../mq';
 
+import * as tendermint from '../tendermint/ndid';
 import * as utils from './utils';
 import * as mq from '../mq';
 import * as config from '../config';
@@ -14,7 +15,7 @@ let requestsData = {};
 let dataFromAS = {};
 
 export const handleTendermintNewBlockEvent = async(error, result) => {
-  let transactions = utils.getTransactionListFromTendermintNewBlockEvent(result);
+  let transactions = tendermint.getTransactionListFromTendermintNewBlockEvent(result);
   for(let i in transactions) { //all tx
     let requestId = transactions[i].args.request_id; //derive from tx;
 
@@ -194,7 +195,7 @@ export async function createRequest({
     data_request_list: data_request_list_to_blockchain,
     message_hash: utils.hash(data.request_message)
   };
-  let [success, height] = await utils.updateChain('CreateRequest', dataToBlockchain, nonce);
+  let [success, height] = await tendermint.transact('CreateRequest', dataToBlockchain, nonce);
   if(!success) return false;
 
   //query node_id and public_key to send data via mq
@@ -244,14 +245,14 @@ export async function createRequest({
 }
 
 export async function getIdpMqDestination(data) {
-  return await utils.queryChain('GetMsqDestination', {
+  return await tendermint.query('GetMsqDestination', {
     hash_id: utils.hash(data.namespace + ':' + data.identifier),
     min_ial: data.min_ial
   });
 }
 
 export async function getAsMqDestination(data) {
-  return await utils.queryChain('GetServiceDestination', {
+  return await tendermint.query('GetServiceDestination', {
     as_id: data.as_id,
     service_id: data.service_id
   });

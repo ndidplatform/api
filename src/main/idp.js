@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
+import * as tendermint from '../tendermint/ndid';
 import * as common from '../main/common';
 import * as utils from './utils';
 import * as config from '../config';
@@ -56,7 +57,7 @@ export async function createIdpResponse(data) {
     accessor_id,
     identity_proof: utils.generateIdentityProof(data)
   };
-  let result = await utils.updateChain(
+  let result = await tendermint.transact(
     'CreateIdpResponse',
     dataToBlockchain,
     utils.getNonce()
@@ -114,7 +115,7 @@ async function handleMessageFromQueue(request) {
 
 export async function handleTendermintNewBlockEvent (error, result) {
   //let [transactions, height] = utils.getTransactionListFromTendermintNewBlockEvent(result);
-  let height = utils.getHeightFromTendermintNewBlockEvent(result);
+  let height = tendermint.getHeightFromTendermintNewBlockEvent(result);
   
   if(height !== blockHeight + 1) {
     //TODO handle missing events
