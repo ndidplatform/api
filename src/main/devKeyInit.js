@@ -21,7 +21,7 @@ async function addKey(role, index) {
 }
 
 export async function init() {
-  let filePath = path.join(__dirname, '..', 'devKey', 'ndid', 'ndid.pub');
+  let filePath = path.join(__dirname, '..', 'devKey', 'ndid', 'ndid1.pub');
   let response = await fetch(`http://localhost:${config.serverPort}/ndid/initNDID`, {
     method: 'POST',
     headers: {

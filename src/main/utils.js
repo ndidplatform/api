@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import * as config from '../config';
 
 let nonce = Date.now() % 10000;
 
@@ -31,8 +32,14 @@ export function generateIdentityProof(data) {
 
 export function createSignature(data, nonce) {
   //TODO call signature if not expose private key,
-  //TODO get private key according to role and nodeid?
-  let privKey = fs.readFileSync(path.join(__dirname, '..', 'devKey', 'ndid', 'ndid'),'utf8');
+  let privKey = fs.readFileSync(
+    path.join(
+      __dirname, 
+      '..',
+      'devKey', 
+      config.role,
+      config.nodeId
+    ),'utf8');
   return crypto.createSign('SHA256').update(JSON.stringify(data) + nonce).sign(privKey,'base64');
 }
 

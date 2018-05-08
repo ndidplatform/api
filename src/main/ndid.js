@@ -11,9 +11,8 @@ export async function initNDID(public_key) {
   }
   init = await tendermint.transact(
     'InitNDID',
-    { public_key, node_id: 'NDID' },
-    utils.getNonce(),
-    'NDID'
+    { public_key, node_id: 'ndid' },
+    utils.getNonce()
   );
   return init;
 }
@@ -27,7 +26,6 @@ export async function registerNode(data) {
   return await tendermint.transact(
     'RegisterNode',
     data,
-    utils.getNonce(),
-    'NDID'
+    utils.getNonce()
   );
 }

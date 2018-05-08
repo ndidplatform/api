@@ -1,5 +1,6 @@
 import * as tendermintClient from './client';
 import * as utils from '../main/utils';
+import * as config from '../config';
 
 function getQueryResult(response) {
   if (response.error) {
@@ -43,9 +44,9 @@ export async function query(fnName, data, requireHeight) {
   }
 }
 
-export async function transact(fnName, data, nonce, node_id) {
+export async function transact(fnName, data, nonce) {
   const tx = fnName + '|' + JSON.stringify(data) + '|' + nonce + '|' + 
-  utils.createSignature(data,nonce) + '|' + node_id || process.env.node_id;
+  utils.createSignature(data,nonce) + '|' + config.nodeId;
 
   try {
     const response = await tendermintClient.broadcastTxCommit(tx);

@@ -25,3 +25,5 @@ export const TENDERMINT_ADDRESS = `${TENDERMINT_IP}:${TENDERMINT_PORT}`;
 export const TENDERMINT_BASE_HTTP_URL = `http://${TENDERMINT_IP}:${TENDERMINT_PORT}`;
 
 export const TENDERMINT_BASE_WS_URL = `ws://${TENDERMINT_IP}:${TENDERMINT_PORT}`;
+
+export const nodeId = process.env.NODE_ID || (role + '1').toLowerCase();
