@@ -12,7 +12,7 @@ receivingSocket.on('message', async function(jsonMessageStr) {
   const jsonMessage = JSON.parse(jsonMessageStr);
 
   // TODO Retrieve private key and proper decrypt
-  let decrypted = await utils.decryptAsymetricKey(null, jsonMessage);
+  let decrypted = utils.decryptAsymetricKey(null, jsonMessage);
   eventEmitter.emit('message', decrypted);
 });
 
@@ -22,7 +22,7 @@ export const send = async (receivers, message) => {
     sendingSocket.connect(`tcp://${receiver.ip}:${receiver.port}`);
 
     // TODO proper encrypt
-    let encryptedMessage = await utils.encryptAsymetricKey(
+    let encryptedMessage = utils.encryptAsymetricKey(
       receiver.public_key,
       JSON.stringify(message)
     );

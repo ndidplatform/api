@@ -26,17 +26,17 @@ function retrieveResult(obj, isQuery) {
 
 }
 
-export async function hash(stringToHash) {
+export function hash(stringToHash) {
   // TODO implement secure hashing
   return 'Hash(' + stringToHash + ')';
 }
 
-export async function decryptAsymetricKey(key, message) {
+export function decryptAsymetricKey(key, message) {
   // TODO implement decryption
   return message.slice(message.indexOf('(') + 1, message.length - 1);
 }
 
-export async function encryptAsymetricKey(key, message) {
+export function encryptAsymetricKey(key, message) {
   // TODO implement encryption
   return 'Encrypt_with_' + key + '(' + message + ')';
 }
@@ -46,9 +46,9 @@ export function generateIdentityProof(data) {
   return '<some-voodoo-happen-here>';
 }
 
-export async function createRequestId(privkey, data, nonce) {
+export function createRequestId(privkey, data, nonce) {
   // TODO implement real request_id generating algorithm
-  return await hash(
+  return hash(
     'Concat_with_nonce_' +
       nonce +
       '(' +

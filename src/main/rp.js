@@ -154,7 +154,7 @@ export async function createRequest({
   if (referenceMapping[reference_id]) return referenceMapping[reference_id];
 
   let nonce = utils.getNonce();
-  let request_id = await utils.createRequestId(privKey, data, nonce);
+  let request_id = utils.createRequestId(privKey, data, nonce);
 
   let data_request_list_to_blockchain = [];
   for (let i in data_request_list) {
@@ -162,7 +162,7 @@ export async function createRequest({
       service_id: data_request_list[i].service_id,
       as_id_list: data_request_list[i].as_id_list,
       count: data_request_list[i].count,
-      request_params_hash: await utils.hash(
+      request_params_hash: utils.hash(
         JSON.stringify(data_request_list[i].request_params)
       )
     });
@@ -192,7 +192,7 @@ export async function createRequest({
     min_ial: data.min_ial,
     timeout: data.timeout,
     data_request_list: data_request_list_to_blockchain,
-    message_hash: await utils.hash(data.request_message)
+    message_hash: utils.hash(data.request_message)
   };
   let [success, height] = await utils.updateChain('CreateRequest', dataToBlockchain, nonce);
   if(!success) return false;
@@ -245,7 +245,7 @@ export async function createRequest({
 
 export async function getIdpMqDestination(data) {
   return await utils.queryChain('GetMsqDestination', {
-    hash_id: await utils.hash(data.namespace + ':' + data.identifier),
+    hash_id: utils.hash(data.namespace + ':' + data.identifier),
     min_ial: data.min_ial
   });
 }

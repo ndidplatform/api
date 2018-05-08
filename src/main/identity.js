@@ -19,7 +19,7 @@ export async function createNewIdentity(data) {
     let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
     registerMqDestination({
       users: [{
-        hash_id: await utils.hash(namespace + ':' + identifier),
+        hash_id: utils.hash(namespace + ':' + identifier),
         //TODO
         //where to get this value?, is it tie to IDP or tie to each identity??
         ial: 3

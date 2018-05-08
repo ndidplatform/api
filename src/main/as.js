@@ -94,7 +94,7 @@ async function checkIntegrity(requestId) {
   let msgBlockchain = await common.getRequest({ requestId });
   let message = mqReceivingQueue[requestId];
 
-  let valid = msgBlockchain.messageHash === (await utils.hash(message.request_message));
+  let valid = msgBlockchain.messageHash === utils.hash(message.request_message);
   if(!valid) {
     console.error(
       'Mq and blockchain not matched!!',
