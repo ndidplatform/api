@@ -1,5 +1,6 @@
 import * as utils from './utils';
 import * as config from '../config';
+import * as tendermint from '../tendermint/ndid';
 
 var init = false;
 
@@ -8,10 +9,11 @@ export async function initNDID(public_key) {
     console.error('NDID already exist.');
     return false;
   }
-  init = await utils.updateChain(
+  init = await tendermint.transact(
     'InitNDID',
-    { public_key },
-    utils.getNonce()
+    { public_key, node_id: 'NDID' },
+    utils.getNonce(),
+    'NDID'
   );
   return init;
 }
@@ -22,9 +24,10 @@ export async function registerNode(data) {
     public_key,
     role
   } = data;
-  return await utils.updateChain(
+  return await tendermint.transact(
     'RegisterNode',
     data,
-    utils.getNonce()
+    utils.getNonce(),
+    'NDID'
   );
 }

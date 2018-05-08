@@ -1,36 +1,39 @@
 import fetch from 'node-fetch';
 import fs from 'fs';
+import path from 'path';
 
 import * as config from '../config';
 
 async function addKey(role, index) {
   let node_id = role + index.toString();
-  let filePath = role + '/' + node_id;
+  let filePath = path.join(__dirname, '..', 'devKey', role, node_id + '.pub');
   fetch(`http://localhost:${config.serverPort}/ndid/registerNode`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      public_key: fs.readFileSync('../devKey/' + filePath + '.pub','utf8').toString(),
+      public_key: fs.readFileSync(filePath,'utf8').toString(),
       node_id,
       role
     })
   });
 }
 
-async function init() {
-  let response = await fetch(process.env.API_ADDRESS + '/ndid/initNDID', {
+export async function init() {
+  let filePath = path.join(__dirname, '..', 'devKey', 'ndid', 'ndid.pub');
+  let response = await fetch(`http://localhost:${config.serverPort}/ndid/initNDID`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      public_key: fs.readFileSync('../devKey/ndid/ndid.pub','utf8').toString()
+      public_key: fs.readFileSync(filePath,'utf8').toString()
     })
   });
-  if(await response.text() !== 'true') {
-    console.error('Cannot initialize NDID master key');
+  let result = await response.text();
+  if(result !== 'true') {
+    console.error('Cannot initialize NDID master key',result);
     return;
   }
 
@@ -44,5 +47,3 @@ async function init() {
     process.exit();
   });
 }
-
-init();

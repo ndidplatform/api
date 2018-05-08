@@ -7,8 +7,8 @@ export const mqRegister = {
 export const asID = process.env.AS_ID || null;
 
 export const DEFAULT_TENDERMENT_PORT = (() => {
-  if (process.env.ROLE === 'rp') return '45000';
-  if (process.env.ROLE === 'idp') return '45001';
+  if (process.env.ROLE === 'idp' || process.env.ROLE === 'ndid') return '45000';
+  if (process.env.ROLE === 'rp') return '45001';
   if (process.env.ROLE === 'as') return '45002';
 })();
 
