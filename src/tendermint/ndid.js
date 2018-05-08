@@ -1,23 +1,28 @@
 import * as tendermintClient from './client';
 
-function retrieveResult(obj, isQuery) {
-  if (obj.error) {
-    console.error(obj.error);
-    return [obj.error, -1];
+function getQueryResult(response) {
+  if (response.error) {
+    console.error(response.error);
+    return [response.error, -1];
   }
 
-  if (isQuery) {
-    if (obj.result.response.log === 'not found') {
-      return [undefined, -1];
-    }
-    let result = Buffer.from(obj.result.response.value, 'base64').toString();
-    return [JSON.parse(result), parseInt(obj.result.response.height)];
+  if (response.result.response.log === 'not found') {
+    return [undefined, -1];
+  }
+  let result = Buffer.from(response.result.response.value, 'base64').toString();
+  return [JSON.parse(result), parseInt(response.result.response.height)];
+}
+
+function getTransactResult(response) {
+  if (response.error) {
+    console.error(response.error);
+    return [response.error, -1];
   }
 
-  if (obj.result.deliver_tx.log !== 'success') {
-    console.error('Update chain failed:', obj);
+  if (response.result.deliver_tx.log !== 'success') {
+    console.error('Update chain failed:', response);
   }
-  return [obj.result.deliver_tx.log === 'success', obj.result.height];
+  return [response.result.deliver_tx.log === 'success', response.result.height];
 }
 
 export async function query(fnName, data, requireHeight) {
@@ -25,8 +30,10 @@ export async function query(fnName, data, requireHeight) {
 
   try {
     const response = await tendermintClient.abciQuery(queryData);
-    const [value, currentHeight] = retrieveResult(response, true);
-    if (requireHeight) return [value, currentHeight];
+    const [value, currentHeight] = getQueryResult(response);
+    if (requireHeight) {
+      return [value, currentHeight];
+    }
     return value;
   } catch (error) {
     // TODO: error handling
@@ -39,7 +46,7 @@ export async function transact(fnName, data, nonce) {
 
   try {
     const response = await tendermintClient.broadcastTxCommit(tx);
-    return retrieveResult(response);
+    return getTransactResult(response);
   } catch (error) {
     // TODO: error handling
     throw error;
