@@ -31,7 +31,7 @@ export async function init() {
       public_key: fs.readFileSync(filePath,'utf8').toString()
     })
   });
-  let result = await response.text();
+  let [result, height] = await response.json();
   if(result !== 'true') {
     console.error('Cannot initialize NDID master key',result);
     return;
