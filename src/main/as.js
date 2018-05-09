@@ -9,11 +9,11 @@ import * as mq from '../mq';
 import * as utils from './utils';
 import * as config from '../config';
 import * as common from '../main/common';
+import * as db from '../db';
 
 const privKey = 'AS_PrivateKey';
-let mqReceivingQueue = {};
-let blockHeight = 0;
-let requestIdsInTendermintBlock = {};
+
+db.put('as-blockHeight', 'blockHeight', 0);
 
 let callbackUrl = null;
 try {
@@ -100,7 +100,7 @@ async function checkIntegrity(requestId) {
   console.log('checkIntegrity');
 
   let msgBlockchain = await common.getRequest({ requestId });
-  let message = mqReceivingQueue[requestId];
+  let message = db.get('as-mqReceivingQueue', requestId);
 
   let valid = msgBlockchain.messageHash === utils.hash(message.request_message);
   if (!valid) {
@@ -139,7 +139,7 @@ async function checkIntegrity(requestId) {
     else valid = false;
   });
 
-  delete mqReceivingQueue[requestId];
+  db.del('as-mqReceivingQueue', requestId);
   return [
     valid,
     {
@@ -153,17 +153,19 @@ async function checkIntegrity(requestId) {
 async function handleMessageFromQueue(request) {
   console.log('AS receive message from mq:', request);
   let requestJson = JSON.parse(request);
-  mqReceivingQueue[requestJson.request_id] = requestJson;
+  db.put('as-mqReceivingQueue', requestJson.request_id, requestJson);
 
+  const blockHeight = db.get('as-blockHeight', 'blockHeight');
   if (blockHeight < requestJson.height) {
-    if (!requestIdsInTendermintBlock[requestJson.height])
-      requestIdsInTendermintBlock[requestJson.height] = [
-        requestJson.request_id,
-      ];
-    else
-      requestIdsInTendermintBlock[requestJson.height].push(
+    const requestIdsInTendermintBlock = db.get('as-requestIdsInTendermintBlock', requestJson.height);
+    if (!requestIdsInTendermintBlock) {
+      db.put('as-requestIdsInTendermintBlock', requestJson.height, [requestJson.request_id]);
+    } else {
+      requestIdsInTendermintBlock.push(
         requestJson.request_id
       );
+      db.put('as-requestIdsInTendermintBlock', requestJson.height, requestIdsInTendermintBlock);
+    }
     return;
   }
 
@@ -205,21 +207,23 @@ async function handleMessageFromQueue(request) {
 export async function handleTendermintNewBlockEvent(error, result) {
   let height = tendermint.getHeightFromTendermintNewBlockEvent(result);
 
+  const blockHeight = db.get('as-blockHeight', 'blockHeight');
   if (height !== blockHeight + 1) {
     //TODO handle missing events
   }
-  blockHeight = height;
+  db.put('as-blockHeight', 'blockHeight', height);
 
   //msq arrive before newBlock event
-  if (requestIdsInTendermintBlock[height]) {
-    let requestIdsToCheck = requestIdsInTendermintBlock[height];
-    delete requestIdsInTendermintBlock[height];
-
-    requestIdsToCheck.forEach(async function(requestId) {
+  const requestIdsInTendermintBlock = db.get('as-requestIdsInTendermintBlock', height);
+  if (requestIdsInTendermintBlock) {
+    requestIdsInTendermintBlock.forEach(async function(requestId) {
       let valid = await checkIntegrity(requestId);
-      if (valid) notifyByCallback(mqReceivingQueue[requestId]);
-      delete mqReceivingQueue[requestId];
+      const message = db.get('as-mqReceivingQueue', requestId);
+      if (valid) notifyByCallback(message);
+      db.del('as-mqReceivingQueue', requestId);
     });
+
+    db.del('as-requestIdsInTendermintBlock', height);
   }
 }
 
