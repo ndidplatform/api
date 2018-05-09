@@ -13,28 +13,24 @@ export function hash(stringToHash) {
 }
 
 export function privateEncrypt(privateKey, plaintext) {
-  if(typeof privateKey === 'string') privateKey = Buffer.from(privateKey, 'utf8');
   const buffer = Buffer.from(plaintext, 'utf8');
   const encrypted = crypto.privateEncrypt(privateKey, buffer);
   return encrypted.toString('base64');
 }
 
 export function privateDecrypt(privateKey, ciphertext) {
-  if(typeof privateKey === 'string') privateKey = Buffer.from(privateKey, 'utf8');
   const buffer = Buffer.from(ciphertext, 'base64');
   const decrypted = crypto.privateDecrypt(privateKey, buffer);
   return decrypted.toString('utf8');
 }
 
 export function publicEncrypt(publicKey, plaintext) {
-  if(typeof publicKey === 'string') publicKey = Buffer.from(publicKey, 'utf8');
   const buffer = Buffer.from(plaintext, 'utf8');
   const encrypted = crypto.publicEncrypt(publicKey, buffer);
   return encrypted.toString('base64');
 }
 
 export function publicDecrypt(publicKey, ciphertext) {
-  if(typeof publicKey === 'string') publicKey = Buffer.from(publicKey, 'utf8');
   const buffer = Buffer.from(ciphertext, 'base64');
   const decrypted = crypto.publicDecrypt(publicKey, buffer);
   return decrypted.toString('utf8');
