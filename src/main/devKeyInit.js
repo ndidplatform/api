@@ -7,7 +7,7 @@ import * as config from '../config';
 async function addKey(role, index) {
   let node_id = role + index.toString();
   let filePath = path.join(__dirname, '..', 'devKey', role, node_id + '.pub');
-  fetch(`http://localhost:${config.serverPort}/ndid/registerNode`, {
+  await fetch(`http://localhost:${config.serverPort}/ndid/registerNode`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -32,18 +32,18 @@ export async function init() {
     })
   });
   let [result, height] = await response.json();
-  if(result !== 'true') {
+  if(!result) {
     console.error('Cannot initialize NDID master key',result);
-    return;
+    process.exit();
   }
 
+  let promiseArr = [];
   ['rp','idp','as'].forEach(async (role) => {
-    await Promise.all([
-      addKey(role, 1),
-      addKey(role, 2),
-      addKey(role, 3)
-    ]);
-    console.log('Key initialize done');
-    process.exit();
+    promiseArr.push(addKey(role, 1));
+    promiseArr.push(addKey(role, 2));
+    promiseArr.push(addKey(role, 3));
   });
+  await Promise.all(promiseArr);
+  console.log('Key initialize done');
+  process.exit();
 }
