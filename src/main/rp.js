@@ -16,7 +16,7 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
     //all tx
     let requestId = transactions[i].args.request_id; //derive from tx;
 
-    const callbackUrl = db.get('rp-callbackUrls', requestId);
+    const callbackUrl = await db.get('callbackUrls', requestId);
     //this request is not concern this RP
     if (!callbackUrl) continue;
 
@@ -40,16 +40,16 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
 
       // Clear callback url mapping when the request is no longer going to have further events
       if (request.status === 'rejected') {
-        db.del('rp-callbackUrls', requestId);
+        db.del('callbackUrls', requestId);
       }
 
-      const requestData = db.get('rp-requestsData', requestId);
+      const requestData = await db.get('requestsData', requestId);
       if (requestData) {
         if (request.status === 'completed') {
           // Send request to AS when completed
           setTimeout(function() {
             sendRequestToAS(requestData);
-            db.del('rp-requestsData', requestId);
+            db.del('requestsData', requestId);
           }, 1000);
         }
       }
@@ -184,7 +184,7 @@ export async function createRequest({
   ...data
 }) {
   //existing reference_id, return
-  const requestId = db.get('rp-requestReferenceMapping', reference_id);
+  const requestId = await db.get('requestReferenceMapping', reference_id);
   if (requestId) {
     return requestId;
   }
@@ -218,7 +218,7 @@ export async function createRequest({
 
   //save request data to DB to send to AS via msq when authen complete
   if (data_request_list != null && data_request_list.length !== 0) {
-    db.put('rp-requestsData', request_id, {
+    await db.put('requestsData', request_id, {
       namespace,
       identifier,
       reference_id,
@@ -264,8 +264,8 @@ export async function createRequest({
   });
 
   //maintain mapping
-  db.put('rp-requestReferenceMapping', reference_id, request_id);
-  db.put('rp-callbackUrls', request_id, data.callback_url);
+  await db.put('requestReferenceMapping', reference_id, request_id);
+  await db.put('callbackUrls', request_id, data.callback_url);
   return request_id;
 }
 
@@ -297,7 +297,7 @@ async function handleMessageFromQueue(data) {
   data = JSON.parse(data);
   if (data.data) {
     try {
-      const callbackUrl = db.get('rp-callbackUrls', data.request_id);
+      const callbackUrl = await db.get('callbackUrls', data.request_id);
 
       await fetch(callbackUrl, {
         method: 'POST',
@@ -309,7 +309,7 @@ async function handleMessageFromQueue(data) {
           as_id: data.as_id,
         }),
       });
-      db.del('rp-callbackUrls', data.request_id);
+      db.del('callbackUrls', data.request_id);
     } catch (error) {
       console.log(
         'Cannot send callback to client application with the following error:',
@@ -318,7 +318,7 @@ async function handleMessageFromQueue(data) {
     }
   }
 
-  db.put('rp-dataFromAS', data.request_id, {
+  await db.put('dataFromAS', data.request_id, {
     data: data.data,
     as_id: data.as_id,
   });
