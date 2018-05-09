@@ -40,7 +40,7 @@ export const mqRegister = {
   ip: process.env.MQ_CONTACT_IP || 'localhost',
   port: (process.env.MQ_BINDING_PORT == null 
     ? DEFAULT_MQ_BINDING_PORT 
-    : process.env.MQ_BINDING_PORT),
+    : parseInt(process.env.MQ_BINDING_PORT)),
 };
 
 export const PRIVATE_KEY_PATH = 
