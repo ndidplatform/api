@@ -4,6 +4,8 @@ import schemas from './jsonSchemas';
 
 const ajv = new Ajv();
 
+ajv.addSchema(schemas.defsSchema, 'defs');
+
 ajv.addFormat(
   'url-with-local-ip',
   '^' +

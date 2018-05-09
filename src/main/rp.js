@@ -217,7 +217,7 @@ export async function createRequest({
   }
 
   //save request data to DB to send to AS via msq when authen complete
-  if (data_request_list.length !== 0) {
+  if (data_request_list != null && data_request_list.length !== 0) {
     db.put('rp-requestsData', request_id, {
       namespace,
       identifier,
