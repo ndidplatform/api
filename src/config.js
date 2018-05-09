@@ -1,3 +1,5 @@
+import path from 'path';
+
 export const serverPort = process.env.SERVER_PORT || 8080;
 export const role = process.env.ROLE;
 export const asID = process.env.AS_ID || null;
@@ -36,3 +38,8 @@ export const mqRegister = {
     ? DEFAULT_MQ_BINDING_PORT 
     : process.env.MQ_BINDING_PORT),
 };
+
+export const PRIVATE_KEY_PATH = 
+  process.env.PRIVATE_KEY_PATH == null
+  ? path.join(__dirname, '..', 'devKey', role, nodeId)
+  : process.env.PRIVATE_KEY_PATH;

@@ -44,6 +44,6 @@ export async function init() {
     promiseArr.push(addKey(role, 3));
   });
   await Promise.all(promiseArr);
-  console.log('Key initialize done');
+  console.log('========= Key initialize done =========');
   process.exit();
 }

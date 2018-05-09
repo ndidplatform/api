@@ -16,7 +16,7 @@ function getQueryResult(response) {
 }
 
 function getTransactResult(response) {
-  console.log('===>',response)
+  //console.log('===>',response)
   if (response.error) {
     console.error(response.error);
     return [response.error, -1];
@@ -46,7 +46,7 @@ export async function query(fnName, data, requireHeight) {
 
 export async function transact(fnName, data, nonce) {
   const tx = fnName + '|' + JSON.stringify(data) + '|' + nonce + '|' + 
-  utils.createSignature(data,nonce) + '|' + config.nodeId;
+  await utils.createSignature(data,nonce) + '|' + config.nodeId;
 
   try {
     const response = await tendermintClient.broadcastTxCommit(tx);
