@@ -22,7 +22,13 @@
 
     to show in an output before starting `ndid-api` process.
 
-3.  Run a server
+3.  Add development keys to the system (for development mode only)
+
+    ```
+    TENDERMINT_IP=$IP TENDERMINT_PORT=$PORT npm run initDevKey
+    ```
+
+4.  Run a server
 
     ```sh
     ROLE=$ROLE \
@@ -38,6 +44,7 @@
 * `MQ_BINDING_PORT`: A port to bind message queue [Default: `5555`]
 * `SERVER_PORT`: API server port [Default: `8080`]
 * `AS_ID`: AS ID for register service (AS only)
+* `PRIVATE_KEY_PATH`: Path to private key (if call back to create signature is not set) [Default: using pre-generated development key]
 
 **_Examples_**
 

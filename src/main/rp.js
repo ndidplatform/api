@@ -144,6 +144,38 @@ async function sendRequestToAS(requestData) {
   }
 }
 
+export async function getIdpsMsqDestination({
+  namespace,
+  identifier,
+  min_ial,
+  idp_list
+}) {
+  let foundedIdpList = await getIdpMqDestination({
+    namespace,
+    identifier,
+    min_ial: min_ial,
+  });
+
+  let nodeIdList = foundedIdpList ? foundedIdpList.node_id || [] : [];
+  let receivers = [];
+
+  //prepare receiver for mq
+  for (let i in nodeIdList) {
+    let nodeId = nodeIdList[i];
+    //filter only those in idp_list
+    if(idp_list != null && idp_list.length !== 0) {
+      if(idp_list.indexOf(nodeId) === -1) continue;
+    }
+    let [ip, port] = nodeId.split(':');
+    receivers.push({
+      ip,
+      port,
+      ...(await common.getNodePubKey(nodeId)),
+    });
+  }
+  return receivers;
+}
+
 export async function createRequest({
   namespace,
   identifier,
@@ -155,6 +187,18 @@ export async function createRequest({
   const requestId = db.get('rp-requestReferenceMapping', reference_id);
   if (requestId) {
     return requestId;
+  }
+
+  let receivers = await getIdpsMsqDestination({
+    namespace,
+    identifier,
+    min_ial: data.min_ial ? data.min_ial : 1,
+    idp_list: data.idp_list
+  });
+
+  if(receivers.length === 0) {
+    console.error('NO IDP FOUND');
+    return false;
   }
 
   let nonce = utils.getNonce();
@@ -205,44 +249,18 @@ export async function createRequest({
   );
   if (!success) return false;
 
-  //query node_id and public_key to send data via mq
-  getIdpMqDestination({
+  //send via message queue
+  mq.send(receivers, {
     namespace,
     identifier,
-    min_ial: data.min_ial,
-  }).then(async (idpList) => {
-    let nodeIdList = idpList ? idpList.node_id || [] : [];
-    let receivers = [];
-    //prepare data for mq
-    for (let i in nodeIdList) {
-      let nodeId = nodeIdList[i];
-      let [ip, port] = nodeId.split(':');
-      receivers.push({
-        ip,
-        port,
-        ...(await common.getNodePubKey(nodeId)),
-      });
-    }
-
-    //TODO filter receivers by idp_list
-    if (receivers.length === 0) {
-      //TODO handle when this user not on board or all IDPs in idp_list
-      //not associate with this user
-      console.error('NO IDP FOUND');
-    }
-    //send via message queue
-    mq.send(receivers, {
-      namespace,
-      identifier,
-      request_id,
-      min_idp: data.min_idp ? data.min_idp : 1,
-      min_aal: data.min_aal ? data.min_aal : 1,
-      min_ial: data.min_ial ? data.min_ial : 1,
-      timeout: data.timeout,
-      data_request_list: data_request_list,
-      request_message: data.request_message,
-      height,
-    });
+    request_id,
+    min_idp: data.min_idp ? data.min_idp : 1,
+    min_aal: data.min_aal ? data.min_aal : 1,
+    min_ial: data.min_ial ? data.min_ial : 1,
+    timeout: data.timeout,
+    data_request_list: data_request_list,
+    request_message: data.request_message,
+    height,
   });
 
   //maintain mapping
