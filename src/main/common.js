@@ -3,8 +3,8 @@ import TendermintEvent from '../tendermint/event';
 import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';
-import * as utils from './utils';
-import { role } from '../config';
+import * as utils from '../utils';
+import { role, nodeId } from '../config';
 
 const tendermintEvent = new TendermintEvent();
 tendermintEvent.on('newBlock#event', (error, result) => {
@@ -59,4 +59,16 @@ export async function addNodePubKey(data) {
 */
 export async function getNodePubKey(node_id) {
   return await tendermint.query('GetNodePublicKey', { node_id });
+}
+
+export async function getMsqAddress(node_id) {
+  return await tendermint.query('GetMsqAddress', { node_id });
+}
+
+export async function registerMsqAddress({ip, port}) {
+  return await tendermint.transact('RegisterMsqAddress', {
+    ip,
+    port,
+    node_id: nodeId
+  }, utils.getNonce());
 }

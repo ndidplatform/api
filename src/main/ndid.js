@@ -1,4 +1,4 @@
-import * as utils from './utils';
+import * as utils from '../utils';
 import * as config from '../config';
 import * as tendermint from '../tendermint/ndid';
 

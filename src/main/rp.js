@@ -2,13 +2,11 @@ import fetch from 'node-fetch';
 import { eventEmitter } from '../mq';
 
 import * as tendermint from '../tendermint/ndid';
-import * as utils from './utils';
+import * as utils from '../utils';
 import * as mq from '../mq';
 import * as config from '../config';
 import * as common from '../main/common';
 import * as db from '../db';
-
-const privKey = 'RP_PrivateKey';
 
 export const handleTendermintNewBlockEvent = async (error, result) => {
   let transactions = tendermint.getTransactionListFromTendermintNewBlockEvent(
@@ -166,13 +164,16 @@ export async function getIdpsMsqDestination({
     if(idp_list != null && idp_list.length !== 0) {
       if(idp_list.indexOf(nodeId) === -1) continue;
     }
-    let [ip, port] = nodeId.split(':');
+    
+    let { ip, port } = await common.getMsqAddress(nodeId);
+
     receivers.push({
       ip,
       port,
       ...(await common.getNodePubKey(nodeId)),
     });
   }
+  console.log(receivers);
   return receivers;
 }
 
@@ -202,7 +203,7 @@ export async function createRequest({
   }
 
   let nonce = utils.getNonce();
-  let request_id = utils.createRequestId(privKey, data, nonce);
+  let request_id = utils.createRequestId();
 
   let data_request_list_to_blockchain = [];
   for (let i in data_request_list) {
@@ -335,6 +336,7 @@ export async function init() {
     node_id,
     public_key: 'very_secure_public_key_for_rp'
   });*/
+  common.registerMsqAddress(config.mqRegister);
 }
 
 if (config.role === 'rp') {

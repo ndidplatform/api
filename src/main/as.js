@@ -6,7 +6,7 @@ import { eventEmitter } from '../mq';
 
 import * as tendermint from '../tendermint/ndid';
 import * as mq from '../mq';
-import * as utils from './utils';
+import * as utils from '../utils';
 import * as config from '../config';
 import * as common from '../main/common';
 import * as db from '../db';
@@ -190,7 +190,7 @@ async function handleMessageFromQueue(request) {
     // When received data
     //let data = 'mock data';
     let as_id = config.asID;
-    let signature = 'sign(' + data + ',' + privKey + ')';
+    let signature = await utils.createSignature(data);
     // AS node encrypts the response and sends it back to RP via NSQ.
     sendDataToRP({
       rp_node_id: requestJson.rp_node_id,
@@ -242,15 +242,15 @@ export async function init() {
   // In production environment, this should be done with register service process.
   // TODO
   //register node id, which is substituted with ip,port for demo
-  let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
-  process.env.nodeId = node_id;
+  //let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
+  //process.env.nodeId = node_id;
   // Hard code add back statement service for demo
   registerServiceDestination({
     as_id: config.asID,
     service_id: 'bank_statement',
-    node_id: node_id,
+    node_id: config.nodeId,
   });
-
+  common.registerMsqAddress(config.mqRegister);
   /*common.addNodePubKey({
     node_id,
     public_key: 'very_secure_public_key_for_as'

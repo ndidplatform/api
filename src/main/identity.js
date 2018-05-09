@@ -1,5 +1,5 @@
 import * as tendermint from '../tendermint/ndid';
-import * as utils from './utils';
+import * as utils from '../utils';
 import * as config from '../config';
 
 export async function createNewIdentity(data) {
@@ -17,7 +17,7 @@ export async function createNewIdentity(data) {
     //check if this call is valid
 
     //register node id, which is substituted with ip,port for demo
-    let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
+    //let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
     registerMqDestination({
       users: [
         {
@@ -27,7 +27,7 @@ export async function createNewIdentity(data) {
           ial: 3,
         },
       ],
-      node_id,
+      node_id: config.nodeId,
     });
     return true;
   } catch (error) {

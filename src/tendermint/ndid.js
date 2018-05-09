@@ -1,5 +1,5 @@
 import * as tendermintClient from './client';
-import * as utils from '../main/utils';
+import * as utils from '../utils';
 import * as config from '../config';
 
 function getQueryResult(response) {

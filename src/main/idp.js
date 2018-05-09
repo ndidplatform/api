@@ -4,13 +4,11 @@ import fetch from 'node-fetch';
 
 import * as tendermint from '../tendermint/ndid';
 import * as common from '../main/common';
-import * as utils from './utils';
+import * as utils from '../utils';
 import * as config from '../config';
 import * as db from '../db';
 
 import { eventEmitter } from '../mq';
-
-const privKey = 'IDP_PrivateKey';
 
 db.put('idp-blockHeight', 'blockHeight', 0);
 
@@ -184,6 +182,7 @@ export async function init() {
     node_id,
     public_key: 'very_secure_public_key_for_idp'
   });*/
+  common.registerMsqAddress(config.mqRegister);
 }
 
 if (config.role === 'idp') {

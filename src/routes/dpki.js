@@ -1,6 +1,6 @@
 import express from 'express';
 import * as abciAppCommonApi from '../main/common';
-import * as utils from '../main/utils';
+import * as utils from '../utils';
 
 import validate from './validator';
 

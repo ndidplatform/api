@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import zmq from 'zeromq';
 import * as config from '../config';
-import * as utils from '../main/utils';
+import * as utils from '../utils';
 
 const receivingSocket = zmq.socket('pull');
 receivingSocket.bindSync('tcp://*:' + config.mqRegister.port);
@@ -11,8 +11,7 @@ export const eventEmitter = new EventEmitter();
 receivingSocket.on('message', async function(jsonMessageStr) {
   const jsonMessage = JSON.parse(jsonMessageStr);
 
-  // TODO Retrieve private key and proper decrypt
-  let decrypted = utils.decryptAsymetricKey(null, jsonMessage);
+  let decrypted = utils.decryptAsymetricKey(jsonMessage);
   eventEmitter.emit('message', decrypted);
 });
 
