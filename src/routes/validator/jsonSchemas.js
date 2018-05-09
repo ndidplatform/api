@@ -58,7 +58,11 @@ export default {
               minimum: 1,
             },
           },
-          callback_url: { type: 'string', format: 'url-with-local-ip' },
+          callback_url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
           data_request_list: {
             type: 'array',
             items: {
@@ -98,7 +102,11 @@ export default {
     '/idp/callback': {
       body: {
         properties: {
-          url: { type: 'string', format: 'url-with-local-ip' },
+          url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
         },
         required: ['url'],
       },
@@ -136,7 +144,11 @@ export default {
     '/as/callback': {
       body: {
         properties: {
-          url: { type: 'string', format: 'url-with-local-ip' },
+          url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
         },
         required: ['url'],
       },
@@ -148,7 +160,11 @@ export default {
           service_name: { type: 'string', minLength: 1 },
           min_ial: { type: 'integer', minimum: 1 },
           min_aal: { type: 'integer', minimum: 1 },
-          url: { type: 'string', format: 'url-with-local-ip' },
+          url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
         },
         required: ['service_id'],
       },
@@ -170,7 +186,11 @@ export default {
     '/dpki/node/register_callback': {
       body: {
         properties: {
-          url: { type: 'string', format: 'url-with-local-ip' },
+          url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
         },
         required: ['url'],
       },
@@ -178,7 +198,11 @@ export default {
     '/dpki/node/register_callback_master': {
       body: {
         properties: {
-          url: { type: 'string', format: 'url-with-local-ip' },
+          url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
         },
         required: ['url'],
       },

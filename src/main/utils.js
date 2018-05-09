@@ -1,40 +1,26 @@
+import crypto from 'crypto';
+import fs from 'fs';
+import * as config from '../config';
 import fetch from 'node-fetch';
 
 let nonce = Date.now() % 10000;
-const logicUrl = process.env.TENDERMINT_ADDRESS || ('http://localhost:' + defaultTendermintPort()) ;
-  
-function defaultTendermintPort() {
-  if(process.env.ROLE === 'rp') return '45000';
-  if(process.env.ROLE === 'idp') return '45001';
-  if(process.env.ROLE === 'as') return '45002';
+let signatureCallback = false;
+
+export function getNonce() {
+  // TODO
+  return (nonce++).toString();
 }
 
-function retrieveResult(obj, isQuery) {
-  if (obj.error) {
-    console.error(obj.error);
-    return obj.error;
-  }
-  if (isQuery) {
-    let result = Buffer.from(obj.result.response.value, 'base64').toString();
-    return JSON.parse(result);
-  } else if (obj.result.deliver_tx.log === 'success') return true;
-  else {
-    console.error('Update chain failed:', obj);
-    return false;
-  }
+export function hash(stringToHash) {
+  return crypto.createHash('sha256').update(stringToHash, 'utf8').digest().toString('base64');
 }
 
-export async function hash(stringToHash) {
-  // TODO implement secure hashing
-  return 'Hash(' + stringToHash + ')';
-}
-
-export async function decryptAsymetricKey(key, message) {
+export function decryptAsymetricKey(key, message) {
   // TODO implement decryption
   return message.slice(message.indexOf('(') + 1, message.length - 1);
 }
 
-export async function encryptAsymetricKey(key, message) {
+export function encryptAsymetricKey(key, message) {
   // TODO implement encryption
   return 'Encrypt_with_' + key + '(' + message + ')';
 }
@@ -44,38 +30,36 @@ export function generateIdentityProof(data) {
   return '<some-voodoo-happen-here>';
 }
 
-export async function createRequestId(privkey, data, nonce) {
-  // TODO implement real request_id generating algorithm
-  return await hash(
-    'Concat_with_nonce_' +
-      nonce +
-      '(' +
-      Buffer.from(JSON.stringify(data)).toString('base64') +
-      ')'
-  );
+export function setSignatureCallback(url) {
+  signatureCallback = url;
 }
 
-export function getNonce() {
-  // TODO
-  return (nonce++).toString();
+async function createSignatureByCallback() {
+  //TODO implement this properly
+  //MUST be base64 format
+  let response = await fetch(signatureCallback, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      node_id: config.nodeId,
+      //request_message: 'string',
+      //request_hash: 'string',
+      hash_method: 'SHA256',
+      //key_type: 'string',
+      //sign_method: 'string'
+    })
+  });
+  return await response.text();
 }
 
-export async function queryChain(fnName, data) {
-  let encoded = Buffer.from(fnName + '|' + JSON.stringify(data)).toString(
-    'base64'
-  );
-
-  let result = await fetch(logicUrl + '/abci_query?data="' + encoded + '"');
-  return retrieveResult(await result.json(), true);
+export async function createSignature(data, nonce) {
+  if(signatureCallback) return await createSignatureByCallback(JSON.stringify(data) + nonce);
+  let privKey = fs.readFileSync(config.PRIVATE_KEY_PATH,'utf8');
+  return crypto.createSign('SHA256').update(JSON.stringify(data) + nonce).sign(privKey,'base64');
 }
 
-export async function updateChain(fnName, data, nonce) {
-  let encoded = Buffer.from(
-    fnName + '|' + JSON.stringify(data) + '|' + nonce
-  ).toString('base64');
-
-  let result = await fetch(
-    logicUrl + '/broadcast_tx_commit?tx="' + encoded + '"'
-  );
-  return retrieveResult(await result.json());
+export function createRequestId(privkey, data, nonce) {
+  return crypto.randomBytes(32).toString('hex');
 }

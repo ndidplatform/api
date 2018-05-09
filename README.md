@@ -22,7 +22,13 @@
 
     to show in an output before starting `ndid-api` process.
 
-3.  Run a server
+3.  Add development keys to the system (for development mode only)
+
+    ```
+    TENDERMINT_IP=$IP TENDERMINT_PORT=$PORT npm run initDevKey
+    ```
+
+4.  Run a server
 
     ```sh
     ROLE=$ROLE \
@@ -32,13 +38,13 @@
 **Environment variable options**
 
 * `ROLE`: Can be `idp`, `rp`, or `as`
-* `TENDERMINT_ADDRESS`: Address to contact `ndid-smart-contract` [Default: `http://localhost:45000` for IDP, `http://localhost:45001` for RP, and `http://localhost:45002` for AS]
+* `TENDERMINT_IP`: IP Address to contact tendermint RPC [Default: `localhost`]
+* `TENDERMINT_PORT`: Port to contact tendermint RPC [Default: `45000` for IDP, `45001` for RP, and `45002` for AS]
 * `MQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted [Required]
 * `MQ_BINDING_PORT`: A port to bind message queue [Default: `5555`]
 * `SERVER_PORT`: API server port [Default: `8080`]
-* `ABCI_APP_CALLBACK_PORT`: port which `ndid-smart-contract` send callback [Default: `3001`] (must match `ndid-smart-contract`)
-* `ABCI_APP_CALLBACK_PATH`: path which `ndid-smart-contract` send callback [Default: `/callback`] (must match `ndid-smart-contract`)
 * `AS_ID`: AS ID for register service (AS only)
+* `PRIVATE_KEY_PATH`: Path to private key (if call back to create signature is not set) [Default: using pre-generated development key]
 
 **_Examples_**
 
@@ -73,5 +79,5 @@
 
 Don't forget to
 
-1.  Set `SERVER_PORT` and `ABCI_APP_CALLBACK_PORT` when running on the same machine to avoid port collision.
-2.  Set `TENDERMINT_ADDRESS` when running `ndid-smart-contract` on another machine.
+1.  Set `SERVER_PORT` when running on the same machine to avoid port collision.
+2.  Set `TENDERMINT_IP` and/or `TENDERMINT_PORT` when running `smart-contract`/`tendermint` on another machine.
