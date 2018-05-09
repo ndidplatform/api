@@ -47,7 +47,7 @@ export const getCallbackUrl = () => {
 async function sendDataToRP(data) {
   let receivers = [];
   let nodeId = data.rp_node_id;
-  let [ip, port] = nodeId.split(':');
+  let { ip, port } = await common.getMsqAddress(nodeId);
   receivers.push({
     ip,
     port,

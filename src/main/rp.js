@@ -108,7 +108,7 @@ async function getASReceiverList(data_request) {
         });
 
         let nodeId = node.node_id;
-        let [ip, port] = nodeId.split(':');
+        let { ip, port } = await common.getMsqAddress(nodeId);
         return {
           ip,
           port,
@@ -122,10 +122,10 @@ async function getASReceiverList(data_request) {
   return receivers;
 }
 
-async function sendRequestToAS(requestData) {
+async function sendRequestToAS(requestData) { 
   // console.log(requestData);
   // node id, which is substituted with ip,port for demo
-  let rp_node_id = process.env.nodeId;
+  let rp_node_id = config.nodeId;
   if (requestData.data_request_list != undefined) {
     requestData.data_request_list.forEach(async (data_request) => {
       let receivers = await getASReceiverList(data_request);
@@ -173,7 +173,6 @@ export async function getIdpsMsqDestination({
       ...(await common.getNodePubKey(nodeId)),
     });
   }
-  console.log(receivers);
   return receivers;
 }
 
