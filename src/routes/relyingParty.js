@@ -57,6 +57,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
       request_timeout,
     });
 
+    if(!requestId) throw 'Cannot create request';
     res.status(200).send({ requestId });
   } catch (error) {
     console.error(error);
