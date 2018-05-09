@@ -22,7 +22,13 @@
 
     to show in an output before starting `ndid-api` process.
 
-3.  Run a server
+3.  Add development keys to the system (for development mode only)
+
+    ```
+    TENDERMINT_IP=$IP TENDERMINT_PORT=$PORT npm run initDevKey
+    ```
+
+4.  Run a server
 
     ```sh
     ROLE=$ROLE \
