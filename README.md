@@ -45,6 +45,7 @@
 * `SERVER_PORT`: API server port [Default: `8080`]
 * `AS_ID`: AS ID for register service (AS only)
 * `PRIVATE_KEY_PATH`: Path to private key (if call back to create signature is not set) [Default: using pre-generated development key]
+* `NODE_ID`: Node ID. Only when there are more than one node per role in the system. This ID tie to public key, in dev mode we have `rp1`, `rp2`, `rp3`, `idp1`, `idp2`, `idp3`, `as1`, `as2`, `as3`
 
 **_Examples_**
 
@@ -81,3 +82,4 @@ Don't forget to
 
 1.  Set `SERVER_PORT` when running on the same machine to avoid port collision.
 2.  Set `TENDERMINT_IP` and/or `TENDERMINT_PORT` when running `smart-contract`/`tendermint` on another machine.
+3.  Set `NODE_ID` when there are more than one node per role in the system.
