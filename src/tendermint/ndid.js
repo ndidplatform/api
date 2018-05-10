@@ -31,8 +31,10 @@ function getTransactResult(response) {
 export async function query(fnName, data, requireHeight) {
   const queryData = fnName + '|' + JSON.stringify(data);
 
+  const dataBase64Encoded = Buffer.from(queryData).toString('base64');
+
   try {
-    const response = await tendermintClient.abciQuery(queryData);
+    const response = await tendermintClient.abciQuery(dataBase64Encoded);
     const [value, currentHeight] = getQueryResult(response);
     if (requireHeight) {
       return [value, currentHeight];
@@ -46,10 +48,12 @@ export async function query(fnName, data, requireHeight) {
 
 export async function transact(fnName, data, nonce) {
   const tx = fnName + '|' + JSON.stringify(data) + '|' + nonce + '|' + 
-  await utils.createSignature(data,nonce) + '|' + config.nodeId;
+    await utils.createSignature(data,nonce) + '|' + config.nodeId;
+
+  const txBase64Encoded = Buffer.from(tx).toString('base64');
 
   try {
-    const response = await tendermintClient.broadcastTxCommit(tx);
+    const response = await tendermintClient.broadcastTxCommit(txBase64Encoded);
     return getTransactResult(response);
   } catch (error) {
     // TODO: error handling

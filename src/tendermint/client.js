@@ -2,15 +2,25 @@ import fetch from 'node-fetch';
 
 import { TENDERMINT_ADDRESS } from '../config';
 
-export async function abciQuery(data) {
-  const base64Encoded = Buffer.from(data).toString('base64');
+async function httpUriCall(method, params) {
+  const queryString = params.reduce((paramsString, param) => {
+    if (param.key == null || param.value == null) {
+      return paramsString;
+    }
+    const uriEncodedParamValue = encodeURIComponent(param.value);
+    if (paramsString !== '') {
+      return paramsString + `&${param.key}="${uriEncodedParamValue}"`;
+    }
+    return paramsString + `${param.key}="${uriEncodedParamValue}"`;
+  }, '');
 
-  const uriEncoded = encodeURIComponent(base64Encoded);
+  let uri = `http://${TENDERMINT_ADDRESS}/${method}`;
+  if (params.length > 0) {
+    uri = uri + `?${queryString}`;
+  }
 
   try {
-    const response = await fetch(
-      `http://${TENDERMINT_ADDRESS}/abci_query?data="${uriEncoded}"`
-    );
+    const response = await fetch(uri);
     const responseJson = await response.json();
     return responseJson;
   } catch (error) {
@@ -19,19 +29,24 @@ export async function abciQuery(data) {
   }
 }
 
-export async function broadcastTxCommit(tx) {
-  const base64Encoded = Buffer.from(tx).toString('base64');
+export function abciQuery(data) {
+  return httpUriCall('abci_query', [
+    {
+      key: 'data',
+      value: data,
+    },
+  ]);
+}
 
-  const uriEncoded = encodeURIComponent(base64Encoded);
+export function broadcastTxCommit(tx) {
+  return httpUriCall('broadcast_tx_commit', [
+    {
+      key: 'tx',
+      value: tx,
+    },
+  ]);
+}
 
-  try {
-    const response = await fetch(
-      `http://${TENDERMINT_ADDRESS}/broadcast_tx_commit?tx="${uriEncoded}"`
-    );
-    const responseJson = await response.json();
-    return responseJson;
-  } catch (error) {
-    console.error('Cannot connect to tendermint HTTP endpoint', error);
-    throw error;
-  }
+export function status() {
+  return httpUriCall('status');
 }
