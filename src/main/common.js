@@ -6,8 +6,28 @@ import * as as from './as';
 import * as utils from '../utils';
 import { role, nodeId } from '../config';
 
+export let latestBlockHeight = null;
+
 const tendermintWsClient = new TendermintWsClient();
+
+tendermintWsClient.on('connected', () => {
+  // Get latest block height
+  tendermintWsClient.getStatus();
+});
+
+tendermintWsClient.on('status', (error, result) => {
+  const blockHeight = result.latest_block_height;
+  if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
+    latestBlockHeight = blockHeight;
+  }
+});
+
 tendermintWsClient.on('newBlock#event', (error, result) => {
+  const blockHeight = result.data.data.block.header.height;
+  if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
+    latestBlockHeight = blockHeight;
+  }
+
   let handleTendermintNewBlockEvent;
   if (role === 'rp') {
     handleTendermintNewBlockEvent = rp.handleTendermintNewBlockEvent;

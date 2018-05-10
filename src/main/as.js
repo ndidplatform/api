@@ -13,8 +13,6 @@ import * as db from '../db';
 
 const privKey = 'AS_PrivateKey';
 
-db.put('blockHeight', '', 0);
-
 let callbackUrl = null;
 try {
   callbackUrl = fs.readFileSync(
@@ -155,8 +153,7 @@ async function handleMessageFromQueue(request) {
   let requestJson = JSON.parse(request);
   await db.put('mqReceivingQueue', requestJson.request_id, requestJson);
 
-  const blockHeight = await db.get('blockHeight', 'blockHeight');
-  if (blockHeight < requestJson.height) {
+  if (common.latestBlockHeight < requestJson.height) {
     const requestIdsInTendermintBlock = await db.get('requestIdsInTendermintBlock', requestJson.height);
     if (!requestIdsInTendermintBlock) {
       await db.put('requestIdsInTendermintBlock', requestJson.height, [requestJson.request_id]);
