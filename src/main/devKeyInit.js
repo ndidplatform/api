@@ -4,7 +4,7 @@ import path from 'path';
 
 import * as config from '../config';
 
-async function addKey(role, index) {
+async function addKeyAndSetToken(role, index) {
   let node_id = role + index.toString();
   let filePath = path.join(__dirname, '..', 'devKey', role, node_id + '.pub');
   await fetch(`http://localhost:${config.serverPort}/ndid/registerNode`, {
@@ -17,6 +17,23 @@ async function addKey(role, index) {
       node_id,
       role
     })
+  });
+
+  //wait 2 sec, so key should already exist
+  return new Promise(async (resolve) => {
+    setTimeout(async () => {
+      await fetch(`http://localhost:${config.serverPort}/ndid/setNodeToken`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          node_id,
+          amount: 1000
+        })
+      });
+      resolve();
+    },2000);
   });
 }
 
@@ -39,9 +56,9 @@ export async function init() {
 
   let promiseArr = [];
   ['rp','idp','as'].forEach(async (role) => {
-    promiseArr.push(addKey(role, 1));
-    promiseArr.push(addKey(role, 2));
-    promiseArr.push(addKey(role, 3));
+    promiseArr.push(addKeyAndSetToken(role, 1));
+    promiseArr.push(addKeyAndSetToken(role, 2));
+    promiseArr.push(addKeyAndSetToken(role, 3));
   });
   await Promise.all(promiseArr);
   console.log('========= Key initialize done =========');

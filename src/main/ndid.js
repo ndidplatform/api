@@ -17,6 +17,45 @@ export async function initNDID(public_key) {
   return init;
 }
 
+export async function setNodeToken(data) {
+  const {
+    node_id,
+    amount
+  } = data;
+
+  return await tendermint.transact(
+    'SetNodeToken',
+    data,
+    utils.getNonce()
+  );
+}
+
+export async function addNodeToken(data) {
+  const {
+    node_id,
+    amount
+  } = data;
+
+  return await tendermint.transact(
+    'AddNodeToken',
+    data,
+    utils.getNonce()
+  );
+}
+
+export async function reduceNodeToken(data) {
+  const {
+    node_id,
+    amount
+  } = data;
+
+  return await tendermint.transact(
+    'ReduceNodeToken',
+    data,
+    utils.getNonce()
+  );
+}
+
 export async function registerNode(data) {
   const {
     node_id,
