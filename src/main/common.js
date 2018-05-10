@@ -72,3 +72,7 @@ export async function registerMsqAddress({ip, port}) {
     node_id: nodeId
   }, utils.getNonce());
 }
+
+export async function getNodeToken(node_id = nodeId) {
+  return await tendermint.query('GetNodeToken', { node_id });
+}
