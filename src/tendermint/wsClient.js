@@ -16,12 +16,17 @@ export default class TendermintWsClient extends EventEmitter {
       console.log('Tendermint WS connected');
       this.wsConnected = true;
 
+      this.emit('connected');
+
       this.subscribeToNewBlockEvent();
     });
 
     this.ws.on('close', () => {
       console.log('Tendermint WS disconnected');
       this.wsConnected = false;
+
+      this.emit('disconnected');
+
       // Try reconnect
       setTimeout(() => this.connectWs(), 1000);
     });
@@ -37,7 +42,7 @@ export default class TendermintWsClient extends EventEmitter {
         const jsonData = JSON.parse(data);
         this.emit(jsonData.id, jsonData.error, jsonData.result);
       } catch (error) {
-        console.warn('Error JSON parsing data received from tendermint')
+        console.warn('Error JSON parsing data received from tendermint');
       }
     });
 
@@ -45,6 +50,19 @@ export default class TendermintWsClient extends EventEmitter {
     // this.ws.on('ping', () => {
     //   console.warn('ping received')
     // });
+  }
+
+  getStatus(id = 'status') {
+    if (this.wsConnected) {
+      this.ws.send(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'status',
+          params: [],
+          id,
+        })
+      );
+    }
   }
 
   subscribeToNewBlockEvent() {
