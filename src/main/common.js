@@ -1,13 +1,13 @@
 import * as tendermint from '../tendermint/ndid';
-import TendermintEvent from '../tendermint/event';
+import TendermintWsClient from '../tendermint/wsClient';
 import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';
 import * as utils from '../utils';
 import { role, nodeId } from '../config';
 
-const tendermintEvent = new TendermintEvent();
-tendermintEvent.on('newBlock#event', (error, result) => {
+const tendermintWsClient = new TendermintWsClient();
+tendermintWsClient.on('newBlock#event', (error, result) => {
   let handleTendermintNewBlockEvent;
   if (role === 'rp') {
     handleTendermintNewBlockEvent = rp.handleTendermintNewBlockEvent;

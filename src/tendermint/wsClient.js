@@ -3,7 +3,7 @@ import WebSocket from 'ws';
 
 import { TENDERMINT_ADDRESS } from '../config';
 
-export default class TendermintEvent extends EventEmitter {
+export default class TendermintWsClient extends EventEmitter {
   constructor() {
     super();
     this.wsConnected = false;

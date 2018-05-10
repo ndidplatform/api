@@ -6,7 +6,7 @@
     "build": "npx babel src -d ./build/ --source-maps inline && cp -r ./devKey ./build",
     "start": "npm run build && node build/server.js",
     "test": "npm run build && npx mocha build/test/test.js",
-    "initDevKey": "npm run build && ROLE=ndid node build/server.js",
+    "initDevKey": "npm run build && ROLE=ndid node build/devKeyInit.js",
     "delete-local-db-cache": "rm -rf db-api-*"
   },
   "dependencies": {
