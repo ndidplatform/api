@@ -34,4 +34,58 @@ router.post('/registerNode', async (req, res, next) => {
   }
 });
 
+router.post('/setNodeToken', async (req, res, next) => {
+  try {
+    const {
+      node_id,
+      amount
+    } = req.body;
+
+    let result = await abciAppNdid.setNodeToken({
+      node_id,
+      amount
+    });
+
+    res.status(200).send(result);
+  } catch (error) {
+    res.status(500).end();
+  }
+});
+
+router.post('/addNodeToken', async (req, res, next) => {
+  try {
+    const {
+      node_id,
+      amount
+    } = req.body;
+
+    let result = await abciAppNdid.addNodeToken({
+      node_id,
+      amount
+    });
+
+    res.status(200).send(result);
+  } catch (error) {
+    res.status(500).end();
+  }
+});
+
+router.post('/reduceNodeToken', async (req, res, next) => {
+  try {
+    const {
+      node_id,
+      amount
+    } = req.body;
+
+    let result = await abciAppNdid.reduceNodeToken({
+      node_id,
+      amount
+    });
+
+    res.status(200).send(result);
+  } catch (error) {
+    res.status(500).end();
+  }
+});
+
 export default router;
