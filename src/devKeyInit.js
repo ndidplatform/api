@@ -5,7 +5,7 @@ import path from 'path';
 
 import * as abciAppNdid from './main/ndid';
 
-async function addKey(role, index) {
+async function addKeyAndSetToken(role, index) {
   const node_id = role + index.toString();
   const filePath = path.join(__dirname, '..', 'devKey', role, node_id + '.pub');
   const public_key = fs.readFileSync(filePath, 'utf8').toString();
@@ -14,6 +14,16 @@ async function addKey(role, index) {
     node_id,
     public_key,
     role,
+  });
+
+  return new Promise(async (resolve) => {
+    setTimeout(async() => {
+      await abciAppNdid.setNodeToken({
+        node_id,
+        amount: 1000
+      });
+      resolve();
+    },2000);
   });
 }
 
@@ -29,9 +39,9 @@ export async function init() {
   } else {
     let promiseArr = [];
     ['rp', 'idp', 'as'].forEach(async (role) => {
-      promiseArr.push(addKey(role, 1));
-      promiseArr.push(addKey(role, 2));
-      promiseArr.push(addKey(role, 3));
+      promiseArr.push(addKeyAndSetToken(role, 1));
+      promiseArr.push(addKeyAndSetToken(role, 2));
+      promiseArr.push(addKeyAndSetToken(role, 3));
     });
     await Promise.all(promiseArr);
     console.log('========= Keys for development initialized =========');
