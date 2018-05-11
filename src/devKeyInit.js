@@ -16,14 +16,9 @@ async function addKeyAndSetToken(role, index) {
     role,
   });
 
-  return new Promise(async (resolve) => {
-    setTimeout(async() => {
-      await abciAppNdid.setNodeToken({
-        node_id,
-        amount: 1000
-      });
-      resolve();
-    },2000);
+  await abciAppNdid.setNodeToken({
+    node_id,
+    amount: 1000
   });
 }
 
