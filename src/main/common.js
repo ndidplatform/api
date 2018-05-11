@@ -25,20 +25,22 @@ tendermintWsClient.on('status', (error, result) => {
 tendermintWsClient.on('newBlock#event', (error, result) => {
   const blockHeight = result.data.data.block.header.height;
   if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
+    let handleTendermintNewBlockEvent;
+    if (role === 'rp') {
+      handleTendermintNewBlockEvent = rp.handleTendermintNewBlockEvent;
+    } else if (role === 'idp') {
+      handleTendermintNewBlockEvent = idp.handleTendermintNewBlockEvent;
+    } else if (role === 'as') {
+      handleTendermintNewBlockEvent = as.handleTendermintNewBlockEvent;
+    }
+
+    const missingBlockCount =
+      latestBlockHeight == null ? 0 : blockHeight - latestBlockHeight - 1;
+    if (handleTendermintNewBlockEvent) {
+      handleTendermintNewBlockEvent(error, result, missingBlockCount);
+    }
+
     latestBlockHeight = blockHeight;
-  }
-
-  let handleTendermintNewBlockEvent;
-  if (role === 'rp') {
-    handleTendermintNewBlockEvent = rp.handleTendermintNewBlockEvent;
-  } else if (role === 'idp') {
-    handleTendermintNewBlockEvent = idp.handleTendermintNewBlockEvent;
-  } else if (role === 'as') {
-    handleTendermintNewBlockEvent = as.handleTendermintNewBlockEvent;
-  }
-
-  if (handleTendermintNewBlockEvent) {
-    handleTendermintNewBlockEvent(error, result);
   }
 });
 
@@ -85,12 +87,16 @@ export async function getMsqAddress(node_id) {
   return await tendermint.query('GetMsqAddress', { node_id });
 }
 
-export async function registerMsqAddress({ip, port}) {
-  return await tendermint.transact('RegisterMsqAddress', {
-    ip,
-    port,
-    node_id: nodeId
-  }, utils.getNonce());
+export async function registerMsqAddress({ ip, port }) {
+  return await tendermint.transact(
+    'RegisterMsqAddress',
+    {
+      ip,
+      port,
+      node_id: nodeId,
+    },
+    utils.getNonce()
+  );
 }
 
 export async function getNodeToken(node_id = nodeId) {

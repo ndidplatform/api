@@ -154,6 +154,7 @@ async function handleMessageFromQueue(request) {
   await db.put('mqReceivingQueue', requestJson.request_id, requestJson);
 
   if (common.latestBlockHeight < requestJson.height) {
+    // FIXME: unsafe array update
     const requestIdsInTendermintBlock = await db.get('requestIdsInTendermintBlock', requestJson.height);
     if (!requestIdsInTendermintBlock) {
       await db.put('requestIdsInTendermintBlock', requestJson.height, [requestJson.request_id]);
@@ -201,26 +202,31 @@ async function handleMessageFromQueue(request) {
   }
 }
 
-export async function handleTendermintNewBlockEvent(error, result) {
-  let height = tendermint.getHeightFromTendermintNewBlockEvent(result);
+export async function handleTendermintNewBlockEvent(error, result, missingBlockCount) {
+  // messages that arrived before 'NewBlock' event
+  // including messages between (latestBlockHeight - missingBlockCount) and latestBlockHeight
+  // (not only just current height in case 'NewBlock' events are missing)
+  for (
+    let height = common.latestBlockHeight - missingBlockCount;
+    height <= common.latestBlockHeight;
+    height++
+  ) {
+    const requestIdsInTendermintBlock = await db.get(
+      'requestIdsInTendermintBlock',
+      height
+    );
+    if (requestIdsInTendermintBlock) {
+      requestIdsInTendermintBlock.forEach(async (requestId) => {
+        const valid = await checkIntegrity(requestId);
+        const message = await db.get('mqReceivingQueue', requestId);
+        if (valid) {
+          notifyByCallback(message);
+        }
+        db.del('mqReceivingQueue', requestId);
+      });
 
-  const blockHeight = await db.get('blockHeight', 'blockHeight');
-  if (height !== blockHeight + 1) {
-    //TODO handle missing events
-  }
-  await db.put('blockHeight', 'blockHeight', height);
-
-  //msq arrive before newBlock event
-  const requestIdsInTendermintBlock = await db.get('requestIdsInTendermintBlock', height);
-  if (requestIdsInTendermintBlock) {
-    requestIdsInTendermintBlock.forEach(async function(requestId) {
-      let valid = await checkIntegrity(requestId);
-      const message = await db.get('mqReceivingQueue', requestId);
-      if (valid) notifyByCallback(message);
-      await db.del('mqReceivingQueue', requestId);
-    });
-
-    db.del('requestIdsInTendermintBlock', height);
+      db.del('requestIdsInTendermintBlock', height);
+    }
   }
 }
 
