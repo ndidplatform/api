@@ -1,4 +1,18 @@
 export default {
+  defsSchema: {
+    definitions: {
+      ial: { type: 'number', enum: [1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3] },
+      aal: { type: 'number', enum: [1, 2.1, 2.2, 3] },
+      ialString: {
+        type: 'string',
+        enum: ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3'],
+      },
+      aalString: {
+        type: 'string',
+        enum: ['1', '2.1', '2.2', '3'],
+      },
+    },
+  },
   GET: {
     '/identity/:namespace/:identifier/requests/history': {
       query: {
@@ -14,12 +28,10 @@ export default {
       query: {
         properties: {
           min_ial: {
-            type: 'string',
-            pattern: '^\\d*[1-9]\\d*$', // number (int) > 0
+            $ref: 'defs#/definitions/ialString',
           },
           min_aal: {
-            type: 'string',
-            pattern: '^\\d*[1-9]\\d*$', // number (int) > 0
+            $ref: 'defs#/definitions/aalString',
           },
         },
       },
@@ -28,12 +40,10 @@ export default {
       query: {
         properties: {
           min_ial: {
-            type: 'string',
-            pattern: '^\\d*[1-9]\\d*$', // number (int) > 0
+            $ref: 'defs#/definitions/ialString',
           },
           min_aal: {
-            type: 'string',
-            pattern: '^\\d*[1-9]\\d*$', // number (int) > 0
+            $ref: 'defs#/definitions/aalString',
           },
         },
       },
@@ -58,7 +68,11 @@ export default {
               minimum: 1,
             },
           },
-          callback_url: { type: 'string', format: 'url-with-local-ip' },
+          callback_url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
           data_request_list: {
             type: 'array',
             items: {
@@ -87,8 +101,8 @@ export default {
             },
           },
           request_message: { type: 'string' },
-          min_ial: { type: 'integer', minimum: 1 },
-          min_aal: { type: 'integer', minimum: 1 },
+          min_ial: { $ref: 'defs#/definitions/ial' },
+          min_aal: { $ref: 'defs#/definitions/aal' },
           min_idp: { type: 'integer', minimum: 1 },
           request_timeout: { type: 'integer', minimum: 0 },
         },
@@ -98,7 +112,11 @@ export default {
     '/idp/callback': {
       body: {
         properties: {
-          url: { type: 'string', format: 'url-with-local-ip' },
+          url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
         },
         required: ['url'],
       },
@@ -109,8 +127,8 @@ export default {
           request_id: { type: 'string', minimum: 1 },
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },
-          ial: { type: 'integer', minimum: 1 },
-          aal: { type: 'integer', minimum: 1 },
+          ial: { $ref: 'defs#/definitions/ial' },
+          aal: { $ref: 'defs#/definitions/aal' },
           secret: { type: 'string' },
           status: {
             type: 'string',
@@ -136,7 +154,11 @@ export default {
     '/as/callback': {
       body: {
         properties: {
-          url: { type: 'string', format: 'url-with-local-ip' },
+          url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
         },
         required: ['url'],
       },
@@ -146,9 +168,13 @@ export default {
         properties: {
           service_id: { type: 'string', minLength: 1 },
           service_name: { type: 'string', minLength: 1 },
-          min_ial: { type: 'integer', minimum: 1 },
-          min_aal: { type: 'integer', minimum: 1 },
-          url: { type: 'string', format: 'url-with-local-ip' },
+          min_ial: { $ref: 'defs#/definitions/ial' },
+          min_aal: { $ref: 'defs#/definitions/aal' },
+          url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
         },
         required: ['service_id'],
       },
@@ -170,7 +196,11 @@ export default {
     '/dpki/node/register_callback': {
       body: {
         properties: {
-          url: { type: 'string', format: 'url-with-local-ip' },
+          url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
         },
         required: ['url'],
       },
@@ -178,7 +208,11 @@ export default {
     '/dpki/node/register_callback_master': {
       body: {
         properties: {
-          url: { type: 'string', format: 'url-with-local-ip' },
+          url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
         },
         required: ['url'],
       },

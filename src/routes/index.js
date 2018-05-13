@@ -5,6 +5,7 @@ import asRouter from './authoritativeSource';
 import identityRouter from './identity';
 import utilityRouter from './utility';
 import dpkiRouter from './dpki';
+import ndidRouter from './nationalDigitalIdentity';
 
 import * as config from '../config';
 
@@ -31,6 +32,8 @@ if (config.role === 'rp') {
   router.use('/idp', idpRouter);
 } else if (config.role === 'as') {
   router.use('/as', asRouter);
+} else if (config.role === 'ndid') {
+  router.use('/ndid', ndidRouter);
 }
 router.use('/identity', identityRouter);
 router.use('/utility', utilityRouter);

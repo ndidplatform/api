@@ -1,6 +1,8 @@
 idp-callback-url.json
 as-callback-url.json
 
+/db-api-*
+
 # production
 /build
 

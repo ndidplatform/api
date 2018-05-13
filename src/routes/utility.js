@@ -1,5 +1,6 @@
 import express from 'express';
 
+import * as abciAppCommonApi from '../main/common';
 import validate from './validator';
 
 const router = express.Router();
@@ -47,6 +48,15 @@ router.get('/idp/:namespace/:identifier', async (req, res, next) => {
 
     res.status(501).end();
   } catch (error) {
+    res.status(500).end();
+  }
+});
+
+router.get('/nodeToken/:nodeId', async(req, res, next) => {
+  try {
+    res.status(200).send(await abciAppCommonApi.getNodeToken(req.params.nodeId));
+  }
+  catch(error) {
     res.status(500).end();
   }
 });
