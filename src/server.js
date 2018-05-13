@@ -11,7 +11,6 @@ import routes from './routes';
 import { init as idp_init } from './main/idp';
 import { init as as_init } from './main/as';
 import { init as rp_init } from './main/rp';
-import { init as devKey_init } from './main/devKeyInit';
 
 process.on('unhandledRejection', function(reason, p) {
   console.error('Unhandled Rejection:', p, '\nreason:', reason.stack || reason);
@@ -43,8 +42,6 @@ if (config.role === 'idp') {
   as_init();
 } else if (config.role === 'rp') {
   rp_init();
-} else if (config.role === 'ndid') {
-  devKey_init();
 }
 
 // For testing
