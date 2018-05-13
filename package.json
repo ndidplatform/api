@@ -3,14 +3,19 @@
   "version": "0.1.0",
   "description": "",
   "scripts": {
-    "build": "npx babel src -d ./build/ --source-maps inline",
+    "build": "npx babel src -d ./build/ --source-maps inline && cp -r ./devKey ./build",
     "start": "npm run build && node build/server.js",
-    "test": "npm run build && npx mocha build/test/test.js"
+    "test": "npm run build && npx mocha build/test/test.js",
+    "initDevKey": "npm run build && ROLE=ndid node build/devKeyInit.js",
+    "delete-local-db-cache": "rm -rf db-api-*"
   },
   "dependencies": {
     "ajv": "^6.4.0",
     "body-parser": "^1.18.2",
+    "encoding-down": "^4.0.0",
     "express": "^4.16.3",
+    "leveldown": "^3.0.2",
+    "levelup": "^2.0.2",
     "morgan": "^1.9.0",
     "node-fetch": "^2.1.2",
     "source-map-support": "^0.5.4",

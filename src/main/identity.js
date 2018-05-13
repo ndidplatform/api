@@ -1,4 +1,5 @@
-import * as utils from './utils';
+import * as tendermint from '../tendermint/ndid';
+import * as utils from '../utils';
 import * as config from '../config';
 
 export async function createNewIdentity(data) {
@@ -16,27 +17,27 @@ export async function createNewIdentity(data) {
     //check if this call is valid
 
     //register node id, which is substituted with ip,port for demo
-    let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
+    //let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
     registerMqDestination({
-      users: [{
-        hash_id: await utils.hash(namespace + ':' + identifier),
-        //TODO
-        //where to get this value?, is it tie to IDP or tie to each identity??
-        ial: 3
-      }],
-      node_id
+      users: [
+        {
+          hash_id: utils.hash(namespace + ':' + identifier),
+          //TODO
+          //where to get this value?, is it tie to IDP or tie to each identity??
+          ial: 3,
+        },
+      ],
+      node_id: config.nodeId,
     });
     return true;
-  }
-  catch(error) {
-    console.error('Error while register user',error);
+  } catch (error) {
+    console.error('Error while register user', error);
     return false;
   }
-
 }
 
 export async function registerMqDestination(data) {
-  let result = await utils.updateChain(
+  let result = await tendermint.transact(
     'RegisterMsqDestination',
     data,
     utils.getNonce()

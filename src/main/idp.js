@@ -2,33 +2,39 @@ import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
+import * as tendermint from '../tendermint/ndid';
 import * as common from '../main/common';
-import * as utils from './utils';
+import * as utils from '../utils';
 import * as config from '../config';
+import * as db from '../db';
 
 import { eventEmitter } from '../mq';
 
-const privKey = 'IDP_PrivateKey';
-let mqReceivingQueue = {};
-let requestIdsInTendermintBlock = {};
-let blockHeight = 0;
+db.put('blockHeight', '', 0);
 
 let callbackUrl = null;
 try {
-  callbackUrl = fs.readFileSync(path.join(__dirname, '../../idp-callback-url.json'), 'utf8');
+  callbackUrl = fs.readFileSync(
+    path.join(__dirname, '../../idp-callback-url.json'),
+    'utf8'
+  );
 } catch (error) {
   if (error.code !== 'ENOENT') {
     console.log(error);
   }
 }
 
-export const setCallbackUrl = url => {
+export const setCallbackUrl = (url) => {
   callbackUrl = url;
-  fs.writeFile(path.join(__dirname, '../../idp-callback-url.json'), url, (err) => {
-    if (err) {
-      console.error('Error writing IDP callback url file');
+  fs.writeFile(
+    path.join(__dirname, '../../idp-callback-url.json'),
+    url,
+    (err) => {
+      if (err) {
+        console.error('Error writing IDP callback url file');
+      }
     }
-  });
+  );
 };
 
 export const getCallbackUrl = () => {
@@ -44,7 +50,7 @@ export async function createIdpResponse(data) {
     ial,
     status,
     signature,
-    accessor_id
+    accessor_id,
   } = data;
 
   let dataToBlockchain = {
@@ -54,9 +60,9 @@ export async function createIdpResponse(data) {
     status,
     signature,
     accessor_id,
-    identity_proof: utils.generateIdentityProof(data)
+    identity_proof: utils.generateIdentityProof(data),
   };
-  let result = await utils.updateChain(
+  let result = await tendermint.transact(
     'CreateIdpResponse',
     dataToBlockchain,
     utils.getNonce()
@@ -72,66 +78,73 @@ async function notifyByCallback(request) {
   fetch(callbackUrl, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ request })
+    body: JSON.stringify({ request }),
   });
 }
 
 async function checkIntegrity(requestId) {
-  
   let msgBlockchain = await common.getRequest({ requestId });
-  let message = mqReceivingQueue[requestId];
+  let message = await db.get('mqReceivingQueue', requestId);
   let valid = false;
 
-  valid = msgBlockchain.messageHash === (await utils.hash(message.request_message));
-  if(!valid) console.error(
-    'Mq and blockchain not matched!!',
-    message.request_message,
-    msgBlockchain.messageHash
-  );
+  valid = msgBlockchain.messageHash === utils.hash(message.request_message);
+  if (!valid)
+    console.error(
+      'Mq and blockchain not matched!!',
+      message.request_message,
+      msgBlockchain.messageHash
+    );
 
   return valid;
-
 }
 
 async function handleMessageFromQueue(request) {
   console.log('IDP receive message from mq:', request);
   let requestJson = JSON.parse(request);
-  mqReceivingQueue[requestJson.request_id] = requestJson;
+  await db.put('mqReceivingQueue', requestJson.request_id, requestJson);
 
-  if(blockHeight < requestJson.height) {
-    if(!requestIdsInTendermintBlock[requestJson.height])
-      requestIdsInTendermintBlock[requestJson.height] = [requestJson.request_id];
-    else
-      requestIdsInTendermintBlock[requestJson.height].push(requestJson.request_id);
+  const blockHeight = await db.get('blockHeight', 'blockHeight');
+  if (blockHeight < requestJson.height) {
+    const requestIdsInTendermintBlock = await db.get('requestIdsInTendermintBlock', requestJson.height);
+    if (!requestIdsInTendermintBlock) {
+      await db.put('requestIdsInTendermintBlock', requestJson.height, [requestJson.request_id]);
+    } else {
+      requestIdsInTendermintBlock.push(
+        requestJson.request_id
+      );
+      await db.put('requestIdsInTendermintBlock', requestJson.height, requestIdsInTendermintBlock);
+    }
     return;
   }
 
   let valid = await checkIntegrity(requestJson.request_id);
-  if(valid) notifyByCallback(requestJson);
+  if (valid) notifyByCallback(requestJson);
 }
 
-export async function handleTendermintNewBlockEvent (error, result) {
+export async function handleTendermintNewBlockEvent(error, result) {
   //let [transactions, height] = utils.getTransactionListFromTendermintNewBlockEvent(result);
-  let height = utils.getHeightFromTendermintNewBlockEvent(result);
-  
-  if(height !== blockHeight + 1) {
+  let height = tendermint.getHeightFromTendermintNewBlockEvent(result);
+
+  const blockHeight = await db.get('blockHeight', 'blockHeight');
+  if (height !== blockHeight + 1) {
     //TODO handle missing events
   }
-  blockHeight = height;
+  await db.put('blockHeight', 'blockHeight', height);
 
   //msq arrive before newBlock event
-  if(requestIdsInTendermintBlock[height]) {
-    let requestIdsToCheck = requestIdsInTendermintBlock[height];
-    delete requestIdsInTendermintBlock[height];
-    
-    requestIdsToCheck.forEach(async function(requestId) {
+  const requestIdsInTendermintBlock = await db.get('requestIdsInTendermintBlock', height);
+  if (requestIdsInTendermintBlock) {
+    requestIdsInTendermintBlock.forEach(async function(requestId) {
       let valid = await checkIntegrity(requestId);
-      if(valid) notifyByCallback(mqReceivingQueue[requestId]);
-      delete mqReceivingQueue[requestId];
+      const message = await db.get('mqReceivingQueue', requestId);
+      if (valid) notifyByCallback(message);
+      db.del('mqReceivingQueue', requestId);
     });
-  }  
+
+    db.del('requestIdsInTendermintBlock', height);
+  }
   // console.log(transactions);
 }
 
@@ -163,11 +176,13 @@ export async function init() {
   //In production this should be done only once in phase 1,
   //when IDP request to join approved NDID
   //after first approved, IDP can add other key and node and endorse themself
-  let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
+  /*let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
+  process.env.nodeId = node_id;
   common.addNodePubKey({
     node_id,
-    public_key: 'very_secure_public_key'
-  });
+    public_key: 'very_secure_public_key_for_idp'
+  });*/
+  common.registerMsqAddress(config.mqRegister);
 }
 
 if (config.role === 'idp') {
