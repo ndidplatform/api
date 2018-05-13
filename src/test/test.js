@@ -17,4 +17,8 @@ describe('Test All APIs', () => {
     require('./asApi');
   });
 
+  describe('MSQ', () => {
+    require('./mqNode');
+    require('./mqIndex');
+  })
 });
