@@ -1,6 +1,6 @@
 var EventEmitter = require('events').EventEmitter;
 import zmq from 'zeromq';
-import * as utils from '../main/utils';
+import * as utils from '../utils';
 import util from 'util';
 
 var MQNode = function(config) {
