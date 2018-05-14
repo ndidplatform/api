@@ -295,8 +295,16 @@ export async function getAsMqDestination(data) {
   });
 }
 
-export function getDataFromAS(request_id) {
-  return db.getDatafromAS(request_id);
+export function getDataFromAS(requestId) {
+  return db.getDatafromAS(requestId);
+}
+
+export function removeDataFromAS(requestId) {
+  return db.removeDataFromAS(requestId);
+}
+
+export function removeAllDataFromAS() {
+  return db.removeAllDataFromAS();
 }
 
 async function handleMessageFromQueue(data) {

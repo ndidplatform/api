@@ -41,7 +41,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
       min_aal,
       min_idp,
       request_timeout,
-    } = req.body;    
+    } = req.body;
 
     const requestId = await abciAppRpApi.createRequest({
       namespace,
@@ -57,7 +57,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
       request_timeout,
     });
 
-    if(!requestId) throw 'Cannot create request';
+    if (!requestId) throw 'Cannot create request';
     res.status(200).send({ requestId });
   } catch (error) {
     console.error(error);
@@ -95,6 +95,24 @@ router.get('/requests/data/:request_id', async (req, res, next) => {
   try {
     const data = await abciAppRpApi.getDataFromAS(req.params.request_id);
     res.status(200).send(data);
+  } catch (error) {
+    res.status(500).end();
+  }
+});
+
+router.delete('/requests/data/:request_id', async (req, res, next) => {
+  try {
+    await abciAppRpApi.removeDataFromAS(req.params.request_id);
+    res.status(200).end();
+  } catch (error) {
+    res.status(500).end();
+  }
+});
+
+router.delete('/requests/data', async (req, res, next) => {
+  try {
+    await abciAppRpApi.removeAllDataFromAS();
+    res.status(200).end();
   } catch (error) {
     res.status(500).end();
   }
