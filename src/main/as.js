@@ -13,12 +13,10 @@ import * as db from '../db';
 
 const privKey = 'AS_PrivateKey';
 
+const callbackUrlFilePath = path.join(__dirname, '..', '..', 'as-callback-url');
 let callbackUrl = null;
 try {
-  callbackUrl = fs.readFileSync(
-    path.join(__dirname, '../../as-callback-url.json'),
-    'utf8'
-  );
+  callbackUrl = fs.readFileSync(callbackUrlFilePath, 'utf8');
 } catch (error) {
   if (error.code !== 'ENOENT') {
     console.log(error);
@@ -27,15 +25,11 @@ try {
 
 export const setCallbackUrl = (url) => {
   callbackUrl = url;
-  fs.writeFile(
-    path.join(__dirname, '../../as-callback-url.json'),
-    url,
-    (err) => {
-      if (err) {
-        console.error('Error writing AS callback url file');
-      }
+  fs.writeFile(callbackUrlFilePath, url, (err) => {
+    if (err) {
+      console.error('Error writing AS callback url file');
     }
-  );
+  });
 };
 
 export const getCallbackUrl = () => {
@@ -154,7 +148,10 @@ async function handleMessageFromQueue(request) {
   await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
 
   if (common.latestBlockHeight < requestJson.height) {
-    await db.addRequestIdExpectedInBlock(requestJson.height, requestJson.request_id);
+    await db.addRequestIdExpectedInBlock(
+      requestJson.height,
+      requestJson.request_id
+    );
     return;
   }
 
@@ -193,22 +190,31 @@ async function handleMessageFromQueue(request) {
   }
 }
 
-export async function handleTendermintNewBlockEvent(error, result, missingBlockCount) {
+export async function handleTendermintNewBlockEvent(
+  error,
+  result,
+  missingBlockCount
+) {
   // messages that arrived before 'NewBlock' event
   // including messages between (latestBlockHeight - missingBlockCount) and latestBlockHeight
   // (not only just current height in case 'NewBlock' events are missing)
   const fromHeight = common.latestBlockHeight - missingBlockCount;
   const toHeight = common.latestBlockHeight;
-  
-  const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(fromHeight, toHeight);
-  await Promise.all(requestIdsInTendermintBlock.map(async (requestId) => {
-    const valid = await checkIntegrity(requestId);
-    const message = await db.getRequestReceivedFromMQ(requestId);
-    if (valid) {
-      notifyByCallback(message);
-    }
-    db.removeRequestReceivedFromMQ(requestId);
-  }));
+
+  const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
+    fromHeight,
+    toHeight
+  );
+  await Promise.all(
+    requestIdsInTendermintBlock.map(async (requestId) => {
+      const valid = await checkIntegrity(requestId);
+      const message = await db.getRequestReceivedFromMQ(requestId);
+      if (valid) {
+        notifyByCallback(message);
+      }
+      db.removeRequestReceivedFromMQ(requestId);
+    })
+  );
 
   db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 }

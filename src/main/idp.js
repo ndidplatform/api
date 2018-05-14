@@ -10,12 +10,15 @@ import * as db from '../db';
 
 import { eventEmitter } from '../mq';
 
+const callbackUrlFilePath = path.join(
+  __dirname,
+  '..',
+  '..',
+  'idp-callback-url'
+);
 let callbackUrl = null;
 try {
-  callbackUrl = fs.readFileSync(
-    path.join(__dirname, '../../idp-callback-url.json'),
-    'utf8'
-  );
+  callbackUrl = fs.readFileSync(callbackUrlFilePath, 'utf8');
 } catch (error) {
   if (error.code !== 'ENOENT') {
     console.log(error);
@@ -24,15 +27,11 @@ try {
 
 export const setCallbackUrl = (url) => {
   callbackUrl = url;
-  fs.writeFile(
-    path.join(__dirname, '../../idp-callback-url.json'),
-    url,
-    (err) => {
-      if (err) {
-        console.error('Error writing IDP callback url file');
-      }
+  fs.writeFile(callbackUrlFilePath, url, (err) => {
+    if (err) {
+      console.error('Error writing IDP callback url file');
     }
-  );
+  });
 };
 
 export const getCallbackUrl = () => {
@@ -104,7 +103,10 @@ async function handleMessageFromQueue(request) {
   await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
 
   if (common.latestBlockHeight < requestJson.height) {
-    await db.addRequestIdExpectedInBlock(requestJson.height, requestJson.request_id);
+    await db.addRequestIdExpectedInBlock(
+      requestJson.height,
+      requestJson.request_id
+    );
     return;
   }
 
@@ -112,14 +114,21 @@ async function handleMessageFromQueue(request) {
   if (valid) notifyByCallback(requestJson);
 }
 
-export async function handleTendermintNewBlockEvent(error, result, missingBlockCount) {
+export async function handleTendermintNewBlockEvent(
+  error,
+  result,
+  missingBlockCount
+) {
   // messages that arrived before 'NewBlock' event
   // including messages between (latestBlockHeight - missingBlockCount) and latestBlockHeight
   // (not only just current height in case 'NewBlock' events are missing)
   const fromHeight = common.latestBlockHeight - missingBlockCount;
   const toHeight = common.latestBlockHeight;
 
-  const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(fromHeight, toHeight);
+  const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
+    fromHeight,
+    toHeight
+  );
   requestIdsInTendermintBlock.forEach(async function(requestId) {
     const valid = await checkIntegrity(requestId);
     const message = await db.getRequestReceivedFromMQ(requestId);

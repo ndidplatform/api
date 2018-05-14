@@ -38,7 +38,11 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
     }
 
     // Clear callback url mapping when the request is no longer going to have further events
-    if (request.status === 'rejected') {
+    if (
+      request.status === 'completed' ||
+      request.status === 'rejected' ||
+      request.status === 'closed'
+    ) {
       db.removeCallbackUrl(requestId);
     }
 
@@ -46,7 +50,7 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
     if (requestData != null) {
       if (request.status === 'completed') {
         // Send request to AS when completed
-        sendRequestToAS(requestData);
+        await sendRequestToAS(requestData);
         db.removeRequestToSendToAS(requestId);
       }
     }
@@ -96,18 +100,16 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
 
 async function getASReceiverList(data_request) {
   let nodeIdList;
-  if(!data_request.as_id_list || data_request.as_id_list.length === 0) {
+  if (!data_request.as_id_list || data_request.as_id_list.length === 0) {
     nodeIdList = await getAsMqDestination({
       //as_id: as,
       service_id: data_request.service_id,
     });
-  }
-  else nodeIdList = data_request.as_id_list;
+  } else nodeIdList = data_request.as_id_list;
 
   const receivers = (await Promise.all(
     nodeIdList.map(async (asNodeId) => {
       try {
-
         //let nodeId = node.node_id;
         let { ip, port } = await common.getMsqAddress(asNodeId);
         return {
@@ -123,18 +125,18 @@ async function getASReceiverList(data_request) {
   return receivers;
 }
 
-async function sendRequestToAS(requestData) { 
+async function sendRequestToAS(requestData) {
   // console.log(requestData);
   // node id, which is substituted with ip,port for demo
   let rp_node_id = config.nodeId;
   if (requestData.data_request_list != undefined) {
     requestData.data_request_list.forEach(async (data_request) => {
       let receivers = await getASReceiverList(data_request);
-      if(receivers.length === 0) {
+      if (receivers.length === 0) {
         console.error('No AS found');
         return;
       }
-      console.log('===>',data_request, receivers);
+      console.log('===>', data_request, receivers);
       mq.send(receivers, {
         request_id: requestData.request_id,
         namespace: requestData.namespace,
@@ -152,7 +154,7 @@ export async function getIdpsMsqDestination({
   namespace,
   identifier,
   min_ial,
-  idp_list
+  idp_list,
 }) {
   let foundedIdpList = await getIdpMqDestination({
     namespace,
@@ -167,10 +169,10 @@ export async function getIdpsMsqDestination({
   for (let i in nodeIdList) {
     let nodeId = nodeIdList[i];
     //filter only those in idp_list
-    if(idp_list != null && idp_list.length !== 0) {
-      if(idp_list.indexOf(nodeId) === -1) continue;
+    if (idp_list != null && idp_list.length !== 0) {
+      if (idp_list.indexOf(nodeId) === -1) continue;
     }
-    
+
     let { ip, port } = await common.getMsqAddress(nodeId);
 
     receivers.push({
@@ -199,10 +201,10 @@ export async function createRequest({
     namespace,
     identifier,
     min_ial: data.min_ial ? data.min_ial : 1,
-    idp_list: data.idp_list
+    idp_list: data.idp_list,
   });
 
-  if(receivers.length === 0) {
+  if (receivers.length === 0) {
     console.error('NO IDP FOUND');
     return false;
   }

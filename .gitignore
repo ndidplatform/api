@@ -1,5 +1,5 @@
-idp-callback-url.json
-as-callback-url.json
+idp-callback-url
+as-callback-url
 
 /db-api-*
 
