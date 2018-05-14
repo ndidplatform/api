@@ -13,6 +13,8 @@ const dbPath = path.join(
 const sequelize = new Sequelize('ndid-api', null, null, {
   dialect: 'sqlite',
   storage: dbPath,
+  logging: false,
+  operatorsAliases: false,
 });
 
 // Models
@@ -44,19 +46,23 @@ const Entities = {
   }),
 };
 
-sequelize.sync();
+const initDb = sequelize.sync();
 
-export async function getList({ name, keyName, key }) {
+export async function getList({ name, keyName, key, valueName }) {
+  await initDb;
   const models = await Entities[name].findAll({
+    attributes: [valueName],
     where: {
       [keyName]: key,
     },
   });
-  return models.map((model) => model.get({ plain: true }));
+  return models.map((model) => model.get(valueName));
 }
 
-export async function getListRange({ name, keyName, keyRange }) {
+export async function getListRange({ name, keyName, keyRange, valueName }) {
+  await initDb;
   const models = await Entities[name].findAll({
+    attributes: [valueName],
     where: {
       [keyName]: {
         [Sequelize.Op.gte]: keyRange.gte,
@@ -64,10 +70,11 @@ export async function getListRange({ name, keyName, keyRange }) {
       },
     },
   });
-  return models.map((model) => model.get({ plain: true }));
+  return models.map((model) => model.get(valueName));
 }
 
 export async function pushToList({ name, keyName, key, valueName, value }) {
+  await initDb;
   await Entities[name].create({
     [keyName]: key,
     [valueName]: value,
@@ -81,6 +88,7 @@ export async function removeFromList({
   valueName,
   valuesToRemove,
 }) {
+  await initDb;
   await Entities[name].destroy({
     where: {
       [keyName]: key,
@@ -92,29 +100,46 @@ export async function removeFromList({
 }
 
 export async function removeList({ name, keyName, key }) {
+  await initDb;
   await Entities[name].destroy({
     where: {
       [keyName]: key,
+    },
+  });
+}
+
+export async function removeListRange({ name, keyName, keyRange }) {
+  await initDb;
+  await Entities[name].destroy({
+    where: {
+      [keyName]: {
+        [Sequelize.Op.gte]: keyRange.gte,
+        [Sequelize.Op.lte]: keyRange.lte,
+      },
     },
   });
 }
 
 export async function removeAllLists({ name }) {
+  await initDb;
   await Entities[name].destroy({
     where: {},
   });
 }
 
-export async function get({ name, keyName, key }) {
+export async function get({ name, keyName, key, valueName }) {
+  await initDb;
   const model = await Entities[name].findOne({
+    attributes: [valueName],
     where: {
       [keyName]: key,
     },
   });
-  return model != null ? model.get({ plain: true }) : null;
+  return model != null ? model.get(valueName) : null;
 }
 
 export async function set({ name, keyName, key, valueName, value }) {
+  await initDb;
   await Entities[name].upsert({
     [keyName]: key,
     [valueName]: value,
@@ -122,6 +147,7 @@ export async function set({ name, keyName, key, valueName, value }) {
 }
 
 export async function remove({ name, keyName, key, valueName, value }) {
+  await initDb;
   await Entities[name].destroy({
     where: {
       [keyName]: key,

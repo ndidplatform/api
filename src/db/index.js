@@ -1,4 +1,4 @@
-import db from './sequelize';
+import * as db from './sequelize';
 
 //
 // Used by IDP and AS
@@ -12,6 +12,16 @@ export function getRequestIdsExpectedInBlock(fromHeight, toHeight) {
       gte: fromHeight, // greaterThanOrEqual
       lte: toHeight, // lessThanOrEqual
     },
+    valueName: 'requestId',
+  });
+}
+
+export function getRequestIdExpectedInBlock(height) {
+  return db.getList({
+    name: 'requestIdExpectedInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'requestId',
   });
 }
 
@@ -25,13 +35,14 @@ export function addRequestIdExpectedInBlock(height, requestId) {
   });
 }
 
-export function removeRequestIdsExpectedInBlock(height, requestIds) {
-  return db.removeFromList({
+export function removeRequestIdsExpectedInBlock(fromHeight, toHeight) {
+  return db.removeListRange({
     name: 'requestIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
-    key: height,
-    valueName: 'requestId',
-    valuesToRemove: requestIds,
+    keyRange: {
+      gte: fromHeight, // greaterThanOrEqual
+      lte: toHeight, // lessThanOrEqual
+    },
   });
 }
 
@@ -40,6 +51,7 @@ export function getRequestReceivedFromMQ(requestId) {
     name: 'requestReceivedFromMQ',
     keyName: 'requestId',
     key: requestId,
+    valueName: 'request',
   });
 }
 
@@ -70,6 +82,7 @@ export function getRequestIdByReferenceId(referenceId) {
     name: 'requestIdReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
+    valueName: 'requestId',
   });
 }
 
@@ -96,6 +109,7 @@ export function getRequestToSendToAS(requestId) {
     name: 'requestToSendToAS',
     keyName: 'requestId',
     key: requestId,
+    valueName: 'request',
   });
 }
 
@@ -117,11 +131,12 @@ export function removeRequestToSendToAS(requestId) {
   });
 }
 
-export function getCallbackUrls(requestId) {
+export function getCallbackUrl(requestId) {
   return db.get({
     name: 'callbackUrl',
     keyName: 'requestId',
     key: requestId,
+    valueName: 'url',
   });
 }
 
@@ -148,6 +163,7 @@ export function getDatafromAS(requestId) {
     name: 'dataFromAS',
     keyName: 'requestId',
     key: requestId,
+    valueName: 'data',
   });
 }
 
