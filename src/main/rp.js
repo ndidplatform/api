@@ -37,22 +37,26 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
       );
     }
 
-    // Clear callback url mapping when the request is no longer going to have further events
-    if (
-      request.status === 'completed' ||
-      request.status === 'rejected' ||
-      request.status === 'closed'
-    ) {
-      db.removeCallbackUrl(requestId);
-    }
-
-    const requestData = await db.getRequestToSendToAS(requestId);
-    if (requestData != null) {
-      if (request.status === 'completed') {
-        // Send request to AS when completed
+    if (request.status === 'completed') {
+      const requestData = await db.getRequestToSendToAS(requestId);
+      if (requestData != null) {
         await sendRequestToAS(requestData);
-        db.removeRequestToSendToAS(requestId);
+      } else {
+        // Authen only, no data request
+
+        // Clear callback url mapping and reference ID mapping
+        // since the request is no longer going to have further events
+        // (the request has reached its end state)
+        db.removeCallbackUrl(requestId);
+        db.removeRequestIdReferenceIdMappingByRequestId(requestId);
       }
+    } else if (request.status === 'rejected' || request.status === 'closed') {
+      // Clear callback url mapping, reference ID mapping, and request data to send to AS
+      // since the request is no longer going to have further events
+      // (the request has reached its end state)
+      db.removeCallbackUrl(requestId);
+      db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+      db.removeRequestToSendToAS(requestId);
     }
   });
 };
@@ -136,7 +140,7 @@ async function sendRequestToAS(requestData) {
         console.error('No AS found');
         return;
       }
-      console.log('===>', data_request, receivers);
+
       mq.send(receivers, {
         request_id: requestData.request_id,
         namespace: requestData.namespace,
@@ -330,6 +334,12 @@ async function handleMessageFromQueue(data) {
     data: data.data,
     as_id: data.as_id,
   });
+
+  // Clear callback url mapping, reference ID mapping, and request data to send to AS
+  // since the request is no longer going to have further events
+  db.removeCallbackUrl(data.request_id);
+  db.removeRequestIdReferenceIdMappingByRequestId(data.request_id);
+  db.removeRequestToSendToAS(data.request_id);
 }
 
 export async function init() {

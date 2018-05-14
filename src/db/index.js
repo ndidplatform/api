@@ -104,6 +104,14 @@ export function removeRequestIdByReferenceId(referenceId) {
   });
 }
 
+export function removeRequestIdReferenceIdMappingByRequestId(requestId) {
+  return db.remove({
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 export function getRequestToSendToAS(requestId) {
   return db.get({
     name: 'requestToSendToAS',

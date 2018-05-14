@@ -86,24 +86,9 @@ async function notifyByCallback(request) {
   return result.data;
 }
 
-async function checkIntegrity(requestId) {
-  console.log('checkIntegrity');
-
-  let msgBlockchain = await common.getRequest({ requestId });
-  let message = await db.getRequestReceivedFromMQ(requestId);
-
-  let valid = msgBlockchain.messageHash === utils.hash(message.request_message);
-  if (!valid) {
-    console.error(
-      'Mq and blockchain not matched!!',
-      message.request_message,
-      msgBlockchain.messageHash
-    );
-    return false;
-  }
-
+async function getResponseDetails(requestId) {
   const requestDetail = await tendermint.query('GetRequestDetail', {
-    requestId: message.request_id,
+    requestId,
   });
 
   // TODO
@@ -113,39 +98,61 @@ async function checkIntegrity(requestId) {
   // Verify the signature.
   // Verify that the message_hash is matching with the request.
 
-  // Get all signature
+  // Get all signatures
+  // and calculate max ial && max aal
   let signatures = [];
-  requestDetail.responses.forEach((response) => {
-    signatures.push(response.signature);
-  });
-
-  // Calculate max ial && max aal
   let max_ial = 0;
   let max_aal = 0;
   requestDetail.responses.forEach((response) => {
+    signatures.push(response.signature);
     if (response.aal > max_aal) max_aal = response.aal;
-    else valid = false;
     if (response.ial > max_ial) max_ial = response.ial;
-    else valid = false;
   });
 
-  db.removeRequestReceivedFromMQ(requestId);
-  return [
-    valid,
-    {
-      signatures,
-      max_aal,
-      max_ial,
-    },
-  ];
+  return {
+    signatures,
+    max_aal,
+    max_ial,
+  };
+}
+
+async function getDataAndSendBackToRP(requestJson, responseDetails) {
+  // Then callback to AS.
+  console.log('Callback to AS', {
+    request_id: requestJson.request_id,
+    request_params: requestJson.request_params,
+    ...responseDetails,
+  });
+
+  // Platform→AS
+  // The AS replies synchronously with the requested data
+  let data = await notifyByCallback({
+    request_id: requestJson.request_id,
+    request_params: requestJson.request_params,
+    ...responseDetails,
+  });
+
+  // When received data
+  let as_id = config.asID;
+  let signature = await utils.createSignature(data);
+  // AS node encrypts the response and sends it back to RP via NSQ.
+  sendDataToRP({
+    rp_node_id: requestJson.rp_node_id,
+    as_id,
+    data,
+    request_id: requestJson.request_id,
+  });
+
+  // AS node adds transaction to blockchain
+  signData({ as_id, request_id: requestJson.request_id, signature });
 }
 
 async function handleMessageFromQueue(request) {
   console.log('AS receive message from mq:', request);
   let requestJson = JSON.parse(request);
-  await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
 
   if (common.latestBlockHeight < requestJson.height) {
+    await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
     await db.addRequestIdExpectedInBlock(
       requestJson.height,
       requestJson.request_id
@@ -153,39 +160,15 @@ async function handleMessageFromQueue(request) {
     return;
   }
 
-  let [valid, additionalData] = await checkIntegrity(requestJson.request_id);
+  const valid = await common.checkRequestIntegrity(
+    requestJson.request_id,
+    requestJson
+  );
   if (valid) {
-    // TODO
-    // Then callback to AS.
-    console.log('Callback to AS', {
-      request_id: requestJson.request_id,
-      request_params: requestJson.request_params,
-      ...additionalData,
-    });
-
-    // AS→Platform
-    // The AS replies synchronously with the requested data
-    let data = await notifyByCallback({
-      request_id: requestJson.request_id,
-      request_params: requestJson.request_params,
-      ...additionalData,
-    });
-
-    // When received data
-    //let data = 'mock data';
-    let as_id = config.asID;
-    let signature = await utils.createSignature(data);
-    // AS node encrypts the response and sends it back to RP via NSQ.
-    sendDataToRP({
-      rp_node_id: requestJson.rp_node_id,
-      as_id,
-      data,
-      request_id: requestJson.request_id,
-    });
-
-    // AS node adds transaction to blockchain
-    signData({ as_id, request_id: requestJson.request_id, signature });
+    const responseDetails = await getResponseDetails(requestJson.request_id);
+    getDataAndSendBackToRP(requestJson, responseDetails);
   }
+  db.removeRequestReceivedFromMQ(requestJson.request_id);
 }
 
 export async function handleTendermintNewBlockEvent(
@@ -205,10 +188,11 @@ export async function handleTendermintNewBlockEvent(
   );
   await Promise.all(
     requestIdsInTendermintBlock.map(async (requestId) => {
-      const valid = await checkIntegrity(requestId);
       const message = await db.getRequestReceivedFromMQ(requestId);
+      const valid = await common.checkRequestIntegrity(requestId, message);
       if (valid) {
-        notifyByCallback(message);
+        const responseDetails = await getResponseDetails(requestId);
+        getDataAndSendBackToRP(message, responseDetails);
       }
       db.removeRequestReceivedFromMQ(requestId);
     })
@@ -216,15 +200,6 @@ export async function handleTendermintNewBlockEvent(
 
   db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 }
-
-/*export async function handleABCIAppCallback(requestId, height) {
-  console.log('Callback (event) from ABCI app; requestId:', requestId);
-  const request = await common.getRequestRequireHeight({ requestId }, height);
-  if (request.status === 'completed') {
-    blockchainQueue[requestId] = await request;
-    checkIntegrity(requestId);
-  }
-}*/
 
 //===================== Initialize before flow can start =======================
 

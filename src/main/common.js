@@ -102,3 +102,19 @@ export async function registerMsqAddress({ ip, port }) {
 export async function getNodeToken(node_id = nodeId) {
   return await tendermint.query('GetNodeToken', { node_id });
 }
+
+export async function checkRequestIntegrity(requestId, request) {
+  const msgBlockchain = await getRequest({ requestId });
+
+  const valid =
+    msgBlockchain.messageHash === utils.hash(request.request_message);
+  if (!valid) {
+    console.error(
+      'Mq and blockchain not matched!!',
+      request.request_message,
+      msgBlockchain.messageHash
+    );
+  }
+
+  return valid;
+}

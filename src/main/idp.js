@@ -81,28 +81,12 @@ async function notifyByCallback(request) {
   });
 }
 
-async function checkIntegrity(requestId) {
-  let msgBlockchain = await common.getRequest({ requestId });
-  let message = await db.getRequestReceivedFromMQ(requestId);
-  let valid = false;
-
-  valid = msgBlockchain.messageHash === utils.hash(message.request_message);
-  if (!valid)
-    console.error(
-      'Mq and blockchain not matched!!',
-      message.request_message,
-      msgBlockchain.messageHash
-    );
-
-  return valid;
-}
-
 async function handleMessageFromQueue(request) {
   console.log('IDP receive message from mq:', request);
   let requestJson = JSON.parse(request);
-  await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
 
   if (common.latestBlockHeight < requestJson.height) {
+    await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
     await db.addRequestIdExpectedInBlock(
       requestJson.height,
       requestJson.request_id
@@ -110,8 +94,11 @@ async function handleMessageFromQueue(request) {
     return;
   }
 
-  let valid = await checkIntegrity(requestJson.request_id);
-  if (valid) notifyByCallback(requestJson);
+  const valid = await common.checkRequestIntegrity(requestJson.request_id, requestJson);
+  if (valid) {
+    notifyByCallback(requestJson);
+  }
+  db.removeRequestReceivedFromMQ(requestJson.request_id);
 }
 
 export async function handleTendermintNewBlockEvent(
@@ -130,8 +117,8 @@ export async function handleTendermintNewBlockEvent(
     toHeight
   );
   requestIdsInTendermintBlock.forEach(async function(requestId) {
-    const valid = await checkIntegrity(requestId);
     const message = await db.getRequestReceivedFromMQ(requestId);
+    const valid = await common.checkRequestIntegrity(requestId, message);
     if (valid) {
       notifyByCallback(message);
     }
@@ -154,12 +141,6 @@ export async function handleTendermintNewBlockEvent(
       if(valid) notifyByCallback(mqReceivingQueue[requestId]);
     });
   }
-}*/
-
-/*export async function handleABCIAppCallback(requestId, height) {
-  console.log('Callback (event) from ABCI app; requestId:', requestId);
-  blockchainQueue[requestId] = await common.getRequestRequireHeight({ requestId }, height);
-  checkIntegrity(requestId);
 }*/
 
 //===================== Initialize before flow can start =======================
