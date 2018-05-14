@@ -11,8 +11,6 @@ import * as config from '../config';
 import * as common from '../main/common';
 import * as db from '../db';
 
-const privKey = 'AS_PrivateKey';
-
 const callbackUrlFilePath = path.join(__dirname, '..', '..', 'as-callback-url');
 let callbackUrl = null;
 try {
