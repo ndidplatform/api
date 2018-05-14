@@ -73,7 +73,7 @@ async function signData(data) {
 async function registerServiceDestination(data) {
   let nonce = utils.getNonce();
   let dataToBlockchain = {
-    as_id: data.as_id,
+    //as_id: data.as_id,
     service_id: data.service_id,
     node_id: data.node_id,
   };
@@ -246,7 +246,7 @@ export async function init() {
   //process.env.nodeId = node_id;
   // Hard code add back statement service for demo
   registerServiceDestination({
-    as_id: config.asID,
+    //as_id: config.asID,
     service_id: 'bank_statement',
     node_id: config.nodeId,
   });
