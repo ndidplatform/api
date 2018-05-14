@@ -95,20 +95,25 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
 };*/
 
 async function getASReceiverList(data_request) {
-  const receivers = (await Promise.all(
-    data_request.as_id_list.map(async (as) => {
-      try {
-        const node = await getAsMqDestination({
-          as_id: as,
-          service_id: data_request.service_id,
-        });
+  let nodeIdList;
+  if(!data_request.as_id_list || data_request.as_id_list.length === 0) {
+    nodeIdList = await getAsMqDestination({
+      //as_id: as,
+      service_id: data_request.service_id,
+    });
+  }
+  else nodeIdList = data_request.as_id_list;
 
-        let nodeId = node.node_id;
-        let { ip, port } = await common.getMsqAddress(nodeId);
+  const receivers = (await Promise.all(
+    nodeIdList.map(async (asNodeId) => {
+      try {
+
+        //let nodeId = node.node_id;
+        let { ip, port } = await common.getMsqAddress(asNodeId);
         return {
           ip,
           port,
-          ...(await common.getNodePubKey(nodeId)),
+          ...(await common.getNodePubKey(asNodeId)),
         };
       } catch (error) {
         return null;
@@ -125,6 +130,11 @@ async function sendRequestToAS(requestData) {
   if (requestData.data_request_list != undefined) {
     requestData.data_request_list.forEach(async (data_request) => {
       let receivers = await getASReceiverList(data_request);
+      if(receivers.length === 0) {
+        console.error('No AS found');
+        return;
+      }
+      console.log('===>',data_request, receivers);
       mq.send(receivers, {
         request_id: requestData.request_id,
         namespace: requestData.namespace,
@@ -274,7 +284,7 @@ export async function getIdpMqDestination(data) {
 
 export async function getAsMqDestination(data) {
   return await tendermint.query('GetServiceDestination', {
-    as_id: data.as_id,
+    //as_id: data.as_id,
     service_id: data.service_id,
   });
 }
