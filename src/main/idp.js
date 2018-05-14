@@ -98,7 +98,6 @@ async function handleMessageFromQueue(request) {
   if (valid) {
     notifyByCallback(requestJson);
   }
-  db.removeRequestReceivedFromMQ(requestJson.request_id);
 }
 
 export async function handleTendermintNewBlockEvent(

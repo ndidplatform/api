@@ -168,7 +168,6 @@ async function handleMessageFromQueue(request) {
     const responseDetails = await getResponseDetails(requestJson.request_id);
     getDataAndSendBackToRP(requestJson, responseDetails);
   }
-  db.removeRequestReceivedFromMQ(requestJson.request_id);
 }
 
 export async function handleTendermintNewBlockEvent(
