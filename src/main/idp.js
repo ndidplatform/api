@@ -10,14 +10,15 @@ import * as db from '../db';
 
 import { eventEmitter } from '../mq';
 
-db.put('blockHeight', '', 0);
-
+const callbackUrlFilePath = path.join(
+  __dirname,
+  '..',
+  '..',
+  'idp-callback-url'
+);
 let callbackUrl = null;
 try {
-  callbackUrl = fs.readFileSync(
-    path.join(__dirname, '../../idp-callback-url.json'),
-    'utf8'
-  );
+  callbackUrl = fs.readFileSync(callbackUrlFilePath, 'utf8');
 } catch (error) {
   if (error.code !== 'ENOENT') {
     console.log(error);
@@ -26,15 +27,11 @@ try {
 
 export const setCallbackUrl = (url) => {
   callbackUrl = url;
-  fs.writeFile(
-    path.join(__dirname, '../../idp-callback-url.json'),
-    url,
-    (err) => {
-      if (err) {
-        console.error('Error writing IDP callback url file');
-      }
+  fs.writeFile(callbackUrlFilePath, url, (err) => {
+    if (err) {
+      console.error('Error writing IDP callback url file');
     }
-  );
+  });
 };
 
 export const getCallbackUrl = () => {
@@ -84,68 +81,50 @@ async function notifyByCallback(request) {
   });
 }
 
-async function checkIntegrity(requestId) {
-  let msgBlockchain = await common.getRequest({ requestId });
-  let message = await db.get('mqReceivingQueue', requestId);
-  let valid = false;
-
-  valid = msgBlockchain.messageHash === utils.hash(message.request_message);
-  if (!valid)
-    console.error(
-      'Mq and blockchain not matched!!',
-      message.request_message,
-      msgBlockchain.messageHash
-    );
-
-  return valid;
-}
-
 async function handleMessageFromQueue(request) {
   console.log('IDP receive message from mq:', request);
   let requestJson = JSON.parse(request);
-  await db.put('mqReceivingQueue', requestJson.request_id, requestJson);
 
-  const blockHeight = await db.get('blockHeight', 'blockHeight');
-  if (blockHeight < requestJson.height) {
-    const requestIdsInTendermintBlock = await db.get('requestIdsInTendermintBlock', requestJson.height);
-    if (!requestIdsInTendermintBlock) {
-      await db.put('requestIdsInTendermintBlock', requestJson.height, [requestJson.request_id]);
-    } else {
-      requestIdsInTendermintBlock.push(
-        requestJson.request_id
-      );
-      await db.put('requestIdsInTendermintBlock', requestJson.height, requestIdsInTendermintBlock);
-    }
+  if (common.latestBlockHeight < requestJson.height) {
+    await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
+    await db.addRequestIdExpectedInBlock(
+      requestJson.height,
+      requestJson.request_id
+    );
     return;
   }
 
-  let valid = await checkIntegrity(requestJson.request_id);
-  if (valid) notifyByCallback(requestJson);
+  const valid = await common.checkRequestIntegrity(requestJson.request_id, requestJson);
+  if (valid) {
+    notifyByCallback(requestJson);
+  }
 }
 
-export async function handleTendermintNewBlockEvent(error, result) {
-  //let [transactions, height] = utils.getTransactionListFromTendermintNewBlockEvent(result);
-  let height = tendermint.getHeightFromTendermintNewBlockEvent(result);
+export async function handleTendermintNewBlockEvent(
+  error,
+  result,
+  missingBlockCount
+) {
+  // messages that arrived before 'NewBlock' event
+  // including messages between (latestBlockHeight - missingBlockCount) and latestBlockHeight
+  // (not only just current height in case 'NewBlock' events are missing)
+  const fromHeight = common.latestBlockHeight - missingBlockCount;
+  const toHeight = common.latestBlockHeight;
 
-  const blockHeight = await db.get('blockHeight', 'blockHeight');
-  if (height !== blockHeight + 1) {
-    //TODO handle missing events
-  }
-  await db.put('blockHeight', 'blockHeight', height);
+  const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
+    fromHeight,
+    toHeight
+  );
+  requestIdsInTendermintBlock.forEach(async function(requestId) {
+    const message = await db.getRequestReceivedFromMQ(requestId);
+    const valid = await common.checkRequestIntegrity(requestId, message);
+    if (valid) {
+      notifyByCallback(message);
+    }
+    db.removeRequestReceivedFromMQ(requestId);
+  });
 
-  //msq arrive before newBlock event
-  const requestIdsInTendermintBlock = await db.get('requestIdsInTendermintBlock', height);
-  if (requestIdsInTendermintBlock) {
-    requestIdsInTendermintBlock.forEach(async function(requestId) {
-      let valid = await checkIntegrity(requestId);
-      const message = await db.get('mqReceivingQueue', requestId);
-      if (valid) notifyByCallback(message);
-      db.del('mqReceivingQueue', requestId);
-    });
-
-    db.del('requestIdsInTendermintBlock', height);
-  }
-  // console.log(transactions);
+  db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 }
 
 /*export async function handleNewBlockEvent(data) {
@@ -161,12 +140,6 @@ export async function handleTendermintNewBlockEvent(error, result) {
       if(valid) notifyByCallback(mqReceivingQueue[requestId]);
     });
   }
-}*/
-
-/*export async function handleABCIAppCallback(requestId, height) {
-  console.log('Callback (event) from ABCI app; requestId:', requestId);
-  blockchainQueue[requestId] = await common.getRequestRequireHeight({ requestId }, height);
-  checkIntegrity(requestId);
 }*/
 
 //===================== Initialize before flow can start =======================

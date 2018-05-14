@@ -12,49 +12,53 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
   let transactions = tendermint.getTransactionListFromTendermintNewBlockEvent(
     result
   );
-  for (let i in transactions) {
-    //all tx
-    let requestId = transactions[i].args.request_id; //derive from tx;
+  transactions.forEach(async (transaction) => {
+    const requestId = transaction.args.request_id; //derive from tx;
 
-    const callbackUrl = await db.get('callbackUrls', requestId);
+    const callbackUrl = await db.getCallbackUrl(requestId);
     //this request is not concern this RP
-    if (!callbackUrl) continue;
+    if (!callbackUrl) return;
 
-    common.getRequest({ requestId }).then(async (request) => {
-      try {
-        await fetch(callbackUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            request,
-          }),
-        });
-      } catch (error) {
-        console.log(
-          'Cannot send callback to client application with the following error:',
-          error
-        );
-      }
+    const request = await common.getRequest({ requestId });
+    try {
+      await fetch(callbackUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          request,
+        }),
+      });
+    } catch (error) {
+      console.log(
+        'Cannot send callback to client application with the following error:',
+        error
+      );
+    }
 
-      // Clear callback url mapping when the request is no longer going to have further events
-      if (request.status === 'rejected') {
-        db.del('callbackUrls', requestId);
-      }
+    if (request.status === 'completed') {
+      const requestData = await db.getRequestToSendToAS(requestId);
+      if (requestData != null) {
+        await sendRequestToAS(requestData);
+      } else {
+        // Authen only, no data request
 
-      const requestData = await db.get('requestsData', requestId);
-      if (requestData) {
-        if (request.status === 'completed') {
-          // Send request to AS when completed
-          setTimeout(function() {
-            sendRequestToAS(requestData);
-            db.del('requestsData', requestId);
-          }, 1000);
-        }
+        // Clear callback url mapping and reference ID mapping
+        // since the request is no longer going to have further events
+        // (the request has reached its end state)
+        db.removeCallbackUrl(requestId);
+        db.removeRequestIdReferenceIdMappingByRequestId(requestId);
       }
-    });
-  }
+    } else if (request.status === 'rejected' || request.status === 'closed') {
+      // Clear callback url mapping, reference ID mapping, and request data to send to AS
+      // since the request is no longer going to have further events
+      // (the request has reached its end state)
+      db.removeCallbackUrl(requestId);
+      db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+      db.removeRequestToSendToAS(requestId);
+    }
+  });
 };
 
 /*export const handleABCIAppCallback = async (requestId, height) => {
@@ -99,20 +103,23 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
 };*/
 
 async function getASReceiverList(data_request) {
-  const receivers = (await Promise.all(
-    data_request.as_id_list.map(async (as) => {
-      try {
-        const node = await getAsMqDestination({
-          as_id: as,
-          service_id: data_request.service_id,
-        });
+  let nodeIdList;
+  if (!data_request.as_id_list || data_request.as_id_list.length === 0) {
+    nodeIdList = await getAsMqDestination({
+      //as_id: as,
+      service_id: data_request.service_id,
+    });
+  } else nodeIdList = data_request.as_id_list;
 
-        let nodeId = node.node_id;
-        let { ip, port } = await common.getMsqAddress(nodeId);
+  const receivers = (await Promise.all(
+    nodeIdList.map(async (asNodeId) => {
+      try {
+        //let nodeId = node.node_id;
+        let { ip, port } = await common.getMsqAddress(asNodeId);
         return {
           ip,
           port,
-          ...(await common.getNodePubKey(nodeId)),
+          ...(await common.getNodePubKey(asNodeId)),
         };
       } catch (error) {
         return null;
@@ -122,13 +129,18 @@ async function getASReceiverList(data_request) {
   return receivers;
 }
 
-async function sendRequestToAS(requestData) { 
+async function sendRequestToAS(requestData) {
   // console.log(requestData);
   // node id, which is substituted with ip,port for demo
   let rp_node_id = config.nodeId;
   if (requestData.data_request_list != undefined) {
     requestData.data_request_list.forEach(async (data_request) => {
       let receivers = await getASReceiverList(data_request);
+      if (receivers.length === 0) {
+        console.error('No AS found');
+        return;
+      }
+
       mq.send(receivers, {
         request_id: requestData.request_id,
         namespace: requestData.namespace,
@@ -146,7 +158,7 @@ export async function getIdpsMsqDestination({
   namespace,
   identifier,
   min_ial,
-  idp_list
+  idp_list,
 }) {
   let foundedIdpList = await getIdpMqDestination({
     namespace,
@@ -161,10 +173,10 @@ export async function getIdpsMsqDestination({
   for (let i in nodeIdList) {
     let nodeId = nodeIdList[i];
     //filter only those in idp_list
-    if(idp_list != null && idp_list.length !== 0) {
-      if(idp_list.indexOf(nodeId) === -1) continue;
+    if (idp_list != null && idp_list.length !== 0) {
+      if (idp_list.indexOf(nodeId) === -1) continue;
     }
-    
+
     let { ip, port } = await common.getMsqAddress(nodeId);
 
     receivers.push({
@@ -184,7 +196,7 @@ export async function createRequest({
   ...data
 }) {
   //existing reference_id, return
-  const requestId = await db.get('requestReferenceMapping', reference_id);
+  const requestId = await db.getRequestIdByReferenceId(reference_id);
   if (requestId) {
     return requestId;
   }
@@ -193,10 +205,10 @@ export async function createRequest({
     namespace,
     identifier,
     min_ial: data.min_ial ? data.min_ial : 1,
-    idp_list: data.idp_list
+    idp_list: data.idp_list,
   });
 
-  if(receivers.length === 0) {
+  if (receivers.length === 0) {
     console.error('NO IDP FOUND');
     return false;
   }
@@ -216,9 +228,9 @@ export async function createRequest({
     });
   }
 
-  //save request data to DB to send to AS via msq when authen complete
+  //save request data to DB to send to AS via mq when authen complete
   if (data_request_list != null && data_request_list.length !== 0) {
-    await db.put('requestsData', request_id, {
+    await db.setRequestToSendToAS(request_id, {
       namespace,
       identifier,
       reference_id,
@@ -264,8 +276,8 @@ export async function createRequest({
   });
 
   //maintain mapping
-  await db.put('requestReferenceMapping', reference_id, request_id);
-  await db.put('callbackUrls', request_id, data.callback_url);
+  await db.setRequestIdByReferenceId(reference_id, request_id);
+  await db.setCallbackUrl(request_id, data.callback_url);
   return request_id;
 }
 
@@ -278,13 +290,21 @@ export async function getIdpMqDestination(data) {
 
 export async function getAsMqDestination(data) {
   return await tendermint.query('GetServiceDestination', {
-    as_id: data.as_id,
+    //as_id: data.as_id,
     service_id: data.service_id,
   });
 }
 
-export function getDataFromAS(request_id) {
-  return db.get('dataFromAS', request_id);
+export function getDataFromAS(requestId) {
+  return db.getDatafromAS(requestId);
+}
+
+export function removeDataFromAS(requestId) {
+  return db.removeDataFromAS(requestId);
+}
+
+export function removeAllDataFromAS() {
+  return db.removeAllDataFromAS();
 }
 
 async function handleMessageFromQueue(data) {
@@ -297,7 +317,7 @@ async function handleMessageFromQueue(data) {
   data = JSON.parse(data);
   if (data.data) {
     try {
-      const callbackUrl = await db.get('callbackUrls', data.request_id);
+      const callbackUrl = await db.getCallbackUrl(data.request_id);
 
       await fetch(callbackUrl, {
         method: 'POST',
@@ -309,7 +329,7 @@ async function handleMessageFromQueue(data) {
           as_id: data.as_id,
         }),
       });
-      db.del('callbackUrls', data.request_id);
+      db.removeCallbackUrl(data.request_id);
     } catch (error) {
       console.log(
         'Cannot send callback to client application with the following error:',
@@ -318,10 +338,16 @@ async function handleMessageFromQueue(data) {
     }
   }
 
-  await db.put('dataFromAS', data.request_id, {
+  await db.addDataFromAS(data.request_id, {
     data: data.data,
     as_id: data.as_id,
   });
+
+  // Clear callback url mapping, reference ID mapping, and request data to send to AS
+  // since the request is no longer going to have further events
+  db.removeCallbackUrl(data.request_id);
+  db.removeRequestIdReferenceIdMappingByRequestId(data.request_id);
+  db.removeRequestToSendToAS(data.request_id);
 }
 
 export async function init() {

@@ -54,7 +54,6 @@ docker-compose up
 * `MQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted [Required]
 * `MQ_BINDING_PORT`: A port to bind message queue [Default: `5555`]
 * `SERVER_PORT`: API server port [Default: `8080`]
-* `AS_ID`: AS ID for register service (AS only)
 * `PRIVATE_KEY_PATH`: Path to private key (if call back to create signature is not set) [Default: using pre-generated development key]
 * `NODE_ID`: Node ID. Only when there are more than one node per role in the system. This ID tie to public key, in dev mode we have `rp1`, `rp2`, `rp3`, `idp1`, `idp2`, `idp3`, `as1`, `as2`, `as3`
 
@@ -89,7 +88,6 @@ docker-compose up
   ROLE=as \
   MQ_CONTACT_IP=192.168.1.1 \
   MQ_BINDING_PORT=5555 \
-  AS_ID=AS1 \
   npm start
   ```
 
