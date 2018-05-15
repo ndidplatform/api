@@ -1,5 +1,6 @@
-import * as crypto from './crypto';
 import fs from 'fs';
+import crypto from 'crypto';
+import * as cryptoUtils from './crypto';
 import * as config from '../config';
 import fetch from 'node-fetch';
 
@@ -12,26 +13,30 @@ export function getNonce() {
 }
 
 export function hash(stringToHash) {
-  return crypto.hash(stringToHash);
+  return cryptoUtils.hash(stringToHash);
 }
 
 export function decryptAsymetricKey(cipher) {
-  // TODO implement decryption with callback decrypt? no design yet...
-  let [encryptedSymKey, encryptedMessage] = cipher.split('|');
-  let privateKey = fs.readFileSync(config.PRIVATE_KEY_PATH,'utf8');
-  let symKey = crypto.privateDecrypt(privateKey, encryptedSymKey);
-  return crypto.decryptAES256GCM(symKey, encryptedMessage);
+  // TODO: implement decryption with callback decrypt? no design yet... (HSM)
+  const [encryptedSymKey, encryptedMessage] = cipher.split('|');
+  const privateKey = fs.readFileSync(config.PRIVATE_KEY_PATH, 'utf8');
+  const symKeyBuffer = cryptoUtils.privateDecrypt(privateKey, encryptedSymKey);
+  return cryptoUtils.decryptAES256GCM(symKeyBuffer, encryptedMessage, false);
 }
 
 export function encryptAsymetricKey(publicKey, message) {
-  let symKey = crypto.randomHexBytes(32);
-  let encryptedSymKey = crypto.publicEncrypt(publicKey, symKey);
-  let encryptedMessage = crypto.encryptAES256GCM(symKey, message);
+  const symKeyBuffer = crypto.randomBytes(32);
+  const encryptedSymKey = cryptoUtils.publicEncrypt(publicKey, symKeyBuffer);
+  const encryptedMessage = cryptoUtils.encryptAES256GCM(
+    symKeyBuffer,
+    message,
+    false // Key derivation is not needed since key is cryptographically random generated and use only once
+  );
   return encryptedSymKey + '|' + encryptedMessage;
 }
 
 export function generateIdentityProof(data) {
-  return crypto.generateIdentityProof(data);
+  return cryptoUtils.generateIdentityProof(data);
 }
 
 export function setSignatureCallback(url) {
@@ -54,18 +59,18 @@ async function createSignatureByCallback() {
       hash_method: 'SHA256',
       //key_type: 'string',
       //sign_method: 'string'
-    })
+    }),
   });
   return await response.text();
 }
 
 export async function createSignature(data, nonce = '') {
-  if(signatureCallback)
+  if (signatureCallback)
     return await createSignatureByCallback(JSON.stringify(data) + nonce);
-  let privateKey = fs.readFileSync(config.PRIVATE_KEY_PATH,'utf8');
-  return crypto.createSignature(data, nonce, privateKey);
+  let privateKey = fs.readFileSync(config.PRIVATE_KEY_PATH, 'utf8');
+  return cryptoUtils.createSignature(data, nonce, privateKey);
 }
 
 export function createRequestId() {
-  return crypto.createRequestId();
+  return cryptoUtils.randomHexBytes(32);
 }
