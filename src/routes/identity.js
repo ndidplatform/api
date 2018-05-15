@@ -13,7 +13,7 @@ router.post('/', async (req, res, next) => {
       body: req.body,
     });
     if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
+      res.status(400).json(bodyValidationResult);
       return;
     }
 
@@ -35,7 +35,11 @@ router.post('/', async (req, res, next) => {
       accessor_id,
     });
 
-    res.status(200).send(isSuccess);
+    if (isSuccess) {
+      res.status(201).json('Identity Created');
+    } else {
+      res.status(500).end();
+    }
   } catch (error) {
     res.status(500).end();
   }
@@ -62,7 +66,7 @@ router.post('/:namespace/:identifier', async (req, res, next) => {
       body: req.body,
     });
     if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
+      res.status(400).json(bodyValidationResult);
       return;
     }
 
@@ -98,7 +102,7 @@ router.post('/:namespace/:identifier/endorsement', async (req, res, next) => {
       body: req.body,
     });
     if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
+      res.status(400).json(bodyValidationResult);
       return;
     }
 
@@ -122,7 +126,7 @@ router.post('/:namespace/:identifier/accessors', async (req, res, next) => {
       body: req.body,
     });
     if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
+      res.status(400).json(bodyValidationResult);
       return;
     }
 
@@ -148,7 +152,7 @@ router.get(
         query: req.query,
       });
       if (!queryValidationResult.valid) {
-        res.status(400).send(queryValidationResult);
+        res.status(400).json(queryValidationResult);
         return;
       }
 

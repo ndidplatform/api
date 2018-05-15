@@ -14,7 +14,7 @@ router.post('/node/create', async (req, res, next) => {
       body: req.body,
     });
     if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
+      res.status(400).json(bodyValidationResult);
       return;
     }
 
@@ -46,7 +46,7 @@ router.post('/node/update', async (req, res, next) => {
       body: req.body,
     });
     if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
+      res.status(400).json(bodyValidationResult);
       return;
     }
 
@@ -78,7 +78,7 @@ router.post('/node/register_callback', async (req, res, next) => {
       body: req.body,
     });
     if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
+      res.status(400).json(bodyValidationResult);
       return;
     }
 
@@ -99,7 +99,7 @@ router.post('/node/register_callback_master', async (req, res, next) => {
       body: req.body,
     });
     if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
+      res.status(400).json(bodyValidationResult);
       return;
     }
 

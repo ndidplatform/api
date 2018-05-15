@@ -10,7 +10,7 @@ router.get('/callback', async (req, res, next) => {
   try {
     const url = abciAppIdpApi.getCallbackUrl();
 
-    res.status(200).send({ url });
+    res.status(200).json({ url });
   } catch (error) {
     res.status(500).end();
   }
@@ -26,7 +26,7 @@ router.post('/callback', async (req, res, next) => {
       body: req.body,
     });
     if (!validationResult.valid) {
-      res.status(400).send(validationResult);
+      res.status(400).json(validationResult);
       return;
     }
 
@@ -46,7 +46,7 @@ router.post('/response', async (req, res, next) => {
       body: req.body,
     });
     if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
+      res.status(400).json(bodyValidationResult);
       return;
     }
 
@@ -74,7 +74,11 @@ router.post('/response', async (req, res, next) => {
       accessor_id,
     });
 
-    res.status(200).send(isSuccess);
+    if (isSuccess) {
+      res.status(200).json('Response Successful');
+    } else {
+      res.status(500).end();
+    }
   } catch (error) {
     res.status(500).end();
   }

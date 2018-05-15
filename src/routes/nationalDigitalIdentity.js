@@ -8,7 +8,7 @@ const router = express.Router();
 router.post('/initNDID', async (req, res, next) => {
   try {
     let result = await abciAppNdid.initNDID(req.body.public_key);
-    res.status(200).send(result);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).end();
   }
@@ -28,7 +28,7 @@ router.post('/registerNode', async (req, res, next) => {
       role
     });
 
-    res.status(200).send(result);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).end();
   }
@@ -46,7 +46,7 @@ router.post('/setNodeToken', async (req, res, next) => {
       amount
     });
 
-    res.status(200).send(result);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).end();
   }
@@ -64,7 +64,7 @@ router.post('/addNodeToken', async (req, res, next) => {
       amount
     });
 
-    res.status(200).send(result);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).end();
   }
@@ -82,7 +82,7 @@ router.post('/reduceNodeToken', async (req, res, next) => {
       amount
     });
 
-    res.status(200).send(result);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).end();
   }

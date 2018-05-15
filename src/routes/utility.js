@@ -13,7 +13,7 @@ router.get('/idp', async (req, res, next) => {
       query: req.query,
     });
     if (!queryValidationResult.valid) {
-      res.status(400).send(queryValidationResult);
+      res.status(400).json(queryValidationResult);
       return;
     }
 
@@ -36,7 +36,7 @@ router.get('/idp/:namespace/:identifier', async (req, res, next) => {
       query: req.query,
     });
     if (!queryValidationResult.valid) {
-      res.status(400).send(queryValidationResult);
+      res.status(400).json(queryValidationResult);
       return;
     }
 
@@ -52,11 +52,12 @@ router.get('/idp/:namespace/:identifier', async (req, res, next) => {
   }
 });
 
-router.get('/nodeToken/:nodeId', async(req, res, next) => {
+router.get('/nodeToken/:nodeId', async (req, res, next) => {
   try {
-    res.status(200).send(await abciAppCommonApi.getNodeToken(req.params.nodeId));
-  }
-  catch(error) {
+    res
+      .status(200)
+      .json(await abciAppCommonApi.getNodeToken(req.params.nodeId));
+  } catch (error) {
     res.status(500).end();
   }
 });

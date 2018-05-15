@@ -9,7 +9,7 @@ router.get('/callback', async (req, res, next) => {
   try {
     const url = abciAppAsApi.getCallbackUrl();
 
-    res.status(200).send({ url });
+    res.status(200).json({ url });
   } catch (error) {
     res.status(500).end();
   }
@@ -23,7 +23,7 @@ router.post('/callback', async (req, res, next) => {
       body: req.body,
     });
     if (!validationResult.valid) {
-      res.status(400).send(validationResult);
+      res.status(400).json(validationResult);
       return;
     }
 
@@ -45,7 +45,7 @@ router.post('/service/:service_id', async (req, res, next) => {
       body: req.body,
     });
     if (!validationResult.valid) {
-      res.status(400).send(validationResult);
+      res.status(400).json(validationResult);
       return;
     }
     

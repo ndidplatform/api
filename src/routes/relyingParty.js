@@ -16,7 +16,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
     //   params: req.params,
     // });
     // if (!paramsValidationResult.valid) {
-    //   res.status(400).send(paramsValidationResult);
+    //   res.status(400).json(paramsValidationResult);
     //   return;
     // }
 
@@ -26,7 +26,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
       body: req.body,
     });
     if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
+      res.status(400).json(bodyValidationResult);
       return;
     }
 
@@ -58,7 +58,7 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
     });
 
     if (!requestId) throw 'Cannot create request';
-    res.status(200).send({ requestId });
+    res.status(200).json({ requestId });
   } catch (error) {
     console.error(error);
     res.status(500).end();
@@ -73,7 +73,7 @@ router.get('/requests/:request_id', async (req, res, next) => {
       requestId: request_id,
     });
 
-    res.status(200).send(request);
+    res.status(200).json(request);
   } catch (error) {
     console.error(error);
     res.status(500).end();
@@ -94,7 +94,7 @@ router.get('/requests/reference/:reference_number', async (req, res, next) => {
 router.get('/requests/data/:request_id', async (req, res, next) => {
   try {
     const data = await abciAppRpApi.getDataFromAS(req.params.request_id);
-    res.status(200).send(data);
+    res.status(200).json(data);
   } catch (error) {
     res.status(500).end();
   }
