@@ -190,14 +190,35 @@ export async function getIdpsMsqDestination({
   return receivers;
 }
 
+/**
+ * Create a new request
+ * @param {Object} request
+ * @param {string} request.namespace
+ * @param {string} request.reference_id
+ * @param {Array.<string>} request.idp_list
+ * @param {string} request.callback_url
+ * @param {Array.<Object>} request.data_request_list
+ * @param {string} request.request_message
+ * @param {number} request.min_ial
+ * @param {number} request.min_aal
+ * @param {number} request.min_idp
+ * @param {number} request.request_timeout
+ * @returns {Promise<string>} Request ID
+ */
 export async function createRequest({
   namespace,
   identifier,
   reference_id,
+  idp_list,
+  callback_url,
   data_request_list,
-  ...data
+  request_message,
+  min_ial,
+  min_aal,
+  min_idp,
+  request_timeout,
 }) {
-  //existing reference_id, return
+  // existing reference_id, return request ID
   const requestId = await db.getRequestIdByReferenceId(reference_id);
   if (requestId) {
     return requestId;
@@ -206,21 +227,21 @@ export async function createRequest({
   let receivers = await getIdpsMsqDestination({
     namespace,
     identifier,
-    min_ial: data.min_ial ? data.min_ial : 1,
-    idp_list: data.idp_list,
+    min_ial,
+    idp_list,
   });
 
   if (receivers.length === 0) {
-    console.error('NO IDP FOUND');
-    return false;
+    console.error('No IDP found');
+    return null;
   }
 
-  let nonce = utils.getNonce();
-  let request_id = utils.createRequestId();
+  const nonce = utils.getNonce();
+  const request_id = utils.createRequestId();
 
-  let data_request_list_to_blockchain = [];
+  const dataRequestListToBlockchain = [];
   for (let i in data_request_list) {
-    data_request_list_to_blockchain.push({
+    dataRequestListToBlockchain.push({
       service_id: data_request_list[i].service_id,
       as_id_list: data_request_list[i].as_id_list,
       count: data_request_list[i].count,
@@ -230,56 +251,49 @@ export async function createRequest({
     });
   }
 
-  //save request data to DB to send to AS via mq when authen complete
-  if (data_request_list != null && data_request_list.length !== 0) {
-    await db.setRequestToSendToAS(request_id, {
-      namespace,
-      identifier,
-      reference_id,
-      request_id,
-      min_idp: data.min_idp ? data.min_idp : 1,
-      min_aal: data.min_aal ? data.min_aal : 1,
-      min_ial: data.min_ial ? data.min_ial : 1,
-      timeout: data.timeout,
-      data_request_list: data_request_list,
-      request_message: data.request_message,
-    });
-  }
-
-  //add data to blockchain
-  let dataToBlockchain = {
-    request_id,
-    min_idp: data.min_idp ? data.min_idp : 1,
-    min_aal: data.min_aal,
-    min_ial: data.min_ial,
-    timeout: data.timeout,
-    data_request_list: data_request_list_to_blockchain,
-    message_hash: utils.hash(data.request_message),
-  };
-  let [success, height] = await tendermint.transact(
-    'CreateRequest',
-    dataToBlockchain,
-    nonce
-  );
-  if (!success) return false;
-
-  //send via message queue
-  mq.send(receivers, {
+  const requestData = {
     namespace,
     identifier,
     request_id,
-    min_idp: data.min_idp ? data.min_idp : 1,
-    min_aal: data.min_aal ? data.min_aal : 1,
-    min_ial: data.min_ial ? data.min_ial : 1,
-    timeout: data.timeout,
+    min_idp: min_idp ? min_idp : 1,
+    min_aal: min_aal,
+    min_ial: min_ial,
+    request_timeout,
     data_request_list: data_request_list,
-    request_message: data.request_message,
+    request_message,
+  };
+
+  // save request data to DB to send to AS via mq when authen complete
+  if (data_request_list != null && data_request_list.length !== 0) {
+    await db.setRequestToSendToAS(request_id, requestData);
+  }
+
+  // add data to blockchain
+  const requestDataToBlockchain = {
+    request_id,
+    min_idp: min_idp ? min_idp : 1,
+    min_aal,
+    min_ial,
+    request_timeout,
+    data_request_list: dataRequestListToBlockchain,
+    message_hash: utils.hash(request_message),
+  };
+  const [success, height] = await tendermint.transact(
+    'CreateRequest',
+    requestDataToBlockchain,
+    nonce
+  );
+  if (!success) return null;
+
+  // send request data to IDPs via message queue
+  mq.send(receivers, {
+    ...requestData,
     height,
   });
 
-  //maintain mapping
+  // maintain mapping
   await db.setRequestIdByReferenceId(reference_id, request_id);
-  await db.setCallbackUrl(request_id, data.callback_url);
+  await db.setCallbackUrl(request_id, callback_url);
   return request_id;
 }
 
