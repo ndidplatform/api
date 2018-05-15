@@ -40,7 +40,8 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
     if (request.status === 'completed') {
       const requestData = await db.getRequestToSendToAS(requestId);
       if (requestData != null) {
-        await sendRequestToAS(requestData);
+        const height = tendermint.getHeightFromTendermintNewBlockEvent(result);
+        await sendRequestToAS(requestData, height);
       } else {
         // Authen only, no data request
 
@@ -129,7 +130,7 @@ async function getASReceiverList(data_request) {
   return receivers;
 }
 
-async function sendRequestToAS(requestData) {
+async function sendRequestToAS(requestData, height) {
   // console.log(requestData);
   // node id, which is substituted with ip,port for demo
   let rp_node_id = config.nodeId;
@@ -149,6 +150,7 @@ async function sendRequestToAS(requestData) {
         request_params: data_request.request_params,
         rp_node_id: rp_node_id,
         request_message: requestData.request_message,
+        height,
       });
     });
   }
