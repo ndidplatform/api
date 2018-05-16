@@ -60,7 +60,6 @@
   ROLE=idp \
   MQ_CONTACT_IP=192.168.1.1 \
   MQ_BINDING_PORT=5555 \
-  ASSOC_USERS=users.json \
   npm start
   ```
 

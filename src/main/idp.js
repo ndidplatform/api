@@ -96,7 +96,10 @@ async function handleMessageFromQueue(request) {
 
   const valid = await common.checkRequestIntegrity(requestJson.request_id, requestJson);
   if (valid) {
-    notifyByCallback(requestJson);
+    notifyByCallback({
+      request_message_hash: utils.hash(requestJson.request_message),
+      ...requestJson
+    });
   }
 }
 
@@ -119,7 +122,10 @@ export async function handleTendermintNewBlockEvent(
     const message = await db.getRequestReceivedFromMQ(requestId);
     const valid = await common.checkRequestIntegrity(requestId, message);
     if (valid) {
-      notifyByCallback(message);
+      notifyByCallback({
+        request_message_hash: utils.hash(message.request_message),
+        ...message
+      });
     }
     db.removeRequestReceivedFromMQ(requestId);
   });
