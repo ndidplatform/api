@@ -13,13 +13,17 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
     result
   );
   transactions.forEach(async (transaction) => {
-    const requestId = transaction.args.request_id; //derive from tx;
+    //TODO clear key with smart-contract, eg. request_id or requestId
+    const requestId = transaction.args.request_id || transaction.args.requestId; //derive from tx;
 
     const callbackUrl = await db.getCallbackUrl(requestId);
     //this request is not concern this RP
     if (!callbackUrl) return;
 
     const request = await common.getRequest({ requestId });
+    const requestDetail = await common.getRequestDetail({ requestId });
+    if(!requestDetail.responses) requestDetail.responses = [];
+    let idpCountOk = requestDetail.responses.length === requestDetail.min_idp;
     try {
       await fetch(callbackUrl, {
         method: 'POST',
@@ -27,7 +31,10 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          request,
+          request: {
+            idpCountOk,
+            ...request
+          },
         }),
       });
     } catch (error) {
@@ -37,7 +44,7 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
       );
     }
 
-    if (request.status === 'completed') {
+    if (request.status === 'confirmed' && idpCountOk) {
       const requestData = await db.getRequestToSendToAS(requestId);
       if (requestData != null) {
         const height = tendermint.getHeightFromTendermintNewBlockEvent(result);
@@ -51,7 +58,7 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
         db.removeCallbackUrl(requestId);
         db.removeRequestIdReferenceIdMappingByRequestId(requestId);
       }
-    } else if (request.status === 'rejected' || request.isClosed || request.isTimeout) {
+    } else if (request.status === 'rejected' || request.is_closed || request.is_timed_out) {
       // Clear callback url mapping, reference ID mapping, and request data to send to AS
       // since the request is no longer going to have further events
       // (the request has reached its end state)
@@ -333,6 +340,9 @@ async function handleMessageFromQueue(data) {
 
   //receive data from AS
   data = JSON.parse(data);
+  let request = await common.getRequest({ requestId: data.request_id });
+  //data arrived too late, ignore data
+  if(request.is_closed || request.is_timed_out) return;
   if (data.data) {
     try {
       const callbackUrl = await db.getCallbackUrl(data.request_id);
@@ -368,40 +378,13 @@ async function handleMessageFromQueue(data) {
   db.removeRequestToSendToAS(data.request_id);
 }
 
-//TODO remove this after real API for closed request is ready
-/*async function simulateCloseRequest(requestId) {
-  let request = {
-    isTimeout: true
-  };
-  const callbackUrl = await db.getCallbackUrl(requestId);
-  //this request is not concern this RP
-  if (!callbackUrl) return;
-  try {
-    await fetch(callbackUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        request
-      }),
-    });
-  } catch (error) {
-    console.log(
-      'Cannot send callback to client application with the following error:',
-      error
-    );
-  }
-}*/
-
-async function closeRequest(requestId) {
+async function timeoutRequest(requestId) {
   let request = await common.getRequest({ requestId });
   switch(request.status) {
     case 'complicated':
     case 'pending':
     case 'confirmed':
-      //TODO close request
-      //simulateCloseRequest(requestId);
+      await tendermint.transact('TimeOutRequest',{ requestId }, utils.getNonce());
       break;
     default:
       //Do nothing
@@ -410,9 +393,9 @@ async function closeRequest(requestId) {
 }
 
 function runTimeoutScheduler(requestId, secondsToTimeout) {
-  if(secondsToTimeout < 0) closeRequest(requestId);
+  if(secondsToTimeout < 0) timeoutRequest(requestId);
   else setTimeout(() => {
-    closeRequest(requestId);
+    timeoutRequest(requestId);
   },secondsToTimeout*1000);
 }
 
