@@ -94,41 +94,55 @@ async function handleMessageFromQueue(request) {
     return;
   }
 
-  const valid = await common.checkRequestIntegrity(requestJson.request_id, requestJson);
+  const valid = await common.checkRequestIntegrity(
+    requestJson.request_id,
+    requestJson
+  );
   if (valid) {
     notifyByCallback({
       request_message_hash: utils.hash(requestJson.request_message),
-      ...requestJson
+      ...requestJson,
     });
   }
 }
 
-export async function handleTendermintNewBlockEvent(
+export async function handleTendermintNewBlockHeaderEvent(
   error,
   result,
   missingBlockCount
 ) {
+  const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
   // messages that arrived before 'NewBlock' event
-  // including messages between (latestBlockHeight - missingBlockCount) and latestBlockHeight
-  // (not only just current height in case 'NewBlock' events are missing)
-  const fromHeight = common.latestBlockHeight - missingBlockCount;
-  const toHeight = common.latestBlockHeight;
+  // including messages between the start of missing block's height
+  // and the block before latest block height
+  // (not only just (current height - 1) in case 'NewBlock' events are missing)
+  // NOTE: tendermint always create a pair of block. A block with transactions and
+  // a block that signs the previous block which indicates that the previous block is valid
+  const fromHeight =
+    missingBlockCount == null
+      ? 1
+      : missingBlockCount === 0
+        ? height - 1
+        : height - missingBlockCount;
+  const toHeight = height - 1;
 
   const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
     fromHeight,
     toHeight
   );
-  requestIdsInTendermintBlock.forEach(async function(requestId) {
-    const message = await db.getRequestReceivedFromMQ(requestId);
-    const valid = await common.checkRequestIntegrity(requestId, message);
-    if (valid) {
-      notifyByCallback({
-        request_message_hash: utils.hash(message.request_message),
-        ...message
-      });
-    }
-    db.removeRequestReceivedFromMQ(requestId);
-  });
+  await Promise.all(
+    requestIdsInTendermintBlock.map(async (requestId) => {
+      const message = await db.getRequestReceivedFromMQ(requestId);
+      const valid = await common.checkRequestIntegrity(requestId, message);
+      if (valid) {
+        notifyByCallback({
+          request_message_hash: utils.hash(message.request_message),
+          ...message,
+        });
+      }
+      db.removeRequestReceivedFromMQ(requestId);
+    })
+  );
 
   db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 }

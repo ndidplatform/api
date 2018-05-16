@@ -61,8 +61,8 @@ export async function transact(fnName, data, nonce) {
   }
 }
 
-export function getTransactionListFromTendermintNewBlockEvent(result) {
-  const txs = result.data.data.block.data.txs; // array of transactions in the block base64 encoded
+export function getTransactionListFromBlockQuery(result) {
+  const txs = result.block.data.txs; // array of transactions in the block base64 encoded
   //const height = result.data.data.block.header.height;
 
   const transactions = txs.map((tx) => {
@@ -80,6 +80,6 @@ export function getTransactionListFromTendermintNewBlockEvent(result) {
   return transactions;
 }
 
-export function getHeightFromTendermintNewBlockEvent(result) {
-  return result.data.data.block.header.height;
+export function getBlockHeightFromNewBlockHeaderEvent(result) {
+  return result.data.data.header.height;
 }

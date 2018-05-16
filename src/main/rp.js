@@ -8,59 +8,75 @@ import * as config from '../config';
 import * as common from '../main/common';
 import * as db from '../db';
 
-export const handleTendermintNewBlockEvent = async (error, result) => {
-  let transactions = tendermint.getTransactionListFromTendermintNewBlockEvent(
-    result
-  );
-  transactions.forEach(async (transaction) => {
-    const requestId = transaction.args.request_id; //derive from tx;
+export async function handleTendermintNewBlockHeaderEvent(
+  error,
+  result,
+  missingBlockCount
+) {
+  // FIXME: handle unknown missingBlockCount (missingBlockCount == null) on server start
+  // Cannot let fromHeight = 0 since it will query tendermint all the blocks from the beginning of the chain
+  // Possible solution: Save last known and processed block height to persistent storage and load it on server start
+  if (missingBlockCount == null) return;
 
-    const callbackUrl = await db.getCallbackUrl(requestId);
-    //this request is not concern this RP
-    if (!callbackUrl) return;
+  const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
+  const fromHeight =
+    missingBlockCount === 0 ? height - 1 : height - missingBlockCount;
+  const toHeight = height - 1;
+  const blocks = await common.getBlocks(fromHeight, toHeight);
+  blocks.forEach((block) => {
+    let transactions = tendermint.getTransactionListFromBlockQuery(block);
+    transactions.forEach(async (transaction) => {
+      const requestId = transaction.args.request_id; //derive from tx;
 
-    const request = await common.getRequest({ requestId });
-    try {
-      await fetch(callbackUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          request,
-        }),
-      });
-    } catch (error) {
-      console.log(
-        'Cannot send callback to client application with the following error:',
-        error
-      );
-    }
+      const callbackUrl = await db.getCallbackUrl(requestId);
 
-    if (request.status === 'completed') {
-      const requestData = await db.getRequestToSendToAS(requestId);
-      if (requestData != null) {
-        const height = tendermint.getHeightFromTendermintNewBlockEvent(result);
-        await sendRequestToAS(requestData, height);
-      } else {
-        // Authen only, no data request
+      if (!callbackUrl) return; // This RP does not concern this request
 
-        // Clear callback url mapping and reference ID mapping
+      const request = await common.getRequest({ requestId });
+      try {
+        await fetch(callbackUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            request,
+          }),
+        });
+      } catch (error) {
+        console.log(
+          'Cannot send callback to client application with the following error:',
+          error
+        );
+      }
+
+      if (request.status === 'completed') {
+        const requestData = await db.getRequestToSendToAS(requestId);
+        if (requestData != null) {
+          const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(
+            result
+          );
+          await sendRequestToAS(requestData, height);
+        } else {
+          // Authen only, no data request
+
+          // Clear callback url mapping and reference ID mapping
+          // since the request is no longer going to have further events
+          // (the request has reached its end state)
+          db.removeCallbackUrl(requestId);
+          db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+        }
+      } else if (request.status === 'rejected' || request.status === 'closed') {
+        // Clear callback url mapping, reference ID mapping, and request data to send to AS
         // since the request is no longer going to have further events
         // (the request has reached its end state)
         db.removeCallbackUrl(requestId);
         db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+        db.removeRequestToSendToAS(requestId);
       }
-    } else if (request.status === 'rejected' || request.status === 'closed') {
-      // Clear callback url mapping, reference ID mapping, and request data to send to AS
-      // since the request is no longer going to have further events
-      // (the request has reached its end state)
-      db.removeCallbackUrl(requestId);
-      db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-      db.removeRequestToSendToAS(requestId);
-    }
+    });
   });
-};
+}
 
 /*export const handleABCIAppCallback = async (requestId, height) => {
   if (callbackUrls[requestId]) {
