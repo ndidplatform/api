@@ -51,7 +51,7 @@ export const handleTendermintNewBlockEvent = async (error, result) => {
         db.removeCallbackUrl(requestId);
         db.removeRequestIdReferenceIdMappingByRequestId(requestId);
       }
-    } else if (request.status === 'rejected' || request.status === 'closed') {
+    } else if (request.status === 'rejected' || request.isClosed || request.isTimeout) {
       // Clear callback url mapping, reference ID mapping, and request data to send to AS
       // since the request is no longer going to have further events
       // (the request has reached its end state)
@@ -368,37 +368,68 @@ async function handleMessageFromQueue(data) {
   db.removeRequestToSendToAS(data.request_id);
 }
 
+//TODO remove this after real API for closed request is ready
+/*async function simulateCloseRequest(requestId) {
+  let request = {
+    isTimeout: true
+  };
+  const callbackUrl = await db.getCallbackUrl(requestId);
+  //this request is not concern this RP
+  if (!callbackUrl) return;
+  try {
+    await fetch(callbackUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        request
+      }),
+    });
+  } catch (error) {
+    console.log(
+      'Cannot send callback to client application with the following error:',
+      error
+    );
+  }
+}*/
+
+async function closeRequest(requestId) {
+  let request = await common.getRequest({ requestId });
+  switch(request.status) {
+    case 'complicated':
+    case 'pending':
+    case 'confirmed':
+      //TODO close request
+      //simulateCloseRequest(requestId);
+      break;
+    default:
+      //Do nothing
+  }
+  db.removeTimeoutScheduler(requestId);
+}
+
+function runTimeoutScheduler(requestId, secondsToTimeout) {
+  if(secondsToTimeout < 0) closeRequest(requestId);
+  else setTimeout(() => {
+    closeRequest(requestId);
+  },secondsToTimeout*1000);
+}
+
 function addTimeoutScheduler(requestId, secondsToTimeout) {
   let unixTimeout = Date.now() + secondsToTimeout*1000;
-  //TODO add unixTimeout to persistent
-
-  setTimeout(async function() {
-    let request = common.getRequest({ requestId });
-    switch(request.status) {
-      case 'complicated':
-      case 'pending':
-      case 'confirmed':
-      case 'rejected':
-        //TODO close request
-        break;
-      default:
-        //Do nothing
-    }
-    //TODO remove from persistent
-
-  },Math.max(0,secondsToTimeout*1000));
+  db.addTimeoutScheduler(requestId, unixTimeout);
+  runTimeoutScheduler(requestId, secondsToTimeout);
 }
 
 export async function init() {
-  //TODO get all scheduler from persistent
-  let scheduler = [];
+  let scheduler = await db.getAllTimeoutScheduler();
   scheduler.forEach(({requestId, unixTimeout}) => {
-    addTimeoutScheduler(requestId, (unixTimeout - Date.now())/1000 );
+    runTimeoutScheduler(requestId, (unixTimeout - Date.now())/1000 );
   });
 
   //In production this should be done only once in phase 1,
   common.registerMsqAddress(config.mqRegister);
-  
 }
 
 if (config.role === 'rp') {

@@ -44,6 +44,10 @@ const Entities = {
     asNodeId: Sequelize.STRING,
     data: Sequelize.JSON,
   }),
+  timeoutScheduler: sequelize.define('timeoutScheduler', {
+    requestId: Sequelize.STRING,
+    unixTimeout: Sequelize.INTEGER
+  })
 };
 
 const initDb = sequelize.sync();
@@ -153,4 +157,17 @@ export async function remove({ name, keyName, key, valueName, value }) {
       [keyName]: key,
     },
   });
+}
+
+export async function getAll(name) {
+  await initDb;
+  const model = await Entities[name].findAll();
+  if(!model) return [];
+  for(let i = 0 ; i < model.length ; i++) {
+    model[i] = model[i].toJSON();
+    delete model[i].id;
+    delete model[i].createdAt;
+    delete model[i].updatedAt;
+  }
+  return model;
 }

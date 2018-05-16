@@ -198,3 +198,25 @@ export function removeAllDataFromAS() {
     name: 'dataFromAS',
   });
 }
+
+export function getAllTimeoutScheduler() {
+  return db.getAll('timeoutScheduler');
+}
+
+export function addTimeoutScheduler(requestId, unixTimeout) {
+  return db.set({
+    name: 'timeoutScheduler',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'unixTimeout',
+    value: unixTimeout
+  });
+}
+
+export function removeTimeoutScheduler(requestId) {
+  return db.remove({
+    name: 'timeoutScheduler',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
