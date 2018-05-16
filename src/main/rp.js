@@ -285,6 +285,8 @@ export async function createRequest({
   );
   if (!success) return null;
 
+  addTimeoutScheduler(request_id,request_timeout);
+
   // send request data to IDPs via message queue
   mq.send(receivers, {
     ...requestData,
@@ -366,18 +368,37 @@ async function handleMessageFromQueue(data) {
   db.removeRequestToSendToAS(data.request_id);
 }
 
+function addTimeoutScheduler(requestId, secondsToTimeout) {
+  let unixTimeout = Date.now() + secondsToTimeout*1000;
+  //TODO add unixTimeout to persistent
+
+  setTimeout(async function() {
+    let request = common.getRequest({ requestId });
+    switch(request.status) {
+      case 'complicated':
+      case 'pending':
+      case 'confirmed':
+      case 'rejected':
+        //TODO close request
+        break;
+      default:
+        //Do nothing
+    }
+    //TODO remove from persistent
+
+  },Math.max(0,secondsToTimeout*1000));
+}
+
 export async function init() {
-  //TODO
+  //TODO get all scheduler from persistent
+  let scheduler = [];
+  scheduler.forEach(({requestId, unixTimeout}) => {
+    addTimeoutScheduler(requestId, (unixTimeout - Date.now())/1000 );
+  });
+
   //In production this should be done only once in phase 1,
-  //when RP request to join approved NDID
-  //after first approved, RP can add other key and node and endorse themself
-  /*let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
-  process.env.nodeId = node_id;
-  common.addNodePubKey({
-    node_id,
-    public_key: 'very_secure_public_key_for_rp'
-  });*/
   common.registerMsqAddress(config.mqRegister);
+  
 }
 
 if (config.role === 'rp') {
