@@ -26,13 +26,21 @@ export async function handleTendermintNewBlockHeaderEvent(
   blocks.forEach((block) => {
     let transactions = tendermint.getTransactionListFromBlockQuery(block);
     transactions.forEach(async (transaction) => {
-      const requestId = transaction.args.request_id; //derive from tx;
+      // TODO: clear key with smart-contract, eg. request_id or requestId
+      const requestId =
+        transaction.args.request_id || transaction.args.requestId; //derive from tx;
 
       const callbackUrl = await db.getCallbackUrl(requestId);
 
       if (!callbackUrl) return; // This RP does not concern this request
 
       const request = await common.getRequest({ requestId });
+      const requestDetail = await common.getRequestDetail({ requestId });
+      if (!requestDetail.responses) {
+        requestDetail.responses = [];
+      }
+      const idpCountOk =
+        requestDetail.responses.length === requestDetail.min_idp;
       try {
         await fetch(callbackUrl, {
           method: 'POST',
@@ -40,7 +48,10 @@ export async function handleTendermintNewBlockHeaderEvent(
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            request,
+            request: {
+              idpCountOk,
+              ...request,
+            }
           }),
         });
       } catch (error) {
@@ -50,7 +61,7 @@ export async function handleTendermintNewBlockHeaderEvent(
         );
       }
 
-      if (request.status === 'completed') {
+      if (request.status === 'confirmed' && idpCountOk) {
         const requestData = await db.getRequestToSendToAS(requestId);
         if (requestData != null) {
           const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(
@@ -66,7 +77,7 @@ export async function handleTendermintNewBlockHeaderEvent(
           db.removeCallbackUrl(requestId);
           db.removeRequestIdReferenceIdMappingByRequestId(requestId);
         }
-      } else if (request.status === 'rejected' || request.status === 'closed') {
+      } else if (request.status === 'rejected' || request.is_closed || request.is_timed_out) {
         // Clear callback url mapping, reference ID mapping, and request data to send to AS
         // since the request is no longer going to have further events
         // (the request has reached its end state)
@@ -301,6 +312,8 @@ export async function createRequest({
   );
   if (!success) return null;
 
+  addTimeoutScheduler(request_id, request_timeout);
+
   // send request data to IDPs via message queue
   mq.send(receivers, {
     ...requestData,
@@ -347,6 +360,9 @@ async function handleMessageFromQueue(data) {
 
   //receive data from AS
   data = JSON.parse(data);
+  let request = await common.getRequest({ requestId: data.request_id });
+  //data arrived too late, ignore data
+  if (request.is_closed || request.is_timed_out) return;
   if (data.data) {
     try {
       const callbackUrl = await db.getCallbackUrl(data.request_id);
@@ -382,17 +398,45 @@ async function handleMessageFromQueue(data) {
   db.removeRequestToSendToAS(data.request_id);
 }
 
+async function timeoutRequest(requestId) {
+  let request = await common.getRequest({ requestId });
+  switch (request.status) {
+    case 'complicated':
+    case 'pending':
+    case 'confirmed':
+      await tendermint.transact(
+        'TimeOutRequest',
+        { requestId },
+        utils.getNonce()
+      );
+      break;
+    default:
+    //Do nothing
+  }
+  db.removeTimeoutScheduler(requestId);
+}
+
+function runTimeoutScheduler(requestId, secondsToTimeout) {
+  if (secondsToTimeout < 0) timeoutRequest(requestId);
+  else
+    setTimeout(() => {
+      timeoutRequest(requestId);
+    }, secondsToTimeout * 1000);
+}
+
+function addTimeoutScheduler(requestId, secondsToTimeout) {
+  let unixTimeout = Date.now() + secondsToTimeout * 1000;
+  db.addTimeoutScheduler(requestId, unixTimeout);
+  runTimeoutScheduler(requestId, secondsToTimeout);
+}
+
 export async function init() {
-  //TODO
+  let scheduler = await db.getAllTimeoutScheduler();
+  scheduler.forEach(({ requestId, unixTimeout }) => {
+    runTimeoutScheduler(requestId, (unixTimeout - Date.now()) / 1000);
+  });
+
   //In production this should be done only once in phase 1,
-  //when RP request to join approved NDID
-  //after first approved, RP can add other key and node and endorse themself
-  /*let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
-  process.env.nodeId = node_id;
-  common.addNodePubKey({
-    node_id,
-    public_key: 'very_secure_public_key_for_rp'
-  });*/
   common.registerMsqAddress(config.mqRegister);
 }
 

@@ -46,8 +46,12 @@ export function getBlocks(fromHeight, toHeight) {
 /*
   data = { requestId }
 */
-export async function getRequest(data) {
-  return await tendermint.query('GetRequest', data);
+export async function getRequest({ requestId }) {
+  return await tendermint.query('GetRequest', { requestId });
+}
+
+export async function getRequestDetail({ requestId }) {
+  return await tendermint.query('GetRequestDetail', { requestId });
 }
 
 /*export async function getRequestRequireHeight(data, requireHeight) {

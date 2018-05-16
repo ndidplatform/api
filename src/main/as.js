@@ -87,9 +87,7 @@ async function notifyByCallback(request) {
 }
 
 async function getResponseDetails(requestId) {
-  const requestDetail = await tendermint.query('GetRequestDetail', {
-    requestId,
-  });
+  const requestDetail = await common.getRequestDetail({ requestId });
 
   // TODO
   // Verify that (number of consent ≥ min_idp in request).
