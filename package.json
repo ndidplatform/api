@@ -7,7 +7,9 @@
     "start": "npm run build && node build/server.js",
     "test": "npm run build && npx mocha build/test/test.js",
     "initDevKey": "npm run build && ROLE=ndid node build/devKeyInit.js",
-    "delete-local-db-cache": "rm -rf db-api-*"
+    "delete-local-db-cache": "rm -rf db-api-*",
+    "delete-latest-block-height": "rm latest-block-height-*",
+    "reset-data-for-dev": "npm run delete-local-db-cache && npm run delete-latest-block-height"
   },
   "dependencies": {
     "ajv": "^6.4.0",

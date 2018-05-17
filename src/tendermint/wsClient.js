@@ -7,14 +7,13 @@ export default class TendermintWsClient extends EventEmitter {
   constructor() {
     super();
     this.wsConnected = false;
+    this.reconnect = true;
     this.rpcId = 0;
     this.queue = [];
     this.connect();
   }
 
   connect() {
-    this.reconnect = true;
-
     this.ws = new WebSocket(`ws://${TENDERMINT_ADDRESS}/websocket`);
     this.ws.on('open', () => {
       console.log('Tendermint WS connected');
