@@ -34,3 +34,8 @@ export const send = async (receivers, message) => {
     sendingSocket.disconnect(`tcp://${receiver.ip}:${receiver.port}`);
   });
 };
+
+export function close() {
+  receivingSocket.close();
+  console.log('Message queue socket closed');
+}

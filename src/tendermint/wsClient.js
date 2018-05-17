@@ -9,10 +9,12 @@ export default class TendermintWsClient extends EventEmitter {
     this.wsConnected = false;
     this.rpcId = 0;
     this.queue = [];
-    this.connectWs();
+    this.connect();
   }
 
-  connectWs() {
+  connect() {
+    this.reconnect = true;
+
     this.ws = new WebSocket(`ws://${TENDERMINT_ADDRESS}/websocket`);
     this.ws.on('open', () => {
       console.log('Tendermint WS connected');
@@ -29,8 +31,10 @@ export default class TendermintWsClient extends EventEmitter {
 
       this.emit('disconnected');
 
-      // Try reconnect
-      setTimeout(() => this.connectWs(), 1000);
+      if (this.reconnect) {
+        // Try reconnect
+        setTimeout(() => this.connect(), 1000);
+      }
     });
 
     this.ws.on('error', (error) => {
@@ -86,9 +90,9 @@ export default class TendermintWsClient extends EventEmitter {
   }
 
   /**
-   * 
-   * @param {number} fromHeight 
-   * @param {number} toHeight 
+   *
+   * @param {number} fromHeight
+   * @param {number} toHeight
    * @returns {Promise<Object[]>}
    */
   async getBlocks(fromHeight, toHeight) {
@@ -115,8 +119,9 @@ export default class TendermintWsClient extends EventEmitter {
     }
   }
 
-  closeWs() {
+  close() {
     if (!this.ws) return;
+    this.reconnect = false;
     this.ws.close();
   }
 

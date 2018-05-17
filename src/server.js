@@ -12,6 +12,10 @@ import { init as idp_init } from './main/idp';
 import { init as as_init } from './main/as';
 import { init as rp_init } from './main/rp';
 
+import { close as closeDB } from './db';
+import { tendermintWsClient } from './main/common';
+import { close as closeMQ } from './mq';
+
 process.on('unhandledRejection', function(reason, p) {
   console.error('Unhandled Rejection:', p, '\nreason:', reason.stack || reason);
 });
@@ -43,6 +47,31 @@ if (config.role === 'idp') {
 } else if (config.role === 'rp') {
   rp_init();
 }
+
+// Graceful Shutdown
+let shutDownCalledOnce = false;
+function shutDown() {
+  if (shutDownCalledOnce) {
+    console.error('Forcefully shutting down');
+    process.exit(1);
+  }
+  shutDownCalledOnce = true;
+
+  console.log(
+    'Received kill signal, shutting down gracefully (Ctrl+C again to force shutdown)'
+  );
+
+  server.close(async () => {
+    console.log('HTTP server closed');
+
+    closeMQ();
+    tendermintWsClient.close();
+    await closeDB();
+  });
+}
+
+process.on('SIGTERM', shutDown);
+process.on('SIGINT', shutDown);
 
 // For testing
 module.exports = server;
