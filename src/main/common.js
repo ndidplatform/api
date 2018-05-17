@@ -64,7 +64,6 @@ tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
   const blockHeight = result.data.data.header.height;
   if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
     const lastKnownBlockHeight = latestBlockHeight;
-    saveLatestBlockHeight(blockHeight);
     latestBlockHeight = blockHeight;
 
     const missingBlockCount =
@@ -78,6 +77,7 @@ tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
         missingBlockCount
       );
     }
+    saveLatestBlockHeight(blockHeight);
   }
 });
 
