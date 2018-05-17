@@ -1,3 +1,5 @@
+import path from 'path';
+import fs from 'fs';
 import * as tendermint from '../tendermint/ndid';
 import TendermintWsClient from '../tendermint/wsClient';
 import * as rp from './rp';
@@ -16,8 +18,6 @@ if (role === 'rp') {
   handleMessageFromQueue = as.handleMessageFromQueue;
 }
 
-export let latestBlockHeight = null;
-
 let handleTendermintNewBlockHeaderEvent;
 if (role === 'rp') {
   handleTendermintNewBlockHeaderEvent = rp.handleTendermintNewBlockHeaderEvent;
@@ -27,16 +27,44 @@ if (role === 'rp') {
   handleTendermintNewBlockHeaderEvent = as.handleTendermintNewBlockHeaderEvent;
 }
 
+export let latestBlockHeight = null;
+const latestBlockHeightFilepath = path.join(
+  __dirname,
+  '..',
+  '..',
+  `latest-block-height-${nodeId}`
+);
+try {
+  latestBlockHeight = fs.readFileSync(latestBlockHeightFilepath, 'utf8');
+} catch (error) {
+  if (error.code !== 'ENOENT') {
+    console.log(error);
+  }
+}
+
+/**
+ * Save last seen block height to file for loading it on server restart
+ * @param {number} height Block height to save
+ */
+function saveLatestBlockHeight(height) {
+  fs.writeFile(latestBlockHeightFilepath, height, (err) => {
+    if (err) {
+      console.error('Error writing last processed block height');
+    }
+  });
+}
+
 export const tendermintWsClient = new TendermintWsClient();
 
 tendermintWsClient.on('connected', () => {
   // tendermintWsClient.getStatus();
 });
 
-tendermintWsClient.on('newBlockHeader#event', (error, result) => {
+tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
   const blockHeight = result.data.data.header.height;
   if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
     const lastKnownBlockHeight = latestBlockHeight;
+    saveLatestBlockHeight(blockHeight);
     latestBlockHeight = blockHeight;
 
     const missingBlockCount =
@@ -44,7 +72,11 @@ tendermintWsClient.on('newBlockHeader#event', (error, result) => {
         ? null
         : blockHeight - lastKnownBlockHeight - 1;
     if (handleTendermintNewBlockHeaderEvent) {
-      handleTendermintNewBlockHeaderEvent(error, result, missingBlockCount);
+      await handleTendermintNewBlockHeaderEvent(
+        error,
+        result,
+        missingBlockCount
+      );
     }
   }
 });

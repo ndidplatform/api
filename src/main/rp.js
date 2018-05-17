@@ -10,7 +10,7 @@ import * as db from '../db';
 let timeoutScheduler = {};
 
 export function clearAllScheduler() {
-  for(let requestId in timeoutScheduler) {
+  for (let requestId in timeoutScheduler) {
     clearTimeout(timeoutScheduler[requestId]);
   }
 }
@@ -20,9 +20,6 @@ export async function handleTendermintNewBlockHeaderEvent(
   result,
   missingBlockCount
 ) {
-  // FIXME: handle unknown missingBlockCount (missingBlockCount == null) on server start
-  // Cannot let fromHeight = 0 since it will query tendermint all the blocks from the beginning of the chain
-  // Possible solution: Save last known and processed block height to persistent storage and load it on server start
   if (missingBlockCount == null) return;
 
   const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
@@ -30,77 +27,85 @@ export async function handleTendermintNewBlockHeaderEvent(
     missingBlockCount === 0 ? height - 1 : height - missingBlockCount;
   const toHeight = height - 1;
   const blocks = await common.getBlocks(fromHeight, toHeight);
-  blocks.forEach((block) => {
-    let transactions = tendermint.getTransactionListFromBlockQuery(block);
-    transactions.forEach(async (transaction) => {
-      // TODO: clear key with smart-contract, eg. request_id or requestId
-      const requestId =
-        transaction.args.request_id || transaction.args.requestId; //derive from tx;
+  await Promise.all(
+    blocks.map(async (block) => {
+      let transactions = tendermint.getTransactionListFromBlockQuery(block);
+      await Promise.all(
+        transactions.map(async (transaction) => {
+          // TODO: clear key with smart-contract, eg. request_id or requestId
+          const requestId =
+            transaction.args.request_id || transaction.args.requestId; //derive from tx;
 
-      const callbackUrl = await db.getCallbackUrl(requestId);
+          const callbackUrl = await db.getCallbackUrl(requestId);
 
-      if (!callbackUrl) return; // This RP does not concern this request
+          if (!callbackUrl) return; // This RP does not concern this request
 
-      const request = await common.getRequest({ requestId });
-      const requestDetail = await common.getRequestDetail({ requestId });
-      if (!requestDetail.responses) {
-        requestDetail.responses = [];
-      }
-      const idpCountOk =
-        requestDetail.responses.length === requestDetail.min_idp;
-      try {
-        await fetch(callbackUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            request: {
-              idpCountOk,
-              ...request,
-            }
-          }),
-        });
-      } catch (error) {
-        console.log(
-          'Cannot send callback to client application with the following error:',
-          error
-        );
-      }
+          const request = await common.getRequest({ requestId });
+          const requestDetail = await common.getRequestDetail({ requestId });
+          if (!requestDetail.responses) {
+            requestDetail.responses = [];
+          }
+          const idpCountOk =
+            requestDetail.responses.length === requestDetail.min_idp;
+          try {
+            await fetch(callbackUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                request: {
+                  idpCountOk,
+                  ...request,
+                },
+              }),
+            });
+          } catch (error) {
+            console.log(
+              'Cannot send callback to client application with the following error:',
+              error
+            );
+          }
 
-      if (request.status === 'confirmed' && idpCountOk) {
-        const requestData = await db.getRequestToSendToAS(requestId);
-        if (requestData != null) {
-          const height = block.block.header.height;
-          /*tendermint.getBlockHeightFromNewBlockHeaderEvent(
+          if (request.status === 'confirmed' && idpCountOk) {
+            const requestData = await db.getRequestToSendToAS(requestId);
+            if (requestData != null) {
+              const height = block.block.header.height;
+              /*tendermint.getBlockHeightFromNewBlockHeaderEvent(
             result
           );*/
-          await sendRequestToAS(requestData, height);
-        } else {
-          // Authen only, no data request
+              await sendRequestToAS(requestData, height);
+            } else {
+              // Authen only, no data request
 
-          // Clear callback url mapping and reference ID mapping
-          // since the request is no longer going to have further events
-          // (the request has reached its end state)
-          db.removeCallbackUrl(requestId);
-          db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-          db.removeTimeoutScheduler(requestId);
-          clearTimeout(timeoutScheduler[requestId]);
-          delete timeoutScheduler[requestId];
-        }
-      } else if (request.status === 'rejected' || request.is_closed || request.is_timed_out) {
-        // Clear callback url mapping, reference ID mapping, and request data to send to AS
-        // since the request is no longer going to have further events
-        // (the request has reached its end state)
-        db.removeCallbackUrl(requestId);
-        db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-        db.removeRequestToSendToAS(requestId);
-        db.removeTimeoutScheduler(requestId);
-        clearTimeout(timeoutScheduler[requestId]);
-        delete timeoutScheduler[requestId];
-      }
-    });
-  });
+              // Clear callback url mapping and reference ID mapping
+              // since the request is no longer going to have further events
+              // (the request has reached its end state)
+              db.removeCallbackUrl(requestId);
+              db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+              db.removeTimeoutScheduler(requestId);
+              clearTimeout(timeoutScheduler[requestId]);
+              delete timeoutScheduler[requestId];
+            }
+          } else if (
+            request.status === 'rejected' ||
+            request.is_closed ||
+            request.is_timed_out
+          ) {
+            // Clear callback url mapping, reference ID mapping, and request data to send to AS
+            // since the request is no longer going to have further events
+            // (the request has reached its end state)
+            db.removeCallbackUrl(requestId);
+            db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+            db.removeRequestToSendToAS(requestId);
+            db.removeTimeoutScheduler(requestId);
+            clearTimeout(timeoutScheduler[requestId]);
+            delete timeoutScheduler[requestId];
+          }
+        })
+      );
+    })
+  );
 }
 
 /*export const handleABCIAppCallback = async (requestId, height) => {
