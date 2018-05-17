@@ -54,6 +54,17 @@ export async function getRequestDetail({ requestId }) {
   return await tendermint.query('GetRequestDetail', { requestId });
 }
 
+export async function getNodeIdsOfAssociatedIdp({
+  namespace,
+  identifier,
+  min_ial,
+}) {
+  return await tendermint.query('GetMsqDestination', {
+    hash_id: utils.hash(namespace + ':' + identifier),
+    min_ial: min_ial,
+  });
+}
+
 /*export async function getRequestRequireHeight(data, requireHeight) {
   let currentHeight,request;
   do {

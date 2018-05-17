@@ -189,7 +189,7 @@ export async function getIdpsMsqDestination({
   min_ial,
   idp_list,
 }) {
-  let foundedIdpList = await getIdpMqDestination({
+  let foundedIdpList = await common.getNodeIdsOfAssociatedIdp({
     namespace,
     identifier,
     min_ial: min_ial,
@@ -324,13 +324,6 @@ export async function createRequest({
   await db.setRequestIdByReferenceId(reference_id, request_id);
   await db.setCallbackUrl(request_id, callback_url);
   return request_id;
-}
-
-export async function getIdpMqDestination(data) {
-  return await tendermint.query('GetMsqDestination', {
-    hash_id: utils.hash(data.namespace + ':' + data.identifier),
-    min_ial: data.min_ial,
-  });
 }
 
 export async function getAsMqDestination(data) {

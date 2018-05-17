@@ -41,12 +41,17 @@ router.get('/idp/:namespace/:identifier', async (req, res, next) => {
     }
 
     const { namespace, identifier } = req.params;
-    const { min_ial, min_aal } = req.query;
+    const { min_ial, /*min_aal*/ } = req.query;
 
-    // Not Implemented
-    // TODO
+    let idpNodeIds = await abciAppCommonApi.getNodeIdsOfAssociatedIdp({
+      namespace,
+      identifier,
+      min_ial,
+    });
 
-    res.status(501).end();
+    res.status(200).send(idpNodeIds ? idpNodeIds : {
+      node_id: []
+    });
   } catch (error) {
     res.status(500).end();
   }
