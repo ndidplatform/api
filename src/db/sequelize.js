@@ -52,6 +52,10 @@ const Entities = {
 
 const initDb = sequelize.sync();
 
+export function close() {
+  return sequelize.close();
+}
+
 export async function getList({ name, keyName, key, valueName }) {
   await initDb;
   const models = await Entities[name].findAll({

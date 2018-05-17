@@ -3,8 +3,18 @@ import TendermintWsClient from '../tendermint/wsClient';
 import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';
+import { eventEmitter as messageQueueEvent } from '../mq';
 import * as utils from '../utils';
 import { role, nodeId } from '../config';
+
+let handleMessageFromQueue;
+if (role === 'rp') {
+  handleMessageFromQueue = rp.handleMessageFromQueue;
+} else if (role === 'idp') {
+  handleMessageFromQueue = idp.handleMessageFromQueue;
+} else if (role === 'as') {
+  handleMessageFromQueue = as.handleMessageFromQueue;
+}
 
 export let latestBlockHeight = null;
 
@@ -17,7 +27,7 @@ if (role === 'rp') {
   handleTendermintNewBlockHeaderEvent = as.handleTendermintNewBlockHeaderEvent;
 }
 
-const tendermintWsClient = new TendermintWsClient();
+export const tendermintWsClient = new TendermintWsClient();
 
 tendermintWsClient.on('connected', () => {
   // tendermintWsClient.getStatus();
@@ -137,4 +147,10 @@ export async function checkRequestIntegrity(requestId, request) {
   }
 
   return valid;
+}
+
+if (handleMessageFromQueue) {
+  messageQueueEvent.on('message', function(message) {
+    handleMessageFromQueue(message);
+  });
 }

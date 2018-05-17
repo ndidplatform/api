@@ -1,5 +1,10 @@
 import * as db from './sequelize';
 
+export async function close() {
+  await db.close();
+  console.log('DB connection closed');
+}
+
 //
 // Used by IDP and AS
 //
