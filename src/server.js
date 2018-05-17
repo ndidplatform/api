@@ -10,7 +10,7 @@ import morgan from 'morgan';
 import routes from './routes';
 import { init as idp_init } from './main/idp';
 import { init as as_init } from './main/as';
-import { init as rp_init } from './main/rp';
+import { init as rp_init, clearAllScheduler } from './main/rp';
 
 import { close as closeDB } from './db';
 import { tendermintWsClient } from './main/common';
@@ -67,6 +67,7 @@ function shutDown() {
     closeMQ();
     tendermintWsClient.close();
     await closeDB();
+    clearAllScheduler();
   });
 }
 

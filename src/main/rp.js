@@ -9,6 +9,12 @@ import * as db from '../db';
 
 let timeoutScheduler = {};
 
+export function clearAllScheduler() {
+  for(let requestId in timeoutScheduler) {
+    clearTimeout(timeoutScheduler[requestId]);
+  }
+}
+
 export async function handleTendermintNewBlockHeaderEvent(
   error,
   result,
@@ -65,9 +71,10 @@ export async function handleTendermintNewBlockHeaderEvent(
       if (request.status === 'confirmed' && idpCountOk) {
         const requestData = await db.getRequestToSendToAS(requestId);
         if (requestData != null) {
-          const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(
+          const height = block.block.header.height;
+          /*tendermint.getBlockHeightFromNewBlockHeaderEvent(
             result
-          );
+          );*/
           await sendRequestToAS(requestData, height);
         } else {
           // Authen only, no data request
@@ -78,8 +85,8 @@ export async function handleTendermintNewBlockHeaderEvent(
           db.removeCallbackUrl(requestId);
           db.removeRequestIdReferenceIdMappingByRequestId(requestId);
           db.removeTimeoutScheduler(requestId);
-          clearTimeout(timeoutRequest[requestId]);
-          delete timeoutRequest[requestId];
+          clearTimeout(timeoutScheduler[requestId]);
+          delete timeoutScheduler[requestId];
         }
       } else if (request.status === 'rejected' || request.is_closed || request.is_timed_out) {
         // Clear callback url mapping, reference ID mapping, and request data to send to AS
@@ -89,8 +96,8 @@ export async function handleTendermintNewBlockHeaderEvent(
         db.removeRequestIdReferenceIdMappingByRequestId(requestId);
         db.removeRequestToSendToAS(requestId);
         db.removeTimeoutScheduler(requestId);
-        clearTimeout(timeoutRequest[requestId]);
-        delete timeoutRequest[requestId];
+        clearTimeout(timeoutScheduler[requestId]);
+        delete timeoutScheduler[requestId];
       }
     });
   });
@@ -389,8 +396,8 @@ export async function handleMessageFromQueue(data) {
   db.removeRequestIdReferenceIdMappingByRequestId(data.request_id);
   db.removeRequestToSendToAS(data.request_id);
   db.removeTimeoutScheduler(data.request_id);
-  clearTimeout(timeoutRequest[data.request_id]);
-  delete timeoutRequest[data.request_id];
+  clearTimeout(timeoutScheduler[data.request_id]);
+  delete timeoutScheduler[data.request_id];
 }
 
 async function timeoutRequest(requestId) {

@@ -133,12 +133,14 @@ async function getDataAndSendBackToRP(requestJson, responseDetails) {
   let signature = await utils.createSignature(data);
   // AS node encrypts the response and sends it back to RP via NSQ.
   // TODO should check request status before send (whether request is closed or timeout)
+  //console.log('===> AS SENDING');
   sendDataToRP({
     rp_node_id: requestJson.rp_node_id,
     as_id,
     data,
     request_id: requestJson.request_id,
   });
+  //console.log('===> AS SENT');
 
   // AS node adds transaction to blockchain
   signData({ as_id, request_id: requestJson.request_id, signature });
@@ -148,6 +150,8 @@ export async function handleMessageFromQueue(request) {
   console.log('AS receive message from mq:', request);
   let requestJson = JSON.parse(request);
 
+  //console.log('arrived?',common.latestBlockHeight < requestJson.height);
+  //console.log('wait for',requestJson.height);
   if (common.latestBlockHeight < requestJson.height) {
     await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
     await db.addRequestIdExpectedInBlock(
@@ -161,6 +165,7 @@ export async function handleMessageFromQueue(request) {
     requestJson.request_id,
     requestJson
   );
+  //console.log('valid', valid)
   if (valid) {
     const responseDetails = await getResponseDetails(requestJson.request_id);
     getDataAndSendBackToRP(requestJson, responseDetails);
@@ -173,6 +178,7 @@ export async function handleTendermintNewBlockHeaderEvent(
   missingBlockCount
 ) {
   const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
+  //console.log('received',height);
   // messages that arrived before 'NewBlock' event
   // including messages between the start of missing block's height
   // and the block before latest block height
