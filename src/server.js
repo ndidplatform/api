@@ -66,6 +66,11 @@ function shutDown() {
 
     closeMQ();
     tendermintWsClient.close();
+    // TODO: wait for async operations which going to use DB to finish before closing
+    // a connection to DB
+    // Possible solution: Have those async operations append a queue to use DB and
+    // remove after finish using DB
+    // => Wait here until a queue to use DB is empty
     await closeDB();
   });
 }
