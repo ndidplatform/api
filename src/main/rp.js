@@ -8,6 +8,8 @@ import * as config from '../config';
 import * as common from '../main/common';
 import * as db from '../db';
 
+let timeoutScheduler = {};
+
 export async function handleTendermintNewBlockHeaderEvent(
   error,
   result,
@@ -76,6 +78,9 @@ export async function handleTendermintNewBlockHeaderEvent(
           // (the request has reached its end state)
           db.removeCallbackUrl(requestId);
           db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+          db.removeTimeoutScheduler(requestId);
+          clearTimeout(timeoutRequest[requestId]);
+          delete timeoutRequest[requestId];
         }
       } else if (request.status === 'rejected' || request.is_closed || request.is_timed_out) {
         // Clear callback url mapping, reference ID mapping, and request data to send to AS
@@ -84,6 +89,9 @@ export async function handleTendermintNewBlockHeaderEvent(
         db.removeCallbackUrl(requestId);
         db.removeRequestIdReferenceIdMappingByRequestId(requestId);
         db.removeRequestToSendToAS(requestId);
+        db.removeTimeoutScheduler(requestId);
+        clearTimeout(timeoutRequest[requestId]);
+        delete timeoutRequest[requestId];
       }
     });
   });
@@ -381,6 +389,9 @@ async function handleMessageFromQueue(data) {
   db.removeCallbackUrl(data.request_id);
   db.removeRequestIdReferenceIdMappingByRequestId(data.request_id);
   db.removeRequestToSendToAS(data.request_id);
+  db.removeTimeoutScheduler(data.request_id);
+  clearTimeout(timeoutRequest[data.request_id]);
+  delete timeoutRequest[data.request_id];
 }
 
 async function timeoutRequest(requestId) {
@@ -403,10 +414,11 @@ async function timeoutRequest(requestId) {
 
 function runTimeoutScheduler(requestId, secondsToTimeout) {
   if (secondsToTimeout < 0) timeoutRequest(requestId);
-  else
-    setTimeout(() => {
+  else {
+    timeoutScheduler[requestId] = setTimeout(() => {
       timeoutRequest(requestId);
     }, secondsToTimeout * 1000);
+  }
 }
 
 function addTimeoutScheduler(requestId, secondsToTimeout) {
