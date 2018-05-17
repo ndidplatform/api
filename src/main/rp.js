@@ -132,8 +132,7 @@ export async function handleTendermintNewBlockHeaderEvent(
 async function getASReceiverList(data_request) {
   let nodeIdList;
   if (!data_request.as_id_list || data_request.as_id_list.length === 0) {
-    nodeIdList = await getAsMqDestination({
-      //as_id: as,
+    nodeIdList = await common.getNodeIdsOfAsWithService({
       service_id: data_request.service_id,
     });
   } else nodeIdList = data_request.as_id_list;
@@ -188,7 +187,7 @@ export async function getIdpsMsqDestination({
   min_ial,
   idp_list,
 }) {
-  let foundedIdpList = await getIdpMqDestination({
+  let foundedIdpList = await common.getNodeIdsOfAssociatedIdp({
     namespace,
     identifier,
     min_ial: min_ial,
@@ -323,20 +322,6 @@ export async function createRequest({
   await db.setRequestIdByReferenceId(reference_id, request_id);
   await db.setCallbackUrl(request_id, callback_url);
   return request_id;
-}
-
-export async function getIdpMqDestination(data) {
-  return await tendermint.query('GetMsqDestination', {
-    hash_id: utils.hash(data.namespace + ':' + data.identifier),
-    min_ial: data.min_ial,
-  });
-}
-
-export async function getAsMqDestination(data) {
-  return await tendermint.query('GetServiceDestination', {
-    //as_id: data.as_id,
-    service_id: data.service_id,
-  });
 }
 
 export function getDataFromAS(requestId) {

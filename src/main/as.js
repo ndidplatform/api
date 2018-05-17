@@ -132,6 +132,7 @@ async function getDataAndSendBackToRP(requestJson, responseDetails) {
   let as_id = config.asID;
   let signature = await utils.createSignature(data);
   // AS node encrypts the response and sends it back to RP via NSQ.
+  // TODO should check request status before send (whether request is closed or timeout)
   sendDataToRP({
     rp_node_id: requestJson.rp_node_id,
     as_id,
