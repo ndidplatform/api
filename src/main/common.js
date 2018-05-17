@@ -65,6 +65,12 @@ export async function getNodeIdsOfAssociatedIdp({
   });
 }
 
+export async function getNodeIdsOfAsWithService({ service_id }) {
+  return await tendermint.query('GetServiceDestination', {
+    service_id,
+  });
+}
+
 /*export async function getRequestRequireHeight(data, requireHeight) {
   let currentHeight,request;
   do {

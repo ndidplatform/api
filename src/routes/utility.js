@@ -57,6 +57,19 @@ router.get('/idp/:namespace/:identifier', async (req, res, next) => {
   }
 });
 
+router.get('/as/:service_id', async (req, res, next) => {
+  try {
+    const { service_id } = req.params;
+    let asNodeIds = await abciAppCommonApi.getNodeIdsOfAsWithService({ service_id });
+    res.status(200).send(asNodeIds ? asNodeIds : {
+      node_id: []
+    });
+  }
+  catch(error) {
+    res.status(500).end();
+  }
+});
+
 router.get('/nodeToken/:nodeId', async (req, res, next) => {
   try {
     res

@@ -133,8 +133,7 @@ export async function handleTendermintNewBlockHeaderEvent(
 async function getASReceiverList(data_request) {
   let nodeIdList;
   if (!data_request.as_id_list || data_request.as_id_list.length === 0) {
-    nodeIdList = await getAsMqDestination({
-      //as_id: as,
+    nodeIdList = await common.getNodeIdsOfAsWithService({
       service_id: data_request.service_id,
     });
   } else nodeIdList = data_request.as_id_list;
@@ -324,13 +323,6 @@ export async function createRequest({
   await db.setRequestIdByReferenceId(reference_id, request_id);
   await db.setCallbackUrl(request_id, callback_url);
   return request_id;
-}
-
-export async function getAsMqDestination(data) {
-  return await tendermint.query('GetServiceDestination', {
-    //as_id: data.as_id,
-    service_id: data.service_id,
-  });
 }
 
 export function getDataFromAS(requestId) {
