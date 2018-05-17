@@ -7,6 +7,8 @@ export default class TendermintWsClient extends EventEmitter {
   constructor() {
     super();
     this.wsConnected = false;
+    this.rpcId = 0;
+    this.queue = [];
     this.connectWs();
   }
 
@@ -18,7 +20,7 @@ export default class TendermintWsClient extends EventEmitter {
 
       this.emit('connected');
 
-      this.subscribeToNewBlockEvent();
+      this.subscribeToNewBlockHeaderEvent();
     });
 
     this.ws.on('close', () => {
@@ -36,14 +38,28 @@ export default class TendermintWsClient extends EventEmitter {
       // this.emit('error', error);
     });
 
-    this.ws.on('message', (data) => {
-      // console.log('>>>', data);
+    this.ws.on('message', (message) => {
+      // console.log('>>>', message);
       try {
-        const jsonData = JSON.parse(data);
-        this.emit(jsonData.id, jsonData.error, jsonData.result);
+        message = JSON.parse(message);
       } catch (error) {
         console.warn('Error JSON parsing data received from tendermint');
+        return;
       }
+
+      const rpcId = parseInt(message.id);
+      if (this.queue[rpcId]) {
+        if (message.error) {
+          this.queue[rpcId].promise[1](message.error);
+        } else {
+          this.queue[rpcId].promise[0](message.result);
+        }
+
+        delete this.queue[rpcId];
+        return;
+      }
+
+      this.emit(message.id, message.error, message.result);
     });
 
     // tendermint websocket sends 'ping' periodically
@@ -52,27 +68,48 @@ export default class TendermintWsClient extends EventEmitter {
     // });
   }
 
-  getStatus(id = 'status') {
-    if (this.wsConnected) {
-      this.ws.send(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'status',
-          params: [],
-          id,
-        })
-      );
-    }
+  /**
+   *
+   * @returns {Promise<Object>}
+   */
+  getStatus() {
+    return this._call('status', []);
   }
 
-  subscribeToNewBlockEvent() {
+  /**
+   *
+   * @param {number} height Block height to query
+   * @returns {Promise<Object>}
+   */
+  getBlock(height) {
+    return this._call('block', [height]);
+  }
+
+  /**
+   * 
+   * @param {number} fromHeight 
+   * @param {number} toHeight 
+   * @returns {Promise<Object[]>}
+   */
+  async getBlocks(fromHeight, toHeight) {
+    const heights = Array.from(
+      { length: toHeight - fromHeight + 1 },
+      (v, i) => i + fromHeight
+    );
+    const blocks = await Promise.all(
+      heights.map((height) => this.getBlock(height))
+    );
+    return blocks;
+  }
+
+  subscribeToNewBlockHeaderEvent() {
     if (this.wsConnected) {
       this.ws.send(
         JSON.stringify({
           jsonrpc: '2.0',
           method: 'subscribe',
-          params: ["tm.event = 'NewBlock'"],
-          id: 'newBlock',
+          params: ["tm.event = 'NewBlockHeader'"],
+          id: 'newBlockHeader',
         })
       );
     }
@@ -81,5 +118,29 @@ export default class TendermintWsClient extends EventEmitter {
   closeWs() {
     if (!this.ws) return;
     this.ws.close();
+  }
+
+  _call(method, params, wsOpts) {
+    return new Promise((resolve, reject) => {
+      if (!this.wsConnected) {
+        return reject(new Error('socket is not connected'));
+      }
+
+      const id = ++this.rpcId;
+      const message = {
+        jsonrpc: '2.0',
+        method: method,
+        params: params || null,
+        id: id.toString(),
+      };
+
+      this.ws.send(JSON.stringify(message), wsOpts, (error) => {
+        if (error) {
+          return reject(error);
+        }
+
+        this.queue[id] = { promise: [resolve, reject] };
+      });
+    });
   }
 }

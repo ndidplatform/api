@@ -8,66 +8,86 @@ import * as config from '../config';
 import * as common from '../main/common';
 import * as db from '../db';
 
-export const handleTendermintNewBlockEvent = async (error, result) => {
-  let transactions = tendermint.getTransactionListFromTendermintNewBlockEvent(
-    result
-  );
-  transactions.forEach(async (transaction) => {
-    //TODO clear key with smart-contract, eg. request_id or requestId
-    const requestId = transaction.args.request_id || transaction.args.requestId; //derive from tx;
+export async function handleTendermintNewBlockHeaderEvent(
+  error,
+  result,
+  missingBlockCount
+) {
+  // FIXME: handle unknown missingBlockCount (missingBlockCount == null) on server start
+  // Cannot let fromHeight = 0 since it will query tendermint all the blocks from the beginning of the chain
+  // Possible solution: Save last known and processed block height to persistent storage and load it on server start
+  if (missingBlockCount == null) return;
 
-    const callbackUrl = await db.getCallbackUrl(requestId);
-    //this request is not concern this RP
-    if (!callbackUrl) return;
+  const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
+  const fromHeight =
+    missingBlockCount === 0 ? height - 1 : height - missingBlockCount;
+  const toHeight = height - 1;
+  const blocks = await common.getBlocks(fromHeight, toHeight);
+  blocks.forEach((block) => {
+    let transactions = tendermint.getTransactionListFromBlockQuery(block);
+    transactions.forEach(async (transaction) => {
+      // TODO: clear key with smart-contract, eg. request_id or requestId
+      const requestId =
+        transaction.args.request_id || transaction.args.requestId; //derive from tx;
 
-    const request = await common.getRequest({ requestId });
-    const requestDetail = await common.getRequestDetail({ requestId });
-    if(!requestDetail.responses) requestDetail.responses = [];
-    let idpCountOk = requestDetail.responses.length === requestDetail.min_idp;
-    try {
-      await fetch(callbackUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          request: {
-            idpCountOk,
-            ...request
+      const callbackUrl = await db.getCallbackUrl(requestId);
+
+      if (!callbackUrl) return; // This RP does not concern this request
+
+      const request = await common.getRequest({ requestId });
+      const requestDetail = await common.getRequestDetail({ requestId });
+      if (!requestDetail.responses) {
+        requestDetail.responses = [];
+      }
+      const idpCountOk =
+        requestDetail.responses.length === requestDetail.min_idp;
+      try {
+        await fetch(callbackUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-        }),
-      });
-    } catch (error) {
-      console.log(
-        'Cannot send callback to client application with the following error:',
-        error
-      );
-    }
+          body: JSON.stringify({
+            request: {
+              idpCountOk,
+              ...request,
+            }
+          }),
+        });
+      } catch (error) {
+        console.log(
+          'Cannot send callback to client application with the following error:',
+          error
+        );
+      }
 
-    if (request.status === 'confirmed' && idpCountOk) {
-      const requestData = await db.getRequestToSendToAS(requestId);
-      if (requestData != null) {
-        const height = tendermint.getHeightFromTendermintNewBlockEvent(result);
-        await sendRequestToAS(requestData, height);
-      } else {
-        // Authen only, no data request
+      if (request.status === 'confirmed' && idpCountOk) {
+        const requestData = await db.getRequestToSendToAS(requestId);
+        if (requestData != null) {
+          const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(
+            result
+          );
+          await sendRequestToAS(requestData, height);
+        } else {
+          // Authen only, no data request
 
-        // Clear callback url mapping and reference ID mapping
+          // Clear callback url mapping and reference ID mapping
+          // since the request is no longer going to have further events
+          // (the request has reached its end state)
+          db.removeCallbackUrl(requestId);
+          db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+        }
+      } else if (request.status === 'rejected' || request.is_closed || request.is_timed_out) {
+        // Clear callback url mapping, reference ID mapping, and request data to send to AS
         // since the request is no longer going to have further events
         // (the request has reached its end state)
         db.removeCallbackUrl(requestId);
         db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+        db.removeRequestToSendToAS(requestId);
       }
-    } else if (request.status === 'rejected' || request.is_closed || request.is_timed_out) {
-      // Clear callback url mapping, reference ID mapping, and request data to send to AS
-      // since the request is no longer going to have further events
-      // (the request has reached its end state)
-      db.removeCallbackUrl(requestId);
-      db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-      db.removeRequestToSendToAS(requestId);
-    }
+    });
   });
-};
+}
 
 /*export const handleABCIAppCallback = async (requestId, height) => {
   if (callbackUrls[requestId]) {
@@ -292,7 +312,7 @@ export async function createRequest({
   );
   if (!success) return null;
 
-  addTimeoutScheduler(request_id,request_timeout);
+  addTimeoutScheduler(request_id, request_timeout);
 
   // send request data to IDPs via message queue
   mq.send(receivers, {
@@ -342,7 +362,7 @@ async function handleMessageFromQueue(data) {
   data = JSON.parse(data);
   let request = await common.getRequest({ requestId: data.request_id });
   //data arrived too late, ignore data
-  if(request.is_closed || request.is_timed_out) return;
+  if (request.is_closed || request.is_timed_out) return;
   if (data.data) {
     try {
       const callbackUrl = await db.getCallbackUrl(data.request_id);
@@ -380,35 +400,40 @@ async function handleMessageFromQueue(data) {
 
 async function timeoutRequest(requestId) {
   let request = await common.getRequest({ requestId });
-  switch(request.status) {
+  switch (request.status) {
     case 'complicated':
     case 'pending':
     case 'confirmed':
-      await tendermint.transact('TimeOutRequest',{ requestId }, utils.getNonce());
+      await tendermint.transact(
+        'TimeOutRequest',
+        { requestId },
+        utils.getNonce()
+      );
       break;
     default:
-      //Do nothing
+    //Do nothing
   }
   db.removeTimeoutScheduler(requestId);
 }
 
 function runTimeoutScheduler(requestId, secondsToTimeout) {
-  if(secondsToTimeout < 0) timeoutRequest(requestId);
-  else setTimeout(() => {
-    timeoutRequest(requestId);
-  },secondsToTimeout*1000);
+  if (secondsToTimeout < 0) timeoutRequest(requestId);
+  else
+    setTimeout(() => {
+      timeoutRequest(requestId);
+    }, secondsToTimeout * 1000);
 }
 
 function addTimeoutScheduler(requestId, secondsToTimeout) {
-  let unixTimeout = Date.now() + secondsToTimeout*1000;
+  let unixTimeout = Date.now() + secondsToTimeout * 1000;
   db.addTimeoutScheduler(requestId, unixTimeout);
   runTimeoutScheduler(requestId, secondsToTimeout);
 }
 
 export async function init() {
   let scheduler = await db.getAllTimeoutScheduler();
-  scheduler.forEach(({requestId, unixTimeout}) => {
-    runTimeoutScheduler(requestId, (unixTimeout - Date.now())/1000 );
+  scheduler.forEach(({ requestId, unixTimeout }) => {
+    runTimeoutScheduler(requestId, (unixTimeout - Date.now()) / 1000);
   });
 
   //In production this should be done only once in phase 1,

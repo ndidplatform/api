@@ -8,41 +8,40 @@ import { role, nodeId } from '../config';
 
 export let latestBlockHeight = null;
 
+let handleTendermintNewBlockHeaderEvent;
+if (role === 'rp') {
+  handleTendermintNewBlockHeaderEvent = rp.handleTendermintNewBlockHeaderEvent;
+} else if (role === 'idp') {
+  handleTendermintNewBlockHeaderEvent = idp.handleTendermintNewBlockHeaderEvent;
+} else if (role === 'as') {
+  handleTendermintNewBlockHeaderEvent = as.handleTendermintNewBlockHeaderEvent;
+}
+
 const tendermintWsClient = new TendermintWsClient();
 
 tendermintWsClient.on('connected', () => {
-  // Get latest block height
-  tendermintWsClient.getStatus();
+  // tendermintWsClient.getStatus();
 });
 
-tendermintWsClient.on('status', (error, result) => {
-  const blockHeight = result.latest_block_height;
+tendermintWsClient.on('newBlockHeader#event', (error, result) => {
+  const blockHeight = result.data.data.header.height;
   if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
+    const lastKnownBlockHeight = latestBlockHeight;
     latestBlockHeight = blockHeight;
-  }
-});
-
-tendermintWsClient.on('newBlock#event', (error, result) => {
-  const blockHeight = result.data.data.block.header.height;
-  if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
-    let handleTendermintNewBlockEvent;
-    if (role === 'rp') {
-      handleTendermintNewBlockEvent = rp.handleTendermintNewBlockEvent;
-    } else if (role === 'idp') {
-      handleTendermintNewBlockEvent = idp.handleTendermintNewBlockEvent;
-    } else if (role === 'as') {
-      handleTendermintNewBlockEvent = as.handleTendermintNewBlockEvent;
-    }
 
     const missingBlockCount =
-      latestBlockHeight == null ? 0 : blockHeight - latestBlockHeight - 1;
-    if (handleTendermintNewBlockEvent) {
-      handleTendermintNewBlockEvent(error, result, missingBlockCount);
+      lastKnownBlockHeight == null
+        ? null
+        : blockHeight - lastKnownBlockHeight - 1;
+    if (handleTendermintNewBlockHeaderEvent) {
+      handleTendermintNewBlockHeaderEvent(error, result, missingBlockCount);
     }
-
-    latestBlockHeight = blockHeight;
   }
 });
+
+export function getBlocks(fromHeight, toHeight) {
+  return tendermintWsClient.getBlocks(fromHeight, toHeight);
+}
 
 /*
   data = { requestId }

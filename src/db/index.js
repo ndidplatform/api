@@ -200,7 +200,7 @@ export function removeAllDataFromAS() {
 }
 
 export function getAllTimeoutScheduler() {
-  return db.getAll('timeoutScheduler');
+  return db.getAll({ name: 'timeoutScheduler' });
 }
 
 export function addTimeoutScheduler(requestId, unixTimeout) {
@@ -209,7 +209,7 @@ export function addTimeoutScheduler(requestId, unixTimeout) {
     keyName: 'requestId',
     key: requestId,
     valueName: 'unixTimeout',
-    value: unixTimeout
+    value: unixTimeout,
   });
 }
 

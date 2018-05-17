@@ -46,8 +46,8 @@ const Entities = {
   }),
   timeoutScheduler: sequelize.define('timeoutScheduler', {
     requestId: Sequelize.STRING,
-    unixTimeout: Sequelize.INTEGER
-  })
+    unixTimeout: Sequelize.INTEGER,
+  }),
 };
 
 const initDb = sequelize.sync();
@@ -159,15 +159,12 @@ export async function remove({ name, keyName, key, valueName, value }) {
   });
 }
 
-export async function getAll(name) {
+export async function getAll({ name }) {
   await initDb;
-  const model = await Entities[name].findAll();
-  if(!model) return [];
-  for(let i = 0 ; i < model.length ; i++) {
-    model[i] = model[i].toJSON();
-    delete model[i].id;
-    delete model[i].createdAt;
-    delete model[i].updatedAt;
-  }
-  return model;
+  const models = await Entities[name].findAll({
+    attributes: {
+      exclude: ['id', 'createdAt', 'updatedAt'],
+    },
+  });
+  return models.map((model) => model.get({ plain: true }));
 }
