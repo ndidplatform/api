@@ -1,5 +1,4 @@
 import fetch from 'node-fetch';
-import { eventEmitter } from '../mq';
 
 import * as tendermint from '../tendermint/ndid';
 import * as utils from '../utils';
@@ -352,7 +351,7 @@ export function removeAllDataFromAS() {
   return db.removeAllDataFromAS();
 }
 
-async function handleMessageFromQueue(data) {
+export async function handleMessageFromQueue(data) {
   console.log('RP receive message from mq:', data);
   // Verifies signature in blockchain.
   // RP node updates the request status
@@ -438,10 +437,4 @@ export async function init() {
 
   //In production this should be done only once in phase 1,
   common.registerMsqAddress(config.mqRegister);
-}
-
-if (config.role === 'rp') {
-  eventEmitter.on('message', function(message) {
-    handleMessageFromQueue(message);
-  });
 }

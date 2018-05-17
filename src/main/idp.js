@@ -8,8 +8,6 @@ import * as utils from '../utils';
 import * as config from '../config';
 import * as db from '../db';
 
-import { eventEmitter } from '../mq';
-
 const callbackUrlFilePath = path.join(
   __dirname,
   '..',
@@ -81,7 +79,7 @@ async function notifyByCallback(request) {
   });
 }
 
-async function handleMessageFromQueue(request) {
+export async function handleMessageFromQueue(request) {
   console.log('IDP receive message from mq:', request);
   let requestJson = JSON.parse(request);
 
@@ -176,10 +174,4 @@ export async function init() {
     public_key: 'very_secure_public_key_for_idp'
   });*/
   common.registerMsqAddress(config.mqRegister);
-}
-
-if (config.role === 'idp') {
-  eventEmitter.on('message', function(message) {
-    handleMessageFromQueue(message);
-  });
 }

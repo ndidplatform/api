@@ -2,8 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
-import { eventEmitter } from '../mq';
-
 import * as tendermint from '../tendermint/ndid';
 import * as mq from '../mq';
 import * as utils from '../utils';
@@ -145,7 +143,7 @@ async function getDataAndSendBackToRP(requestJson, responseDetails) {
   signData({ as_id, request_id: requestJson.request_id, signature });
 }
 
-async function handleMessageFromQueue(request) {
+export async function handleMessageFromQueue(request) {
   console.log('AS receive message from mq:', request);
   let requestJson = JSON.parse(request);
 
@@ -226,10 +224,4 @@ export async function init() {
     node_id,
     public_key: 'very_secure_public_key_for_as'
   });*/
-}
-
-if (config.role === 'as') {
-  eventEmitter.on('message', function(message) {
-    handleMessageFromQueue(message);
-  });
 }
