@@ -98,7 +98,7 @@ Don't forget to
 
 ## Note
 
-* When working in development, if you clear/delete the blockchain, you need to delete DB files and latest block height files. Run `npm run reset-data-for-dev`.
+* When working in development, if you clear/delete the blockchain, you need to delete DB files and latest block height files by running `npm run reset-data-for-dev`. (Automatically run when running `npm run initDevKey`)
 
 * Run `npm run delete-local-db-cache` to delete local DB used for caching. Local DB file name is `db-api-` following by node ID (env: `NODE_ID`) set on server start (e.g. `db-api-idp1` when node ID is set to `idp1`).
 
