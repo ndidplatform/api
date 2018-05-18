@@ -1,5 +1,6 @@
 import express from 'express';
 import * as abciAppIdentityApi from '../main/identity';
+import * as abciAppCommonApi from '../main/common';
 
 import validate from './validator';
 
@@ -49,11 +50,16 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
     const { namespace, identifier } = req.params;
 
-    // Not Implemented
-    // TODO
+    let checkIdpNodeIds = await abciAppCommonApi.getNodeIdsOfAssociatedIdp({
+      namespace,
+      identifier,
+      min_ial: 1,
+    });
+    let status = (checkIdpNodeIds && checkIdpNodeIds.node_id.length !== 0) ? 200 : 404;
 
-    res.status(501).end();
+    res.status(status).end();
   } catch (error) {
+    console.error(error);
     res.status(500).end();
   }
 });
