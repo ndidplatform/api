@@ -37,18 +37,6 @@
     npm start
     ```
 
-## Run in Docker
-
-Required
-
-* Docker CE [Install docker](https://docs.docker.com/install/)
-* docker-compose [Install docker-compose](https://docs.docker.com/compose/install/)
-
-```
-docker network create ndidplatform
-docker-compose up
-```
-
 **Environment variable options**
 
 * `ROLE`: Can be `idp`, `rp`, or `as`
@@ -95,6 +83,18 @@ Don't forget to
 1.  Set `SERVER_PORT` when running on the same machine to avoid port collision.
 2.  Set `TENDERMINT_IP` and/or `TENDERMINT_PORT` when running `smart-contract`/`tendermint` on another machine.
 3.  Set `NODE_ID` when there are more than one node per role in the system.
+
+## Run in Docker
+
+Required
+
+* Docker CE [Install docker](https://docs.docker.com/install/)
+* docker-compose [Install docker-compose](https://docs.docker.com/compose/install/)
+
+```
+docker network create ndidplatform
+docker-compose up
+```
 
 ## Note
 
