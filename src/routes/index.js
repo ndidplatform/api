@@ -1,4 +1,7 @@
 import express from 'express';
+
+import logger from '../logger';
+
 import rpRouter from './relyingParty';
 import idpRouter from './identityProvider';
 import asRouter from './authoritativeSource';
@@ -17,10 +20,24 @@ const env = process.env.NODE_ENV || 'development';
 if (env === 'development') {
   router.use((req, res, next) => {
     if (req.method === 'POST') {
-      console.log(req.method, req.originalUrl, req.params, req.body);
+      const { method, originalUrl, params, body } = req;
+      logger.debug({
+        message: 'Incoming HTTP',
+        method,
+        originalUrl,
+        params,
+        body,
+      });
     }
     if (req.method === 'GET') {
-      console.log(req.method, req.originalUrl, req.params, req.query);
+      const { method, originalUrl, params, query } = req;
+      logger.debug({
+        message: 'Incoming HTTP',
+        method,
+        originalUrl,
+        params,
+        query,
+      });
     }
     next();
   });

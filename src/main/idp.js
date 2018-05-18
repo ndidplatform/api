@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
+import logger from '../logger';
+
 import * as tendermint from '../tendermint/ndid';
 import * as common from '../main/common';
 import * as utils from '../utils';
@@ -19,7 +21,15 @@ try {
   callbackUrl = fs.readFileSync(callbackUrlFilePath, 'utf8');
 } catch (error) {
   if (error.code !== 'ENOENT') {
-    console.log(error);
+    logger.warn({
+      message: 'IDP callback url file not found',
+      error,
+    });
+  } else {
+    logger.error({
+      message: 'Cannot read IDP callback url file',
+      error,
+    });
   }
 }
 
@@ -27,7 +37,10 @@ export const setCallbackUrl = (url) => {
   callbackUrl = url;
   fs.writeFile(callbackUrlFilePath, url, (err) => {
     if (err) {
-      console.error('Error writing IDP callback url file');
+      logger.error({
+        message: 'Cannot write IDP callback url file',
+        error: err,
+      });
     }
   });
 };
@@ -67,7 +80,9 @@ export async function createIdpResponse(data) {
 
 async function notifyByCallback(request) {
   if (!callbackUrl) {
-    console.error('callbackUrl for IDP not set');
+    logger.error({
+      message: 'Callback URL for IDP has not been set'
+    });
     return;
   }
   fetch(callbackUrl, {
@@ -80,8 +95,14 @@ async function notifyByCallback(request) {
 }
 
 export async function handleMessageFromQueue(request) {
-  console.log('IDP receive message from mq:', request);
-  let requestJson = JSON.parse(request);
+  logger.info({
+    message: 'Received message from MQ',
+  });
+  logger.debug({
+    message: 'Message from MQ',
+    request,
+  });
+  const requestJson = JSON.parse(request);
 
   if (common.latestBlockHeight < requestJson.height) {
     await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);

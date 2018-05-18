@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
+import logger from '../logger';
+
 import * as tendermint from '../tendermint/ndid';
 import * as mq from '../mq';
 import * as utils from '../utils';
@@ -15,7 +17,15 @@ try {
   callbackUrl = fs.readFileSync(callbackUrlFilePath, 'utf8');
 } catch (error) {
   if (error.code !== 'ENOENT') {
-    console.log(error);
+    logger.warn({
+      message: 'AS callback url file not found',
+      error,
+    });
+  } else {
+    logger.error({
+      message: 'Cannot read AS callback url file',
+      error,
+    });
   }
 }
 
@@ -23,7 +33,10 @@ export const setCallbackUrl = (url) => {
   callbackUrl = url;
   fs.writeFile(callbackUrlFilePath, url, (err) => {
     if (err) {
-      console.error('Error writing AS callback url file');
+      logger.error({
+        message: 'Cannot write AS callback url file',
+        error: err,
+      });
     }
   });
 };
@@ -70,17 +83,37 @@ async function registerServiceDestination(data) {
 
 async function notifyByCallback(request) {
   if (!callbackUrl) {
-    console.error('callbackUrl for AS not set');
+    logger.error({
+      message: 'Callback URL for AS has not been set'
+    });
     return;
   }
-  let data = await fetch(callbackUrl, {
+
+  logger.info({
+    message: 'Sending callback to AS',
+  });
+  logger.debug({
+    message: 'Callback to AS',
+    request,
+  });
+
+  const data = await fetch(callbackUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ request }),
   });
-  let result = await data.json();
+  const result = await data.json();
+
+  logger.info({
+    message: 'Received data from AS',
+  });
+  logger.debug({
+    message: 'Data from AS',
+    result,
+  });
+
   return result.data;
 }
 
@@ -113,15 +146,8 @@ async function getResponseDetails(requestId) {
 }
 
 async function getDataAndSendBackToRP(requestJson, responseDetails) {
-  // Then callback to AS.
-  console.log('Callback to AS', {
-    request_id: requestJson.request_id,
-    request_params: requestJson.request_params,
-    ...responseDetails,
-  });
-
   // Platform→AS
-  // The AS replies synchronously with the requested data
+  // The AS replies with the requested data
   let data = await notifyByCallback({
     request_id: requestJson.request_id,
     request_params: requestJson.request_params,
@@ -147,11 +173,15 @@ async function getDataAndSendBackToRP(requestJson, responseDetails) {
 }
 
 export async function handleMessageFromQueue(request) {
-  console.log('AS receive message from mq:', request);
-  let requestJson = JSON.parse(request);
+  logger.info({
+    message: 'Received message from MQ',
+  });
+  logger.debug({
+    message: 'Message from MQ',
+    request,
+  });
+  const requestJson = JSON.parse(request);
 
-  //console.log('arrived?',common.latestBlockHeight < requestJson.height);
-  //console.log('wait for',requestJson.height);
   if (common.latestBlockHeight < requestJson.height) {
     await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
     await db.addRequestIdExpectedInBlock(
@@ -165,7 +195,6 @@ export async function handleMessageFromQueue(request) {
     requestJson.request_id,
     requestJson
   );
-  //console.log('valid', valid)
   if (valid) {
     const responseDetails = await getResponseDetails(requestJson.request_id);
     getDataAndSendBackToRP(requestJson, responseDetails);

@@ -1,5 +1,7 @@
 import fetch from 'node-fetch';
 
+import logger from '../logger';
+
 import { TENDERMINT_ADDRESS } from '../config';
 
 async function httpUriCall(method, params) {
@@ -24,7 +26,11 @@ async function httpUriCall(method, params) {
     const responseJson = await response.json();
     return responseJson;
   } catch (error) {
-    console.error('Cannot connect to tendermint HTTP endpoint', error);
+    logger.error({
+      message: 'Cannot connect to tendermint HTTP endpoint',
+      uri,
+      error,
+    });
     throw error;
   }
 }

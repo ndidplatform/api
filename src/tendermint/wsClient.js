@@ -1,6 +1,8 @@
 import EventEmitter from 'events';
 import WebSocket from 'ws';
 
+import logger from '../logger';
+
 import { TENDERMINT_ADDRESS } from '../config';
 
 export default class TendermintWsClient extends EventEmitter {
@@ -16,7 +18,10 @@ export default class TendermintWsClient extends EventEmitter {
   connect() {
     this.ws = new WebSocket(`ws://${TENDERMINT_ADDRESS}/websocket`);
     this.ws.on('open', () => {
-      console.log('Tendermint WS connected');
+      logger.info({
+        message: 'tendermint WS connected',
+      });
+
       this.wsConnected = true;
 
       this.emit('connected');
@@ -25,7 +30,10 @@ export default class TendermintWsClient extends EventEmitter {
     });
 
     this.ws.on('close', () => {
-      console.log('Tendermint WS disconnected');
+      logger.info({
+        message: 'tendermint WS disconnected',
+      });
+
       this.wsConnected = false;
 
       this.emit('disconnected');
@@ -37,16 +45,26 @@ export default class TendermintWsClient extends EventEmitter {
     });
 
     this.ws.on('error', (error) => {
-      console.log('Tendermint WS error:', error);
+      logger.warn({
+        message: 'tendermint WS error',
+        error,
+      });
       // this.emit('error', error);
     });
 
     this.ws.on('message', (message) => {
-      // console.log('>>>', message);
+      // logger.debug({
+      //   message: 'Data received from tendermint WS',
+      //   data: message,
+      // });
       try {
         message = JSON.parse(message);
       } catch (error) {
-        console.warn('Error JSON parsing data received from tendermint');
+        logger.warn({
+          message: 'Error JSON parsing message received from tendermint',
+          data: message,
+          error,
+        });
         return;
       }
 

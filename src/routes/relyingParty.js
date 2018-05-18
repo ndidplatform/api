@@ -60,7 +60,6 @@ router.post('/requests/:namespace/:identifier', async (req, res, next) => {
     if (!requestId) throw 'Cannot create request';
     res.status(200).json({ requestId });
   } catch (error) {
-    console.error(error);
     res.status(500).end();
   }
 });
@@ -75,7 +74,6 @@ router.get('/requests/:request_id', async (req, res, next) => {
 
     res.status(200).json(request);
   } catch (error) {
-    console.error(error);
     res.status(500).end();
   }
 });
