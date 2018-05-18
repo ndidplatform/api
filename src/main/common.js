@@ -170,13 +170,19 @@ export async function checkRequestIntegrity(requestId, request) {
 
   const valid =
     msgBlockchain.messageHash === utils.hash(request.request_message);
-  // if (!valid) {
-  //   console.error(
-  //     'Mq and blockchain not matched!!',
-  //     request.request_message,
-  //     msgBlockchain.messageHash
-  //   );
-  // }
+  if (!valid) {
+    logger.warn({
+      message: 'Request message hash mismatched',
+      requestId,
+    });
+    logger.debug({
+      message: 'Request message hash mismatched',
+      requestId,
+      givenRequestMessage: request.request_message,
+      givenRequestMessageHash: utils.hash(request.request_message),
+      requestMessageHashFromBlockchain: msgBlockchain.messageHash,
+    });
+  }
 
   return valid;
 }
