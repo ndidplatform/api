@@ -74,3 +74,48 @@ export async function createSignature(data, nonce = '') {
 export function createRequestId() {
   return cryptoUtils.randomHexBytes(32);
 }
+
+export function securelyGenerateParamsForZk({
+  secret, 
+  namespace, 
+  identifier,
+  generating_function,
+  prime_modulo
+}) {
+  if(!prime_modulo) prime_modulo = generateRandomBigPrime();
+  if(!generating_function) generating_function = generateingFunctionOfGroup(prime_modulo);
+
+  let secretBigInt = stringToBigInt(secret);
+  let sidBigInt = stringToBigInt(namespace + ':' + identifier);
+
+  let commitment = powerModBigInt( 
+    powerModBigInt(generating_function, secretBigInt, prime_modulo), 
+    sidBigInt, 
+    prime_modulo 
+  );
+  return {
+    generating_function,
+    prime_modulo,
+    commitment
+  };
+}
+
+function generateingFunctionOfGroup(prime) {
+  //TODO implement this
+  return 0;
+}
+
+function generateRandomBigPrime() {
+  //TODO implement this
+  return 2; //is this big enough?
+}
+
+function stringToBigInt(str) {
+  //TODO implement this
+  return 0;
+}
+
+function powerModBigInt(base, power, modulo) {
+  //TODO implement this
+  return 0;
+}

@@ -22,18 +22,18 @@ export async function createNewIdentity(data) {
       isExisted,
       generating_function,
       prime_modulo
-    } = await someCheckingFunction();
+    } = await tendermint.query('CheckExistingIdentity',{ hash_id });
 
     let hash_id = utils.hash(namespace + ':' + identifier);
     if(!isExisted) {
       //not exist, create new
-      let [ _generating_function, _prime_modulo, commitment ] = securelyGenerate({
+      let { commitment, ...params } = utils.securelyGenerateParamsForZk({
         secret, 
         namespace, 
         identifier
       });
-      generating_function = _generating_function;
-      prime_modulo = _prime_modulo;
+      generating_function = params.generating_function;
+      prime_modulo = params.prime_modulo;
 
       await tendermint.transact('CreateIdentity',{
         hash_id,
@@ -59,8 +59,10 @@ export async function createNewIdentity(data) {
     else {
       //existed, request for consent add accessor
       //create SPECIAL REQUEST for onboarding and wait for event when consent is given
+      createSpecialRequest(...);
       //store that special request id to persistent map to all data 
       //(secret, g, p, sid, ial, accessor_id, accessor_public_key, accessor_type)
+      storeToPersistent(...);
     }
     //=====================================================================
 
@@ -90,7 +92,7 @@ export async function addAccessorMethod(specialRequestId) {
 
   let hash_id = utils.hash(namespace + ':' + identifier);
 
-  let commitment = securelyGenerateWithSpecificFunction({
+  let { commitment } = utils.securelyGenerateParamsForZk({
     secret,
     namespace,
     identifier,
