@@ -20,10 +20,9 @@ let callbackUrl = null;
 try {
   callbackUrl = fs.readFileSync(callbackUrlFilePath, 'utf8');
 } catch (error) {
-  if (error.code !== 'ENOENT') {
+  if (error.code === 'ENOENT') {
     logger.warn({
       message: 'IDP callback url file not found',
-      error,
     });
   } else {
     logger.error({
@@ -81,7 +80,7 @@ export async function createIdpResponse(data) {
 async function notifyByCallback(request) {
   if (!callbackUrl) {
     logger.error({
-      message: 'Callback URL for IDP has not been set'
+      message: 'Callback URL for IDP has not been set',
     });
     return;
   }

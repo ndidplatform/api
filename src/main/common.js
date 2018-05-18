@@ -40,10 +40,9 @@ const latestBlockHeightFilepath = path.join(
 try {
   latestBlockHeight = fs.readFileSync(latestBlockHeightFilepath, 'utf8');
 } catch (error) {
-  if (error.code !== 'ENOENT') {
+  if (error.code === 'ENOENT') {
     logger.warn({
       message: 'Latest block height file not found',
-      error,
     });
   } else {
     logger.error({
