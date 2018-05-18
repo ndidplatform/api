@@ -1,5 +1,8 @@
 import EventEmitter from 'events';
 import zmq from 'zeromq';
+
+import logger from '../logger';
+
 import * as config from '../config';
 import * as utils from '../utils';
 
@@ -37,5 +40,7 @@ export const send = async (receivers, message) => {
 
 export function close() {
   receivingSocket.close();
-  console.log('Message queue socket closed');
+  logger.info({
+    message: 'Message queue socket closed',
+  });
 }

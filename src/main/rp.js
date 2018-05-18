@@ -1,5 +1,7 @@
 import fetch from 'node-fetch';
 
+import logger from '../logger';
+
 import * as tendermint from '../tendermint/ndid';
 import * as utils from '../utils';
 import * as mq from '../mq';
@@ -61,10 +63,10 @@ export async function handleTendermintNewBlockHeaderEvent(
               }),
             });
           } catch (error) {
-            console.log(
-              'Cannot send callback to client application with the following error:',
-              error
-            );
+            logger.error({
+              message: 'Cannot send callback to client application',
+              error,
+            });
           }
 
           if (request.status === 'confirmed' && idpCountOk) {
@@ -176,14 +178,16 @@ async function getASReceiverList(data_request) {
 }
 
 async function sendRequestToAS(requestData, height) {
-  // console.log(requestData);
   // node id, which is substituted with ip,port for demo
   let rp_node_id = config.nodeId;
   if (requestData.data_request_list != undefined) {
     requestData.data_request_list.forEach(async (data_request) => {
       let receivers = await getASReceiverList(data_request);
       if (receivers.length === 0) {
-        console.error('No AS found');
+        logger.error({
+          message: 'No AS found',
+          data_request,
+        });
         return;
       }
 
@@ -277,7 +281,12 @@ export async function createRequest({
   });
 
   if (receivers.length === 0) {
-    console.error('No IDP found');
+    logger.error({
+      message: 'No IDP found',
+      namespace,
+      identifier,
+      idp_list,
+    });
     return null;
   }
 
@@ -357,7 +366,14 @@ export function removeAllDataFromAS() {
 }
 
 export async function handleMessageFromQueue(data) {
-  console.log('RP receive message from mq:', data);
+  logger.info({
+    message: 'Received message from MQ',
+  });
+  logger.debug({
+    message: 'Message from MQ',
+    data,
+  });
+
   // Verifies signature in blockchain.
   // RP node updates the request status
   // Call callback to RP.
@@ -383,10 +399,10 @@ export async function handleMessageFromQueue(data) {
       });
       db.removeCallbackUrl(data.request_id);
     } catch (error) {
-      console.log(
-        'Cannot send callback to client application with the following error:',
-        error
-      );
+      logger.warn({
+        message: 'Cannot send callback to client application (RP)',
+        error,
+      });
     }
   }
 

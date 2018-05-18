@@ -1,12 +1,12 @@
 import 'source-map-support/register';
 
 import http from 'http';
-import * as config from './config';
-
-import bodyParser from 'body-parser';
-
 import express from 'express';
+import bodyParser from 'body-parser';
 import morgan from 'morgan';
+
+import logger from './logger';
+
 import routes from './routes';
 import { init as idp_init } from './main/idp';
 import { init as as_init } from './main/as';
@@ -16,8 +16,14 @@ import { close as closeDB } from './db';
 import { tendermintWsClient } from './main/common';
 import { close as closeMQ } from './mq';
 
+import * as config from './config';
+
 process.on('unhandledRejection', function(reason, p) {
-  console.error('Unhandled Rejection:', p, '\nreason:', reason.stack || reason);
+  logger.error({
+    message: 'Unhandled Rejection',
+    p,
+    reason: reason.stack || reason,
+  });
 });
 
 const env = process.env.NODE_ENV || 'development';
@@ -35,7 +41,9 @@ app.use(routes);
 const server = http.createServer(app);
 server.listen(config.serverPort);
 
-console.log(`Server listening on port ${config.serverPort}`);
+logger.info({
+  message: `Server listening on port ${config.serverPort}`,
+});
 
 // TO BE REMOVED
 // Not needed in production environment
@@ -52,17 +60,22 @@ if (config.role === 'idp') {
 let shutDownCalledOnce = false;
 function shutDown() {
   if (shutDownCalledOnce) {
-    console.error('Forcefully shutting down');
+    logger.error({
+      message: 'Forcefully shutting down',
+    });
     process.exit(1);
   }
   shutDownCalledOnce = true;
 
-  console.log(
-    'Received kill signal, shutting down gracefully (Ctrl+C again to force shutdown)'
-  );
+  logger.info({
+    message: 'Received kill signal, shutting down gracefully',
+  });
+  console.log('(Ctrl+C again to force shutdown)');
 
   server.close(async () => {
-    console.log('HTTP server closed');
+    logger.info({
+      message: 'HTTP server closed',
+    });
 
     closeMQ();
     tendermintWsClient.close();

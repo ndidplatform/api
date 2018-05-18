@@ -1,8 +1,12 @@
 import * as db from './sequelize';
 
+import logger from '../logger';
+
 export async function close() {
   await db.close();
-  console.log('DB connection closed');
+  logger.info({
+    message: 'DB connection closed',
+  });
 }
 
 //
