@@ -1,6 +1,9 @@
 import path from 'path';
 
 export const serverPort = process.env.SERVER_PORT || 8080;
+
+export const LOG_DIRECTORY_PATH = process.env.LOG_DIRECTORY_PATH || __dirname;
+
 export const role = process.env.ROLE;
 
 export const DEFAULT_MQ_BINDING_PORT = (() => {
