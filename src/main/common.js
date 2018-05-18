@@ -1,5 +1,8 @@
 import path from 'path';
 import fs from 'fs';
+
+import logger from '../logger';
+
 import * as tendermint from '../tendermint/ndid';
 import TendermintWsClient from '../tendermint/wsClient';
 import * as rp from './rp';
@@ -38,7 +41,15 @@ try {
   latestBlockHeight = fs.readFileSync(latestBlockHeightFilepath, 'utf8');
 } catch (error) {
   if (error.code !== 'ENOENT') {
-    console.log(error);
+    logger.warn({
+      message: 'Latest block height file not found',
+      error,
+    });
+  } else {
+    logger.error({
+      message: 'Cannot read latest block height file',
+      error,
+    });
   }
 }
 
@@ -49,7 +60,10 @@ try {
 function saveLatestBlockHeight(height) {
   fs.writeFile(latestBlockHeightFilepath, height, (err) => {
     if (err) {
-      console.error('Error writing last processed block height');
+      logger.error({
+        message: 'Cannot write latest block height file',
+        error: err,
+      });
     }
   });
 }
@@ -170,13 +184,13 @@ export async function checkRequestIntegrity(requestId, request) {
 
   const valid =
     msgBlockchain.messageHash === utils.hash(request.request_message);
-  if (!valid) {
-    console.error(
-      'Mq and blockchain not matched!!',
-      request.request_message,
-      msgBlockchain.messageHash
-    );
-  }
+  // if (!valid) {
+  //   console.error(
+  //     'Mq and blockchain not matched!!',
+  //     request.request_message,
+  //     msgBlockchain.messageHash
+  //   );
+  // }
 
   return valid;
 }

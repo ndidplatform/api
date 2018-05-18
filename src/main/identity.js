@@ -1,3 +1,5 @@
+import logger from '../logger';
+
 import * as tendermint from '../tendermint/ndid';
 import * as utils from '../utils';
 import * as config from '../config';
@@ -31,7 +33,10 @@ export async function createNewIdentity(data) {
     });
     return true;
   } catch (error) {
-    console.error('Error while register user', error);
+    logger.error({
+      message: 'Cannot create new identity',
+      error,
+    });
     return false;
   }
 }

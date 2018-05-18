@@ -23,6 +23,8 @@
     "sequelize": "^4.37.7",
     "source-map-support": "^0.5.4",
     "sqlite3": "^4.0.0",
+    "winston": "^3.0.0-rc5",
+    "winston-daily-rotate-file": "^3.1.4",
     "ws": "^5.1.1",
     "zeromq": "^4.6.0"
   },

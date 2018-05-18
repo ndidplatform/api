@@ -1,10 +1,15 @@
+import logger from '../logger';
+
 import * as tendermintClient from './client';
 import * as utils from '../utils';
 import * as config from '../config';
 
 function getQueryResult(response) {
   if (response.error) {
-    console.error(response.error);
+    logger.debug({
+      message: 'tendermint query error',
+      error: response.error,
+    });
     return [response.error, -1];
   }
 
@@ -16,14 +21,19 @@ function getQueryResult(response) {
 }
 
 function getTransactResult(response) {
-  //console.log('===>',response)
   if (response.error) {
-    console.error(response.error);
+    logger.debug({
+      message: 'tendermint transact error',
+      error: response.error,
+    });
     return [response.error, -1];
   }
 
   if (response.result.deliver_tx.log !== 'success') {
-    console.error('Update chain failed:', response);
+    logger.error({
+      message: 'tendermint transact failed',
+      response
+    });
   }
   return [response.result.deliver_tx.log === 'success', response.result.height];
 }
