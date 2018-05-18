@@ -91,6 +91,9 @@ tendermintWsClient.on('connected', () => {
 });
 
 tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
+  if (syncing !== false) {
+    return;
+  }
   const blockHeight = result.data.data.header.height;
   if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
     const lastKnownBlockHeight = latestBlockHeight;
