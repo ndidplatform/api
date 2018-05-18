@@ -1,5 +1,6 @@
 import util from 'util';
 import winston from 'winston';
+import 'winston-daily-rotate-file';
 
 const env = process.env.NODE_ENV || 'development';
 
@@ -34,36 +35,46 @@ const customFormat = winston.format.printf((info) => {
   }
 });
 
-const logger = winston.createLogger({
-  level: env !== 'production' ? 'debug' : 'info',
-  exitOnError: false,
-});
+const logger = winston.createLogger();
 
-// If we're not in production then log to the `console` with debug log level
+// If we're not in production then log to the `console`
 if (env !== 'production') {
-  logger.add(
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        // winston.format.timestamp(),
-        customFormat
-      ),
-    })
-  );
+  logger.configure({
+    level: 'debug',
+    format: winston.format.combine(
+      winston.format.colorize(),
+      // winston.format.timestamp(),
+      customFormat
+    ),
+    transports: [new winston.transports.Console()],
+    exitOnError: false,
+  });
 } else {
-  logger.add(
-    new winston.transports.File({
-      filename: 'error.log',
-      level: 'error',
-      format: logFormatForFile,
-    })
-  );
-  logger.add(
-    new winston.transports.File({
-      filename: 'combined.log',
-      format: logFormatForFile,
-    })
-  );
+  logger.configure({
+    level: 'info',
+    format: logFormatForFile,
+    transports: [
+      // new winston.transports.File({
+      //   filename: 'error.log',
+      //   level: 'error',
+      // }),
+      // new winston.transports.File({
+      //   filename: 'combined.log',
+      // }),
+      new winston.transports.DailyRotateFile({
+        filename: 'error-%DATE%.log',
+        level: 'error',
+        // datePattern: 'YYYY-MM-DD',
+        zippedArchive: true, // gzip archived log files
+      }),
+      new winston.transports.DailyRotateFile({
+        filename: 'combined-%DATE%.log',
+        // datePattern: 'YYYY-MM-DD',
+        zippedArchive: true, // gzip archived log files
+      }),
+    ],
+    exitOnError: false,
+  });
 }
 
 export default logger;
