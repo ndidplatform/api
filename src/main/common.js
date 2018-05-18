@@ -126,19 +126,6 @@ export async function getNodeIdsOfAsWithService({ service_id }) {
   });
 }
 
-/*export async function getRequestRequireHeight(data, requireHeight) {
-  let currentHeight,request;
-  do {
-    let [ _request, _currentHeight ] = await utils.queryChain('GetRequest', data, true);
-    currentHeight = _currentHeight;
-    request = _request;
-    //sleep
-    await new Promise(resolve => { setTimeout(resolve,1000); });
-  }
-  while(currentHeight < requireHeight + 2); //magic number...
-  return request;
-}*/
-
 /*
   data = { node_id, public_key }
 */

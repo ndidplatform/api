@@ -110,47 +110,6 @@ export async function handleTendermintNewBlockHeaderEvent(
   );
 }
 
-/*export const handleABCIAppCallback = async (requestId, height) => {
-  if (callbackUrls[requestId]) {
-    const request = await common.getRequestRequireHeight({ requestId }, height);
-
-    try {
-      await fetch(callbackUrls[requestId], {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          request
-        })
-      });
-    } catch (error) {
-      console.log(
-        'Cannot send callback to client application with the following error:',
-        error
-      );
-    }
-
-    // Clear callback url mapping when the request is no longer going to have further events
-    if (request.status === 'rejected') {
-      delete callbackUrls[requestId];
-    }
-  }
-
-  if (requestsData[requestId]) {
-    const request = await common.getRequest({ requestId });
-    let requestData = requestsData[requestId];
-
-    if (request.status === 'completed') {
-      // Send request to AS when completed
-      setTimeout(function() {
-        sendRequestToAS(requestData);
-        delete requestsData[requestId]; 
-      }, 1000);
-    }
-  }
-};*/
-
 async function getASReceiverList(data_request) {
   let nodeIdList;
   if (!data_request.as_id_list || data_request.as_id_list.length === 0) {

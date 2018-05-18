@@ -165,21 +165,6 @@ export async function handleTendermintNewBlockHeaderEvent(
   db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 }
 
-/*export async function handleNewBlockEvent(data) {
-  let height = -1; //derive from data;
-  let requestId = -1; //derive from data;
-  blockHeight = height;
-  for(let tx in data.txs) {
-    blockchainQueue[requestId] = data.txs.request.body; //derive from data
-    //msq may not arrive yet, or else, this tx do not concern this idp
-    //TODO: should have mechanism to clear blockchainQueue that do not concern this idp
-    if(!mqReceivingQueue[requestId]) continue; 
-    checkIntegrity(tx.request_id).then((valid) => {
-      if(valid) notifyByCallback(mqReceivingQueue[requestId]);
-    });
-  }
-}*/
-
 //===================== Initialize before flow can start =======================
 
 export async function init() {

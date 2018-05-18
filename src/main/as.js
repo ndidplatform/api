@@ -11,40 +11,6 @@ import * as config from '../config';
 import * as common from '../main/common';
 import * as db from '../db';
 
-/*const callbackUrlFilePath = path.join(__dirname, '..', '..', 'as-callback-url');
-let callbackUrl = null;
-try {
-  callbackUrl = fs.readFileSync(callbackUrlFilePath, 'utf8');
-} catch (error) {
-  if (error.code !== 'ENOENT') {
-    logger.warn({
-      message: 'AS callback url file not found',
-      error,
-    });
-  } else {
-    logger.error({
-      message: 'Cannot read AS callback url file',
-      error,
-    });
-  }
-}
-
-export const setCallbackUrl = (url) => {
-  callbackUrl = url;
-  fs.writeFile(callbackUrlFilePath, url, (err) => {
-    if (err) {
-      logger.error({
-        message: 'Cannot write AS callback url file',
-        error: err,
-      });
-    }
-  });
-};
-
-export const getCallbackUrl = () => {
-  return callbackUrl;
-};*/
-
 async function sendDataToRP(data) {
   let receivers = [];
   let nodeId = data.rp_node_id;
