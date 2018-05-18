@@ -10,6 +10,13 @@ import * as config from '../config';
 
 let handleTendermintNewBlockHeaderEvent;
 
+export let syncing = null;
+
+let readyPromise;
+export const ready = new Promise((resolve) => {
+  readyPromise = { resolve };
+});
+
 const latestBlockHeightFilepath = path.join(
   __dirname,
   '..',
@@ -53,10 +60,34 @@ export function setTendermintNewBlockHeaderEventHandler(handler) {
   handleTendermintNewBlockHeaderEvent = handler;
 }
 
+/**
+ * Poll tendermint status until syncing === false
+ */
+async function pollStatusUtilSynced() {
+  logger.info({
+    message: 'Waiting for tendermint to finish syncing blockchain',
+  });
+  if (syncing == null || syncing === true) {
+    for (;;) {
+      const status = await tendermintWsClient.getStatus();
+      syncing = status.syncing;
+      if (syncing === false) {
+        logger.info({
+          message: 'Tendermint blockchain synced',
+        });
+        readyPromise.resolve();
+        readyPromise = null;
+        break;
+      }
+      await utils.wait(1000);
+    }
+  }
+}
+
 export const tendermintWsClient = new TendermintWsClient();
 
 tendermintWsClient.on('connected', () => {
-  // tendermintWsClient.getStatus();
+  pollStatusUtilSynced();
 });
 
 tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
@@ -112,7 +143,7 @@ function getTransactResult(response) {
   if (response.result.deliver_tx.log !== 'success') {
     logger.error({
       message: 'tendermint transact failed',
-      response
+      response,
     });
   }
   return [response.result.deliver_tx.log === 'success', response.result.height];
@@ -137,8 +168,16 @@ export async function query(fnName, data, requireHeight) {
 }
 
 export async function transact(fnName, data, nonce) {
-  const tx = fnName + '|' + JSON.stringify(data) + '|' + nonce + '|' + 
-    await utils.createSignature(data,nonce) + '|' + config.nodeId;
+  const tx =
+    fnName +
+    '|' +
+    JSON.stringify(data) +
+    '|' +
+    nonce +
+    '|' +
+    (await utils.createSignature(data, nonce)) +
+    '|' +
+    config.nodeId;
 
   const txBase64Encoded = Buffer.from(tx).toString('base64');
 

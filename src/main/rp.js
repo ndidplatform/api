@@ -420,5 +420,9 @@ export async function init() {
   });
 
   //In production this should be done only once in phase 1,
+
+  // Wait for blockchain ready
+  await tendermint.ready;
+  
   common.registerMsqAddress(config.mqRegister);
 }

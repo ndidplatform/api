@@ -170,6 +170,10 @@ export async function handleTendermintNewBlockHeaderEvent(
 export async function init() {
   //TODO
   //In production this should be done only once in phase 1,
+
+  // Wait for blockchain ready
+  await tendermint.ready;
+  
   //when IDP request to join approved NDID
   //after first approved, IDP can add other key and node and endorse themself
   /*let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;

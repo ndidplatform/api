@@ -9,6 +9,7 @@ import identityRouter from './identity';
 import utilityRouter from './utility';
 import dpkiRouter from './dpki';
 import ndidRouter from './nationalDigitalIdentity';
+import * as tendermint from '../tendermint/ndid';
 
 import * as config from '../config';
 
@@ -42,6 +43,18 @@ if (env === 'development') {
     next();
   });
 }
+
+router.use((req, res, next) => {
+  // Reject all requests when tendermint is not yet ready.
+  // This includes when tendermint is syncing (happens when starting a new node or resuming tendermint)
+  if (tendermint.syncing == null || tendermint.syncing === true) {
+    res
+      .status(503)
+      .json({ message: 'Syncing blockchain data. Please try again later.' });
+    return;
+  }
+  next();
+});
 
 if (config.role === 'rp') {
   router.use('/rp', rpRouter);

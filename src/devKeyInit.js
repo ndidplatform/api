@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 
 import * as abciAppNdid from './main/ndid';
+import * as tendermint from './tendermint/ndid';
 
 async function addKeyAndSetToken(role, index) {
   const node_id = role + index.toString();
@@ -27,6 +28,9 @@ export async function init() {
 
   const filePath = path.join(__dirname, '..', 'devKey', 'ndid', 'ndid1.pub');
   const public_key = fs.readFileSync(filePath, 'utf8').toString();
+
+  // Wait for blockchain ready
+  await tendermint.ready;
 
   const result = await abciAppNdid.initNDID(public_key);
   if (!result) {

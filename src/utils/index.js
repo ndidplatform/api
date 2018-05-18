@@ -7,6 +7,10 @@ import fetch from 'node-fetch';
 let nonce = Date.now() % 10000;
 let signatureCallback = false;
 
+export function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function getNonce() {
   // TODO
   return (nonce++).toString();
