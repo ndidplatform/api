@@ -5,7 +5,8 @@ import fetch from 'node-fetch';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
-import * as common from '../main/common';
+import * as common from './common';
+import * as identity from './identity';
 import * as utils from '../utils';
 import * as config from '../config';
 import * as db from '../db';
@@ -52,22 +53,16 @@ export const getCallbackUrl = () => {
 export async function createIdpResponse(data) {
   let {
     request_id,
-    namespace,
-    identifier,
     aal,
-    ial,
     status,
     signature,
-    accessor_id,
   } = data;
 
   let dataToBlockchain = {
     request_id,
     aal,
-    ial,
     status,
     signature,
-    accessor_id,
     identity_proof: utils.generateIdentityProof(data),
   };
   let [result, height] = await tendermint.transact(
@@ -144,6 +139,13 @@ export async function handleTendermintNewBlockHeaderEvent(
         ? height - 1
         : height - missingBlockCount;
   const toHeight = height - 1;
+
+  //TODO
+  //MUST check if this is specialRequest
+  if(this is special request) {
+    identity.addAccessorMethod(specialRequestId);
+    return ??
+  }
 
   const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
     fromHeight,

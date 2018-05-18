@@ -11,26 +11,59 @@ export async function createNewIdentity(data) {
       identifier,
       secret,
       accessor_type,
-      accessor_key,
+      accessor_public_key,
       accessor_id,
+      ial
     } = data;
 
-    //TODO
-    //check if this call is valid
+    //======================= TODO ========================================
+    //check existing sid
+    let {
+      isExisted,
+      generating_function,
+      prime_modulo
+    } = await someCheckingFunction();
 
-    //register node id, which is substituted with ip,port for demo
-    //let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
-    registerMqDestination({
-      users: [
-        {
-          hash_id: utils.hash(namespace + ':' + identifier),
-          //TODO
-          //where to get this value?, is it tie to IDP or tie to each identity??
-          ial: 3,
-        },
-      ],
-      node_id: config.nodeId,
-    });
+    let hash_id = utils.hash(namespace + ':' + identifier);
+    if(!isExisted) {
+      //not exist, create new
+      let [ _generating_function, _prime_modulo, commitment ] = securelyGenerate({
+        secret, 
+        namespace, 
+        identifier
+      });
+      generating_function = _generating_function;
+      prime_modulo = _prime_modulo;
+
+      await tendermint.transact('CreateIdentity',{
+        hash_id,
+        accessor_id,
+        accessor_public_key,
+        accessor_type,
+        generating_function,
+        prime_modulo,
+        commitment,
+      }, utils.getNonce());
+
+      registerMqDestination({
+        users: [
+          {
+            hash_id,
+            ial,
+          },
+        ],
+        node_id: config.nodeId,
+      });
+
+    }
+    else {
+      //existed, request for consent add accessor
+      //create SPECIAL REQUEST for onboarding and wait for event when consent is given
+      //store that special request id to persistent map to all data 
+      //(secret, g, p, sid, ial, accessor_id, accessor_public_key, accessor_type)
+    }
+    //=====================================================================
+
     return true;
   } catch (error) {
     logger.error({
@@ -39,6 +72,49 @@ export async function createNewIdentity(data) {
     });
     return false;
   }
+}
+
+export async function addAccessorMethod(specialRequestId) {
+
+  const {
+    secret,
+    namespace,
+    identifier,
+    generating_function,
+    prime_modulo, 
+    ial,
+    accessor_id,
+    accessor_public_key,
+    accessor_type
+  } = getFromPersistent(specialRequestId);
+
+  let hash_id = utils.hash(namespace + ':' + identifier);
+
+  let commitment = securelyGenerateWithSpecificFunction({
+    secret,
+    namespace,
+    identifier,
+    generating_function,
+    prime_modulo,
+  });
+
+  await tendermint.transact('AddAccessorMethod', {
+    hash_id,
+    accessor_id,
+    accessor_public_key,
+    accessor_type,
+    commitment
+  }, utils.getNonce());
+
+  registerMqDestination({
+    users: [
+      {
+        hash_id,
+        ial,
+      },
+    ],
+    node_id: config.nodeId,
+  });
 }
 
 export async function registerMqDestination(data) {

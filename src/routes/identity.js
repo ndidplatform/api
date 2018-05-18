@@ -23,8 +23,9 @@ router.post('/', async (req, res, next) => {
       identifier,
       secret,
       accessor_type,
-      accessor_key,
+      accessor_public_key,
       accessor_id,
+      ial,
     } = req.body;
 
     let isSuccess = await abciAppIdentityApi.createNewIdentity({
@@ -32,8 +33,9 @@ router.post('/', async (req, res, next) => {
       identifier,
       secret,
       accessor_type,
-      accessor_key,
+      accessor_public_key,
       accessor_id,
+      ial
     });
 
     if (isSuccess) {
