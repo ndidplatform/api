@@ -40,7 +40,7 @@ router.get('/service/:service_id', async (req, res, next) => {
 
     let result = await abciAppAsApi.getServiceDetail(service_id);
 
-    res.status(200).send(result);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).end();
   }

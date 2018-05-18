@@ -81,11 +81,12 @@ router.get('/requests/:request_id', async (req, res, next) => {
 
 router.get('/requests/reference/:reference_number', async (req, res, next) => {
   try {
-    
-    const requestId = await db.getRequestIdByReferenceId(req.params.reference_number);
+    const requestId = await db.getRequestIdByReferenceId(
+      req.params.reference_number
+    );
     const status = requestId ? 200 : 404;
 
-    res.status(status).send(requestId);
+    res.status(status).json(requestId);
   } catch (error) {
     res.status(500).end();
   }
