@@ -2,7 +2,7 @@ version: '3'
 services:
   api-idp:
     build:
-      context: .
+      context: ../
       dockerfile: Dockerfile
     environment:
       ROLE: idp
@@ -16,7 +16,7 @@ services:
       - 8080:8080
   api-rp:
     build:
-      context: .
+      context: ../
       dockerfile: Dockerfile
     environment:
       ROLE: rp
@@ -29,7 +29,7 @@ services:
       - 8081:8081
   api-as:
     build:
-      context: .
+      context: ../
       dockerfile: Dockerfile
     environment:
       ROLE: as
