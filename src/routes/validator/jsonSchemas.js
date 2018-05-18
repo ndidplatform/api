@@ -151,7 +151,7 @@ export default {
         ],
       },
     },
-    '/as/callback': {
+    /*'/as/callback': {
       body: {
         properties: {
           url: {
@@ -162,7 +162,7 @@ export default {
         },
         required: ['url'],
       },
-    },
+    },*/
     '/as/service/:service_id': {
       body: {
         properties: {

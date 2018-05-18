@@ -49,7 +49,8 @@ router.post('/service/:service_id', async (req, res, next) => {
       return;
     }
     
-    const { service_id, service_name, min_ial, min_aal, url } = req.body;
+    const { service_name, min_ial, min_aal, url } = req.body;
+    const service_id = req.params.service_id;
 
     await abciAppAsApi.registerAsService({
       service_id,
@@ -69,9 +70,9 @@ router.get('/service/:service_id', async (req, res, next) => {
   try {
     const { service_id } = req.params;
 
-    let result = await abciAppAsApi.getServiceDetail(req.params.service_id);
+    let result = await abciAppAsApi.getServiceDetail(service_id);
 
-    res.status(200).end(result);
+    res.status(200).send(result);
   } catch (error) {
     res.status(500).end();
   }

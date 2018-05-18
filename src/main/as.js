@@ -61,12 +61,7 @@ async function signData(data) {
 async function registerServiceDestination(data) {
   try {
     let nonce = utils.getNonce();
-    let dataToBlockchain = {
-      //as_id: data.as_id,
-      service_id: data.service_id,
-      node_id: data.node_id,
-    };
-    tendermint.transact('RegisterServiceDestination', dataToBlockchain, nonce);
+    tendermint.transact('RegisterServiceDestination', data, nonce);
   }
   catch(error) {
     throw error;
@@ -74,7 +69,9 @@ async function registerServiceDestination(data) {
 }
 
 async function notifyByCallback(request, serviceId) {
-  let callbackUrl = db.getServiceCallbackUrl(serviceId);//get by persistent
+  //get by persistent
+  let callbackUrl = await db.getServiceCallbackUrl(serviceId); 
+  //console.log('===>',callbackUrl);
   if (!callbackUrl) {
     console.error('callbackUrl for AS not set');
     return;
@@ -226,15 +223,17 @@ export async function registerAsService({
   url,
 }) {
   try {
-    await registerServiceDestination({
-      service_id,
-      service_name,
-      min_aal,
-      min_ial,
-      node_id: config.nodeId
-    });
-    //store callback to persistent
-    db.setServiceCallbackUrl(service_id, url);
+    await Promise.all([
+      registerServiceDestination({
+        service_id,
+        service_name,
+        min_aal,
+        min_ial,
+        node_id: config.nodeId
+      }),
+      //store callback to persistent
+      db.setServiceCallbackUrl(service_id, url)
+    ]);
   }
   catch(error) {
     throw error;
@@ -243,15 +242,15 @@ export async function registerAsService({
 
 export async function getServiceDetail(service_id) {
   try {
-    let result = await tendermint.transact('GetServiceDetail', {
+    let result = await tendermint.query('GetServiceDetail', {
       service_id,
       node_id: config.nodeId,
-    }, utils.getNonce());
-    return {
+    });
+    return result ? {
       service_id,
-      url: db.getServiceCallbackUrl(service_id),
+      url: await db.getServiceCallbackUrl(service_id),
       ...result,
-    };
+    } : null;
   }
   catch(error) {
     throw error;
