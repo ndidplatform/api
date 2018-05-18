@@ -9,7 +9,7 @@ import * as config from '../config';
 import * as common from '../main/common';
 import * as db from '../db';
 
-const callbackUrlFilePath = path.join(__dirname, '..', '..', 'as-callback-url');
+/*const callbackUrlFilePath = path.join(__dirname, '..', '..', 'as-callback-url');
 let callbackUrl = null;
 try {
   callbackUrl = fs.readFileSync(callbackUrlFilePath, 'utf8');
@@ -30,7 +30,7 @@ export const setCallbackUrl = (url) => {
 
 export const getCallbackUrl = () => {
   return callbackUrl;
-};
+};*/
 
 async function sendDataToRP(data) {
   let receivers = [];
@@ -59,16 +59,22 @@ async function signData(data) {
 }
 
 async function registerServiceDestination(data) {
-  let nonce = utils.getNonce();
-  let dataToBlockchain = {
-    //as_id: data.as_id,
-    service_id: data.service_id,
-    node_id: data.node_id,
-  };
-  tendermint.transact('RegisterServiceDestination', dataToBlockchain, nonce);
+  try {
+    let nonce = utils.getNonce();
+    let dataToBlockchain = {
+      //as_id: data.as_id,
+      service_id: data.service_id,
+      node_id: data.node_id,
+    };
+    tendermint.transact('RegisterServiceDestination', dataToBlockchain, nonce);
+  }
+  catch(error) {
+    throw error;
+  }
 }
 
-async function notifyByCallback(request) {
+async function notifyByCallback(request, serviceId) {
+  let callbackUrl = db.getServiceCallbackUrl(serviceId);//get by persistent
   if (!callbackUrl) {
     console.error('callbackUrl for AS not set');
     return;
@@ -126,7 +132,7 @@ async function getDataAndSendBackToRP(requestJson, responseDetails) {
     request_id: requestJson.request_id,
     request_params: requestJson.request_params,
     ...responseDetails,
-  });
+  }, requestJson.service_id);
 
   // When received data
   let as_id = config.asID;
@@ -212,6 +218,46 @@ export async function handleTendermintNewBlockHeaderEvent(
   db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 }
 
+export async function registerAsService({
+  service_id,
+  service_name,
+  min_ial,
+  min_aal,
+  url,
+}) {
+  try {
+    await registerServiceDestination({
+      service_id,
+      service_name,
+      min_aal,
+      min_ial,
+      node_id: config.nodeId
+    });
+    //store callback to persistent
+    db.setServiceCallbackUrl(service_id, url);
+  }
+  catch(error) {
+    throw error;
+  }
+}
+
+export async function getServiceDetail(service_id) {
+  try {
+    let result = await tendermint.transact('GetServiceDetail', {
+      service_id,
+      node_id: config.nodeId,
+    }, utils.getNonce());
+    return {
+      service_id,
+      url: db.getServiceCallbackUrl(service_id),
+      ...result,
+    };
+  }
+  catch(error) {
+    throw error;
+  }
+}
+
 //===================== Initialize before flow can start =======================
 
 export async function init() {
@@ -221,11 +267,11 @@ export async function init() {
   //let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
   //process.env.nodeId = node_id;
   // Hard code add back statement service for demo
-  registerServiceDestination({
+  /*registerServiceDestination({
     //as_id: config.asID,
     service_id: 'bank_statement',
     node_id: config.nodeId,
-  });
+  });*/
   common.registerMsqAddress(config.mqRegister);
   /*common.addNodePubKey({
     node_id,

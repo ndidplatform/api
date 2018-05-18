@@ -144,18 +144,37 @@ export function removeRequestToSendToAS(requestId) {
   });
 }
 
-export function getCallbackUrl(requestId) {
+export function getServiceCallbackUrl(serviceId) {
   return db.get({
-    name: 'callbackUrl',
+    name: 'serviceCallbackUrl',
+    keyName: 'serviceId',
+    key: serviceId,
+    valueName: 'url',
+  });
+}
+
+export function setServiceCallbackUrl(serviceId, callbackUrl) {
+  return db.set({
+    name: 'serviceCallbackUrl',
+    keyName: 'serviceId',
+    key: serviceId,
+    valueName: 'url',
+    value: callbackUrl,
+  });
+}
+
+export function getRequestCallbackUrl(requestId) {
+  return db.get({
+    name: 'requestCallbackUrl',
     keyName: 'requestId',
     key: requestId,
     valueName: 'url',
   });
 }
 
-export function setCallbackUrl(requestId, callbackUrl) {
+export function setRequestCallbackUrl(requestId, callbackUrl) {
   return db.set({
-    name: 'callbackUrl',
+    name: 'requestCallbackUrl',
     keyName: 'requestId',
     key: requestId,
     valueName: 'url',
@@ -163,9 +182,9 @@ export function setCallbackUrl(requestId, callbackUrl) {
   });
 }
 
-export function removeCallbackUrl(requestId) {
+export function removeRequestCallbackUrl(requestId) {
   return db.remove({
-    name: 'callbackUrl',
+    name: 'requestCallbackUrl',
     keyName: 'requestId',
     key: requestId,
   });

@@ -5,7 +5,7 @@ import validate from './validator';
 
 const router = express.Router();
 
-router.get('/callback', async (req, res, next) => {
+/*router.get('/callback', async (req, res, next) => {
   try {
     const url = abciAppAsApi.getCallbackUrl();
 
@@ -35,7 +35,7 @@ router.post('/callback', async (req, res, next) => {
   } catch (error) {
     res.status(500).end();
   }
-});
+});*/
 
 router.post('/service/:service_id', async (req, res, next) => {
   try {
@@ -51,10 +51,15 @@ router.post('/service/:service_id', async (req, res, next) => {
     
     const { service_id, service_name, min_ial, min_aal, url } = req.body;
 
-    // Not Implemented
-    // TODO
+    await abciAppAsApi.registerAsService({
+      service_id,
+      service_name,
+      min_aal,
+      min_ial,
+      url
+    });
 
-    res.status(501).end();
+    res.status(200).end();
   } catch (error) {
     res.status(500).end();
   }
@@ -64,10 +69,9 @@ router.get('/service/:service_id', async (req, res, next) => {
   try {
     const { service_id } = req.params;
 
-    // Not Implemented
-    // TODO
+    let result = await abciAppAsApi.getServiceDetail(req.params.service_id);
 
-    res.status(501).end();
+    res.status(200).end(result);
   } catch (error) {
     res.status(500).end();
   }

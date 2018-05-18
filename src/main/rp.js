@@ -36,7 +36,7 @@ export async function handleTendermintNewBlockHeaderEvent(
           const requestId =
             transaction.args.request_id || transaction.args.requestId; //derive from tx;
 
-          const callbackUrl = await db.getCallbackUrl(requestId);
+          const callbackUrl = await db.getRequestCallbackUrl(requestId);
 
           if (!callbackUrl) return; // This RP does not concern this request
 
@@ -81,7 +81,7 @@ export async function handleTendermintNewBlockHeaderEvent(
               // Clear callback url mapping and reference ID mapping
               // since the request is no longer going to have further events
               // (the request has reached its end state)
-              db.removeCallbackUrl(requestId);
+              db.removeRequestCallbackUrl(requestId);
               db.removeRequestIdReferenceIdMappingByRequestId(requestId);
               db.removeTimeoutScheduler(requestId);
               clearTimeout(timeoutScheduler[requestId]);
@@ -95,7 +95,7 @@ export async function handleTendermintNewBlockHeaderEvent(
             // Clear callback url mapping, reference ID mapping, and request data to send to AS
             // since the request is no longer going to have further events
             // (the request has reached its end state)
-            db.removeCallbackUrl(requestId);
+            db.removeRequestCallbackUrl(requestId);
             db.removeRequestIdReferenceIdMappingByRequestId(requestId);
             db.removeRequestToSendToAS(requestId);
             db.removeTimeoutScheduler(requestId);
@@ -340,7 +340,7 @@ export async function createRequest({
 
   // maintain mapping
   await db.setRequestIdByReferenceId(reference_id, request_id);
-  await db.setCallbackUrl(request_id, callback_url);
+  await db.setRequestCallbackUrl(request_id, callback_url);
   return request_id;
 }
 
@@ -369,7 +369,7 @@ export async function handleMessageFromQueue(data) {
   if (request.is_closed || request.is_timed_out) return;
   if (data.data) {
     try {
-      const callbackUrl = await db.getCallbackUrl(data.request_id);
+      const callbackUrl = await db.getRequestCallbackUrl(data.request_id);
 
       await fetch(callbackUrl, {
         method: 'POST',
@@ -381,7 +381,7 @@ export async function handleMessageFromQueue(data) {
           as_id: data.as_id,
         }),
       });
-      db.removeCallbackUrl(data.request_id);
+      db.removeRequestCallbackUrl(data.request_id);
     } catch (error) {
       console.log(
         'Cannot send callback to client application with the following error:',
@@ -397,7 +397,7 @@ export async function handleMessageFromQueue(data) {
 
   // Clear callback url mapping, reference ID mapping, and request data to send to AS
   // since the request is no longer going to have further events
-  db.removeCallbackUrl(data.request_id);
+  db.removeRequestCallbackUrl(data.request_id);
   db.removeRequestIdReferenceIdMappingByRequestId(data.request_id);
   db.removeRequestToSendToAS(data.request_id);
   db.removeTimeoutScheduler(data.request_id);

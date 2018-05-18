@@ -35,8 +35,12 @@ const Entities = {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     request: Sequelize.JSON,
   }),
-  callbackUrl: sequelize.define('callbackUrl', {
+  requestCallbackUrl: sequelize.define('requestCallbackUrl', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
+    url: Sequelize.TEXT,
+  }),
+  serviceCallbackUrl: sequelize.define('serviceCallbackUrl', {
+    serviceId: { type: Sequelize.STRING, primaryKey: true },
     url: Sequelize.TEXT,
   }),
   dataFromAS: sequelize.define('dataFromAS', {
