@@ -151,7 +151,7 @@ export async function handleMessageFromQueue(request) {
   });
   const requestJson = JSON.parse(request);
 
-  if (common.latestBlockHeight < requestJson.height) {
+  if (tendermint.latestBlockHeight < requestJson.height) {
     await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
     await db.addRequestIdExpectedInBlock(
       requestJson.height,

@@ -28,7 +28,7 @@ export async function handleTendermintNewBlockHeaderEvent(
   const fromHeight =
     missingBlockCount === 0 ? height - 1 : height - missingBlockCount;
   const toHeight = height - 1;
-  const blocks = await common.getBlocks(fromHeight, toHeight);
+  const blocks = await tendermint.getBlocks(fromHeight, toHeight);
   await Promise.all(
     blocks.map(async (block) => {
       let transactions = tendermint.getTransactionListFromBlockQuery(block);
