@@ -13,7 +13,7 @@ import { init as as_init } from './main/as';
 import { init as rp_init, clearAllScheduler } from './main/rp';
 
 import { close as closeDB } from './db';
-import { tendermintWsClient } from './main/common';
+import { tendermintWsClient } from './tendermint/ndid';
 import { close as closeMQ } from './mq';
 
 import * as config from './config';

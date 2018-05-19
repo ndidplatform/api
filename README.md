@@ -36,15 +36,6 @@
     ROLE=$ROLE \
     npm start
     ```
-## Run in Docker
-Required
-- Docker CE [Install docker](https://docs.docker.com/install/)
-- docker-compose [Install docker-compose](https://docs.docker.com/compose/install/)
-
-```
-docker network create ndidplatform
-docker-compose up
-```
 
 **Environment variable options**
 
@@ -56,6 +47,7 @@ docker-compose up
 * `SERVER_PORT`: API server port [Default: `8080`]
 * `PRIVATE_KEY_PATH`: Path to private key (if call back to create signature is not set) [Default: using pre-generated development key]
 * `NODE_ID`: Node ID. Only when there are more than one node per role in the system. This ID tie to public key, in dev mode we have `rp1`, `rp2`, `rp3`, `idp1`, `idp2`, `idp3`, `as1`, `as2`, `as3`
+* `LOG_DIRECTORY_PATH`: Directory path for log files (only in `production` environment) [Default: `__dirname` (code's directory)]
 
 **_Examples_**
 
@@ -92,9 +84,21 @@ Don't forget to
 2.  Set `TENDERMINT_IP` and/or `TENDERMINT_PORT` when running `smart-contract`/`tendermint` on another machine.
 3.  Set `NODE_ID` when there are more than one node per role in the system.
 
+## Run in Docker
+
+Required
+
+* Docker CE [Install docker](https://docs.docker.com/install/)
+* docker-compose [Install docker-compose](https://docs.docker.com/compose/install/)
+
+```
+docker network create ndidplatform
+docker-compose up
+```
+
 ## Note
 
-* When working in development, if you clear/delete the blockchain, you need to delete DB files and latest block height files. Run `npm run reset-data-for-dev`.
+* When working in development, if you clear/delete the blockchain, you need to delete DB files and latest block height files by running `npm run reset-data-for-dev`. (Automatically run when running `npm run initDevKey`)
 
 * Run `npm run delete-local-db-cache` to delete local DB used for caching. Local DB file name is `db-api-` following by node ID (env: `NODE_ID`) set on server start (e.g. `db-api-idp1` when node ID is set to `idp1`).
 

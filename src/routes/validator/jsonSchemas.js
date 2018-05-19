@@ -151,18 +151,6 @@ export default {
         ],
       },
     },
-    /*'/as/callback': {
-      body: {
-        properties: {
-          url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
-          },
-        },
-        required: ['url'],
-      },
-    },*/
     '/as/service/:service_id': {
       body: {
         properties: {

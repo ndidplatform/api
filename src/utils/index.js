@@ -9,6 +9,10 @@ let signatureCallback = false;
 const saltByteLength = 8;
 const saltStringLength = saltByteLength*2;
 
+export function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function getNonce() {
   // TODO
   return (nonce++).toString();

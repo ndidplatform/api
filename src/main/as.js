@@ -1,5 +1,3 @@
-import fs from 'fs';
-import path from 'path';
 import fetch from 'node-fetch';
 
 import logger from '../logger';
@@ -10,40 +8,6 @@ import * as utils from '../utils';
 import * as config from '../config';
 import * as common from '../main/common';
 import * as db from '../db';
-
-/*const callbackUrlFilePath = path.join(__dirname, '..', '..', 'as-callback-url');
-let callbackUrl = null;
-try {
-  callbackUrl = fs.readFileSync(callbackUrlFilePath, 'utf8');
-} catch (error) {
-  if (error.code !== 'ENOENT') {
-    logger.warn({
-      message: 'AS callback url file not found',
-      error,
-    });
-  } else {
-    logger.error({
-      message: 'Cannot read AS callback url file',
-      error,
-    });
-  }
-}
-
-export const setCallbackUrl = (url) => {
-  callbackUrl = url;
-  fs.writeFile(callbackUrlFilePath, url, (err) => {
-    if (err) {
-      logger.error({
-        message: 'Cannot write AS callback url file',
-        error: err,
-      });
-    }
-  });
-};
-
-export const getCallbackUrl = () => {
-  return callbackUrl;
-};*/
 
 async function sendDataToRP(data) {
   let receivers = [];
@@ -186,7 +150,7 @@ export async function handleMessageFromQueue(request) {
   });
   const requestJson = JSON.parse(request);
 
-  if (common.latestBlockHeight < requestJson.height) {
+  if (tendermint.latestBlockHeight < requestJson.height) {
     await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
     await db.addRequestIdExpectedInBlock(
       requestJson.height,
@@ -291,6 +255,10 @@ export async function getServiceDetail(service_id) {
 
 export async function init() {
   // In production environment, this should be done with register service process.
+
+  // Wait for blockchain ready
+  await tendermint.ready;
+
   // TODO
   //register node id, which is substituted with ip,port for demo
   //let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;

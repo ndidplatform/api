@@ -20,10 +20,9 @@ let callbackUrl = null;
 try {
   callbackUrl = fs.readFileSync(callbackUrlFilePath, 'utf8');
 } catch (error) {
-  if (error.code !== 'ENOENT') {
+  if (error.code === 'ENOENT') {
     logger.warn({
       message: 'IDP callback url file not found',
-      error,
     });
   } else {
     logger.error({
@@ -81,7 +80,7 @@ export async function createIdpResponse(data) {
 async function notifyByCallback(request) {
   if (!callbackUrl) {
     logger.error({
-      message: 'Callback URL for IDP has not been set'
+      message: 'Callback URL for IDP has not been set',
     });
     return;
   }
@@ -104,7 +103,7 @@ export async function handleMessageFromQueue(request) {
   });
   const requestJson = JSON.parse(request);
 
-  if (common.latestBlockHeight < requestJson.height) {
+  if (tendermint.latestBlockHeight < requestJson.height) {
     await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
     await db.addRequestIdExpectedInBlock(
       requestJson.height,
@@ -166,26 +165,15 @@ export async function handleTendermintNewBlockHeaderEvent(
   db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 }
 
-/*export async function handleNewBlockEvent(data) {
-  let height = -1; //derive from data;
-  let requestId = -1; //derive from data;
-  blockHeight = height;
-  for(let tx in data.txs) {
-    blockchainQueue[requestId] = data.txs.request.body; //derive from data
-    //msq may not arrive yet, or else, this tx do not concern this idp
-    //TODO: should have mechanism to clear blockchainQueue that do not concern this idp
-    if(!mqReceivingQueue[requestId]) continue; 
-    checkIntegrity(tx.request_id).then((valid) => {
-      if(valid) notifyByCallback(mqReceivingQueue[requestId]);
-    });
-  }
-}*/
-
 //===================== Initialize before flow can start =======================
 
 export async function init() {
   //TODO
   //In production this should be done only once in phase 1,
+
+  // Wait for blockchain ready
+  await tendermint.ready;
+  
   //when IDP request to join approved NDID
   //after first approved, IDP can add other key and node and endorse themself
   /*let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
