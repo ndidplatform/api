@@ -182,8 +182,11 @@ export async function getNodeToken(node_id = nodeId) {
 export async function checkRequestIntegrity(requestId, request) {
   const msgBlockchain = await getRequest({ requestId });
 
-  const valid =
-    msgBlockchain.messageHash === utils.hash(request.request_message);
+  const valid = utils.compareSaltedHash({
+    saltedHash: msgBlockchain.messageHash,
+    plain: request.request_message,
+  });
+    //msgBlockchain.messageHash === utils.hash(request.request_message);
   // if (!valid) {
   //   console.error(
   //     'Mq and blockchain not matched!!',

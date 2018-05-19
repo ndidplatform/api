@@ -129,6 +129,7 @@ async function getResponseDetails(requestId) {
   // Verify the identity proof.
   // Verify the signature.
   // Verify that the message_hash is matching with the request.
+  // Verify data_request_params with its hash
 
   // Get all signatures
   // and calculate max ial && max aal

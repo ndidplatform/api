@@ -299,7 +299,7 @@ export async function createRequest({
       service_id: data_request_list[i].service_id,
       as_id_list: data_request_list[i].as_id_list,
       count: data_request_list[i].count,
-      request_params_hash: utils.hash(
+      request_params_hash: utils.hashWithRandomSalt(
         JSON.stringify(data_request_list[i].request_params)
       ),
     });
@@ -330,7 +330,7 @@ export async function createRequest({
     min_ial,
     request_timeout,
     data_request_list: dataRequestListToBlockchain,
-    message_hash: utils.hash(request_message),
+    message_hash: utils.hashWithRandomSalt(request_message),
   };
   const [success, height] = await tendermint.transact(
     'CreateRequest',
