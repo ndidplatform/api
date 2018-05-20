@@ -1,47 +1,65 @@
 version: '3'
 services:
+  api-ndid:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=ndid
+      - NODE_ID=ndid1
+      - NDID_IP=api-ndid
+      - TENDERMINT_IP=tm-ndid
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=api-ndid
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${API_PORT:-8080}
+    ports:
+      - "8080:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
   api-idp:
-    build:
-      context: ../
-      dockerfile: Dockerfile
+    image: ndidplatform/api:latest
     environment:
-      ROLE: idp
-      MQ_CONTACT_IP: api-idp
-      MQ_BINDING_PORT: 5555
-      ASSOC_USERS: users.json
-      TENDERMINT_IP: tm-idp
-      TENDERMINT_PORT: 45000
-      SERVER_PORT: 8080
+      - ROLE=idp
+      - NODE_ID=idp1
+      - NDID_IP=api-ndid
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=api-idp
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${API_PORT:-8080}
     ports:
-      - 8080:8080
+      - "8081:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
   api-rp:
-    build:
-      context: ../
-      dockerfile: Dockerfile
+    image: ndidplatform/api:latest
     environment:
-      ROLE: rp
-      MQ_CONTACT_IP: api-rp
-      MQ_BINDING_PORT: 5556
-      TENDERMINT_IP: tm-rp
-      TENDERMINT_PORT: 45001
-      SERVER_PORT: 8081
+      - ROLE=rp
+      - NODE_ID=rp1
+      - NDID_IP=api-ndid
+      - TENDERMINT_IP=tm-rp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=api-rp
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${API_PORT:-8080}
     ports:
-      - 8081:8081
+      - "8082:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
   api-as:
-    build:
-      context: ../
-      dockerfile: Dockerfile
+    image: ndidplatform/api:latest
     environment:
-      ROLE: as
-      MQ_CONTACT_IP: api-as
-      MQ_BINDING_PORT: 5557
-      TENDERMINT_IP: tm-as
-      TENDERMINT_PORT: 45002
-      AS_ID: AS1
-      SERVER_PORT: 8082
+      - ROLE=as
+      - NODE_ID=as1
+      - NDID_IP=api-ndid
+      - TENDERMINT_IP=tm-as
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=api-as
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${API_PORT:-8080}
     ports:
-      - 8082:8082
+      - "8083:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+      
 networks:
-  default:
-    external:
-      name: ndidplatform
+  ndidplatform:
