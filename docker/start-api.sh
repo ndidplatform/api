@@ -138,4 +138,4 @@ case ${ROLE} in
     ;;
 esac
 
-node /api/build/server.js
+PRIVATE_KEY_PATH=${KEY_PATH} node /api/build/server.js
