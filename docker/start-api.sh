@@ -66,7 +66,7 @@ init_ndid() {
     echo "Initailizing NDID node succeeded"
     return 0
   else
-    echo "Initailizing NDID node failed"
+    echo "Initailizing NDID node failed: ${RESULT}"
     return 1
   fi
 }
@@ -83,7 +83,7 @@ register_node_id() {
     echo "Registering ${NODE_ID} node succeeded"
     return 0
   else
-    echo "Registering ${NODE_ID} node failed"
+    echo "Registering ${NODE_ID} node failed: ${RESULT}"
     return 1
   fi
 }
