@@ -57,7 +57,7 @@ does_node_id_exist() {
 init_ndid() {
   echo "Initializing NDID node..."
 
-  local PUBLIC_KEY=$(tr '\n' '#' < /api/devKey/${ROLE}/${NODE_ID}.pub | sed 's/#/\\n/g')
+  local PUBLIC_KEY=$(tr '\n' '#' < ${KEY_PATH}.pub | sed 's/#/\\n/g')
   local RESULT=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/initNDID \
     -H "Content-Type: application/json" \
     -d "{\"public_key\":\"${PUBLIC_KEY}\"}")
