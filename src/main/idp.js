@@ -118,7 +118,7 @@ export async function handleMessageFromQueue(request) {
   );
   if (valid) {
     notifyByCallback({
-      request_message_hash: utils.hash(requestJson.request_message),
+      //request_message_hash: utils.hash(requestJson.request_message),
       ...requestJson,
     });
   }
@@ -154,7 +154,7 @@ export async function handleTendermintNewBlockHeaderEvent(
       const valid = await common.checkRequestIntegrity(requestId, message);
       if (valid) {
         notifyByCallback({
-          request_message_hash: utils.hash(message.request_message),
+          //request_message_hash: utils.hash(message.request_message),
           ...message,
         });
       }

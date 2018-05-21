@@ -6,6 +6,8 @@ import fetch from 'node-fetch';
 
 let nonce = Date.now() % 10000;
 let signatureCallback = false;
+const saltByteLength = 8;
+const saltStringLength = saltByteLength*2;
 
 export function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -18,6 +20,17 @@ export function getNonce() {
 
 export function hash(stringToHash) {
   return cryptoUtils.hash(stringToHash);
+}
+
+export function hashWithRandomSalt(stringToHash) {
+  let saltByte = crypto.randomBytes(saltByteLength);
+  let saltString = saltByte.toString('hex');
+  return saltString + hash(saltString + stringToHash);
+}
+
+export function compareSaltedHash({saltedHash, plain}) {
+  let saltString = saltedHash.substring(0,saltStringLength);
+  return saltedHash === saltString + hash(saltString + plain);
 }
 
 export function decryptAsymetricKey(cipher) {
