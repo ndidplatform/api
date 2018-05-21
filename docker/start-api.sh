@@ -33,9 +33,17 @@ tendermint_wait_for_sync_complete() {
 }
 
 generate_key() {
+  mkdir -p $(dirname ${KEY_PATH}) && \
   openssl genrsa -out ${KEY_PATH} 2048 && \
   openssl rsa -in ${KEY_PATH} -pubout -out ${KEY_PATH}.pub
-  echo "Keypair is generated at ${KEY_PATH} and ${KEY_PATH}.pub"
+
+  if [ $? -eq 0 ]; then
+    echo "Keypair is generated at ${KEY_PATH} and ${KEY_PATH}.pub"
+    return 0
+  else
+    echo "Failed to generate keypair at ${KEY_PATH} and ${KEY_PATH}.pub"
+    return 1
+  fi
 }
 
 # check return value; 0 = exist, 1 = does not exist
@@ -57,7 +65,7 @@ does_node_id_exist() {
 init_ndid() {
   echo "Initializing NDID node..."
 
-  local PUBLIC_KEY=$(tr '\n' '#' < /api/devKey/${ROLE}/${NODE_ID}.pub | sed 's/#/\\n/g')
+  local PUBLIC_KEY=$(tr '\n' '#' < ${KEY_PATH}.pub | sed 's/#/\\n/g')
   local RESULT=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/initNDID \
     -H "Content-Type: application/json" \
     -d "{\"public_key\":\"${PUBLIC_KEY}\"}")
@@ -66,7 +74,7 @@ init_ndid() {
     echo "Initailizing NDID node succeeded"
     return 0
   else
-    echo "Initailizing NDID node failed"
+    echo "Initailizing NDID node failed: ${RESULT}"
     return 1
   fi
 }
@@ -83,7 +91,7 @@ register_node_id() {
     echo "Registering ${NODE_ID} node succeeded"
     return 0
   else
-    echo "Registering ${NODE_ID} node failed"
+    echo "Registering ${NODE_ID} node failed: ${RESULT}"
     return 1
   fi
 }
@@ -118,6 +126,7 @@ case ${ROLE} in
   ndid)
     tendermint_wait_for_sync_complete
     if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ] || ! does_node_id_exist; then
+      generate_key
       wait_for_ndid_node_to_be_ready init_ndid &
     fi
     ;;
@@ -125,6 +134,7 @@ case ${ROLE} in
     tendermint_wait_for_sync_complete
     
     if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ] || ! does_node_id_exist; then
+      generate_key
       wait_until_ndid_node_initialized
       register_node_id && \
       set_token_for_node_id 10000 
@@ -135,4 +145,4 @@ case ${ROLE} in
     ;;
 esac
 
-node /api/build/server.js
+PRIVATE_KEY_PATH=${KEY_PATH} node /api/build/server.js
