@@ -118,6 +118,7 @@ case ${ROLE} in
   ndid)
     tendermint_wait_for_sync_complete
     if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ] || ! does_node_id_exist; then
+      generate_key
       wait_for_ndid_node_to_be_ready init_ndid &
     fi
     ;;
@@ -125,6 +126,7 @@ case ${ROLE} in
     tendermint_wait_for_sync_complete
     
     if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ] || ! does_node_id_exist; then
+      generate_key
       wait_until_ndid_node_initialized
       register_node_id && \
       set_token_for_node_id 10000 
