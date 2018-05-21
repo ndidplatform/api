@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 
 import logger from '../logger';
 
-import { TENDERMINT_ADDRESS } from '../config';
+import { tendermintAddress } from '../config';
 
 async function httpUriCall(method, params) {
   const queryString = params.reduce((paramsString, param) => {
@@ -16,7 +16,7 @@ async function httpUriCall(method, params) {
     return paramsString + `${param.key}="${uriEncodedParamValue}"`;
   }, '');
 
-  let uri = `http://${TENDERMINT_ADDRESS}/${method}`;
+  let uri = `http://${tendermintAddress}/${method}`;
   if (params.length > 0) {
     uri = uri + `?${queryString}`;
   }

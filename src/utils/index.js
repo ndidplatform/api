@@ -23,7 +23,7 @@ export function hash(stringToHash) {
 export function decryptAsymetricKey(cipher) {
   // TODO: implement decryption with callback decrypt? no design yet... (HSM)
   const [encryptedSymKey, encryptedMessage] = cipher.split('|');
-  const privateKey = fs.readFileSync(config.PRIVATE_KEY_PATH, 'utf8');
+  const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
   const symKeyBuffer = cryptoUtils.privateDecrypt(privateKey, encryptedSymKey);
   return cryptoUtils.decryptAES256GCM(symKeyBuffer, encryptedMessage, false);
 }
@@ -71,7 +71,7 @@ async function createSignatureByCallback() {
 export async function createSignature(data, nonce = '') {
   if (signatureCallback)
     return await createSignatureByCallback(JSON.stringify(data) + nonce);
-  let privateKey = fs.readFileSync(config.PRIVATE_KEY_PATH, 'utf8');
+  let privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
   return cryptoUtils.createSignature(data, nonce, privateKey);
 }
 

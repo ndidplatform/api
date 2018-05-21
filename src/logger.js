@@ -65,13 +65,13 @@ if (env !== 'production') {
       //   filename: 'combined.log',
       // }),
       new winston.transports.DailyRotateFile({
-        filename: path.join(config.LOG_DIRECTORY_PATH, 'error-%DATE%.log'),
+        filename: path.join(config.logDirectoryPath, 'error-%DATE%.log'),
         level: 'error',
         // datePattern: 'YYYY-MM-DD',
         zippedArchive: true, // gzip archived log files
       }),
       new winston.transports.DailyRotateFile({
-        filename: path.join(config.LOG_DIRECTORY_PATH, 'combined-%DATE%.log'),
+        filename: path.join(config.logDirectoryPath, 'combined-%DATE%.log'),
         // datePattern: 'YYYY-MM-DD',
         zippedArchive: true, // gzip archived log files
       }),
