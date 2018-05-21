@@ -25,9 +25,11 @@ const latestBlockHeightFilepath = path.join(
 );
 
 export let latestBlockHeight = null;
-
+let latestProcessedBlockHeight = null;
 try {
-  latestBlockHeight = fs.readFileSync(latestBlockHeightFilepath, 'utf8');
+  const blockHeight = fs.readFileSync(latestBlockHeightFilepath, 'utf8');
+  latestBlockHeight = blockHeight;
+  latestProcessedBlockHeight = blockHeight;
 } catch (error) {
   if (error.code === 'ENOENT') {
     logger.warn({
@@ -46,14 +48,17 @@ try {
  * @param {number} height Block height to save
  */
 function saveLatestBlockHeight(height) {
-  fs.writeFile(latestBlockHeightFilepath, height, (err) => {
-    if (err) {
-      logger.error({
-        message: 'Cannot write latest block height file',
-        error: err,
-      });
-    }
-  });
+  if (latestProcessedBlockHeight < height) {
+    fs.writeFile(latestBlockHeightFilepath, height, (err) => {
+      if (err) {
+        logger.error({
+          message: 'Cannot write latest block height file',
+          error: err,
+        });
+      }
+    });
+    latestProcessedBlockHeight = height;
+  }
 }
 
 export function setTendermintNewBlockHeaderEventHandler(handler) {
