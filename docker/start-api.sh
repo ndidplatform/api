@@ -36,7 +36,14 @@ generate_key() {
   mkdir -p $(dirname ${KEY_PATH}) && \
   openssl genrsa -out ${KEY_PATH} 2048 && \
   openssl rsa -in ${KEY_PATH} -pubout -out ${KEY_PATH}.pub
-  echo "Keypair is generated at ${KEY_PATH} and ${KEY_PATH}.pub"
+
+  if [ $? -eq 0 ]; then
+    echo "Keypair is generated at ${KEY_PATH} and ${KEY_PATH}.pub"
+    return 0
+  else
+    echo "Failed to generate keypair at ${KEY_PATH} and ${KEY_PATH}.pub"
+    return 1
+  fi
 }
 
 # check return value; 0 = exist, 1 = does not exist
