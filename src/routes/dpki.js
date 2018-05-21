@@ -1,23 +1,13 @@
 import express from 'express';
+
+import { validateBody } from './middleware/validation';
 import * as abciAppCommonApi from '../main/common';
 import * as utils from '../utils';
 
-import validate from './validator';
-
 const router = express.Router();
 
-router.post('/node/create', async (req, res, next) => {
+router.post('/node/create', validateBody, async (req, res, next) => {
   try {
-    const bodyValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!bodyValidationResult.valid) {
-      res.status(400).json(bodyValidationResult);
-      return;
-    }
-
     const {
       node_id,
       node_name,
@@ -38,18 +28,8 @@ router.post('/node/create', async (req, res, next) => {
   }
 });
 
-router.post('/node/update', async (req, res, next) => {
+router.post('/node/update', validateBody, async (req, res, next) => {
   try {
-    const bodyValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!bodyValidationResult.valid) {
-      res.status(400).json(bodyValidationResult);
-      return;
-    }
-
     const {
       node_id,
       node_name,
@@ -70,18 +50,8 @@ router.post('/node/update', async (req, res, next) => {
   }
 });
 
-router.post('/node/register_callback', async (req, res, next) => {
+router.post('/node/register_callback', validateBody, async (req, res, next) => {
   try {
-    const bodyValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!bodyValidationResult.valid) {
-      res.status(400).json(bodyValidationResult);
-      return;
-    }
-
     const { url } = req.body;
 
     await utils.setSignatureCallback(url);
@@ -91,27 +61,21 @@ router.post('/node/register_callback', async (req, res, next) => {
   }
 });
 
-router.post('/node/register_callback_master', async (req, res, next) => {
-  try {
-    const bodyValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!bodyValidationResult.valid) {
-      res.status(400).json(bodyValidationResult);
-      return;
+router.post(
+  '/node/register_callback_master',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { url } = req.body;
+
+      // Not Implemented
+      // TODO
+
+      res.status(501).end();
+    } catch (error) {
+      res.status(500).end();
     }
-
-    const { url } = req.body;
-
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
-  } catch (error) {
-    res.status(500).end();
   }
-});
+);
 
 export default router;

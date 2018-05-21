@@ -1,22 +1,12 @@
 import express from 'express';
 
+import { validateBody } from './middleware/validation';
 import * as abciAppAsApi from '../main/as';
-import validate from './validator';
 
 const router = express.Router();
 
-router.post('/service/:service_id', async (req, res, next) => {
+router.post('/service/:service_id', validateBody, async (req, res, next) => {
   try {
-    const validationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!validationResult.valid) {
-      res.status(400).json(validationResult);
-      return;
-    }
-
     const { service_name, min_ial, min_aal, url } = req.body;
     const service_id = req.params.service_id;
 
