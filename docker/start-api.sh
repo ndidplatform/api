@@ -33,6 +33,7 @@ tendermint_wait_for_sync_complete() {
 }
 
 generate_key() {
+  mkdir -p $(dirname ${KEY_PATH}) && \
   openssl genrsa -out ${KEY_PATH} 2048 && \
   openssl rsa -in ${KEY_PATH} -pubout -out ${KEY_PATH}.pub
   echo "Keypair is generated at ${KEY_PATH} and ${KEY_PATH}.pub"
