@@ -7,8 +7,8 @@ const router = express.Router();
 
 router.post('/service/:service_id', validateBody, async (req, res, next) => {
   try {
+    const { service_id } = req.params;
     const { service_name, min_ial, min_aal, url } = req.body;
-    const service_id = req.params.service_id;
 
     await abciAppAsApi.registerAsService({
       service_id,

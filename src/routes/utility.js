@@ -63,11 +63,11 @@ router.get('/as/:service_id', async (req, res, next) => {
   }
 });
 
-router.get('/nodeToken/:nodeId', async (req, res, next) => {
+router.get('/nodeToken/:node_id', async (req, res, next) => {
   try {
-    res
-      .status(200)
-      .json(await abciAppCommonApi.getNodeToken(req.params.nodeId));
+    const { node_id } = req.params;
+
+    res.status(200).json(await abciAppCommonApi.getNodeToken(node_id));
   } catch (error) {
     res.status(500).end();
   }
