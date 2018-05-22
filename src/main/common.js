@@ -1,6 +1,3 @@
-import path from 'path';
-import fs from 'fs';
-
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
