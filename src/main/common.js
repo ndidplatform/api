@@ -14,13 +14,19 @@ import { role, nodeId } from '../config';
 let handleMessageFromQueue;
 if (role === 'rp') {
   handleMessageFromQueue = rp.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockHeaderEventHandler(rp.handleTendermintNewBlockHeaderEvent);
+  tendermint.setTendermintNewBlockHeaderEventHandler(
+    rp.handleTendermintNewBlockHeaderEvent
+  );
 } else if (role === 'idp') {
   handleMessageFromQueue = idp.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockHeaderEventHandler(idp.handleTendermintNewBlockHeaderEvent);
+  tendermint.setTendermintNewBlockHeaderEventHandler(
+    idp.handleTendermintNewBlockHeaderEvent
+  );
 } else if (role === 'as') {
   handleMessageFromQueue = as.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockHeaderEventHandler(as.handleTendermintNewBlockHeaderEvent);
+  tendermint.setTendermintNewBlockHeaderEventHandler(
+    as.handleTendermintNewBlockHeaderEvent
+  );
 }
 
 /*
@@ -55,12 +61,17 @@ export async function getNodeIdsOfAsWithService({ service_id }) {
   data = { node_id, public_key }
 */
 export async function addNodePubKey(data) {
-  let result = await tendermint.transact(
-    'AddNodePublicKey',
-    data,
-    utils.getNonce()
-  );
-  return result;
+  try {
+    const result = await tendermint.transact(
+      'AddNodePublicKey',
+      data,
+      utils.getNonce()
+    );
+    return result;
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
 }
 
 /*

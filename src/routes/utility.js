@@ -26,7 +26,7 @@ router.get(
       const { namespace, identifier } = req.params;
       const { min_ial /*min_aal*/ } = req.query;
 
-      let idpNodeIds = await abciAppCommonApi.getNodeIdsOfAssociatedIdp({
+      const idpNodeIds = await abciAppCommonApi.getNodeIdsOfAssociatedIdp({
         namespace,
         identifier,
         min_ial,

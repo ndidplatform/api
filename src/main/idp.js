@@ -69,12 +69,17 @@ export async function createIdpResponse(data) {
     accessor_id,
     identity_proof: utils.generateIdentityProof(data),
   };
-  let [result, height] = await tendermint.transact(
-    'CreateIdpResponse',
-    dataToBlockchain,
-    utils.getNonce()
-  );
-  return result;
+  try {
+    const { success } = await tendermint.transact(
+      'CreateIdpResponse',
+      dataToBlockchain,
+      utils.getNonce()
+    );
+    return success;
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
 }
 
 async function notifyByCallback(request) {

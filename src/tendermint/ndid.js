@@ -124,51 +124,104 @@ export function getBlocks(fromHeight, toHeight) {
 }
 
 function getQueryResult(response) {
+  logger.debug({
+    message: 'Tendermint query result',
+    response,
+  });
   if (response.error) {
-    logger.debug({
-      message: 'tendermint query error',
-      error: response.error,
+    logger.error({
+      message: 'Tendermint JSON-RPC call error (query)',
+      response,
     });
-    return [response.error, -1];
+    throw {
+      error: response.error,
+      // TODO: error code
+      // code: ,
+    };
   }
 
-  if (response.result.response.log === 'not found') {
-    return [undefined, -1];
+  // const currentHeight = parseInt(response.result.response.height);
+
+  if (response.result.response.value == null) {
+    logger.error({
+      message: 'Tendermint query failed',
+      response,
+    });
+    throw {
+      error: response.result.response.log,
+      // currentHeight,
+      // TODO: error code
+      // code: ,
+    };
   }
-  let result = Buffer.from(response.result.response.value, 'base64').toString();
-  return [JSON.parse(result), parseInt(response.result.response.height)];
+
+  // if (response.result.response.log === 'not found') {
+  //   return {
+  //     error: response.result.response.log,
+  //   };
+  // }
+  const result = Buffer.from(
+    response.result.response.value,
+    'base64'
+  ).toString();
+  try {
+    return JSON.parse(result);
+  } catch (error) {
+    logger.error({
+      message: 'Cannot parse Tendermint query result JSON',
+      result,
+    });
+    throw {
+      error: 'Cannot parse Tendermint query result JSON',
+    };
+  }
 }
 
 function getTransactResult(response) {
+  logger.debug({
+    message: 'Tendermint transact result',
+    response,
+  });
   if (response.error) {
-    logger.debug({
-      message: 'tendermint transact error',
-      error: response.error,
+    logger.error({
+      message: 'Tendermint JSON-RPC call error (transact)',
+      response,
     });
-    return [response.error, -1];
+    throw {
+      error: response.error,
+      // TODO: error code
+      // code: ,
+    };
   }
+
+  const height = response.result.height;
 
   if (response.result.deliver_tx.log !== 'success') {
     logger.error({
-      message: 'tendermint transact failed',
+      message: 'Tendermint transact failed',
       response,
     });
+    throw {
+      error: { code: response.result.deliver_tx.code },
+      height,
+      // TODO: error code
+      // code: ,
+    };
   }
-  return [response.result.deliver_tx.log === 'success', response.result.height];
+  return {
+    success: response.result.deliver_tx.log === 'success',
+    height,
+  };
 }
 
-export async function query(fnName, data, requireHeight) {
+export async function query(fnName, data) {
   const queryData = fnName + '|' + JSON.stringify(data);
 
   const dataBase64Encoded = Buffer.from(queryData).toString('base64');
 
   try {
     const response = await tendermintClient.abciQuery(dataBase64Encoded);
-    const [value, currentHeight] = getQueryResult(response);
-    if (requireHeight) {
-      return [value, currentHeight];
-    }
-    return value;
+    return getQueryResult(response);
   } catch (error) {
     // TODO: error handling
     throw error;

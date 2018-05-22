@@ -40,12 +40,12 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
     const { namespace, identifier } = req.params;
 
-    let checkIdpNodeIds = await abciAppCommonApi.getNodeIdsOfAssociatedIdp({
+    const checkIdpNodeIds = await abciAppCommonApi.getNodeIdsOfAssociatedIdp({
       namespace,
       identifier,
       min_ial: 1,
     });
-    let status =
+    const status =
       checkIdpNodeIds && checkIdpNodeIds.node_id.length !== 0 ? 200 : 404;
 
     res.status(status).end();

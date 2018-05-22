@@ -42,8 +42,13 @@ export async function handleTendermintNewBlockHeaderEvent(
 
           if (!callbackUrl) return; // This RP does not concern this request
 
-          const request = await common.getRequest({ requestId });
-          const requestDetail = await common.getRequestDetail({ requestId });
+          // TODO: try catch / error handling
+          const request = await common.getRequest({
+            requestId,
+          });
+          const requestDetail = await common.getRequestDetail({
+            requestId,
+          });
           if (!requestDetail.responses) {
             requestDetail.responses = [];
           }
@@ -76,6 +81,7 @@ export async function handleTendermintNewBlockHeaderEvent(
               /*tendermint.getBlockHeightFromNewBlockHeaderEvent(
             result
           );*/
+              // TODO: try catch / error handling
               await sendRequestToAS(requestData, height);
             } else {
               // Authen only, no data request
@@ -170,30 +176,32 @@ export async function getIdpsMsqDestination({
   min_ial,
   idp_list,
 }) {
-  let foundedIdpList = await common.getNodeIdsOfAssociatedIdp({
+  const foundIdps = await common.getNodeIdsOfAssociatedIdp({
     namespace,
     identifier,
     min_ial: min_ial,
   });
 
-  let nodeIdList = foundedIdpList ? foundedIdpList.node_id || [] : [];
+  let nodeIdList = foundIdps.node_id;
   let receivers = [];
 
-  //prepare receiver for mq
-  for (let i in nodeIdList) {
-    let nodeId = nodeIdList[i];
-    //filter only those in idp_list
-    if (idp_list != null && idp_list.length !== 0) {
-      if (idp_list.indexOf(nodeId) === -1) continue;
+  if (nodeIdList != null) {
+    //prepare receiver for mq
+    for (let i in nodeIdList) {
+      let nodeId = nodeIdList[i];
+      //filter only those in idp_list
+      if (idp_list != null && idp_list.length !== 0) {
+        if (idp_list.indexOf(nodeId) === -1) continue;
+      }
+
+      let { ip, port } = await common.getMsqAddress(nodeId);
+
+      receivers.push({
+        ip,
+        port,
+        ...(await common.getNodePubKey(nodeId)),
+      });
     }
-
-    let { ip, port } = await common.getMsqAddress(nodeId);
-
-    receivers.push({
-      ip,
-      port,
-      ...(await common.getNodePubKey(nodeId)),
-    });
   }
   return receivers;
 }
@@ -291,20 +299,26 @@ export async function createRequest({
     data_request_list: dataRequestListToBlockchain,
     message_hash: utils.hashWithRandomSalt(request_message),
   };
-  const [success, height] = await tendermint.transact(
-    'CreateRequest',
-    requestDataToBlockchain,
-    nonce
-  );
-  if (!success) return null;
+  try {
+    const { success, height } = await tendermint.transact(
+      'CreateRequest',
+      requestDataToBlockchain,
+      nonce
+    );
+
+    if (!success) return null;
+
+    // send request data to IDPs via message queue
+    mq.send(receivers, {
+      ...requestData,
+      height,
+    });
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
 
   addTimeoutScheduler(request_id, request_timeout);
-
-  // send request data to IDPs via message queue
-  mq.send(receivers, {
-    ...requestData,
-    height,
-  });
 
   // maintain mapping
   await db.setRequestIdByReferenceId(reference_id, request_id);
@@ -339,9 +353,17 @@ export async function handleMessageFromQueue(data) {
 
   //receive data from AS
   data = JSON.parse(data);
-  let request = await common.getRequest({ requestId: data.request_id });
-  //data arrived too late, ignore data
-  if (request.is_closed || request.is_timed_out) return;
+  try {
+    const request = await common.getRequest({
+      requestId: data.request_id,
+    });
+    //data arrived too late, ignore data
+    if (request.is_closed || request.is_timed_out) return;
+  } catch (error) {
+    // TODO: error handling
+    throw error;
+  }
+
   if (data.data) {
     try {
       const callbackUrl = await db.getRequestCallbackUrl(data.request_id);
@@ -381,19 +403,24 @@ export async function handleMessageFromQueue(data) {
 }
 
 async function timeoutRequest(requestId) {
-  let request = await common.getRequest({ requestId });
-  switch (request.status) {
-    case 'complicated':
-    case 'pending':
-    case 'confirmed':
-      await tendermint.transact(
-        'TimeOutRequest',
-        { requestId },
-        utils.getNonce()
-      );
-      break;
-    default:
-    //Do nothing
+  try {
+    const request = await common.getRequest({ requestId });
+    switch (request.status) {
+      case 'complicated':
+      case 'pending':
+      case 'confirmed':
+        await tendermint.transact(
+          'TimeOutRequest',
+          { requestId },
+          utils.getNonce()
+        );
+        break;
+      default:
+      //Do nothing
+    }
+  } catch (error) {
+    // TODO: error handling
+    throw error;
   }
   db.removeTimeoutScheduler(requestId);
 }
@@ -423,6 +450,6 @@ export async function init() {
 
   // Wait for blockchain ready
   await tendermint.ready;
-  
+
   common.registerMsqAddress(config.mqRegister);
 }

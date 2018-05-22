@@ -42,7 +42,7 @@ export async function createNewIdentity(data) {
 }
 
 export async function registerMqDestination(data) {
-  let result = await tendermint.transact(
+  const result = await tendermint.transact(
     'RegisterMsqDestination',
     data,
     utils.getNonce()

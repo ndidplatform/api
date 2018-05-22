@@ -12,11 +12,12 @@ import * as db from '../db';
 async function sendDataToRP(data) {
   let receivers = [];
   let nodeId = data.rp_node_id;
+  // TODO: try catch / error handling
   let { ip, port } = await common.getMsqAddress(nodeId);
   receivers.push({
     ip,
     port,
-    ...(await common.getNodePubKey(nodeId)),
+    ...(await common.getNodePubKey(nodeId)), // TODO: try catch / error handling
   });
   mq.send(receivers, {
     as_id: data.as_id,
@@ -26,32 +27,36 @@ async function sendDataToRP(data) {
 }
 
 async function signData(data) {
-  let nonce = utils.getNonce();
-  let dataToBlockchain = {
+  const nonce = utils.getNonce();
+  const dataToBlockchain = {
     as_id: data.as_id,
     request_id: data.request_id,
     signature: data.signature,
   };
-  tendermint.transact('SignData', dataToBlockchain, nonce);
+  try {
+    await tendermint.transact('SignData', dataToBlockchain, nonce);
+  } catch (error) {
+    // TODO: handle error
+    throw error;
+  }
 }
 
 async function registerServiceDestination(data) {
   try {
     let nonce = utils.getNonce();
-    tendermint.transact('RegisterServiceDestination', data, nonce);
-  }
-  catch(error) {
+    await tendermint.transact('RegisterServiceDestination', data, nonce);
+  } catch (error) {
     throw error;
   }
 }
 
 async function notifyByCallback(request, serviceId) {
   //get by persistent
-  let callbackUrl = await db.getServiceCallbackUrl(serviceId); 
+  let callbackUrl = await db.getServiceCallbackUrl(serviceId);
   //console.log('===>',callbackUrl);
   if (!callbackUrl) {
     logger.error({
-      message: 'Callback URL for AS has not been set'
+      message: 'Callback URL for AS has not been set',
     });
     return;
   }
@@ -85,7 +90,9 @@ async function notifyByCallback(request, serviceId) {
 }
 
 async function getResponseDetails(requestId) {
-  const requestDetail = await common.getRequestDetail({ requestId });
+  const requestDetail = await common.getRequestDetail({
+    requestId,
+  });
 
   // TODO
   // Verify that (number of consent ≥ min_idp in request).
@@ -116,11 +123,14 @@ async function getResponseDetails(requestId) {
 async function getDataAndSendBackToRP(requestJson, responseDetails) {
   // Platform→AS
   // The AS replies with the requested data
-  let data = await notifyByCallback({
-    request_id: requestJson.request_id,
-    request_params: requestJson.request_params,
-    ...responseDetails,
-  }, requestJson.service_id);
+  let data = await notifyByCallback(
+    {
+      request_id: requestJson.request_id,
+      request_params: requestJson.request_params,
+      ...responseDetails,
+    },
+    requestJson.service_id
+  );
 
   // When received data
   let as_id = config.asID;
@@ -164,6 +174,7 @@ export async function handleMessageFromQueue(request) {
     requestJson
   );
   if (valid) {
+    // TODO try catch / error handling
     const responseDetails = await getResponseDetails(requestJson.request_id);
     getDataAndSendBackToRP(requestJson, responseDetails);
   }
@@ -223,30 +234,30 @@ export async function registerAsService({
         service_name,
         min_aal,
         min_ial,
-        node_id: config.nodeId
+        node_id: config.nodeId,
       }),
       //store callback to persistent
-      db.setServiceCallbackUrl(service_id, url)
+      db.setServiceCallbackUrl(service_id, url),
     ]);
-  }
-  catch(error) {
+  } catch (error) {
     throw error;
   }
 }
 
 export async function getServiceDetail(service_id) {
   try {
-    let result = await tendermint.query('GetServiceDetail', {
+    const result = await tendermint.query('GetServiceDetail', {
       service_id,
       node_id: config.nodeId,
     });
-    return result ? {
-      service_id,
-      url: await db.getServiceCallbackUrl(service_id),
-      ...result,
-    } : null;
-  }
-  catch(error) {
+    return result
+      ? {
+          service_id,
+          url: await db.getServiceCallbackUrl(service_id),
+          ...result,
+        }
+      : null;
+  } catch (error) {
     throw error;
   }
 }
