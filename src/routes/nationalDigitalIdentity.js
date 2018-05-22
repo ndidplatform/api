@@ -1,7 +1,7 @@
 import express from 'express';
-import * as abciAppNdid from '../main/ndid';
 
-import validate from './validator';
+import { validateBody } from './middleware/validation';
+import * as abciAppNdid from '../main/ndid';
 
 const router = express.Router();
 

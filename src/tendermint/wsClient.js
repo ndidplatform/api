@@ -3,7 +3,7 @@ import WebSocket from 'ws';
 
 import logger from '../logger';
 
-import { TENDERMINT_ADDRESS } from '../config';
+import { tendermintAddress } from '../config';
 
 export default class TendermintWsClient extends EventEmitter {
   constructor() {
@@ -16,7 +16,7 @@ export default class TendermintWsClient extends EventEmitter {
   }
 
   connect() {
-    this.ws = new WebSocket(`ws://${TENDERMINT_ADDRESS}/websocket`);
+    this.ws = new WebSocket(`ws://${tendermintAddress}/websocket`);
     this.ws.on('open', () => {
       logger.info({
         message: 'tendermint WS connected',

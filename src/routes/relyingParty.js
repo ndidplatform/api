@@ -1,69 +1,51 @@
 import express from 'express';
 
+import { validateBody } from './middleware/validation';
 import * as abciAppRpApi from '../main/rp';
 import * as abciAppCommonApi from '../main/common';
 import * as db from '../db';
 
-import validate from './validator';
-
 const router = express.Router();
 
-router.post('/requests/:namespace/:identifier', async (req, res, next) => {
-  try {
-    // Path params validation (no rules = not needed according to specs)
-    // const paramsValidationResult = validate({
-    //   method: req.method,
-    //   path: `${req.baseUrl}${req.route.path}`,
-    //   params: req.params,
-    // });
-    // if (!paramsValidationResult.valid) {
-    //   res.status(400).json(paramsValidationResult);
-    //   return;
-    // }
+router.post(
+  '/requests/:namespace/:identifier',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { namespace, identifier } = req.params;
+      const {
+        reference_id,
+        idp_list,
+        callback_url,
+        data_request_list,
+        request_message,
+        min_ial,
+        min_aal,
+        min_idp,
+        request_timeout,
+      } = req.body;
 
-    const bodyValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!bodyValidationResult.valid) {
-      res.status(400).json(bodyValidationResult);
-      return;
+      const requestId = await abciAppRpApi.createRequest({
+        namespace,
+        identifier,
+        reference_id,
+        idp_list,
+        callback_url,
+        data_request_list,
+        request_message,
+        min_ial,
+        min_aal,
+        min_idp,
+        request_timeout,
+      });
+
+      if (!requestId) throw 'Cannot create request';
+      res.status(200).json({ requestId });
+    } catch (error) {
+      res.status(500).end();
     }
-
-    const { namespace, identifier } = req.params;
-    const {
-      reference_id,
-      idp_list,
-      callback_url,
-      data_request_list,
-      request_message,
-      min_ial,
-      min_aal,
-      min_idp,
-      request_timeout,
-    } = req.body;
-
-    const requestId = await abciAppRpApi.createRequest({
-      namespace,
-      identifier,
-      reference_id,
-      idp_list,
-      callback_url,
-      data_request_list,
-      request_message,
-      min_ial,
-      min_aal,
-      min_idp,
-      request_timeout,
-    });
-
-    if (!requestId) throw 'Cannot create request';
-    res.status(200).json({ requestId });
-  } catch (error) {
-    res.status(500).end();
   }
-});
+);
 
 router.get('/requests/:request_id', async (req, res, next) => {
   try {
@@ -81,11 +63,12 @@ router.get('/requests/:request_id', async (req, res, next) => {
 
 router.get('/requests/reference/:reference_number', async (req, res, next) => {
   try {
-    
-    const requestId = await db.getRequestIdByReferenceId(req.params.reference_number);
+    const { reference_number } = req.params;
+
+    const requestId = await db.getRequestIdByReferenceId(reference_number);
     const status = requestId ? 200 : 404;
 
-    res.status(status).send(requestId);
+    res.status(status).json(requestId);
   } catch (error) {
     res.status(500).end();
   }
@@ -93,7 +76,9 @@ router.get('/requests/reference/:reference_number', async (req, res, next) => {
 
 router.get('/requests/data/:request_id', async (req, res, next) => {
   try {
-    const data = await abciAppRpApi.getDataFromAS(req.params.request_id);
+    const { request_id } = req.params;
+
+    const data = await abciAppRpApi.getDataFromAS(request_id);
     res.status(200).json(data);
   } catch (error) {
     res.status(500).end();
@@ -102,7 +87,9 @@ router.get('/requests/data/:request_id', async (req, res, next) => {
 
 router.delete('/requests/data/:request_id', async (req, res, next) => {
   try {
-    await abciAppRpApi.removeDataFromAS(req.params.request_id);
+    const { request_id } = req.params;
+
+    await abciAppRpApi.removeDataFromAS(request_id);
     res.status(200).end();
   } catch (error) {
     res.status(500).end();

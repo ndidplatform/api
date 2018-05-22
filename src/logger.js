@@ -1,6 +1,9 @@
+import path from 'path';
 import util from 'util';
 import winston from 'winston';
 import 'winston-daily-rotate-file';
+
+import * as config from './config';
 
 const env = process.env.NODE_ENV || 'development';
 
@@ -62,13 +65,13 @@ if (env !== 'production') {
       //   filename: 'combined.log',
       // }),
       new winston.transports.DailyRotateFile({
-        filename: 'error-%DATE%.log',
+        filename: path.join(config.logDirectoryPath, 'error-%DATE%.log'),
         level: 'error',
         // datePattern: 'YYYY-MM-DD',
         zippedArchive: true, // gzip archived log files
       }),
       new winston.transports.DailyRotateFile({
-        filename: 'combined-%DATE%.log',
+        filename: path.join(config.logDirectoryPath, 'combined-%DATE%.log'),
         // datePattern: 'YYYY-MM-DD',
         zippedArchive: true, // gzip archived log files
       }),

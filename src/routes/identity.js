@@ -1,23 +1,13 @@
 import express from 'express';
+
+import { validateQuery, validateBody } from './middleware/validation';
 import * as abciAppIdentityApi from '../main/identity';
 import * as abciAppCommonApi from '../main/common';
 
-import validate from './validator';
-
 const router = express.Router();
 
-router.post('/', async (req, res, next) => {
+router.post('/', validateBody, async (req, res, next) => {
   try {
-    const bodyValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!bodyValidationResult.valid) {
-      res.status(400).json(bodyValidationResult);
-      return;
-    }
-
     const {
       namespace,
       identifier,
@@ -57,7 +47,8 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
       identifier,
       min_ial: 1,
     });
-    let status = (checkIdpNodeIds && checkIdpNodeIds.node_id.length !== 0) ? 200 : 404;
+    let status =
+      checkIdpNodeIds && checkIdpNodeIds.node_id.length !== 0 ? 200 : 404;
 
     res.status(status).end();
   } catch (error) {
@@ -66,18 +57,8 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
   }
 });
 
-router.post('/:namespace/:identifier', async (req, res, next) => {
+router.post('/:namespace/:identifier', validateBody, async (req, res, next) => {
   try {
-    const bodyValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!bodyValidationResult.valid) {
-      res.status(400).json(bodyValidationResult);
-      return;
-    }
-
     const { namespace, identifier } = req.params;
 
     // Not Implemented
@@ -102,68 +83,47 @@ router.get('/:namespace/:identifier/endorsement', async (req, res, next) => {
   }
 });
 
-router.post('/:namespace/:identifier/endorsement', async (req, res, next) => {
-  try {
-    const bodyValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!bodyValidationResult.valid) {
-      res.status(400).json(bodyValidationResult);
-      return;
+router.post(
+  '/:namespace/:identifier/endorsement',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { namespace, identifier } = req.params;
+      const { secret, accessor_type, accessor_key, accessor_id } = req.body;
+
+      // Not Implemented
+      // TODO
+
+      res.status(501).end();
+    } catch (error) {
+      res.status(500).end();
     }
-
-    const { namespace, identifier } = req.params;
-    const { secret, accessor_type, accessor_key, accessor_id } = req.body;
-
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
-  } catch (error) {
-    res.status(500).end();
   }
-});
+);
 
-router.post('/:namespace/:identifier/accessors', async (req, res, next) => {
-  try {
-    const bodyValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!bodyValidationResult.valid) {
-      res.status(400).json(bodyValidationResult);
-      return;
+router.post(
+  '/:namespace/:identifier/accessors',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { namespace, identifier } = req.params;
+      const { accessor_type, accessor_key, accessor_id } = req.body;
+
+      // Not Implemented
+      // TODO
+
+      res.status(501).end();
+    } catch (error) {
+      res.status(500).end();
     }
-
-    const { namespace, identifier } = req.params;
-    const { accessor_type, accessor_key, accessor_id } = req.body;
-
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
-  } catch (error) {
-    res.status(500).end();
   }
-});
+);
 
 router.get(
   '/:namespace/:identifier/requests/history',
+  validateQuery,
   async (req, res, next) => {
     try {
-      const queryValidationResult = validate({
-        method: req.method,
-        path: `${req.baseUrl}${req.route.path}`,
-        query: req.query,
-      });
-      if (!queryValidationResult.valid) {
-        res.status(400).json(queryValidationResult);
-        return;
-      }
-
       const { namespace, identifier } = req.params;
       const { count } = req.query;
 

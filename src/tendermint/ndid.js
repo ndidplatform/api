@@ -1,8 +1,127 @@
+import path from 'path';
+import fs from 'fs';
+
 import logger from '../logger';
 
 import * as tendermintClient from './client';
+import TendermintWsClient from './wsClient';
 import * as utils from '../utils';
 import * as config from '../config';
+
+let handleTendermintNewBlockHeaderEvent;
+
+export let syncing = null;
+
+let readyPromise;
+export const ready = new Promise((resolve) => {
+  readyPromise = { resolve };
+});
+
+const latestBlockHeightFilepath = path.join(
+  __dirname,
+  '..',
+  '..',
+  `latest-block-height-${config.nodeId}`
+);
+
+export let latestBlockHeight = null;
+let latestProcessedBlockHeight = null;
+try {
+  const blockHeight = fs.readFileSync(latestBlockHeightFilepath, 'utf8');
+  latestBlockHeight = blockHeight;
+  latestProcessedBlockHeight = blockHeight;
+} catch (error) {
+  if (error.code === 'ENOENT') {
+    logger.warn({
+      message: 'Latest block height file not found',
+    });
+  } else {
+    logger.error({
+      message: 'Cannot read latest block height file',
+      error,
+    });
+  }
+}
+
+/**
+ * Save last seen block height to file for loading it on server restart
+ * @param {number} height Block height to save
+ */
+function saveLatestBlockHeight(height) {
+  if (latestProcessedBlockHeight < height) {
+    fs.writeFile(latestBlockHeightFilepath, height, (err) => {
+      if (err) {
+        logger.error({
+          message: 'Cannot write latest block height file',
+          error: err,
+        });
+      }
+    });
+    latestProcessedBlockHeight = height;
+  }
+}
+
+export function setTendermintNewBlockHeaderEventHandler(handler) {
+  handleTendermintNewBlockHeaderEvent = handler;
+}
+
+/**
+ * Poll tendermint status until syncing === false
+ */
+async function pollStatusUtilSynced() {
+  logger.info({
+    message: 'Waiting for tendermint to finish syncing blockchain',
+  });
+  if (syncing == null || syncing === true) {
+    for (;;) {
+      const status = await tendermintWsClient.getStatus();
+      syncing = status.syncing;
+      if (syncing === false) {
+        logger.info({
+          message: 'Tendermint blockchain synced',
+        });
+        readyPromise.resolve();
+        readyPromise = null;
+        break;
+      }
+      await utils.wait(1000);
+    }
+  }
+}
+
+export const tendermintWsClient = new TendermintWsClient();
+
+tendermintWsClient.on('connected', () => {
+  pollStatusUtilSynced();
+});
+
+tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
+  if (syncing !== false) {
+    return;
+  }
+  const blockHeight = result.data.data.header.height;
+  if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
+    const lastKnownBlockHeight = latestBlockHeight;
+    latestBlockHeight = blockHeight;
+
+    const missingBlockCount =
+      lastKnownBlockHeight == null
+        ? null
+        : blockHeight - lastKnownBlockHeight - 1;
+    if (handleTendermintNewBlockHeaderEvent) {
+      await handleTendermintNewBlockHeaderEvent(
+        error,
+        result,
+        missingBlockCount
+      );
+    }
+    saveLatestBlockHeight(blockHeight);
+  }
+});
+
+export function getBlocks(fromHeight, toHeight) {
+  return tendermintWsClient.getBlocks(fromHeight, toHeight);
+}
 
 function getQueryResult(response) {
   if (response.error) {
@@ -32,7 +151,7 @@ function getTransactResult(response) {
   if (response.result.deliver_tx.log !== 'success') {
     logger.error({
       message: 'tendermint transact failed',
-      response
+      response,
     });
   }
   return [response.result.deliver_tx.log === 'success', response.result.height];
@@ -57,8 +176,16 @@ export async function query(fnName, data, requireHeight) {
 }
 
 export async function transact(fnName, data, nonce) {
-  const tx = fnName + '|' + JSON.stringify(data) + '|' + nonce + '|' + 
-    await utils.createSignature(data,nonce) + '|' + config.nodeId;
+  const tx =
+    fnName +
+    '|' +
+    JSON.stringify(data) +
+    '|' +
+    nonce +
+    '|' +
+    (await utils.createSignature(data, nonce)) +
+    '|' +
+    config.nodeId;
 
   const txBase64Encoded = Buffer.from(tx).toString('base64');
 

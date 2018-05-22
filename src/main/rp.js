@@ -28,7 +28,7 @@ export async function handleTendermintNewBlockHeaderEvent(
   const fromHeight =
     missingBlockCount === 0 ? height - 1 : height - missingBlockCount;
   const toHeight = height - 1;
-  const blocks = await common.getBlocks(fromHeight, toHeight);
+  const blocks = await tendermint.getBlocks(fromHeight, toHeight);
   await Promise.all(
     blocks.map(async (block) => {
       let transactions = tendermint.getTransactionListFromBlockQuery(block);
@@ -109,47 +109,6 @@ export async function handleTendermintNewBlockHeaderEvent(
     })
   );
 }
-
-/*export const handleABCIAppCallback = async (requestId, height) => {
-  if (callbackUrls[requestId]) {
-    const request = await common.getRequestRequireHeight({ requestId }, height);
-
-    try {
-      await fetch(callbackUrls[requestId], {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          request
-        })
-      });
-    } catch (error) {
-      console.log(
-        'Cannot send callback to client application with the following error:',
-        error
-      );
-    }
-
-    // Clear callback url mapping when the request is no longer going to have further events
-    if (request.status === 'rejected') {
-      delete callbackUrls[requestId];
-    }
-  }
-
-  if (requestsData[requestId]) {
-    const request = await common.getRequest({ requestId });
-    let requestData = requestsData[requestId];
-
-    if (request.status === 'completed') {
-      // Send request to AS when completed
-      setTimeout(function() {
-        sendRequestToAS(requestData);
-        delete requestsData[requestId]; 
-      }, 1000);
-    }
-  }
-};*/
 
 async function getASReceiverList(data_request) {
   let nodeIdList;
@@ -299,7 +258,7 @@ export async function createRequest({
       service_id: data_request_list[i].service_id,
       as_id_list: data_request_list[i].as_id_list,
       count: data_request_list[i].count,
-      request_params_hash: utils.hash(
+      request_params_hash: utils.hashWithRandomSalt(
         JSON.stringify(data_request_list[i].request_params)
       ),
     });
@@ -330,7 +289,7 @@ export async function createRequest({
     min_ial,
     request_timeout,
     data_request_list: dataRequestListToBlockchain,
-    message_hash: utils.hash(request_message),
+    message_hash: utils.hashWithRandomSalt(request_message),
   };
   const [success, height] = await tendermint.transact(
     'CreateRequest',
@@ -461,5 +420,9 @@ export async function init() {
   });
 
   //In production this should be done only once in phase 1,
+
+  // Wait for blockchain ready
+  await tendermint.ready;
+  
   common.registerMsqAddress(config.mqRegister);
 }

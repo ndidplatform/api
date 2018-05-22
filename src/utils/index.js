@@ -6,6 +6,12 @@ import fetch from 'node-fetch';
 
 let nonce = Date.now() % 10000;
 let signatureCallback = false;
+const saltByteLength = 8;
+const saltStringLength = saltByteLength*2;
+
+export function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export function getNonce() {
   // TODO
@@ -16,10 +22,21 @@ export function hash(stringToHash) {
   return cryptoUtils.hash(stringToHash);
 }
 
+export function hashWithRandomSalt(stringToHash) {
+  let saltByte = crypto.randomBytes(saltByteLength);
+  let saltString = saltByte.toString('hex');
+  return saltString + hash(saltString + stringToHash);
+}
+
+export function compareSaltedHash({saltedHash, plain}) {
+  let saltString = saltedHash.substring(0,saltStringLength);
+  return saltedHash === saltString + hash(saltString + plain);
+}
+
 export function decryptAsymetricKey(cipher) {
   // TODO: implement decryption with callback decrypt? no design yet... (HSM)
   const [encryptedSymKey, encryptedMessage] = cipher.split('|');
-  const privateKey = fs.readFileSync(config.PRIVATE_KEY_PATH, 'utf8');
+  const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
   const symKeyBuffer = cryptoUtils.privateDecrypt(privateKey, encryptedSymKey);
   return cryptoUtils.decryptAES256GCM(symKeyBuffer, encryptedMessage, false);
 }
@@ -67,7 +84,7 @@ async function createSignatureByCallback() {
 export async function createSignature(data, nonce = '') {
   if (signatureCallback)
     return await createSignatureByCallback(JSON.stringify(data) + nonce);
-  let privateKey = fs.readFileSync(config.PRIVATE_KEY_PATH, 'utf8');
+  let privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
   return cryptoUtils.createSignature(data, nonce, privateKey);
 }
 

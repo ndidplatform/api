@@ -6,10 +6,13 @@
     "build": "npx babel src -d ./build/ --source-maps inline && cp -r ./devKey ./build",
     "start": "npm run build && node build/server.js",
     "test": "npm run build && npx mocha build/test/test.js",
-    "initDevKey": "npm run build && ROLE=ndid node build/devKeyInit.js",
+    "initDevKey": "npm run build && ROLE=ndid node build/devKeyInit.js && npm run reset-data-for-dev",
     "delete-local-db-cache": "rm -rf db-api-*",
-    "delete-latest-block-height": "rm latest-block-height-*",
-    "reset-data-for-dev": "npm run delete-local-db-cache && npm run delete-latest-block-height"
+    "delete-latest-block-height": "rm -f latest-block-height-*",
+    "reset-data-for-dev": "npm run delete-local-db-cache && npm run delete-latest-block-height",
+    "docker-build": "docker-compose -f docker/docker-compose.build.yml build",
+    "docker-up": "docker-compose -f docker/docker-compose.yml up",
+    "docker-down": "docker-compose -f docker/docker-compose.yml down"
   },
   "dependencies": {
     "ajv": "^6.4.0",
