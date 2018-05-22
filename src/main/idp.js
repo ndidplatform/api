@@ -141,10 +141,10 @@ export async function handleTendermintNewBlockHeaderEvent(
 
   //TODO
   //MUST check if this is specialRequest
-  if(this is special request) {
+  /*if(this is special request) {
     identity.addAccessorMethod(specialRequestId);
     return ??
-  }
+  }*/
 
   const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
     fromHeight,

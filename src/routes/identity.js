@@ -29,7 +29,7 @@ router.post('/', validateBody, async (req, res, next) => {
     });
 
     if (isSuccess) {
-      res.status(201).json('Identity Created');
+      res.status(200).json('Identity Created');
     } else {
       res.status(500).end();
     }

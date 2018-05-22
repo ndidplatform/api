@@ -15,16 +15,17 @@ export async function createNewIdentity(data) {
       accessor_id,
       ial
     } = data;
+    const hash_id = utils.hash(namespace + ':' + identifier);
 
     //======================= TODO ========================================
     //check existing sid
     let {
       isExisted,
       generating_function,
-      prime_modulo
+      prime_modulo,
+      bound_value,
     } = await tendermint.query('CheckExistingIdentity',{ hash_id });
 
-    let hash_id = utils.hash(namespace + ':' + identifier);
     if(!isExisted) {
       //not exist, create new
       let { commitment, ...params } = utils.securelyGenerateParamsForZk({
@@ -34,7 +35,9 @@ export async function createNewIdentity(data) {
       });
       generating_function = params.generating_function;
       prime_modulo = params.prime_modulo;
+      bound_value = params.bound_value;
 
+      //TODO cast all bigInt to string
       await tendermint.transact('CreateIdentity',{
         hash_id,
         accessor_id,
@@ -43,6 +46,7 @@ export async function createNewIdentity(data) {
         generating_function,
         prime_modulo,
         commitment,
+        bound_value
       }, utils.getNonce());
 
       registerMqDestination({
@@ -56,14 +60,14 @@ export async function createNewIdentity(data) {
       });
 
     }
-    else {
+    /*else {
       //existed, request for consent add accessor
       //create SPECIAL REQUEST for onboarding and wait for event when consent is given
       createSpecialRequest(...);
       //store that special request id to persistent map to all data 
       //(secret, g, p, sid, ial, accessor_id, accessor_public_key, accessor_type)
       storeToPersistent(...);
-    }
+    }*/
     //=====================================================================
 
     return true;
@@ -76,7 +80,7 @@ export async function createNewIdentity(data) {
   }
 }
 
-export async function addAccessorMethod(specialRequestId) {
+/*export async function addAccessorMethod(specialRequestId) {
 
   const {
     secret,
@@ -117,7 +121,7 @@ export async function addAccessorMethod(specialRequestId) {
     ],
     node_id: config.nodeId,
   });
-}
+}*/
 
 export async function registerMqDestination(data) {
   let result = await tendermint.transact(
