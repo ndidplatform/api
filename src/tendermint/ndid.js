@@ -70,7 +70,7 @@ export function setTendermintNewBlockHeaderEventHandler(handler) {
  */
 async function pollStatusUtilSynced() {
   logger.info({
-    message: 'Waiting for tendermint to finish syncing blockchain',
+    message: 'Waiting for Tendermint to finish syncing blockchain',
   });
   if (syncing == null || syncing === true) {
     for (;;) {
@@ -100,6 +100,12 @@ tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
     return;
   }
   const blockHeight = result.data.data.header.height;
+
+  logger.debug({
+    message: 'Tendermint NewBlockHeader event received',
+    blockHeight,
+  });
+
   if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
     const lastKnownBlockHeight = latestBlockHeight;
     latestBlockHeight = blockHeight;
@@ -215,6 +221,12 @@ function getTransactResult(response) {
 }
 
 export async function query(fnName, data) {
+  logger.debug({
+    message: 'Tendermint query',
+    fnName,
+    data,
+  });
+
   const queryData = fnName + '|' + JSON.stringify(data);
 
   const dataBase64Encoded = Buffer.from(queryData).toString('base64');
@@ -229,6 +241,13 @@ export async function query(fnName, data) {
 }
 
 export async function transact(fnName, data, nonce) {
+  logger.debug({
+    message: 'Tendermint transact',
+    fnName,
+    data,
+    nonce,
+  });
+
   const tx =
     fnName +
     '|' +

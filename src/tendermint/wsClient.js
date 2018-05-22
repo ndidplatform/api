@@ -19,7 +19,7 @@ export default class TendermintWsClient extends EventEmitter {
     this.ws = new WebSocket(`ws://${tendermintAddress}/websocket`);
     this.ws.on('open', () => {
       logger.info({
-        message: 'tendermint WS connected',
+        message: 'Tendermint WS connected',
       });
 
       this.wsConnected = true;
@@ -31,7 +31,7 @@ export default class TendermintWsClient extends EventEmitter {
 
     this.ws.on('close', () => {
       logger.info({
-        message: 'tendermint WS disconnected',
+        message: 'Tendermint WS disconnected',
       });
 
       this.wsConnected = false;
@@ -46,7 +46,7 @@ export default class TendermintWsClient extends EventEmitter {
 
     this.ws.on('error', (error) => {
       logger.warn({
-        message: 'tendermint WS error',
+        message: 'Tendermint WS error',
         error,
       });
       // this.emit('error', error);
