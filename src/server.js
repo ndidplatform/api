@@ -33,8 +33,11 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: false, limit: '2mb' }));
 app.use(bodyParser.json({ limit: '2mb' }));
 
-app.use(morgan('combined'));
-// app.use(morgan('dev'));
+app.use(
+  morgan('combined', {
+    stream: { write: (message) => logger.info(message.trim()) },
+  })
+);
 
 app.use(routes);
 
