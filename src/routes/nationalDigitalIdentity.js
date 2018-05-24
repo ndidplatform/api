@@ -88,4 +88,38 @@ router.post('/reduceNodeToken', async (req, res, next) => {
   }
 });
 
+router.post('/addNamespace', async (req, res, next) => {
+  try {
+    const {
+      namespace,
+      description,
+    } = req.body;
+
+    let result = abciAppNdid.addNamespace({
+      namespace,
+      description
+    });
+    res.status(200).json(result);
+  }
+  catch(error) {
+    res.status(500).end();
+  }
+});
+
+router.post('/deleteNamespace', async (req, res, next) => {
+  try {
+    const {
+      namespace,
+    } = req.body;
+    
+    let result = abciAppNdid.deleteNamespace({
+      namespace,
+    });
+    res.status(200).json(result);
+  }
+  catch(error) {
+    res.status(500).end();
+  }
+});
+
 export default router;

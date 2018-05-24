@@ -73,4 +73,13 @@ router.get('/nodeToken/:node_id', async (req, res, next) => {
   }
 });
 
+router.get('/namespace', async (req, res, next) => {
+  try {
+    res.status(200).json(await abciAppCommonApi.getNamespaceList());
+  }
+  catch(error) {
+    res.status(500).end();
+  }
+});
+
 export default router;
