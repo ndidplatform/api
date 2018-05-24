@@ -6,6 +6,7 @@ import fetch from 'node-fetch';
 
 let nonce = Date.now() % 10000;
 let signatureCallback = false;
+let masterSignatureCallback = false;
 const saltByteLength = 8;
 const saltStringLength = saltByteLength*2;
 
@@ -57,14 +58,20 @@ export function generateIdentityProof(data) {
 }
 
 export function setSignatureCallback(url) {
-  //comment out because no decrypt yet...
-  //signatureCallback = url;
+  signatureCallback = url;
 }
 
-async function createSignatureByCallback() {
+export function setMasterSignatureCallback(url) {
+  masterSignatureCallback = url;
+}
+
+async function createSignatureByCallback(data, useMasterKey) {
   //TODO implement this properly
   //MUST be base64 format
-  let response = await fetch(signatureCallback, {
+  let response = await fetch( useMasterKey 
+    ? signatureCallback
+    : masterSignatureCallback
+    , {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -81,10 +88,13 @@ async function createSignatureByCallback() {
   return await response.text();
 }
 
-export async function createSignature(data, nonce = '') {
+export async function createSignature(data, nonce = '', useMasterKey) {
   if (signatureCallback)
-    return await createSignatureByCallback(JSON.stringify(data) + nonce);
-  let privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
+    return await createSignatureByCallback(JSON.stringify(data) + nonce, useMasterKey);
+  let privateKey = (useMasterKey 
+    ? fs.readFileSync(config.privateKeyPath, 'utf8')
+    : fs.readFileSync(config.masterPrivateKeyPath, 'utf8')
+  );
   return cryptoUtils.createSignature(data, nonce, privateKey);
 }
 

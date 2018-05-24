@@ -240,7 +240,7 @@ export async function query(fnName, data) {
   }
 }
 
-export async function transact(fnName, data, nonce) {
+export async function transact(fnName, data, nonce, useMasterKey) {
   logger.debug({
     message: 'Tendermint transact',
     fnName,
@@ -255,7 +255,7 @@ export async function transact(fnName, data, nonce) {
     '|' +
     nonce +
     '|' +
-    (await utils.createSignature(data, nonce)) +
+    (await utils.createSignature(data, nonce, useMasterKey)) +
     '|' +
     config.nodeId;
 
