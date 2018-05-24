@@ -174,12 +174,14 @@ export async function getIdpsMsqDestination({
   namespace,
   identifier,
   min_ial,
+  min_aal,
   idp_list,
 }) {
   const foundIdps = await common.getNodeIdsOfAssociatedIdp({
     namespace,
     identifier,
-    min_ial: min_ial,
+    min_ial,
+    min_aal,
   });
 
   let nodeIdList = foundIdps.node_id;
@@ -244,6 +246,7 @@ export async function createRequest({
     namespace,
     identifier,
     min_ial,
+    min_aal,
     idp_list,
   });
 

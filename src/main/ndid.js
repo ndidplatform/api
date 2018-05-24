@@ -75,7 +75,7 @@ export async function reduceNodeToken(data) {
 }
 
 export async function registerNode(data) {
-  const { node_id, public_key, role } = data;
+  const { node_id, public_key, role, max_ial, max_aal } = data;
 
   data.role = data.role.toUpperCase();
   if (data.role === 'IDP') data.role = 'IdP';
