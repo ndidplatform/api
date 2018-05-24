@@ -19,7 +19,7 @@ async function addKeyAndSetToken(role, index) {
 
   await abciAppNdid.setNodeToken({
     node_id,
-    amount: 1000
+    amount: 1000,
   });
 }
 
@@ -32,10 +32,8 @@ export async function init() {
   // Wait for blockchain ready
   await tendermint.ready;
 
-  const result = await abciAppNdid.initNDID(public_key);
-  if (!result) {
-    console.error('Cannot initialize NDID master key', result);
-  } else {
+  try {
+    await abciAppNdid.initNDID(public_key);
     let promiseArr = [];
     ['rp', 'idp', 'as'].forEach(async (role) => {
       promiseArr.push(addKeyAndSetToken(role, 1));
@@ -44,6 +42,8 @@ export async function init() {
     });
     await Promise.all(promiseArr);
     console.log('========= Keys for development initialized =========');
+  } catch (error) {
+    console.error('Cannot initialize NDID master key');
   }
 
   process.exit();

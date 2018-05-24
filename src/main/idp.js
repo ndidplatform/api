@@ -49,27 +49,28 @@ export const getCallbackUrl = () => {
 };
 
 export async function createIdpResponse(data) {
-  let {
-    request_id,
-    namespace,
-    identifier,
-    aal,
-    ial,
-    status,
-    signature,
-    accessor_id,
-  } = data;
-
-  let dataToBlockchain = {
-    request_id,
-    aal,
-    ial,
-    status,
-    signature,
-    accessor_id,
-    identity_proof: utils.generateIdentityProof(data),
-  };
   try {
+    let {
+      request_id,
+      namespace,
+      identifier,
+      aal,
+      ial,
+      status,
+      signature,
+      accessor_id,
+    } = data;
+
+    let dataToBlockchain = {
+      request_id,
+      aal,
+      ial,
+      status,
+      signature,
+      accessor_id,
+      identity_proof: utils.generateIdentityProof(data),
+    };
+
     const { success } = await tendermint.transact(
       'CreateIdpResponse',
       dataToBlockchain,
@@ -77,7 +78,10 @@ export async function createIdpResponse(data) {
     );
     return success;
   } catch (error) {
-    // TODO:
+    logger.error({
+      message: 'Cannot create IDP response',
+      error,
+    });
     throw error;
   }
 }
@@ -178,7 +182,7 @@ export async function init() {
 
   // Wait for blockchain ready
   await tendermint.ready;
-  
+
   //when IDP request to join approved NDID
   //after first approved, IDP can add other key and node and endorse themself
   /*let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;

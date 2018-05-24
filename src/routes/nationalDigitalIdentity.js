@@ -7,8 +7,8 @@ const router = express.Router();
 
 router.post('/initNDID', async (req, res, next) => {
   try {
-    let result = await abciAppNdid.initNDID(req.body.public_key);
-    res.status(200).json(result);
+    await abciAppNdid.initNDID(req.body.public_key);
+    res.status(200).end();
   } catch (error) {
     res.status(500).end();
   }
@@ -16,19 +16,15 @@ router.post('/initNDID', async (req, res, next) => {
 
 router.post('/registerNode', async (req, res, next) => {
   try {
-    const {
-      node_id,
-      public_key,
-      role
-    } = req.body;
+    const { node_id, public_key, role } = req.body;
 
-    let result = await abciAppNdid.registerNode({
+    await abciAppNdid.registerNode({
       node_id,
       public_key,
-      role
+      role,
     });
 
-    res.status(200).json(result);
+    res.status(200).end();
   } catch (error) {
     res.status(500).end();
   }
@@ -36,17 +32,14 @@ router.post('/registerNode', async (req, res, next) => {
 
 router.post('/setNodeToken', async (req, res, next) => {
   try {
-    const {
-      node_id,
-      amount
-    } = req.body;
+    const { node_id, amount } = req.body;
 
-    let result = await abciAppNdid.setNodeToken({
+    await abciAppNdid.setNodeToken({
       node_id,
-      amount
+      amount,
     });
 
-    res.status(200).json(result);
+    res.status(200).end();
   } catch (error) {
     res.status(500).end();
   }
@@ -54,17 +47,14 @@ router.post('/setNodeToken', async (req, res, next) => {
 
 router.post('/addNodeToken', async (req, res, next) => {
   try {
-    const {
-      node_id,
-      amount
-    } = req.body;
+    const { node_id, amount } = req.body;
 
-    let result = await abciAppNdid.addNodeToken({
+    await abciAppNdid.addNodeToken({
       node_id,
-      amount
+      amount,
     });
 
-    res.status(200).json(result);
+    res.status(200).end();
   } catch (error) {
     res.status(500).end();
   }
@@ -72,17 +62,14 @@ router.post('/addNodeToken', async (req, res, next) => {
 
 router.post('/reduceNodeToken', async (req, res, next) => {
   try {
-    const {
-      node_id,
-      amount
-    } = req.body;
+    const { node_id, amount } = req.body;
 
-    let result = await abciAppNdid.reduceNodeToken({
+    await abciAppNdid.reduceNodeToken({
       node_id,
-      amount
+      amount,
     });
 
-    res.status(200).json(result);
+    res.status(200).end();
   } catch (error) {
     res.status(500).end();
   }

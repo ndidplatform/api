@@ -234,96 +234,102 @@ export async function createRequest({
   min_idp,
   request_timeout,
 }) {
-  // existing reference_id, return request ID
-  const requestId = await db.getRequestIdByReferenceId(reference_id);
-  if (requestId) {
-    return requestId;
-  }
+  try {
+    // existing reference_id, return request ID
+    const requestId = await db.getRequestIdByReferenceId(reference_id);
+    if (requestId) {
+      return requestId;
+    }
 
-  let receivers = await getIdpsMsqDestination({
-    namespace,
-    identifier,
-    min_ial,
-    idp_list,
-  });
-
-  if (receivers.length === 0) {
-    logger.error({
-      message: 'No IDP found',
+    let receivers = await getIdpsMsqDestination({
       namespace,
       identifier,
+      min_ial,
       idp_list,
     });
-    return null;
-  }
 
-  const nonce = utils.getNonce();
-  const request_id = utils.createRequestId();
+    if (receivers.length === 0) {
+      logger.error({
+        message: 'No IDP found',
+        namespace,
+        identifier,
+        idp_list,
+      });
+      throw {
+        error: 'No IDP found',
+        // TODO: error code
+        // code: ,
+      };
+    }
 
-  const dataRequestListToBlockchain = [];
-  for (let i in data_request_list) {
-    dataRequestListToBlockchain.push({
-      service_id: data_request_list[i].service_id,
-      as_id_list: data_request_list[i].as_id_list,
-      count: data_request_list[i].count,
-      request_params_hash: utils.hashWithRandomSalt(
-        JSON.stringify(data_request_list[i].request_params)
-      ),
-    });
-  }
+    const nonce = utils.getNonce();
+    const request_id = utils.createRequestId();
 
-  const requestData = {
-    namespace,
-    identifier,
-    request_id,
-    min_idp: min_idp ? min_idp : 1,
-    min_aal: min_aal,
-    min_ial: min_ial,
-    request_timeout,
-    data_request_list: data_request_list,
-    request_message,
-  };
+    const dataRequestListToBlockchain = [];
+    for (let i in data_request_list) {
+      dataRequestListToBlockchain.push({
+        service_id: data_request_list[i].service_id,
+        as_id_list: data_request_list[i].as_id_list,
+        count: data_request_list[i].count,
+        request_params_hash: utils.hashWithRandomSalt(
+          JSON.stringify(data_request_list[i].request_params)
+        ),
+      });
+    }
 
-  // save request data to DB to send to AS via mq when authen complete
-  if (data_request_list != null && data_request_list.length !== 0) {
-    await db.setRequestToSendToAS(request_id, requestData);
-  }
+    const requestData = {
+      namespace,
+      identifier,
+      request_id,
+      min_idp: min_idp ? min_idp : 1,
+      min_aal: min_aal,
+      min_ial: min_ial,
+      request_timeout,
+      data_request_list: data_request_list,
+      request_message,
+    };
 
-  // add data to blockchain
-  const requestDataToBlockchain = {
-    request_id,
-    min_idp: min_idp ? min_idp : 1,
-    min_aal,
-    min_ial,
-    request_timeout,
-    data_request_list: dataRequestListToBlockchain,
-    message_hash: utils.hashWithRandomSalt(request_message),
-  };
-  try {
-    const { success, height } = await tendermint.transact(
+    // save request data to DB to send to AS via mq when authen complete
+    if (data_request_list != null && data_request_list.length !== 0) {
+      await db.setRequestToSendToAS(request_id, requestData);
+    }
+
+    // add data to blockchain
+    const requestDataToBlockchain = {
+      request_id,
+      min_idp: min_idp ? min_idp : 1,
+      min_aal,
+      min_ial,
+      request_timeout,
+      data_request_list: dataRequestListToBlockchain,
+      message_hash: utils.hashWithRandomSalt(request_message),
+    };
+
+    const { height } = await tendermint.transact(
       'CreateRequest',
       requestDataToBlockchain,
       nonce
     );
-
-    if (!success) return null;
 
     // send request data to IDPs via message queue
     mq.send(receivers, {
       ...requestData,
       height,
     });
+
+    addTimeoutScheduler(request_id, request_timeout);
+
+    // maintain mapping
+    await db.setRequestIdByReferenceId(reference_id, request_id);
+    await db.setRequestCallbackUrl(request_id, callback_url);
+    return request_id;
   } catch (error) {
-    // TODO:
+    logger.error({
+      message: 'Cannot create request',
+      error,
+    });
     throw error;
   }
-
-  addTimeoutScheduler(request_id, request_timeout);
-
-  // maintain mapping
-  await db.setRequestIdByReferenceId(reference_id, request_id);
-  await db.setRequestCallbackUrl(request_id, callback_url);
-  return request_id;
 }
 
 export function getDataFromAS(requestId) {

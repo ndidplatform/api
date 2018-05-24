@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 
+import CustomError from '../error/customError';
 import logger from '../logger';
 
 import * as tendermintClient from './client';
@@ -135,30 +136,29 @@ function getQueryResult(response) {
     response,
   });
   if (response.error) {
+    const error = new CustomError(
+      'Tendermint JSON-RPC call error (query)',
+      -1, // FIXME: error code
+      response.error
+    );
     logger.error({
-      message: 'Tendermint JSON-RPC call error (query)',
-      response,
+      message: error.message,
+      details: error.details,
+      stack: error.stack,
     });
-    throw {
-      error: response.error,
-      // TODO: error code
-      // code: ,
-    };
+    throw error;
   }
 
   // const currentHeight = parseInt(response.result.response.height);
 
   if (response.result.response.value == null) {
-    logger.error({
-      message: 'Tendermint query failed',
-      response,
-    });
-    throw {
-      error: response.result.response.log,
-      // currentHeight,
-      // TODO: error code
-      // code: ,
-    };
+    const error = new CustomError(
+      'Tendermint query failed',
+      -1, // FIXME: error code
+      response.result
+    );
+    logger.error(error.getInfoForLog());
+    throw error;
   }
 
   // if (response.result.response.log === 'not found') {
@@ -173,13 +173,13 @@ function getQueryResult(response) {
   try {
     return JSON.parse(result);
   } catch (error) {
+    // FIXME: error code
+    const error = new CustomError('Cannot parse Tendermint query result JSON', -1);
     logger.error({
       message: 'Cannot parse Tendermint query result JSON',
       result,
     });
-    throw {
-      error: 'Cannot parse Tendermint query result JSON',
-    };
+    throw error;
   }
 }
 
@@ -193,11 +193,12 @@ function getTransactResult(response) {
       message: 'Tendermint JSON-RPC call error (transact)',
       response,
     });
-    throw {
-      error: response.error,
-      // TODO: error code
-      // code: ,
-    };
+    // FIXME: error code
+    throw new CustomError(
+      'Tendermint JSON-RPC call error (transact)',
+      -1,
+      response.error
+    );
   }
 
   const height = response.result.height;
@@ -207,15 +208,13 @@ function getTransactResult(response) {
       message: 'Tendermint transact failed',
       response,
     });
-    throw {
-      error: { code: response.result.deliver_tx.code },
+    // FIXME: error code
+    throw new CustomError('Tendermint query failed', -1, {
+      abciCode: response.result.deliver_tx.code,
       height,
-      // TODO: error code
-      // code: ,
-    };
+    });
   }
   return {
-    success: response.result.deliver_tx.log === 'success',
     height,
   };
 }

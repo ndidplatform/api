@@ -14,14 +14,16 @@ export async function initNDID(public_key) {
     return false;
   }
   try {
-    const { success } = await tendermint.transact(
+    await tendermint.transact(
       'InitNDID',
       { public_key, node_id: 'ndid1' },
       utils.getNonce()
     );
-    return success;
   } catch (error) {
-    // TODO:
+    logger.error({
+      message: 'Cannot init NDID',
+      error,
+    });
     throw error;
   }
 }
@@ -30,14 +32,12 @@ export async function setNodeToken(data) {
   const { node_id, amount } = data;
 
   try {
-    const { success } = await tendermint.transact(
-      'SetNodeToken',
-      data,
-      utils.getNonce()
-    );
-    return success;
+    await tendermint.transact('SetNodeToken', data, utils.getNonce());
   } catch (error) {
-    // TODO:
+    logger.error({
+      message: 'Cannot set node token',
+      error,
+    });
     throw error;
   }
 }
@@ -46,14 +46,12 @@ export async function addNodeToken(data) {
   const { node_id, amount } = data;
 
   try {
-    const { success } = await tendermint.transact(
-      'AddNodeToken',
-      data,
-      utils.getNonce()
-    );
-    return success;
+    await tendermint.transact('AddNodeToken', data, utils.getNonce());
   } catch (error) {
-    // TODO:
+    logger.error({
+      message: 'Cannot add node token',
+      error,
+    });
     throw error;
   }
 }
@@ -62,14 +60,12 @@ export async function reduceNodeToken(data) {
   const { node_id, amount } = data;
 
   try {
-    const { success } = await tendermint.transact(
-      'ReduceNodeToken',
-      data,
-      utils.getNonce()
-    );
-    return success;
+    await tendermint.transact('ReduceNodeToken', data, utils.getNonce());
   } catch (error) {
-    // TODO:
+    logger.error({
+      message: 'Cannot reduce node token',
+      error,
+    });
     throw error;
   }
 }
@@ -81,14 +77,12 @@ export async function registerNode(data) {
   if (data.role === 'IDP') data.role = 'IdP';
 
   try {
-    const { success } = await tendermint.transact(
-      'RegisterNode',
-      data,
-      utils.getNonce()
-    );
-    return success;
+    await tendermint.transact('RegisterNode', data, utils.getNonce());
   } catch (error) {
-    // TODO:
+    logger.error({
+      message: 'Cannot register node',
+      error,
+    });
     throw error;
   }
 }
