@@ -16,6 +16,9 @@ export default class TendermintWsClient extends EventEmitter {
   }
 
   connect() {
+    logger.info({
+      message: 'Tendermint WS connecting',
+    });
     this.ws = new WebSocket(`ws://${tendermintAddress}/websocket`);
     this.ws.on('open', () => {
       logger.info({
@@ -30,13 +33,15 @@ export default class TendermintWsClient extends EventEmitter {
     });
 
     this.ws.on('close', () => {
-      logger.info({
-        message: 'Tendermint WS disconnected',
-      });
+      if (this.wsConnected === true) {
+        logger.info({
+          message: 'Tendermint WS disconnected',
+        });
+
+        this.emit('disconnected');
+      }
 
       this.wsConnected = false;
-
-      this.emit('disconnected');
 
       if (this.reconnect) {
         // Try reconnect
@@ -45,7 +50,7 @@ export default class TendermintWsClient extends EventEmitter {
     });
 
     this.ws.on('error', (error) => {
-      logger.warn({
+      logger.error({
         message: 'Tendermint WS error',
         error,
       });
