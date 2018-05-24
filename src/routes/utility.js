@@ -36,7 +36,7 @@ router.get(
         idpNodeIds
           ? idpNodeIds
           : {
-              node_id: [],
+              node: [],
             }
       );
     } catch (error) {

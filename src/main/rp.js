@@ -184,13 +184,13 @@ export async function getIdpsMsqDestination({
     min_aal,
   });
 
-  let nodeIdList = foundIdps.node_id;
+  let nodeIdList = foundIdps.node;
   let receivers = [];
 
   if (nodeIdList != null) {
     //prepare receiver for mq
     for (let i in nodeIdList) {
-      let nodeId = nodeIdList[i];
+      let nodeId = nodeIdList[i].id;
       //filter only those in idp_list
       if (idp_list != null && idp_list.length !== 0) {
         if (idp_list.indexOf(nodeId) === -1) continue;
