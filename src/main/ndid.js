@@ -89,12 +89,11 @@ export async function registerNode(data) {
 
 export async function addNamespace({ namespace, description }) {
   try {
-    const { success } = await tendermint.transact(
+    await tendermint.transact(
       'AddNamespace',
       { namespace, description },
       utils.getNonce()
     );
-    return success;
   } catch (error) {
     // TODO:
     throw error;
@@ -103,12 +102,11 @@ export async function addNamespace({ namespace, description }) {
 
 export async function deleteNamespace({ namespace }) {
   try {
-    const { success } = await tendermint.transact(
+    await tendermint.transact(
       'DeleteNamespace',
       { namespace },
       utils.getNonce()
     );
-    return success;
   } catch (error) {
     // TODO:
     throw error;

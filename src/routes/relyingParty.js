@@ -39,10 +39,9 @@ router.post(
         request_timeout,
       });
 
-      if (!requestId) throw 'Cannot create request';
       res.status(200).json({ requestId });
     } catch (error) {
-      res.status(500).end();
+      next(error);
     }
   }
 );
@@ -55,9 +54,13 @@ router.get('/requests/:request_id', async (req, res, next) => {
       requestId: request_id,
     });
 
-    res.status(200).json(request);
+    if (request != null) {
+      res.status(200).json(request);
+    } else {
+      res.status(404).end();
+    }
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -65,12 +68,16 @@ router.get('/requests/reference/:reference_number', async (req, res, next) => {
   try {
     const { reference_number } = req.params;
 
-    const requestId = await db.getRequestIdByReferenceId(reference_number);
-    const status = requestId ? 200 : 404;
-
-    res.status(status).json(requestId);
+    const requestId = await abciAppRpApi.getRequestIdByReferenceId(
+      reference_number
+    );
+    if (requestId != null) {
+      res.status(200).json(requestId);
+    } else {
+      res.status(404).end();
+    }
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -81,7 +88,7 @@ router.get('/requests/data/:request_id', async (req, res, next) => {
     const data = await abciAppRpApi.getDataFromAS(request_id);
     res.status(200).json(data);
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -90,18 +97,18 @@ router.delete('/requests/data/:request_id', async (req, res, next) => {
     const { request_id } = req.params;
 
     await abciAppRpApi.removeDataFromAS(request_id);
-    res.status(200).end();
+    res.status(204).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
 router.delete('/requests/data', async (req, res, next) => {
   try {
     await abciAppRpApi.removeAllDataFromAS();
-    res.status(200).end();
+    res.status(204).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 

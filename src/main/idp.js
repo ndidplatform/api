@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
+import CustomError from '../error/customError';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
@@ -71,18 +72,18 @@ export async function createIdpResponse(data) {
       identity_proof: utils.generateIdentityProof(data),
     };
 
-    const { success } = await tendermint.transact(
+    await tendermint.transact(
       'CreateIdpResponse',
       dataToBlockchain,
       utils.getNonce()
     );
-    return success;
   } catch (error) {
-    logger.error({
+    const err = new CustomError({
       message: 'Cannot create IDP response',
-      error,
-    });
-    throw error;
+      cause: error,
+    })
+    logger.error(err.getInfoForLog());
+    throw err;
   }
 }
 
@@ -93,13 +94,24 @@ async function notifyByCallback(request) {
     });
     return;
   }
-  fetch(callbackUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ request }),
-  });
+  try {
+    fetch(callbackUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ request }),
+    });
+  } catch (error) {
+    logger.error({
+      message: 'Cannot send callback to IDP',
+    });
+
+    // TODO: handle error
+    // retry?
+
+    // throw error;
+  }
 }
 
 export async function handleMessageFromQueue(request) {

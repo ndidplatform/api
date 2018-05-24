@@ -14,7 +14,7 @@ router.get('/idp', validateQuery, async (req, res, next) => {
 
     res.status(501).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -40,7 +40,7 @@ router.get(
             }
       );
     } catch (error) {
-      res.status(500).end();
+      next(error);
     }
   }
 );
@@ -59,7 +59,7 @@ router.get('/as/:service_id', async (req, res, next) => {
           }
     );
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -69,16 +69,15 @@ router.get('/nodeToken/:node_id', async (req, res, next) => {
 
     res.status(200).json(await abciAppCommonApi.getNodeToken(node_id));
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
 router.get('/namespace', async (req, res, next) => {
   try {
     res.status(200).json(await abciAppCommonApi.getNamespaceList());
-  }
-  catch(error) {
-    res.status(500).end();
+  } catch (error) {
+    next(error);
   }
 });
 

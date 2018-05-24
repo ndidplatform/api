@@ -1,5 +1,7 @@
 import fetch from 'node-fetch';
 
+import CustomError from '../error/customError';
+import errorCode from '../error/code';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
@@ -8,6 +10,7 @@ import * as mq from '../mq';
 import * as config from '../config';
 import * as common from '../main/common';
 import * as db from '../db';
+import { SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION } from 'constants';
 
 let timeoutScheduler = {};
 
@@ -72,6 +75,9 @@ export async function handleTendermintNewBlockHeaderEvent(
               message: 'Cannot send callback to client application',
               error,
             });
+
+            // TODO: error handling
+            // retry?
           }
 
           if (request.status === 'confirmed' && idpCountOk) {
@@ -252,17 +258,15 @@ export async function createRequest({
     });
 
     if (receivers.length === 0) {
-      logger.error({
+      throw new CustomError({
         message: 'No IDP found',
-        namespace,
-        identifier,
-        idp_list,
+        code: errorCode.NO_IDP_FOUND,
+        details: {
+          namespace,
+          identifier,
+          idp_list,
+        },
       });
-      throw {
-        error: 'No IDP found',
-        // TODO: error code
-        // code: ,
-      };
     }
 
     const nonce = utils.getNonce();
@@ -327,24 +331,57 @@ export async function createRequest({
     await db.setRequestCallbackUrl(request_id, callback_url);
     return request_id;
   } catch (error) {
-    logger.error({
+    const err = new CustomError({
       message: 'Cannot create request',
-      error,
+      cause: error,
     });
-    throw error;
+    logger.error(err.getInfoForLog());
+    throw err;
   }
 }
 
-export function getDataFromAS(requestId) {
-  return db.getDatafromAS(requestId);
+export async function getRequestIdByReferenceId(referenceId) {
+  try {
+    return await db.getRequestIdByReferenceId(referenceId);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get data received from AS',
+      cause: error,
+    });
+  }
 }
 
-export function removeDataFromAS(requestId) {
-  return db.removeDataFromAS(requestId);
+export async function getDataFromAS(requestId) {
+  try {
+    return await db.getDatafromAS(requestId);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get data received from AS',
+      cause: error,
+    });
+  }
 }
 
-export function removeAllDataFromAS() {
-  return db.removeAllDataFromAS();
+export async function removeDataFromAS(requestId) {
+  try {
+    return await db.removeDataFromAS(requestId);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove data received from AS',
+      cause: error,
+    });
+  }
+}
+
+export async function removeAllDataFromAS() {
+  try {
+    return await db.removeAllDataFromAS();
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove all data received from AS',
+      cause: error,
+    });
+  }
 }
 
 export async function handleMessageFromQueue(data) {

@@ -17,7 +17,7 @@ router.post('/', validateBody, async (req, res, next) => {
       accessor_id,
     } = req.body;
 
-    let isSuccess = await abciAppIdentityApi.createNewIdentity({
+    await abciAppIdentityApi.createNewIdentity({
       namespace,
       identifier,
       secret,
@@ -26,13 +26,9 @@ router.post('/', validateBody, async (req, res, next) => {
       accessor_id,
     });
 
-    if (isSuccess) {
-      res.status(201).json('Identity Created');
-    } else {
-      res.status(500).end();
-    }
+    res.status(201).json('Identity Created');
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -50,8 +46,7 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
 
     res.status(status).end();
   } catch (error) {
-    console.error(error);
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -64,7 +59,7 @@ router.post('/:namespace/:identifier', validateBody, async (req, res, next) => {
 
     res.status(501).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -77,7 +72,7 @@ router.get('/:namespace/:identifier/endorsement', async (req, res, next) => {
 
     res.status(501).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -94,7 +89,7 @@ router.post(
 
       res.status(501).end();
     } catch (error) {
-      res.status(500).end();
+      next(error);
     }
   }
 );
@@ -112,7 +107,7 @@ router.post(
 
       res.status(501).end();
     } catch (error) {
-      res.status(500).end();
+      next(error);
     }
   }
 );
@@ -130,7 +125,7 @@ router.get(
 
       res.status(501).end();
     } catch (error) {
-      res.status(500).end();
+      next(error);
     }
   }
 );

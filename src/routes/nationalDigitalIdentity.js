@@ -10,7 +10,7 @@ router.post('/initNDID', async (req, res, next) => {
     await abciAppNdid.initNDID(req.body.public_key);
     res.status(200).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -26,7 +26,7 @@ router.post('/registerNode', async (req, res, next) => {
 
     res.status(200).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -41,7 +41,7 @@ router.post('/setNodeToken', async (req, res, next) => {
 
     res.status(200).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -56,7 +56,7 @@ router.post('/addNodeToken', async (req, res, next) => {
 
     res.status(200).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -71,7 +71,7 @@ router.post('/reduceNodeToken', async (req, res, next) => {
 
     res.status(200).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -85,7 +85,7 @@ router.post('/addNamespace', async (req, res, next) => {
     });
     res.status(200).json(result);
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -98,7 +98,7 @@ router.post('/deleteNamespace', async (req, res, next) => {
     });
     res.status(200).json(result);
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
