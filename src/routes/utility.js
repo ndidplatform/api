@@ -24,12 +24,13 @@ router.get(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { min_ial /*min_aal*/ } = req.query;
+      const { min_ial, min_aal } = req.query;
 
       const idpNodeIds = await abciAppCommonApi.getNodeIdsOfAssociatedIdp({
         namespace,
         identifier,
         min_ial,
+        min_aal,
       });
 
       res.status(200).json(

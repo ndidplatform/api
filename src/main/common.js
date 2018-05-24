@@ -41,10 +41,12 @@ export async function getNodeIdsOfAssociatedIdp({
   namespace,
   identifier,
   min_ial,
+  min_aal,
 }) {
   return await tendermint.query('GetMsqDestination', {
     hash_id: utils.hash(namespace + ':' + identifier),
-    min_ial: min_ial,
+    min_ial,
+    min_aal,
   });
 }
 
