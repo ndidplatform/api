@@ -122,6 +122,10 @@ export async function checkRequestIntegrity(requestId, request) {
   return valid;
 }
 
+export async function getNamespaceList() {
+  return await tendermint.query('GetNamespaceList');
+}
+
 if (handleMessageFromQueue) {
   messageQueueEvent.on('message', function(message) {
     handleMessageFromQueue(message);

@@ -71,7 +71,7 @@ export async function reduceNodeToken(data) {
 }
 
 export async function registerNode(data) {
-  const { node_id, public_key, role } = data;
+  const { node_id, public_key, role, max_ial, max_aal } = data;
 
   data.role = data.role.toUpperCase();
   if (data.role === 'IDP') data.role = 'IdP';
@@ -83,6 +83,34 @@ export async function registerNode(data) {
       message: 'Cannot register node',
       error,
     });
+    throw error;
+  }
+}
+
+export async function addNamespace({ namespace, description }) {
+  try {
+    const { success } = await tendermint.transact(
+      'AddNamespace',
+      { namespace, description },
+      utils.getNonce()
+    );
+    return success;
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function deleteNamespace({ namespace }) {
+  try {
+    const { success } = await tendermint.transact(
+      'DeleteNamespace',
+      { namespace },
+      utils.getNonce()
+    );
+    return success;
+  } catch (error) {
+    // TODO:
     throw error;
   }
 }

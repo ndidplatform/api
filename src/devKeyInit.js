@@ -15,6 +15,8 @@ async function addKeyAndSetToken(role, index) {
     node_id,
     public_key,
     role,
+    max_ial: 3,
+    max_aal: 3,
   });
 
   await abciAppNdid.setNodeToken({
