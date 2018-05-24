@@ -14,7 +14,7 @@ export const eventEmitter = new EventEmitter();
 receivingSocket.on('message', async function(jsonMessageStr) {
   const jsonMessage = JSON.parse(jsonMessageStr);
 
-  let decrypted = utils.decryptAsymetricKey(jsonMessage);
+  let decrypted = await utils.decryptAsymetricKey(jsonMessage);
   eventEmitter.emit('message', decrypted);
 });
 

@@ -50,3 +50,8 @@ export const privateKeyPath =
   process.env.PRIVATE_KEY_PATH == null
     ? path.join(__dirname, '..', 'devKey', role, nodeId)
     : process.env.PRIVATE_KEY_PATH;
+
+export const masterPrivateKeyPath =
+  process.env.MASTER_PRIVATE_KEY_PATH == null
+    ? path.join(__dirname, '..', 'devKey', role, nodeId + '_master')
+    : process.env.MASTER_PRIVATE_KEY_PATH;

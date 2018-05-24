@@ -7,6 +7,7 @@ import fetch from 'node-fetch';
 let nonce = Date.now() % 10000;
 let signatureCallback = false;
 let masterSignatureCallback = false;
+let decryptCallback = false;
 const saltByteLength = 8;
 const saltStringLength = saltByteLength*2;
 
@@ -34,11 +35,29 @@ export function compareSaltedHash({saltedHash, plain}) {
   return saltedHash === saltString + hash(saltString + plain);
 }
 
-export function decryptAsymetricKey(cipher) {
+export async function decryptAsymetricKey(cipher) {
   // TODO: implement decryption with callback decrypt? no design yet... (HSM)
   const [encryptedSymKey, encryptedMessage] = cipher.split('|');
-  const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
-  const symKeyBuffer = cryptoUtils.privateDecrypt(privateKey, encryptedSymKey);
+  let symKeyBuffer;
+
+  if(decryptCallback) {
+    let response = await fetch( decryptCallback, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        cipher: encryptedSymKey
+      }),
+    });
+    let base64 = await response.text();
+    symKeyBuffer = Buffer.from(base64, 'base64');
+  }
+  else {
+    const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
+    symKeyBuffer = cryptoUtils.privateDecrypt(privateKey, encryptedSymKey);
+  }
+  
   return cryptoUtils.decryptAES256GCM(symKeyBuffer, encryptedMessage, false);
 }
 
@@ -57,8 +76,9 @@ export function generateIdentityProof(data) {
   return cryptoUtils.generateIdentityProof(data);
 }
 
-export function setSignatureCallback(url) {
-  signatureCallback = url;
+export function setSignatureCallback(signatureCallbackUrl, decryptCallbackUrl) {
+  signatureCallback = signatureCallbackUrl;
+  decryptCallback = decryptCallbackUrl;
 }
 
 export function setMasterSignatureCallback(url) {
