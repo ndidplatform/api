@@ -10,7 +10,6 @@ import * as mq from '../mq';
 import * as config from '../config';
 import * as common from '../main/common';
 import * as db from '../db';
-import { SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION } from 'constants';
 
 let timeoutScheduler = {};
 
