@@ -248,6 +248,20 @@ export async function createRequest({
       return requestId;
     }
 
+    if (idp_list != null && idp_list.length < min_idp) {
+      throw new CustomError({
+        message:
+          'Provided IdPs is less than minimum IdP needed (length of "idp_list" is less than "min_idp")',
+        code: errorCode.IDP_LIST_LESS_THAN_MIN_IDP,
+        clientError: true,
+        details: {
+          namespace,
+          identifier,
+          idp_list,
+        },
+      });
+    }
+
     let receivers = await getIdpsMsqDestination({
       namespace,
       identifier,
@@ -258,8 +272,9 @@ export async function createRequest({
 
     if (receivers.length === 0) {
       throw new CustomError({
-        message: 'No IDP found',
+        message: 'No IdP found',
         code: errorCode.NO_IDP_FOUND,
+        clientError: true,
         details: {
           namespace,
           identifier,
@@ -270,8 +285,9 @@ export async function createRequest({
 
     if (receivers.length < min_idp) {
       throw new CustomError({
-        message: 'Not enough IDP',
-        code: errorCode.IDP_NOT_ENOUGH,
+        message: 'Not enough IdP',
+        code: errorCode.NOT_ENOUGH_IDP,
+        clientError: true,
         details: {
           namespace,
           identifier,

@@ -1,12 +1,19 @@
 export default class CustomError extends Error {
-  constructor({ message, code, details, cause }) {
+  constructor({ message, code, clientError, details, cause }) {
     super(message);
+
+    Object.defineProperty(this, 'name', {
+      value: 'CustomError',
+    });
 
     if (code != null) {
       this.code = code;
     }
     if (details != null) {
       this.details = details;
+    }
+    if (clientError != null) {
+      this.clientError = clientError;
     }
 
     if (cause != null) {
@@ -48,6 +55,16 @@ export default class CustomError extends Error {
     return this.code != null
       ? this.message
       : this.message + '; Caused by: ' + this.getMessageWithCode();
+  }
+
+  isRootCauseClientError() {
+    if (this.clientError != null) {
+      return this.clientError;
+    }
+    if (this.cause != null) {
+      return this.cause.isRootCauseClientError();
+    }
+    return false;
   }
 
   /**

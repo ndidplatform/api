@@ -6,25 +6,31 @@ export default function errorHandler(err, req, res, next) {
   }
   let errorMessage;
   let errorCode;
+  let clientError;
 
-  if (err.getMessageWithRootCause != null) {
+  if (err.name === 'CustomError') {
     errorMessage = err.getMessageWithRootCause();
+    errorCode = err.getCode();
+    clientError = err.isRootCauseClientError();
   } else {
     errorMessage = err.message;
+    errorCode = err.code != null ? err.code : undefined;
   }
 
-  if (err.code != null) {
-    errorCode = err.code;
+  if (clientError) {
+    res.status(400).json({
+      error: {
+        code: errorCode,
+        message: errorMessage,
+      },
+    });
   } else {
-    if (err.getCode != null) {
-      errorCode = err.getCode();
-    }
+    res.status(500).json({
+      error: {
+        code: errorCode,
+        message: errorMessage,
+        stack: env === 'development' ? err.stack : undefined,
+      },
+    });
   }
-  res.status(500).json({
-    error: {
-      code: errorCode,
-      message: errorMessage,
-      stack: env === 'development' ? err.stack : undefined,
-    },
-  });
 }

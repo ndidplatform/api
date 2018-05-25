@@ -1,4 +1,5 @@
 import validate from '../validator';
+import errorCode from '../../error/code';
 
 // Path params validation (no rules = not needed according to specs)
 // export function validatePath(req, res, next) {
@@ -8,7 +9,11 @@ import validate from '../validator';
 //     params: req.params,
 //   });
 //   if (!paramsValidationResult.valid) {
-//     res.status(400).json(paramsValidationResult);
+//     res.status(400).json({
+//       message: 'Invalid input',
+//       code: errorCode.INVALID_INPUT,
+//       details: paramsValidationResult,
+//     });
 //     return;
 //   }
 // }
@@ -20,7 +25,11 @@ export function validateQuery(req, res, next) {
     query: req.query,
   });
   if (!queryValidationResult.valid) {
-    res.status(400).json(queryValidationResult);
+    res.status(400).json({
+      message: 'Invalid input',
+      code: errorCode.INVALID_INPUT,
+      details: queryValidationResult,
+    });
     return;
   }
   next();
@@ -33,7 +42,11 @@ export function validateBody(req, res, next) {
     body: req.body,
   });
   if (!bodyValidationResult.valid) {
-    res.status(400).json(bodyValidationResult);
+    res.status(400).json({
+      message: 'Invalid input',
+      code: errorCode.INVALID_INPUT,
+      details: bodyValidationResult,
+    });
     return;
   }
   next();
