@@ -23,6 +23,7 @@ if [ -z ${ROLE} ]; then exit_missing_env ROLE; fi
 if [ -z ${NDID_IP} ]; then exit_missing_env NDID_IP; fi
 
 KEY_PATH=/api/build/devKey/${ROLE}/${NODE_ID}
+MASTER_KEY_PATH=/api/build/devKey/${ROLE}/master/${NODE_ID}
 
 tendermint_wait_for_sync_complete() {
   echo "Waiting for tendermint at ${TENDERMINT_IP}:${TENDERMINT_PORT} to be ready..."
@@ -42,6 +43,20 @@ generate_key() {
     return 0
   else
     echo "Failed to generate keypair at ${KEY_PATH} and ${KEY_PATH}.pub"
+    return 1
+  fi
+}
+
+generate_master_key() {
+  mkdir -p $(dirname ${MASTER_KEY_PATH}) && \
+  openssl genrsa -out ${MASTER_KEY_PATH} 2048 && \
+  openssl rsa -in ${MASTER_KEY_PATH} -pubout -out ${MASTER_KEY_PATH}.pub
+
+  if [ $? -eq 0 ]; then
+    echo "Keypair is generated at ${MASTER_KEY_PATH} and ${MASTER_KEY_PATH}.pub"
+    return 0
+  else
+    echo "Failed to generate keypair at ${MASTER_KEY_PATH} and ${MASTER_KEY_PATH}.pub"
     return 1
   fi
 }
@@ -85,9 +100,10 @@ register_node_id() {
   echo "Registering ${NODE_ID} node..."
   
   local PUBLIC_KEY=$(tr '\n' '#' < ${KEY_PATH}.pub | sed 's/#/\\n/g')
+  local MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${MASTER_KEY_PATH}.pub | sed 's/#/\\n/g')
   local RESPONSE_CODE=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/registerNode \
     -H "Content-Type: application/json" \
-    -d "{\"public_key\":\"${PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3}}" \
+    -d "{\"public_key\":\"${PUBLIC_KEY}\",\"master_public_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"This is name: ${NODE_ID}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3}}" \
     -w '%{http_code}' \
     -o /dev/null)
 
@@ -141,6 +157,7 @@ case ${ROLE} in
     
     if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ] || ! does_node_id_exist; then
       generate_key
+      generate_master_key
       wait_until_ndid_node_initialized
       register_node_id && \
       set_token_for_node_id 10000 
@@ -151,4 +168,4 @@ case ${ROLE} in
     ;;
 esac
 
-PRIVATE_KEY_PATH=${KEY_PATH} node /api/build/server.js
+PRIVATE_KEY_PATH=${KEY_PATH} MASTER_PRIVATE_KEY_PATH=${MASTER_KEY_PATH} node /api/build/server.js
