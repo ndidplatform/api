@@ -1,5 +1,7 @@
 import fetch from 'node-fetch';
 
+import CustomError from '../error/customError';
+import errorCode from '../error/code';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
@@ -8,6 +10,7 @@ import * as mq from '../mq';
 import * as config from '../config';
 import * as common from '../main/common';
 import * as db from '../db';
+import { SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION } from 'constants';
 
 let timeoutScheduler = {};
 
@@ -72,6 +75,9 @@ export async function handleTendermintNewBlockHeaderEvent(
               message: 'Cannot send callback to client application',
               error,
             });
+
+            // TODO: error handling
+            // retry?
           }
 
           if (request.status === 'confirmed' && idpCountOk) {
@@ -236,109 +242,146 @@ export async function createRequest({
   min_idp,
   request_timeout,
 }) {
-  // existing reference_id, return request ID
-  const requestId = await db.getRequestIdByReferenceId(reference_id);
-  if (requestId) {
-    return requestId;
-  }
+  try {
+    // existing reference_id, return request ID
+    const requestId = await db.getRequestIdByReferenceId(reference_id);
+    if (requestId) {
+      return requestId;
+    }
 
-  let receivers = await getIdpsMsqDestination({
-    namespace,
-    identifier,
-    min_ial,
-    min_aal,
-    idp_list,
-  });
-
-  if (receivers.length === 0) {
-    logger.error({
-      message: 'No IDP found',
+    let receivers = await getIdpsMsqDestination({
       namespace,
       identifier,
+      min_ial,
+      min_aal,
       idp_list,
     });
-    return null;
-  }
 
-  const nonce = utils.getNonce();
-  const request_id = utils.createRequestId();
+    if (receivers.length === 0) {
+      throw new CustomError({
+        message: 'No IDP found',
+        code: errorCode.NO_IDP_FOUND,
+        details: {
+          namespace,
+          identifier,
+          idp_list,
+        },
+      });
+    }
 
-  const dataRequestListToBlockchain = [];
-  for (let i in data_request_list) {
-    dataRequestListToBlockchain.push({
-      service_id: data_request_list[i].service_id,
-      as_id_list: data_request_list[i].as_id_list,
-      count: data_request_list[i].count,
-      request_params_hash: utils.hashWithRandomSalt(
-        JSON.stringify(data_request_list[i].request_params)
-      ),
-    });
-  }
+    const nonce = utils.getNonce();
+    const request_id = utils.createRequestId();
 
-  const requestData = {
-    namespace,
-    identifier,
-    request_id,
-    min_idp: min_idp ? min_idp : 1,
-    min_aal: min_aal,
-    min_ial: min_ial,
-    request_timeout,
-    data_request_list: data_request_list,
-    request_message,
-  };
+    const dataRequestListToBlockchain = [];
+    for (let i in data_request_list) {
+      dataRequestListToBlockchain.push({
+        service_id: data_request_list[i].service_id,
+        as_id_list: data_request_list[i].as_id_list,
+        count: data_request_list[i].count,
+        request_params_hash: utils.hashWithRandomSalt(
+          JSON.stringify(data_request_list[i].request_params)
+        ),
+      });
+    }
 
-  // save request data to DB to send to AS via mq when authen complete
-  if (data_request_list != null && data_request_list.length !== 0) {
-    await db.setRequestToSendToAS(request_id, requestData);
-  }
+    const requestData = {
+      namespace,
+      identifier,
+      request_id,
+      min_idp: min_idp ? min_idp : 1,
+      min_aal: min_aal,
+      min_ial: min_ial,
+      request_timeout,
+      data_request_list: data_request_list,
+      request_message,
+    };
 
-  // add data to blockchain
-  const requestDataToBlockchain = {
-    request_id,
-    min_idp: min_idp ? min_idp : 1,
-    min_aal,
-    min_ial,
-    request_timeout,
-    data_request_list: dataRequestListToBlockchain,
-    message_hash: utils.hashWithRandomSalt(request_message),
-  };
-  try {
-    const { success, height } = await tendermint.transact(
+    // save request data to DB to send to AS via mq when authen complete
+    if (data_request_list != null && data_request_list.length !== 0) {
+      await db.setRequestToSendToAS(request_id, requestData);
+    }
+
+    // add data to blockchain
+    const requestDataToBlockchain = {
+      request_id,
+      min_idp: min_idp ? min_idp : 1,
+      min_aal,
+      min_ial,
+      request_timeout,
+      data_request_list: dataRequestListToBlockchain,
+      message_hash: utils.hashWithRandomSalt(request_message),
+    };
+
+    const { height } = await tendermint.transact(
       'CreateRequest',
       requestDataToBlockchain,
       nonce
     );
-
-    if (!success) return null;
 
     // send request data to IDPs via message queue
     mq.send(receivers, {
       ...requestData,
       height,
     });
+
+    addTimeoutScheduler(request_id, request_timeout);
+
+    // maintain mapping
+    await db.setRequestIdByReferenceId(reference_id, request_id);
+    await db.setRequestCallbackUrl(request_id, callback_url);
+    return request_id;
   } catch (error) {
-    // TODO:
-    throw error;
+    const err = new CustomError({
+      message: 'Cannot create request',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    throw err;
   }
-
-  addTimeoutScheduler(request_id, request_timeout);
-
-  // maintain mapping
-  await db.setRequestIdByReferenceId(reference_id, request_id);
-  await db.setRequestCallbackUrl(request_id, callback_url);
-  return request_id;
 }
 
-export function getDataFromAS(requestId) {
-  return db.getDatafromAS(requestId);
+export async function getRequestIdByReferenceId(referenceId) {
+  try {
+    return await db.getRequestIdByReferenceId(referenceId);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get data received from AS',
+      cause: error,
+    });
+  }
 }
 
-export function removeDataFromAS(requestId) {
-  return db.removeDataFromAS(requestId);
+export async function getDataFromAS(requestId) {
+  try {
+    return await db.getDatafromAS(requestId);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get data received from AS',
+      cause: error,
+    });
+  }
 }
 
-export function removeAllDataFromAS() {
-  return db.removeAllDataFromAS();
+export async function removeDataFromAS(requestId) {
+  try {
+    return await db.removeDataFromAS(requestId);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove data received from AS',
+      cause: error,
+    });
+  }
+}
+
+export async function removeAllDataFromAS() {
+  try {
+    return await db.removeAllDataFromAS();
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove all data received from AS',
+      cause: error,
+    });
+  }
 }
 
 export async function handleMessageFromQueue(data) {

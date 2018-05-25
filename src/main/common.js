@@ -1,3 +1,4 @@
+import CustomError from '../error/customError';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
@@ -26,15 +27,26 @@ if (role === 'rp') {
   );
 }
 
-/*
-  data = { requestId }
-*/
 export async function getRequest({ requestId }) {
-  return await tendermint.query('GetRequest', { requestId });
+  try {
+    return await tendermint.query('GetRequest', { requestId });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get request from blockchain',
+      cause: error,
+    });
+  }
 }
 
 export async function getRequestDetail({ requestId }) {
-  return await tendermint.query('GetRequestDetail', { requestId });
+  try {
+    return await tendermint.query('GetRequestDetail', { requestId });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get request details from blockchain',
+      cause: error,
+    });
+  }
 }
 
 export async function getNodeIdsOfAssociatedIdp({
@@ -43,24 +55,41 @@ export async function getNodeIdsOfAssociatedIdp({
   min_ial,
   min_aal,
 }) {
-  return await tendermint.query('GetMsqDestination', {
-    hash_id: (namespace && identifier)
-     ? utils.hash(namespace + ':' + identifier)
-     : undefined,
-    min_ial,
-    min_aal,
-  });
+  try {
+    return await tendermint.query('GetMsqDestination', {
+      hash_id: (namespace && identifier)
+        ? utils.hash(namespace + ':' + identifier)
+        : undefined,
+      min_ial,
+      min_aal,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get associated node IDs from blockchain',
+      cause: error,
+    });
+  }
 }
 
 export async function getNodeIdsOfAsWithService({ service_id }) {
-  return await tendermint.query('GetServiceDestination', {
-    service_id,
-  });
+  try {
+    return await tendermint.query('GetServiceDestination', {
+      service_id,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get associated AS node IDs from blockchain',
+      cause: error,
+    });
+  }
 }
 
-/*
-  data = { node_id, public_key }
-*/
+/**
+ *
+ * @param {Object} data
+ * @param {string} data.node_id
+ * @param {string} data.public_key
+ */
 export async function addNodePubKey(data) {
   try {
     const result = await tendermint.transact(
@@ -70,36 +99,63 @@ export async function addNodePubKey(data) {
     );
     return result;
   } catch (error) {
-    // TODO:
-    throw error;
+    throw new CustomError({
+      message: 'Cannot add node public key to blockchain',
+      cause: error,
+    });
   }
 }
 
-/*
-  node_id
-*/
 export async function getNodePubKey(node_id) {
-  return await tendermint.query('GetNodePublicKey', { node_id });
+  try {
+    return await tendermint.query('GetNodePublicKey', { node_id });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get node public key from blockchain',
+      cause: error,
+    });
+  }
 }
 
 export async function getMsqAddress(node_id) {
-  return await tendermint.query('GetMsqAddress', { node_id });
+  try {
+    return await tendermint.query('GetMsqAddress', { node_id });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get message queue address from blockchain',
+      cause: error,
+    });
+  }
 }
 
 export async function registerMsqAddress({ ip, port }) {
-  return await tendermint.transact(
-    'RegisterMsqAddress',
-    {
-      ip,
-      port,
-      node_id: nodeId,
-    },
-    utils.getNonce()
-  );
+  try {
+    return await tendermint.transact(
+      'RegisterMsqAddress',
+      {
+        ip,
+        port,
+        node_id: nodeId,
+      },
+      utils.getNonce()
+    );
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot register message queue address to blockchain',
+      cause: error,
+    });
+  }
 }
 
 export async function getNodeToken(node_id = nodeId) {
-  return await tendermint.query('GetNodeToken', { node_id });
+  try {
+    return await tendermint.query('GetNodeToken', { node_id });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get node token from blockchain',
+      cause: error,
+    });
+  }
 }
 
 export async function checkRequestIntegrity(requestId, request) {
@@ -127,7 +183,14 @@ export async function checkRequestIntegrity(requestId, request) {
 }
 
 export async function getNamespaceList() {
-  return await tendermint.query('GetNamespaceList');
+  try {
+    return await tendermint.query('GetNamespaceList');
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get namespace list from blockchain',
+      cause: error,
+    });
+  }
 }
 
 if (handleMessageFromQueue) {

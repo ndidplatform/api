@@ -24,7 +24,7 @@ router.post('/node/create', validateBody, async (req, res, next) => {
 
     res.status(501).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -46,7 +46,7 @@ router.post('/node/update', validateBody, async (req, res, next) => {
 
     res.status(501).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -57,7 +57,7 @@ router.post('/node/register_callback', validateBody, async (req, res, next) => {
     await utils.setSignatureCallback(url);
     res.status(200).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -73,7 +73,7 @@ router.post(
 
       res.status(501).end();
     } catch (error) {
-      res.status(500).end();
+      next(error);
     }
   }
 );
