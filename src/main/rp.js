@@ -268,6 +268,18 @@ export async function createRequest({
       });
     }
 
+    if (receivers.length < min_idp) {
+      throw new CustomError({
+        message: 'Not enough IDP',
+        code: errorCode.IDP_NOT_ENOUGH,
+        details: {
+          namespace,
+          identifier,
+          idp_list,
+        },
+      });
+    }
+
     const nonce = utils.getNonce();
     const request_id = utils.createRequestId();
 
