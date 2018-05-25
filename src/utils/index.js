@@ -112,8 +112,8 @@ export async function createSignature(data, nonce = '', useMasterKey) {
   if (signatureCallback)
     return await createSignatureByCallback(JSON.stringify(data) + nonce, useMasterKey);
   let privateKey = (useMasterKey 
-    ? fs.readFileSync(config.privateKeyPath, 'utf8')
-    : fs.readFileSync(config.masterPrivateKeyPath, 'utf8')
+    ? fs.readFileSync(config.masterPrivateKeyPath, 'utf8')
+    : fs.readFileSync(config.privateKeyPath, 'utf8')
   );
   return cryptoUtils.createSignature(data, nonce, privateKey);
 }
