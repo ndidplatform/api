@@ -53,11 +53,13 @@ export async function getNodeIdsOfAssociatedIdp({
   namespace,
   identifier,
   min_ial,
+  min_aal,
 }) {
   try {
     return await tendermint.query('GetMsqDestination', {
       hash_id: utils.hash(namespace + ':' + identifier),
-      min_ial: min_ial,
+      min_ial,
+      min_aal,
     });
   } catch (error) {
     throw new CustomError({
@@ -81,8 +83,8 @@ export async function getNodeIdsOfAsWithService({ service_id }) {
 }
 
 /**
- * 
- * @param {Object} data 
+ *
+ * @param {Object} data
  * @param {string} data.node_id
  * @param {string} data.public_key
  */
