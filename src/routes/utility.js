@@ -7,12 +7,14 @@ const router = express.Router();
 
 router.get('/idp', validateQuery, async (req, res, next) => {
   try {
-    const { min_ial, min_aal } = req.query;
+    const { min_ial = 1, min_aal = 1 } = req.query;
 
-    // Not Implemented
-    // TODO
+    const idpNodeIds = await abciAppCommonApi.getNodeIdsOfAssociatedIdp({
+      min_ial,
+      min_aal,
+    });
 
-    res.status(501).end();
+    res.status(200).send(idpNodeIds);
   } catch (error) {
     res.status(500).end();
   }
@@ -24,7 +26,7 @@ router.get(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { min_ial, min_aal } = req.query;
+      const { min_ial = 1, min_aal = 1 } = req.query;
 
       const idpNodeIds = await abciAppCommonApi.getNodeIdsOfAssociatedIdp({
         namespace,
