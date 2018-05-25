@@ -10,9 +10,11 @@ import errorCode from '../../error/code';
 //   });
 //   if (!paramsValidationResult.valid) {
 //     res.status(400).json({
-//       message: 'Invalid input',
-//       code: errorCode.INVALID_INPUT,
-//       details: paramsValidationResult,
+//       error: {
+//         message: 'Invalid input',
+//         code: errorCode.INVALID_INPUT,
+//         details: paramsValidationResult,
+//       },
 //     });
 //     return;
 //   }
@@ -26,9 +28,11 @@ export function validateQuery(req, res, next) {
   });
   if (!queryValidationResult.valid) {
     res.status(400).json({
-      message: 'Invalid input',
-      code: errorCode.INVALID_INPUT,
-      details: queryValidationResult,
+      error: {
+        message: 'Invalid input',
+        code: errorCode.INVALID_INPUT,
+        details: queryValidationResult,
+      },
     });
     return;
   }
@@ -43,9 +47,11 @@ export function validateBody(req, res, next) {
   });
   if (!bodyValidationResult.valid) {
     res.status(400).json({
-      message: 'Invalid input',
-      code: errorCode.INVALID_INPUT,
-      details: bodyValidationResult,
+      error: {
+        message: 'Invalid input',
+        code: errorCode.INVALID_INPUT,
+        details: bodyValidationResult,
+      },
     });
     return;
   }
