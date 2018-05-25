@@ -16,11 +16,12 @@ router.post('/initNDID', async (req, res, next) => {
 
 router.post('/registerNode', async (req, res, next) => {
   try {
-    const { node_id, public_key, role, max_aal, max_ial } = req.body;
+    const { node_id, public_key, master_public_key, role, max_aal, max_ial } = req.body;
 
     await abciAppNdid.registerNode({
       node_id,
       public_key,
+      master_public_key,
       role,
       max_aal,
       max_ial
