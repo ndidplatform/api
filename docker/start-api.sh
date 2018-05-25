@@ -66,15 +66,17 @@ init_ndid() {
   echo "Initializing NDID node..."
 
   local PUBLIC_KEY=$(tr '\n' '#' < ${KEY_PATH}.pub | sed 's/#/\\n/g')
-  local RESULT=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/initNDID \
+  local RESPONSE_CODE=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/initNDID \
     -H "Content-Type: application/json" \
-    -d "{\"public_key\":\"${PUBLIC_KEY}\"}")
+    -d "{\"public_key\":\"${PUBLIC_KEY}\"}" \
+    -w '%{http_code}' \
+    -o /dev/null)
 
-  if [ "${RESULT}" = "true" ]; then
+  if [ "${RESPONSE_CODE}" = "200" ]; then
     echo "Initailizing NDID node succeeded"
     return 0
   else
-    echo "Initailizing NDID node failed: ${RESULT}"
+    echo "Initailizing NDID node failed: ${RESPONSE_CODE}"
     return 1
   fi
 }
@@ -83,15 +85,17 @@ register_node_id() {
   echo "Registering ${NODE_ID} node..."
 
   local PUBLIC_KEY=$(tr '\n' '#' < ${KEY_PATH}.pub | sed 's/#/\\n/g')
-  local RESULT=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/registerNode \
+  local RESPONSE_CODE=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/registerNode \
     -H "Content-Type: application/json" \
-    -d "{\"public_key\":\"${PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"role\":\"${ROLE}\"}")
+    -d "{\"public_key\":\"${PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"role\":\"${ROLE}\"}" \
+    -w '%{http_code}' \
+    -o /dev/null)
 
-  if [ "${RESULT}" = "true" ]; then
+  if [ "${RESPONSE_CODE}" = "200" ]; then
     echo "Registering ${NODE_ID} node succeeded"
     return 0
   else
-    echo "Registering ${NODE_ID} node failed: ${RESULT}"
+    echo "Registering ${NODE_ID} node failed: ${RESPONSE_CODE}"
     return 1
   fi
 }
@@ -100,15 +104,17 @@ set_token_for_node_id() {
   echo "Giving ${AMOUNT} tokens to ${NODE_ID} node..."
 
   local AMOUNT=$1
-  local RESULT=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/addNodeToken \
+  local RESPONSE_CODE=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/addNodeToken \
     -H "Content-Type: application/json" \
-    -d "{\"node_id\":\"${NODE_ID}\",\"amount\":${AMOUNT}}")
+    -d "{\"node_id\":\"${NODE_ID}\",\"amount\":${AMOUNT}}" \
+    -w '%{http_code}' \
+    -o /dev/null)
 
-  if [ "${RESULT}" = "true" ]; then
+  if [ "${RESPONSE_CODE}" = "200" ]; then
     echo "Giving ${AMOUNT} tokens to ${NODE_ID} node succeeded"
     return 0
   else
-    echo "Giving ${AMOUNT} tokens to ${NODE_ID} node failed"
+    echo "Giving ${AMOUNT} tokens to ${NODE_ID} node failed: ${RESPONSE_CODE}"
     return 1
   fi
 }
