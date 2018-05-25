@@ -81,7 +81,7 @@ export async function createIdpResponse(data) {
     const err = new CustomError({
       message: 'Cannot create IDP response',
       cause: error,
-    })
+    });
     logger.error(err.getInfoForLog());
     throw err;
   }
@@ -124,7 +124,13 @@ export async function handleMessageFromQueue(request) {
   });
   const requestJson = JSON.parse(request);
 
-  if (tendermint.latestBlockHeight < requestJson.height) {
+  const latestBlockHeight = tendermint.latestBlockHeight;
+  if (latestBlockHeight <= requestJson.height) {
+    logger.debug({
+      message: 'Saving message from MQ',
+      tendermintLatestBlockHeight: latestBlockHeight,
+      messageBlockHeight: requestJson.height,
+    });
     await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
     await db.addRequestIdExpectedInBlock(
       requestJson.height,
@@ -133,6 +139,10 @@ export async function handleMessageFromQueue(request) {
     return;
   }
 
+  logger.debug({
+    message: 'Processing request',
+    requestId: requestJson.request_id,
+  });
   const valid = await common.checkRequestIntegrity(
     requestJson.request_id,
     requestJson
@@ -165,12 +175,22 @@ export async function handleTendermintNewBlockHeaderEvent(
         : height - missingBlockCount;
   const toHeight = height - 1;
 
+  logger.debug({
+    message: 'Getting request IDs to process',
+    fromHeight,
+    toHeight,
+  });
+
   const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
     fromHeight,
     toHeight
   );
   await Promise.all(
     requestIdsInTendermintBlock.map(async (requestId) => {
+      logger.debug({
+        message: 'Processing request',
+        requestId,
+      });
       const message = await db.getRequestReceivedFromMQ(requestId);
       const valid = await common.checkRequestIntegrity(requestId, message);
       if (valid) {

@@ -83,11 +83,11 @@ init_ndid() {
 
 register_node_id() {
   echo "Registering ${NODE_ID} node..."
-
+  
   local PUBLIC_KEY=$(tr '\n' '#' < ${KEY_PATH}.pub | sed 's/#/\\n/g')
   local RESPONSE_CODE=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/registerNode \
     -H "Content-Type: application/json" \
-    -d "{\"public_key\":\"${PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"role\":\"${ROLE}\"}" \
+    -d "{\"public_key\":\"${PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3}}" \
     -w '%{http_code}' \
     -o /dev/null)
 

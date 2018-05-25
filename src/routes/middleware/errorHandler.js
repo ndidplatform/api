@@ -4,7 +4,15 @@ export default function errorHandler(err, req, res, next) {
   if (res.headersSent) {
     return next(err);
   }
+  let errorMessage;
   let errorCode;
+
+  if (err.getMessageWithRootCause != null) {
+    errorMessage = err.getMessageWithRootCause();
+  } else {
+    errorMessage = err.message;
+  }
+
   if (err.code != null) {
     errorCode = err.code;
   } else {
@@ -15,7 +23,7 @@ export default function errorHandler(err, req, res, next) {
   res.status(500).json({
     error: {
       code: errorCode,
-      message: err.message,
+      message: errorMessage,
       stack: env === 'development' ? err.stack : undefined,
     },
   });
