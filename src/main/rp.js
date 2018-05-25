@@ -248,7 +248,7 @@ export async function createRequest({
       return requestId;
     }
 
-    if (idp_list != null && idp_list.length < min_idp) {
+    if (idp_list != null && idp_list.length > 0 && idp_list.length < min_idp) {
       throw new CustomError({
         message:
           'Provided IdPs is less than minimum IdP needed (length of "idp_list" is less than "min_idp")',
