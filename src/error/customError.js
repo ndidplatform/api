@@ -1,0 +1,81 @@
+export default class CustomError extends Error {
+  constructor({ message, code, details, cause }) {
+    super(message);
+
+    if (code != null) {
+      this.code = code;
+    }
+    if (details != null) {
+      this.details = details;
+    }
+
+    if (cause != null) {
+      Object.defineProperty(this, 'cause', {
+        value: cause,
+        writable: false,
+      });
+    }
+
+    Error.captureStackTrace(this, this.constructor);
+    const oldStackDescriptor = Object.getOwnPropertyDescriptor(this, 'stack');
+    const stackDescriptor = buildStackDescriptor(oldStackDescriptor, cause);
+    Object.defineProperty(this, 'stack', stackDescriptor);
+  }
+
+  /**
+   * Get top of the stack error code
+   * @returns {number} Error code
+   */
+  getCode() {
+    if (this.code != null) {
+      return this.code;
+    }
+    if (this.cause != null) {
+      return this.cause.getCode();
+    }
+  }
+
+  /**
+   * Get error info
+   * @returns {Object} Error info
+   */
+  getInfoForLog() {
+    if (this.details != null) {
+      return {
+        message: this.message,
+        code: this.getCode(),
+        details: this.details,
+        stack: this.stack,
+      };
+    } else {
+      return {
+        message: this.message,
+        code: this.getCode(),
+        stack: this.stack,
+      };
+    }
+  }
+}
+
+function buildStackDescriptor(oldStackDescriptor, nested) {
+  if (oldStackDescriptor.get) {
+    return {
+      get: function() {
+        const stack = oldStackDescriptor.get.call(this);
+        return buildCombinedStacks(stack, this.nested);
+      },
+    };
+  } else {
+    const stack = oldStackDescriptor.value;
+    return {
+      value: buildCombinedStacks(stack, nested),
+    };
+  }
+}
+
+function buildCombinedStacks(stack, nested) {
+  if (nested) {
+    stack += '\nCaused By: ' + nested.stack;
+  }
+  return stack;
+}

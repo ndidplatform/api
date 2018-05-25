@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
+import CustomError from '../error/customError';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
@@ -49,36 +50,40 @@ export const getCallbackUrl = () => {
 };
 
 export async function createIdpResponse(data) {
-  let {
-    request_id,
-    namespace,
-    identifier,
-    aal,
-    ial,
-    status,
-    signature,
-    accessor_id,
-  } = data;
-
-  let dataToBlockchain = {
-    request_id,
-    aal,
-    ial,
-    status,
-    signature,
-    accessor_id,
-    identity_proof: utils.generateIdentityProof(data),
-  };
   try {
-    const { success } = await tendermint.transact(
+    let {
+      request_id,
+      namespace,
+      identifier,
+      aal,
+      ial,
+      status,
+      signature,
+      accessor_id,
+    } = data;
+
+    let dataToBlockchain = {
+      request_id,
+      aal,
+      ial,
+      status,
+      signature,
+      accessor_id,
+      identity_proof: utils.generateIdentityProof(data),
+    };
+
+    await tendermint.transact(
       'CreateIdpResponse',
       dataToBlockchain,
       utils.getNonce()
     );
-    return success;
   } catch (error) {
-    // TODO:
-    throw error;
+    const err = new CustomError({
+      message: 'Cannot create IDP response',
+      cause: error,
+    })
+    logger.error(err.getInfoForLog());
+    throw err;
   }
 }
 
@@ -89,13 +94,24 @@ async function notifyByCallback(request) {
     });
     return;
   }
-  fetch(callbackUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ request }),
-  });
+  try {
+    fetch(callbackUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ request }),
+    });
+  } catch (error) {
+    logger.error({
+      message: 'Cannot send callback to IDP',
+    });
+
+    // TODO: handle error
+    // retry?
+
+    // throw error;
+  }
 }
 
 export async function handleMessageFromQueue(request) {
@@ -178,7 +194,7 @@ export async function init() {
 
   // Wait for blockchain ready
   await tendermint.ready;
-  
+
   //when IDP request to join approved NDID
   //after first approved, IDP can add other key and node and endorse themself
   /*let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;

@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 
+import CustomError from '../error/customError';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
@@ -69,24 +70,44 @@ async function notifyByCallback(request, serviceId) {
     request,
   });
 
-  const data = await fetch(callbackUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ request }),
-  });
-  const result = await data.json();
+  let responseFromAS;
+  try {
+    responseFromAS = await fetch(callbackUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ request }),
+    });
+  } catch (error) {
+    logger.error({
+      message: 'Cannot get data from AS',
+      error,
+    });
 
-  logger.info({
-    message: 'Received data from AS',
-  });
-  logger.debug({
-    message: 'Data from AS',
-    result,
-  });
+    // TODO: handle error
+    // retry?
+  }
+  try {
+    const result = await responseFromAS.json();
 
-  return result.data;
+    logger.info({
+      message: 'Received data from AS',
+    });
+    logger.debug({
+      message: 'Data from AS',
+      result,
+    });
+
+    return result.data;
+  } catch (error) {
+    logger.error({
+      message: 'Cannot parse data from AS',
+      error,
+    });
+
+    throw error;
+  }
 }
 
 async function getResponseDetails(requestId) {
@@ -240,7 +261,10 @@ export async function registerAsService({
       db.setServiceCallbackUrl(service_id, url),
     ]);
   } catch (error) {
-    throw error;
+    throw new CustomError({
+      message: 'Cannot register AS service',
+      cause: error,
+    });
   }
 }
 
@@ -258,7 +282,10 @@ export async function getServiceDetail(service_id) {
         }
       : null;
   } catch (error) {
-    throw error;
+    throw new CustomError({
+      message: 'Cannot get service details',
+      cause: error,
+    });
   }
 }
 

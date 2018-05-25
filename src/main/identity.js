@@ -20,7 +20,7 @@ export async function createNewIdentity(data) {
 
     //register node id, which is substituted with ip,port for demo
     //let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
-    registerMqDestination({
+    await registerMqDestination({
       users: [
         {
           hash_id: utils.hash(namespace + ':' + identifier),
@@ -37,7 +37,7 @@ export async function createNewIdentity(data) {
       message: 'Cannot create new identity',
       error,
     });
-    return false;
+    throw error;
   }
 }
 

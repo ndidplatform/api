@@ -10,9 +10,13 @@ router.get('/callback', async (req, res, next) => {
   try {
     const url = abciAppIdpApi.getCallbackUrl();
 
-    res.status(200).json({ url });
+    if (url != null) {
+      res.status(200).json({ url });
+    } else {
+      res.status(404).end();
+    }
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -24,7 +28,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
 
     res.status(200).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -42,7 +46,7 @@ router.post('/response', validateBody, async (req, res, next) => {
       accessor_id,
     } = req.body;
 
-    let isSuccess = await abciAppIdpApi.createIdpResponse({
+    await abciAppIdpApi.createIdpResponse({
       request_id,
       namespace,
       identifier,
@@ -54,13 +58,9 @@ router.post('/response', validateBody, async (req, res, next) => {
       accessor_id,
     });
 
-    if (isSuccess) {
-      res.status(200).json('Response Successful');
-    } else {
-      res.status(500).end();
-    }
+    res.status(200).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 

@@ -7,14 +7,16 @@ const router = express.Router();
 
 router.get('/idp', validateQuery, async (req, res, next) => {
   try {
-    const { min_ial, min_aal } = req.query;
+    const { min_ial = 1, min_aal = 1 } = req.query;
 
-    // Not Implemented
-    // TODO
+    const idpNodeIds = await abciAppCommonApi.getNodeIdsOfAssociatedIdp({
+      min_ial,
+      min_aal,
+    });
 
-    res.status(501).end();
+    res.status(200).send(idpNodeIds);
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -24,7 +26,7 @@ router.get(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { min_ial, min_aal } = req.query;
+      const { min_ial = 1, min_aal = 1 } = req.query;
 
       const idpNodeIds = await abciAppCommonApi.getNodeIdsOfAssociatedIdp({
         namespace,
@@ -41,7 +43,7 @@ router.get(
             }
       );
     } catch (error) {
-      res.status(500).end();
+      next(error);
     }
   }
 );
@@ -60,7 +62,7 @@ router.get('/as/:service_id', async (req, res, next) => {
           }
     );
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -70,16 +72,15 @@ router.get('/nodeToken/:node_id', async (req, res, next) => {
 
     res.status(200).json(await abciAppCommonApi.getNodeToken(node_id));
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
 router.get('/namespace', async (req, res, next) => {
   try {
     res.status(200).json(await abciAppCommonApi.getNamespaceList());
-  }
-  catch(error) {
-    res.status(500).end();
+  } catch (error) {
+    next(error);
   }
 });
 
