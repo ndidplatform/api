@@ -35,6 +35,21 @@ export default class CustomError extends Error {
     }
   }
 
+  getMessageWithCode() {
+    if (this.code != null) {
+      return this.message;
+    }
+    if (this.cause != null) {
+      return this.cause.getMessageWithCode();
+    }
+  }
+
+  getMessageWithRootCause() {
+    return this.code != null
+      ? this.message
+      : this.message + '; Caused by: ' + this.getMessageWithCode();
+  }
+
   /**
    * Get error info
    * @returns {Object} Error info
