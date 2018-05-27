@@ -2,14 +2,16 @@ import EventEmitter from 'events';
 import zmq from 'zeromq';
 import * as config from '../config';
 import * as utils from '../main/utils';
-import MQNode from './mqnode.js';
+import MQSend from './mqsend.js';
+import MQRecv from './mqrecv.js';
 
-const mqNode = new MQNode({port: config.mqRegister.port});
+const mqSend = new MQSend({});
+const mqRecv = new MQRecv({port: config.mqRegister.port});
 
 
 export const eventEmitter = new EventEmitter();
 
-mqNode.on('message', async function(jsonMessageStr) {
+mqRecv.on('message', async function(jsonMessageStr) {
 
   const jsonMessage = JSON.parse(jsonMessageStr);
 
@@ -29,7 +31,7 @@ export const send = async (receivers, message) => {
       JSON.stringify(message)
     );
 
-    mqNode.send(receiver, JSON.stringify(encryptedMessage));
+    mqSend.send(receiver, JSON.stringify(encryptedMessage));
 
   });
 };

@@ -1,6 +1,6 @@
 // TODO
 describe('Test All APIs', () => {
-
+/*
   describe('Main logic', () => {
     require('./main');
   });
@@ -16,9 +16,10 @@ describe('Test All APIs', () => {
   describe('AS APIs', () => {
     require('./asApi');
   });
-
+*/
   describe('MSQ', () => {
-    require('./mqNode');
+    require('./mqRecv');
+    require('./mqSend');
     require('./mqIndex');
   })
 });
