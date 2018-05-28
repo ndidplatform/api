@@ -87,7 +87,7 @@ init_ndid() {
     -w '%{http_code}' \
     -o /dev/null)
 
-  if [ "${RESPONSE_CODE}" = "200" ]; then
+  if [ "${RESPONSE_CODE}" = "204" ]; then
     echo "Initailizing NDID node succeeded"
     return 0
   else
@@ -107,7 +107,7 @@ register_node_id() {
     -w '%{http_code}' \
     -o /dev/null)
 
-  if [ "${RESPONSE_CODE}" = "200" ]; then
+  if [ "${RESPONSE_CODE}" = "204" ]; then
     echo "Registering ${NODE_ID} node succeeded"
     return 0
   else
@@ -126,7 +126,7 @@ set_token_for_node_id() {
     -w '%{http_code}' \
     -o /dev/null)
 
-  if [ "${RESPONSE_CODE}" = "200" ]; then
+  if [ "${RESPONSE_CODE}" = "204" ]; then
     echo "Giving ${AMOUNT} tokens to ${NODE_ID} node succeeded"
     return 0
   else
