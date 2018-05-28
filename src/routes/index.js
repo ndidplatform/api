@@ -5,13 +5,13 @@ import errorCode from '../error/code';
 import logger from '../logger';
 
 import errorHandler from './middleware/errorHandler';
-import rpRouter from './relyingParty';
-import idpRouter from './identityProvider';
-import asRouter from './authoritativeSource';
+import rpRouter from './rp';
+import idpRouter from './idp';
+import asRouter from './as';
 import identityRouter from './identity';
 import utilityRouter from './utility';
 import dpkiRouter from './dpki';
-import ndidRouter from './nationalDigitalIdentity';
+import ndidRouter from './ndid';
 import * as tendermint from '../tendermint/ndid';
 
 import * as config from '../config';
