@@ -57,7 +57,7 @@ router.post('/response', validateBody, async (req, res, next) => {
       accessor_id,
     });
 
-    res.status(200).json('Success');
+    res.status(204).end();
   } catch (error) {
     next(error);
   }

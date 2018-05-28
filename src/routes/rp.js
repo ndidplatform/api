@@ -94,7 +94,7 @@ router.delete('/requests/data/:request_id', async (req, res, next) => {
     const { request_id } = req.params;
 
     await rp.removeDataFromAS(request_id);
-    res.status(200).json('Success');
+    res.status(204).end();
   } catch (error) {
     next(error);
   }
@@ -103,7 +103,7 @@ router.delete('/requests/data/:request_id', async (req, res, next) => {
 router.delete('/requests/data', async (req, res, next) => {
   try {
     await rp.removeAllDataFromAS();
-    res.status(200).json('Success');
+    res.status(204).end();
   } catch (error) {
     next(error);
   }

@@ -71,7 +71,7 @@ router.post('/node/register_callback', validateBody, async (req, res, next) => {
     const { signUrl, decryptUrl } = req.body;
 
     await utils.setSignatureCallback(signUrl, decryptUrl);
-    res.status(200).json('Success');
+    res.status(204).end();
   } catch (error) {
     next(error);
   }
@@ -85,7 +85,7 @@ router.post(
       const { url } = req.body;
 
       await utils.setMasterSignatureCallback(url);
-      res.status(200).json('Success');
+      res.status(204).end();
     } catch (error) {
       next(error);
     }
