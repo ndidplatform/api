@@ -14,7 +14,9 @@ export default {
     'Not connected to Tendermint. Please try again later.',
 
   // Client error
-  INVALID_INPUT: 'Invalid input',
+  PATH_PARAMS_VALIDATION_FAILED: 'Path parameters validation failed',
+  QUERY_STRING_VALIDATION_FAILED: 'Query string validation failed',
+  BODY_VALIDATION_FAILED: 'Body validation failed',
   IDP_LIST_LESS_THAN_MIN_IDP:
     'Provided IdPs is less than minimum IdP needed (length of "idp_list" is less than "min_idp")',
   NO_IDP_FOUND: 'No IdP found',

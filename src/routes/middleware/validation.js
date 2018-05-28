@@ -12,8 +12,8 @@ import errorMessage from '../../error/message';
 //   if (!paramsValidationResult.valid) {
 //     res.status(400).json({
 //       error: {
-//         message: errorMessage.INVALID_INPUT,
-//         code: errorCode.INVALID_INPUT,
+//         message: errorMessage.PATH_PARAMS_VALIDATION_FAILED,
+//         code: errorCode.PATH_PARAMS_VALIDATION_FAILED,
 //         details: paramsValidationResult,
 //       },
 //     });
@@ -30,8 +30,8 @@ export function validateQuery(req, res, next) {
   if (!queryValidationResult.valid) {
     res.status(400).json({
       error: {
-        message: errorMessage.INVALID_INPUT,
-        code: errorCode.INVALID_INPUT,
+        message: errorMessage.QUERY_STRING_VALIDATION_FAILED,
+        code: errorCode.QUERY_STRING_VALIDATION_FAILED,
         details: queryValidationResult,
       },
     });
@@ -49,8 +49,8 @@ export function validateBody(req, res, next) {
   if (!bodyValidationResult.valid) {
     res.status(400).json({
       error: {
-        message: errorMessage.INVALID_INPUT,
-        code: errorCode.INVALID_INPUT,
+        message: errorMessage.BODY_VALIDATION_FAILED,
+        code: errorCode.BODY_VALIDATION_FAILED,
         details: bodyValidationResult,
       },
     });

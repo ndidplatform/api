@@ -57,15 +57,12 @@ const validate = ({ method, path, params, query, body }) => {
   if (typeof params === 'object') {
     data = params;
     dataType = 'params';
-    type = 'HTTP_path_parameters';
   } else if (typeof query === 'object') {
     data = query;
     dataType = 'query';
-    type = 'HTTP_query_string';
   } else if (typeof body === 'object') {
     data = body;
     dataType = 'body';
-    type = 'HTTP_body';
   }
 
   const jsonSchema = getJSONSchema(method, path, dataType);
@@ -74,7 +71,6 @@ const validate = ({ method, path, params, query, body }) => {
 
   return {
     valid,
-    type,
     errors: validate.errors,
   };
 };
