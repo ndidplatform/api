@@ -8,6 +8,7 @@ import logger from '../logger';
 
 import * as tendermintClient from './client';
 import TendermintWsClient from './wsClient';
+import { convertAbciAppCode } from './abciAppCode';
 import * as utils from '../utils';
 import * as config from '../config';
 
@@ -200,6 +201,19 @@ function getTransactResult(response) {
   const height = response.result.height;
 
   if (response.result.deliver_tx.log !== 'success') {
+    if (response.result.deliver_tx.code != null) {
+      const convertedErrorCode = convertAbciAppCode(response.result.deliver_tx.code);
+      if (convertAbciAppCode != null) {
+        throw new CustomError({
+          // message: errorMessage.,
+          code: convertedErrorCode,
+          details: {
+            abciCode: response.result.deliver_tx.code,
+            height,
+          },
+        });
+      }
+    }
     throw new CustomError({
       message: errorMessage.TENDERMINT_TRANSACT_ERROR,
       code: errorCode.TENDERMINT_TRANSACT_ERROR,
