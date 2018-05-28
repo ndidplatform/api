@@ -78,7 +78,7 @@ async function pollStatusUtilSynced() {
   if (syncing == null || syncing === true) {
     for (;;) {
       const status = await tendermintWsClient.getStatus();
-      syncing = status.syncing;
+      syncing = status.sync_info.syncing;
       if (syncing === false) {
         logger.info({
           message: 'Tendermint blockchain synced',
@@ -111,7 +111,7 @@ tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
   if (syncing !== false) {
     return;
   }
-  const blockHeight = result.data.data.header.height;
+  const blockHeight = result.data.value.header.height;
 
   logger.debug({
     message: 'Tendermint NewBlockHeader event received',
@@ -267,6 +267,10 @@ export function getTransactionListFromBlockQuery(result) {
   const txs = result.block.data.txs; // array of transactions in the block base64 encoded
   //const height = result.data.data.block.header.height;
 
+  if (txs == null) {
+    return [];
+  }
+
   const transactions = txs.map((tx) => {
     // Decode base64 2 times because we send transactions to tendermint in base64 format
     const txContentBase64 = Buffer.from(tx, 'base64').toString();
@@ -283,5 +287,5 @@ export function getTransactionListFromBlockQuery(result) {
 }
 
 export function getBlockHeightFromNewBlockHeaderEvent(result) {
-  return result.data.data.header.height;
+  return result.data.value.header.height;
 }
