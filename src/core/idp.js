@@ -6,7 +6,7 @@ import CustomError from '../error/customError';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
-import * as common from '../main/common';
+import * as common from './common';
 import * as utils from '../utils';
 import * as config from '../config';
 import * as db from '../db';

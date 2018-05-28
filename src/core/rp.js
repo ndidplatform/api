@@ -8,7 +8,7 @@ import * as tendermint from '../tendermint/ndid';
 import * as utils from '../utils';
 import * as mq from '../mq';
 import * as config from '../config';
-import * as common from '../main/common';
+import * as common from './common';
 import * as db from '../db';
 
 let timeoutScheduler = {};

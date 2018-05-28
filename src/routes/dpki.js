@@ -1,16 +1,15 @@
 import express from 'express';
 
 import { validateBody } from './middleware/validation';
-import * as abciAppCommonApi from '../main/common';
-import * as abciAppNdidApi from '../main/ndid';
-import * as abciAppDpkiApi from '../main/dpki';
+import * as ndid from '../core/ndid';
+import * as dpki from '../core/dpki';
 import * as utils from '../utils';
 import * as config from '../config';
 
 const router = express.Router();
 
 router.post('/node/create', validateBody, async (req, res, next) => {
-  if(config.role !== 'ndid') {
+  if (config.role !== 'ndid') {
     res.status(403).end();
     return;
   }
@@ -24,10 +23,10 @@ router.post('/node/create', validateBody, async (req, res, next) => {
       node_master_key,
       //node_master_key_type,
       //node_master_key_method,
-      role
+      role,
     } = req.body;
 
-    let result = await abciAppNdidApi.registerNode({
+    let result = await ndid.registerNode({
       node_id,
       node_name,
       public_key: node_key,
@@ -57,10 +56,10 @@ router.post('/node/update', validateBody, async (req, res, next) => {
     } = req.body;
 
     //should we allow organization to update their node's name?
-    let result = await abciAppDpkiApi.updateNode({
+    let result = await dpki.updateNode({
       node_id,
       public_key: node_key,
-      master_public_key: node_master_key
+      master_public_key: node_master_key,
     });
 
     res.status(200).send(result);

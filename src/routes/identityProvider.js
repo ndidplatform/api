@@ -1,14 +1,13 @@
 import express from 'express';
 
 import { validateBody } from './middleware/validation';
-import * as abciAppIdpApi from '../main/idp';
-import * as abciAppCommonApi from '../main/common';
+import * as idp from '../core/idp';
 
 const router = express.Router();
 
 router.get('/callback', async (req, res, next) => {
   try {
-    const url = abciAppIdpApi.getCallbackUrl();
+    const url = idp.getCallbackUrl();
 
     if (url != null) {
       res.status(200).json({ url });
@@ -24,7 +23,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
   try {
     const { url } = req.body;
 
-    abciAppIdpApi.setCallbackUrl(url);
+    idp.setCallbackUrl(url);
 
     res.status(200).end();
   } catch (error) {
@@ -46,7 +45,7 @@ router.post('/response', validateBody, async (req, res, next) => {
       accessor_id,
     } = req.body;
 
-    await abciAppIdpApi.createIdpResponse({
+    await idp.createIdpResponse({
       request_id,
       namespace,
       identifier,

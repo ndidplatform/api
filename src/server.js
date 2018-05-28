@@ -8,9 +8,9 @@ import morgan from 'morgan';
 import logger from './logger';
 
 import routes from './routes';
-import { init as idp_init } from './main/idp';
-import { init as as_init } from './main/as';
-import { init as rp_init, clearAllScheduler } from './main/rp';
+import { init as idp_init } from './core/idp';
+import { init as as_init } from './core/as';
+import { init as rp_init, clearAllScheduler } from './core/rp';
 
 import { close as closeDB } from './db';
 import { tendermintWsClient } from './tendermint/ndid';

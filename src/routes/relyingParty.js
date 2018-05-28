@@ -1,9 +1,8 @@
 import express from 'express';
 
 import { validateBody } from './middleware/validation';
-import * as abciAppRpApi from '../main/rp';
-import * as abciAppCommonApi from '../main/common';
-import * as db from '../db';
+import * as rp from '../core/rp';
+import * as common from '../core/common';
 
 const router = express.Router();
 
@@ -25,7 +24,7 @@ router.post(
         request_timeout,
       } = req.body;
 
-      const requestId = await abciAppRpApi.createRequest({
+      const requestId = await rp.createRequest({
         namespace,
         identifier,
         reference_id,
@@ -50,7 +49,7 @@ router.get('/requests/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    const request = await abciAppCommonApi.getRequest({
+    const request = await common.getRequest({
       requestId: request_id,
     });
 
@@ -68,9 +67,7 @@ router.get('/requests/reference/:reference_number', async (req, res, next) => {
   try {
     const { reference_number } = req.params;
 
-    const requestId = await abciAppRpApi.getRequestIdByReferenceId(
-      reference_number
-    );
+    const requestId = await rp.getRequestIdByReferenceId(reference_number);
     if (requestId != null) {
       res.status(200).json(requestId);
     } else {
@@ -85,7 +82,7 @@ router.get('/requests/data/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    const data = await abciAppRpApi.getDataFromAS(request_id);
+    const data = await rp.getDataFromAS(request_id);
     res.status(200).json(data);
   } catch (error) {
     next(error);
@@ -96,7 +93,7 @@ router.delete('/requests/data/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    await abciAppRpApi.removeDataFromAS(request_id);
+    await rp.removeDataFromAS(request_id);
     res.status(204).end();
   } catch (error) {
     next(error);
@@ -105,7 +102,7 @@ router.delete('/requests/data/:request_id', async (req, res, next) => {
 
 router.delete('/requests/data', async (req, res, next) => {
   try {
-    await abciAppRpApi.removeAllDataFromAS();
+    await rp.removeAllDataFromAS();
     res.status(204).end();
   } catch (error) {
     next(error);

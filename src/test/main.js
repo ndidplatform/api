@@ -1,6 +1,6 @@
-import * as rp from '../main/rp';
-import * as idp from '../main/idp';
-import * as common from '../main/common';
+import * as rp from '../core/rp';
+import * as idp from '../core/idp';
+import * as common from '../core/common';
 
 const chai = require('chai');
 const expect = chai.expect;

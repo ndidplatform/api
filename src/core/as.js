@@ -7,7 +7,7 @@ import * as tendermint from '../tendermint/ndid';
 import * as mq from '../mq';
 import * as utils from '../utils';
 import * as config from '../config';
-import * as common from '../main/common';
+import * as common from './common';
 import * as db from '../db';
 
 async function sendDataToRP(data) {

@@ -3,7 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import * as abciAppNdid from './main/ndid';
+import * as ndid from './core/ndid';
 import * as tendermint from './tendermint/ndid';
 
 async function addKeyAndSetToken(role, index) {
@@ -11,11 +11,16 @@ async function addKeyAndSetToken(role, index) {
   const node_name = ''; //all anonymous
   const filePath = path.join(__dirname, '..', 'devKey', role, node_id + '.pub');
   const public_key = fs.readFileSync(filePath, 'utf8').toString();
-  const masterFilePath = path.join(__dirname, '..', 'devKey', role, node_id + '_master.pub');
+  const masterFilePath = path.join(
+    __dirname,
+    '..',
+    'devKey',
+    role,
+    node_id + '_master.pub'
+  );
   const master_public_key = fs.readFileSync(masterFilePath, 'utf8').toString();
 
-
-  await abciAppNdid.registerNode({
+  await ndid.registerNode({
     node_id,
     node_name,
     public_key,
@@ -25,7 +30,7 @@ async function addKeyAndSetToken(role, index) {
     max_aal: 3,
   });
 
-  await abciAppNdid.setNodeToken({
+  await ndid.setNodeToken({
     node_id,
     amount: 1000,
   });
@@ -41,7 +46,7 @@ export async function init() {
   await tendermint.ready;
 
   try {
-    await abciAppNdid.initNDID(public_key);
+    await ndid.initNDID(public_key);
     let promiseArr = [];
     ['rp', 'idp', 'as'].forEach(async (role) => {
       promiseArr.push(addKeyAndSetToken(role, 1));

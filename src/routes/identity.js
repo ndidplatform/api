@@ -1,8 +1,8 @@
 import express from 'express';
 
 import { validateQuery, validateBody } from './middleware/validation';
-import * as abciAppIdentityApi from '../main/identity';
-import * as abciAppCommonApi from '../main/common';
+import * as identity from '../core/identity';
+import * as common from '../core/common';
 
 const router = express.Router();
 
@@ -17,7 +17,7 @@ router.post('/', validateBody, async (req, res, next) => {
       accessor_id,
     } = req.body;
 
-    await abciAppIdentityApi.createNewIdentity({
+    await identity.createNewIdentity({
       namespace,
       identifier,
       secret,
@@ -36,7 +36,7 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
     const { namespace, identifier } = req.params;
 
-    const checkIdpNodeIds = await abciAppCommonApi.getNodeIdsOfAssociatedIdp({
+    const checkIdpNodeIds = await common.getNodeIdsOfAssociatedIdp({
       namespace,
       identifier,
       min_ial: 1,

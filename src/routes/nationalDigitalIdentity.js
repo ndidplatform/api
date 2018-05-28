@@ -1,13 +1,13 @@
 import express from 'express';
 
 import { validateBody } from './middleware/validation';
-import * as abciAppNdid from '../main/ndid';
+import * as ndid from '../core/ndid';
 
 const router = express.Router();
 
 router.post('/initNDID', async (req, res, next) => {
   try {
-    await abciAppNdid.initNDID(req.body.public_key);
+    await ndid.initNDID(req.body.public_key);
     res.status(200).end();
   } catch (error) {
     next(error);
@@ -16,15 +16,22 @@ router.post('/initNDID', async (req, res, next) => {
 
 router.post('/registerNode', async (req, res, next) => {
   try {
-    const { node_id, public_key, master_public_key, role, max_aal, max_ial } = req.body;
-
-    await abciAppNdid.registerNode({
+    const {
       node_id,
       public_key,
       master_public_key,
       role,
       max_aal,
-      max_ial
+      max_ial,
+    } = req.body;
+
+    await ndid.registerNode({
+      node_id,
+      public_key,
+      master_public_key,
+      role,
+      max_aal,
+      max_ial,
     });
 
     res.status(200).end();
@@ -37,7 +44,7 @@ router.post('/setNodeToken', async (req, res, next) => {
   try {
     const { node_id, amount } = req.body;
 
-    await abciAppNdid.setNodeToken({
+    await ndid.setNodeToken({
       node_id,
       amount,
     });
@@ -52,7 +59,7 @@ router.post('/addNodeToken', async (req, res, next) => {
   try {
     const { node_id, amount } = req.body;
 
-    await abciAppNdid.addNodeToken({
+    await ndid.addNodeToken({
       node_id,
       amount,
     });
@@ -67,7 +74,7 @@ router.post('/reduceNodeToken', async (req, res, next) => {
   try {
     const { node_id, amount } = req.body;
 
-    await abciAppNdid.reduceNodeToken({
+    await ndid.reduceNodeToken({
       node_id,
       amount,
     });
@@ -82,7 +89,7 @@ router.post('/addNamespace', async (req, res, next) => {
   try {
     const { namespace, description } = req.body;
 
-    let result = abciAppNdid.addNamespace({
+    let result = ndid.addNamespace({
       namespace,
       description,
     });
@@ -96,7 +103,7 @@ router.post('/deleteNamespace', async (req, res, next) => {
   try {
     const { namespace } = req.body;
 
-    let result = abciAppNdid.deleteNamespace({
+    let result = ndid.deleteNamespace({
       namespace,
     });
     res.status(200).json(result);
