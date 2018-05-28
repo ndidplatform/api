@@ -1,5 +1,6 @@
 import validate from '../validator';
 import errorCode from '../../error/code';
+import errorMessage from '../../error/message';
 
 // Path params validation (no rules = not needed according to specs)
 // export function validatePath(req, res, next) {
@@ -11,7 +12,7 @@ import errorCode from '../../error/code';
 //   if (!paramsValidationResult.valid) {
 //     res.status(400).json({
 //       error: {
-//         message: 'Invalid input',
+//         message: errorMessage.INVALID_INPUT,
 //         code: errorCode.INVALID_INPUT,
 //         details: paramsValidationResult,
 //       },
@@ -29,7 +30,7 @@ export function validateQuery(req, res, next) {
   if (!queryValidationResult.valid) {
     res.status(400).json({
       error: {
-        message: 'Invalid input',
+        message: errorMessage.INVALID_INPUT,
         code: errorCode.INVALID_INPUT,
         details: queryValidationResult,
       },
@@ -48,7 +49,7 @@ export function validateBody(req, res, next) {
   if (!bodyValidationResult.valid) {
     res.status(400).json({
       error: {
-        message: 'Invalid input',
+        message: errorMessage.INVALID_INPUT,
         code: errorCode.INVALID_INPUT,
         details: bodyValidationResult,
       },

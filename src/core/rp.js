@@ -2,6 +2,7 @@ import fetch from 'node-fetch';
 
 import CustomError from '../error/customError';
 import errorCode from '../error/code';
+import errorMessage from '../error/message';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
@@ -250,8 +251,7 @@ export async function createRequest({
 
     if (idp_list != null && idp_list.length > 0 && idp_list.length < min_idp) {
       throw new CustomError({
-        message:
-          'Provided IdPs is less than minimum IdP needed (length of "idp_list" is less than "min_idp")',
+        message: errorMessage.IDP_LIST_LESS_THAN_MIN_IDP,
         code: errorCode.IDP_LIST_LESS_THAN_MIN_IDP,
         clientError: true,
         details: {
@@ -272,7 +272,7 @@ export async function createRequest({
 
     if (receivers.length === 0) {
       throw new CustomError({
-        message: 'No IdP found',
+        message: errorMessage.NO_IDP_FOUND,
         code: errorCode.NO_IDP_FOUND,
         clientError: true,
         details: {
@@ -285,7 +285,7 @@ export async function createRequest({
 
     if (receivers.length < min_idp) {
       throw new CustomError({
-        message: 'Not enough IdP',
+        message: errorMessage.NOT_ENOUGH_IDP,
         code: errorCode.NOT_ENOUGH_IDP,
         clientError: true,
         details: {
@@ -380,6 +380,12 @@ export async function getRequestIdByReferenceId(referenceId) {
 
 export async function getDataFromAS(requestId) {
   try {
+    // Check if request exists
+    const request = await common.getRequest({ requestId });
+    if (request == null) {
+      return null;
+    }
+
     return await db.getDatafromAS(requestId);
   } catch (error) {
     throw new CustomError({

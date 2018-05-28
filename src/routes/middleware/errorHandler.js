@@ -9,7 +9,7 @@ export default function errorHandler(err, req, res, next) {
   let clientError;
 
   if (err.name === 'CustomError') {
-    errorMessage = err.getMessageWithRootCause();
+    errorMessage = err.getMessageWithCode();
     errorCode = err.getCode();
     clientError = err.isRootCauseClientError();
   } else {
@@ -17,7 +17,7 @@ export default function errorHandler(err, req, res, next) {
     errorCode = err.code != null ? err.code : undefined;
   }
 
-  if (clientError) {
+  if (clientError === true) {
     res.status(400).json({
       error: {
         code: errorCode,

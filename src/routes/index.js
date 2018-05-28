@@ -1,6 +1,7 @@
 import express from 'express';
 
 import errorCode from '../error/code';
+import errorMessage from '../error/message';
 
 import logger from '../logger';
 
@@ -54,7 +55,7 @@ router.use((req, res, next) => {
   if (tendermint.connected !== true) {
     res.status(503).json({
       error: {
-        message: 'Not connected to Tendermint. Please try again later.',
+        message: errorMessage.TENDERMINT_NOT_CONNECTED,
         code: errorCode.TENDERMINT_NOT_CONNECTED,
       },
     });
@@ -64,7 +65,7 @@ router.use((req, res, next) => {
   if (tendermint.syncing == null || tendermint.syncing === true) {
     res.status(503).json({
       error: {
-        message: 'Syncing blockchain data. Please try again later.',
+        message: errorMessage.TENDERMINT_SYNCING,
         code: errorCode.TENDERMINT_SYNCING,
       },
     });

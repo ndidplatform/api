@@ -3,6 +3,7 @@ import fs from 'fs';
 
 import CustomError from '../error/customError';
 import errorCode from '../error/code';
+import errorMessage from '../error/message';
 import logger from '../logger';
 
 import * as tendermintClient from './client';
@@ -148,7 +149,7 @@ function getQueryResult(response) {
   });
   if (response.error) {
     throw new CustomError({
-      message: 'Tendermint JSON-RPC call error (query)',
+      message: errorMessage.TENDERMINT_QUERY_JSON_RPC_ERROR,
       code: errorCode.TENDERMINT_QUERY_JSON_RPC_ERROR,
       details: response.error,
     });
@@ -162,7 +163,7 @@ function getQueryResult(response) {
 
   if (response.result.response.value == null) {
     throw new CustomError({
-      message: 'Tendermint query failed',
+      message: errorMessage.TENDERMINT_QUERY_ERROR,
       code: errorCode.TENDERMINT_QUERY_ERROR,
       details: response.result,
     });
@@ -176,7 +177,7 @@ function getQueryResult(response) {
     return JSON.parse(result);
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot parse Tendermint query result JSON',
+      message: errorMessage.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR,
       code: errorCode.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR,
       cause: error,
     });
@@ -190,7 +191,7 @@ function getTransactResult(response) {
   });
   if (response.error) {
     throw new CustomError({
-      message: 'Tendermint JSON-RPC call error (transact)',
+      message: errorMessage.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
       code: errorCode.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
       details: response.result,
     });
@@ -200,7 +201,7 @@ function getTransactResult(response) {
 
   if (response.result.deliver_tx.log !== 'success') {
     throw new CustomError({
-      message: 'Tendermint query failed',
+      message: errorMessage.TENDERMINT_TRANSACT_ERROR,
       code: errorCode.TENDERMINT_TRANSACT_ERROR,
       details: {
         abciCode: response.result.deliver_tx.code,
