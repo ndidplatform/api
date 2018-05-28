@@ -170,21 +170,31 @@ export default {
     '/dpki/node/create': {
       body: {
         properties: {
-          // TODO
+          node_id: { type: 'string', minLength: 1 },
+          node_name: { type: 'string', minLength: 1 },
+          node_key: { type: 'string', minLength: 1 },
+          node_master_key: { type: 'string', minLength: 1 },
         },
+        required: ['node_id', 'node_name', 'node_key', 'node_master_key'],
       },
     },
     '/dpki/node/update': {
       body: {
         properties: {
-          // TODO
+          node_key: { type: 'string', minLength: 1 },
+          node_master_key: { type: 'string', minLength: 1 },
         },
       },
     },
     '/dpki/node/register_callback': {
       body: {
         properties: {
-          url: {
+          signUrl: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
+          decryptUrl: {
             type: 'string',
             format: 'uri',
             pattern: '^(https?)://',

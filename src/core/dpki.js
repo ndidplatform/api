@@ -4,21 +4,16 @@ import * as utils from '../utils';
 import * as config from '../config';
 import * as tendermint from '../tendermint/ndid';
 
-let init = false;
-
-export async function updateNode(data) {
-  const { 
-    node_id, 
-    public_key, 
-    master_public_key,
-  } = data;
-
+export async function updateNode({ public_key, master_public_key }) {
   try {
     const { success } = await tendermint.transact(
       'UpdateNode',
-      data,
+      {
+        public_key,
+        master_public_key,
+      },
       utils.getNonce(),
-      true,
+      true
     );
     return success;
   } catch (error) {

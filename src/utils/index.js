@@ -76,8 +76,8 @@ export function generateIdentityProof(data) {
   return cryptoUtils.generateIdentityProof(data);
 }
 
-export function setSignatureCallback(signatureCallbackUrl, decryptCallbackUrl) {
-  signatureCallback = signatureCallbackUrl;
+export function setSignatureCallback(signCallbackUrl, decryptCallbackUrl) {
+  signatureCallback = signCallbackUrl;
   decryptCallback = decryptCallbackUrl;
 }
 

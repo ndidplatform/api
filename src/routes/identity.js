@@ -40,6 +40,7 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
       namespace,
       identifier,
       min_ial: 1,
+      min_aal: 1,
     });
     const status =
       checkIdpNodeIds && checkIdpNodeIds.node_id.length !== 0 ? 200 : 404;

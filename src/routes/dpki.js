@@ -26,7 +26,7 @@ router.post('/node/create', validateBody, async (req, res, next) => {
       role,
     } = req.body;
 
-    let result = await ndid.registerNode({
+    const result = await ndid.registerNode({
       node_id,
       node_name,
       public_key: node_key,
@@ -45,7 +45,6 @@ router.post('/node/create', validateBody, async (req, res, next) => {
 router.post('/node/update', validateBody, async (req, res, next) => {
   try {
     const {
-      node_id,
       //node_name,
       node_key,
       //node_key_type,
@@ -57,7 +56,6 @@ router.post('/node/update', validateBody, async (req, res, next) => {
 
     //should we allow organization to update their node's name?
     let result = await dpki.updateNode({
-      node_id,
       public_key: node_key,
       master_public_key: node_master_key,
     });
@@ -70,9 +68,9 @@ router.post('/node/update', validateBody, async (req, res, next) => {
 
 router.post('/node/register_callback', validateBody, async (req, res, next) => {
   try {
-    const { signatureUrl, decryptUrl } = req.body;
+    const { signUrl, decryptUrl } = req.body;
 
-    await utils.setSignatureCallback(signatureUrl, decryptUrl);
+    await utils.setSignatureCallback(signUrl, decryptUrl);
     res.status(200).end();
   } catch (error) {
     next(error);
