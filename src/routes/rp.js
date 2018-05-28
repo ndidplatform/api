@@ -38,7 +38,7 @@ router.post(
         request_timeout,
       });
 
-      res.status(200).json({ requestId });
+      res.status(200).json({ request_id: requestId });
     } catch (error) {
       next(error);
     }
@@ -69,7 +69,7 @@ router.get('/requests/reference/:reference_number', async (req, res, next) => {
 
     const requestId = await rp.getRequestIdByReferenceId(reference_number);
     if (requestId != null) {
-      res.status(200).json(requestId);
+      res.status(200).json({ request_id: requestId });
     } else {
       res.status(404).end();
     }
@@ -94,7 +94,7 @@ router.delete('/requests/data/:request_id', async (req, res, next) => {
     const { request_id } = req.params;
 
     await rp.removeDataFromAS(request_id);
-    res.status(204).end();
+    res.status(200).json('Success');
   } catch (error) {
     next(error);
   }
@@ -103,7 +103,7 @@ router.delete('/requests/data/:request_id', async (req, res, next) => {
 router.delete('/requests/data', async (req, res, next) => {
   try {
     await rp.removeAllDataFromAS();
-    res.status(204).end();
+    res.status(200).json('Success');
   } catch (error) {
     next(error);
   }

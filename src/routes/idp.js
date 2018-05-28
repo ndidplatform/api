@@ -25,7 +25,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
 
     idp.setCallbackUrl(url);
 
-    res.status(200).end();
+    res.status(200).json('Success');
   } catch (error) {
     next(error);
   }
@@ -57,7 +57,7 @@ router.post('/response', validateBody, async (req, res, next) => {
       accessor_id,
     });
 
-    res.status(200).end();
+    res.status(200).json('Success');
   } catch (error) {
     next(error);
   }

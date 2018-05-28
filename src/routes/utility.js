@@ -14,7 +14,7 @@ router.get('/idp', validateQuery, async (req, res, next) => {
       min_aal,
     });
 
-    res.status(200).send(idpNodeIds);
+    res.status(200).json(idpNodeIds);
   } catch (error) {
     next(error);
   }

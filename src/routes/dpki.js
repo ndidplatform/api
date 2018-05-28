@@ -36,7 +36,7 @@ router.post('/node/create', validateBody, async (req, res, next) => {
       max_aal: 3,
     });
 
-    res.status(200).send(result);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -60,7 +60,7 @@ router.post('/node/update', validateBody, async (req, res, next) => {
       master_public_key: node_master_key,
     });
 
-    res.status(200).send(result);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -71,7 +71,7 @@ router.post('/node/register_callback', validateBody, async (req, res, next) => {
     const { signUrl, decryptUrl } = req.body;
 
     await utils.setSignatureCallback(signUrl, decryptUrl);
-    res.status(200).end();
+    res.status(200).json('Success');
   } catch (error) {
     next(error);
   }
@@ -85,7 +85,7 @@ router.post(
       const { url } = req.body;
 
       await utils.setMasterSignatureCallback(url);
-      res.status(200).end();
+      res.status(200).json('Success');
     } catch (error) {
       next(error);
     }

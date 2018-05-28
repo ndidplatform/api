@@ -8,7 +8,7 @@ const router = express.Router();
 router.post('/initNDID', async (req, res, next) => {
   try {
     await ndid.initNDID(req.body.public_key);
-    res.status(200).end();
+    res.status(200).json('Success');
   } catch (error) {
     next(error);
   }
@@ -34,7 +34,7 @@ router.post('/registerNode', async (req, res, next) => {
       max_ial,
     });
 
-    res.status(200).end();
+    res.status(200).json('Success');
   } catch (error) {
     next(error);
   }
@@ -49,7 +49,7 @@ router.post('/setNodeToken', async (req, res, next) => {
       amount,
     });
 
-    res.status(200).end();
+    res.status(200).json('Success');
   } catch (error) {
     next(error);
   }
@@ -64,7 +64,7 @@ router.post('/addNodeToken', async (req, res, next) => {
       amount,
     });
 
-    res.status(200).end();
+    res.status(200).json('Success');
   } catch (error) {
     next(error);
   }
@@ -79,34 +79,34 @@ router.post('/reduceNodeToken', async (req, res, next) => {
       amount,
     });
 
-    res.status(200).end();
+    res.status(200).json('Success');
   } catch (error) {
     next(error);
   }
 });
 
-router.post('/addNamespace', async (req, res, next) => {
+router.post('/namespaces', async (req, res, next) => {
   try {
     const { namespace, description } = req.body;
 
-    let result = ndid.addNamespace({
+    await ndid.addNamespace({
       namespace,
       description,
     });
-    res.status(200).json(result);
+    res.status(200).json('Success');
   } catch (error) {
     next(error);
   }
 });
 
-router.post('/deleteNamespace', async (req, res, next) => {
+router.delete('/namespaces/:namespace', async (req, res, next) => {
   try {
-    const { namespace } = req.body;
+    const { namespace } = req.params;
 
-    let result = ndid.deleteNamespace({
+    await ndid.deleteNamespace({
       namespace,
     });
-    res.status(200).json(result);
+    res.status(200).json('Success');
   } catch (error) {
     next(error);
   }

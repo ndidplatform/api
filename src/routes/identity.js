@@ -26,7 +26,7 @@ router.post('/', validateBody, async (req, res, next) => {
       accessor_id,
     });
 
-    res.status(201).json('Identity Created');
+    res.status(201).json('Created');
   } catch (error) {
     next(error);
   }
@@ -42,10 +42,12 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
       min_ial: 1,
       min_aal: 1,
     });
-    const status =
-      checkIdpNodeIds && checkIdpNodeIds.node_id.length !== 0 ? 200 : 404;
 
-    res.status(status).end();
+    if (checkIdpNodeIds && checkIdpNodeIds.node_id.length !== 0) {
+      res.status(200).json('Found');
+    } else {
+      res.status(404).end();
+    }
   } catch (error) {
     next(error);
   }
