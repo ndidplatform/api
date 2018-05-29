@@ -1,5 +1,9 @@
 #!/bin/sh
 
+TENDERMINT_PORT=${TENDERMINT_PORT:-45000}
+MQ_BINDING_PORT=${MQ_BINDING_PORT:-5555}
+SERVER_PORT=${SERVER_PORT:-8080}
+
 exit_missing_env() {
   echo "MISSING ENV: ${1} is not set"
   exit 1
@@ -17,7 +21,6 @@ exit_path_not_exist() {
 
 if [ -z ${SERVER_PORT} ]; then exit_missing_env SERVER_PORT; fi
 if [ -z ${TENDERMINT_IP} ]; then exit_missing_env TENDERMINT_IP; fi
-if [ -z ${TENDERMINT_PORT} ]; then exit_missing_env TENDERMINT_PORT; fi
 if [ -z ${NODE_ID} ]; then exit_missing_env NODE_ID; fi
 if [ -z ${ROLE} ]; then exit_missing_env ROLE; fi
 if [ -z ${NDID_IP} ]; then exit_missing_env NDID_IP; fi
