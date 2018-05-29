@@ -55,6 +55,36 @@ export function removeRequestIdsExpectedInBlock(fromHeight, toHeight) {
   });
 }
 
+export function getResponseIdExpectedInBlock(height) {
+  return db.getList({
+    name: 'responseIdExpectedInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'responseId',
+  });
+}
+
+export function addResponseIdExpectedInBlock(height, responseId) {
+  return db.pushToList({
+    name: 'responseIdExpectedInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'responseId',
+    value: responseId,
+  });
+}
+
+export function removeResponseIdsExpectedInBlock(fromHeight, toHeight) {
+  return db.removeListRange({
+    name: 'responseIdExpectedInBlock',
+    keyName: 'expectedBlockHeight',
+    keyRange: {
+      gte: fromHeight, // greaterThanOrEqual
+      lte: toHeight, // lessThanOrEqual
+    },
+  });
+}
+
 export function getRequestReceivedFromMQ(requestId) {
   return db.get({
     name: 'requestReceivedFromMQ',
@@ -79,6 +109,33 @@ export function removeRequestReceivedFromMQ(requestId) {
     name: 'requestReceivedFromMQ',
     keyName: 'requestId',
     key: requestId,
+  });
+}
+
+export function getProofReceivedFromMQ(responseId) {
+  return db.get({
+    name: 'proofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'privateProof',
+  });
+}
+
+export function setProofReceivedFromMQ(responseId, privateProof) {
+  return db.set({
+    name: 'proofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'privateProof',
+    value: privateProof,
+  });
+}
+
+export function removeProofReceivedFromMQ(responseId) {
+  return db.remove({
+    name: 'proofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
   });
 }
 

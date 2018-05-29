@@ -168,7 +168,7 @@ export async function handleTendermintNewBlockHeaderEvent(
   missingBlockCount
 ) {
   const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
-  //Todo
+  //TODO
   //loop in all tx in block
   //const senderNodeId = tendermint.getNodeIdFromNewBlockHeaderEvent(result);
   //save senderNodeId to persistent, map with requestId

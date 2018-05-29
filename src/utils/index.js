@@ -123,3 +123,8 @@ export async function createSignature(data, nonce = '', useMasterKey) {
 export function createRequestId() {
   return cryptoUtils.randomHexBytes(32);
 }
+
+export function verifyZKProof(...) {
+  //TODO implement
+  return true;
+}

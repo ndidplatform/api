@@ -23,9 +23,17 @@ const Entities = {
     requestId: Sequelize.STRING,
     expectedBlockHeight: Sequelize.INTEGER,
   }),
+  responseIdExpectedInBlock: sequelize.define('responseIdExpectedInBlock', {
+    responseId: Sequelize.STRING,
+    expectedBlockHeight: Sequelize.INTEGER,
+  }),
   requestReceivedFromMQ: sequelize.define('requestReceivedFromMQ', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     request: Sequelize.JSON,
+  }),
+  proofReceivedFromMQ: sequelize.define('proofReceivedFromMQ', {
+    responseId: { type: Sequelize.STRING, primaryKey: true },
+    privateProof: Sequelize.STRING,
   }),
   requestIdReferenceIdMapping: sequelize.define('requestIdReferenceIdMapping', {
     referenceId: { type: Sequelize.TEXT, primaryKey: true },

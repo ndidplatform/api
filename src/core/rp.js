@@ -420,6 +420,11 @@ export async function removeAllDataFromAS() {
   }
 }
 
+async function verifyZKProof() {
+  //query and verify
+  return utils.verifyZKProof(...);
+}
+
 export async function handleMessageFromQueue(data) {
 
   logger.info({
@@ -431,15 +436,42 @@ export async function handleMessageFromQueue(data) {
   });
 
   //distinguish between message from idp, as
-  //check zk proof
-  //must wait for height
-  //store private parameter from idp to request, to pass along to as
+  if(!data.as_id) {
+    if(!data.idp_id) {
+      //invalid message
+      throw 'something';
+    }
 
-  // Verifies signature in blockchain.
-  // RP node updates the request status
-  // Call callback to RP.
+    //store private parameter from EACH idp to request, to pass along to as
+
+    //must wait for height
+    const latestBlockHeight = tendermint.latestBlockHeight;
+    
+    if (latestBlockHeight <= data.height) {
+      const responseId = data.request_id + ':' + data.idp_id;
+      logger.debug({
+        message: 'Saving message from MQ',
+        tendermintLatestBlockHeight: latestBlockHeight,
+        messageBlockHeight: data.height,
+      });
+      await db.setProofReceivedFromMQ(responseId, data.privateProof);
+      await db.addResponseIdExpectedInBlock(
+        data.height,
+        responseId
+      );
+      return;
+    }
+    if(!verifyZKProof()) {
+      //TODO manually close request due to invalid response of conflict idp??
+    }
+    else return;
+
+  }
 
   //receive data from AS
+  // TODO: verifies signature of AS in blockchain.
+  // Call callback to RP.
+
   data = JSON.parse(data);
   try {
     const request = await common.getRequest({
