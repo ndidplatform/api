@@ -15,6 +15,8 @@ export function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export const randomBytes = crypto.randomBytes;
+
 export function getNonce() {
   // TODO
   return (nonce++).toString();

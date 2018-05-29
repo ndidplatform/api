@@ -182,5 +182,6 @@ export function decryptAES256GCM(masterkey, ciphertext, deriveKey) {
 
 export function generateIdentityProof(data) {
   // TODO:
-  return '<some-voodoo-happen-here>';
+  //[blockchain-proof, private-proof]
+  return ['<some-voodoo-happen-here>','<another-voodoo-happen-here>'];
 }

@@ -161,10 +161,13 @@ export async function getNodeToken(node_id = nodeId) {
 export async function checkRequestIntegrity(requestId, request) {
   const msgBlockchain = await getRequest({ requestId });
 
-  const valid = utils.compareSaltedHash({
+  const valid = 
+    utils.hash(request.challenge + request.request_message)
+    === msgBlockchain.messageHash;
+  /*utils.compareSaltedHash({
     saltedHash: msgBlockchain.messageHash,
     plain: request.request_message,
-  });
+  });*/
   if (!valid) {
     logger.warn({
       message: 'Request message hash mismatched',

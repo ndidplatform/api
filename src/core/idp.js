@@ -62,21 +62,28 @@ export async function createIdpResponse(data) {
       accessor_id,
     } = data;
 
+    let [blockchainProof, privateProof] = utils.generateIdentityProof(data);
+
     let dataToBlockchain = {
       request_id,
       aal,
       ial,
       status,
       signature,
-      accessor_id,
-      identity_proof: utils.generateIdentityProof(data),
+      //accessor_id,
+      identity_proof: blockchainProof,
     };
+
+    //Todo
+    //query rp's nodeId from persistent 
+    //send msq (private proof) to rp
 
     await tendermint.transact(
       'CreateIdpResponse',
       dataToBlockchain,
       utils.getNonce()
     );
+
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot create IDP response',
@@ -161,6 +168,12 @@ export async function handleTendermintNewBlockHeaderEvent(
   missingBlockCount
 ) {
   const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
+  //Todo
+  //loop in all tx in block
+  //const senderNodeId = tendermint.getNodeIdFromNewBlockHeaderEvent(result);
+  //save senderNodeId to persistent, map with requestId
+  //=======================================================================
+
   // messages that arrived before 'NewBlock' event
   // including messages between the start of missing block's height
   // and the block before latest block height

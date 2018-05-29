@@ -207,6 +207,7 @@ export async function handleMessageFromQueue(request) {
   if (valid) {
     // TODO try catch / error handling
     const responseDetails = await getResponseDetails(requestJson.request_id);
+    //check zk proof
     getDataAndSendBackToRP(requestJson, responseDetails);
   }
 }

@@ -311,6 +311,8 @@ export async function createRequest({
       });
     }
 
+    let challenge = utils.randomBytes(config.challengeLength);
+
     const requestData = {
       namespace,
       identifier,
@@ -321,6 +323,7 @@ export async function createRequest({
       request_timeout,
       data_request_list: data_request_list,
       request_message,
+      challenge,
     };
 
     // save request data to DB to send to AS via mq when authen complete
@@ -336,7 +339,7 @@ export async function createRequest({
       min_ial,
       request_timeout,
       data_request_list: dataRequestListToBlockchain,
-      message_hash: utils.hashWithRandomSalt(request_message),
+      message_hash: utils.hash(challenge + request_message),
     };
 
     const { height } = await tendermint.transact(
@@ -418,6 +421,7 @@ export async function removeAllDataFromAS() {
 }
 
 export async function handleMessageFromQueue(data) {
+
   logger.info({
     message: 'Received message from MQ',
   });
@@ -425,6 +429,11 @@ export async function handleMessageFromQueue(data) {
     message: 'Message from MQ',
     data,
   });
+
+  //distinguish between message from idp, as
+  //check zk proof
+  //must wait for height
+  //store private parameter from idp to request, to pass along to as
 
   // Verifies signature in blockchain.
   // RP node updates the request status
