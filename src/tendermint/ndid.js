@@ -2,13 +2,12 @@ import path from 'path';
 import fs from 'fs';
 
 import CustomError from '../error/customError';
-import errorCode from '../error/code';
-import errorMessage from '../error/message';
+import errorType from '../error/type';
 import logger from '../logger';
 
 import * as tendermintClient from './client';
 import TendermintWsClient from './wsClient';
-import { convertAbciAppCode } from './abciAppCode';
+import { convertAbciAppCodeToErrorType } from './abciAppCode';
 import * as utils from '../utils';
 import * as config from '../config';
 
@@ -150,8 +149,8 @@ function getQueryResult(response) {
   });
   if (response.error) {
     throw new CustomError({
-      message: errorMessage.TENDERMINT_QUERY_JSON_RPC_ERROR,
-      code: errorCode.TENDERMINT_QUERY_JSON_RPC_ERROR,
+      message: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR.message,
+      code: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR.code,
       details: response.error,
     });
   }
@@ -164,8 +163,8 @@ function getQueryResult(response) {
 
   if (response.result.response.value == null) {
     throw new CustomError({
-      message: errorMessage.TENDERMINT_QUERY_ERROR,
-      code: errorCode.TENDERMINT_QUERY_ERROR,
+      message: errorType.TENDERMINT_QUERY_ERROR.message,
+      code: errorType.TENDERMINT_QUERY_ERROR.code,
       details: response.result,
     });
   }
@@ -178,8 +177,8 @@ function getQueryResult(response) {
     return JSON.parse(result);
   } catch (error) {
     throw new CustomError({
-      message: errorMessage.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR,
-      code: errorCode.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR,
+      message: errorType.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR.message,
+      code: errorType.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR.code,
       cause: error,
     });
   }
@@ -192,8 +191,8 @@ function getTransactResult(response) {
   });
   if (response.error) {
     throw new CustomError({
-      message: errorMessage.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
-      code: errorCode.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
+      message: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR.message,
+      code: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR.code,
       details: response.result,
     });
   }
@@ -202,11 +201,13 @@ function getTransactResult(response) {
 
   if (response.result.deliver_tx.log !== 'success') {
     if (response.result.deliver_tx.code != null) {
-      const convertedErrorCode = convertAbciAppCode(response.result.deliver_tx.code);
-      if (convertAbciAppCode != null) {
+      const convertedErrorType = convertAbciAppCodeToErrorType(
+        response.result.deliver_tx.code
+      );
+      if (convertedErrorType != null) {
         throw new CustomError({
-          // message: errorMessage.,
-          code: convertedErrorCode,
+          message: convertedErrorType.message,
+          code: convertedErrorType.code,
           details: {
             abciCode: response.result.deliver_tx.code,
             height,
@@ -215,8 +216,8 @@ function getTransactResult(response) {
       }
     }
     throw new CustomError({
-      message: errorMessage.TENDERMINT_TRANSACT_ERROR,
-      code: errorCode.TENDERMINT_TRANSACT_ERROR,
+      message: errorType.TENDERMINT_TRANSACT_ERROR.message,
+      code: errorType.TENDERMINT_TRANSACT_ERROR.code,
       details: {
         abciCode: response.result.deliver_tx.code,
         height,

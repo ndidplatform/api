@@ -1,4 +1,4 @@
-import errorCode from '../error/code';
+import errorType from '../error/type';
 
 // Response codes from ABCI app
 // OK                     uint32 = 0
@@ -27,31 +27,31 @@ import errorCode from '../error/code';
 // DuplicateRequestID     uint32 = 23
 
 const codeMapping = {
-  1: errorCode.ENCODING_ERROR, // Not used in API (calls from API won't generate this error)
-  2: errorCode.DECODING_ERROR, // Cannot base64 decode transaction
-  3: errorCode.BAD_NONCE,
-  4: errorCode.UNAUTHORIZED,
-  5: errorCode.UNMARSHAL_ERROR,
-  6: errorCode.MARSHAL_ERROR,
-  7: errorCode.REQUEST_ID_NOT_FOUND,
-  8: errorCode.REQUEST_IS_CLOSED,
-  9: errorCode.REQUEST_IS_TIMED_OUT,
-  10: errorCode.REQUEST_IS_COMPLETED,
-  11: errorCode.DUPLICATE_SERVICE_ID,
-  12: errorCode.TOKEN_ACCOUNT_NOT_FOUND, // Node ID not found
-  13: errorCode.NOT_ENOUGH_TOKEN,
-  14: errorCode.WRONG_TRANSACTION_FORMAT,
-  15: errorCode.METHOD_CAN_NOT_BE_EMPTY,
-  16: errorCode.DUPLICATE_RESPONSE,
-  17: errorCode.AAL_ERROR,
-  18: errorCode.IAL_ERROR,
-  19: errorCode.DUPLICATE_NODE_ID,
-  20: errorCode.WRONG_ROLE,
-  21: errorCode.DUPLICATE_NAMESPACE,
-  22: errorCode.NAMESPACE_NOT_FOUND,
-  23: errorCode.DUPLICATE_REQUEST_ID,
+  1: errorType.ENCODING_ERROR, // Not used in API (calls from API won't generate this error)
+  2: errorType.DECODING_ERROR, // Cannot base64 decode transaction
+  3: errorType.BAD_NONCE,
+  4: errorType.UNAUTHORIZED,
+  5: errorType.UNMARSHAL_ERROR,
+  6: errorType.MARSHAL_ERROR,
+  7: errorType.REQUEST_ID_NOT_FOUND,
+  8: errorType.REQUEST_IS_CLOSED,
+  9: errorType.REQUEST_IS_TIMED_OUT,
+  10: errorType.REQUEST_IS_COMPLETED,
+  11: errorType.DUPLICATE_SERVICE_ID,
+  12: errorType.TOKEN_ACCOUNT_NOT_FOUND, // Node ID not found
+  13: errorType.NOT_ENOUGH_TOKEN,
+  14: errorType.WRONG_TRANSACTION_FORMAT,
+  15: errorType.METHOD_CAN_NOT_BE_EMPTY,
+  16: errorType.DUPLICATE_RESPONSE,
+  17: errorType.AAL_ERROR,
+  18: errorType.IAL_ERROR,
+  19: errorType.DUPLICATE_NODE_ID,
+  20: errorType.WRONG_ROLE,
+  21: errorType.DUPLICATE_NAMESPACE,
+  22: errorType.NAMESPACE_NOT_FOUND,
+  23: errorType.DUPLICATE_REQUEST_ID,
 };
 
-export function convertAbciAppCode(abciAppCode) {
+export function convertAbciAppCodeToErrorType(abciAppCode) {
   return codeMapping[abciAppCode];
 }

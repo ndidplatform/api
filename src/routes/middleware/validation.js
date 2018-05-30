@@ -1,6 +1,5 @@
 import validate from '../validator';
-import errorCode from '../../error/code';
-import errorMessage from '../../error/message';
+import errorType from '../../error/type';
 
 // Path params validation (no rules = not needed according to specs)
 // export function validatePath(req, res, next) {
@@ -12,8 +11,8 @@ import errorMessage from '../../error/message';
 //   if (!paramsValidationResult.valid) {
 //     res.status(400).json({
 //       error: {
-//         message: errorMessage.PATH_PARAMS_VALIDATION_FAILED,
-//         code: errorCode.PATH_PARAMS_VALIDATION_FAILED,
+//         message: errorType.PATH_PARAMS_VALIDATION_FAILED.message,
+//         code: errorType.PATH_PARAMS_VALIDATION_FAILED.code,
 //         details: paramsValidationResult,
 //       },
 //     });
@@ -30,8 +29,8 @@ export function validateQuery(req, res, next) {
   if (!queryValidationResult.valid) {
     res.status(400).json({
       error: {
-        message: errorMessage.QUERY_STRING_VALIDATION_FAILED,
-        code: errorCode.QUERY_STRING_VALIDATION_FAILED,
+        message: errorType.QUERY_STRING_VALIDATION_FAILED.message,
+        code: errorType.QUERY_STRING_VALIDATION_FAILED.code,
         details: queryValidationResult,
       },
     });
@@ -49,8 +48,8 @@ export function validateBody(req, res, next) {
   if (!bodyValidationResult.valid) {
     res.status(400).json({
       error: {
-        message: errorMessage.BODY_VALIDATION_FAILED,
-        code: errorCode.BODY_VALIDATION_FAILED,
+        message: errorType.BODY_VALIDATION_FAILED.message,
+        code: errorType.BODY_VALIDATION_FAILED.code,
         details: bodyValidationResult,
       },
     });
