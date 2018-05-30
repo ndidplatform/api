@@ -20,6 +20,8 @@ import { close as closeMQ } from './mq';
 
 import * as config from './config';
 
+const env = process.env.NODE_ENV || 'development';
+
 process.on('unhandledRejection', function(reason, p) {
   logger.error({
     message: 'Unhandled Rejection',
@@ -30,10 +32,9 @@ process.on('unhandledRejection', function(reason, p) {
 
 logger.info({
   message: 'Starting API server',
+  env,
   config,
 });
-
-const env = process.env.NODE_ENV || 'development';
 
 const app = express();
 
