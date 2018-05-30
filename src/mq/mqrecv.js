@@ -9,8 +9,6 @@ var util = require ('util');
 
 var MQRecv = function(config) {
   
-  var self = this;
-
   this.receivingSocket = zmq.socket('rep');
   
   this.receivingSocket.bindSync('tcp://*:' + config.port);
@@ -18,11 +16,12 @@ var MQRecv = function(config) {
   this.receivingSocket.on('message', async function(jsonMessageStr) {
       const jsonMessage = JSON.parse(jsonMessageStr);
 
-      self.receivingSocket.send(JSON.stringify({seq:jsonMessage.seq}));
+      this.receivingSocket.send(JSON.stringify({seq:jsonMessage.seq, msgId:jsonMessage.msgId}));
 
-     // console.log("receive message:"+ jsonMessage.seq +  ": " + jsonMessage.msg);
-      self.emit('message', jsonMessage.msg);    
-  });
+      if (jsonMessage.msg.length < 100000)
+        console.log("receive message:"+ jsonMessage.seq +  ": " + jsonMessage.msg);
+      this.emit('message', jsonMessage.msg);    
+  }.bind(this));
 };
 
 util.inherits(MQRecv, EventEmitter);

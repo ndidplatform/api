@@ -11,13 +11,11 @@ describe('Test message queue Sending', function () {
 
   
   it('should send data to destination succesffully', function(done) {
-
     var sendNode = new MQSend({});
     var recvNode= new MQRecv({port: 5565});
 
     recvNode.on('message', function(msg){
-   //   expect(msg).to.be.a('String').and.equal('test message 1');  
-     expect(String(msg)).to.equal('test message 1');  
+       expect(String(msg)).to.equal('test message 1');  
        done();
     });
     
@@ -25,11 +23,9 @@ describe('Test message queue Sending', function () {
               port:5565
               }, 'test message 1');
     
-  
   });
  
   it('should send data in Thai successfully',function(done) {
-
     var recvNode = new MQRecv({port: 5557});
     recvNode.on("message", function(msg){
       expect(String(msg)).to.equal('นี่คือเทสแมสเซจ');  
@@ -106,7 +102,7 @@ describe('Test message queue Sending', function () {
   it('should retry and should resume sending properly if destination dies and come up within time limit',  function(done) {
     let count = 0;
     
-    this.timeout(10000);
+    this.timeout(100000);
     
     var mqNode1 = new MQRecv({port: 5606});
     
@@ -114,8 +110,10 @@ describe('Test message queue Sending', function () {
       expect(msg).to.be.a('String').and.equal('test1');  
       assert.fail();
     });
-  
-    var mqNode = new MQSend({timeout:500, totalTimeout:1600});
+    
+    mqNode1.on("error", function(msg){
+    });
+    var mqNode = new MQSend({timeout:1000, totalTimeout:16000});
    
     mqNode.send({ip:"127.0.0.1",
               port:5680
@@ -126,7 +124,7 @@ describe('Test message queue Sending', function () {
         mqNode2.on("message", function(msg){
         expect(msg).to.be.a('String').and.equal('test22');  
         count++;
-        if (count==4)done();
+        if (count==3)done();
       });  
     }
     , 4000);
@@ -160,8 +158,8 @@ describe('Test message queue Sending', function () {
 
     var recv = new MQRecvClose( {port:4444});
     var mqNode = new MQSend({timeout:5000, totalTimeout:1600});
-    mqNode.on('mq_error', async function() {
- console.log("Error in message queue");
+    mqNode.on('error', function(mag) {
+      console.log("Error in message queue");
         done();
     });
 
@@ -205,7 +203,10 @@ describe('Test message queue Sending', function () {
          expect(String(msg)).to.equal(str);  
          done();
       });
-      
+      sendNode.on('state', function(msg){
+        console.log('xxxxx' + msg);
+     });
+     
       sendNode.send({ip:'127.0.0.1',
                 port:5691
                 }, str);
