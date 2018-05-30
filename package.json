@@ -24,6 +24,7 @@
     "morgan": "^1.9.0",
     "node-fetch": "^2.1.2",
     "sequelize": "^4.37.7",
+    "simple-backoff": "^1.1.0",
     "source-map-support": "^0.5.4",
     "sqlite3": "^4.0.0",
     "winston": "^3.0.0-rc5",
