@@ -201,8 +201,18 @@ if (handleMessageFromQueue) {
   messageQueueEvent.on('message', handleMessageFromQueue);
 }
 
-export function verifyZKProof() {
+export function verifyZKProof(request_id, idp_id) {
+  const { privateProof, challenge } from persistentDB;
+
   //query and verify zk, also check conflict with each others
-  return utils.verifyZKProof();
+  //query accessor_group_id of this accessor_id
+  //and check against all accessor_group_id of responses
+
+  //query accessor_public_key from privateProof.accessor_id
+  let public_key = '...' + privateProof.accessor_id;
+  //query publicProof from response of idp_id in request
+  let publicProof = '...' + request_id + idp_id;
+
+  return utils.verifyZKProof(public_key, challenge, privateProof, publicProof);
 }
 

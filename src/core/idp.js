@@ -64,6 +64,10 @@ export async function createIdpResponse(data) {
     } = data;
 
     let [blockchainProof, privateProof] = utils.generateIdentityProof(data);
+    privateProof = {
+      privateProof,
+      accessor_id,
+    };
 
     let dataToBlockchain = {
       request_id,
