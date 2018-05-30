@@ -25,7 +25,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
 
     idp.setCallbackUrl(url);
 
-    res.status(200).json('Success');
+    res.status(204).end();
   } catch (error) {
     next(error);
   }
