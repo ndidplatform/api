@@ -201,3 +201,9 @@ if (handleMessageFromQueue) {
     handleMessageFromQueue(message);
   });
 }
+
+export function verifyZKProof() {
+  //query and verify zk, also check conflict with each others
+  return utils.verifyZKProof();
+}
+

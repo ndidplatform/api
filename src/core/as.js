@@ -207,7 +207,11 @@ export async function handleMessageFromQueue(request) {
   if (valid) {
     // TODO try catch / error handling
     const responseDetails = await getResponseDetails(requestJson.request_id);
-    //check zk proof
+    //loop and check zk proof for all response
+    if(!common.verifyZKProof()) {
+      //TODO, do not answer? or send data to rp and tell them proof is invalid?
+      return;
+    }
     getDataAndSendBackToRP(requestJson, responseDetails);
   }
 }

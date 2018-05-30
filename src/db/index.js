@@ -55,7 +55,7 @@ export function removeRequestIdsExpectedInBlock(fromHeight, toHeight) {
   });
 }
 
-export function getResponseIdExpectedInBlock(height) {
+export function getResponseIdsExpectedInBlock(height) {
   return db.getList({
     name: 'responseIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
@@ -64,7 +64,7 @@ export function getResponseIdExpectedInBlock(height) {
   });
 }
 
-export function addResponseIdExpectedInBlock(height, responseId) {
+export function addResponseIdsExpectedInBlock(height, responseId) {
   return db.pushToList({
     name: 'responseIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
@@ -107,6 +107,33 @@ export function setRequestReceivedFromMQ(requestId, request) {
 export function removeRequestReceivedFromMQ(requestId) {
   return db.remove({
     name: 'requestReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getRPIdFromRequestId(requestId) {
+  return db.get({
+    name: 'rpIdFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'rp_id',
+  });
+}
+
+export function setRPIdFromRequestId(requestId, rp_id) {
+  return db.set({
+    name: 'rpIdFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'rp_id',
+    value: rp_id,
+  });
+}
+
+export function removeRPIdFromRequestId(requestId) {
+  return db.remove({
+    name: 'rpIdFromRequestId',
     keyName: 'requestId',
     key: requestId,
   });

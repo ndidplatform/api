@@ -10,6 +10,7 @@ import * as common from './common';
 import * as utils from '../utils';
 import * as config from '../config';
 import * as db from '../db';
+import * as mq from '../mq';
 
 const callbackUrlFilePath = path.join(
   __dirname,
@@ -74,15 +75,14 @@ export async function createIdpResponse(data) {
       identity_proof: blockchainProof,
     };
 
-    //Todo
-    //query rp's nodeId from persistent 
-    //send msq (private proof) to rp
 
-    await tendermint.transact(
+    let { height } = await tendermint.transact(
       'CreateIdpResponse',
       dataToBlockchain,
       utils.getNonce()
     );
+
+    sendPrivateProofToRP(request_id, privateProof, height);
 
   } catch (error) {
     const err = new CustomError({
@@ -121,6 +121,34 @@ async function notifyByCallback(request) {
   }
 }
 
+async function sendPrivateProofToRP(request_id, private_proof, height) {
+  let rp_id = await db.getRPIdFromRequestId(request_id);
+
+  logger.info({
+    message: 'Query MQ destination for rp',
+  });
+  logger.debug({
+    message: 'Query MQ destination for rp',
+    rp_id
+  });
+
+  let { ip, port } = await common.getMsqAddress(rp_id);
+  let rpMq = {
+    ip,
+    port,
+    ...(await common.getNodePubKey(rp_id)),
+  };
+
+  mq.send([rpMq], {
+    request_id,
+    private_proof,
+    height,
+    idp_id: config.nodeId
+  });
+
+  db.removeRPIdFromRequestId(request_id);
+}
+
 export async function handleMessageFromQueue(request) {
   logger.info({
     message: 'Received message from MQ',
@@ -143,6 +171,7 @@ export async function handleMessageFromQueue(request) {
       requestJson.height,
       requestJson.request_id
     );
+    await db.setRPIdFromRequestId(requestJson.request_id, requestJson.rp_id);
     return;
   }
 
@@ -168,11 +197,6 @@ export async function handleTendermintNewBlockHeaderEvent(
   missingBlockCount
 ) {
   const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
-  //TODO
-  //loop in all tx in block
-  //const senderNodeId = tendermint.getNodeIdFromNewBlockHeaderEvent(result);
-  //save senderNodeId to persistent, map with requestId
-  //=======================================================================
 
   // messages that arrived before 'NewBlock' event
   // including messages between the start of missing block's height

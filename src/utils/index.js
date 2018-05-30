@@ -15,7 +15,9 @@ export function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export const randomBytes = crypto.randomBytes;
+export function randomHexBytes(length) {
+  return cryptoUtils.randomHexBytes(length);
+}
 
 export function getNonce() {
   // TODO
@@ -78,6 +80,12 @@ export function generateIdentityProof(data) {
   return cryptoUtils.generateIdentityProof(data);
 }
 
+export function verifyZKProof() {
+  //TODO implement
+  return true;
+}
+
+
 export function setSignatureCallback(signCallbackUrl, decryptCallbackUrl) {
   signatureCallback = signCallbackUrl;
   decryptCallback = decryptCallbackUrl;
@@ -121,10 +129,5 @@ export async function createSignature(data, nonce = '', useMasterKey) {
 }
 
 export function createRequestId() {
-  return cryptoUtils.randomHexBytes(32);
-}
-
-export function verifyZKProof(...) {
-  //TODO implement
-  return true;
+  return randomHexBytes(32);
 }
