@@ -1,5 +1,9 @@
 #!/bin/sh
 
+TENDERMINT_PORT=${TENDERMINT_PORT:-45000}
+MQ_BINDING_PORT=${MQ_BINDING_PORT:-5555}
+SERVER_PORT=${SERVER_PORT:-8080}
+
 exit_missing_env() {
   echo "MISSING ENV: ${1} is not set"
   exit 1
@@ -17,7 +21,6 @@ exit_path_not_exist() {
 
 if [ -z ${SERVER_PORT} ]; then exit_missing_env SERVER_PORT; fi
 if [ -z ${TENDERMINT_IP} ]; then exit_missing_env TENDERMINT_IP; fi
-if [ -z ${TENDERMINT_PORT} ]; then exit_missing_env TENDERMINT_PORT; fi
 if [ -z ${NODE_ID} ]; then exit_missing_env NODE_ID; fi
 if [ -z ${ROLE} ]; then exit_missing_env ROLE; fi
 if [ -z ${NDID_IP} ]; then exit_missing_env NDID_IP; fi
@@ -28,7 +31,7 @@ MASTER_KEY_PATH=/api/build/devKey/${ROLE}/master/${NODE_ID}
 tendermint_wait_for_sync_complete() {
   echo "Waiting for tendermint at ${TENDERMINT_IP}:${TENDERMINT_PORT} to be ready..."
   while true; do 
-    [ ! "$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/status | jq -r .result.syncing)" = "false" ] || break  
+    [ ! "$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/status | jq -r .result.sync_info.syncing)" = "false" ] || break  
     sleep 1
   done
 }
@@ -67,7 +70,7 @@ does_node_id_exist() {
   if [ $# -gt 0 ]; then _NODE_ID=$1; fi
 
   echo "Checking if node_id=${_NODE_ID} exist..."
-  local DATA=$(echo "GetNodePublicKey|{\"node_id\":\"${_NODE_ID}\"}" | base64)
+  local DATA=$(echo "GetNodePublicKey|{\"node_id\":\"${_NODE_ID}\"}" | base64 | sed 's/\//%2F/g;s/+/%2B/g')
   if [ "$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/abci_query?data=\"${DATA}\" | jq -r .result.response.value | base64 -d | jq -r .public_key)" = "" ]; then
     echo "node_id=${_NODE_ID} does not exist"
     return 1

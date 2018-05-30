@@ -1,8 +1,7 @@
 import fetch from 'node-fetch';
 
 import CustomError from '../error/customError';
-import errorCode from '../error/code';
-import errorMessage from '../error/message';
+import errorType from '../error/type';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
@@ -285,8 +284,8 @@ export async function createRequest({
 
     if (idp_list != null && idp_list.length > 0 && idp_list.length < min_idp) {
       throw new CustomError({
-        message: errorMessage.IDP_LIST_LESS_THAN_MIN_IDP,
-        code: errorCode.IDP_LIST_LESS_THAN_MIN_IDP,
+        message: errorType.IDP_LIST_LESS_THAN_MIN_IDP.message,
+        code: errorType.IDP_LIST_LESS_THAN_MIN_IDP.code,
         clientError: true,
         details: {
           namespace,
@@ -306,8 +305,8 @@ export async function createRequest({
 
     if (receivers.length === 0) {
       throw new CustomError({
-        message: errorMessage.NO_IDP_FOUND,
-        code: errorCode.NO_IDP_FOUND,
+        message: errorType.NO_IDP_FOUND.message,
+        code: errorType.NO_IDP_FOUND.code,
         clientError: true,
         details: {
           namespace,
@@ -319,8 +318,8 @@ export async function createRequest({
 
     if (receivers.length < min_idp) {
       throw new CustomError({
-        message: errorMessage.NOT_ENOUGH_IDP,
-        code: errorCode.NOT_ENOUGH_IDP,
+        message: errorType.NOT_ENOUGH_IDP.message,
+        code: errorType.NOT_ENOUGH_IDP.code,
         clientError: true,
         details: {
           namespace,

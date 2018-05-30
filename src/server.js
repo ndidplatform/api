@@ -5,6 +5,8 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
 
+import './envVarValidate';
+
 import logger from './logger';
 
 import routes from './routes';
@@ -18,6 +20,8 @@ import { close as closeMQ } from './mq';
 
 import * as config from './config';
 
+const env = process.env.NODE_ENV || 'development';
+
 process.on('unhandledRejection', function(reason, p) {
   logger.error({
     message: 'Unhandled Rejection',
@@ -26,7 +30,11 @@ process.on('unhandledRejection', function(reason, p) {
   });
 });
 
-const env = process.env.NODE_ENV || 'development';
+logger.info({
+  message: 'Starting server',
+  env,
+  config,
+});
 
 const app = express();
 

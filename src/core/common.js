@@ -57,9 +57,10 @@ export async function getNodeIdsOfAssociatedIdp({
 }) {
   try {
     return await tendermint.query('GetMsqDestination', {
-      hash_id: (namespace && identifier)
-        ? utils.hash(namespace + ':' + identifier)
-        : undefined,
+      hash_id:
+        namespace && identifier
+          ? utils.hash(namespace + ':' + identifier)
+          : undefined,
       min_ial,
       min_aal,
     });
@@ -197,9 +198,7 @@ export async function getNamespaceList() {
 }
 
 if (handleMessageFromQueue) {
-  messageQueueEvent.on('message', function(message) {
-    handleMessageFromQueue(message);
-  });
+  messageQueueEvent.on('message', handleMessageFromQueue);
 }
 
 export function verifyZKProof() {
