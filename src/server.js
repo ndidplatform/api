@@ -31,7 +31,7 @@ process.on('unhandledRejection', function(reason, p) {
 });
 
 logger.info({
-  message: 'Starting API server',
+  message: 'Starting server',
   env,
   config,
 });
