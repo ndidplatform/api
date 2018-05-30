@@ -19,7 +19,7 @@ export function clearAllScheduler() {
   }
 }
 
-async function checkAndNotify(requestId, idp_id) {
+async function checkAndNotify(requestId, idp_id, height) {
 
   logger.debug({
     message: 'RP check zk proof and notify',
@@ -71,7 +71,49 @@ async function checkAndNotify(requestId, idp_id) {
     // retry?
   }
 
-  return [idpCountOk, responsesValid];
+  logger.debug({
+    message: 'Check to notify AS',
+    request,
+    idpCountOk,
+    requestDetail
+  });
+
+  if (request.status === 'confirmed' && idpCountOk) {
+    const requestData = await db.getRequestToSendToAS(requestId);
+    if (requestData != null) {
+      //const height = block.block.header.height;
+      //tendermint.getBlockHeightFromNewBlockHeaderEvent(
+        //result
+      //);
+      // TODO: try catch / error handling
+      await sendRequestToAS(requestData, height);
+    } else {
+      // Authen only, no data request
+
+      // Clear callback url mapping and reference ID mapping
+      // since the request is no longer going to have further events
+      // (the request has reached its end state)
+      db.removeRequestCallbackUrl(requestId);
+      db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+      db.removeTimeoutScheduler(requestId);
+      clearTimeout(timeoutScheduler[requestId]);
+      delete timeoutScheduler[requestId];
+    }
+  } else if (
+    request.status === 'rejected' ||
+    request.is_closed ||
+    request.is_timed_out
+  ) {
+    // Clear callback url mapping, reference ID mapping, and request data to send to AS
+    // since the request is no longer going to have further events
+    // (the request has reached its end state)
+    db.removeRequestCallbackUrl(requestId);
+    db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+    db.removeRequestToSendToAS(requestId);
+    db.removeTimeoutScheduler(requestId);
+    clearTimeout(timeoutScheduler[requestId]);
+    delete timeoutScheduler[requestId];
+  }
 }
 
 export async function handleTendermintNewBlockHeaderEvent(
@@ -102,54 +144,8 @@ export async function handleTendermintNewBlockHeaderEvent(
     responseIdsInTendermintBlock.map(async (responseId) => {
       // TODO: clear key with smart-contract, eg. request_id or requestId
       const [requestId, idp_id] = responseId.split(':');
-
-      const request = await common.getRequest({
-        requestId,
-      });
-      let [idpCountOk, responsesValid] = await checkAndNotify(requestId, idp_id); 
+      await checkAndNotify(requestId, idp_id, height); 
       db.removeProofReceivedFromMQ(responseId);
-      if(!responsesValid) {
-        //TODO: some response is not valid, or conflict with each other
-        //should close?
-        return;
-      }
-
-      if (request.status === 'confirmed' && idpCountOk) {
-        const requestData = await db.getRequestToSendToAS(requestId);
-        if (requestData != null) {
-          //const height = block.block.header.height;
-          //tendermint.getBlockHeightFromNewBlockHeaderEvent(
-            //result
-          //);
-          // TODO: try catch / error handling
-          await sendRequestToAS(requestData, height);
-        } else {
-          // Authen only, no data request
-
-          // Clear callback url mapping and reference ID mapping
-          // since the request is no longer going to have further events
-          // (the request has reached its end state)
-          db.removeRequestCallbackUrl(requestId);
-          db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-          db.removeTimeoutScheduler(requestId);
-          clearTimeout(timeoutScheduler[requestId]);
-          delete timeoutScheduler[requestId];
-        }
-      } else if (
-        request.status === 'rejected' ||
-        request.is_closed ||
-        request.is_timed_out
-      ) {
-        // Clear callback url mapping, reference ID mapping, and request data to send to AS
-        // since the request is no longer going to have further events
-        // (the request has reached its end state)
-        db.removeRequestCallbackUrl(requestId);
-        db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-        db.removeRequestToSendToAS(requestId);
-        db.removeTimeoutScheduler(requestId);
-        clearTimeout(timeoutScheduler[requestId]);
-        delete timeoutScheduler[requestId];
-      }
     })
   );
   db.removeResponseIdsExpectedInBlock(fromHeight, toHeight);
@@ -182,6 +178,13 @@ async function getASReceiverList(data_request) {
 }
 
 async function sendRequestToAS(requestData, height) {
+
+  logger.debug({
+    message: 'RP call AS',
+    requestData,
+    height,
+  });
+
   // node id, which is substituted with ip,port for demo
   let rp_node_id = config.nodeId;
   if (requestData.data_request_list != undefined) {
@@ -489,7 +492,7 @@ export async function handleMessageFromQueue(data) {
           private_proof: data.private_proof,
         }];
       }
-      db.setRequestToSendToAS(data.request_id, data);
+      db.setRequestToSendToAS(data.request_id, request);
     }
 
     //must wait for height
@@ -509,12 +512,7 @@ export async function handleMessageFromQueue(data) {
       );
       return;
     }
-
-    checkAndNotify(data.request_id, data.idp_id);
-    
-    db.removeProofReceivedFromMQ(responseId);
-    db.removeResponseIdsExpectedInBlock(data.height, data.height);
-
+    checkAndNotify(data.request_id, data.idp_id, latestBlockHeight);
   }
 
   //receive data from AS
