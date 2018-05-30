@@ -1,7 +1,6 @@
 import express from 'express';
 
-import errorCode from '../error/code';
-import errorMessage from '../error/message';
+import errorType from '../error/type';
 
 import logger from '../logger';
 
@@ -55,8 +54,8 @@ router.use((req, res, next) => {
   if (tendermint.connected !== true) {
     res.status(503).json({
       error: {
-        message: errorMessage.TENDERMINT_NOT_CONNECTED,
-        code: errorCode.TENDERMINT_NOT_CONNECTED,
+        message: errorType.TENDERMINT_NOT_CONNECTED.message,
+        code: errorType.TENDERMINT_NOT_CONNECTED.code,
       },
     });
     return;
@@ -65,8 +64,8 @@ router.use((req, res, next) => {
   if (tendermint.syncing == null || tendermint.syncing === true) {
     res.status(503).json({
       error: {
-        message: errorMessage.TENDERMINT_SYNCING,
-        code: errorCode.TENDERMINT_SYNCING,
+        message: errorType.TENDERMINT_SYNCING.message,
+        code: errorType.TENDERMINT_SYNCING.code,
       },
     });
     return;

@@ -1,8 +1,7 @@
 import fetch from 'node-fetch';
 
 import CustomError from '../error/customError';
-import errorCode from '../error/code';
-import errorMessage from '../error/message';
+import errorType from '../error/type';
 
 import { tendermintAddress } from '../config';
 
@@ -29,8 +28,8 @@ async function httpUriCall(method, params) {
     return responseJson;
   } catch (error) {
     throw new CustomError({
-      message: errorMessage.TENDERMINT_HTTP_CALL_ERROR,
-      code: errorCode.TENDERMINT_HTTP_CALL_ERROR,
+      message: errorType.TENDERMINT_HTTP_CALL_ERROR.message,
+      code: errorType.TENDERMINT_HTTP_CALL_ERROR.code,
       details: {
         uri,
       },
