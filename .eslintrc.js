@@ -39,5 +39,13 @@ module.exports = {
         "babel/arrow-parens": 1,
         "babel/no-await-in-loop": 1,
         "babel/flow-object-type": 1
-    }
+    },
+    "overrides": [
+        {
+            "files": [ "*.test.js" ],
+            "env": {
+                "mocha": true
+            }
+        }
+    ]
 };

@@ -5,7 +5,7 @@
   "scripts": {
     "build": "npx babel src -d ./build/ --source-maps inline && cp -r ./devKey ./build",
     "start": "npm run build && node build/server.js",
-    "test": "npm run build && npx mocha build/test/test.js",
+    "test": "npm run build && npx mocha build/**/*.test.js",
     "initDevKey": "npm run build && ROLE=ndid node build/devKeyInit.js && npm run reset-data-for-dev",
     "delete-local-db-cache": "rm -rf db-api-*",
     "delete-latest-block-height": "rm -f latest-block-height-*",
