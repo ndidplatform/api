@@ -5,6 +5,8 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
 
+import './envVarValidate';
+
 import logger from './logger';
 
 import routes from './routes';
@@ -24,6 +26,11 @@ process.on('unhandledRejection', function(reason, p) {
     p,
     reason: reason.stack || reason,
   });
+});
+
+logger.info({
+  message: 'Starting API server',
+  config,
 });
 
 const env = process.env.NODE_ENV || 'development';

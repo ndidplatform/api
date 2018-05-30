@@ -1,7 +1,5 @@
 import path from 'path';
 
-// TODO: env var (config) validation
-
 export const serverPort = process.env.SERVER_PORT || 8080;
 
 export const logDirectoryPath = process.env.LOG_DIRECTORY_PATH || __dirname;
@@ -9,9 +7,9 @@ export const logDirectoryPath = process.env.LOG_DIRECTORY_PATH || __dirname;
 export const role = process.env.ROLE;
 
 export const defaultMqBindingPort = (() => {
+  if (process.env.ROLE === 'idp') return 5555;
   if (process.env.ROLE === 'rp') return 5556;
   if (process.env.ROLE === 'as') return 5557;
-  return 5555;
 })();
 
 export const defaultTendermintPort = (() => {
