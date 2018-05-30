@@ -12,7 +12,7 @@ import * as db from '../db';
 
 async function sendDataToRP(data) {
   let receivers = [];
-  let nodeId = data.rp_node_id;
+  let nodeId = data.rp_id;
   // TODO: try catch / error handling
   let { ip, port } = await common.getMsqAddress(nodeId);
   receivers.push({
@@ -53,6 +53,13 @@ async function registerServiceDestination(data) {
 
 async function notifyByCallback(request, serviceId) {
   //get by persistent
+
+  logger.debug({
+    message: 'AS try to send data',
+    request,
+    serviceId,
+  });
+
   let callbackUrl = await db.getServiceCallbackUrl(serviceId);
   //console.log('===>',callbackUrl);
   if (!callbackUrl) {
@@ -144,6 +151,12 @@ async function getResponseDetails(requestId) {
 async function getDataAndSendBackToRP(requestJson, responseDetails) {
   // Platform→AS
   // The AS replies with the requested data
+  logger.debug({
+    message: 'AS process request for data',
+    requestJson,
+    responseDetails,
+  });
+
   let data = await notifyByCallback(
     {
       request_id: requestJson.request_id,
@@ -160,7 +173,7 @@ async function getDataAndSendBackToRP(requestJson, responseDetails) {
   // TODO should check request status before send (whether request is closed or timeout)
   //console.log('===> AS SENDING');
   sendDataToRP({
-    rp_node_id: requestJson.rp_node_id,
+    rp_id: requestJson.rp_id,
     as_id,
     data,
     request_id: requestJson.request_id,

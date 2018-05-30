@@ -204,9 +204,10 @@ async function sendRequestToAS(requestData, height) {
         identifier: requestData.identifier,
         service_id: data_request.service_id,
         request_params: data_request.request_params,
-        rp_node_id: rp_node_id,
+        rp_id: requestData.rp_id,
         request_message: requestData.request_message,
         height,
+        challenge: requestData.challenge,
       });
     });
   }
@@ -492,7 +493,7 @@ export async function handleMessageFromQueue(data) {
           private_proof: data.private_proof,
         }];
       }
-      db.setRequestToSendToAS(data.request_id, request);
+      await db.setRequestToSendToAS(data.request_id, request);
     }
 
     //must wait for height
@@ -519,7 +520,6 @@ export async function handleMessageFromQueue(data) {
   // TODO: verifies signature of AS in blockchain.
   // Call callback to RP.
 
-  data = JSON.parse(data);
   try {
     const request = await common.getRequest({
       requestId: data.request_id,
