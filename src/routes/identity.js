@@ -13,7 +13,7 @@ router.post('/', validateBody, async (req, res, next) => {
       identifier,
       //secret,
       accessor_type,
-      accessor_key,
+      accessor_public_key,
       accessor_id,
       accessor_group_id,
     } = req.body;
@@ -23,7 +23,7 @@ router.post('/', validateBody, async (req, res, next) => {
       identifier,
       //secret,
       accessor_type,
-      accessor_key,
+      accessor_public_key,
       accessor_id,
       accessor_group_id,
     });

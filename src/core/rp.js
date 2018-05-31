@@ -688,6 +688,8 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
     if(response.idp_id === idp_id) publicProof = response.identity_proof;
   });
 
+  //TODO verify signature
+
   return utils.verifyZKProof(
     public_key, 
     challenge, 

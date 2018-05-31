@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import * as cryptoUtils from './crypto';
 import * as config from '../config';
 import fetch from 'node-fetch';
+import bignum from 'bignum';
+import { spawnSync } from 'child_process';
 
 let nonce = Date.now() % 10000;
 let signatureCallback = false;
@@ -77,23 +79,40 @@ export function encryptAsymetricKey(publicKey, message) {
 }
 
 export function generateIdentityProof(data) {
-  return cryptoUtils.generateIdentityProof(data);
+  //random
+  let k = crypto.randomBytes(2047);
+  let n = extractModulusFromPublicKey(data.publicKey);
+  let secret = stringToBigInt(data.secret);
+
+  let blockchainProof = cryptoUtils.publicEncrypt(data.publicKey, k);
+  let privateProof = (
+    stringToBigInt( k.toString('utf8') )
+    .mul(secret.powm(data.challenge,n)
+  )).mod(n);
+
+  console.log('----',[blockchainProof, privateProof]);
+  return [blockchainProof, privateProof];
 }
 
-/*function extractModulusFromPublicKey(publicKey) {
-  //TODO
-  return 2;
+function extractModulusFromPublicKey(publicKey) {
+  let fileName = 'tmpNDIDFile' + Date.now();
+  fs.writeFileSync(fileName,publicKey);
+  let result = spawnSync('openssl',('rsa -pubin -in ' + fileName + ' -text -noout').split(' '));
+  let resultStr = result.stdout.toString().split(':').join('').split(' ').join('');
+  let modStr = resultStr.split('\n').splice(2);
+  modStr = modStr.splice(0,modStr.length-2).join('');
+
+  fs.unlink(fileName);
+  return stringToBigInt(Buffer.from(modStr,'hex').toString());
 }
 
 function powerMod(base, exponent, modulus) {
-  //TODO
-  return base.powerMod(exponent, modulus);
+  return base.powm(exponent, modulus);
 }
 
 function stringToBigInt(string) {
-  //TODO
-  return 0;
-}*/
+  return bignum.fromBuffer(Buffer.from(string,'utf8'));
+}
 
 export function verifyZKProof(publicKey, 
   challenge, 
@@ -101,23 +120,21 @@ export function verifyZKProof(publicKey,
   publicProof, 
   sid,
 ) {
-  //TODO implement
-  /*let tmp1 = cryptoUtils.publicEncrypt(publicKey, Buffer.from(privateProof,'utf8'));
   let hashedSid = hash(sid.namespace + ':' + sid.identifier);
-
   let n = extractModulusFromPublicKey(publicKey);
+
+  let tmp1 = stringToBigInt(
+    cryptoUtils.publicEncrypt(publicKey, Buffer.from(privateProof,'utf8'))
+  );
+
   let tmp2 = powerMod(
     stringToBigInt(hashedSid), 
-    stringToBigInt(challenge), 
-    stringToBigInt(n)
-  ); // (hashedSid**challenge)%(n of publicKey)
+    stringToBigInt(challenge),
+    n,
+  ); 
 
-  let tmp1BigInt = stringToBigInt(tmp1);
-  let tmp2BigInt = stringToBigInt(tmp2);
-
-  let tmp3 = (tmp1BigInt.times(tmp2BigInt)).mod(n);
-  return stringToBigInt(publicProof).equal(tmp3);*/
-  return true;
+  let tmp3 = (tmp1.mul(tmp2)).mod(n);
+  return stringToBigInt(publicProof).eq(tmp3);
 }
 
 export function setSignatureCallback(signCallbackUrl, decryptCallbackUrl) {

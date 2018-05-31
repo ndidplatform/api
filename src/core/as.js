@@ -390,6 +390,8 @@ async function verifyZKProof(request_id, dataFromMq) {
       if(response.idp_id === privateProofObjectList[i].idp_id) publicProof = response.identity_proof;
     });
 
+     //TODO verify signature
+
     valid &= utils.verifyZKProof(
       public_key, 
       dataFromMq.challenge, 

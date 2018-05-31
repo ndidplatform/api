@@ -61,9 +61,16 @@ export async function createIdpResponse(data) {
       status,
       signature,
       accessor_id,
+      secret,
     } = data;
 
-    let [blockchainProof, privateProofValue] = utils.generateIdentityProof(data);
+    let [blockchainProof, privateProofValue] = utils.generateIdentityProof({
+      publicKey: await common.getAccessorKey(accessor_id),
+      challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge,
+      ...data
+    });
+    await db.removeRequestReceivedFromMQ(request_id);
+
     let privateProofObject = {
       privateProofValue,
       accessor_id,
@@ -162,6 +169,8 @@ export async function handleMessageFromQueue(request) {
     request,
   });
   const requestJson = JSON.parse(request);
+  //need challenge for response
+  await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
 
   const latestBlockHeight = tendermint.latestBlockHeight;
   if (latestBlockHeight <= requestJson.height) {
@@ -170,7 +179,6 @@ export async function handleMessageFromQueue(request) {
       tendermintLatestBlockHeight: latestBlockHeight,
       messageBlockHeight: requestJson.height,
     });
-    await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
     await db.addRequestIdExpectedInBlock(
       requestJson.height,
       requestJson.request_id
@@ -240,7 +248,8 @@ export async function handleTendermintNewBlockHeaderEvent(
           ...message,
         });
       }
-      db.removeRequestReceivedFromMQ(requestId);
+      //need challenge when respond
+      //db.removeRequestReceivedFromMQ(requestId);
     })
   );
 

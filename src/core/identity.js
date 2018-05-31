@@ -11,7 +11,7 @@ export async function createNewIdentity(data) {
       identifier,
       //secret,
       accessor_type,
-      accessor_key,
+      accessor_public_key,
       accessor_id,
       accessor_group_id,
     } = data;
@@ -30,7 +30,7 @@ export async function createNewIdentity(data) {
     await Promise.all([
       tendermint.transact('CreateIdentity',{
         accessor_type,
-        accessor_key,
+        accessor_public_key,
         accessor_id,
         accessor_group_id
       }, utils.getNonce()),

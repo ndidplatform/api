@@ -222,7 +222,7 @@ export default {
           identifier: { type: 'string', minLength: 1 },
           //secret: { type: 'string', minLength: 1 },
           accessor_type: { type: 'string', minLength: 1 },
-          accessor_key: { type: 'string', minLength: 1 },
+          accessor_public_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
         },
         required: [
@@ -230,7 +230,7 @@ export default {
           'identifier',
           //'secret',
           'accessor_type',
-          'accessor_key',
+          'accessor_public_key',
           'accessor_id',
         ],
       },
