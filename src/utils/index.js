@@ -80,11 +80,45 @@ export function generateIdentityProof(data) {
   return cryptoUtils.generateIdentityProof(data);
 }
 
-export function verifyZKProof() {
-  //TODO implement
-  return true;
+/*function extractModulusFromPublicKey(publicKey) {
+  //TODO
+  return 2;
 }
 
+function powerMod(base, exponent, modulus) {
+  //TODO
+  return base.powerMod(exponent, modulus);
+}
+
+function stringToBigInt(string) {
+  //TODO
+  return 0;
+}*/
+
+export function verifyZKProof(publicKey, 
+  challenge, 
+  privateProof, 
+  publicProof, 
+  sid,
+) {
+  //TODO implement
+  /*let tmp1 = cryptoUtils.publicEncrypt(publicKey, Buffer.from(privateProof,'utf8'));
+  let hashedSid = hash(sid.namespace + ':' + sid.identifier);
+
+  let n = extractModulusFromPublicKey(publicKey);
+  let tmp2 = powerMod(
+    stringToBigInt(hashedSid), 
+    stringToBigInt(challenge), 
+    stringToBigInt(n)
+  ); // (hashedSid**challenge)%(n of publicKey)
+
+  let tmp1BigInt = stringToBigInt(tmp1);
+  let tmp2BigInt = stringToBigInt(tmp2);
+
+  let tmp3 = (tmp1BigInt.times(tmp2BigInt)).mod(n);
+  return stringToBigInt(publicProof).equal(tmp3);*/
+  return true;
+}
 
 export function setSignatureCallback(signCallbackUrl, decryptCallbackUrl) {
   signatureCallback = signCallbackUrl;

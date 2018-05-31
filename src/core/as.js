@@ -355,7 +355,9 @@ export async function init() {
 async function verifyZKProof(request_id, dataFromMq) {
   if(!dataFromMq) dataFromMq = await db.getRequestReceivedFromMQ(request_id);
   let {
-    privateProofObjectList
+    privateProofObjectList,
+    namespace,
+    identifier,
   } = dataFromMq;
 
   //query and verify zk, also check conflict with each others
@@ -392,7 +394,11 @@ async function verifyZKProof(request_id, dataFromMq) {
       public_key, 
       dataFromMq.challenge, 
       privateProofObjectList[i].privateProofObject.privateProofValue, 
-      publicProof
+      publicProof,
+      {
+        namespace,
+        identifier
+      }
     );
   }
   return valid;

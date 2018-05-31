@@ -647,7 +647,7 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
   //query accessor_group_id of this accessor_id
   let accessor_group_id = await common.getAccessorGroupId(privateProofObject.accessor_id);
   //and check against all accessor_group_id of responses
-  let privateProofObjectList = (await db.getRequestToSendToAS(request_id)).privateProofObjectList;
+  let { namespace,identifier,privateProofObjectList } = (await db.getRequestToSendToAS(request_id));
 
   logger.debug({
     message: 'RP verifying zk proof',
@@ -688,5 +688,14 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
     if(response.idp_id === idp_id) publicProof = response.identity_proof;
   });
 
-  return utils.verifyZKProof(public_key, challenge, privateProofObject.privateProofValue, publicProof);
+  return utils.verifyZKProof(
+    public_key, 
+    challenge, 
+    privateProofObject.privateProofValue, 
+    publicProof, 
+    {
+      namespace,
+      identifier
+    }
+  );
 }
