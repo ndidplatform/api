@@ -220,7 +220,7 @@ export default {
         properties: {
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },
-          secret: { type: 'string', minLength: 1 },
+          //secret: { type: 'string', minLength: 1 },
           accessor_type: { type: 'string', minLength: 1 },
           accessor_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
@@ -228,7 +228,7 @@ export default {
         required: [
           'namespace',
           'identifier',
-          'secret',
+          //'secret',
           'accessor_type',
           'accessor_key',
           'accessor_id',

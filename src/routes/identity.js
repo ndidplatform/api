@@ -11,19 +11,21 @@ router.post('/', validateBody, async (req, res, next) => {
     const {
       namespace,
       identifier,
-      secret,
+      //secret,
       accessor_type,
       accessor_key,
       accessor_id,
+      accessor_group_id,
     } = req.body;
 
     await identity.createNewIdentity({
       namespace,
       identifier,
-      secret,
+      //secret,
       accessor_type,
       accessor_key,
       accessor_id,
+      accessor_group_id,
     });
 
     res.status(201).end();

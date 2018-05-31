@@ -35,9 +35,13 @@ const Entities = {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     rp_id: Sequelize.STRING,
   }),
+  challengeFromRequestId: sequelize.define('challengeFromRequestId', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    challenge: Sequelize.STRING,
+  }),
   proofReceivedFromMQ: sequelize.define('proofReceivedFromMQ', {
     responseId: { type: Sequelize.STRING, primaryKey: true },
-    privateProof: Sequelize.JSON,
+    privateProofObject: Sequelize.JSON,
   }),
   requestIdReferenceIdMapping: sequelize.define('requestIdReferenceIdMapping', {
     referenceId: { type: Sequelize.TEXT, primaryKey: true },

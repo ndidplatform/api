@@ -5,6 +5,7 @@ import * as tendermint from '../tendermint/ndid';
 import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';
+import * as db from '../db';
 import { eventEmitter as messageQueueEvent } from '../mq';
 import * as utils from '../utils';
 import { role, nodeId } from '../config';
@@ -201,18 +202,14 @@ if (handleMessageFromQueue) {
   messageQueueEvent.on('message', handleMessageFromQueue);
 }
 
-export function verifyZKProof(request_id, idp_id) {
-  const { privateProof, challenge } from persistentDB;
-
-  //query and verify zk, also check conflict with each others
-  //query accessor_group_id of this accessor_id
-  //and check against all accessor_group_id of responses
-
-  //query accessor_public_key from privateProof.accessor_id
-  let public_key = '...' + privateProof.accessor_id;
-  //query publicProof from response of idp_id in request
-  let publicProof = '...' + request_id + idp_id;
-
-  return utils.verifyZKProof(public_key, challenge, privateProof, publicProof);
+export async function getAccessorGroupId(accessor_id) {
+  return (await tendermint.query('GetAccessorGroupID',{
+    accessor_id,
+  })).accessor_group_id;
 }
 
+export async function getAccessorKey(accessor_id) {
+  return (await tendermint.query('GetAccessorKey',{
+    accessor_id,
+  })).accessor_public_key;
+}

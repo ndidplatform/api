@@ -139,22 +139,49 @@ export function removeRPIdFromRequestId(requestId) {
   });
 }
 
+export function getChallengeFromRequestId(requestId) {
+  return db.get({
+    name: 'challengeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'challenge',
+  });
+}
+
+export function setChallengeFromRequestId(requestId, challenge) {
+  return db.set({
+    name: 'challengeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'challenge',
+    value: challenge,
+  });
+}
+
+export function removeChallengeFromRequestId(requestId) {
+  return db.remove({
+    name: 'challengeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 export function getProofReceivedFromMQ(responseId) {
   return db.get({
     name: 'proofReceivedFromMQ',
     keyName: 'responseId',
     key: responseId,
-    valueName: 'privateProof',
+    valueName: 'privateProofObject',
   });
 }
 
-export function setProofReceivedFromMQ(responseId, privateProof) {
+export function setProofReceivedFromMQ(responseId, privateProofObject) {
   return db.set({
     name: 'proofReceivedFromMQ',
     keyName: 'responseId',
     key: responseId,
-    valueName: 'privateProof',
-    value: privateProof,
+    valueName: 'privateProofObject',
+    value: privateProofObject,
   });
 }
 

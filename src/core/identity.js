@@ -13,7 +13,7 @@ export async function createNewIdentity(data) {
       accessor_type,
       accessor_key,
       accessor_id,
-      accessor_group_id
+      accessor_group_id,
     } = data;
 
     let hash_id = utils.hash(namespace + ':' + identifier);

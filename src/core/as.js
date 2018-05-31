@@ -221,7 +221,7 @@ export async function handleMessageFromQueue(request) {
     // TODO try catch / error handling
     const responseDetails = await getResponseDetails(requestJson.request_id);
     //loop and check zk proof for all response
-    if(!common.verifyZKProof()) {
+    if(!verifyZKProof(requestJson.request_id, requestJson)) {
       //TODO, do not answer? or send data to rp and tell them proof is invalid?
       return;
     }
@@ -268,7 +268,7 @@ export async function handleTendermintNewBlockHeaderEvent(
       });
       const message = await db.getRequestReceivedFromMQ(requestId);
       const valid = await common.checkRequestIntegrity(requestId, message);
-      if (valid) {
+      if (valid && verifyZKProof(requestId)) {
         const responseDetails = await getResponseDetails(requestId);
         getDataAndSendBackToRP(message, responseDetails);
       }
@@ -350,4 +350,50 @@ export async function init() {
     node_id,
     public_key: 'very_secure_public_key_for_as'
   });*/
+}
+
+async function verifyZKProof(request_id, dataFromMq) {
+  if(!dataFromMq) dataFromMq = await db.getRequestReceivedFromMQ(request_id);
+  let {
+    privateProofObjectList
+  } = dataFromMq;
+
+  //query and verify zk, also check conflict with each others
+  let accessor_group_id = await common.getAccessorGroupId(
+    privateProofObjectList[0].privateProofObject.accessor_id
+  );
+  for(let i = 1 ; i < privateProofObjectList.length ; i++) {
+    let otherGroupId = await common.getAccessorGroupId(
+      privateProofObjectList[i].privateProofObject.accessor_id
+    );
+    if(otherGroupId !== accessor_group_id) {
+      //TODO handle this?
+      //throw 'Conflicted response';
+      return false;
+    }
+  }
+
+  let responses = (await common.getRequestDetail({
+    requestId: request_id
+  })).responses;
+  let valid = true;
+  for(let i = 0 ; i < privateProofObjectList.length ; i++) {
+    //query accessor_public_key from privateProof.accessor_id
+    let public_key = await common.getAccessorKey(
+      privateProofObjectList[i].privateProofObject.accessor_id
+    );
+    //query publicProof from response of idp_id in request
+    let publicProof;
+    responses.forEach((response) => {
+      if(response.idp_id === privateProofObjectList[i].idp_id) publicProof = response.identity_proof;
+    });
+
+    valid &= utils.verifyZKProof(
+      public_key, 
+      dataFromMq.challenge, 
+      privateProofObjectList[i].privateProofObject.privateProofValue, 
+      publicProof
+    );
+  }
+  return valid;
 }

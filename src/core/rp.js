@@ -19,7 +19,7 @@ export function clearAllScheduler() {
   }
 }
 
-async function checkAndNotify(requestId, idp_id, height) {
+async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
 
   logger.debug({
     message: 'RP check zk proof and notify',
@@ -45,7 +45,7 @@ async function checkAndNotify(requestId, idp_id, height) {
 
   const idpCountOk =
     requestDetail.responses.length === requestDetail.min_idp;
-  const responsesValid = await common.verifyZKProof(requestId, idp_id);
+  const responsesValid = await verifyZKProof(requestId, idp_id, dataFromMq);
 
   try {
     await fetch(callbackUrl, {
@@ -185,8 +185,6 @@ async function sendRequestToAS(requestData, height) {
     height,
   });
 
-  // node id, which is substituted with ip,port for demo
-  let rp_node_id = config.nodeId;
   if (requestData.data_request_list != undefined) {
     requestData.data_request_list.forEach(async (data_request) => {
       let receivers = await getASReceiverList(data_request);
@@ -208,6 +206,7 @@ async function sendRequestToAS(requestData, height) {
         request_message: requestData.request_message,
         height,
         challenge: requestData.challenge,
+        privateProofObjectList :requestData.privateProofObjectList,
       });
     });
   }
@@ -349,6 +348,7 @@ export async function createRequest({
     }
 
     let challenge = utils.randomHexBytes(config.challengeLength);
+    db.setChallengeFromRequestId(request_id, challenge);
 
     const requestData = {
       namespace,
@@ -366,9 +366,10 @@ export async function createRequest({
     };
 
     // save request data to DB to send to AS via mq when authen complete
-    if (data_request_list != null && data_request_list.length !== 0) {
+    // store even no data require, use for zk proof
+    //if (data_request_list != null && data_request_list.length !== 0) {
       await db.setRequestToSendToAS(request_id, requestData);
-    }
+    //}
 
     // add data to blockchain
     const requestDataToBlockchain = {
@@ -481,16 +482,22 @@ export async function handleMessageFromQueue(data) {
     let request = await db.getRequestToSendToAS(data.request_id);
     //AS involve
     if(request) {
-      if(request.private_proof_list) {
-        request.private_proof_list.push({
+      if(request.privateProofObjectList) {
+        request.privateProofObjectList.push({
           idp_id: data.idp_id,
-          private_proof: data.private_proof,
+          privateProofObject: {
+            privateProofValue: data.privateProofValue,
+            accessor_id: data.accessor_id,
+          }
         });
       }
       else {
-        request.private_proof_list = [{
+        request.privateProofObjectList = [{
           idp_id: data.idp_id,
-          private_proof: data.private_proof,
+          privateProofObject: {
+            privateProofValue: data.privateProofValue,
+            accessor_id: data.accessor_id,
+          }
         }];
       }
       await db.setRequestToSendToAS(data.request_id, request);
@@ -513,7 +520,7 @@ export async function handleMessageFromQueue(data) {
       );
       return;
     }
-    checkAndNotify(data.request_id, data.idp_id, latestBlockHeight);
+    checkAndNotify(data.request_id, data.idp_id, latestBlockHeight, data);
   }
 
   //receive data from AS
@@ -619,4 +626,67 @@ export async function init() {
   await tendermint.ready;
 
   common.registerMsqAddress(config.mqRegister);
+}
+
+async function verifyZKProof(request_id, idp_id, dataFromMq) {
+  let challenge = await db.getChallengeFromRequestId(request_id);
+  let privateProofObject = dataFromMq 
+    ? dataFromMq 
+    : await db.getProofReceivedFromMQ(request_id + ':' + idp_id);
+
+  //query and verify zk, also check conflict with each others
+  logger.debug({
+    message: 'RP verifying zk proof',
+    request_id,
+    idp_id,
+    dataFromMq,
+    challenge,
+    privateProofObject
+  });
+
+  //query accessor_group_id of this accessor_id
+  let accessor_group_id = await common.getAccessorGroupId(privateProofObject.accessor_id);
+  //and check against all accessor_group_id of responses
+  let privateProofObjectList = (await db.getRequestToSendToAS(request_id)).privateProofObjectList;
+
+  logger.debug({
+    message: 'RP verifying zk proof',
+    privateProofObjectList,
+  });
+
+  for(let i = 0 ; i < privateProofObjectList.length ; i++) {
+    let otherPrivateProofObject = privateProofObjectList[i].privateProofObject;
+    let otherGroupId = await common.getAccessorGroupId(otherPrivateProofObject.accessor_id);
+    if(otherGroupId !== accessor_group_id) {
+      //TODO handle this, manually close?
+      logger.debug({
+        message: 'Conflict response',
+        otherGroupId,
+        otherPrivateProofObject,
+        accessor_group_id,
+        accessorId: privateProofObject.accessor_id,
+      });
+      throw 'Conflicted response';
+    }
+  }
+
+  //query accessor_public_key from privateProofObject.accessor_id
+  let public_key = await common.getAccessorKey(privateProofObject.accessor_id);
+
+  //query publicProof from response of idp_id in request
+  let publicProof;
+  let responses = (await common.getRequestDetail({
+    requestId: request_id
+  })).responses;
+
+  logger.debug({
+    message: 'Request detail',
+    responses,
+  });
+
+  responses.forEach((response) => {
+    if(response.idp_id === idp_id) publicProof = response.identity_proof;
+  });
+
+  return utils.verifyZKProof(public_key, challenge, privateProofObject.privateProofValue, publicProof);
 }

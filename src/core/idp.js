@@ -63,9 +63,9 @@ export async function createIdpResponse(data) {
       accessor_id,
     } = data;
 
-    let [blockchainProof, privateProof] = utils.generateIdentityProof(data);
-    privateProof = {
-      privateProof,
+    let [blockchainProof, privateProofValue] = utils.generateIdentityProof(data);
+    let privateProofObject = {
+      privateProofValue,
       accessor_id,
     };
 
@@ -86,7 +86,7 @@ export async function createIdpResponse(data) {
       utils.getNonce()
     );
 
-    sendPrivateProofToRP(request_id, privateProof, height);
+    sendPrivateProofToRP(request_id, privateProofObject, height);
 
   } catch (error) {
     const err = new CustomError({
@@ -125,7 +125,7 @@ async function notifyByCallback(request) {
   }
 }
 
-async function sendPrivateProofToRP(request_id, private_proof, height) {
+async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   let rp_id = await db.getRPIdFromRequestId(request_id);
 
   logger.info({
@@ -145,7 +145,7 @@ async function sendPrivateProofToRP(request_id, private_proof, height) {
 
   mq.send([rpMq], {
     request_id,
-    private_proof,
+    ...privateProofObject,
     height,
     idp_id: config.nodeId
   });
