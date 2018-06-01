@@ -75,10 +75,11 @@ async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
     message: 'Check to notify AS',
     request,
     idpCountOk,
-    requestDetail
+    requestDetail,
+    responsesValid,
   });
 
-  if (request.status === 'confirmed' && idpCountOk) {
+  if (request.status === 'confirmed' && idpCountOk && responsesValid) {
     const requestData = await db.getRequestToSendToAS(requestId);
     if (requestData != null) {
       //const height = block.block.header.height;

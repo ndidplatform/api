@@ -81,29 +81,33 @@ export function encryptAsymetricKey(publicKey, message) {
 export function generateIdentityProof(data) {
   //random
   let k = crypto.randomBytes(2047);
-  let n = extractModulusFromPublicKey(data.publicKey);
+  let { n, e } = extractParameterFromPublicKey(data.publicKey);
   let secret = stringToBigInt(data.secret);
 
-  let blockchainProof = cryptoUtils.publicEncrypt(data.publicKey, k);
+  let blockchainProof = powerMod(stringToBigInt(k),e,n).toBuffer().toString('base64');
+  console.log(blockchainProof);
   let privateProof = (
-    stringToBigInt( k.toString('utf8') )
+    stringToBigInt( k.toString('base64') )
     .mul(secret.powm(data.challenge,n)
-  )).mod(n);
+  )).mod(n).toBuffer().toString('base64');
 
-  console.log('----',[blockchainProof, privateProof]);
   return [blockchainProof, privateProof];
 }
 
-function extractModulusFromPublicKey(publicKey) {
+function extractParameterFromPublicKey(publicKey) {
   let fileName = 'tmpNDIDFile' + Date.now();
   fs.writeFileSync(fileName,publicKey);
   let result = spawnSync('openssl',('rsa -pubin -in ' + fileName + ' -text -noout').split(' '));
-  let resultStr = result.stdout.toString().split(':').join('').split(' ').join('');
-  let modStr = resultStr.split('\n').splice(2);
-  modStr = modStr.splice(0,modStr.length-2).join('');
+  let resultStr = result.stdout.toString().split(':').join('');
+  let resultNoHeader = resultStr.split('\n').splice(2);
+  let modStr = resultNoHeader.splice(0,resultNoHeader.length-2).join('').split(' ').join('');
+  let exponentStr = resultNoHeader[0].split(' ')[1];
 
   fs.unlink(fileName);
-  return stringToBigInt(Buffer.from(modStr,'hex').toString());
+  return {
+    n: stringToBigInt(Buffer.from(modStr,'hex').toString('base64')),
+    e: bignum(exponentStr)
+  };
 }
 
 function powerMod(base, exponent, modulus) {
@@ -111,7 +115,7 @@ function powerMod(base, exponent, modulus) {
 }
 
 function stringToBigInt(string) {
-  return bignum.fromBuffer(Buffer.from(string,'utf8'));
+  return bignum.fromBuffer(Buffer.from(string,'base64'));
 }
 
 export function verifyZKProof(publicKey, 
@@ -121,12 +125,9 @@ export function verifyZKProof(publicKey,
   sid,
 ) {
   let hashedSid = hash(sid.namespace + ':' + sid.identifier);
-  let n = extractModulusFromPublicKey(publicKey);
+  let { n, e } = extractParameterFromPublicKey(publicKey);
 
-  let tmp1 = stringToBigInt(
-    cryptoUtils.publicEncrypt(publicKey, Buffer.from(privateProof,'utf8'))
-  );
-
+  let tmp1 = powerMod(stringToBigInt(privateProof),e,n);
   let tmp2 = powerMod(
     stringToBigInt(hashedSid), 
     stringToBigInt(challenge),
