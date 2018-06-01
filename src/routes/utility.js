@@ -7,14 +7,14 @@ const router = express.Router();
 
 router.get('/idp', validateQuery, async (req, res, next) => {
   try {
-    const { min_ial = 1, min_aal = 1 } = req.query;
+    const { min_ial = 0, min_aal = 0 } = req.query;
 
-    const idpNodeIds = await common.getNodeIdsOfAssociatedIdp({
+    const idpNodes = await common.getIdpNodes({
       min_ial,
       min_aal,
     });
 
-    res.status(200).json(idpNodeIds);
+    res.status(200).json(idpNodes);
   } catch (error) {
     next(error);
   }
@@ -26,22 +26,16 @@ router.get(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { min_ial = 1, min_aal = 1 } = req.query;
+      const { min_ial = 0, min_aal = 0 } = req.query;
 
-      const idpNodeIds = await common.getNodeIdsOfAssociatedIdp({
+      const idpNodes = await common.getIdpNodes({
         namespace,
         identifier,
         min_ial,
         min_aal,
       });
 
-      res.status(200).json(
-        idpNodeIds
-          ? idpNodeIds
-          : {
-              node: [],
-            }
-      );
+      res.status(200).json(idpNodes);
     } catch (error) {
       next(error);
     }
@@ -51,16 +45,10 @@ router.get(
 router.get('/as/:service_id', async (req, res, next) => {
   try {
     const { service_id } = req.params;
-    let asNodeIds = await common.getNodeIdsOfAsWithService({
+    let asNodes = await common.getAsNodesByServiceId({
       service_id,
     });
-    res.status(200).json(
-      asNodeIds
-        ? asNodeIds
-        : {
-            node_id: [],
-          }
-    );
+    res.status(200).json(asNodes);
   } catch (error) {
     next(error);
   }

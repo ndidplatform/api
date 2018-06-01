@@ -13,6 +13,7 @@ export async function createNewIdentity(data) {
       accessor_type,
       accessor_key,
       accessor_id,
+      ial,
     } = data;
 
     //TODO
@@ -24,9 +25,7 @@ export async function createNewIdentity(data) {
       users: [
         {
           hash_id: utils.hash(namespace + ':' + identifier),
-          //TODO
-          //where to get this value?, is it tie to IDP or tie to each identity??
-          ial: 3,
+          ial,
         },
       ],
       node_id: config.nodeId,

@@ -25,6 +25,8 @@ import errorType from '../error/type';
 // DuplicateNamespace     uint32 = 21
 // NamespaceNotFound      uint32 = 22
 // DuplicateRequestID     uint32 = 23
+// NodeIDNotFound         uint32 = 24
+// DuplicatePublicKey     uint32 = 25
 
 const codeMapping = {
   1: errorType.ENCODING_ERROR, // Not used in API (calls from API won't generate this error)
@@ -50,6 +52,8 @@ const codeMapping = {
   21: errorType.DUPLICATE_NAMESPACE,
   22: errorType.NAMESPACE_NOT_FOUND,
   23: errorType.DUPLICATE_REQUEST_ID,
+  24: errorType.NODE_ID_NOT_FOUND,
+  25: errorType.DUPLICATE_PUBLIC_KEY,
 };
 
 export function convertAbciAppCodeToErrorType(abciAppCode) {

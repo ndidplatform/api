@@ -49,14 +49,9 @@ export async function getRequestDetail({ requestId }) {
   }
 }
 
-export async function getNodeIdsOfAssociatedIdp({
-  namespace,
-  identifier,
-  min_ial,
-  min_aal,
-}) {
+export async function getIdpNodes({ namespace, identifier, min_ial, min_aal }) {
   try {
-    return await tendermint.query('GetMsqDestination', {
+    const result = await tendermint.query('GetIdpNodes', {
       hash_id:
         namespace && identifier
           ? utils.hash(namespace + ':' + identifier)
@@ -64,22 +59,24 @@ export async function getNodeIdsOfAssociatedIdp({
       min_ial,
       min_aal,
     });
+    return result.node != null ? result.node : [];
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get associated node IDs from blockchain',
+      message: 'Cannot get IdP nodes from blockchain',
       cause: error,
     });
   }
 }
 
-export async function getNodeIdsOfAsWithService({ service_id }) {
+export async function getAsNodesByServiceId({ service_id }) {
   try {
-    return await tendermint.query('GetServiceDestination', {
+    const result = await tendermint.query('GetAsNodesByServiceId', {
       service_id,
     });
+    return result.node != null ? result.node : [];
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get associated AS node IDs from blockchain',
+      message: 'Cannot get AS nodes by service ID from blockchain',
       cause: error,
     });
   }

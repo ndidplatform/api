@@ -93,7 +93,7 @@ router.get('/requests/data/:request_id', async (req, res, next) => {
   }
 });
 
-router.delete('/requests/data/:request_id', async (req, res, next) => {
+router.post('/requests/housekeeping/data/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
@@ -104,7 +104,7 @@ router.delete('/requests/data/:request_id', async (req, res, next) => {
   }
 });
 
-router.delete('/requests/data', async (req, res, next) => {
+router.post('/requests/housekeeping/data', async (req, res, next) => {
   try {
     await rp.removeAllDataFromAS();
     res.status(204).end();

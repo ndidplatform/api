@@ -208,6 +208,7 @@ function getTransactResult(response) {
         throw new CustomError({
           message: convertedErrorType.message,
           code: convertedErrorType.code,
+          clientError: convertedErrorType.clientError,
           details: {
             abciCode: response.result.deliver_tx.code,
             height,

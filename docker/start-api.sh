@@ -110,7 +110,7 @@ register_node_id() {
     -w '%{http_code}' \
     -o /dev/null)
 
-  if [ "${RESPONSE_CODE}" = "204" ]; then
+  if [ "${RESPONSE_CODE}" = "201" ]; then
     echo "Registering ${NODE_ID} node succeeded"
     return 0
   else
