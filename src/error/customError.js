@@ -1,3 +1,5 @@
+import type from './type';
+
 export default class CustomError extends Error {
   constructor({ message, code, clientError, details, cause }) {
     super(message);
@@ -37,18 +39,20 @@ export default class CustomError extends Error {
     if (this.code != null) {
       return this.code;
     }
-    if (this.cause != null) {
+    if (this.cause != null && this.cause.name === 'CustomError') {
       return this.cause.getCode();
     }
+    return type.UNKNOWN_ERROR.code;
   }
 
   getMessageWithCode() {
     if (this.code != null) {
       return this.message;
     }
-    if (this.cause != null) {
+    if (this.cause != null && this.cause.name === 'CustomError') {
       return this.cause.getMessageWithCode();
     }
+    return this.cause.message;
   }
 
   getMessageWithRootCause() {
@@ -61,7 +65,7 @@ export default class CustomError extends Error {
     if (this.clientError != null) {
       return this.clientError;
     }
-    if (this.cause != null) {
+    if (this.cause != null && this.cause.name === 'CustomError') {
       return this.cause.isRootCauseClientError();
     }
     return false;

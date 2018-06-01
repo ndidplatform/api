@@ -164,7 +164,7 @@ export default {
             pattern: '^(https?)://',
           },
         },
-        required: ['service_id'],
+        required: ['service_id', 'service_name', 'min_ial', 'min_aal', 'url'],
       },
     },
     '/dpki/node/create': {
@@ -184,23 +184,38 @@ export default {
           node_key: { type: 'string', minLength: 1 },
           node_master_key: { type: 'string', minLength: 1 },
         },
+        anyOf: [
+          {
+            required: ['node_key'],
+          },
+          {
+            required: ['node_master_key'],
+          },
+        ],
       },
     },
     '/dpki/node/register_callback': {
       body: {
         properties: {
-          signUrl: {
+          sign_url: {
             type: 'string',
             format: 'uri',
             pattern: '^(https?)://',
           },
-          decryptUrl: {
+          decrypt_url: {
             type: 'string',
             format: 'uri',
             pattern: '^(https?)://',
           },
         },
-        required: ['url'],
+        anyOf: [
+          {
+            required: ['sign_url'],
+          },
+          {
+            required: ['decrypt_url'],
+          },
+        ],
       },
     },
     '/dpki/node/register_callback_master': {
@@ -224,6 +239,7 @@ export default {
           accessor_type: { type: 'string', minLength: 1 },
           accessor_public_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
+          ial: { $ref: 'defs#/definitions/ial' },
         },
         required: [
           'namespace',
@@ -232,13 +248,20 @@ export default {
           'accessor_type',
           'accessor_public_key',
           'accessor_id',
+          'ial',
         ],
       },
     },
     '/identity/:namespace/:identifier': {
       body: {
-        properties: {
-          // TODO
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            namespace: { type: 'string', minLength: 1 },
+            identifier: { type: 'string', minLength: 1 },
+          },
+          required: ['namespace', 'identifier'],
         },
       },
     },

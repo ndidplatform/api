@@ -34,7 +34,7 @@ router.post('/registerNode', async (req, res, next) => {
       max_ial,
     });
 
-    res.status(204).end();
+    res.status(201).end();
   } catch (error) {
     next(error);
   }
@@ -93,7 +93,7 @@ router.post('/namespaces', async (req, res, next) => {
       namespace,
       description,
     });
-    res.status(204).end();
+    res.status(201).end();
   } catch (error) {
     next(error);
   }

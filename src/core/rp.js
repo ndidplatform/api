@@ -155,10 +155,13 @@ export async function handleTendermintNewBlockHeaderEvent(
 async function getASReceiverList(data_request) {
   let nodeIdList;
   if (!data_request.as_id_list || data_request.as_id_list.length === 0) {
-    nodeIdList = await common.getNodeIdsOfAsWithService({
+    const asNodes = await common.getAsNodesByServiceId({
       service_id: data_request.service_id,
     });
-  } else nodeIdList = data_request.as_id_list;
+    nodeIdList = asNodes.map((asNode) => asNode.id);
+  } else {
+    nodeIdList = data_request.as_id_list;
+  }
 
   const receivers = (await Promise.all(
     nodeIdList.map(async (asNodeId) => {
@@ -220,34 +223,33 @@ export async function getIdpsMsqDestination({
   min_aal,
   idp_list,
 }) {
-  const foundIdps = await common.getNodeIdsOfAssociatedIdp({
+  const idpNodes = await common.getIdpNodes({
     namespace,
     identifier,
     min_ial,
     min_aal,
   });
 
-  let nodeIdList = foundIdps.node;
-  let receivers = [];
+  let filteredIdpNodes;
+  if (idp_list != null && idp_list.length !== 0) {
+    filteredIdpNodes = idpNodes.filter(
+      (idpNode) => idp_list.indexOf(idpNode.id) >= 0
+    );
+  } else {
+    filteredIdpNodes = idpNodes;
+  }
 
-  if (nodeIdList != null) {
-    //prepare receiver for mq
-    for (let i in nodeIdList) {
-      let nodeId = nodeIdList[i].id;
-      //filter only those in idp_list
-      if (idp_list != null && idp_list.length !== 0) {
-        if (idp_list.indexOf(nodeId) === -1) continue;
-      }
-
-      let { ip, port } = await common.getMsqAddress(nodeId);
-
-      receivers.push({
+  const receivers = await Promise.all(
+    filteredIdpNodes.map(async (idpNode) => {
+      const nodeId = idpNode.id;
+      const { ip, port } = await common.getMsqAddress(nodeId);
+      return {
         ip,
         port,
         ...(await common.getNodePubKey(nodeId)),
-      });
-    }
-  }
+      };
+    })
+  );
   return receivers;
 }
 
