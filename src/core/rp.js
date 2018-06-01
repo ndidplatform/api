@@ -51,11 +51,9 @@ export async function handleTendermintNewBlockHeaderEvent(
           const requestDetail = await common.getRequestDetail({
             requestId,
           });
-          if (!requestDetail.responses) {
+          if (requestDetail.responses == null) {
             requestDetail.responses = [];
           }
-          const idpCountOk =
-            requestDetail.responses.length === requestDetail.min_idp;
           try {
             await fetch(callbackUrl, {
               method: 'POST',
@@ -63,10 +61,23 @@ export async function handleTendermintNewBlockHeaderEvent(
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                request: {
-                  idpCountOk,
-                  ...request,
-                },
+                type: 'request_event',
+                request_id: requestDetail.request_id,
+                status: request.status,
+                min_idp: requestDetail.min_idp,
+                answered_idp_count: requestDetail.responses.length,
+                is_closed: request.is_closed,
+                is_timed_out: request.is_timed_out,
+                service_list: requestDetail.data_request_list.map(
+                  (service) => ({
+                    service_id: service.service_id,
+                    count: service.count,
+                    answered_count:
+                      service.answered_as_id_list != null
+                        ? service.answered_as_id_list.length
+                        : 0,
+                  })
+                ),
               }),
             });
           } catch (error) {
@@ -79,7 +90,18 @@ export async function handleTendermintNewBlockHeaderEvent(
             // retry?
           }
 
-          if (request.status === 'confirmed' && idpCountOk) {
+          const idpCountOk =
+            requestDetail.responses.length === requestDetail.min_idp;
+          if (request.status === 'completed') {
+            // Clear callback url mapping, reference ID mapping, and request data to send to AS
+            // since the request is no longer going to have further events
+            db.removeRequestCallbackUrl(requestId);
+            db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+            db.removeRequestToSendToAS(requestId);
+            db.removeTimeoutScheduler(requestId);
+            clearTimeout(timeoutScheduler[requestId]);
+            delete timeoutScheduler[requestId];
+          } else if (request.status === 'confirmed' && idpCountOk) {
             const requestData = await db.getRequestToSendToAS(requestId);
             if (requestData != null) {
               const height = block.block.header.height;
@@ -431,55 +453,30 @@ export async function handleMessageFromQueue(data) {
   // RP node updates the request status
   // Call callback to RP.
 
-  //receive data from AS
-  data = JSON.parse(data);
   try {
-    const request = await common.getRequest({
-      requestId: data.request_id,
+    const dataJSON = JSON.parse(data);
+    const requestDetail = await common.getRequestDetail({
+      requestId: dataJSON.request_id,
     });
-    //data arrived too late, ignore data
-    if (request.is_closed || request.is_timed_out) return;
+    // Note: Should check if received request id is expected?
+
+    // TODO: Need to change how BC store data
+    // Check if AS signs sent data before request is closed or timed out
+    // for (let i = 0; i < requestDetail.data_request_list.length; i++) {
+    //   const dataRequest = requestDetail.data_request_list[i];
+    //   if (dataRequest.answered_as_id_list.indexOf(dataJSON.as_id) < 0){
+    //     return;
+    //   }
+    // }
+
+    await db.addDataFromAS(dataJSON.request_id, {
+      data: dataJSON.data,
+      as_id: dataJSON.as_id,
+    });
   } catch (error) {
     // TODO: error handling
     throw error;
   }
-
-  if (data.data) {
-    try {
-      const callbackUrl = await db.getRequestCallbackUrl(data.request_id);
-
-      await fetch(callbackUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          data: data.data,
-          as_id: data.as_id,
-        }),
-      });
-      db.removeRequestCallbackUrl(data.request_id);
-    } catch (error) {
-      logger.warn({
-        message: 'Cannot send callback to client application (RP)',
-        error,
-      });
-    }
-  }
-
-  await db.addDataFromAS(data.request_id, {
-    data: data.data,
-    as_id: data.as_id,
-  });
-
-  // Clear callback url mapping, reference ID mapping, and request data to send to AS
-  // since the request is no longer going to have further events
-  db.removeRequestCallbackUrl(data.request_id);
-  db.removeRequestIdReferenceIdMappingByRequestId(data.request_id);
-  db.removeRequestToSendToAS(data.request_id);
-  db.removeTimeoutScheduler(data.request_id);
-  clearTimeout(timeoutScheduler[data.request_id]);
-  delete timeoutScheduler[data.request_id];
 }
 
 async function timeoutRequest(requestId) {
