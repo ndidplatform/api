@@ -87,7 +87,7 @@ async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
         //result
       //);
       // TODO: try catch / error handling
-      await sendRequestToAS(requestData, height);
+      await sendRequestToAS(requestData, height-1);
     } else {
       // Authen only, no data request
 
@@ -348,7 +348,7 @@ export async function createRequest({
       });
     }
 
-    let challenge = utils.randomHexBytes(config.challengeLength);
+    let challenge = utils.randomBase64Bytes(config.challengeLength);
     db.setChallengeFromRequestId(request_id, challenge);
 
     const requestData = {

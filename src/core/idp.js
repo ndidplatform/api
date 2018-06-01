@@ -63,7 +63,7 @@ export async function createIdpResponse(data) {
       accessor_id,
       secret,
     } = data;
-
+    
     let [blockchainProof, privateProofValue] = utils.generateIdentityProof({
       publicKey: await common.getAccessorKey(accessor_id),
       challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge,

@@ -5,6 +5,7 @@ import * as config from '../config';
 import fetch from 'node-fetch';
 import bignum from 'bignum';
 import { spawnSync } from 'child_process';
+import logger from '../logger';
 
 let nonce = Date.now() % 10000;
 let signatureCallback = false;
@@ -17,8 +18,8 @@ export function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function randomHexBytes(length) {
-  return cryptoUtils.randomHexBytes(length);
+export function randomBase64Bytes(length) {
+  return cryptoUtils.randomBase64Bytes(length);
 }
 
 export function getNonce() {
@@ -32,7 +33,7 @@ export function hash(stringToHash) {
 
 export function hashWithRandomSalt(stringToHash) {
   let saltByte = crypto.randomBytes(saltByteLength);
-  let saltString = saltByte.toString('hex');
+  let saltString = saltByte.toString('base64');
   return saltString + hash(saltString + stringToHash);
 }
 
@@ -80,16 +81,32 @@ export function encryptAsymetricKey(publicKey, message) {
 
 export function generateIdentityProof(data) {
   //random
-  let k = crypto.randomBytes(2047);
+
+  logger.debug({
+    message: 'Generating proof',
+    data,
+  });
+
+  let k = randomBase64Bytes(2047);
+  let kInt = stringToBigInt(k);
   let { n, e } = extractParameterFromPublicKey(data.publicKey);
   let secret = stringToBigInt(data.secret);
+  let challenge = stringToBigInt(data.challenge);
 
-  let blockchainProof = powerMod(stringToBigInt(k),e,n).toBuffer().toString('base64');
-  console.log(blockchainProof);
-  let privateProof = (
-    stringToBigInt( k.toString('base64') )
-    .mul(secret.powm(data.challenge,n)
-  )).mod(n).toBuffer().toString('base64');
+  let blockchainProof = powerMod(kInt,e,n).toBuffer().toString('base64');
+  //console.log(blockchainProof);
+  let privateProof = kInt.mul( 
+    powerMod(secret,challenge,n) 
+  ).mod(n).toBuffer().toString('base64');
+
+  logger.debug({
+    message: 'Proof generated',
+    k: k,
+    blockchainProof,
+    privateProof,
+    n,e,
+    challenge: data.challenge,
+  });
 
   return [blockchainProof, privateProof];
 }
@@ -103,7 +120,7 @@ function extractParameterFromPublicKey(publicKey) {
   let modStr = resultNoHeader.splice(0,resultNoHeader.length-2).join('').split(' ').join('');
   let exponentStr = resultNoHeader[0].split(' ')[1];
 
-  fs.unlink(fileName);
+  fs.unlink(fileName, () => {});
   return {
     n: stringToBigInt(Buffer.from(modStr,'hex').toString('base64')),
     e: bignum(exponentStr)
@@ -135,6 +152,17 @@ export function verifyZKProof(publicKey,
   ); 
 
   let tmp3 = (tmp1.mul(tmp2)).mod(n);
+
+  logger.debug({
+    message: 'ZK Verify result',
+    hashedSid,
+    n,e,
+    tmp1,
+    tmp2,
+    tmp3,
+    publicProof,
+  });
+
   return stringToBigInt(publicProof).eq(tmp3);
 }
 
@@ -181,5 +209,5 @@ export async function createSignature(data, nonce = '', useMasterKey) {
 }
 
 export function createRequestId() {
-  return randomHexBytes(32);
+  return cryptoUtils.randomHexBytes(32);
 }

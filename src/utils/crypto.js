@@ -11,8 +11,8 @@ const AES_KEY_LENGTH_IN_BYTES = 32;
 export function hash(stringToHash) {
   const hash = crypto.createHash('sha256');
   hash.update(stringToHash);
-  const hashStrHex = hash.digest('hex');
-  return hashStrHex;
+  const hashStrBase64 = hash.digest('base64');
+  return hashStrBase64;
 }
 
 /**
@@ -81,6 +81,10 @@ export function createSignature(data, nonce, privateKey) {
  */
 export function randomHexBytes(length) {
   return crypto.randomBytes(length).toString('hex');
+}
+
+export function randomBase64Bytes(length) {
+  return crypto.randomBytes(length).toString('base64');
 }
 
 /**
