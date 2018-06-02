@@ -1,0 +1,21 @@
+idp-callback-url
+as-callback-url
+
+latest-block-height-*
+
+/db-api-*
+
+# production
+/build
+
+# dependencies
+/node_modules
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# misc
+.DS_Store
+
+*.swp

@@ -19,6 +19,123 @@ export function clearAllScheduler() {
   }
 }
 
+async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
+  logger.debug({
+    message: 'RP check zk proof and notify',
+    requestId,
+    idp_id,
+  });
+
+  const request = await common.getRequest({
+    requestId,
+  });
+
+  const callbackUrl = await db.getRequestCallbackUrl(requestId);
+  if (!callbackUrl) return; // This RP does not concern this request
+
+  // TODO: try catch / error handling
+  const requestDetail = await common.getRequestDetail({
+    requestId: requestId,
+  });
+
+  if (requestDetail.responses == null) {
+    requestDetail.responses = [];
+  }
+
+  const responsesValid = await verifyZKProof(requestId, idp_id, dataFromMq);
+
+  try {
+    await fetch(callbackUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'request_event',
+        request_id: requestDetail.request_id,
+        status: request.status,
+        min_idp: requestDetail.min_idp,
+        answered_idp_count: requestDetail.responses.length,
+        is_closed: request.is_closed,
+        is_timed_out: request.is_timed_out,
+        service_list: requestDetail.data_request_list.map((service) => ({
+          service_id: service.service_id,
+          count: service.count,
+          answered_count:
+            service.answered_as_id_list != null
+              ? service.answered_as_id_list.length
+              : 0,
+        })),
+        responses_valid: responsesValid,
+      }),
+    });
+  } catch (error) {
+    logger.error({
+      message: 'Cannot send callback to client application',
+      error,
+    });
+
+    // TODO: error handling
+    // retry?
+  }
+
+  const idpCountOk = requestDetail.responses.length === requestDetail.min_idp;
+
+  logger.debug({
+    message: 'Check to notify AS',
+    request,
+    idpCountOk,
+    requestDetail,
+    responsesValid,
+  });
+
+  if (request.status === 'completed') {
+    // Clear callback url mapping, reference ID mapping, and request data to send to AS
+    // since the request is no longer going to have further events
+    db.removeRequestCallbackUrl(requestId);
+    db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+    db.removeRequestToSendToAS(requestId);
+    db.removeTimeoutScheduler(requestId);
+    clearTimeout(timeoutScheduler[requestId]);
+    delete timeoutScheduler[requestId];
+  } else if (request.status === 'confirmed' && idpCountOk && responsesValid) {
+    const requestData = await db.getRequestToSendToAS(requestId);
+    if (requestData != null) {
+      // const height = block.block.header.height;
+      /*tendermint.getBlockHeightFromNewBlockHeaderEvent(
+    result
+  );*/
+      // TODO: try catch / error handling
+      await sendRequestToAS(requestData, height - 1);
+    } else {
+      // Authen only, no data request
+
+      // Clear callback url mapping and reference ID mapping
+      // since the request is no longer going to have further events
+      // (the request has reached its end state)
+      db.removeRequestCallbackUrl(requestId);
+      db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+      db.removeTimeoutScheduler(requestId);
+      clearTimeout(timeoutScheduler[requestId]);
+      delete timeoutScheduler[requestId];
+    }
+  } else if (
+    request.status === 'rejected' ||
+    request.is_closed ||
+    request.is_timed_out
+  ) {
+    // Clear callback url mapping, reference ID mapping, and request data to send to AS
+    // since the request is no longer going to have further events
+    // (the request has reached its end state)
+    db.removeRequestCallbackUrl(requestId);
+    db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+    db.removeRequestToSendToAS(requestId);
+    db.removeTimeoutScheduler(requestId);
+    clearTimeout(timeoutScheduler[requestId]);
+    delete timeoutScheduler[requestId];
+  }
+}
+
 export async function handleTendermintNewBlockHeaderEvent(
   error,
   result,
@@ -30,117 +147,28 @@ export async function handleTendermintNewBlockHeaderEvent(
   const fromHeight =
     missingBlockCount === 0 ? height - 1 : height - missingBlockCount;
   const toHeight = height - 1;
-  const blocks = await tendermint.getBlocks(fromHeight, toHeight);
+
+  //loop through all those block before, and verify all proof
+  logger.debug({
+    message: 'Getting request IDs to process responses',
+    fromHeight,
+    toHeight,
+  });
+
+  const responseIdsInTendermintBlock = await db.getResponseIdsExpectedInBlock(
+    fromHeight,
+    toHeight
+  );
+
   await Promise.all(
-    blocks.map(async (block) => {
-      let transactions = tendermint.getTransactionListFromBlockQuery(block);
-      await Promise.all(
-        transactions.map(async (transaction) => {
-          // TODO: clear key with smart-contract, eg. request_id or requestId
-          const requestId =
-            transaction.args.request_id || transaction.args.requestId; //derive from tx;
-
-          const callbackUrl = await db.getRequestCallbackUrl(requestId);
-
-          if (!callbackUrl) return; // This RP does not concern this request
-
-          // TODO: try catch / error handling
-          const request = await common.getRequest({
-            requestId,
-          });
-          const requestDetail = await common.getRequestDetail({
-            requestId,
-          });
-          if (requestDetail.responses == null) {
-            requestDetail.responses = [];
-          }
-          try {
-            await fetch(callbackUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                type: 'request_event',
-                request_id: requestDetail.request_id,
-                status: request.status,
-                min_idp: requestDetail.min_idp,
-                answered_idp_count: requestDetail.responses.length,
-                is_closed: request.is_closed,
-                is_timed_out: request.is_timed_out,
-                service_list: requestDetail.data_request_list.map(
-                  (service) => ({
-                    service_id: service.service_id,
-                    count: service.count,
-                    answered_count:
-                      service.answered_as_id_list != null
-                        ? service.answered_as_id_list.length
-                        : 0,
-                  })
-                ),
-              }),
-            });
-          } catch (error) {
-            logger.error({
-              message: 'Cannot send callback to client application',
-              error,
-            });
-
-            // TODO: error handling
-            // retry?
-          }
-
-          const idpCountOk =
-            requestDetail.responses.length === requestDetail.min_idp;
-          if (request.status === 'completed') {
-            // Clear callback url mapping, reference ID mapping, and request data to send to AS
-            // since the request is no longer going to have further events
-            db.removeRequestCallbackUrl(requestId);
-            db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-            db.removeRequestToSendToAS(requestId);
-            db.removeTimeoutScheduler(requestId);
-            clearTimeout(timeoutScheduler[requestId]);
-            delete timeoutScheduler[requestId];
-          } else if (request.status === 'confirmed' && idpCountOk) {
-            const requestData = await db.getRequestToSendToAS(requestId);
-            if (requestData != null) {
-              const height = block.block.header.height;
-              /*tendermint.getBlockHeightFromNewBlockHeaderEvent(
-            result
-          );*/
-              // TODO: try catch / error handling
-              await sendRequestToAS(requestData, height);
-            } else {
-              // Authen only, no data request
-
-              // Clear callback url mapping and reference ID mapping
-              // since the request is no longer going to have further events
-              // (the request has reached its end state)
-              db.removeRequestCallbackUrl(requestId);
-              db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-              db.removeTimeoutScheduler(requestId);
-              clearTimeout(timeoutScheduler[requestId]);
-              delete timeoutScheduler[requestId];
-            }
-          } else if (
-            request.status === 'rejected' ||
-            request.is_closed ||
-            request.is_timed_out
-          ) {
-            // Clear callback url mapping, reference ID mapping, and request data to send to AS
-            // since the request is no longer going to have further events
-            // (the request has reached its end state)
-            db.removeRequestCallbackUrl(requestId);
-            db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-            db.removeRequestToSendToAS(requestId);
-            db.removeTimeoutScheduler(requestId);
-            clearTimeout(timeoutScheduler[requestId]);
-            delete timeoutScheduler[requestId];
-          }
-        })
-      );
+    responseIdsInTendermintBlock.map(async (responseIdWithHeight) => {
+      // TODO: clear key with smart-contract, eg. request_id or requestId
+      const [requestId, idp_id] = responseIdWithHeight.responseId.split(':');
+      await checkAndNotify(requestId, idp_id, responseIdWithHeight.height);
+      db.removeProofReceivedFromMQ(responseIdWithHeight.responseId);
     })
   );
+  db.removeResponseIdsExpectedInBlock(fromHeight, toHeight);
 }
 
 async function getASReceiverList(data_request) {
@@ -173,8 +201,12 @@ async function getASReceiverList(data_request) {
 }
 
 async function sendRequestToAS(requestData, height) {
-  // node id, which is substituted with ip,port for demo
-  let rp_node_id = config.nodeId;
+  logger.debug({
+    message: 'RP call AS',
+    requestData,
+    height,
+  });
+
   if (requestData.data_request_list != undefined) {
     requestData.data_request_list.forEach(async (data_request) => {
       let receivers = await getASReceiverList(data_request);
@@ -192,9 +224,11 @@ async function sendRequestToAS(requestData, height) {
         identifier: requestData.identifier,
         service_id: data_request.service_id,
         request_params: data_request.request_params,
-        rp_node_id: rp_node_id,
+        rp_id: requestData.rp_id,
         request_message: requestData.request_message,
         height,
+        challenge: requestData.challenge,
+        privateProofObjectList: requestData.privateProofObjectList,
       });
     });
   }
@@ -334,6 +368,9 @@ export async function createRequest({
       });
     }
 
+    let challenge = utils.randomBase64Bytes(config.challengeLength);
+    db.setChallengeFromRequestId(request_id, challenge);
+
     const requestData = {
       namespace,
       identifier,
@@ -344,12 +381,16 @@ export async function createRequest({
       request_timeout,
       data_request_list: data_request_list,
       request_message,
+      // for zk proof
+      challenge,
+      rp_id: config.nodeId,
     };
 
     // save request data to DB to send to AS via mq when authen complete
-    if (data_request_list != null && data_request_list.length !== 0) {
-      await db.setRequestToSendToAS(request_id, requestData);
-    }
+    // store even no data require, use for zk proof
+    //if (data_request_list != null && data_request_list.length !== 0) {
+    await db.setRequestToSendToAS(request_id, requestData);
+    //}
 
     // add data to blockchain
     const requestDataToBlockchain = {
@@ -359,7 +400,7 @@ export async function createRequest({
       min_ial,
       request_timeout,
       data_request_list: dataRequestListToBlockchain,
-      message_hash: utils.hashWithRandomSalt(request_message),
+      message_hash: utils.hash(challenge + request_message),
     };
 
     const { height } = await tendermint.transact(
@@ -449,33 +490,87 @@ export async function handleMessageFromQueue(data) {
     data,
   });
 
-  // Verifies signature in blockchain.
-  // RP node updates the request status
-  // Call callback to RP.
+  const dataJSON = JSON.parse(data);
 
-  try {
-    const dataJSON = JSON.parse(data);
-    const requestDetail = await common.getRequestDetail({
-      requestId: dataJSON.request_id,
-    });
-    // Note: Should check if received request id is expected?
+  //distinguish between message from idp, as
+  if (dataJSON.idp_id != null) {
+    //store private parameter from EACH idp to request, to pass along to as
+    let request = await db.getRequestToSendToAS(dataJSON.request_id);
+    //AS involve
+    if (request) {
+      if (request.privateProofObjectList) {
+        request.privateProofObjectList.push({
+          idp_id: dataJSON.idp_id,
+          privateProofObject: {
+            privateProofValue: dataJSON.privateProofValue,
+            accessor_id: dataJSON.accessor_id,
+          },
+        });
+      } else {
+        request.privateProofObjectList = [
+          {
+            idp_id: dataJSON.idp_id,
+            privateProofObject: {
+              privateProofValue: dataJSON.privateProofValue,
+              accessor_id: dataJSON.accessor_id,
+            },
+          },
+        ];
+      }
+      await db.setRequestToSendToAS(dataJSON.request_id, request);
+    }
 
-    // TODO: Need to change how BC store data
-    // Check if AS signs sent data before request is closed or timed out
-    // for (let i = 0; i < requestDetail.data_request_list.length; i++) {
-    //   const dataRequest = requestDetail.data_request_list[i];
-    //   if (dataRequest.answered_as_id_list.indexOf(dataJSON.as_id) < 0){
-    //     return;
-    //   }
-    // }
+    //must wait for height
+    const latestBlockHeight = tendermint.latestBlockHeight;
+    const responseId = dataJSON.request_id + ':' + dataJSON.idp_id;
 
-    await db.addDataFromAS(dataJSON.request_id, {
-      data: dataJSON.data,
-      as_id: dataJSON.as_id,
-    });
-  } catch (error) {
-    // TODO: error handling
-    throw error;
+    if (latestBlockHeight <= dataJSON.height) {
+      logger.debug({
+        message: 'Saving message from MQ',
+        tendermintLatestBlockHeight: latestBlockHeight,
+        messageBlockHeight: dataJSON.height,
+      });
+      db.setProofReceivedFromMQ(responseId, dataJSON);
+      db.addResponseIdsExpectedInBlock(dataJSON.height, {
+        height: dataJSON.height,
+        responseId,
+      });
+      return;
+    }
+    checkAndNotify(
+      dataJSON.request_id,
+      dataJSON.idp_id,
+      latestBlockHeight,
+      dataJSON
+    );
+  } else if (dataJSON.as_id != null) {
+    //receive data from AS
+    // TODO: verifies signature of AS in blockchain.
+    // Call callback to RP.
+
+    try {
+      const requestDetail = await common.getRequestDetail({
+        requestId: dataJSON.request_id,
+      });
+      // Note: Should check if received request id is expected?
+
+      // TODO: Need to change how BC store data
+      // Check if AS signs sent data before request is closed or timed out
+      // for (let i = 0; i < requestDetail.data_request_list.length; i++) {
+      //   const dataRequest = requestDetail.data_request_list[i];
+      //   if (dataRequest.answered_as_id_list.indexOf(dataJSON.as_id) < 0){
+      //     return;
+      //   }
+      // }
+
+      await db.addDataFromAS(dataJSON.request_id, {
+        data: dataJSON.data,
+        as_id: dataJSON.as_id,
+      });
+    } catch (error) {
+      // TODO: error handling
+      throw error;
+    }
   }
 }
 
@@ -529,4 +624,86 @@ export async function init() {
   await tendermint.ready;
 
   common.registerMsqAddress(config.mqRegister);
+}
+
+async function verifyZKProof(request_id, idp_id, dataFromMq) {
+  let challenge = await db.getChallengeFromRequestId(request_id);
+  let privateProofObject = dataFromMq
+    ? dataFromMq
+    : await db.getProofReceivedFromMQ(request_id + ':' + idp_id);
+
+  //query and verify zk, also check conflict with each others
+  logger.debug({
+    message: 'RP verifying zk proof',
+    request_id,
+    idp_id,
+    dataFromMq,
+    challenge,
+    privateProofObject,
+  });
+
+  //query accessor_group_id of this accessor_id
+  let accessor_group_id = await common.getAccessorGroupId(
+    privateProofObject.accessor_id
+  );
+  //and check against all accessor_group_id of responses
+  let {
+    namespace,
+    identifier,
+    privateProofObjectList,
+  } = await db.getRequestToSendToAS(request_id);
+
+  logger.debug({
+    message: 'RP verifying zk proof',
+    privateProofObjectList,
+  });
+
+  for (let i = 0; i < privateProofObjectList.length; i++) {
+    let otherPrivateProofObject = privateProofObjectList[i].privateProofObject;
+    let otherGroupId = await common.getAccessorGroupId(
+      otherPrivateProofObject.accessor_id
+    );
+    if (otherGroupId !== accessor_group_id) {
+      //TODO handle this, manually close?
+      logger.debug({
+        message: 'Conflict response',
+        otherGroupId,
+        otherPrivateProofObject,
+        accessor_group_id,
+        accessorId: privateProofObject.accessor_id,
+      });
+      throw 'Conflicted response';
+    }
+  }
+
+  //query accessor_public_key from privateProofObject.accessor_id
+  let public_key = await common.getAccessorKey(privateProofObject.accessor_id);
+
+  //query publicProof from response of idp_id in request
+  let publicProof;
+  let responses = (await common.getRequestDetail({
+    requestId: request_id,
+  })).responses;
+
+  logger.debug({
+    message: 'Request detail',
+    responses,
+  });
+
+  responses.forEach((response) => {
+    if (response.idp_id === idp_id) publicProof = response.identity_proof;
+  });
+
+  //TODO verify signature
+
+  return utils.verifyZKProof(
+    public_key,
+    challenge,
+    privateProofObject.privateProofValue,
+    publicProof,
+    {
+      namespace,
+      identifier,
+    }
+  );
 }

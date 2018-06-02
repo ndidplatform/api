@@ -12,7 +12,7 @@ import * as db from '../db';
 
 async function sendDataToRP(data) {
   let receivers = [];
-  let nodeId = data.rp_node_id;
+  let nodeId = data.rp_id;
   // TODO: try catch / error handling
   let { ip, port } = await common.getMsqAddress(nodeId);
   receivers.push({
@@ -53,6 +53,13 @@ async function registerServiceDestination(data) {
 
 async function notifyByCallback(request, serviceId) {
   //get by persistent
+
+  logger.debug({
+    message: 'AS try to send data',
+    request,
+    serviceId,
+  });
+
   let callbackUrl = await db.getServiceCallbackUrl(serviceId);
   //console.log('===>',callbackUrl);
   if (!callbackUrl) {
@@ -144,6 +151,12 @@ async function getResponseDetails(requestId) {
 async function getDataAndSendBackToRP(requestJson, responseDetails) {
   // Platform→AS
   // The AS replies with the requested data
+  logger.debug({
+    message: 'AS process request for data',
+    requestJson,
+    responseDetails,
+  });
+
   let data = await notifyByCallback(
     {
       request_id: requestJson.request_id,
@@ -160,7 +173,7 @@ async function getDataAndSendBackToRP(requestJson, responseDetails) {
   // TODO should check request status before send (whether request is closed or timeout)
   //console.log('===> AS SENDING');
   sendDataToRP({
-    rp_node_id: requestJson.rp_node_id,
+    rp_id: requestJson.rp_id,
     as_id,
     data,
     request_id: requestJson.request_id,
@@ -212,6 +225,11 @@ export async function handleMessageFromQueue(request) {
   if (valid) {
     // TODO try catch / error handling
     const responseDetails = await getResponseDetails(requestJson.request_id);
+    //loop and check zk proof for all response
+    if(!verifyZKProof(requestJson.request_id, requestJson)) {
+      //TODO, do not answer? or send data to rp and tell them proof is invalid?
+      return;
+    }
     getDataAndSendBackToRP(requestJson, responseDetails);
   }
 }
@@ -255,7 +273,7 @@ export async function handleTendermintNewBlockHeaderEvent(
       });
       const message = await db.getRequestReceivedFromMQ(requestId);
       const valid = await common.checkRequestIntegrity(requestId, message);
-      if (valid) {
+      if (valid && verifyZKProof(requestId)) {
         const responseDetails = await getResponseDetails(requestId);
         getDataAndSendBackToRP(message, responseDetails);
       }
@@ -337,4 +355,58 @@ export async function init() {
     node_id,
     public_key: 'very_secure_public_key_for_as'
   });*/
+}
+
+async function verifyZKProof(request_id, dataFromMq) {
+  if(!dataFromMq) dataFromMq = await db.getRequestReceivedFromMQ(request_id);
+  let {
+    privateProofObjectList,
+    namespace,
+    identifier,
+  } = dataFromMq;
+
+  //query and verify zk, also check conflict with each others
+  let accessor_group_id = await common.getAccessorGroupId(
+    privateProofObjectList[0].privateProofObject.accessor_id
+  );
+  for(let i = 1 ; i < privateProofObjectList.length ; i++) {
+    let otherGroupId = await common.getAccessorGroupId(
+      privateProofObjectList[i].privateProofObject.accessor_id
+    );
+    if(otherGroupId !== accessor_group_id) {
+      //TODO handle this?
+      //throw 'Conflicted response';
+      return false;
+    }
+  }
+
+  let responses = (await common.getRequestDetail({
+    requestId: request_id
+  })).responses;
+  let valid = true;
+  for(let i = 0 ; i < privateProofObjectList.length ; i++) {
+    //query accessor_public_key from privateProof.accessor_id
+    let public_key = await common.getAccessorKey(
+      privateProofObjectList[i].privateProofObject.accessor_id
+    );
+    //query publicProof from response of idp_id in request
+    let publicProof;
+    responses.forEach((response) => {
+      if(response.idp_id === privateProofObjectList[i].idp_id) publicProof = response.identity_proof;
+    });
+
+     //TODO verify signature
+
+    valid &= utils.verifyZKProof(
+      public_key, 
+      dataFromMq.challenge, 
+      privateProofObjectList[i].privateProofObject.privateProofValue, 
+      publicProof,
+      {
+        namespace,
+        identifier
+      }
+    );
+  }
+  return valid;
 }

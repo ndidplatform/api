@@ -5,6 +5,7 @@ import * as tendermint from '../tendermint/ndid';
 import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';
+import * as db from '../db';
 import { eventEmitter as messageQueueEvent } from '../mq';
 import * as utils from '../utils';
 import { role, nodeId } from '../config';
@@ -159,10 +160,13 @@ export async function getNodeToken(node_id = nodeId) {
 export async function checkRequestIntegrity(requestId, request) {
   const msgBlockchain = await getRequest({ requestId });
 
-  const valid = utils.compareSaltedHash({
+  const valid = 
+    utils.hash(request.challenge + request.request_message)
+    === msgBlockchain.messageHash;
+  /*utils.compareSaltedHash({
     saltedHash: msgBlockchain.messageHash,
     plain: request.request_message,
-  });
+  });*/
   if (!valid) {
     logger.warn({
       message: 'Request message hash mismatched',
@@ -193,4 +197,16 @@ export async function getNamespaceList() {
 
 if (handleMessageFromQueue) {
   messageQueueEvent.on('message', handleMessageFromQueue);
+}
+
+export async function getAccessorGroupId(accessor_id) {
+  return (await tendermint.query('GetAccessorGroupID',{
+    accessor_id,
+  })).accessor_group_id;
+}
+
+export async function getAccessorKey(accessor_id) {
+  return (await tendermint.query('GetAccessorKey',{
+    accessor_id,
+  })).accessor_public_key;
 }

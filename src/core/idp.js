@@ -10,6 +10,7 @@ import * as common from './common';
 import * as utils from '../utils';
 import * as config from '../config';
 import * as db from '../db';
+import * as mq from '../mq';
 
 const callbackUrlFilePath = path.join(
   __dirname,
@@ -60,7 +61,20 @@ export async function createIdpResponse(data) {
       status,
       signature,
       accessor_id,
+      secret,
     } = data;
+    
+    let [blockchainProof, privateProofValue] = utils.generateIdentityProof({
+      publicKey: await common.getAccessorKey(accessor_id),
+      challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge,
+      ...data
+    });
+    await db.removeRequestReceivedFromMQ(request_id);
+
+    let privateProofObject = {
+      privateProofValue,
+      accessor_id,
+    };
 
     let dataToBlockchain = {
       request_id,
@@ -68,15 +82,19 @@ export async function createIdpResponse(data) {
       ial,
       status,
       signature,
-      accessor_id,
-      identity_proof: utils.generateIdentityProof(data),
+      //accessor_id,
+      identity_proof: blockchainProof,
     };
 
-    await tendermint.transact(
+
+    let { height } = await tendermint.transact(
       'CreateIdpResponse',
       dataToBlockchain,
       utils.getNonce()
     );
+
+    sendPrivateProofToRP(request_id, privateProofObject, height);
+
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot create IDP response',
@@ -114,6 +132,34 @@ async function notifyByCallback(request) {
   }
 }
 
+async function sendPrivateProofToRP(request_id, privateProofObject, height) {
+  let rp_id = await db.getRPIdFromRequestId(request_id);
+
+  logger.info({
+    message: 'Query MQ destination for rp',
+  });
+  logger.debug({
+    message: 'Query MQ destination for rp',
+    rp_id
+  });
+
+  let { ip, port } = await common.getMsqAddress(rp_id);
+  let rpMq = {
+    ip,
+    port,
+    ...(await common.getNodePubKey(rp_id)),
+  };
+
+  mq.send([rpMq], {
+    request_id,
+    ...privateProofObject,
+    height,
+    idp_id: config.nodeId
+  });
+
+  db.removeRPIdFromRequestId(request_id);
+}
+
 export async function handleMessageFromQueue(request) {
   logger.info({
     message: 'Received message from MQ',
@@ -123,6 +169,8 @@ export async function handleMessageFromQueue(request) {
     request,
   });
   const requestJson = JSON.parse(request);
+  //need challenge for response
+  await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
 
   const latestBlockHeight = tendermint.latestBlockHeight;
   if (latestBlockHeight <= requestJson.height) {
@@ -131,11 +179,11 @@ export async function handleMessageFromQueue(request) {
       tendermintLatestBlockHeight: latestBlockHeight,
       messageBlockHeight: requestJson.height,
     });
-    await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
     await db.addRequestIdExpectedInBlock(
       requestJson.height,
       requestJson.request_id
     );
+    await db.setRPIdFromRequestId(requestJson.request_id, requestJson.rp_id);
     return;
   }
 
@@ -161,6 +209,7 @@ export async function handleTendermintNewBlockHeaderEvent(
   missingBlockCount
 ) {
   const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
+
   // messages that arrived before 'NewBlock' event
   // including messages between the start of missing block's height
   // and the block before latest block height
@@ -199,7 +248,8 @@ export async function handleTendermintNewBlockHeaderEvent(
           ...message,
         });
       }
-      db.removeRequestReceivedFromMQ(requestId);
+      //need challenge when respond
+      //db.removeRequestReceivedFromMQ(requestId);
     })
   );
 

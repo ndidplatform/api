@@ -53,3 +53,5 @@ export const masterPrivateKeyPath =
   process.env.MASTER_PRIVATE_KEY_PATH == null
     ? path.join(__dirname, '..', 'devKey', role, nodeId + '_master')
     : process.env.MASTER_PRIVATE_KEY_PATH;
+
+export const challengeLength = 16;
