@@ -208,7 +208,7 @@ export function addDataFromAS(requestId, data) {
     name: 'dataFromAS',
     keyName: 'requestId',
     key: requestId,
-    valueKey: 'data',
+    valueName: 'data',
     value: data,
   });
 }
