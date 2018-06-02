@@ -30,9 +30,9 @@ async function sendDataToRP(data) {
 async function signData(data) {
   const nonce = utils.getNonce();
   const dataToBlockchain = {
-    as_id: data.as_id,
     request_id: data.request_id,
     signature: data.signature,
+    service_id: data.service_id,
   };
   try {
     await tendermint.transact('SignData', dataToBlockchain, nonce);
@@ -181,7 +181,12 @@ async function getDataAndSendBackToRP(requestJson, responseDetails) {
   //console.log('===> AS SENT');
 
   // AS node adds transaction to blockchain
-  signData({ as_id, request_id: requestJson.request_id, signature });
+  signData({
+    as_id,
+    request_id: requestJson.request_id,
+    signature,
+    service_id: requestJson.service_id,
+  });
 }
 
 export async function handleMessageFromQueue(request) {

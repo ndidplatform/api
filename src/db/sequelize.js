@@ -24,7 +24,7 @@ const Entities = {
     expectedBlockHeight: Sequelize.INTEGER,
   }),
   responseIdExpectedInBlock: sequelize.define('responseIdExpectedInBlock', {
-    responseId: Sequelize.STRING,
+    responseIdWithHeight: Sequelize.JSON,
     expectedBlockHeight: Sequelize.INTEGER,
   }),
   requestReceivedFromMQ: sequelize.define('requestReceivedFromMQ', {
@@ -61,7 +61,6 @@ const Entities = {
   }),
   dataFromAS: sequelize.define('dataFromAS', {
     requestId: Sequelize.STRING,
-    asNodeId: Sequelize.STRING,
     data: Sequelize.JSON,
   }),
   timeoutScheduler: sequelize.define('timeoutScheduler', {

@@ -55,22 +55,26 @@ export function removeRequestIdsExpectedInBlock(fromHeight, toHeight) {
   });
 }
 
-export function getResponseIdsExpectedInBlock(height) {
-  return db.getList({
+export function getResponseIdsExpectedInBlock(fromHeight, toHeight) {
+  return db.getListRange({
     name: 'responseIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
-    key: height,
-    valueName: 'responseId',
+    keyRange: {
+      gte: fromHeight, // greaterThanOrEqual
+      lte: toHeight, // lessThanOrEqual
+    },
+    valueName: 'responseIdWithHeight',
+    returnKey: true,
   });
 }
 
-export function addResponseIdsExpectedInBlock(height, responseId) {
+export function addResponseIdsExpectedInBlock(height, responseIdWithHeight) {
   return db.pushToList({
     name: 'responseIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
     key: height,
-    valueName: 'responseId',
-    value: responseId,
+    valueName: 'responseIdWithHeight',
+    value: responseIdWithHeight,
   });
 }
 
@@ -319,7 +323,7 @@ export function addDataFromAS(requestId, data) {
     name: 'dataFromAS',
     keyName: 'requestId',
     key: requestId,
-    valueKey: 'data',
+    valueName: 'data',
     value: data,
   });
 }
