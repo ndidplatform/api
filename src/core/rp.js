@@ -649,14 +649,19 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
 
   //query accessor_group_id of this accessor_id
   let accessor_group_id = await common.getAccessorGroupId(privateProofObject.accessor_id);
-  //and check against all accessor_group_id of responses
-  let { namespace,identifier,privateProofObjectList } = (await db.getRequestToSendToAS(request_id));
+  let { 
+    namespace,
+    identifier,
+    privateProofObjectList,
+    request_message
+  } = await db.getRequestToSendToAS(request_id);
 
   logger.debug({
     message: 'RP verifying zk proof',
     privateProofObjectList,
   });
 
+  //and check against all accessor_group_id of responses
   for(let i = 0 ; i < privateProofObjectList.length ; i++) {
     let otherPrivateProofObject = privateProofObjectList[i].privateProofObject;
     let otherGroupId = await common.getAccessorGroupId(otherPrivateProofObject.accessor_id);
@@ -677,7 +682,7 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
   let public_key = await common.getAccessorKey(privateProofObject.accessor_id);
 
   //query publicProof from response of idp_id in request
-  let publicProof;
+  let publicProof, signature;
   let responses = (await common.getRequestDetail({
     requestId: request_id
   })).responses;
@@ -685,15 +690,31 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
   logger.debug({
     message: 'Request detail',
     responses,
+    request_message,
   });
 
   responses.forEach((response) => {
-    if(response.idp_id === idp_id) publicProof = response.identity_proof;
+    if(response.idp_id === idp_id) {
+      publicProof = response.identity_proof;
+      signature = response.signature;
+    }
   });
 
-  //TODO verify signature
+  let signatureValid = utils.verifySignature(
+    signature, 
+    public_key, 
+    request_message
+  );
 
-  return utils.verifyZKProof(
+  logger.debug({
+    message: 'Verify signature',
+    signatureValid,
+    request_message,
+    public_key,
+    signature,
+  });
+
+  return signatureValid && utils.verifyZKProof(
     public_key, 
     challenge, 
     privateProofObject.privateProofValue, 

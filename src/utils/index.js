@@ -208,6 +208,10 @@ export async function createSignature(data, nonce = '', useMasterKey) {
   return cryptoUtils.createSignature(data, nonce, privateKey);
 }
 
+export function verifySignature(signatureInBase64, publicKey, plainText) {
+  return cryptoUtils.verifySignature(signatureInBase64, publicKey, plainText);
+}
+
 export function createRequestId() {
   return cryptoUtils.randomHexBytes(32);
 }

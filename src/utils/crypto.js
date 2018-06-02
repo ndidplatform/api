@@ -74,6 +74,12 @@ export function createSignature(data, nonce, privateKey) {
     .sign(privateKey, 'base64');
 }
 
+
+export function verifySignature(signatureInBase64, publicKey, plainText) {
+  let verifyInstance = crypto.createVerify('RSA-SHA256');
+  verifyInstance.update(plainText);
+  return verifyInstance.verify(publicKey, Buffer.from(signatureInBase64,'base64'));
+}
 /**
  * 
  * @param {number} length random bytes length

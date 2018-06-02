@@ -358,6 +358,7 @@ async function verifyZKProof(request_id, dataFromMq) {
     privateProofObjectList,
     namespace,
     identifier,
+    request_message,
   } = dataFromMq;
 
   //query and verify zk, also check conflict with each others
@@ -385,12 +386,29 @@ async function verifyZKProof(request_id, dataFromMq) {
       privateProofObjectList[i].privateProofObject.accessor_id
     );
     //query publicProof from response of idp_id in request
-    let publicProof;
+    let publicProof,signature;
     responses.forEach((response) => {
-      if(response.idp_id === privateProofObjectList[i].idp_id) publicProof = response.identity_proof;
+      if(response.idp_id === privateProofObjectList[i].idp_id) {
+        publicProof = response.identity_proof;
+        signature = response.signature;
+      }
     });
 
-     //TODO verify signature
+    let signatureValid = utils.verifySignature(
+      signature, 
+      public_key, 
+      request_message
+    );
+  
+    logger.debug({
+      message: 'Verify signature',
+      signatureValid,
+      request_message,
+      public_key,
+      signature,
+    });
+
+    valid &= signatureValid;
 
     valid &= utils.verifyZKProof(
       public_key, 
