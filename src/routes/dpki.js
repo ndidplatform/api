@@ -1,117 +1,97 @@
 import express from 'express';
 
-import validate from './validator';
+import { validateBody } from './middleware/validation';
+import * as ndid from '../core/ndid';
+import * as dpki from '../core/dpki';
+import * as utils from '../utils';
+import * as config from '../config';
 
 const router = express.Router();
 
-router.post('/node/create', async (req, res, next) => {
+router.post('/node/create', validateBody, async (req, res, next) => {
+  if (config.role !== 'ndid') {
+    res.status(403).end();
+    return;
+  }
   try {
-    const bodyValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
-      return;
-    }
-
     const {
       node_id,
       node_name,
       node_key,
-      node_key_type,
-      node_key_method,
+      //node_key_type,
+      //node_key_method,
       node_master_key,
-      node_master_key_type,
-      node_master_key_method,
+      //node_master_key_type,
+      //node_master_key_method,
+      role,
+      max_aal,
+      max_ial,
     } = req.body;
 
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
-  } catch (error) {
-    res.status(500).end();
-  }
-});
-
-router.post('/node/update', async (req, res, next) => {
-  try {
-    const bodyValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
-      return;
-    }
-
-    const {
+    await ndid.registerNode({
       node_id,
       node_name,
+      public_key: node_key,
+      master_public_key: node_master_key,
+      role,
+      max_ial,
+      max_aal,
+    });
+
+    res.status(201).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/node/update', validateBody, async (req, res, next) => {
+  try {
+    const {
+      //node_name,
       node_key,
-      node_key_type,
-      node_key_method,
+      //node_key_type,
+      //node_key_method,
       node_master_key,
-      node_master_key_type,
-      node_master_key_method,
+      //node_master_key_type,
+      //node_master_key_method,
     } = req.body;
 
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
-  } catch (error) {
-    res.status(500).end();
-  }
-});
-
-router.post('/node/register_callback', async (req, res, next) => {
-  try {
-    const bodyValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
+    //should we allow organization to update their node's name?
+    let result = await dpki.updateNode({
+      public_key: node_key,
+      master_public_key: node_master_key,
     });
-    if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
-      return;
-    }
 
-    const { url } = req.body;
-
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
+    res.status(200).json(result);
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
-router.post('/node/register_callback_master', async (req, res, next) => {
+router.post('/node/register_callback', validateBody, async (req, res, next) => {
   try {
-    const bodyValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      body: req.body,
-    });
-    if (!bodyValidationResult.valid) {
-      res.status(400).send(bodyValidationResult);
-      return;
-    }
+    const { sign_url, decrypt_url } = req.body;
 
-    const { url } = req.body;
-
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
+    await utils.setSignatureCallback(sign_url, decrypt_url);
+    res.status(204).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
+
+router.post(
+  '/node/register_callback_master',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { url } = req.body;
+
+      await utils.setMasterSignatureCallback(url);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

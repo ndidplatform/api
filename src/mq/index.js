@@ -1,7 +1,10 @@
 import EventEmitter from 'events';
 import zmq from 'zeromq';
+
+import logger from '../logger';
+
 import * as config from '../config';
-import * as utils from '../main/utils';
+import * as utils from '../utils';
 import MQSend from './mqsend.js';
 import MQRecv from './mqrecv.js';
 
@@ -15,18 +18,14 @@ mqRecv.on('message', async function(jsonMessageStr) {
 
   const jsonMessage = JSON.parse(jsonMessageStr);
 
-  // TODO Retrieve private key and proper decrypt
-  let decrypted = await utils.decryptAsymetricKey(null, jsonMessage);
+  let decrypted = await utils.decryptAsymetricKey(jsonMessage);
   eventEmitter.emit('message', decrypted);
 });
 
 export const send = async (receivers, message) => {
-  receivers.forEach(async receiver => {
-    const sendingSocket = zmq.socket('req');
-    sendingSocket.connect(`tcp://${receiver.ip}:${receiver.port}`);
-
+  receivers.forEach(async (receiver) => {
     // TODO proper encrypt
-    let encryptedMessage = await utils.encryptAsymetricKey(
+    let encryptedMessage = utils.encryptAsymetricKey(
       receiver.public_key,
       JSON.stringify(message)
     );
@@ -35,3 +34,10 @@ export const send = async (receivers, message) => {
 
   });
 };
+
+export function close() {
+  mqRecv.close();
+  logger.info({
+    message: 'Message queue socket closed',
+  });
+}

@@ -1,53 +1,74 @@
 import express from 'express';
 
-import validate from './validator';
+import { validateQuery } from './middleware/validation';
+import * as common from '../core/common';
 
 const router = express.Router();
 
-router.get('/idp', async (req, res, next) => {
+router.get('/idp', validateQuery, async (req, res, next) => {
   try {
-    const queryValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      query: req.query,
+    const { min_ial = 0, min_aal = 0 } = req.query;
+
+    const idpNodes = await common.getIdpNodes({
+      min_ial,
+      min_aal,
     });
-    if (!queryValidationResult.valid) {
-      res.status(400).send(queryValidationResult);
-      return;
-    }
 
-    const { min_ial, min_aal } = req.query;
-
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
+    res.status(200).json(idpNodes);
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
-router.get('/idp/:namespace/:identifier', async (req, res, next) => {
-  try {
-    const queryValidationResult = validate({
-      method: req.method,
-      path: `${req.baseUrl}${req.route.path}`,
-      query: req.query,
-    });
-    if (!queryValidationResult.valid) {
-      res.status(400).send(queryValidationResult);
-      return;
+router.get(
+  '/idp/:namespace/:identifier',
+  validateQuery,
+  async (req, res, next) => {
+    try {
+      const { namespace, identifier } = req.params;
+      const { min_ial = 0, min_aal = 0 } = req.query;
+
+      const idpNodes = await common.getIdpNodes({
+        namespace,
+        identifier,
+        min_ial,
+        min_aal,
+      });
+
+      res.status(200).json(idpNodes);
+    } catch (error) {
+      next(error);
     }
+  }
+);
 
-    const { namespace, identifier } = req.params;
-    const { min_ial, min_aal } = req.query;
-
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
+router.get('/as/:service_id', async (req, res, next) => {
+  try {
+    const { service_id } = req.params;
+    let asNodes = await common.getAsNodesByServiceId({
+      service_id,
+    });
+    res.status(200).json(asNodes);
   } catch (error) {
-    res.status(500).end();
+    next(error);
+  }
+});
+
+router.get('/nodeToken/:node_id', async (req, res, next) => {
+  try {
+    const { node_id } = req.params;
+
+    res.status(200).json(await common.getNodeToken(node_id));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/namespace', async (req, res, next) => {
+  try {
+    res.status(200).json(await common.getNamespaceList());
+  } catch (error) {
+    next(error);
   }
 });
 
