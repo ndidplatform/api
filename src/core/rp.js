@@ -119,6 +119,7 @@ async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
       // (the request has reached its end state)
       db.removeRequestCallbackUrl(requestId);
       db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+      db.removeRequestToSendToAS(requestId);
       db.removeTimeoutScheduler(requestId);
       clearTimeout(timeoutScheduler[requestId]);
       delete timeoutScheduler[requestId];
