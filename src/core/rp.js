@@ -19,6 +19,12 @@ export function clearAllScheduler() {
   }
 }
 
+async function isRequestIdOwnByRP(requestId) {
+  // I think better approach is to check from timeout db.
+  const callbackUrl = await db.getRequestCallbackUrl(requestId);
+  return (callbackUrl != null);
+}
+
 async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
   logger.debug({
     message: 'RP check zk proof and notify',
@@ -29,9 +35,6 @@ async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
   const request = await common.getRequest({
     requestId,
   });
-
-  const callbackUrl = await db.getRequestCallbackUrl(requestId);
-  if (!callbackUrl) return; // This RP does not concern this request
 
   // TODO: try catch / error handling
   const requestDetail = await common.getRequestDetail({
@@ -45,6 +48,7 @@ async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
   const responsesValid = await verifyZKProof(requestId, idp_id, dataFromMq);
 
   try {
+    const callbackUrl = await db.getRequestCallbackUrl(requestId);
     await fetch(callbackUrl, {
       method: 'POST',
       headers: {
@@ -115,6 +119,7 @@ async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
       // (the request has reached its end state)
       db.removeRequestCallbackUrl(requestId);
       db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+      db.removeRequestToSendToAS(requestId);
       db.removeTimeoutScheduler(requestId);
       clearTimeout(timeoutScheduler[requestId]);
       delete timeoutScheduler[requestId];
@@ -164,6 +169,7 @@ export async function handleTendermintNewBlockHeaderEvent(
     responseIdsInTendermintBlock.map(async (responseIdWithHeight) => {
       // TODO: clear key with smart-contract, eg. request_id or requestId
       const [requestId, idp_id] = responseIdWithHeight.responseId.split(':');
+      if (!isRequestIdOwnByRP(requestId)) return; // This RP does not concern this request
       await checkAndNotify(requestId, idp_id, responseIdWithHeight.height);
       db.removeProofReceivedFromMQ(responseIdWithHeight.responseId);
     })
@@ -306,6 +312,27 @@ export async function createRequest({
       return requestId;
     }
 
+    // Set default value
+    if (min_idp == null) min_idp = 1;
+
+    if (callback_url == null) {
+      throw new CustomError({
+        message:
+          'callback_url is required in creating asynchronous request',
+        code: errorCode.BODY_VALIDATION_FAILED.code,
+        clientError: true,
+      });
+    }
+
+    if (request_message == null || request_message.length == 0) {
+      throw new CustomError({
+        message:
+          'Request message is required',
+        code: errorCode.BODY_VALIDATION_FAILED.code,
+        clientError: true,
+      });
+    }
+
     if (idp_list != null && idp_list.length > 0 && idp_list.length < min_idp) {
       throw new CustomError({
         message: errorType.IDP_LIST_LESS_THAN_MIN_IDP.message,
@@ -358,10 +385,11 @@ export async function createRequest({
 
     const dataRequestListToBlockchain = [];
     for (let i in data_request_list) {
+      count = Math.min(data_request_list[i].as_id_list.length, data_request_list[i].count);
       dataRequestListToBlockchain.push({
         service_id: data_request_list[i].service_id,
         as_id_list: data_request_list[i].as_id_list,
-        count: data_request_list[i].count,
+        count,
         request_params_hash: utils.hashWithRandomSalt(
           JSON.stringify(data_request_list[i].request_params)
         ),
@@ -375,11 +403,11 @@ export async function createRequest({
       namespace,
       identifier,
       request_id,
-      min_idp: min_idp ? min_idp : 1,
-      min_aal: min_aal,
-      min_ial: min_ial,
+      min_idp,
+      min_aal,
+      min_ial,
       request_timeout,
-      data_request_list: data_request_list,
+      data_request_list,
       request_message,
       // for zk proof
       challenge,
@@ -395,7 +423,7 @@ export async function createRequest({
     // add data to blockchain
     const requestDataToBlockchain = {
       request_id,
-      min_idp: min_idp ? min_idp : 1,
+      min_idp,
       min_aal,
       min_ial,
       request_timeout,
@@ -646,7 +674,7 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
   let accessor_group_id = await common.getAccessorGroupId(
     privateProofObject.accessor_id
   );
-  let { 
+  let {
     namespace,
     identifier,
     privateProofObjectList,
@@ -700,8 +728,8 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
   });
 
   let signatureValid = utils.verifySignature(
-    signature, 
-    public_key, 
+    signature,
+    public_key,
     request_message
   );
 
@@ -714,10 +742,10 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
   });
 
   return signatureValid && utils.verifyZKProof(
-    public_key, 
-    challenge, 
-    privateProofObject.privateProofValue, 
-    publicProof, 
+    public_key,
+    challenge,
+    privateProofObject.privateProofValue,
+    publicProof,
     {
       namespace,
       identifier,
