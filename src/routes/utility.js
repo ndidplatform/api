@@ -54,7 +54,7 @@ router.get('/as/:service_id', async (req, res, next) => {
   }
 });
 
-router.get('/nodeToken/:node_id', async (req, res, next) => {
+router.get('/node_token/:node_id', async (req, res, next) => {
   try {
     const { node_id } = req.params;
 
