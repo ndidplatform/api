@@ -450,9 +450,9 @@ export async function createRequest({
       namespace,
       identifier,
       request_id,
-      min_idp: min_idp ? min_idp : 1,
-      min_aal: min_aal,
-      min_ial: min_ial,
+      min_idp,
+      min_aal,
+      min_ial,
       request_timeout,
       data_request_list: data_request_list,
       request_message,
@@ -470,7 +470,7 @@ export async function createRequest({
     // add data to blockchain
     const requestDataToBlockchain = {
       request_id,
-      min_idp: min_idp ? min_idp : 1,
+      min_idp,
       min_aal,
       min_ial,
       request_timeout,
