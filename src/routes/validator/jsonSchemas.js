@@ -106,7 +106,15 @@ export default {
           min_idp: { type: 'integer', minimum: 1 },
           request_timeout: { type: 'integer', minimum: 0 },
         },
-        required: ['reference_id', 'min_ial', 'min_aal'],
+        required: [
+          'reference_id',
+          'callback_url',
+          'request_message',
+          'min_ial',
+          'min_aal',
+          'min_idp',
+          'request_timeout',
+        ],
       },
     },
     '/idp/callback': {
