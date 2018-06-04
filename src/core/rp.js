@@ -650,8 +650,10 @@ export async function handleMessageFromQueue(data) {
       // }
 
       await db.addDataFromAS(dataJSON.request_id, {
+        source_node_id: dataJSON.as_id,
+        service_id: dataJSON.service_id,
+        source_signature: dataJSON.signature,
         data: dataJSON.data,
-        as_id: dataJSON.as_id,
       });
     } catch (error) {
       // TODO: error handling

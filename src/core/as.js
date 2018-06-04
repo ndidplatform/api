@@ -21,9 +21,11 @@ async function sendDataToRP(data) {
     ...(await common.getNodePubKey(nodeId)), // TODO: try catch / error handling
   });
   mq.send(receivers, {
-    as_id: data.as_id,
-    data: data.data,
     request_id: data.request_id,
+    as_id: data.as_id,
+    service_id: data.service_id,
+    signature: data.signature,
+    data: data.data,
   });
 }
 
@@ -174,9 +176,11 @@ async function getDataAndSendBackToRP(requestJson, responseDetails) {
   //console.log('===> AS SENDING');
   sendDataToRP({
     rp_id: requestJson.rp_id,
-    as_id,
-    data,
     request_id: requestJson.request_id,
+    as_id,
+    signature,
+    service_id: requestJson.service_id,
+    data,
   });
   //console.log('===> AS SENT');
 
