@@ -157,7 +157,8 @@ function getQueryResult(response) {
 
   // const currentHeight = parseInt(response.result.response.height);
 
-  if (response.result.response.log === 'not found') {
+  //if (response.result.response.log === 'not found') {
+  if (response.result.response.log.indexOf('not found') !== -1) {
     return null;
   }
 
