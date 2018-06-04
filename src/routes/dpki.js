@@ -4,15 +4,10 @@ import { validateBody } from './middleware/validation';
 import * as ndid from '../core/ndid';
 import * as dpki from '../core/dpki';
 import * as utils from '../utils';
-import * as config from '../config';
 
 const router = express.Router();
 
 router.post('/node/create', validateBody, async (req, res, next) => {
-  if (config.role !== 'ndid') {
-    res.status(403).end();
-    return;
-  }
   try {
     const {
       node_id,
