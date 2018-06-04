@@ -55,37 +55,30 @@ export function removeRequestIdsExpectedInBlock(fromHeight, toHeight) {
   });
 }
 
-export function getResponseIdsExpectedInBlock(fromHeight, toHeight) {
-  return db.getListRange({
-    name: 'responseIdExpectedInBlock',
-    keyName: 'expectedBlockHeight',
-    keyRange: {
-      gte: fromHeight, // greaterThanOrEqual
-      lte: toHeight, // lessThanOrEqual
-    },
-    valueName: 'responseIdWithHeight',
-    returnKey: true,
-  });
-}
-
-export function addResponseIdsExpectedInBlock(height, responseIdWithHeight) {
-  return db.pushToList({
-    name: 'responseIdExpectedInBlock',
+export function getExpectedIdpResponseNodeId(height) {
+  return db.get({
+    name: 'expectedIdpResponseNodeId',
     keyName: 'expectedBlockHeight',
     key: height,
-    valueName: 'responseIdWithHeight',
-    value: responseIdWithHeight,
+    valueName: 'idpNodeId',
   });
 }
 
-export function removeResponseIdsExpectedInBlock(fromHeight, toHeight) {
-  return db.removeListRange({
-    name: 'responseIdExpectedInBlock',
+export function setExpectedIdpResponseNodeId(height, idpNodeId) {
+  return db.set({
+    name: 'expectedIdpResponseNodeId',
     keyName: 'expectedBlockHeight',
-    keyRange: {
-      gte: fromHeight, // greaterThanOrEqual
-      lte: toHeight, // lessThanOrEqual
-    },
+    key: height,
+    valueName: 'idpNodeId',
+    value: idpNodeId,
+  });
+}
+
+export function removeExpectedIdpResponseNodeId(height) {
+  return db.remove({
+    name: 'expectedIdpResponseNodeId',
+    keyName: 'expectedBlockHeight',
+    key: height,
   });
 }
 

@@ -19,16 +19,11 @@ export function clearAllScheduler() {
   }
 }
 
-async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
-  logger.debug({
-    message: 'RP check zk proof and notify',
-    requestId,
-    idp_id,
-  });
-
-  const request = await common.getRequest({
-    requestId,
-  });
+async function checkAndNotify(requestId, height) {
+  // logger.debug({
+  //   message: 'RP check zk proof and notify',
+  //   requestId,
+  // });
 
   const callbackUrl = await db.getRequestCallbackUrl(requestId);
   if (!callbackUrl) return; // This RP does not concern this request
@@ -42,7 +37,67 @@ async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
     requestDetail.responses = [];
   }
 
-  const responsesValid = await verifyZKProof(requestId, idp_id, dataFromMq);
+  // ZK Proof verification is needed only when got new response from IdP
+  let needZKProofVerification = false;
+  if (
+    (requestDetail.status === 'confirmed' ||
+      requestDetail.status === 'complicated' ||
+      requestDetail.status === 'rejected') &&
+    requestDetail.is_closed === false &&
+    requestDetail.is_timed_out === false
+  ) {
+    if (requestDetail.responses.length < requestDetail.min_idp) {
+      needZKProofVerification = true;
+    } else if (requestDetail.responses.length === requestDetail.min_idp) {
+      let asAnswerCount;
+      if (
+        requestDetail.data_request_list &&
+        Array.isArray(requestDetail.data_request_list)
+      ) {
+        asAnswerCount = requestDetail.data_request_list.reduce(
+          (total, service) => {
+            const answerCount =
+              service.answered_as_id_list != null
+                ? service.answered_as_id_list.length
+                : 0;
+            return total + answerCount;
+          },
+          0
+        );
+      }
+      if (asAnswerCount === 0) {
+        needZKProofVerification = true;
+      }
+    }
+  }
+
+  if (needZKProofVerification) {
+    // Validate ZK Proof
+    const idpNodeId = await db.getExpectedIdpResponseNodeId(requestId);
+
+    if (idpNodeId == null) return;
+
+    await checkZKAndNotify(requestDetail, height, idpNodeId, callbackUrl);
+    return;
+  }
+
+  const eventDataForCallback = {
+    type: 'request_event',
+    request_id: requestDetail.request_id,
+    status: requestDetail.status,
+    min_idp: requestDetail.min_idp,
+    answered_idp_count: requestDetail.responses.length,
+    is_closed: requestDetail.is_closed,
+    is_timed_out: requestDetail.is_timed_out,
+    service_list: requestDetail.data_request_list.map((service) => ({
+      service_id: service.service_id,
+      count: service.count,
+      answered_count:
+        service.answered_as_id_list != null
+          ? service.answered_as_id_list.length
+          : 0,
+    })),
+  };
 
   try {
     await fetch(callbackUrl, {
@@ -50,24 +105,7 @@ async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        type: 'request_event',
-        request_id: requestDetail.request_id,
-        status: request.status,
-        min_idp: requestDetail.min_idp,
-        answered_idp_count: requestDetail.responses.length,
-        is_closed: request.is_closed,
-        is_timed_out: request.is_timed_out,
-        service_list: requestDetail.data_request_list.map((service) => ({
-          service_id: service.service_id,
-          count: service.count,
-          answered_count:
-            service.answered_as_id_list != null
-              ? service.answered_as_id_list.length
-              : 0,
-        })),
-        responses_valid: responsesValid,
-      }),
+      body: JSON.stringify(eventDataForCallback),
     });
   } catch (error) {
     logger.error({
@@ -79,51 +117,13 @@ async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
     // retry?
   }
 
-  const idpCountOk = requestDetail.responses.length === requestDetail.min_idp;
-
-  logger.debug({
-    message: 'Check to notify AS',
-    request,
-    idpCountOk,
-    requestDetail,
-    responsesValid,
-  });
-
-  if (request.status === 'completed') {
-    // Clear callback url mapping, reference ID mapping, and request data to send to AS
-    // since the request is no longer going to have further events
-    db.removeRequestCallbackUrl(requestId);
-    db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-    db.removeRequestToSendToAS(requestId);
-    db.removeTimeoutScheduler(requestId);
-    clearTimeout(timeoutScheduler[requestId]);
-    delete timeoutScheduler[requestId];
-  } else if (request.status === 'confirmed' && idpCountOk && responsesValid) {
-    const requestData = await db.getRequestToSendToAS(requestId);
-    if (requestData != null) {
-      // const height = block.block.header.height;
-      /*tendermint.getBlockHeightFromNewBlockHeaderEvent(
-    result
-  );*/
-      // TODO: try catch / error handling
-      await sendRequestToAS(requestData, height - 1);
-    } else {
-      // Authen only, no data request
-
-      // Clear callback url mapping and reference ID mapping
-      // since the request is no longer going to have further events
-      // (the request has reached its end state)
-      db.removeRequestCallbackUrl(requestId);
-      db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-      db.removeTimeoutScheduler(requestId);
-      clearTimeout(timeoutScheduler[requestId]);
-      delete timeoutScheduler[requestId];
-    }
-  } else if (
-    request.status === 'rejected' ||
-    request.is_closed ||
-    request.is_timed_out
+  if (
+    // request.status === 'completed' ||
+    requestDetail.status === 'rejected' ||
+    requestDetail.is_closed ||
+    requestDetail.is_timed_out
   ) {
+    // Clean up
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
     // since the request is no longer going to have further events
     // (the request has reached its end state)
@@ -134,6 +134,80 @@ async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
     clearTimeout(timeoutScheduler[requestId]);
     delete timeoutScheduler[requestId];
   }
+}
+
+async function checkZKAndNotify(
+  requestDetail,
+  height,
+  idpId,
+  callbackUrl,
+  requestData
+) {
+  logger.debug({
+    message: 'Check ZK Proof then notify',
+    requestDetail,
+    height,
+    idpId,
+    callbackUrl,
+    requestData,
+  });
+  const responseValid = await verifyZKProof(
+    requestDetail.request_id,
+    idpId,
+    requestData
+  );
+
+  if (
+    requestDetail.status === 'confirmed' &&
+    requestDetail.responses.length === requestDetail.min_idp &&
+    responseValid
+  ) {
+    const requestData = await db.getRequestToSendToAS(requestDetail.request_id);
+    if (requestData != null) {
+      // TODO: try catch / error handling
+      await sendRequestToAS(requestData, height);
+    }
+  }
+
+  const eventDataForCallback = {
+    type: 'request_event',
+    request_id: requestDetail.request_id,
+    status: requestDetail.status,
+    min_idp: requestDetail.min_idp,
+    answered_idp_count: requestDetail.responses.length,
+    is_closed: requestDetail.is_closed,
+    is_timed_out: requestDetail.is_timed_out,
+    service_list: requestDetail.data_request_list.map((service) => ({
+      service_id: service.service_id,
+      count: service.count,
+      answered_count:
+        service.answered_as_id_list != null
+          ? service.answered_as_id_list.length
+          : 0,
+    })),
+    latest_response_valid: responseValid,
+  };
+
+  try {
+    await fetch(callbackUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(eventDataForCallback),
+    });
+  } catch (error) {
+    logger.error({
+      message: 'Cannot send callback to client application',
+      error,
+    });
+
+    // TODO: error handling
+    // retry?
+  }
+
+  db.removeProofReceivedFromMQ(`${requestDetail.request_id}:${idpId}`);
+  db.removeExpectedIdpResponseNodeId(requestDetail.request_id);
 }
 
 export async function handleTendermintNewBlockHeaderEvent(
@@ -155,20 +229,21 @@ export async function handleTendermintNewBlockHeaderEvent(
     toHeight,
   });
 
-  const responseIdsInTendermintBlock = await db.getResponseIdsExpectedInBlock(
-    fromHeight,
-    toHeight
-  );
-
+  const blocks = await tendermint.getBlocks(fromHeight, toHeight);
   await Promise.all(
-    responseIdsInTendermintBlock.map(async (responseIdWithHeight) => {
-      // TODO: clear key with smart-contract, eg. request_id or requestId
-      const [requestId, idp_id] = responseIdWithHeight.responseId.split(':');
-      await checkAndNotify(requestId, idp_id, responseIdWithHeight.height);
-      db.removeProofReceivedFromMQ(responseIdWithHeight.responseId);
+    blocks.map(async (block) => {
+      let transactions = tendermint.getTransactionListFromBlockQuery(block);
+      await Promise.all(
+        transactions.map(async (transaction) => {
+          // TODO: clear key with smart-contract, eg. request_id or requestId
+          const requestId =
+            transaction.args.request_id || transaction.args.requestId; //derive from tx;
+          const height = block.block.header.height;
+          await checkAndNotify(requestId, height);
+        })
+      );
     })
   );
-  db.removeResponseIdsExpectedInBlock(fromHeight, toHeight);
 }
 
 async function getASReceiverList(data_request) {
@@ -403,6 +478,10 @@ export async function createRequest({
       message_hash: utils.hash(challenge + request_message),
     };
 
+    // maintain mapping
+    await db.setRequestIdByReferenceId(reference_id, request_id);
+    await db.setRequestCallbackUrl(request_id, callback_url);
+
     const { height } = await tendermint.transact(
       'CreateRequest',
       requestDataToBlockchain,
@@ -417,9 +496,6 @@ export async function createRequest({
 
     addTimeoutScheduler(request_id, request_timeout);
 
-    // maintain mapping
-    await db.setRequestIdByReferenceId(reference_id, request_id);
-    await db.setRequestCallbackUrl(request_id, callback_url);
     return request_id;
   } catch (error) {
     const err = new CustomError({
@@ -531,16 +607,26 @@ export async function handleMessageFromQueue(data) {
         messageBlockHeight: dataJSON.height,
       });
       db.setProofReceivedFromMQ(responseId, dataJSON);
-      db.addResponseIdsExpectedInBlock(dataJSON.height, {
-        height: dataJSON.height,
-        responseId,
-      });
+      db.setExpectedIdpResponseNodeId(dataJSON.request_id, dataJSON.idp_id);
       return;
     }
-    checkAndNotify(
-      dataJSON.request_id,
-      dataJSON.idp_id,
+
+    const callbackUrl = await db.getRequestCallbackUrl(dataJSON.request_id);
+    // if (!callbackUrl) return;
+
+    const requestDetail = await common.getRequestDetail({
+      requestId: dataJSON.request_id,
+    });
+
+    if (requestDetail.responses == null) {
+      requestDetail.responses = [];
+    }
+
+    checkZKAndNotify(
+      requestDetail,
       latestBlockHeight,
+      dataJSON.idp_id,
+      callbackUrl,
       dataJSON
     );
   } else if (dataJSON.as_id != null) {
@@ -554,7 +640,7 @@ export async function handleMessageFromQueue(data) {
       });
       // Note: Should check if received request id is expected?
 
-      // TODO: Need to change how BC store data
+      // Should check? (legal liability issue)
       // Check if AS signs sent data before request is closed or timed out
       // for (let i = 0; i < requestDetail.data_request_list.length; i++) {
       //   const dataRequest = requestDetail.data_request_list[i];
@@ -646,11 +732,11 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
   let accessor_group_id = await common.getAccessorGroupId(
     privateProofObject.accessor_id
   );
-  let { 
+  let {
     namespace,
     identifier,
     privateProofObjectList,
-    request_message
+    request_message,
   } = await db.getRequestToSendToAS(request_id);
 
   logger.debug({
@@ -659,7 +745,7 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
   });
 
   //and check against all accessor_group_id of responses
-  for(let i = 0 ; i < privateProofObjectList.length ; i++) {
+  for (let i = 0; i < privateProofObjectList.length; i++) {
     let otherPrivateProofObject = privateProofObjectList[i].privateProofObject;
     let otherGroupId = await common.getAccessorGroupId(
       otherPrivateProofObject.accessor_id
@@ -693,15 +779,15 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
   });
 
   responses.forEach((response) => {
-    if(response.idp_id === idp_id) {
+    if (response.idp_id === idp_id) {
       publicProof = response.identity_proof;
       signature = response.signature;
     }
   });
 
   let signatureValid = utils.verifySignature(
-    signature, 
-    public_key, 
+    signature,
+    public_key,
     request_message
   );
 
@@ -713,14 +799,17 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
     signature,
   });
 
-  return signatureValid && utils.verifyZKProof(
-    public_key, 
-    challenge, 
-    privateProofObject.privateProofValue, 
-    publicProof, 
-    {
-      namespace,
-      identifier,
-    }
+  return (
+    signatureValid &&
+    utils.verifyZKProof(
+      public_key,
+      challenge,
+      privateProofObject.privateProofValue,
+      publicProof,
+      {
+        namespace,
+        identifier,
+      }
+    )
   );
 }

@@ -23,8 +23,8 @@ const Entities = {
     requestId: Sequelize.STRING,
     expectedBlockHeight: Sequelize.INTEGER,
   }),
-  responseIdExpectedInBlock: sequelize.define('responseIdExpectedInBlock', {
-    responseIdWithHeight: Sequelize.JSON,
+  expectedIdpResponseNodeId: sequelize.define('expectedIdpResponseNodeId', {
+    idpNodeId: Sequelize.STRING,
     expectedBlockHeight: Sequelize.INTEGER,
   }),
   requestReceivedFromMQ: sequelize.define('requestReceivedFromMQ', {
