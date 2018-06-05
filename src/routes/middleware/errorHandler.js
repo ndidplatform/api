@@ -1,3 +1,5 @@
+import { clientHttpErrorCode, serverHttpErrorCode } from '../../config';
+
 const env = process.env.NODE_ENV || 'development';
 
 export default function errorHandler(err, req, res, next) {
@@ -29,14 +31,14 @@ export default function errorHandler(err, req, res, next) {
       },
     });
   } else if (clientError === true) {
-    res.status(400).json({
+    res.status(clientHttpErrorCode).json({
       error: {
         code: errorCode,
         message: errorMessage,
       },
     });
   } else {
-    res.status(500).json({
+    res.status(serverHttpErrorCode).json({
       error: {
         code: errorCode,
         message: errorMessage,
