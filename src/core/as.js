@@ -391,11 +391,12 @@ async function verifyZKProof(request_id, dataFromMq) {
       privateProofObjectList[i].privateProofObject.accessor_id
     );
     //query publicProof from response of idp_id in request
-    let publicProof,signature;
+    let publicProof,signature,privateProofValueHash;
     responses.forEach((response) => {
       if(response.idp_id === privateProofObjectList[i].idp_id) {
         publicProof = response.identity_proof;
         signature = response.signature;
+        privateProofValueHash = response.private_proof_hash;
       }
     });
 
@@ -423,7 +424,8 @@ async function verifyZKProof(request_id, dataFromMq) {
       {
         namespace,
         identifier
-      }
+      },
+      privateProofValueHash,
     );
   }
   return valid;

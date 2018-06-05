@@ -140,7 +140,10 @@ export function verifyZKProof(publicKey,
   privateProof, 
   publicProof, 
   sid,
+  privateProofHash,
 ) {
+  if(privateProofHash !== hash(privateProof)) return false;
+
   let hashedSid = hash(sid.namespace + ':' + sid.identifier);
   let { n, e } = extractParameterFromPublicKey(publicKey);
 

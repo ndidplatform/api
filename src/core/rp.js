@@ -767,7 +767,7 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
   let public_key = await common.getAccessorKey(privateProofObject.accessor_id);
 
   //query publicProof from response of idp_id in request
-  let publicProof, signature;
+  let publicProof, signature, privateProofValueHash;
   let responses = (await common.getRequestDetail({
     requestId: request_id,
   })).responses;
@@ -782,6 +782,7 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
     if (response.idp_id === idp_id) {
       publicProof = response.identity_proof;
       signature = response.signature;
+      privateProofValueHash = response.private_proof_hash;
     }
   });
 
@@ -809,7 +810,8 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
       {
         namespace,
         identifier,
-      }
+      },
+      privateProofValueHash,
     )
   );
 }

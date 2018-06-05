@@ -84,6 +84,7 @@ export async function createIdpResponse(data) {
       signature,
       //accessor_id,
       identity_proof: blockchainProof,
+      private_proof_hash: utils.hash(privateProofValue),
     };
 
 
