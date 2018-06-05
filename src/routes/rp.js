@@ -49,7 +49,7 @@ router.get('/requests/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    const request = await common.getRequest({
+    const request = await common.getRequestDetail({
       requestId: request_id,
     });
 
