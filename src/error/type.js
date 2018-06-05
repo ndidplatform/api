@@ -85,29 +85,24 @@ export default {
     code: 15003,
     message: 'Bad nonce',
   },
-  UNAUTHORIZED: {
-    code: 15004,
-    message:
-      'Unauthorized (You may have not registered your node with NDID or calling a function with wrong role)',
-  },
   UNMARSHAL_ERROR: {
-    code: 15005,
+    code: 15004,
     message: 'Cannot unmarshal JSON',
   },
   MARSHAL_ERROR: {
-    code: 15006,
+    code: 15005,
     message: 'Cannot marshal JSON',
   },
   WRONG_TRANSACTION_FORMAT: {
-    code: 15007,
+    code: 15006,
     message: 'Wrong transaction format',
   },
   METHOD_CAN_NOT_BE_EMPTY: {
-    code: 15008,
+    code: 15007,
     message: 'Method name cannot be empty',
   },
   DUPLICATE_REQUEST_ID: {
-    code: 15009,
+    code: 15008,
     message: 'Duplicate request ID',
   }, // Server generates a duplicate request ID
 
@@ -191,5 +186,11 @@ export default {
     code: 25016,
     message: 'Duplicate public key (already used)',
     clientError: true,
+  },
+
+  UNAUTHORIZED: {
+    code: 35001,
+    message:
+      'Unauthorized (You may have not registered your node with NDID or calling a function with a wrong role)',
   },
 };

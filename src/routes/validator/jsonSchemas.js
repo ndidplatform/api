@@ -162,7 +162,6 @@ export default {
     '/as/service/:service_id': {
       body: {
         properties: {
-          service_id: { type: 'string', minLength: 1 },
           service_name: { type: 'string', minLength: 1 },
           min_ial: { $ref: 'defs#/definitions/ial' },
           min_aal: { $ref: 'defs#/definitions/aal' },
@@ -172,7 +171,7 @@ export default {
             pattern: '^(https?)://',
           },
         },
-        required: ['service_id', 'service_name', 'min_ial', 'min_aal', 'url'],
+        required: ['service_name', 'min_ial', 'min_aal', 'url'],
       },
     },
     '/dpki/node/create': {

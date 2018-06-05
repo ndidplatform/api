@@ -54,11 +54,17 @@ router.get('/as/:service_id', async (req, res, next) => {
   }
 });
 
-router.get('/nodeToken/:node_id', async (req, res, next) => {
+router.get('/node_token/:node_id', async (req, res, next) => {
   try {
     const { node_id } = req.params;
 
-    res.status(200).json(await common.getNodeToken(node_id));
+    const result = await common.getNodeToken(node_id);
+
+    if (result == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(result);
+    }
   } catch (error) {
     next(error);
   }

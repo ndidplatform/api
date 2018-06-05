@@ -2,6 +2,9 @@ import path from 'path';
 
 export const serverPort = process.env.SERVER_PORT || 8080;
 
+export const clientHttpErrorCode = process.env.CLIENT_HTTP_ERROR_CODE || 400;
+export const serverHttpErrorCode = process.env.SERVER_HTTP_ERROR_CODE || 500;
+
 export const logDirectoryPath = process.env.LOG_DIRECTORY_PATH || __dirname;
 
 export const role = process.env.ROLE;
