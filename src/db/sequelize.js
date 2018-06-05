@@ -86,6 +86,16 @@ export async function getList({ name, keyName, key, valueName }) {
   return models.map((model) => model.get(valueName));
 }
 
+export async function count({ name, keyName, key }) {
+  await initDb;
+  const count = await Entities[name].count({
+    where: {
+      [keyName]: key,
+    },
+  });
+  return count;
+}
+
 export async function getListRange({ name, keyName, keyRange, valueName }) {
   await initDb;
   const models = await Entities[name].findAll({

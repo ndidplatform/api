@@ -19,6 +19,38 @@ export function clearAllScheduler() {
   }
 }
 
+/**
+ *
+ * @param {string} callbackUrl
+ * @param {Object} data
+ * @param {boolean} retry
+ */
+async function callbackToClient(callbackUrl, data, retry) {
+  // TODO: retry with back-off, persistence
+  try {
+    await fetch(callbackUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    logger.error({
+      message: 'Cannot send callback to client application',
+      error,
+    });
+
+    // TODO: error handling
+    // retry?
+  }
+}
+
+/**
+ * 
+ * @param {string} requestId 
+ * @param {integer} height 
+ */
 async function checkAndNotify(requestId, height) {
   // logger.debug({
   //   message: 'RP check zk proof and notify',
@@ -99,23 +131,7 @@ async function checkAndNotify(requestId, height) {
     })),
   };
 
-  try {
-    await fetch(callbackUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(eventDataForCallback),
-    });
-  } catch (error) {
-    logger.error({
-      message: 'Cannot send callback to client application',
-      error,
-    });
-
-    // TODO: error handling
-    // retry?
-  }
+  await callbackToClient(callbackUrl, eventDataForCallback, true);
 
   if (
     // request.status === 'completed' ||
@@ -188,23 +204,7 @@ async function checkZKAndNotify(
     latest_response_valid: responseValid,
   };
 
-  try {
-    await fetch(callbackUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(eventDataForCallback),
-    });
-  } catch (error) {
-    logger.error({
-      message: 'Cannot send callback to client application',
-      error,
-    });
-
-    // TODO: error handling
-    // retry?
-  }
+  await callbackToClient(callbackUrl, eventDataForCallback, true);
 
   db.removeProofReceivedFromMQ(`${requestDetail.request_id}:${idpId}`);
   db.removeExpectedIdpResponseNodeId(requestDetail.request_id);
@@ -482,17 +482,23 @@ export async function createRequest({
     await db.setRequestIdByReferenceId(reference_id, request_id);
     await db.setRequestCallbackUrl(request_id, callback_url);
 
-    const { height } = await tendermint.transact(
-      'CreateRequest',
-      requestDataToBlockchain,
-      nonce
-    );
+    try {
+      const { height } = await tendermint.transact(
+        'CreateRequest',
+        requestDataToBlockchain,
+        nonce
+      );
 
-    // send request data to IDPs via message queue
-    mq.send(receivers, {
-      ...requestData,
-      height,
-    });
+      // send request data to IDPs via message queue
+      mq.send(receivers, {
+        ...requestData,
+        height,
+      });
+    } catch (error) {
+      await db.removeRequestIdByReferenceId(reference_id);
+      await db.removeRequestCallbackUrl(request_id);
+      throw error;
+    }
 
     addTimeoutScheduler(request_id, request_timeout);
 
@@ -655,6 +661,27 @@ export async function handleMessageFromQueue(data) {
         source_signature: dataJSON.signature,
         data: dataJSON.data,
       });
+
+      const asTotalCount = requestDetail.data_request_list.reduce(
+        (total, service) => total + service.count,
+        0
+      );
+
+      const receivedDataCount = await db.countDataFromAS(dataJSON.request_id);
+
+      const received_all = asTotalCount === receivedDataCount;
+
+      const callbackUrl = await db.getRequestCallbackUrl(dataJSON.request_id);
+
+      const dataForCallback = {
+        type: 'data_received',
+        request_id: dataJSON.request_id,
+        service_id: dataJSON.service_id,
+        source_node_id: dataJSON.as_id,
+        received_all,
+      };
+
+      await callbackToClient(callbackUrl, dataForCallback, true);
     } catch (error) {
       // TODO: error handling
       throw error;

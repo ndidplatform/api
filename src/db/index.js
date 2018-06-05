@@ -311,6 +311,14 @@ export function getDatafromAS(requestId) {
   });
 }
 
+export function countDataFromAS(requestId) {
+  return db.count({
+    name: 'dataFromAS',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 export function addDataFromAS(requestId, data) {
   return db.pushToList({
     name: 'dataFromAS',
