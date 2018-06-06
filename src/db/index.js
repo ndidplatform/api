@@ -136,6 +136,33 @@ export function removeRPIdFromRequestId(requestId) {
   });
 }
 
+export function getIdentityFromRequestId(requestId) {
+  return db.get({
+    name: 'identityRequestIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'identity',
+  });
+}
+
+export function setIdentityFromRequestId(requestId, identity) {
+  return db.set({
+    name: 'identityRequestIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'identity',
+    value: identity,
+  });
+}
+
+export function removeIdentityFromRequestId(requestId) {
+  return db.remove({
+    name: 'identityRequestIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 export function getChallengeFromRequestId(requestId) {
   return db.get({
     name: 'challengeFromRequestId',

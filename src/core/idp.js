@@ -114,6 +114,12 @@ async function notifyByCallback(request) {
     });
     return;
   }
+
+  logger.debug({
+    message: 'Notifying client',
+    request,
+  });
+
   try {
     request.type = request.type || 'request';
     fetch(callbackUrl, {

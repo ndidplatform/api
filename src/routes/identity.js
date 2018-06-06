@@ -19,7 +19,7 @@ router.post('/', validateBody, async (req, res, next) => {
       ial,
     } = req.body;
 
-    await identity.createNewIdentity({
+    let { request_id, exist } = await identity.createNewIdentity({
       namespace,
       identifier,
       //secret,
@@ -30,7 +30,9 @@ router.post('/', validateBody, async (req, res, next) => {
       ial,
     });
 
-    res.status(201).end();
+    res.status(200).send({
+      request_id, exist
+    });
   } catch (error) {
     next(error);
   }

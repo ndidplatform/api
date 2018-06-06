@@ -67,6 +67,10 @@ const Entities = {
     requestId: Sequelize.STRING,
     unixTimeout: Sequelize.INTEGER,
   }),
+  identityRequestIdMapping: sequelize.define('identityRequestIdMapping', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    identity: Sequelize.JSON,
+  }),
 };
 
 const initDb = sequelize.sync();
