@@ -38,8 +38,10 @@ async function signData(data) {
   try {
     await tendermint.transact('SignData', dataToBlockchain, nonce);
   } catch (error) {
-    // TODO: handle error
-    throw error;
+    throw new CustomError({
+      message: 'Cannot sign data',
+      cause: error,
+    });
   }
 }
 
@@ -48,7 +50,10 @@ async function registerServiceDestination(data) {
     let nonce = utils.getNonce();
     await tendermint.transact('RegisterServiceDestination', data, nonce);
   } catch (error) {
-    throw error;
+    throw new CustomError({
+      message: 'Cannot register service destination',
+      cause: error,
+    });
   }
 }
 
@@ -72,7 +77,10 @@ export async function afterGotDataFromCallback(response, additionalData) {
       error,
     });
 
-    throw error;
+    throw new CustomError({
+      message: 'Cannot parse data from AS',
+      cause: error,
+    });
   }
 
   // When received data
