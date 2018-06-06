@@ -27,6 +27,7 @@
     ```sh
     TENDERMINT_IP=$IP \
     TENDERMINT_PORT=$PORT \
+    NODE_ID=ndid1 \
     npm run initDevKey
     ```
 
@@ -34,12 +35,13 @@
 
     ```sh
     ROLE=$ROLE \
+    NODE_ID=$NODE_ID \
     npm start
     ```
 
 **Environment variable options**
 
-- `ROLE`: Can be `idp`, `rp`, or `as`
+- `ROLE`: Can be `idp`, `rp`, or `as` [Required]
 - `TENDERMINT_IP`: IP Address to contact tendermint RPC [Default: `localhost`]
 - `TENDERMINT_PORT`: Port to contact tendermint RPC [Default: `45000` for IDP, `45001` for RP, and `45002` for AS]
 - `MQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted [Required]
@@ -47,7 +49,7 @@
 - `SERVER_PORT`: API server port [Default: `8080`]
 - `PRIVATE_KEY_PATH`: Path to private key (if call back to create signature is not set) [Default: using pre-generated development key]
 - `MASTER_PRIVATE_KEY_PATH`: Path to master private key (if call back to create signature is not set) [Default: using pre-generated development key]
-- `NODE_ID`: Node ID. Only when there are more than one node per role in the system. This ID tie to public key, in dev mode we have `rp1`, `rp2`, `rp3`, `idp1`, `idp2`, `idp3`, `as1`, `as2`, `as3`
+- `NODE_ID`: Node ID. Only when there are more than one node per role in the system. This ID tie to public key, in dev mode we have `rp1`, `rp2`, `rp3`, `idp1`, `idp2`, `idp3`, `as1`, `as2`, `as3` [Required]
 - `LOG_DIRECTORY_PATH`: Directory path for log files (only in `production` environment) [Default: `__dirname` (code's directory)]
 - `CLIENT_HTTP_ERROR_CODE`: HTTP error code when responding a client error [Default: `400`]
 - `SERVER_HTTP_ERROR_CODE`: HTTP error code when responding a server error [Default: `500`]
