@@ -35,8 +35,8 @@ router.post('/response', validateBody, async (req, res, next) => {
   try {
     const {
       request_id,
-      namespace,
-      identifier,
+      //namespace,
+      //identifier,
       ial,
       aal,
       secret,
@@ -47,8 +47,8 @@ router.post('/response', validateBody, async (req, res, next) => {
 
     await idp.createIdpResponse({
       request_id,
-      namespace,
-      identifier,
+      //namespace,
+      //identifier,
       ial,
       aal,
       secret,
