@@ -1,5 +1,4 @@
-import fetch from 'node-fetch';
-
+import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/customError';
 import errorType from '../error/type';
 import logger from '../logger';
@@ -21,35 +20,8 @@ export function clearAllScheduler() {
 
 /**
  *
- * @param {string} callbackUrl
- * @param {Object} data
- * @param {boolean} retry
- */
-async function callbackToClient(callbackUrl, data, retry) {
-  // TODO: retry with back-off, persistence
-  try {
-    await fetch(callbackUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-  } catch (error) {
-    logger.error({
-      message: 'Cannot send callback to client application',
-      error,
-    });
-
-    // TODO: error handling
-    // retry?
-  }
-}
-
-/**
- * 
- * @param {string} requestId 
- * @param {integer} height 
+ * @param {string} requestId
+ * @param {integer} height
  */
 async function checkAndNotify(requestId, height) {
   // logger.debug({
@@ -840,7 +812,7 @@ async function verifyZKProof(request_id, idp_id, dataFromMq) {
         namespace,
         identifier,
       },
-      privateProofValueHash,
+      privateProofValueHash
     )
   );
 }

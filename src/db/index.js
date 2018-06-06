@@ -10,7 +10,35 @@ export async function close() {
 }
 
 //
-// Used by IDP and AS
+// Used by RP, IdP, and AS
+//
+
+export function addCallbackWithRetryData(cbId, data) {
+  return db.pushToList({
+    name: 'callbackWithRetry',
+    keyName: 'cbId',
+    key: cbId,
+    valueName: 'data',
+    value: data,
+  });
+}
+
+export function removeCallbackWithRetryData(cbId) {
+  return db.remove({
+    name: 'callbackWithRetry',
+    keyName: 'cbId',
+    key: cbId,
+  });
+}
+
+export function getAllCallbackWithRetryData() {
+  return db.getAll({
+    name: 'callbackWithRetry',
+  });
+}
+
+//
+// Used by IdP and AS
 //
 
 export function getRequestIdsExpectedInBlock(fromHeight, toHeight) {

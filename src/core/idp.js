@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import fetch from 'node-fetch';
 
+import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/customError';
 import logger from '../logger';
 
@@ -63,11 +63,11 @@ export async function createIdpResponse(data) {
       accessor_id,
       secret,
     } = data;
-    
+
     let [blockchainProof, privateProofValue] = utils.generateIdentityProof({
       publicKey: await common.getAccessorKey(accessor_id),
       challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge,
-      ...data
+      ...data,
     });
     await db.removeRequestReceivedFromMQ(request_id);
 
@@ -87,7 +87,6 @@ export async function createIdpResponse(data) {
       private_proof_hash: utils.hash(privateProofValue),
     };
 
-
     let { height } = await tendermint.transact(
       'CreateIdpResponse',
       dataToBlockchain,
@@ -95,7 +94,6 @@ export async function createIdpResponse(data) {
     );
 
     sendPrivateProofToRP(request_id, privateProofObject, height);
-
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot create IDP response',
@@ -106,31 +104,14 @@ export async function createIdpResponse(data) {
   }
 }
 
-async function notifyByCallback(request) {
+function notifyByCallback(request) {
   if (!callbackUrl) {
     logger.error({
       message: 'Callback URL for IDP has not been set',
     });
     return;
   }
-  try {
-    fetch(callbackUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ request }),
-    });
-  } catch (error) {
-    logger.error({
-      message: 'Cannot send callback to IDP',
-    });
-
-    // TODO: handle error
-    // retry?
-
-    // throw error;
-  }
+  return callbackToClient(callbackUrl, { request }, true);
 }
 
 async function sendPrivateProofToRP(request_id, privateProofObject, height) {
@@ -141,7 +122,7 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   });
   logger.debug({
     message: 'Query MQ destination for rp',
-    rp_id
+    rp_id,
   });
 
   let { ip, port } = await common.getMsqAddress(rp_id);
@@ -155,7 +136,7 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
     request_id,
     ...privateProofObject,
     height,
-    idp_id: config.nodeId
+    idp_id: config.nodeId,
   });
 
   db.removeRPIdFromRequestId(request_id);

@@ -67,6 +67,10 @@ const Entities = {
     requestId: Sequelize.STRING,
     unixTimeout: Sequelize.INTEGER,
   }),
+  callbackWithRetry: sequelize.define('callbackWithRetry', {
+    cbId: { type: Sequelize.STRING, primaryKey: true },
+    data: Sequelize.JSON,
+  }),
 };
 
 const initDb = sequelize.sync();
@@ -183,7 +187,7 @@ export async function set({ name, keyName, key, valueName, value }) {
   });
 }
 
-export async function remove({ name, keyName, key, valueName, value }) {
+export async function remove({ name, keyName, key }) {
   await initDb;
   await Entities[name].destroy({
     where: {

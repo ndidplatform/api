@@ -1,5 +1,4 @@
-import fetch from 'node-fetch';
-
+import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/customError';
 import logger from '../logger';
 
@@ -53,17 +52,64 @@ async function registerServiceDestination(data) {
   }
 }
 
-async function notifyByCallback(request, serviceId) {
-  //get by persistent
+export async function afterGotDataFromCallback(response, additionalData) {
+  let data;
+  try {
+    const result = await response.json();
 
-  logger.debug({
-    message: 'AS try to send data',
-    request,
-    serviceId,
+    logger.info({
+      message: 'Received data from AS',
+    });
+    logger.debug({
+      message: 'Data from AS',
+      result,
+    });
+
+    data = result.data;
+  } catch (error) {
+    logger.error({
+      message: 'Cannot parse data from AS',
+      error,
+    });
+
+    throw error;
+  }
+
+  // When received data
+  let as_id = config.nodeId;
+  let signature = await utils.createSignature(data);
+  // AS node encrypts the response and sends it back to RP via NSQ.
+  // TODO should check request status before send (whether request is closed or timeout)
+  
+  sendDataToRP({
+    rp_id: additionalData.rpId,
+    request_id: additionalData.requestId,
+    as_id,
+    signature,
+    service_id: additionalData.serviceId,
+    data,
   });
 
-  let callbackUrl = await db.getServiceCallbackUrl(serviceId);
-  //console.log('===>',callbackUrl);
+  // AS node adds transaction to blockchain
+  signData({
+    as_id,
+    request_id: additionalData.requestId,
+    signature,
+    service_id: additionalData.serviceId,
+  });
+}
+
+async function getDataAndSendBackToRP(request, responseDetails) {
+  // Platform→AS
+  // The AS replies with the requested data
+  logger.debug({
+    message: 'AS process request for data',
+    request,
+    responseDetails,
+  });
+
+  const callbackUrl = await db.getServiceCallbackUrl(request.service_id);
+
   if (!callbackUrl) {
     logger.error({
       message: 'Callback URL for AS has not been set',
@@ -79,44 +125,21 @@ async function notifyByCallback(request, serviceId) {
     request,
   });
 
-  let responseFromAS;
-  try {
-    responseFromAS = await fetch(callbackUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ request }),
-    });
-  } catch (error) {
-    logger.error({
-      message: 'Cannot get data from AS',
-      error,
-    });
-
-    // TODO: handle error
-    // retry?
-  }
-  try {
-    const result = await responseFromAS.json();
-
-    logger.info({
-      message: 'Received data from AS',
-    });
-    logger.debug({
-      message: 'Data from AS',
-      result,
-    });
-
-    return result.data;
-  } catch (error) {
-    logger.error({
-      message: 'Cannot parse data from AS',
-      error,
-    });
-
-    throw error;
-  }
+  callbackToClient(
+    callbackUrl,
+    {
+      request_id: request.request_id,
+      request_params: request.request_params,
+      ...responseDetails,
+    },
+    true,
+    afterGotDataFromCallback,
+    {
+      rpId: request.rp_id,
+      requestId: request.request_id,
+      serviceId: request.service_id,
+    }
+  );
 }
 
 async function getResponseDetails(requestId) {
@@ -150,91 +173,42 @@ async function getResponseDetails(requestId) {
   };
 }
 
-async function getDataAndSendBackToRP(requestJson, responseDetails) {
-  // Platform→AS
-  // The AS replies with the requested data
-  logger.debug({
-    message: 'AS process request for data',
-    requestJson,
-    responseDetails,
-  });
-
-  let data = await notifyByCallback(
-    {
-      request_id: requestJson.request_id,
-      request_params: requestJson.request_params,
-      ...responseDetails,
-    },
-    requestJson.service_id
-  );
-
-  // When received data
-  let as_id = config.nodeId;
-  let signature = await utils.createSignature(data);
-  // AS node encrypts the response and sends it back to RP via NSQ.
-  // TODO should check request status before send (whether request is closed or timeout)
-  //console.log('===> AS SENDING');
-  sendDataToRP({
-    rp_id: requestJson.rp_id,
-    request_id: requestJson.request_id,
-    as_id,
-    signature,
-    service_id: requestJson.service_id,
-    data,
-  });
-  //console.log('===> AS SENT');
-
-  // AS node adds transaction to blockchain
-  signData({
-    as_id,
-    request_id: requestJson.request_id,
-    signature,
-    service_id: requestJson.service_id,
-  });
-}
-
-export async function handleMessageFromQueue(request) {
+export async function handleMessageFromQueue(requestJsonStr) {
   logger.info({
     message: 'Received message from MQ',
   });
   logger.debug({
     message: 'Message from MQ',
-    request,
+    requestJsonStr,
   });
-  const requestJson = JSON.parse(request);
+  const request = JSON.parse(requestJsonStr);
 
   const latestBlockHeight = tendermint.latestBlockHeight;
-  if (latestBlockHeight <= requestJson.height) {
+  if (latestBlockHeight <= request.height) {
     logger.debug({
       message: 'Saving message from MQ',
       tendermintLatestBlockHeight: latestBlockHeight,
-      messageBlockHeight: requestJson.height,
+      messageBlockHeight: request.height,
     });
-    await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
-    await db.addRequestIdExpectedInBlock(
-      requestJson.height,
-      requestJson.request_id
-    );
+    await db.setRequestReceivedFromMQ(request.request_id, request);
+    await db.addRequestIdExpectedInBlock(request.height, request.request_id);
     return;
   }
 
   logger.debug({
     message: 'Processing request',
-    requestId: requestJson.request_id,
+    requestId: request.request_id,
   });
-  const valid = await common.checkRequestIntegrity(
-    requestJson.request_id,
-    requestJson
-  );
+  const valid = await common.checkRequestIntegrity(request.request_id, request);
   if (valid) {
     // TODO try catch / error handling
-    const responseDetails = await getResponseDetails(requestJson.request_id);
+    const responseDetails = await getResponseDetails(request.request_id);
     //loop and check zk proof for all response
-    if(!verifyZKProof(requestJson.request_id, requestJson)) {
+    if (!verifyZKProof(request.request_id, request)) {
       //TODO, do not answer? or send data to rp and tell them proof is invalid?
       return;
     }
-    getDataAndSendBackToRP(requestJson, responseDetails);
+    getDataAndSendBackToRP(request, responseDetails);
   }
 }
 
@@ -275,11 +249,11 @@ export async function handleTendermintNewBlockHeaderEvent(
         message: 'Processing request',
         requestId,
       });
-      const message = await db.getRequestReceivedFromMQ(requestId);
-      const valid = await common.checkRequestIntegrity(requestId, message);
+      const request = await db.getRequestReceivedFromMQ(requestId);
+      const valid = await common.checkRequestIntegrity(requestId, request);
       if (valid && verifyZKProof(requestId)) {
         const responseDetails = await getResponseDetails(requestId);
-        getDataAndSendBackToRP(message, responseDetails);
+        getDataAndSendBackToRP(request, responseDetails);
       }
       db.removeRequestReceivedFromMQ(requestId);
     })
@@ -362,7 +336,7 @@ export async function init() {
 }
 
 async function verifyZKProof(request_id, dataFromMq) {
-  if(!dataFromMq) dataFromMq = await db.getRequestReceivedFromMQ(request_id);
+  if (!dataFromMq) dataFromMq = await db.getRequestReceivedFromMQ(request_id);
   let {
     privateProofObjectList,
     namespace,
@@ -374,11 +348,11 @@ async function verifyZKProof(request_id, dataFromMq) {
   let accessor_group_id = await common.getAccessorGroupId(
     privateProofObjectList[0].privateProofObject.accessor_id
   );
-  for(let i = 1 ; i < privateProofObjectList.length ; i++) {
+  for (let i = 1; i < privateProofObjectList.length; i++) {
     let otherGroupId = await common.getAccessorGroupId(
       privateProofObjectList[i].privateProofObject.accessor_id
     );
-    if(otherGroupId !== accessor_group_id) {
+    if (otherGroupId !== accessor_group_id) {
       //TODO handle this?
       //throw 'Conflicted response';
       return false;
@@ -386,18 +360,18 @@ async function verifyZKProof(request_id, dataFromMq) {
   }
 
   let responses = (await common.getRequestDetail({
-    requestId: request_id
+    requestId: request_id,
   })).responses;
   let valid = true;
-  for(let i = 0 ; i < privateProofObjectList.length ; i++) {
+  for (let i = 0; i < privateProofObjectList.length; i++) {
     //query accessor_public_key from privateProof.accessor_id
     let public_key = await common.getAccessorKey(
       privateProofObjectList[i].privateProofObject.accessor_id
     );
     //query publicProof from response of idp_id in request
-    let publicProof,signature,privateProofValueHash;
+    let publicProof, signature, privateProofValueHash;
     responses.forEach((response) => {
-      if(response.idp_id === privateProofObjectList[i].idp_id) {
+      if (response.idp_id === privateProofObjectList[i].idp_id) {
         publicProof = response.identity_proof;
         signature = response.signature;
         privateProofValueHash = response.private_proof_hash;
@@ -405,11 +379,11 @@ async function verifyZKProof(request_id, dataFromMq) {
     });
 
     let signatureValid = utils.verifySignature(
-      signature, 
-      public_key, 
+      signature,
+      public_key,
       request_message
     );
-  
+
     logger.debug({
       message: 'Verify signature',
       signatureValid,
@@ -421,15 +395,15 @@ async function verifyZKProof(request_id, dataFromMq) {
     valid &= signatureValid;
 
     valid &= utils.verifyZKProof(
-      public_key, 
-      dataFromMq.challenge, 
-      privateProofObjectList[i].privateProofObject.privateProofValue, 
+      public_key,
+      dataFromMq.challenge,
+      privateProofObjectList[i].privateProofObject.privateProofValue,
       publicProof,
       {
         namespace,
-        identifier
+        identifier,
       },
-      privateProofValueHash,
+      privateProofValueHash
     );
   }
   return valid;

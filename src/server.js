@@ -17,6 +17,7 @@ import { init as rp_init, clearAllScheduler } from './core/rp';
 import { close as closeDB } from './db';
 import { tendermintWsClient } from './tendermint/ndid';
 import { close as closeMQ } from './mq';
+import { stopAllCallbackRetries } from './utils/callback';
 
 import * as config from './config';
 
@@ -85,6 +86,7 @@ function shutDown() {
       message: 'HTTP server closed',
     });
 
+    stopAllCallbackRetries();
     closeMQ();
     tendermintWsClient.close();
     // TODO: wait for async operations which going to use DB to finish before closing

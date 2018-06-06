@@ -5,8 +5,8 @@ import * as tendermint from '../tendermint/ndid';
 import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';
-import * as db from '../db';
 import { eventEmitter as messageQueueEvent } from '../mq';
+import { resumeCallbackToClient } from '../utils/callback';
 import * as utils from '../utils';
 import { role, nodeId } from '../config';
 
@@ -16,16 +16,19 @@ if (role === 'rp') {
   tendermint.setTendermintNewBlockHeaderEventHandler(
     rp.handleTendermintNewBlockHeaderEvent
   );
+  resumeCallbackToClient();
 } else if (role === 'idp') {
   handleMessageFromQueue = idp.handleMessageFromQueue;
   tendermint.setTendermintNewBlockHeaderEventHandler(
     idp.handleTendermintNewBlockHeaderEvent
   );
+  resumeCallbackToClient();
 } else if (role === 'as') {
   handleMessageFromQueue = as.handleMessageFromQueue;
   tendermint.setTendermintNewBlockHeaderEventHandler(
     as.handleTendermintNewBlockHeaderEvent
   );
+  resumeCallbackToClient(as.afterGotDataFromCallback);
 }
 
 export async function getRequest({ requestId }) {

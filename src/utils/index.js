@@ -14,8 +14,16 @@ let decryptCallback = false;
 const saltByteLength = 8;
 const saltStringLength = saltByteLength*2;
 
-export function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+export function wait(ms, stoppable) {
+  let setTimeoutFn;
+  const promise = new Promise((resolve) => setTimeoutFn = setTimeout(resolve, ms));
+  if (stoppable) {
+    return {
+      promise,
+      stopWaiting: () => clearTimeout(setTimeoutFn),
+    };
+  }
+  return promise;
 }
 
 export function randomBase64Bytes(length) {
