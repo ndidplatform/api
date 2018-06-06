@@ -35,9 +35,7 @@ export const tendermintBaseHttpUrl = `http://${tendermintIp}:${tendermintPort}`;
 
 export const tendermintBaseWsUrl = `ws://${tendermintIp}:${tendermintPort}`;
 
-export const nodeId = process.env.NODE_ID || (role + '1').toLowerCase();
-
-export const asID = role === 'as' ? process.env.AS_ID || nodeId : null;
+export const nodeId = process.env.NODE_ID;
 
 export const mqRegister = {
   ip: process.env.MQ_CONTACT_IP || 'localhost',

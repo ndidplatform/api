@@ -162,7 +162,7 @@ export async function checkRequestIntegrity(requestId, request) {
 
   const valid = 
     utils.hash(request.challenge + request.request_message)
-    === msgBlockchain.messageHash;
+    === msgBlockchain.request_message_hash;
   /*utils.compareSaltedHash({
     saltedHash: msgBlockchain.messageHash,
     plain: request.request_message,
@@ -177,7 +177,7 @@ export async function checkRequestIntegrity(requestId, request) {
       requestId,
       givenRequestMessage: request.request_message,
       givenRequestMessageHash: utils.hash(request.request_message),
-      requestMessageHashFromBlockchain: msgBlockchain.messageHash,
+      requestMessageHashFromBlockchain: msgBlockchain.request_message_hash,
     });
   }
 
