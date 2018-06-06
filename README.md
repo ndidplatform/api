@@ -13,14 +13,7 @@
     npm install
     ```
 
-2.  Run smart contract (tendermint ABCI app) server in `smart-contract` repository and wait for
-
-    ```sh
-    Commit
-    Commit
-    ```
-
-    to show in an output before starting `api` process.
+2.  Run smart contract (tendermint ABCI app) server in `smart-contract` repository and wait for first commit to show up in an output.
 
 3.  Add development keys to the system (for development mode only)
 
