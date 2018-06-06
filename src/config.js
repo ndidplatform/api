@@ -55,4 +55,6 @@ export const masterPrivateKeyPath =
     ? path.join(__dirname, '..', 'devKey', role, nodeId + '_master')
     : process.env.MASTER_PRIVATE_KEY_PATH;
 
+//in byte
 export const challengeLength = 16;
+export const zkRandomLengthForIdp = 256;

@@ -95,7 +95,7 @@ export function generateIdentityProof(data) {
     data,
   });
 
-  let k = randomBase64Bytes(2047);
+  let k = randomBase64Bytes(config.zkRandomLengthForIdp);
   let kInt = stringToBigInt(k);
   let { n, e } = extractParameterFromPublicKey(data.publicKey);
   let secret = stringToBigInt(data.secret);
