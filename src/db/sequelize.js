@@ -183,7 +183,7 @@ export async function set({ name, keyName, key, valueName, value }) {
   });
 }
 
-export async function remove({ name, keyName, key, valueName, value }) {
+export async function remove({ name, keyName, key }) {
   await initDb;
   await Entities[name].destroy({
     where: {

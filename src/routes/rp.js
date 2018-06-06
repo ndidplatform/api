@@ -24,7 +24,7 @@ router.post(
         request_timeout,
       } = req.body;
 
-      const requestId = await rp.createRequest({
+      const requestId = await common.createRequest({
         namespace,
         identifier,
         reference_id,
