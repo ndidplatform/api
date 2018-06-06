@@ -106,7 +106,15 @@ export default {
           min_idp: { type: 'integer', minimum: 1 },
           request_timeout: { type: 'integer', minimum: 0 },
         },
-        required: ['reference_id', 'min_ial', 'min_aal'],
+        required: [
+          'reference_id',
+          'callback_url',
+          'request_message',
+          'min_ial',
+          'min_aal',
+          'min_idp',
+          'request_timeout',
+        ],
       },
     },
     '/idp/callback': {
@@ -132,8 +140,7 @@ export default {
           secret: { type: 'string' },
           status: {
             type: 'string',
-            // TODO
-            // May validate value to be one of 'accept' and 'reject'
+            enum: ['accept', 'reject'],
           },
           signature: { type: 'string' },
           accessor_id: { type: 'string' },
@@ -154,7 +161,6 @@ export default {
     '/as/service/:service_id': {
       body: {
         properties: {
-          service_id: { type: 'string', minLength: 1 },
           service_name: { type: 'string', minLength: 1 },
           min_ial: { $ref: 'defs#/definitions/ial' },
           min_aal: { $ref: 'defs#/definitions/aal' },
@@ -164,7 +170,7 @@ export default {
             pattern: '^(https?)://',
           },
         },
-        required: ['service_id'],
+        required: ['service_name', 'min_ial', 'min_aal', 'url'],
       },
     },
     '/dpki/node/create': {
@@ -184,23 +190,38 @@ export default {
           node_key: { type: 'string', minLength: 1 },
           node_master_key: { type: 'string', minLength: 1 },
         },
+        anyOf: [
+          {
+            required: ['node_key'],
+          },
+          {
+            required: ['node_master_key'],
+          },
+        ],
       },
     },
     '/dpki/node/register_callback': {
       body: {
         properties: {
-          signUrl: {
+          sign_url: {
             type: 'string',
             format: 'uri',
             pattern: '^(https?)://',
           },
-          decryptUrl: {
+          decrypt_url: {
             type: 'string',
             format: 'uri',
             pattern: '^(https?)://',
           },
         },
-        required: ['url'],
+        anyOf: [
+          {
+            required: ['sign_url'],
+          },
+          {
+            required: ['decrypt_url'],
+          },
+        ],
       },
     },
     '/dpki/node/register_callback_master': {
@@ -220,25 +241,33 @@ export default {
         properties: {
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },
-          secret: { type: 'string', minLength: 1 },
+          //secret: { type: 'string', minLength: 1 },
           accessor_type: { type: 'string', minLength: 1 },
-          accessor_key: { type: 'string', minLength: 1 },
+          accessor_public_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
+          ial: { $ref: 'defs#/definitions/ial' },
         },
         required: [
           'namespace',
           'identifier',
-          'secret',
+          //'secret',
           'accessor_type',
-          'accessor_key',
+          'accessor_public_key',
           'accessor_id',
+          'ial',
         ],
       },
     },
     '/identity/:namespace/:identifier': {
       body: {
-        properties: {
-          // TODO
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            namespace: { type: 'string', minLength: 1 },
+            identifier: { type: 'string', minLength: 1 },
+          },
+          required: ['namespace', 'identifier'],
         },
       },
     },

@@ -55,6 +55,33 @@ export function removeRequestIdsExpectedInBlock(fromHeight, toHeight) {
   });
 }
 
+export function getExpectedIdpResponseNodeId(height) {
+  return db.get({
+    name: 'expectedIdpResponseNodeId',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'idpNodeId',
+  });
+}
+
+export function setExpectedIdpResponseNodeId(height, idpNodeId) {
+  return db.set({
+    name: 'expectedIdpResponseNodeId',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'idpNodeId',
+    value: idpNodeId,
+  });
+}
+
+export function removeExpectedIdpResponseNodeId(height) {
+  return db.remove({
+    name: 'expectedIdpResponseNodeId',
+    keyName: 'expectedBlockHeight',
+    key: height,
+  });
+}
+
 export function getRequestReceivedFromMQ(requestId) {
   return db.get({
     name: 'requestReceivedFromMQ',
@@ -79,6 +106,87 @@ export function removeRequestReceivedFromMQ(requestId) {
     name: 'requestReceivedFromMQ',
     keyName: 'requestId',
     key: requestId,
+  });
+}
+
+export function getRPIdFromRequestId(requestId) {
+  return db.get({
+    name: 'rpIdFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'rp_id',
+  });
+}
+
+export function setRPIdFromRequestId(requestId, rp_id) {
+  return db.set({
+    name: 'rpIdFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'rp_id',
+    value: rp_id,
+  });
+}
+
+export function removeRPIdFromRequestId(requestId) {
+  return db.remove({
+    name: 'rpIdFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getChallengeFromRequestId(requestId) {
+  return db.get({
+    name: 'challengeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'challenge',
+  });
+}
+
+export function setChallengeFromRequestId(requestId, challenge) {
+  return db.set({
+    name: 'challengeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'challenge',
+    value: challenge,
+  });
+}
+
+export function removeChallengeFromRequestId(requestId) {
+  return db.remove({
+    name: 'challengeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getProofReceivedFromMQ(responseId) {
+  return db.get({
+    name: 'proofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'privateProofObject',
+  });
+}
+
+export function setProofReceivedFromMQ(responseId, privateProofObject) {
+  return db.set({
+    name: 'proofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'privateProofObject',
+    value: privateProofObject,
+  });
+}
+
+export function removeProofReceivedFromMQ(responseId) {
+  return db.remove({
+    name: 'proofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
   });
 }
 
@@ -203,12 +311,20 @@ export function getDatafromAS(requestId) {
   });
 }
 
+export function countDataFromAS(requestId) {
+  return db.count({
+    name: 'dataFromAS',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 export function addDataFromAS(requestId, data) {
   return db.pushToList({
     name: 'dataFromAS',
     keyName: 'requestId',
     key: requestId,
-    valueKey: 'data',
+    valueName: 'data',
     value: data,
   });
 }

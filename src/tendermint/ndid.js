@@ -157,7 +157,8 @@ function getQueryResult(response) {
 
   // const currentHeight = parseInt(response.result.response.height);
 
-  if (response.result.response.log === 'not found') {
+  //if (response.result.response.log === 'not found') {
+  if (response.result.response.log.indexOf('not found') !== -1) {
     return null;
   }
 
@@ -208,6 +209,7 @@ function getTransactResult(response) {
         throw new CustomError({
           message: convertedErrorType.message,
           code: convertedErrorType.code,
+          clientError: convertedErrorType.clientError,
           details: {
             abciCode: response.result.deliver_tx.code,
             height,
@@ -304,4 +306,9 @@ export function getTransactionListFromBlockQuery(result) {
 
 export function getBlockHeightFromNewBlockHeaderEvent(result) {
   return result.data.value.header.height;
+}
+
+export function getNodeIdFromNewBlockHeaderEvent(result) {
+  //Todo
+  return 'someId'; //result.data.value.header.height;
 }

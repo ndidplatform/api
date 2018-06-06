@@ -12,7 +12,7 @@ import * as db from '../db';
 
 async function sendDataToRP(data) {
   let receivers = [];
-  let nodeId = data.rp_node_id;
+  let nodeId = data.rp_id;
   // TODO: try catch / error handling
   let { ip, port } = await common.getMsqAddress(nodeId);
   receivers.push({
@@ -21,18 +21,20 @@ async function sendDataToRP(data) {
     ...(await common.getNodePubKey(nodeId)), // TODO: try catch / error handling
   });
   mq.send(receivers, {
-    as_id: data.as_id,
-    data: data.data,
     request_id: data.request_id,
+    as_id: data.as_id,
+    service_id: data.service_id,
+    signature: data.signature,
+    data: data.data,
   });
 }
 
 async function signData(data) {
   const nonce = utils.getNonce();
   const dataToBlockchain = {
-    as_id: data.as_id,
     request_id: data.request_id,
     signature: data.signature,
+    service_id: data.service_id,
   };
   try {
     await tendermint.transact('SignData', dataToBlockchain, nonce);
@@ -53,6 +55,13 @@ async function registerServiceDestination(data) {
 
 async function notifyByCallback(request, serviceId) {
   //get by persistent
+
+  logger.debug({
+    message: 'AS try to send data',
+    request,
+    serviceId,
+  });
+
   let callbackUrl = await db.getServiceCallbackUrl(serviceId);
   //console.log('===>',callbackUrl);
   if (!callbackUrl) {
@@ -144,6 +153,12 @@ async function getResponseDetails(requestId) {
 async function getDataAndSendBackToRP(requestJson, responseDetails) {
   // Platform→AS
   // The AS replies with the requested data
+  logger.debug({
+    message: 'AS process request for data',
+    requestJson,
+    responseDetails,
+  });
+
   let data = await notifyByCallback(
     {
       request_id: requestJson.request_id,
@@ -154,21 +169,28 @@ async function getDataAndSendBackToRP(requestJson, responseDetails) {
   );
 
   // When received data
-  let as_id = config.asID;
+  let as_id = config.nodeId;
   let signature = await utils.createSignature(data);
   // AS node encrypts the response and sends it back to RP via NSQ.
   // TODO should check request status before send (whether request is closed or timeout)
   //console.log('===> AS SENDING');
   sendDataToRP({
-    rp_node_id: requestJson.rp_node_id,
-    as_id,
-    data,
+    rp_id: requestJson.rp_id,
     request_id: requestJson.request_id,
+    as_id,
+    signature,
+    service_id: requestJson.service_id,
+    data,
   });
   //console.log('===> AS SENT');
 
   // AS node adds transaction to blockchain
-  signData({ as_id, request_id: requestJson.request_id, signature });
+  signData({
+    as_id,
+    request_id: requestJson.request_id,
+    signature,
+    service_id: requestJson.service_id,
+  });
 }
 
 export async function handleMessageFromQueue(request) {
@@ -207,6 +229,11 @@ export async function handleMessageFromQueue(request) {
   if (valid) {
     // TODO try catch / error handling
     const responseDetails = await getResponseDetails(requestJson.request_id);
+    //loop and check zk proof for all response
+    if(!verifyZKProof(requestJson.request_id, requestJson)) {
+      //TODO, do not answer? or send data to rp and tell them proof is invalid?
+      return;
+    }
     getDataAndSendBackToRP(requestJson, responseDetails);
   }
 }
@@ -250,7 +277,7 @@ export async function handleTendermintNewBlockHeaderEvent(
       });
       const message = await db.getRequestReceivedFromMQ(requestId);
       const valid = await common.checkRequestIntegrity(requestId, message);
-      if (valid) {
+      if (valid && verifyZKProof(requestId)) {
         const responseDetails = await getResponseDetails(requestId);
         getDataAndSendBackToRP(message, responseDetails);
       }
@@ -332,4 +359,78 @@ export async function init() {
     node_id,
     public_key: 'very_secure_public_key_for_as'
   });*/
+}
+
+async function verifyZKProof(request_id, dataFromMq) {
+  if(!dataFromMq) dataFromMq = await db.getRequestReceivedFromMQ(request_id);
+  let {
+    privateProofObjectList,
+    namespace,
+    identifier,
+    request_message,
+  } = dataFromMq;
+
+  //query and verify zk, also check conflict with each others
+  let accessor_group_id = await common.getAccessorGroupId(
+    privateProofObjectList[0].privateProofObject.accessor_id
+  );
+  for(let i = 1 ; i < privateProofObjectList.length ; i++) {
+    let otherGroupId = await common.getAccessorGroupId(
+      privateProofObjectList[i].privateProofObject.accessor_id
+    );
+    if(otherGroupId !== accessor_group_id) {
+      //TODO handle this?
+      //throw 'Conflicted response';
+      return false;
+    }
+  }
+
+  let responses = (await common.getRequestDetail({
+    requestId: request_id
+  })).responses;
+  let valid = true;
+  for(let i = 0 ; i < privateProofObjectList.length ; i++) {
+    //query accessor_public_key from privateProof.accessor_id
+    let public_key = await common.getAccessorKey(
+      privateProofObjectList[i].privateProofObject.accessor_id
+    );
+    //query publicProof from response of idp_id in request
+    let publicProof,signature,privateProofValueHash;
+    responses.forEach((response) => {
+      if(response.idp_id === privateProofObjectList[i].idp_id) {
+        publicProof = response.identity_proof;
+        signature = response.signature;
+        privateProofValueHash = response.private_proof_hash;
+      }
+    });
+
+    let signatureValid = utils.verifySignature(
+      signature, 
+      public_key, 
+      request_message
+    );
+  
+    logger.debug({
+      message: 'Verify signature',
+      signatureValid,
+      request_message,
+      public_key,
+      signature,
+    });
+
+    valid &= signatureValid;
+
+    valid &= utils.verifyZKProof(
+      public_key, 
+      dataFromMq.challenge, 
+      privateProofObjectList[i].privateProofObject.privateProofValue, 
+      publicProof,
+      {
+        namespace,
+        identifier
+      },
+      privateProofValueHash,
+    );
+  }
+  return valid;
 }

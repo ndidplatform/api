@@ -10,12 +10,13 @@
     "delete-local-db-cache": "rm -rf db-api-*",
     "delete-latest-block-height": "rm -f latest-block-height-*",
     "reset-data-for-dev": "npm run delete-local-db-cache && npm run delete-latest-block-height",
-    "docker-build": "docker-compose -f docker/docker-compose.build.yml build",
+    "docker-build": "./docker/build.sh",
     "docker-up": "docker-compose -f docker/docker-compose.yml up",
     "docker-down": "docker-compose -f docker/docker-compose.yml down"
   },
   "dependencies": {
     "ajv": "^6.4.0",
+    "bignum": "git+https://github.com/ndidplatform/node-bignum.git",
     "body-parser": "^1.18.2",
     "encoding-down": "^4.0.0",
     "express": "^4.16.3",

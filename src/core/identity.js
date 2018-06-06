@@ -9,28 +9,45 @@ export async function createNewIdentity(data) {
     const {
       namespace,
       identifier,
-      secret,
+      //secret,
       accessor_type,
-      accessor_key,
+      accessor_public_key,
       accessor_id,
+      accessor_group_id,
+      ial,
     } = data;
+
+    let hash_id = utils.hash(namespace + ':' + identifier);
 
     //TODO
     //check if this call is valid
-
-    //register node id, which is substituted with ip,port for demo
-    //let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
-    await registerMqDestination({
-      users: [
-        {
-          hash_id: utils.hash(namespace + ':' + identifier),
-          //TODO
-          //where to get this value?, is it tie to IDP or tie to each identity??
-          ial: 3,
-        },
-      ],
-      node_id: config.nodeId,
+    //call CheckExistingIdentity to tendermint
+    let { exist } = await tendermint.query('CheckExistingIdentity', {
+      hash_id,
     });
+    if(exist) throw 'Already exist!';
+    //not exist -> continue
+    
+    await Promise.all([
+      tendermint.transact('CreateIdentity',{
+        accessor_type,
+        accessor_public_key,
+        accessor_id,
+        accessor_group_id
+      }, utils.getNonce()),
+
+      //register node id, which is substituted with ip,port for demo
+      //let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
+      registerMqDestination({
+        users: [
+          {
+            hash_id,
+            ial,
+          },
+        ],
+        node_id: config.nodeId,
+      })
+    ]);
     return true;
   } catch (error) {
     logger.error({

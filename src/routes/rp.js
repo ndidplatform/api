@@ -2,7 +2,6 @@ import express from 'express';
 
 import { validateBody } from './middleware/validation';
 import * as rp from '../core/rp';
-import * as common from '../core/common';
 
 const router = express.Router();
 
@@ -45,24 +44,6 @@ router.post(
   }
 );
 
-router.get('/requests/:request_id', async (req, res, next) => {
-  try {
-    const { request_id } = req.params;
-
-    const request = await common.getRequest({
-      requestId: request_id,
-    });
-
-    if (request != null) {
-      res.status(200).json(request);
-    } else {
-      res.status(404).end();
-    }
-  } catch (error) {
-    next(error);
-  }
-});
-
 router.get('/requests/reference/:reference_number', async (req, res, next) => {
   try {
     const { reference_number } = req.params;
@@ -93,7 +74,7 @@ router.get('/requests/data/:request_id', async (req, res, next) => {
   }
 });
 
-router.delete('/requests/data/:request_id', async (req, res, next) => {
+router.post('/requests/housekeeping/data/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
@@ -104,7 +85,7 @@ router.delete('/requests/data/:request_id', async (req, res, next) => {
   }
 });
 
-router.delete('/requests/data', async (req, res, next) => {
+router.post('/requests/housekeeping/data', async (req, res, next) => {
   try {
     await rp.removeAllDataFromAS();
     res.status(204).end();

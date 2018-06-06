@@ -2,6 +2,9 @@ import path from 'path';
 
 export const serverPort = process.env.SERVER_PORT || 8080;
 
+export const clientHttpErrorCode = process.env.CLIENT_HTTP_ERROR_CODE || 400;
+export const serverHttpErrorCode = process.env.SERVER_HTTP_ERROR_CODE || 500;
+
 export const logDirectoryPath = process.env.LOG_DIRECTORY_PATH || __dirname;
 
 export const role = process.env.ROLE;
@@ -32,9 +35,7 @@ export const tendermintBaseHttpUrl = `http://${tendermintIp}:${tendermintPort}`;
 
 export const tendermintBaseWsUrl = `ws://${tendermintIp}:${tendermintPort}`;
 
-export const nodeId = process.env.NODE_ID || (role + '1').toLowerCase();
-
-export const asID = role === 'as' ? process.env.AS_ID || nodeId : null;
+export const nodeId = process.env.NODE_ID;
 
 export const mqRegister = {
   ip: process.env.MQ_CONTACT_IP || 'localhost',
@@ -53,3 +54,5 @@ export const masterPrivateKeyPath =
   process.env.MASTER_PRIVATE_KEY_PATH == null
     ? path.join(__dirname, '..', 'devKey', role, nodeId + '_master')
     : process.env.MASTER_PRIVATE_KEY_PATH;
+
+export const challengeLength = 16;

@@ -5,6 +5,7 @@ import * as tendermint from '../tendermint/ndid';
 import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';
+import * as db from '../db';
 import { eventEmitter as messageQueueEvent } from '../mq';
 import * as utils from '../utils';
 import { role, nodeId } from '../config';
@@ -49,14 +50,9 @@ export async function getRequestDetail({ requestId }) {
   }
 }
 
-export async function getNodeIdsOfAssociatedIdp({
-  namespace,
-  identifier,
-  min_ial,
-  min_aal,
-}) {
+export async function getIdpNodes({ namespace, identifier, min_ial, min_aal }) {
   try {
-    return await tendermint.query('GetMsqDestination', {
+    const result = await tendermint.query('GetIdpNodes', {
       hash_id:
         namespace && identifier
           ? utils.hash(namespace + ':' + identifier)
@@ -64,22 +60,24 @@ export async function getNodeIdsOfAssociatedIdp({
       min_ial,
       min_aal,
     });
+    return result.node != null ? result.node : [];
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get associated node IDs from blockchain',
+      message: 'Cannot get IdP nodes from blockchain',
       cause: error,
     });
   }
 }
 
-export async function getNodeIdsOfAsWithService({ service_id }) {
+export async function getAsNodesByServiceId({ service_id }) {
   try {
-    return await tendermint.query('GetServiceDestination', {
+    const result = await tendermint.query('GetAsNodesByServiceId', {
       service_id,
     });
+    return result.node != null ? result.node : [];
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get associated AS node IDs from blockchain',
+      message: 'Cannot get AS nodes by service ID from blockchain',
       cause: error,
     });
   }
@@ -162,10 +160,13 @@ export async function getNodeToken(node_id = nodeId) {
 export async function checkRequestIntegrity(requestId, request) {
   const msgBlockchain = await getRequest({ requestId });
 
-  const valid = utils.compareSaltedHash({
+  const valid = 
+    utils.hash(request.challenge + request.request_message)
+    === msgBlockchain.request_message_hash;
+  /*utils.compareSaltedHash({
     saltedHash: msgBlockchain.messageHash,
     plain: request.request_message,
-  });
+  });*/
   if (!valid) {
     logger.warn({
       message: 'Request message hash mismatched',
@@ -176,7 +177,7 @@ export async function checkRequestIntegrity(requestId, request) {
       requestId,
       givenRequestMessage: request.request_message,
       givenRequestMessageHash: utils.hash(request.request_message),
-      requestMessageHashFromBlockchain: msgBlockchain.messageHash,
+      requestMessageHashFromBlockchain: msgBlockchain.request_message_hash,
     });
   }
 
@@ -196,4 +197,16 @@ export async function getNamespaceList() {
 
 if (handleMessageFromQueue) {
   messageQueueEvent.on('message', handleMessageFromQueue);
+}
+
+export async function getAccessorGroupId(accessor_id) {
+  return (await tendermint.query('GetAccessorGroupID',{
+    accessor_id,
+  })).accessor_group_id;
+}
+
+export async function getAccessorKey(accessor_id) {
+  return (await tendermint.query('GetAccessorKey',{
+    accessor_id,
+  })).accessor_public_key;
 }

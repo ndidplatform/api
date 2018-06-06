@@ -1,6 +1,8 @@
 import validate from '../validator';
 import errorType from '../../error/type';
 
+import { clientHttpErrorCode } from '../../config';
+
 // Path params validation (no rules = not needed according to specs)
 // export function validatePath(req, res, next) {
 //   const paramsValidationResult = validate({
@@ -9,7 +11,7 @@ import errorType from '../../error/type';
 //     params: req.params,
 //   });
 //   if (!paramsValidationResult.valid) {
-//     res.status(400).json({
+//     res.status(clientHttpErrorCode).json({
 //       error: {
 //         message: errorType.PATH_PARAMS_VALIDATION_FAILED.message,
 //         code: errorType.PATH_PARAMS_VALIDATION_FAILED.code,
@@ -27,7 +29,7 @@ export function validateQuery(req, res, next) {
     query: req.query,
   });
   if (!queryValidationResult.valid) {
-    res.status(400).json({
+    res.status(clientHttpErrorCode).json({
       error: {
         message: errorType.QUERY_STRING_VALIDATION_FAILED.message,
         code: errorType.QUERY_STRING_VALIDATION_FAILED.code,
@@ -46,7 +48,7 @@ export function validateBody(req, res, next) {
     body: req.body,
   });
   if (!bodyValidationResult.valid) {
-    res.status(400).json({
+    res.status(clientHttpErrorCode).json({
       error: {
         message: errorType.BODY_VALIDATION_FAILED.message,
         code: errorType.BODY_VALIDATION_FAILED.code,

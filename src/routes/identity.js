@@ -11,19 +11,23 @@ router.post('/', validateBody, async (req, res, next) => {
     const {
       namespace,
       identifier,
-      secret,
+      //secret,
       accessor_type,
-      accessor_key,
+      accessor_public_key,
       accessor_id,
+      accessor_group_id,
+      ial,
     } = req.body;
 
     await identity.createNewIdentity({
       namespace,
       identifier,
-      secret,
+      //secret,
       accessor_type,
-      accessor_key,
+      accessor_public_key,
       accessor_id,
+      accessor_group_id,
+      ial,
     });
 
     res.status(201).end();
@@ -36,14 +40,14 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
     const { namespace, identifier } = req.params;
 
-    const checkIdpNodeIds = await common.getNodeIdsOfAssociatedIdp({
+    const idpNodes = await common.getIdpNodes({
       namespace,
       identifier,
-      min_ial: 1,
-      min_aal: 1,
+      min_ial: 0,
+      min_aal: 0,
     });
 
-    if (checkIdpNodeIds && checkIdpNodeIds.node_id.length !== 0) {
+    if (idpNodes.length !== 0) {
       res.status(204).end();
     } else {
       res.status(404).end();
@@ -104,24 +108,6 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const { accessor_type, accessor_key, accessor_id } = req.body;
-
-      // Not Implemented
-      // TODO
-
-      res.status(501).end();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.get(
-  '/:namespace/:identifier/requests/history',
-  validateQuery,
-  async (req, res, next) => {
-    try {
-      const { namespace, identifier } = req.params;
-      const { count } = req.query;
 
       // Not Implemented
       // TODO
