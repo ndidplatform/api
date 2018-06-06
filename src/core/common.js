@@ -167,7 +167,7 @@ export async function checkRequestIntegrity(requestId, request) {
 
   const valid = 
     utils.hash(request.challenge + request.request_message)
-    === msgBlockchain.messageHash;
+    === msgBlockchain.request_message_hash;
   /*utils.compareSaltedHash({
     saltedHash: msgBlockchain.messageHash,
     plain: request.request_message,
@@ -181,8 +181,8 @@ export async function checkRequestIntegrity(requestId, request) {
       message: 'Request message hash mismatched',
       requestId,
       givenRequestMessage: request.request_message,
-      givenRequestMessageHash: utils.hash(request.request_message),
-      requestMessageHashFromBlockchain: msgBlockchain.messageHash,
+      givenRequestMessageHashWithChallenge: utils.hash(request.challenge + request.request_message),
+      requestMessageHashFromBlockchain: msgBlockchain.request_message_hash,
     });
   }
 
@@ -357,7 +357,7 @@ export async function createRequest({
       idp_list,
     });
 
-    if (receivers.length === 0) {
+    if (receivers.length === 0 && min_idp !== 0) {
       throw new CustomError({
         message: errorType.NO_IDP_FOUND.message,
         code: errorType.NO_IDP_FOUND.code,
@@ -430,7 +430,7 @@ export async function createRequest({
       min_ial,
       request_timeout,
       data_request_list: dataRequestListToBlockchain,
-      message_hash: utils.hash(challenge + request_message),
+      request_message_hash: utils.hash(challenge + request_message),
     };
 
     // maintain mapping
