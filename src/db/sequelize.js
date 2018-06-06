@@ -71,6 +71,10 @@ const Entities = {
     cbId: { type: Sequelize.STRING, primaryKey: true },
     data: Sequelize.JSON,
   }),
+  identityRequestIdMapping: sequelize.define('identityRequestIdMapping', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    identity: Sequelize.JSON,
+  }),
 };
 
 const initDb = sequelize.sync();

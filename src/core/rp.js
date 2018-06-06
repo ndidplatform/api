@@ -1,22 +1,14 @@
 import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/customError';
-import errorType from '../error/type';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
-import * as utils from '../utils';
 import * as mq from '../mq';
 import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
 
-let timeoutScheduler = {};
-
-export function clearAllScheduler() {
-  for (let requestId in timeoutScheduler) {
-    clearTimeout(timeoutScheduler[requestId]);
-  }
-}
+let timeoutScheduler = common.timeoutScheduler;
 
 /**
  *
@@ -119,7 +111,7 @@ async function checkAndNotify(requestId, height) {
     db.removeRequestIdReferenceIdMappingByRequestId(requestId);
     db.removeRequestToSendToAS(requestId);
     db.removeTimeoutScheduler(requestId);
-    clearTimeout(timeoutScheduler[requestId]);
+    common.clearTimeout(timeoutScheduler[requestId]);
     delete timeoutScheduler[requestId];
   }
 }
@@ -139,7 +131,7 @@ async function checkZKAndNotify(
     callbackUrl,
     requestData,
   });
-  const responseValid = await verifyZKProof(
+  const responseValid = await common.verifyZKProof(
     requestDetail.request_id,
     idpId,
     requestData
@@ -278,210 +270,6 @@ async function sendRequestToAS(requestData, height) {
         privateProofObjectList: requestData.privateProofObjectList,
       });
     });
-  }
-}
-
-export async function getIdpsMsqDestination({
-  namespace,
-  identifier,
-  min_ial,
-  min_aal,
-  idp_list,
-}) {
-  const idpNodes = await common.getIdpNodes({
-    namespace,
-    identifier,
-    min_ial,
-    min_aal,
-  });
-
-  let filteredIdpNodes;
-  if (idp_list != null && idp_list.length !== 0) {
-    filteredIdpNodes = idpNodes.filter(
-      (idpNode) => idp_list.indexOf(idpNode.id) >= 0
-    );
-  } else {
-    filteredIdpNodes = idpNodes;
-  }
-
-  const receivers = await Promise.all(
-    filteredIdpNodes.map(async (idpNode) => {
-      const nodeId = idpNode.id;
-      const { ip, port } = await common.getMsqAddress(nodeId);
-      return {
-        ip,
-        port,
-        ...(await common.getNodePubKey(nodeId)),
-      };
-    })
-  );
-  return receivers;
-}
-
-/**
- * Create a new request
- * @param {Object} request
- * @param {string} request.namespace
- * @param {string} request.reference_id
- * @param {Array.<string>} request.idp_list
- * @param {string} request.callback_url
- * @param {Array.<Object>} request.data_request_list
- * @param {string} request.request_message
- * @param {number} request.min_ial
- * @param {number} request.min_aal
- * @param {number} request.min_idp
- * @param {number} request.request_timeout
- * @returns {Promise<string>} Request ID
- */
-export async function createRequest({
-  namespace,
-  identifier,
-  reference_id,
-  idp_list,
-  callback_url,
-  data_request_list,
-  request_message,
-  min_ial,
-  min_aal,
-  min_idp,
-  request_timeout,
-}) {
-  try {
-    // existing reference_id, return request ID
-    const requestId = await db.getRequestIdByReferenceId(reference_id);
-    if (requestId) {
-      return requestId;
-    }
-
-    if (idp_list != null && idp_list.length > 0 && idp_list.length < min_idp) {
-      throw new CustomError({
-        message: errorType.IDP_LIST_LESS_THAN_MIN_IDP.message,
-        code: errorType.IDP_LIST_LESS_THAN_MIN_IDP.code,
-        clientError: true,
-        details: {
-          namespace,
-          identifier,
-          idp_list,
-        },
-      });
-    }
-
-    let receivers = await getIdpsMsqDestination({
-      namespace,
-      identifier,
-      min_ial,
-      min_aal,
-      idp_list,
-    });
-
-    if (receivers.length === 0) {
-      throw new CustomError({
-        message: errorType.NO_IDP_FOUND.message,
-        code: errorType.NO_IDP_FOUND.code,
-        clientError: true,
-        details: {
-          namespace,
-          identifier,
-          idp_list,
-        },
-      });
-    }
-
-    if (receivers.length < min_idp) {
-      throw new CustomError({
-        message: errorType.NOT_ENOUGH_IDP.message,
-        code: errorType.NOT_ENOUGH_IDP.code,
-        clientError: true,
-        details: {
-          namespace,
-          identifier,
-          idp_list,
-        },
-      });
-    }
-
-    const nonce = utils.getNonce();
-    const request_id = utils.createRequestId();
-
-    const dataRequestListToBlockchain = [];
-    for (let i in data_request_list) {
-      dataRequestListToBlockchain.push({
-        service_id: data_request_list[i].service_id,
-        as_id_list: data_request_list[i].as_id_list,
-        count: data_request_list[i].count,
-        request_params_hash: utils.hashWithRandomSalt(
-          JSON.stringify(data_request_list[i].request_params)
-        ),
-      });
-    }
-
-    let challenge = utils.randomBase64Bytes(config.challengeLength);
-    db.setChallengeFromRequestId(request_id, challenge);
-
-    const requestData = {
-      namespace,
-      identifier,
-      request_id,
-      min_idp,
-      min_aal,
-      min_ial,
-      request_timeout,
-      data_request_list: data_request_list,
-      request_message,
-      // for zk proof
-      challenge,
-      rp_id: config.nodeId,
-    };
-
-    // save request data to DB to send to AS via mq when authen complete
-    // store even no data require, use for zk proof
-    //if (data_request_list != null && data_request_list.length !== 0) {
-    await db.setRequestToSendToAS(request_id, requestData);
-    //}
-
-    // add data to blockchain
-    const requestDataToBlockchain = {
-      request_id,
-      min_idp,
-      min_aal,
-      min_ial,
-      request_timeout,
-      data_request_list: dataRequestListToBlockchain,
-      request_message_hash: utils.hash(challenge + request_message),
-    };
-
-    // maintain mapping
-    await db.setRequestIdByReferenceId(reference_id, request_id);
-    await db.setRequestCallbackUrl(request_id, callback_url);
-
-    try {
-      const { height } = await tendermint.transact(
-        'CreateRequest',
-        requestDataToBlockchain,
-        nonce
-      );
-
-      // send request data to IDPs via message queue
-      mq.send(receivers, {
-        ...requestData,
-        height,
-      });
-    } catch (error) {
-      await db.removeRequestIdByReferenceId(reference_id);
-      await db.removeRequestCallbackUrl(request_id);
-      throw error;
-    }
-
-    addTimeoutScheduler(request_id, request_timeout);
-
-    return request_id;
-  } catch (error) {
-    const err = new CustomError({
-      message: 'Cannot create request',
-      cause: error,
-    });
-    logger.error(err.getInfoForLog());
-    throw err;
   }
 }
 
@@ -661,48 +449,10 @@ export async function handleMessageFromQueue(data) {
   }
 }
 
-async function timeoutRequest(requestId) {
-  try {
-    const request = await common.getRequest({ requestId });
-    switch (request.status) {
-      case 'complicated':
-      case 'pending':
-      case 'confirmed':
-        await tendermint.transact(
-          'TimeOutRequest',
-          { requestId },
-          utils.getNonce()
-        );
-        break;
-      default:
-      //Do nothing
-    }
-  } catch (error) {
-    // TODO: error handling
-    throw error;
-  }
-  db.removeTimeoutScheduler(requestId);
-}
-
-function runTimeoutScheduler(requestId, secondsToTimeout) {
-  if (secondsToTimeout < 0) timeoutRequest(requestId);
-  else {
-    timeoutScheduler[requestId] = setTimeout(() => {
-      timeoutRequest(requestId);
-    }, secondsToTimeout * 1000);
-  }
-}
-
-function addTimeoutScheduler(requestId, secondsToTimeout) {
-  let unixTimeout = Date.now() + secondsToTimeout * 1000;
-  db.addTimeoutScheduler(requestId, unixTimeout);
-  runTimeoutScheduler(requestId, secondsToTimeout);
-}
-
 export async function init() {
   let scheduler = await db.getAllTimeoutScheduler();
   scheduler.forEach(({ requestId, unixTimeout }) => {
-    runTimeoutScheduler(requestId, (unixTimeout - Date.now()) / 1000);
+    common.runTimeoutScheduler(requestId, (unixTimeout - Date.now()) / 1000);
   });
 
   //In production this should be done only once in phase 1,
@@ -711,108 +461,4 @@ export async function init() {
   await tendermint.ready;
 
   common.registerMsqAddress(config.mqRegister);
-}
-
-async function verifyZKProof(request_id, idp_id, dataFromMq) {
-  let challenge = await db.getChallengeFromRequestId(request_id);
-  let privateProofObject = dataFromMq
-    ? dataFromMq
-    : await db.getProofReceivedFromMQ(request_id + ':' + idp_id);
-
-  //query and verify zk, also check conflict with each others
-  logger.debug({
-    message: 'RP verifying zk proof',
-    request_id,
-    idp_id,
-    dataFromMq,
-    challenge,
-    privateProofObject,
-  });
-
-  //query accessor_group_id of this accessor_id
-  let accessor_group_id = await common.getAccessorGroupId(
-    privateProofObject.accessor_id
-  );
-  let {
-    namespace,
-    identifier,
-    privateProofObjectList,
-    request_message,
-  } = await db.getRequestToSendToAS(request_id);
-
-  logger.debug({
-    message: 'RP verifying zk proof',
-    privateProofObjectList,
-  });
-
-  //and check against all accessor_group_id of responses
-  for (let i = 0; i < privateProofObjectList.length; i++) {
-    let otherPrivateProofObject = privateProofObjectList[i].privateProofObject;
-    let otherGroupId = await common.getAccessorGroupId(
-      otherPrivateProofObject.accessor_id
-    );
-    if (otherGroupId !== accessor_group_id) {
-      //TODO handle this, manually close?
-      logger.debug({
-        message: 'Conflict response',
-        otherGroupId,
-        otherPrivateProofObject,
-        accessor_group_id,
-        accessorId: privateProofObject.accessor_id,
-      });
-      throw 'Conflicted response';
-    }
-  }
-
-  //query accessor_public_key from privateProofObject.accessor_id
-  let public_key = await common.getAccessorKey(privateProofObject.accessor_id);
-
-  //query publicProof from response of idp_id in request
-  let publicProof, signature, privateProofValueHash;
-  let responses = (await common.getRequestDetail({
-    requestId: request_id,
-  })).responses;
-
-  logger.debug({
-    message: 'Request detail',
-    responses,
-    request_message,
-  });
-
-  responses.forEach((response) => {
-    if (response.idp_id === idp_id) {
-      publicProof = response.identity_proof;
-      signature = response.signature;
-      privateProofValueHash = response.private_proof_hash;
-    }
-  });
-
-  let signatureValid = utils.verifySignature(
-    signature,
-    public_key,
-    request_message
-  );
-
-  logger.debug({
-    message: 'Verify signature',
-    signatureValid,
-    request_message,
-    public_key,
-    signature,
-  });
-
-  return (
-    signatureValid &&
-    utils.verifyZKProof(
-      public_key,
-      challenge,
-      privateProofObject.privateProofValue,
-      publicProof,
-      {
-        namespace,
-        identifier,
-      },
-      privateProofValueHash
-    )
-  );
 }

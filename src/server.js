@@ -12,7 +12,8 @@ import logger from './logger';
 import routes from './routes';
 import { init as idp_init } from './core/idp';
 import { init as as_init } from './core/as';
-import { init as rp_init, clearAllScheduler } from './core/rp';
+import { init as rp_init } from './core/rp';
+import { clearAllScheduler } from './core/common';
 
 import { close as closeDB } from './db';
 import { tendermintWsClient } from './tendermint/ndid';

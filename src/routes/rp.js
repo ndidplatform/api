@@ -2,6 +2,7 @@ import express from 'express';
 
 import { validateBody } from './middleware/validation';
 import * as rp from '../core/rp';
+import * as common from '../core/common';
 
 const router = express.Router();
 
@@ -23,7 +24,7 @@ router.post(
         request_timeout,
       } = req.body;
 
-      const requestId = await rp.createRequest({
+      const requestId = await common.createRequest({
         namespace,
         identifier,
         reference_id,
