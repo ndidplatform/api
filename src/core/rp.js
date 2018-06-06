@@ -67,8 +67,8 @@ async function checkAndNotify(requestId, height) {
     (requestDetail.status === 'confirmed' ||
       requestDetail.status === 'complicated' ||
       requestDetail.status === 'rejected') &&
-    requestDetail.is_closed === false &&
-    requestDetail.is_timed_out === false
+    requestDetail.closed === false &&
+    requestDetail.timed_out === false
   ) {
     if (requestDetail.responses.length < requestDetail.min_idp) {
       needZKProofVerification = true;
@@ -111,8 +111,8 @@ async function checkAndNotify(requestId, height) {
     status: requestDetail.status,
     min_idp: requestDetail.min_idp,
     answered_idp_count: requestDetail.responses.length,
-    is_closed: requestDetail.is_closed,
-    is_timed_out: requestDetail.is_timed_out,
+    closed: requestDetail.closed,
+    timed_out: requestDetail.timed_out,
     service_list: requestDetail.data_request_list.map((service) => ({
       service_id: service.service_id,
       count: service.count,
@@ -128,8 +128,8 @@ async function checkAndNotify(requestId, height) {
   if (
     // request.status === 'completed' ||
     requestDetail.status === 'rejected' ||
-    requestDetail.is_closed ||
-    requestDetail.is_timed_out
+    requestDetail.closed ||
+    requestDetail.timed_out
   ) {
     // Clean up
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
@@ -183,8 +183,8 @@ async function checkZKAndNotify(
     status: requestDetail.status,
     min_idp: requestDetail.min_idp,
     answered_idp_count: requestDetail.responses.length,
-    is_closed: requestDetail.is_closed,
-    is_timed_out: requestDetail.is_timed_out,
+    closed: requestDetail.closed,
+    timed_out: requestDetail.timed_out,
     service_list: requestDetail.data_request_list.map((service) => ({
       service_id: service.service_id,
       count: service.count,

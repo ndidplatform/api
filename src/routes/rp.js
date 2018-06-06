@@ -45,24 +45,6 @@ router.post(
   }
 );
 
-router.get('/requests/:request_id', async (req, res, next) => {
-  try {
-    const { request_id } = req.params;
-
-    const request = await common.getRequestDetail({
-      requestId: request_id,
-    });
-
-    if (request != null) {
-      res.status(200).json(request);
-    } else {
-      res.status(404).end();
-    }
-  } catch (error) {
-    next(error);
-  }
-});
-
 router.get('/requests/reference/:reference_number', async (req, res, next) => {
   try {
     const { reference_number } = req.params;

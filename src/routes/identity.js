@@ -119,22 +119,4 @@ router.post(
   }
 );
 
-router.get(
-  '/:namespace/:identifier/requests/history',
-  validateQuery,
-  async (req, res, next) => {
-    try {
-      const { namespace, identifier } = req.params;
-      const { count } = req.query;
-
-      // Not Implemented
-      // TODO
-
-      res.status(501).end();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
 export default router;

@@ -140,8 +140,7 @@ export default {
           secret: { type: 'string' },
           status: {
             type: 'string',
-            // TODO
-            // May validate value to be one of 'accept' and 'reject'
+            enum: ['accept', 'reject'],
           },
           signature: { type: 'string' },
           accessor_id: { type: 'string' },

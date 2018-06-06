@@ -6,6 +6,7 @@ if (process.env.NODE_ENV == null || process.env.NODE_ENV === '') {
 
 if (process.env.ROLE == null) {
   console.error(
+    'ERROR:',
     '"ROLE" environment variable is not set. Process will now exit.'
   );
   process.exit(1);
@@ -21,6 +22,14 @@ if (
     `Unknown role: ${
       process.env.ROLE
     }; Must be one of "idp", "rp", "as", or "ndid". Process will now exit.`
+  );
+  process.exit(1);
+}
+
+if (process.env.NODE_ID == null || process.env.NODE_ID === '') {
+  console.error(
+    'ERROR:',
+    '"NODE_ID" environment variable is not set. Process will now exit.'
   );
   process.exit(1);
 }
