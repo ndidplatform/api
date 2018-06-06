@@ -187,6 +187,36 @@ export async function handleMessageFromQueue(request) {
       requestJson.request_id
     );
     await db.setRPIdFromRequestId(requestJson.request_id, requestJson.rp_id);
+
+    if(requestJson.accessor_id) {
+      //====================== COPY-PASTE from RP, need refactoring =====================
+      //store private parameter from EACH idp to request, to pass along to as
+      let request = await db.getRequestToSendToAS(requestJson.request_id);
+      //AS involve
+      if (request) {
+        if (request.privateProofObjectList) {
+          request.privateProofObjectList.push({
+            idp_id: requestJson.idp_id,
+            privateProofObject: {
+              privateProofValue: requestJson.privateProofValue,
+              accessor_id: requestJson.accessor_id,
+            },
+          });
+        } else {
+          request.privateProofObjectList = [
+            {
+              idp_id: requestJson.idp_id,
+              privateProofObject: {
+                privateProofValue: requestJson.privateProofValue,
+                accessor_id: requestJson.accessor_id,
+              },
+            },
+          ];
+        }
+        await db.setRequestToSendToAS(requestJson.request_id, request);
+      }
+      //====================================================================================
+    }
     return;
   }
 
@@ -196,8 +226,8 @@ export async function handleMessageFromQueue(request) {
   });
   //onboard response
   if(requestJson.accessor_id) {
-    if(checkOnboardResponse(requestJson)) {
-      identity.addAccessorAfterConsent(requestJson.request_id, requestJson.accessor_id);
+    if(await checkOnboardResponse(requestJson)) {
+      await identity.addAccessorAfterConsent(requestJson.request_id, requestJson.accessor_id);
       notifyByCallback({
         type: 'onboard_request',
         request_id: requestJson.request_id,
@@ -259,7 +289,7 @@ export async function handleTendermintNewBlockHeaderEvent(
       const message = await db.getRequestReceivedFromMQ(requestId);
       //reposne for onboard
       if(message.accessor_id) {
-        if(checkOnboardResponse(message)) {
+        if(await checkOnboardResponse(message)) {
           await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
           notifyByCallback({
             type: 'onboard_request',
@@ -310,7 +340,7 @@ async function checkOnboardResponse(message) {
   let requestDetail = await common.getRequestDetail({
     requestId: message.request_id
   });
-  let response = requestDetail.response[0];
+  let response = requestDetail.responses[0];
   
   if(!(await common.verifyZKProof(message.request_id, message.idp_id, message))) {
     reason = 'Invalid response';
@@ -326,7 +356,16 @@ async function checkOnboardResponse(message) {
       success: false,
       reason: reason
     });
+
+    logger.debug({
+      message: 'Onboarding failed',
+      reason,
+    });
+
     return false;
   }
+  logger.debug({
+    message: 'Onboard consented',
+  });
   return true;
 }

@@ -476,7 +476,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq) {
 
   //query and verify zk, also check conflict with each others
   logger.debug({
-    message: 'RP verifying zk proof',
+    message: 'Verifying zk proof',
     request_id,
     idp_id,
     dataFromMq,
@@ -496,7 +496,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq) {
   } = await db.getRequestToSendToAS(request_id);
 
   logger.debug({
-    message: 'RP verifying zk proof',
+    message: 'Verifying zk proof',
     privateProofObjectList,
   });
 

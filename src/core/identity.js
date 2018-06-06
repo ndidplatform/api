@@ -6,6 +6,11 @@ import * as config from '../config';
 import * as common from './common';
 
 export async function addAccessorAfterConsent(request_id, accessor_id) {
+  logger.debug({
+    message: 'GET consent, adding accessor...',
+    request_id,
+    accessor_id,
+  });
   //retrieve data from persistent
   //call add accessor to tendermint
   //call register message queue
