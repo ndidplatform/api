@@ -6,6 +6,45 @@ import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
 
+export async function checkAssociated({namespace, identifier}) {
+  let idpList = await common.getIdpNodes({
+    namespace,
+    identifier,
+    min_aal: 1,
+    min_ial: 1.1,
+  });
+  for(let i = 0 ; i < idpList.length ; i++) {
+    if(idpList[i].id === config.nodeId) return true;
+  }
+  return false;
+}
+
+export async function addAccessorMethodForAssociatedIdp({
+  namespace,
+  identifier,
+  reference_id,
+  accessor_type,
+  accessor_public_key,
+  accessor_id,
+}) {
+
+  let associated = await checkAssociated({
+    namespace,
+    identifier,
+  });
+  if(!associated) return { associated };
+  
+  let { request_id } = await createNewIdentity({
+    namespace,
+    identifier,
+    reference_id,
+    accessor_type,
+    accessor_public_key,
+    accessor_id,
+  });
+  return { request_id, associated };
+}
+
 export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   //NOTE: zero knowledge proof cannot be verify by blockchain, hence, 
   //if this idp call to add their accessor it's imply that zk proof is verified by the
@@ -24,7 +63,7 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
     accessor_id,  
   } = await db.getIdentityFromRequestId(request_id);
   
-  await Promise.all([
+  let promiseArray = [
     tendermint.transact('AddAccessorMethod',{
       request_id,
       accessor_group_id,
@@ -32,7 +71,10 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
       accessor_id,
       accessor_public_key,
     }, utils.getNonce()),
+  ];
 
+  //no ial means old idp add new accessor
+  if(ial) promiseArray.push(
     registerMqDestination({
       users: [
         {
@@ -42,7 +84,9 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
       ],
       node_id: config.nodeId,
     })
-  ]);
+  );
+
+  await Promise.all(promiseArray);
 }
 
 export async function createNewIdentity(data) {
@@ -78,7 +122,9 @@ export async function createNewIdentity(data) {
       idp_list: [],
       callback_url: null,
       data_request_list: [],
-      request_message: 'Request for consent to add another IDP', //Must lock?
+      request_message: ial 
+        ? 'Request for consent to add another IDP' 
+        : 'Request for consent to add another key from IDP: ' + config.nodeId, //Must lock?
       min_ial: 1.1,
       min_aal: 1,
       min_idp: exist ? 1 : 0,

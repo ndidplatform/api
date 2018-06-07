@@ -15,7 +15,6 @@ router.post('/', validateBody, async (req, res, next) => {
       accessor_type,
       accessor_public_key,
       accessor_id,
-      accessor_group_id,
       ial,
     } = req.body;
 
@@ -26,7 +25,6 @@ router.post('/', validateBody, async (req, res, next) => {
       accessor_type,
       accessor_public_key,
       accessor_id,
-      accessor_group_id,
       ial,
     });
 
@@ -34,6 +32,46 @@ router.post('/', validateBody, async (req, res, next) => {
       request_id, exist
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+router.post(
+  '/:namespace/:identifier/accessors', 
+  validateBody, 
+  async (req, res, next) => 
+{
+  try {
+    const {
+      reference_id,
+      accessor_type,
+      accessor_public_key,
+      accessor_id,
+    } = req.body;
+
+    const {
+      namespace,
+      identifier
+    } = req.params;
+
+    let { request_id, associated } = await identity.addAccessorMethodForAssociatedIdp({
+      namespace,
+      identifier,
+      reference_id,
+      accessor_type,
+      accessor_public_key,
+      accessor_id,
+    });
+
+    if(!associated) {
+      res.status(403).send('Must already onboard this user');
+      return;
+    }
+    res.status(200).send({
+      request_id
+    });
+  }
+  catch(error) {
     next(error);
   }
 });
@@ -92,24 +130,6 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const { secret, accessor_type, accessor_key, accessor_id } = req.body;
-
-      // Not Implemented
-      // TODO
-
-      res.status(501).end();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.post(
-  '/:namespace/:identifier/accessors',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const { namespace, identifier } = req.params;
-      const { accessor_type, accessor_key, accessor_id } = req.body;
 
       // Not Implemented
       // TODO
