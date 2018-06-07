@@ -24,7 +24,6 @@ const callbackUrlFilesPrefix = path.join(
 [ 'signature',
   'masterSignature',
   'decrypt',
-  'accessor',
 ].forEach((key) => {
   try {
     callbackUrl[key] = fs.readFileSync(callbackUrlFilesPrefix + '-' + key, 'utf8');
@@ -240,24 +239,6 @@ export function setMasterSignatureCallback(url) {
       if (err) {
         logger.error({
           message: 'Cannot write DPKI master-sign callback url file',
-          error: err,
-        });
-      }
-    });
-  }
-}
-
-export function getAccessorCallback() {
-  return callbackUrl.accessor;
-}
-
-export function setAccessorCallback(url) {
-  if(url) {
-    callbackUrl.accessor = url;
-    fs.writeFile(callbackUrlFilesPrefix + '-accessor', url, (err) => {
-      if (err) {
-        logger.error({
-          message: 'Cannot write DPKI accessor callback url file',
           error: err,
         });
       }

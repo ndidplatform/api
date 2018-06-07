@@ -2,7 +2,6 @@ import express from 'express';
 
 import { validateBody } from './middleware/validation';
 import * as idp from '../core/idp';
-import * as utils from '../utils';
 
 const router = express.Router();
 
@@ -67,7 +66,7 @@ router.post('/response', validateBody, async (req, res, next) => {
 router.get('/accessor/callback', validateBody, async (req, res, next) => {
   try {
     res.status(200).end({
-      url: await utils.getAccessorCallback()
+      url: await idp.getAccessorCallback()
     });
   } catch (error) {
     next(error);
@@ -77,7 +76,7 @@ router.get('/accessor/callback', validateBody, async (req, res, next) => {
 router.post('/accessor/callback', validateBody, async (req, res, next) => {
   try {
     const { url } = req.body;
-    await utils.setAccessorCallback(url);
+    await idp.setAccessorCallback(url);
     res.status(204).end();
   } catch (error) {
     next(error);

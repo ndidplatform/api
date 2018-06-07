@@ -13,32 +13,56 @@ import * as db from '../db';
 import * as mq from '../mq';
 import * as identity from './identity';
 
-const callbackUrlFilePath = path.join(
+const callbackUrlFilesPrefix = path.join(
   __dirname,
   '..',
   '..',
   'idp-callback-url-' + config.nodeId,
 );
 
-let callbackUrl = null;
-try {
-  callbackUrl = fs.readFileSync(callbackUrlFilePath + '-request', 'utf8');
-} catch (error) {
-  if (error.code === 'ENOENT') {
-    logger.warn({
-      message: 'IDP callback url file not found',
-    });
-  } else {
-    logger.error({
-      message: 'Cannot read IDP callback url file',
-      error,
+let callbackUrl = {};
+
+[ 'request',
+  'accessor',
+].forEach((key) => {
+  try {
+    callbackUrl[key] = fs.readFileSync(callbackUrlFilesPrefix + '-' + key, 'utf8');
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      logger.warn({
+        message: 'IDP ' + key + ' callback url file not found',
+      });
+    } else {
+      logger.error({
+        message: 'Cannot read IDP ' + key + ' callback url file',
+        error,
+      });
+    }
+  }
+});
+
+export function getAccessorCallback() {
+  return callbackUrl.accessor;
+}
+
+export function setAccessorCallback(url) {
+  if(url) {
+    callbackUrl.accessor = url;
+    fs.writeFile(callbackUrlFilesPrefix + '-accessor', url, (err) => {
+      if (err) {
+        logger.error({
+          message: 'Cannot write DPKI accessor callback url file',
+          error: err,
+        });
+      }
     });
   }
 }
 
+
 export const setCallbackUrl = (url) => {
-  callbackUrl = url;
-  fs.writeFile(callbackUrlFilePath + '-request', url, (err) => {
+  callbackUrl.request = url;
+  fs.writeFile(callbackUrlFilesPrefix + '-request', url, (err) => {
     if (err) {
       logger.error({
         message: 'Cannot write IDP callback url file',
@@ -49,7 +73,7 @@ export const setCallbackUrl = (url) => {
 };
 
 export const getCallbackUrl = () => {
-  return callbackUrl;
+  return callbackUrl.request;
 };
 
 export async function createIdpResponse(data) {
@@ -107,13 +131,13 @@ export async function createIdpResponse(data) {
 }
 
 function notifyByCallback(request) {
-  if (!callbackUrl) {
+  if (!callbackUrl.request) {
     logger.error({
       message: 'Callback URL for IDP has not been set',
     });
     return;
   }
-  return callbackToClient(callbackUrl, { request }, true);
+  return callbackToClient(callbackUrl.request, { request }, true);
 }
 
 async function sendPrivateProofToRP(request_id, privateProofObject, height) {
