@@ -11,7 +11,7 @@ router.post('/', validateBody, async (req, res, next) => {
     const {
       namespace,
       identifier,
-      //secret,
+      reference_id,
       accessor_type,
       accessor_public_key,
       accessor_id,
@@ -22,7 +22,7 @@ router.post('/', validateBody, async (req, res, next) => {
     let { request_id, exist } = await identity.createNewIdentity({
       namespace,
       identifier,
-      //secret,
+      reference_id,
       accessor_type,
       accessor_public_key,
       accessor_id,

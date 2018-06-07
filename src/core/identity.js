@@ -50,11 +50,10 @@ export async function createNewIdentity(data) {
     const {
       namespace,
       identifier,
-      //secret,
+      reference_id,
       accessor_type,
       accessor_public_key,
       accessor_id,
-      //accessor_group_id,
       ial,
     } = data;
 
@@ -67,8 +66,12 @@ export async function createNewIdentity(data) {
       hash_id,
     });
 
-    let reference_id = utils.randomBase64Bytes(16);
-    let request_id = await common.createRequest({
+    let request_id = await db.getRequestIdByReferenceId(reference_id);
+    if(request_id) {
+      return { request_id, exist };
+    }
+
+    request_id = await common.createRequest({
       namespace,
       identifier,
       reference_id,
@@ -81,6 +84,8 @@ export async function createNewIdentity(data) {
       min_idp: exist ? 1 : 0,
       request_timeout: 86400,
     });
+
+    db.setRequestIdByReferenceId(reference_id, request_id);
 
     if(exist) {
       //save data for add accessor to persistent
