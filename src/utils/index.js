@@ -311,3 +311,123 @@ export function verifySignature(signatureInBase64, publicKey, plainText) {
 export function createRequestId() {
   return cryptoUtils.randomHexBytes(32);
 }
+
+/**
+ * @typedef {Object} RequestStatus
+ * @property {string} request_id 
+ * @property {string} status 
+ * @property {number} min_idp 
+ * @property {number} answered_idp_count 
+ * @property {boolean} closed 
+ * @property {boolean} timed_out 
+ * @property {Object} service_list 
+ * @property {string} service_list.service_id 
+ * @property {number} service_list.count 
+ * @property {number} service_list.signed_data_count 
+ * @property {number} service_list.received_data_count 
+ */
+/**
+ * 
+ * @param {Object} requestDetail 
+ * @param {string} requestDetail.request_id 
+ * @param {number} requestDetail.min_idp
+ * @param {number} requestDetail.min_ial
+ * @param {number} requestDetail.min_aal
+ * @param {number} requestDetail.request_timeout
+ * @param {Array.<Object>} requestDetail.data_request_list
+ * @param {string} requestDetail.request_message_hash
+ * @param {Array.<Object>} requestDetail.responses
+ * @param {boolean} requestDetail.closed
+ * @param {boolean} requestDetail.timed_out
+ * @param {Object} receivedDataFromAs 
+ * @param {string} receivedDataFromAs.service_id 
+ * @returns {RequestStatus} requestStatus
+ */
+export function getDetailedRequestStatus(requestDetail, receivedDataFromAs) {
+  if (requestDetail.responses == null) {
+    requestDetail.responses = [];
+  }
+
+  let status;
+  if (requestDetail.responses.length === 0) {
+    status = 'pending';
+  }
+  // Check response's status
+  const responseCount = requestDetail.responses.reduce(
+    (count, response) => {
+      if (response.status === 'accept') {
+        count.accept++;
+      } else if (response.status === 'reject') {
+        count.reject++;
+      }
+      return count;
+    },
+    {
+      accept: 0,
+      reject: 0,
+    }
+  );
+  if (responseCount.accept > 0 && responseCount.reject === 0) {
+    status = 'confirmed';
+  } else if (responseCount.accept === 0 && responseCount.reject > 0) {
+    status = 'rejected';
+  } else if (responseCount.accept > 0 && responseCount.reject > 0) {
+    status = 'complicated';
+  }
+
+  const serviceList = requestDetail.data_request_list.map((service) => {
+    const signedAnswerCount =
+      service.answered_as_id_list != null
+        ? service.answered_as_id_list.length
+        : 0;
+    const receivedDataCount = receivedDataFromAs.filter(
+      (receivedData) => receivedData.service_id === service.service_id
+    ).length;
+    return {
+      service_id: service.service_id,
+      count: service.count,
+      signed_data_count: signedAnswerCount,
+      received_data_count: receivedDataCount,
+    };
+  });
+
+  if (requestDetail.data_request_list.length === 0) {
+    // No data request
+    if (requestDetail.responses.length === requestDetail.min_idp) {
+      if (responseCount.accept > 0 && responseCount.reject === 0) {
+        status = 'completed';
+      }
+    }
+  } else if (requestDetail.data_request_list.length > 0) {
+    const asSignedAnswerCount = serviceList.reduce(
+      (total, service) => ({
+        count: total.count + service.count,
+        signedAnswerCount: total.signedAnswerCount + service.signed_data_count,
+        receivedDataCount:
+          total.receivedDataCount + service.received_data_count,
+      }),
+      {
+        count: 0,
+        signedAnswerCount: 0,
+        receivedDataCount: 0,
+      }
+    );
+
+    if (
+      asSignedAnswerCount.count === asSignedAnswerCount.signedAnswerCount &&
+      asSignedAnswerCount.signedAnswerCount ===
+        asSignedAnswerCount.receivedDataCount
+    ) {
+      status = 'completed';
+    }
+  }
+  return {
+    request_id: requestDetail.request_id,
+    status,
+    min_idp: requestDetail.min_idp,
+    answered_idp_count: requestDetail.responses.length,
+    closed: requestDetail.closed,
+    timed_out: requestDetail.timed_out,
+    service_list: serviceList,
+  };
+}
