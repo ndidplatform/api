@@ -17,8 +17,9 @@ const callbackUrlFilePath = path.join(
   __dirname,
   '..',
   '..',
-  'idp-callback-url'
+  'idp-callback-url-' + config.nodeId,
 );
+
 let callbackUrl = null;
 try {
   callbackUrl = fs.readFileSync(callbackUrlFilePath, 'utf8');
