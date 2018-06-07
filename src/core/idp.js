@@ -43,8 +43,13 @@ let callbackUrl = {};
 });
 
 export async function accessorSign(hash_id, accessor_id) {
+
+  let hash_id_hex = Buffer.from(hash_id,'base64').toString('hex');
+  while(hash_id_hex.length < 512) hash_id_hex = '00' + hash_id_hex;
+  let hash_id_padded = Buffer.from(hash_id_hex,'hex').toString('base64');
+
   let data = {
-    hash_of_sid: hash_id,
+    hash_of_sid: hash_id_padded,
     hash_method: 'SHA256',
     key_type: 'RSA',
     sign_method: 'RSA',
