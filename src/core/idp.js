@@ -22,7 +22,7 @@ const callbackUrlFilePath = path.join(
 
 let callbackUrl = null;
 try {
-  callbackUrl = fs.readFileSync(callbackUrlFilePath, 'utf8');
+  callbackUrl = fs.readFileSync(callbackUrlFilePath + '-request', 'utf8');
 } catch (error) {
   if (error.code === 'ENOENT') {
     logger.warn({
@@ -38,7 +38,7 @@ try {
 
 export const setCallbackUrl = (url) => {
   callbackUrl = url;
-  fs.writeFile(callbackUrlFilePath, url, (err) => {
+  fs.writeFile(callbackUrlFilePath + '-request', url, (err) => {
     if (err) {
       logger.error({
         message: 'Cannot write IDP callback url file',
