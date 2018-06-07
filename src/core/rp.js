@@ -7,6 +7,7 @@ import * as mq from '../mq';
 import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
+import { getDetailedRequestStatus } from '../utils';
 
 let timeoutScheduler = common.timeoutScheduler;
 
@@ -15,7 +16,7 @@ let timeoutScheduler = common.timeoutScheduler;
  * @param {string} requestId
  * @param {integer} height
  */
-async function checkAndNotify(requestId, height) {
+async function notifyRequestUpdate(requestId, height) {
   // logger.debug({
   //   message: 'RP check zk proof and notify',
   //   requestId,
@@ -33,34 +34,26 @@ async function checkAndNotify(requestId, height) {
     requestDetail.responses = [];
   }
 
+  const receivedDataFromAs = await db.getDatafromAS(requestId);
+  const requestStatus = getDetailedRequestStatus(
+    requestDetail,
+    receivedDataFromAs
+  );
+
   // ZK Proof verification is needed only when got new response from IdP
   let needZKProofVerification = false;
   if (
-    (requestDetail.status === 'confirmed' ||
-      requestDetail.status === 'complicated' ||
-      requestDetail.status === 'rejected') &&
-    requestDetail.closed === false &&
-    requestDetail.timed_out === false
+    requestStatus.status !== 'pending' &&
+    requestStatus.closed === false &&
+    requestStatus.timed_out === false
   ) {
-    if (requestDetail.responses.length < requestDetail.min_idp) {
+    if (requestStatus.answered_idp_count < requestStatus.min_idp) {
       needZKProofVerification = true;
-    } else if (requestDetail.responses.length === requestDetail.min_idp) {
-      let asAnswerCount;
-      if (
-        requestDetail.data_request_list &&
-        Array.isArray(requestDetail.data_request_list)
-      ) {
-        asAnswerCount = requestDetail.data_request_list.reduce(
-          (total, service) => {
-            const answerCount =
-              service.answered_as_id_list != null
-                ? service.answered_as_id_list.length
-                : 0;
-            return total + answerCount;
-          },
-          0
-        );
-      }
+    } else if (requestStatus.answered_idp_count === requestStatus.min_idp) {
+      const asAnswerCount = requestStatus.service_list.reduce(
+        (total, service) => total + service.signed_data_count,
+        0
+      );
       if (asAnswerCount === 0) {
         needZKProofVerification = true;
       }
@@ -73,33 +66,20 @@ async function checkAndNotify(requestId, height) {
 
     if (idpNodeId == null) return;
 
-    await checkZKAndNotify(requestDetail, height, idpNodeId, callbackUrl);
+    await checkZKAndNotify(requestStatus, height, idpNodeId, callbackUrl);
     return;
   }
 
   const eventDataForCallback = {
     type: 'request_event',
-    request_id: requestDetail.request_id,
-    status: requestDetail.status,
-    min_idp: requestDetail.min_idp,
-    answered_idp_count: requestDetail.responses.length,
-    closed: requestDetail.closed,
-    timed_out: requestDetail.timed_out,
-    service_list: requestDetail.data_request_list.map((service) => ({
-      service_id: service.service_id,
-      count: service.count,
-      answered_count:
-        service.answered_as_id_list != null
-          ? service.answered_as_id_list.length
-          : 0,
-    })),
+    ...requestStatus,
   };
 
   await callbackToClient(callbackUrl, eventDataForCallback, true);
 
   if (
     // request.status === 'completed' ||
-    requestDetail.status === 'rejected' ||
+    // requestDetail.status === 'rejected' ||
     requestDetail.closed ||
     requestDetail.timed_out
   ) {
@@ -117,7 +97,7 @@ async function checkAndNotify(requestId, height) {
 }
 
 async function checkZKAndNotify(
-  requestDetail,
+  requestStatus,
   height,
   idpId,
   callbackUrl,
@@ -125,24 +105,24 @@ async function checkZKAndNotify(
 ) {
   logger.debug({
     message: 'Check ZK Proof then notify',
-    requestDetail,
+    requestStatus,
     height,
     idpId,
     callbackUrl,
     requestData,
   });
   const responseValid = await common.verifyZKProof(
-    requestDetail.request_id,
+    requestStatus.request_id,
     idpId,
     requestData
   );
 
   if (
-    requestDetail.status === 'confirmed' &&
-    requestDetail.responses.length === requestDetail.min_idp &&
+    requestStatus.status === 'confirmed' &&
+    requestStatus.answered_idp_count === requestStatus.min_idp &&
     responseValid
   ) {
-    const requestData = await db.getRequestToSendToAS(requestDetail.request_id);
+    const requestData = await db.getRequestToSendToAS(requestStatus.request_id);
     if (requestData != null) {
       // TODO: try catch / error handling
       await sendRequestToAS(requestData, height);
@@ -151,27 +131,14 @@ async function checkZKAndNotify(
 
   const eventDataForCallback = {
     type: 'request_event',
-    request_id: requestDetail.request_id,
-    status: requestDetail.status,
-    min_idp: requestDetail.min_idp,
-    answered_idp_count: requestDetail.responses.length,
-    closed: requestDetail.closed,
-    timed_out: requestDetail.timed_out,
-    service_list: requestDetail.data_request_list.map((service) => ({
-      service_id: service.service_id,
-      count: service.count,
-      answered_count:
-        service.answered_as_id_list != null
-          ? service.answered_as_id_list.length
-          : 0,
-    })),
-    latest_response_valid: responseValid,
+    ...requestStatus,
+    latest_idp_response_valid: responseValid,
   };
 
   await callbackToClient(callbackUrl, eventDataForCallback, true);
 
-  db.removeProofReceivedFromMQ(`${requestDetail.request_id}:${idpId}`);
-  db.removeExpectedIdpResponseNodeId(requestDetail.request_id);
+  db.removeProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
+  db.removeExpectedIdpResponseNodeId(requestStatus.request_id);
 }
 
 export async function handleTendermintNewBlockHeaderEvent(
@@ -202,8 +169,9 @@ export async function handleTendermintNewBlockHeaderEvent(
           // TODO: clear key with smart-contract, eg. request_id or requestId
           const requestId =
             transaction.args.request_id || transaction.args.requestId; //derive from tx;
+          if (requestId == null) return;
           const height = block.block.header.height;
-          await checkAndNotify(requestId, height);
+          await notifyRequestUpdate(requestId, height);
         })
       );
     })
@@ -383,13 +351,15 @@ export async function handleMessageFromQueue(data) {
     const requestDetail = await common.getRequestDetail({
       requestId: dataJSON.request_id,
     });
+    const receivedDataFromAs = await db.getDatafromAS(dataJSON.request_id);
 
-    if (requestDetail.responses == null) {
-      requestDetail.responses = [];
-    }
+    const requestStatus = getDetailedRequestStatus(
+      requestDetail,
+      receivedDataFromAs
+    );
 
     checkZKAndNotify(
-      requestDetail,
+      requestStatus,
       latestBlockHeight,
       dataJSON.idp_id,
       callbackUrl,
@@ -422,26 +392,21 @@ export async function handleMessageFromQueue(data) {
         data: dataJSON.data,
       });
 
-      const asTotalCount = requestDetail.data_request_list.reduce(
-        (total, service) => total + service.count,
-        0
-      );
-
-      const receivedDataCount = await db.countDataFromAS(dataJSON.request_id);
-
-      const received_all = asTotalCount === receivedDataCount;
+      const receivedDataFromAs = await db.getDatafromAS(dataJSON.request_id);
 
       const callbackUrl = await db.getRequestCallbackUrl(dataJSON.request_id);
 
-      const dataForCallback = {
-        type: 'data_received',
-        request_id: dataJSON.request_id,
-        service_id: dataJSON.service_id,
-        source_node_id: dataJSON.as_id,
-        received_all,
+      const requestStatus = getDetailedRequestStatus(
+        requestDetail,
+        receivedDataFromAs
+      );
+
+      const eventDataForCallback = {
+        type: 'request_event',
+        ...requestStatus,
       };
 
-      await callbackToClient(callbackUrl, dataForCallback, true);
+      await callbackToClient(callbackUrl, eventDataForCallback, true);
     } catch (error) {
       // TODO: error handling
       throw error;
