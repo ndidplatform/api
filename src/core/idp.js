@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import fetch from 'node-fetch';
 
 import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/customError';
@@ -40,6 +41,30 @@ let callbackUrl = {};
     }
   }
 });
+
+export async function accessorSign(hash_id, accessor_id) {
+  let data = {
+    hash_of_sid: hash_id,
+    hash_method: 'SHA256',
+    key_type: 'RSA',
+    sign_method: 'RSA',
+  };
+
+  logger.debug({
+    message: 'Callback to accessor sign',
+    url: callbackUrl.accessor,
+    accessor_id,
+  });
+
+  let response = await fetch(callbackUrl.accessor + '/' + encodeURIComponent(accessor_id), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  return await response.text();
+}
 
 export function getAccessorCallback() {
   return callbackUrl.accessor;

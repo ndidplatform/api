@@ -129,6 +129,18 @@ export default {
         required: ['url'],
       },
     },
+    '/idp/accessor/callback': {
+      body: {
+        properties: {
+          url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
+        },
+        required: ['url'],
+      },
+    },
     '/idp/response': {
       body: {
         properties: {

@@ -118,7 +118,6 @@ export function encryptAsymetricKey(publicKey, message) {
 }
 
 export function generateIdentityProof(data) {
-  //random
 
   logger.debug({
     message: 'Generating proof',
@@ -139,11 +138,12 @@ export function generateIdentityProof(data) {
 
   logger.debug({
     message: 'Proof generated',
-    k: k,
-    blockchainProof,
-    privateProof,
+    k: stringToBigInt(k),
+    bcInt: stringToBigInt(blockchainProof),
+    pvInt: stringToBigInt(privateProof),
     n,e,
-    challenge: data.challenge,
+    secret,
+    challenge: stringToBigInt(data.challenge),
   });
 
   return [blockchainProof, privateProof];
@@ -173,6 +173,28 @@ function stringToBigInt(string) {
   return bignum.fromBuffer(Buffer.from(string,'base64'));
 }
 
+function euclideanGCD(a, b) {
+  if( a.eq(bignum('0')) ) return [b, bignum('0'), bignum('1')];
+  let [g, y, x] = euclideanGCD(b.mod(a),a);
+  return [
+    g, 
+    x.sub(
+      b.sub(
+        b.mod(a)
+      )
+      .div(a)
+      .mul(y)
+    ),
+    y
+  ];
+}
+
+function moduloMultiplicativeInverse(a, modulo) {
+  let [g, x, y] = euclideanGCD(a, modulo);
+  if(!g.eq(1)) throw 'No modular inverse';
+  return x.mod(modulo);
+}
+
 export function verifyZKProof(publicKey, 
   challenge, 
   privateProof, 
@@ -182,12 +204,13 @@ export function verifyZKProof(publicKey,
 ) {
   if(privateProofHash !== hash(privateProof)) return false;
 
-  let hashedSid = hash(sid.namespace + ':' + sid.identifier);
   let { n, e } = extractParameterFromPublicKey(publicKey);
+  let hashedSid = hash(sid.namespace + ':' + sid.identifier);
+  let inverseHashSid = moduloMultiplicativeInverse(stringToBigInt(hashedSid), n);
 
   let tmp1 = powerMod(stringToBigInt(privateProof),e,n);
   let tmp2 = powerMod(
-    stringToBigInt(hashedSid), 
+    inverseHashSid, 
     stringToBigInt(challenge),
     n,
   ); 
@@ -196,11 +219,13 @@ export function verifyZKProof(publicKey,
 
   logger.debug({
     message: 'ZK Verify result',
-    hashedSid,
+    hashBigInt: stringToBigInt(hashedSid),
+    inverseHashSid,
     n,e,
     tmp1,
     tmp2,
     tmp3,
+    publicProofBigInt: stringToBigInt(publicProof),
     publicProof,
   });
 

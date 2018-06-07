@@ -5,6 +5,7 @@ import * as utils from '../utils';
 import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
+import { accessorSign } from './idp';
 
 export async function checkAssociated({namespace, identifier}) {
   let idpList = await common.getIdpNodes({
@@ -49,7 +50,7 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   //NOTE: zero knowledge proof cannot be verify by blockchain, hence, 
   //if this idp call to add their accessor it's imply that zk proof is verified by the
   logger.debug({
-    message: 'GET consent, adding accessor...',
+    message: 'Get consent, adding accessor...',
     request_id,
     old_accessor_id,
   });
@@ -103,8 +104,6 @@ export async function createNewIdentity(data) {
 
     let hash_id = utils.hash(namespace + ':' + identifier);
 
-    //TODO
-    //check if this call is valid
     //call CheckExistingIdentity to tendermint
     let { exist } = await tendermint.query('CheckExistingIdentity', {
       hash_id,
@@ -132,6 +131,14 @@ export async function createNewIdentity(data) {
     });
 
     db.setRequestIdByReferenceId(reference_id, request_id);
+    let secret = await accessorSign(hash_id, accessor_id);
+    
+    logger.debug({
+      message: 'secret from accessor callback',
+      secret,
+      hash_id,
+      accessor_id,
+    });
 
     if(exist) {
       //save data for add accessor to persistent
@@ -165,7 +172,7 @@ export async function createNewIdentity(data) {
         })
       ]);
     }
-    return { request_id, exist };
+    return { request_id, exist, secret };
   } 
   catch (error) {
     logger.error({
