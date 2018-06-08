@@ -67,7 +67,7 @@ router.post('/node/register_callback', validateBody, async (req, res, next) => {
   try {
     const { sign_url, decrypt_url } = req.body;
 
-    await utils.setSignatureCallback(sign_url, decrypt_url);
+    await utils.setDpkiCallback(sign_url, decrypt_url);
     res.status(204).end();
   } catch (error) {
     next(error);

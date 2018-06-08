@@ -9,7 +9,7 @@ import bignum from 'bignum';
 import { spawnSync } from 'child_process';
 import logger from '../logger';
 
-let nonce = Date.now() % 10000;
+//let nonce = Date.now() % 10000;
 let callbackUrl = {};
 const saltByteLength = 8;
 const saltStringLength = saltByteLength*2;
@@ -60,8 +60,7 @@ export function randomBase64Bytes(length) {
 }
 
 export function getNonce() {
-  // TODO
-  return (nonce++).toString();
+  return randomBase64Bytes(32);
 }
 
 export function hash(stringToHash) {
@@ -80,7 +79,6 @@ export function compareSaltedHash({saltedHash, plain}) {
 }
 
 export async function decryptAsymetricKey(cipher) {
-  // TODO: implement decryption with callback decrypt? no design yet... (HSM)
   const [encryptedSymKey, encryptedMessage] = cipher.split('|');
   let symKeyBuffer;
   let decryptCallback = callbackUrl.decrypt;
@@ -92,7 +90,9 @@ export async function decryptAsymetricKey(cipher) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        cipher: encryptedSymKey
+        node_id: config.nodeId,
+        encrypted_message: encryptedSymKey,
+        key_type: 'RSA',
       }),
     });
     let base64 = await response.text();
@@ -232,7 +232,7 @@ export function verifyZKProof(publicKey,
   return stringToBigInt(publicProof).eq(tmp3);
 }
 
-export function setSignatureCallback(signCallbackUrl, decryptCallbackUrl) {
+export function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
   if(signCallbackUrl) {
     callbackUrl.signature = signCallbackUrl;
     fs.writeFile(callbackUrlFilesPrefix + '-signature', signCallbackUrl, (err) => {
@@ -284,11 +284,11 @@ async function createSignatureByCallback(data, useMasterKey) {
     },
     body: JSON.stringify({
       node_id: config.nodeId,
-      //request_message: 'string',
-      //request_hash: 'string',
+      request_message: JSON.stringify(data),
+      request_message_hash: hash(JSON.stringify(data)),
       hash_method: 'SHA256',
-      //key_type: 'string',
-      //sign_method: 'string'
+      key_type: 'RSA',
+      sign_method: 'RSA-SHA256'
     }),
   });
   return await response.text();
