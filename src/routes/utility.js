@@ -88,7 +88,7 @@ router.get('/node_token/:node_id', async (req, res, next) => {
   }
 });
 
-router.get('/namespace', async (req, res, next) => {
+router.get('/namespaces', async (req, res, next) => {
   try {
     res.status(200).json(await common.getNamespaceList());
   } catch (error) {
