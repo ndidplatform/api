@@ -29,10 +29,6 @@ async function notifyRequestUpdate(requestId, height) {
     requestId: requestId,
   });
 
-  if (requestDetail.responses == null) {
-    requestDetail.responses = [];
-  }
-
   const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
   // ZK Proof verification is needed only when got new response from IdP
@@ -157,7 +153,7 @@ export async function handleTendermintNewBlockHeaderEvent(
   const blocks = await tendermint.getBlocks(fromHeight, toHeight);
   await Promise.all(
     blocks.map(async (block) => {
-      let transactions = tendermint.getTransactionListFromBlockQuery(block);
+      const transactions = tendermint.getTransactionListFromBlockQuery(block);
       await Promise.all(
         transactions.map(async (transaction) => {
           // TODO: clear key with smart-contract, eg. request_id or requestId
