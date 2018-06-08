@@ -397,6 +397,26 @@ async function setDataReceived(requestId, serviceId, asNodeId) {
   } catch (error) {
     throw new CustomError({
       message: 'Cannot set data received to blockchain',
+      requestId,
+      serviceId,
+      asNodeId,
+      cause: error,
+    });
+  }
+}
+
+export async function closeRequest(requestId) {
+  try {
+    const result = await tendermint.transact(
+      'CloseRequest',
+      { requestId },
+      utils.getNonce()
+    );
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot close a request',
+      requestId,
       cause: error,
     });
   }

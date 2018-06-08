@@ -75,20 +75,34 @@ router.get('/requests/data/:request_id', async (req, res, next) => {
   }
 });
 
-router.post('/requests/housekeeping/data/:request_id', async (req, res, next) => {
-  try {
-    const { request_id } = req.params;
+router.post(
+  '/requests/housekeeping/data/:request_id',
+  async (req, res, next) => {
+    try {
+      const { request_id } = req.params;
 
-    await rp.removeDataFromAS(request_id);
+      await rp.removeDataFromAS(request_id);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post('/requests/housekeeping/data', async (req, res, next) => {
+  try {
+    await rp.removeAllDataFromAS();
     res.status(204).end();
   } catch (error) {
     next(error);
   }
 });
 
-router.post('/requests/housekeeping/data', async (req, res, next) => {
+router.post('/requests/close', validateBody, async (req, res, next) => {
   try {
-    await rp.removeAllDataFromAS();
+    const { request_id } = req.body;
+
+    await rp.closeRequest(request_id);
     res.status(204).end();
   } catch (error) {
     next(error);

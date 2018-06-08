@@ -117,6 +117,14 @@ export default {
         ],
       },
     },
+    '/rp/requests/close': {
+      body: {
+        properties: {
+          request_id: { type: 'string', minLength: 1 },
+        },
+        required: ['request_id'],
+      },
+    },
     '/idp/callback': {
       body: {
         properties: {
