@@ -22,12 +22,14 @@ if (role === 'rp') {
   tendermint.setTendermintNewBlockHeaderEventHandler(
     rp.handleTendermintNewBlockHeaderEvent
   );
+  resumeTimeoutScheduler();
   resumeCallbackToClient();
 } else if (role === 'idp') {
   handleMessageFromQueue = idp.handleMessageFromQueue;
   tendermint.setTendermintNewBlockHeaderEventHandler(
     idp.handleTendermintNewBlockHeaderEvent
   );
+  resumeTimeoutScheduler();
   resumeCallbackToClient();
 } else if (role === 'as') {
   handleMessageFromQueue = as.handleMessageFromQueue;
@@ -35,6 +37,13 @@ if (role === 'rp') {
     as.handleTendermintNewBlockHeaderEvent
   );
   resumeCallbackToClient(as.afterGotDataFromCallback);
+}
+
+async function resumeTimeoutScheduler() {
+  let scheduler = await db.getAllTimeoutScheduler();
+  scheduler.forEach(({ requestId, unixTimeout }) => 
+    runTimeoutScheduler(requestId, (unixTimeout - Date.now()) / 1000)
+  );
 }
 
 export async function getRequest({ requestId }) {
@@ -274,23 +283,20 @@ export function clearAllScheduler() {
 
 export async function timeoutRequest(requestId) {
   try {
-    const requestDetail = await getRequestDetail({ requestId });
-    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
-    switch (requestStatus.status) {
-      case 'complicated':
-      case 'pending':
-      case 'confirmed':
-        await tendermint.transact(
-          'TimeOutRequest',
-          { requestId },
-          utils.getNonce()
-        );
-        break;
-      default:
-      //Do nothing
+    const request = await getRequest({ requestId });
+    if (request.closed === false) {
+      await tendermint.transact(
+        'TimeOutRequest',
+        { requestId },
+        utils.getNonce()
+      );
     }
   } catch (error) {
-    // TODO: error handling
+    logger.error({
+      message: 'Cannot set timed out',
+      requestId,
+      error,
+    });
     throw error;
   }
   db.removeTimeoutScheduler(requestId);

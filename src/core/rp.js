@@ -9,8 +9,6 @@ import * as common from './common';
 import * as db from '../db';
 import * as utils from '../utils';
 
-let timeoutScheduler = common.timeoutScheduler;
-
 /**
  *
  * @param {string} requestId
@@ -69,8 +67,6 @@ async function notifyRequestUpdate(requestId, height) {
   await callbackToClient(callbackUrl, eventDataForCallback, true);
 
   if (
-    // request.status === 'completed' ||
-    // requestDetail.status === 'rejected' ||
     requestDetail.closed ||
     requestDetail.timed_out
   ) {
@@ -82,8 +78,8 @@ async function notifyRequestUpdate(requestId, height) {
     db.removeRequestIdReferenceIdMappingByRequestId(requestId);
     db.removeRequestToSendToAS(requestId);
     db.removeTimeoutScheduler(requestId);
-    common.clearTimeout(timeoutScheduler[requestId]);
-    delete timeoutScheduler[requestId];
+    clearTimeout(common.timeoutScheduler[requestId]);
+    delete common.timeoutScheduler[requestId];
   }
 }
 
@@ -407,11 +403,6 @@ async function setDataReceived(requestId, serviceId, asNodeId) {
 }
 
 export async function init() {
-  let scheduler = await db.getAllTimeoutScheduler();
-  scheduler.forEach(({ requestId, unixTimeout }) => {
-    common.runTimeoutScheduler(requestId, (unixTimeout - Date.now()) / 1000);
-  });
-
   //In production this should be done only once in phase 1,
 
   // Wait for blockchain ready
