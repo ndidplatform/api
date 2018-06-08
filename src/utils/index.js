@@ -8,6 +8,7 @@ import fetch from 'node-fetch';
 import bignum from 'bignum';
 import { spawnSync } from 'child_process';
 import logger from '../logger';
+import constants from 'constants';
 
 let nonce = Date.now() % 10000;
 let callbackUrl = {};
@@ -117,6 +118,32 @@ export function encryptAsymetricKey(publicKey, message) {
   return encryptedSymKey + '|' + encryptedMessage;
 }
 
+export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
+  const rawMessageBuffer = cryptoUtils.publicDecrypt({
+    key: publicKey,
+    padding: constants.RSA_NO_PADDING,
+  }, Buffer.from(cipher,'base64'));
+
+  //RSA PKCS v. 1.5
+  if( rawMessageBuffer[0] !== 0 ||
+      ( rawMessageBuffer[1] !== 0 &&
+      rawMessageBuffer[1] !== 1)
+    ) throw 'Invalid cipher';
+  let padLength = 2;
+  while(rawMessageBuffer[padLength] !== 0) padLength++;
+
+  logger.debug({
+    message: 'padding extracted',
+    publicKey,
+    rawMessageBuffer,
+    rawMessageString: rawMessageBuffer.toString('base64'),
+    hash_id_string: rawMessageBuffer.slice(padLength).toString('base64'),
+    padLength,
+  });
+
+  return rawMessageBuffer.slice(0,padLength).toString('base64');
+}
+
 export function generateIdentityProof(data) {
 
   logger.debug({
@@ -144,9 +171,14 @@ export function generateIdentityProof(data) {
     n,e,
     secret,
     challenge: stringToBigInt(data.challenge),
+    padding: data.secret.split('|')[0],
   });
 
-  return [blockchainProof, privateProof];
+  return { 
+    blockchainProof,
+    privateProofValue: privateProof,
+    padding: data.secret.split('|')[0],
+  };
 }
 
 function extractParameterFromPublicKey(publicKey) {
@@ -201,12 +233,19 @@ export function verifyZKProof(publicKey,
   publicProof, 
   sid,
   privateProofHash,
+  padding,
 ) {
   if(privateProofHash !== hash(privateProof)) return false;
 
   let { n, e } = extractParameterFromPublicKey(publicKey);
   let hashedSid = hash(sid.namespace + ':' + sid.identifier);
-  let inverseHashSid = moduloMultiplicativeInverse(stringToBigInt(hashedSid), n);
+
+  let paddedHashedSid = Buffer.concat([
+    Buffer.from(padding,'base64'),
+    Buffer.from(hashedSid,'base64')
+  ]).toString('base64');
+
+  let inverseHashSid = moduloMultiplicativeInverse(stringToBigInt(paddedHashedSid), n);
 
   let tmp1 = powerMod(stringToBigInt(privateProof),e,n);
   let tmp2 = powerMod(
@@ -227,6 +266,8 @@ export function verifyZKProof(publicKey,
     tmp3,
     publicProofBigInt: stringToBigInt(publicProof),
     publicProof,
+    paddedHashedSid,
+    hashedSid,
   });
 
   return stringToBigInt(publicProof).eq(tmp3);

@@ -572,6 +572,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq) {
         identifier,
       },
       privateProofValueHash,
+      privateProofObject.padding,
     )
   );
 }

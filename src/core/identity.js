@@ -131,10 +131,14 @@ export async function createNewIdentity(data) {
     });
 
     db.setRequestIdByReferenceId(reference_id, request_id);
-    let secret = await accessorSign(hash_id, accessor_id);
+    let encryptedHash = await accessorSign(hash_id, accessor_id);
+    let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
+    let secret = padding + '|' + encryptedHash;
     
     logger.debug({
-      message: 'secret from accessor callback',
+      message: 'encryptedHash from accessor callback',
+      encryptedHash,
+      padding,
       secret,
       hash_id,
       accessor_id,

@@ -411,7 +411,8 @@ async function verifyZKProof(request_id, dataFromMq) {
         namespace,
         identifier,
       },
-      privateProofValueHash
+      privateProofValueHash,
+      privateProofObjectList[i].privateProofObject.padding,
     );
   }
   return valid;
