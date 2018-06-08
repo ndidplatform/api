@@ -1,4 +1,4 @@
-// Adapt from https://github.com/indutny/asn1.js
+// Adapt from https://github.com/crypto-browserify/parse-asn1
 
 import * as structure from './structure';
 
