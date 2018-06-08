@@ -101,17 +101,6 @@ Required
 - Docker CE 17.06+ [Install docker](https://docs.docker.com/install/)
 - docker-compose 1.14.0+ [Install docker-compose](https://docs.docker.com/compose/install/)
 
-### Build
-
-```
-npm run docker-build
-```
-
-or
-
-```
-./docker/build.sh
-```
 
 ### Run
 
@@ -124,6 +113,23 @@ or
 ```
 docker-compoes -f docker/docker-compose.yml up
 ```
+
+### Build
+
+```
+npm run docker-build
+```
+
+or
+
+```
+./docker/build.sh
+```
+
+### Note
+
+* To run docker container without building image, run command show in **Run** section (no building required). It will run docker container with image from Dockerhub (https://hub.docker.com/r/ndidplatform/api/).
+* To pull latest image from Dockerhub, run `docker pull ndidplatform/api`
 
 ## Note
 
