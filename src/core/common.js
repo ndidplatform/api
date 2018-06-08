@@ -50,7 +50,12 @@ export async function getRequest({ requestId }) {
 
 export async function getRequestDetail({ requestId }) {
   try {
-    return await tendermint.query('GetRequestDetail', { requestId });
+    const requestDetail = await tendermint.query('GetRequestDetail', { requestId });
+    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+    return {
+      ...requestDetail,
+      status: requestStatus.status,
+    };
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get request details from blockchain',
@@ -269,8 +274,9 @@ export function clearAllScheduler() {
 
 export async function timeoutRequest(requestId) {
   try {
-    const request = await getRequest({ requestId });
-    switch (request.status) {
+    const requestDetail = await getRequestDetail({ requestId });
+    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+    switch (requestStatus.status) {
       case 'complicated':
       case 'pending':
       case 'confirmed':

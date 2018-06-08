@@ -7,7 +7,7 @@ import * as mq from '../mq';
 import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
-import { getDetailedRequestStatus } from '../utils';
+import * as utils from '../utils';
 
 let timeoutScheduler = common.timeoutScheduler;
 
@@ -25,7 +25,6 @@ async function notifyRequestUpdate(requestId, height) {
   const callbackUrl = await db.getRequestCallbackUrl(requestId);
   if (!callbackUrl) return; // This RP does not concern this request
 
-  // TODO: try catch / error handling
   const requestDetail = await common.getRequestDetail({
     requestId: requestId,
   });
@@ -34,11 +33,7 @@ async function notifyRequestUpdate(requestId, height) {
     requestDetail.responses = [];
   }
 
-  const receivedDataFromAs = await db.getDatafromAS(requestId);
-  const requestStatus = getDetailedRequestStatus(
-    requestDetail,
-    receivedDataFromAs
-  );
+  const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
   // ZK Proof verification is needed only when got new response from IdP
   let needZKProofVerification = false;
@@ -124,7 +119,6 @@ async function checkZKAndNotify(
   ) {
     const requestData = await db.getRequestToSendToAS(requestStatus.request_id);
     if (requestData != null) {
-      // TODO: try catch / error handling
       await sendRequestToAS(requestData, height);
     }
   }
@@ -351,12 +345,8 @@ export async function handleMessageFromQueue(data) {
     const requestDetail = await common.getRequestDetail({
       requestId: dataJSON.request_id,
     });
-    const receivedDataFromAs = await db.getDatafromAS(dataJSON.request_id);
 
-    const requestStatus = getDetailedRequestStatus(
-      requestDetail,
-      receivedDataFromAs
-    );
+    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
     checkZKAndNotify(
       requestStatus,
@@ -371,9 +361,9 @@ export async function handleMessageFromQueue(data) {
     // Call callback to RP.
 
     try {
-      const requestDetail = await common.getRequestDetail({
-        requestId: dataJSON.request_id,
-      });
+      // const requestDetail = await common.getRequestDetail({
+      //   requestId: dataJSON.request_id,
+      // });
       // Note: Should check if received request id is expected?
 
       // Should check? (legal liability issue)
@@ -392,25 +382,31 @@ export async function handleMessageFromQueue(data) {
         data: dataJSON.data,
       });
 
-      const receivedDataFromAs = await db.getDatafromAS(dataJSON.request_id);
-
-      const callbackUrl = await db.getRequestCallbackUrl(dataJSON.request_id);
-
-      const requestStatus = getDetailedRequestStatus(
-        requestDetail,
-        receivedDataFromAs
-      );
-
-      const eventDataForCallback = {
-        type: 'request_event',
-        ...requestStatus,
-      };
-
-      await callbackToClient(callbackUrl, eventDataForCallback, true);
+      await setDataReceived(dataJSON.request_id, dataJSON.service_id, dataJSON.as_id);
     } catch (error) {
       // TODO: error handling
       throw error;
     }
+  }
+}
+
+async function setDataReceived(requestId, serviceId, asNodeId) {
+  try {
+    const result = await tendermint.transact(
+      'SetDataReceived',
+      {
+        requestId,
+        service_id: serviceId,
+        as_id: asNodeId,
+      },
+      utils.getNonce()
+    );
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot set data received to blockchain',
+      cause: error,
+    });
   }
 }
 

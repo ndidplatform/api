@@ -330,11 +330,9 @@ export function createRequestId() {
  * @param {Array.<Object>} requestDetail.responses
  * @param {boolean} requestDetail.closed
  * @param {boolean} requestDetail.timed_out
- * @param {Object} receivedDataFromAs 
- * @param {string} receivedDataFromAs.service_id 
  * @returns {RequestStatus} requestStatus
  */
-export function getDetailedRequestStatus(requestDetail, receivedDataFromAs) {
+export function getDetailedRequestStatus(requestDetail) {
   if (requestDetail.responses == null) {
     requestDetail.responses = [];
   }
@@ -371,9 +369,10 @@ export function getDetailedRequestStatus(requestDetail, receivedDataFromAs) {
       service.answered_as_id_list != null
         ? service.answered_as_id_list.length
         : 0;
-    const receivedDataCount = receivedDataFromAs.filter(
-      (receivedData) => receivedData.service_id === service.service_id
-    ).length;
+    const receivedDataCount = 
+      service.received_data_from_list != null
+        ? service.received_data_from_list.length
+        : 0;
     return {
       service_id: service.service_id,
       count: service.count,
