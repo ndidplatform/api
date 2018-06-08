@@ -44,12 +44,8 @@ let callbackUrl = {};
 
 export async function accessorSign(hash_id, accessor_id) {
 
-  let hash_id_hex = Buffer.from(hash_id,'base64').toString('hex');
-  while(hash_id_hex.length < 512) hash_id_hex = '00' + hash_id_hex;
-  let hash_id_padded = Buffer.from(hash_id_hex,'hex').toString('base64');
-
   let data = {
-    hash_of_sid: hash_id_padded,
+    hash_of_sid: hash_id,
     hash_method: 'SHA256',
     key_type: 'RSA',
     sign_method: 'RSA',
@@ -59,6 +55,7 @@ export async function accessorSign(hash_id, accessor_id) {
     message: 'Callback to accessor sign',
     url: callbackUrl.accessor,
     accessor_id,
+    hash_id,
   });
 
   let response = await fetch(callbackUrl.accessor + '/' + encodeURIComponent(accessor_id), {
@@ -120,7 +117,7 @@ export async function createIdpResponse(data) {
       secret,
     } = data;
 
-    let [blockchainProof, privateProofValue] = utils.generateIdentityProof({
+    let { blockchainProof, privateProofValue, padding } = utils.generateIdentityProof({
       publicKey: await common.getAccessorKey(accessor_id),
       challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge,
       secret,
@@ -130,6 +127,7 @@ export async function createIdpResponse(data) {
     let privateProofObject = {
       privateProofValue,
       accessor_id,
+      padding,
     };
 
     let dataToBlockchain = {

@@ -57,4 +57,4 @@ export const masterPrivateKeyPath =
 
 //in byte
 export const challengeLength = 16;
-export const zkRandomLengthForIdp = 256;
+export const zkRandomLengthForIdp = 240;
