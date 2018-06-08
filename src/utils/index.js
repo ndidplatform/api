@@ -6,7 +6,7 @@ import * as cryptoUtils from './crypto';
 import * as config from '../config';
 import fetch from 'node-fetch';
 import bignum from 'bignum';
-import { spawnSync } from 'child_process';
+import { parseKey } from './asn1parser';
 import logger from '../logger';
 
 //let nonce = Date.now() % 10000;
@@ -118,7 +118,6 @@ export function encryptAsymetricKey(publicKey, message) {
 }
 
 export function generateIdentityProof(data) {
-
   logger.debug({
     message: 'Generating proof',
     data,
@@ -150,18 +149,10 @@ export function generateIdentityProof(data) {
 }
 
 function extractParameterFromPublicKey(publicKey) {
-  let fileName = 'tmpNDIDFile' + Date.now();
-  fs.writeFileSync(fileName,publicKey);
-  let result = spawnSync('openssl',('rsa -pubin -in ' + fileName + ' -text -noout').split(' '));
-  let resultStr = result.stdout.toString().split(':').join('');
-  let resultNoHeader = resultStr.split('\n').splice(2);
-  let modStr = resultNoHeader.splice(0,resultNoHeader.length-2).join('').split(' ').join('');
-  let exponentStr = resultNoHeader[0].split(' ')[1];
-
-  fs.unlink(fileName, () => {});
+  const parsedKey = parseKey(publicKey);
   return {
-    n: stringToBigInt(Buffer.from(modStr,'hex').toString('base64')),
-    e: bignum(exponentStr)
+    n: stringToBigInt(parsedKey.modulus.toBuffer().toString('base64')),
+    e: bignum(parsedKey.publicExponent.toString(10))
   };
 }
 

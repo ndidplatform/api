@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "ajv": "^6.4.0",
+    "asn1.js": "^5.0.1",
     "bignum": "git+https://github.com/ndidplatform/node-bignum.git",
     "body-parser": "^1.18.2",
     "encoding-down": "^4.0.0",
