@@ -141,7 +141,7 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
     padLength,
   });
 
-  return rawMessageBuffer.slice(0,padLength).toString('base64');
+  return rawMessageBuffer.slice(0,padLength + 1).toString('base64');
 }
 
 export function generateIdentityProof(data) {
@@ -151,16 +151,17 @@ export function generateIdentityProof(data) {
     data,
   });
 
+  let [ padding, signedHash ] = data.secret.split('|');
   let k = randomBase64Bytes(config.zkRandomLengthForIdp);
   let kInt = stringToBigInt(k);
   let { n, e } = extractParameterFromPublicKey(data.publicKey);
-  let secret = stringToBigInt(data.secret);
+  let signedHashInt = stringToBigInt(signedHash);
   let challenge = stringToBigInt(data.challenge);
 
   let blockchainProof = powerMod(kInt,e,n).toBuffer().toString('base64');
   //console.log(blockchainProof);
   let privateProof = kInt.mul( 
-    powerMod(secret,challenge,n) 
+    powerMod(signedHashInt,challenge,n) 
   ).mod(n).toBuffer().toString('base64');
 
   logger.debug({
@@ -169,9 +170,9 @@ export function generateIdentityProof(data) {
     bcInt: stringToBigInt(blockchainProof),
     pvInt: stringToBigInt(privateProof),
     n,e,
-    secret,
+    signedHashInt,
     challenge: stringToBigInt(data.challenge),
-    padding: data.secret.split('|')[0],
+    padding,
   });
 
   return { 
@@ -246,6 +247,7 @@ export function verifyZKProof(publicKey,
   ]).toString('base64');
 
   let inverseHashSid = moduloMultiplicativeInverse(stringToBigInt(paddedHashedSid), n);
+  if(inverseHashSid.lt(bignum(0))) inverseHashSid = inverseHashSid.add(n);
 
   let tmp1 = powerMod(stringToBigInt(privateProof),e,n);
   let tmp2 = powerMod(
@@ -266,7 +268,7 @@ export function verifyZKProof(publicKey,
     tmp3,
     publicProofBigInt: stringToBigInt(publicProof),
     publicProof,
-    paddedHashedSid,
+    paddedHashedSid: stringToBigInt(paddedHashedSid),
     hashedSid,
   });
 
