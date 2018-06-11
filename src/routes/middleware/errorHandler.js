@@ -1,3 +1,4 @@
+import errorType from '../../error/type';
 import { clientHttpErrorCode, serverHttpErrorCode } from '../../config';
 
 const env = process.env.NODE_ENV || 'development';
@@ -45,5 +46,40 @@ export default function errorHandler(err, req, res, next) {
         stack: env === 'development' ? err.stack : undefined,
       },
     });
+  }
+}
+
+export function bodyParserErrorHandler(err, req, res, next) {
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  let errorCode;
+  let errorMessage;
+  if (err) {
+    if (err.type == 'entity.parse.failed') {
+      errorCode = errorType.BODY_PARSE_FAILED.code;
+      errorMessage = `${errorType.BODY_PARSE_FAILED.message}: ${err.message}`;
+    } else {
+      errorCode = errorType.BODY_PARSER_ERROR.code;
+      errorMessage = `${errorType.BODY_PARSER_ERROR.message}: ${err.message}`;
+    }
+
+    if (err.status === 400) {
+      res.status(clientHttpErrorCode).json({
+        error: {
+          code: errorCode,
+          message: errorMessage,
+        },
+      });
+    } else {
+      res.status(serverHttpErrorCode).json({
+        error: {
+          code: errorCode,
+          message: errorMessage,
+          stack: env === 'development' ? err.stack : undefined,
+        },
+      });
+    }
   }
 }

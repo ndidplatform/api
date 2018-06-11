@@ -60,6 +60,9 @@ export async function getRequest({ requestId }) {
 export async function getRequestDetail({ requestId }) {
   try {
     const requestDetail = await tendermint.query('GetRequestDetail', { requestId });
+    if (requestDetail == null) {
+      return null;
+    }
     const requestStatus = utils.getDetailedRequestStatus(requestDetail);
     return {
       ...requestDetail,

@@ -10,6 +10,7 @@ import './envVarValidate';
 import logger from './logger';
 
 import routes from './routes';
+import { bodyParserErrorHandler } from './routes/middleware/errorHandler';
 import { init as idp_init } from './core/idp';
 import { init as as_init } from './core/as';
 import { init as rp_init } from './core/rp';
@@ -40,14 +41,14 @@ logger.info({
 
 const app = express();
 
-app.use(bodyParser.urlencoded({ extended: false, limit: '2mb' }));
-app.use(bodyParser.json({ limit: '2mb' }));
-
 app.use(
   morgan('combined', {
     stream: { write: (message) => logger.info(message.trim()) },
   })
 );
+
+app.use(bodyParser.json({ limit: '2mb' }));
+app.use(bodyParserErrorHandler);
 
 app.use(routes);
 

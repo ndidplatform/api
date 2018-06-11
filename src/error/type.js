@@ -36,6 +36,10 @@ export default {
     code: 10008,
     message: 'Not connected to Tendermint. Please try again later.',
   },
+  BODY_PARSER_ERROR: {
+    code: 10009,
+    message: 'Body parsing failed',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
@@ -69,6 +73,10 @@ export default {
     message:
       'Not enough IdP (the number of IdPs found is less than minimum IdP needed)',
     clientError: true,
+  },
+  BODY_PARSE_FAILED: {
+    code: 20007,
+    message: 'Unable to parse body',
   },
 
   // Errors return from ABCI app
