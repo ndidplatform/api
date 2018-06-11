@@ -137,6 +137,8 @@ async function getDataAndSendBackToRP(request, responseDetails) {
     callbackUrl,
     {
       request_id: request.request_id,
+      namespace: request.namespace,
+      identifier: request.identifier,
       request_params: request.request_params,
       ...responseDetails,
     },
