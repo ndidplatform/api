@@ -5,6 +5,8 @@ import logger from '../logger';
 
 import * as config from '../config';
 import * as utils from '../utils';
+import CustomError from '../error/customError';
+import * as tendermint from '../tendermint/ndid';
 
 const receivingSocket = zmq.socket('pull');
 receivingSocket.bindSync('tcp://*:' + config.mqRegister.port);
@@ -14,19 +16,73 @@ export const eventEmitter = new EventEmitter();
 receivingSocket.on('message', async function(jsonMessageStr) {
   const jsonMessage = JSON.parse(jsonMessageStr);
 
-  let decrypted = utils.decryptAsymetricKey(jsonMessage);
-  eventEmitter.emit('message', decrypted);
+  let decrypted = await utils.decryptAsymetricKey(jsonMessage);
+  
+  logger.debug({
+    message: 'Raw decrypted message from message queue',
+    decrypted,
+  });
+
+  //verify digital signature
+  let [ raw_messge, msqSignature ] = decrypted.split('|');
+
+  logger.debug({
+    message: 'Split msqSignature',
+    raw_messge,
+    msqSignature,
+  });
+
+  let { idp_id, rp_id, as_id } = JSON.parse(raw_messge);
+  let nodeId = idp_id || rp_id || as_id ;
+  let { public_key } = await getNodePubKey(nodeId);
+  if(!nodeId) throw new CustomError({
+    message: 'Receive message from unknown node',
+  });
+
+  let signatureValid = utils.verifySignature(
+    msqSignature,
+    public_key,
+    raw_messge,
+  );
+
+  logger.debug({
+    message: 'Verify signature',
+    msqSignature,
+    public_key,
+    raw_messge,
+    raw_message_object: JSON.parse(raw_messge),
+    signatureValid,
+  });
+
+  if(signatureValid) {
+    eventEmitter.emit('message', raw_messge);
+  }
+  else throw new CustomError({
+    message: 'Receive message with unmatch digital signature',
+  });
 });
 
 export const send = async (receivers, message) => {
+
+  let msqSignature = await utils.createSignature(message);
+  let realPayload = JSON.stringify(message) + '|' + msqSignature;
+
+  logger.debug({
+    message: 'Digital signature created',
+    raw_message_object: message,
+    msqSignature,
+    realPayload,
+  });
+
   receivers.forEach(async (receiver) => {
     const sendingSocket = zmq.socket('push');
     sendingSocket.connect(`tcp://${receiver.ip}:${receiver.port}`);
 
-    // TODO proper encrypt
+    //cannot add signature in object because JSON.stringify may produce different string
+    //for two object that is deep equal, hence, verify signature retuen false
     let encryptedMessage = utils.encryptAsymetricKey(
       receiver.public_key,
-      JSON.stringify(message)
+      realPayload,
     );
     sendingSocket.send(JSON.stringify(encryptedMessage));
 
@@ -43,4 +99,16 @@ export function close() {
   logger.info({
     message: 'Message queue socket closed',
   });
+}
+
+//cannot use common.js because circular dependency
+async function getNodePubKey(node_id) {
+  try {
+    return await tendermint.query('GetNodePublicKey', { node_id });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get node public key from blockchain',
+      cause: error,
+    });
+  }
 }

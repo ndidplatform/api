@@ -5,18 +5,24 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
 
+import './envVarValidate';
+
 import logger from './logger';
 
 import routes from './routes';
-import { init as idp_init } from './main/idp';
-import { init as as_init } from './main/as';
-import { init as rp_init, clearAllScheduler } from './main/rp';
+import { init as idp_init } from './core/idp';
+import { init as as_init } from './core/as';
+import { init as rp_init } from './core/rp';
+import { clearAllScheduler } from './core/common';
 
 import { close as closeDB } from './db';
 import { tendermintWsClient } from './tendermint/ndid';
 import { close as closeMQ } from './mq';
+import { stopAllCallbackRetries } from './utils/callback';
 
 import * as config from './config';
+
+const env = process.env.NODE_ENV || 'development';
 
 process.on('unhandledRejection', function(reason, p) {
   logger.error({
@@ -26,7 +32,11 @@ process.on('unhandledRejection', function(reason, p) {
   });
 });
 
-const env = process.env.NODE_ENV || 'development';
+logger.info({
+  message: 'Starting server',
+  env,
+  config,
+});
 
 const app = express();
 
@@ -80,6 +90,7 @@ function shutDown() {
       message: 'HTTP server closed',
     });
 
+    stopAllCallbackRetries();
     closeMQ();
     tendermintWsClient.close();
     // TODO: wait for async operations which going to use DB to finish before closing

@@ -10,7 +10,35 @@ export async function close() {
 }
 
 //
-// Used by IDP and AS
+// Used by RP, IdP, and AS
+//
+
+export function addCallbackWithRetryData(cbId, data) {
+  return db.pushToList({
+    name: 'callbackWithRetry',
+    keyName: 'cbId',
+    key: cbId,
+    valueName: 'data',
+    value: data,
+  });
+}
+
+export function removeCallbackWithRetryData(cbId) {
+  return db.remove({
+    name: 'callbackWithRetry',
+    keyName: 'cbId',
+    key: cbId,
+  });
+}
+
+export function getAllCallbackWithRetryData() {
+  return db.getAll({
+    name: 'callbackWithRetry',
+  });
+}
+
+//
+// Used by IdP and AS
 //
 
 export function getRequestIdsExpectedInBlock(fromHeight, toHeight) {
@@ -55,6 +83,33 @@ export function removeRequestIdsExpectedInBlock(fromHeight, toHeight) {
   });
 }
 
+export function getExpectedIdpResponseNodeId(height) {
+  return db.get({
+    name: 'expectedIdpResponseNodeId',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'idpNodeId',
+  });
+}
+
+export function setExpectedIdpResponseNodeId(height, idpNodeId) {
+  return db.set({
+    name: 'expectedIdpResponseNodeId',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'idpNodeId',
+    value: idpNodeId,
+  });
+}
+
+export function removeExpectedIdpResponseNodeId(height) {
+  return db.remove({
+    name: 'expectedIdpResponseNodeId',
+    keyName: 'expectedBlockHeight',
+    key: height,
+  });
+}
+
 export function getRequestReceivedFromMQ(requestId) {
   return db.get({
     name: 'requestReceivedFromMQ',
@@ -79,6 +134,114 @@ export function removeRequestReceivedFromMQ(requestId) {
     name: 'requestReceivedFromMQ',
     keyName: 'requestId',
     key: requestId,
+  });
+}
+
+export function getRPIdFromRequestId(requestId) {
+  return db.get({
+    name: 'rpIdFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'rp_id',
+  });
+}
+
+export function setRPIdFromRequestId(requestId, rp_id) {
+  return db.set({
+    name: 'rpIdFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'rp_id',
+    value: rp_id,
+  });
+}
+
+export function removeRPIdFromRequestId(requestId) {
+  return db.remove({
+    name: 'rpIdFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getIdentityFromRequestId(requestId) {
+  return db.get({
+    name: 'identityRequestIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'identity',
+  });
+}
+
+export function setIdentityFromRequestId(requestId, identity) {
+  return db.set({
+    name: 'identityRequestIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'identity',
+    value: identity,
+  });
+}
+
+export function removeIdentityFromRequestId(requestId) {
+  return db.remove({
+    name: 'identityRequestIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getChallengeFromRequestId(requestId) {
+  return db.get({
+    name: 'challengeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'challenge',
+  });
+}
+
+export function setChallengeFromRequestId(requestId, challenge) {
+  return db.set({
+    name: 'challengeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'challenge',
+    value: challenge,
+  });
+}
+
+export function removeChallengeFromRequestId(requestId) {
+  return db.remove({
+    name: 'challengeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getProofReceivedFromMQ(responseId) {
+  return db.get({
+    name: 'proofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'privateProofObject',
+  });
+}
+
+export function setProofReceivedFromMQ(responseId, privateProofObject) {
+  return db.set({
+    name: 'proofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'privateProofObject',
+    value: privateProofObject,
+  });
+}
+
+export function removeProofReceivedFromMQ(responseId) {
+  return db.remove({
+    name: 'proofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
   });
 }
 
@@ -203,12 +366,20 @@ export function getDatafromAS(requestId) {
   });
 }
 
+export function countDataFromAS(requestId) {
+  return db.count({
+    name: 'dataFromAS',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 export function addDataFromAS(requestId, data) {
   return db.pushToList({
     name: 'dataFromAS',
     keyName: 'requestId',
     key: requestId,
-    valueKey: 'data',
+    valueName: 'data',
     value: data,
   });
 }

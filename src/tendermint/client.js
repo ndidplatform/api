@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 
-import logger from '../logger';
+import CustomError from '../error/customError';
+import errorType from '../error/type';
 
 import { tendermintAddress } from '../config';
 
@@ -26,12 +27,14 @@ async function httpUriCall(method, params) {
     const responseJson = await response.json();
     return responseJson;
   } catch (error) {
-    logger.error({
-      message: 'Cannot connect to tendermint HTTP endpoint',
-      uri,
-      error,
+    throw new CustomError({
+      message: errorType.TENDERMINT_HTTP_CALL_ERROR.message,
+      code: errorType.TENDERMINT_HTTP_CALL_ERROR.code,
+      details: {
+        uri,
+      },
+      cause: error,
     });
-    throw error;
   }
 }
 

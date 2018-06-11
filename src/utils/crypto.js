@@ -11,8 +11,8 @@ const AES_KEY_LENGTH_IN_BYTES = 32;
 export function hash(stringToHash) {
   const hash = crypto.createHash('sha256');
   hash.update(stringToHash);
-  const hashStrHex = hash.digest('hex');
-  return hashStrHex;
+  const hashStrBase64 = hash.digest('base64');
+  return hashStrBase64;
 }
 
 /**
@@ -74,6 +74,12 @@ export function createSignature(data, nonce, privateKey) {
     .sign(privateKey, 'base64');
 }
 
+
+export function verifySignature(signatureInBase64, publicKey, plainText) {
+  let verifyInstance = crypto.createVerify('RSA-SHA256');
+  verifyInstance.update(plainText);
+  return verifyInstance.verify(publicKey, Buffer.from(signatureInBase64,'base64'));
+}
 /**
  * 
  * @param {number} length random bytes length
@@ -81,6 +87,10 @@ export function createSignature(data, nonce, privateKey) {
  */
 export function randomHexBytes(length) {
   return crypto.randomBytes(length).toString('hex');
+}
+
+export function randomBase64Bytes(length) {
+  return crypto.randomBytes(length).toString('base64');
 }
 
 /**
@@ -178,9 +188,4 @@ export function decryptAES256GCM(masterkey, ciphertext, deriveKey) {
   } catch (error) {
     return null;
   }
-}
-
-export function generateIdentityProof(data) {
-  // TODO:
-  return '<some-voodoo-happen-here>';
 }

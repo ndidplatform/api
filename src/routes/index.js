@@ -1,14 +1,17 @@
 import express from 'express';
 
+import errorType from '../error/type';
+
 import logger from '../logger';
 
-import rpRouter from './relyingParty';
-import idpRouter from './identityProvider';
-import asRouter from './authoritativeSource';
+import errorHandler from './middleware/errorHandler';
+import rpRouter from './rp';
+import idpRouter from './idp';
+import asRouter from './as';
 import identityRouter from './identity';
 import utilityRouter from './utility';
 import dpkiRouter from './dpki';
-import ndidRouter from './nationalDigitalIdentity';
+import ndidRouter from './ndid';
 import * as tendermint from '../tendermint/ndid';
 
 import * as config from '../config';
@@ -47,10 +50,24 @@ if (env === 'development') {
 router.use((req, res, next) => {
   // Reject all requests when tendermint is not yet ready.
   // This includes when tendermint is syncing (happens when starting a new node or resuming tendermint)
+
+  if (tendermint.connected !== true) {
+    res.status(503).json({
+      error: {
+        message: errorType.TENDERMINT_NOT_CONNECTED.message,
+        code: errorType.TENDERMINT_NOT_CONNECTED.code,
+      },
+    });
+    return;
+  }
+
   if (tendermint.syncing == null || tendermint.syncing === true) {
-    res
-      .status(503)
-      .json({ message: 'Syncing blockchain data. Please try again later.' });
+    res.status(503).json({
+      error: {
+        message: errorType.TENDERMINT_SYNCING.message,
+        code: errorType.TENDERMINT_SYNCING.code,
+      },
+    });
     return;
   }
   next();
@@ -68,6 +85,8 @@ if (config.role === 'rp') {
 router.use('/identity', identityRouter);
 router.use('/utility', utilityRouter);
 router.use('/dpki', dpkiRouter);
+
+router.use(errorHandler);
 
 // All other paths besides stated above are invalid
 router.get('*', function(req, res) {

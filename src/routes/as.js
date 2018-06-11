@@ -1,7 +1,7 @@
 import express from 'express';
 
 import { validateBody } from './middleware/validation';
-import * as abciAppAsApi from '../main/as';
+import * as as from '../core/as';
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ router.post('/service/:service_id', validateBody, async (req, res, next) => {
     const { service_id } = req.params;
     const { service_name, min_ial, min_aal, url } = req.body;
 
-    await abciAppAsApi.registerAsService({
+    await as.registerAsService({
       service_id,
       service_name,
       min_aal,
@@ -18,9 +18,9 @@ router.post('/service/:service_id', validateBody, async (req, res, next) => {
       url,
     });
 
-    res.status(200).end();
+    res.status(201).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -28,11 +28,11 @@ router.get('/service/:service_id', async (req, res, next) => {
   try {
     const { service_id } = req.params;
 
-    let result = await abciAppAsApi.getServiceDetail(service_id);
+    let result = await as.getServiceDetail(service_id);
 
     res.status(200).json(result);
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 

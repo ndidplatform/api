@@ -1,19 +1,23 @@
 import path from 'path';
 import fs from 'fs';
 
+import CustomError from '../error/customError';
+import errorType from '../error/type';
 import logger from '../logger';
 
 import * as tendermintClient from './client';
 import TendermintWsClient from './wsClient';
+import { convertAbciAppCodeToErrorType } from './abciAppCode';
 import * as utils from '../utils';
 import * as config from '../config';
 
 let handleTendermintNewBlockHeaderEvent;
 
 export let syncing = null;
+export let connected = false;
 
 let readyPromise;
-export const ready = new Promise((resolve) => {
+export let ready = new Promise((resolve) => {
   readyPromise = { resolve };
 });
 
@@ -75,7 +79,7 @@ async function pollStatusUtilSynced() {
   if (syncing == null || syncing === true) {
     for (;;) {
       const status = await tendermintWsClient.getStatus();
-      syncing = status.syncing;
+      syncing = status.sync_info.syncing;
       if (syncing === false) {
         logger.info({
           message: 'Tendermint blockchain synced',
@@ -92,14 +96,23 @@ async function pollStatusUtilSynced() {
 export const tendermintWsClient = new TendermintWsClient();
 
 tendermintWsClient.on('connected', () => {
+  connected = true;
   pollStatusUtilSynced();
+});
+
+tendermintWsClient.on('disconnected', () => {
+  connected = false;
+  syncing = null;
+  ready = new Promise((resolve) => {
+    readyPromise = { resolve };
+  });
 });
 
 tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
   if (syncing !== false) {
     return;
   }
-  const blockHeight = result.data.data.header.height;
+  const blockHeight = result.data.value.header.height;
 
   logger.debug({
     message: 'Tendermint NewBlockHeader event received',
@@ -135,37 +148,28 @@ function getQueryResult(response) {
     response,
   });
   if (response.error) {
-    logger.error({
-      message: 'Tendermint JSON-RPC call error (query)',
-      response,
+    throw new CustomError({
+      message: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR.message,
+      code: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR.code,
+      details: response.error,
     });
-    throw {
-      error: response.error,
-      // TODO: error code
-      // code: ,
-    };
   }
 
   // const currentHeight = parseInt(response.result.response.height);
 
-  if (response.result.response.value == null) {
-    logger.error({
-      message: 'Tendermint query failed',
-      response,
-    });
-    throw {
-      error: response.result.response.log,
-      // currentHeight,
-      // TODO: error code
-      // code: ,
-    };
+  //if (response.result.response.log === 'not found') {
+  if (response.result.response.log.indexOf('not found') !== -1) {
+    return null;
   }
 
-  // if (response.result.response.log === 'not found') {
-  //   return {
-  //     error: response.result.response.log,
-  //   };
-  // }
+  if (response.result.response.value == null) {
+    throw new CustomError({
+      message: errorType.TENDERMINT_QUERY_ERROR.message,
+      code: errorType.TENDERMINT_QUERY_ERROR.code,
+      details: response.result,
+    });
+  }
+
   const result = Buffer.from(
     response.result.response.value,
     'base64'
@@ -173,13 +177,11 @@ function getQueryResult(response) {
   try {
     return JSON.parse(result);
   } catch (error) {
-    logger.error({
-      message: 'Cannot parse Tendermint query result JSON',
-      result,
+    throw new CustomError({
+      message: errorType.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR.message,
+      code: errorType.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR.code,
+      cause: error,
     });
-    throw {
-      error: 'Cannot parse Tendermint query result JSON',
-    };
   }
 }
 
@@ -189,33 +191,42 @@ function getTransactResult(response) {
     response,
   });
   if (response.error) {
-    logger.error({
-      message: 'Tendermint JSON-RPC call error (transact)',
-      response,
+    throw new CustomError({
+      message: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR.message,
+      code: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR.code,
+      details: response.result,
     });
-    throw {
-      error: response.error,
-      // TODO: error code
-      // code: ,
-    };
   }
 
   const height = response.result.height;
 
   if (response.result.deliver_tx.log !== 'success') {
-    logger.error({
-      message: 'Tendermint transact failed',
-      response,
+    if (response.result.deliver_tx.code != null) {
+      const convertedErrorType = convertAbciAppCodeToErrorType(
+        response.result.deliver_tx.code
+      );
+      if (convertedErrorType != null) {
+        throw new CustomError({
+          message: convertedErrorType.message,
+          code: convertedErrorType.code,
+          clientError: convertedErrorType.clientError,
+          details: {
+            abciCode: response.result.deliver_tx.code,
+            height,
+          },
+        });
+      }
+    }
+    throw new CustomError({
+      message: errorType.TENDERMINT_TRANSACT_ERROR.message,
+      code: errorType.TENDERMINT_TRANSACT_ERROR.code,
+      details: {
+        abciCode: response.result.deliver_tx.code,
+        height,
+      },
     });
-    throw {
-      error: { code: response.result.deliver_tx.code },
-      height,
-      // TODO: error code
-      // code: ,
-    };
   }
   return {
-    success: response.result.deliver_tx.log === 'success',
     height,
   };
 }
@@ -240,7 +251,7 @@ export async function query(fnName, data) {
   }
 }
 
-export async function transact(fnName, data, nonce) {
+export async function transact(fnName, data, nonce, useMasterKey) {
   logger.debug({
     message: 'Tendermint transact',
     fnName,
@@ -255,7 +266,7 @@ export async function transact(fnName, data, nonce) {
     '|' +
     nonce +
     '|' +
-    (await utils.createSignature(data, nonce)) +
+    (await utils.createSignature(data, nonce, useMasterKey)) +
     '|' +
     config.nodeId;
 
@@ -274,6 +285,10 @@ export function getTransactionListFromBlockQuery(result) {
   const txs = result.block.data.txs; // array of transactions in the block base64 encoded
   //const height = result.data.data.block.header.height;
 
+  if (txs == null) {
+    return [];
+  }
+
   const transactions = txs.map((tx) => {
     // Decode base64 2 times because we send transactions to tendermint in base64 format
     const txContentBase64 = Buffer.from(tx, 'base64').toString();
@@ -290,5 +305,10 @@ export function getTransactionListFromBlockQuery(result) {
 }
 
 export function getBlockHeightFromNewBlockHeaderEvent(result) {
-  return result.data.data.header.height;
+  return result.data.value.header.height;
+}
+
+export function getNodeIdFromNewBlockHeaderEvent(result) {
+  //Todo
+  return 'someId'; //result.data.value.header.height;
 }

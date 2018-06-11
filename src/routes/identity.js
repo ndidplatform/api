@@ -1,8 +1,8 @@
 import express from 'express';
 
 import { validateQuery, validateBody } from './middleware/validation';
-import * as abciAppIdentityApi from '../main/identity';
-import * as abciAppCommonApi from '../main/common';
+import * as identity from '../core/identity';
+import * as common from '../core/common';
 
 const router = express.Router();
 
@@ -11,28 +11,68 @@ router.post('/', validateBody, async (req, res, next) => {
     const {
       namespace,
       identifier,
-      secret,
+      reference_id,
       accessor_type,
-      accessor_key,
+      accessor_public_key,
+      accessor_id,
+      ial,
+    } = req.body;
+
+    let { request_id, exist, secret } = await identity.createNewIdentity({
+      namespace,
+      identifier,
+      reference_id,
+      accessor_type,
+      accessor_public_key,
+      accessor_id,
+      ial,
+    });
+
+    res.status(200).send({
+      request_id, exist, secret
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post(
+  '/:namespace/:identifier/accessors', 
+  validateBody, 
+  async (req, res, next) => 
+{
+  try {
+    const {
+      reference_id,
+      accessor_type,
+      accessor_public_key,
       accessor_id,
     } = req.body;
 
-    let isSuccess = await abciAppIdentityApi.createNewIdentity({
+    const {
+      namespace,
+      identifier
+    } = req.params;
+
+    let { request_id, associated } = await identity.addAccessorMethodForAssociatedIdp({
       namespace,
       identifier,
-      secret,
+      reference_id,
       accessor_type,
-      accessor_key,
+      accessor_public_key,
       accessor_id,
     });
 
-    if (isSuccess) {
-      res.status(201).json('Identity Created');
-    } else {
-      res.status(500).end();
+    if(!associated) {
+      res.status(403).send('Must already onboard this user');
+      return;
     }
-  } catch (error) {
-    res.status(500).end();
+    res.status(200).send({
+      request_id
+    });
+  }
+  catch(error) {
+    next(error);
   }
 });
 
@@ -40,18 +80,20 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
     const { namespace, identifier } = req.params;
 
-    const checkIdpNodeIds = await abciAppCommonApi.getNodeIdsOfAssociatedIdp({
+    const idpNodes = await common.getIdpNodes({
       namespace,
       identifier,
-      min_ial: 1,
+      min_ial: 0,
+      min_aal: 0,
     });
-    const status =
-      checkIdpNodeIds && checkIdpNodeIds.node_id.length !== 0 ? 200 : 404;
 
-    res.status(status).end();
+    if (idpNodes.length !== 0) {
+      res.status(204).end();
+    } else {
+      res.status(404).end();
+    }
   } catch (error) {
-    console.error(error);
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -64,7 +106,7 @@ router.post('/:namespace/:identifier', validateBody, async (req, res, next) => {
 
     res.status(501).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -77,7 +119,7 @@ router.get('/:namespace/:identifier/endorsement', async (req, res, next) => {
 
     res.status(501).end();
   } catch (error) {
-    res.status(500).end();
+    next(error);
   }
 });
 
@@ -94,43 +136,7 @@ router.post(
 
       res.status(501).end();
     } catch (error) {
-      res.status(500).end();
-    }
-  }
-);
-
-router.post(
-  '/:namespace/:identifier/accessors',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const { namespace, identifier } = req.params;
-      const { accessor_type, accessor_key, accessor_id } = req.body;
-
-      // Not Implemented
-      // TODO
-
-      res.status(501).end();
-    } catch (error) {
-      res.status(500).end();
-    }
-  }
-);
-
-router.get(
-  '/:namespace/:identifier/requests/history',
-  validateQuery,
-  async (req, res, next) => {
-    try {
-      const { namespace, identifier } = req.params;
-      const { count } = req.query;
-
-      // Not Implemented
-      // TODO
-
-      res.status(501).end();
-    } catch (error) {
-      res.status(500).end();
+      next(error);
     }
   }
 );
