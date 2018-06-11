@@ -277,67 +277,67 @@ export async function removeAllDataFromAS() {
   }
 }
 
-export async function handleMessageFromQueue(data) {
+export async function handleMessageFromQueue(messageStr) {
   logger.info({
     message: 'Received message from MQ',
   });
   logger.debug({
     message: 'Message from MQ',
-    data,
+    messageStr,
   });
 
-  const dataJSON = JSON.parse(data);
+  const message = JSON.parse(messageStr);
 
   //distinguish between message from idp, as
-  if (dataJSON.idp_id != null) {
+  if (message.idp_id != null) {
     //store private parameter from EACH idp to request, to pass along to as
-    let request = await db.getRequestToSendToAS(dataJSON.request_id);
+    let request = await db.getRequestToSendToAS(message.request_id);
     //AS involve
     if (request) {
       if (request.privateProofObjectList) {
         request.privateProofObjectList.push({
-          idp_id: dataJSON.idp_id,
+          idp_id: message.idp_id,
           privateProofObject: {
-            privateProofValue: dataJSON.privateProofValue,
-            accessor_id: dataJSON.accessor_id,
-            padding: dataJSON.padding,
+            privateProofValue: message.privateProofValue,
+            accessor_id: message.accessor_id,
+            padding: message.padding,
           },
         });
       } else {
         request.privateProofObjectList = [
           {
-            idp_id: dataJSON.idp_id,
+            idp_id: message.idp_id,
             privateProofObject: {
-              privateProofValue: dataJSON.privateProofValue,
-              accessor_id: dataJSON.accessor_id,
-              padding: dataJSON.padding,
+              privateProofValue: message.privateProofValue,
+              accessor_id: message.accessor_id,
+              padding: message.padding,
             },
           },
         ];
       }
-      await db.setRequestToSendToAS(dataJSON.request_id, request);
+      await db.setRequestToSendToAS(message.request_id, request);
     }
 
     //must wait for height
     const latestBlockHeight = tendermint.latestBlockHeight;
-    const responseId = dataJSON.request_id + ':' + dataJSON.idp_id;
+    const responseId = message.request_id + ':' + message.idp_id;
 
-    if (latestBlockHeight <= dataJSON.height) {
+    if (latestBlockHeight <= message.height) {
       logger.debug({
         message: 'Saving message from MQ',
         tendermintLatestBlockHeight: latestBlockHeight,
-        messageBlockHeight: dataJSON.height,
+        messageBlockHeight: message.height,
       });
-      db.setProofReceivedFromMQ(responseId, dataJSON);
-      db.setExpectedIdpResponseNodeId(dataJSON.request_id, dataJSON.idp_id);
+      db.setProofReceivedFromMQ(responseId, message);
+      db.setExpectedIdpResponseNodeId(message.request_id, message.idp_id);
       return;
     }
 
-    const callbackUrl = await db.getRequestCallbackUrl(dataJSON.request_id);
+    const callbackUrl = await db.getRequestCallbackUrl(message.request_id);
     // if (!callbackUrl) return;
 
     const requestDetail = await common.getRequestDetail({
-      requestId: dataJSON.request_id,
+      requestId: message.request_id,
     });
 
     const requestStatus = utils.getDetailedRequestStatus(requestDetail);
@@ -345,11 +345,11 @@ export async function handleMessageFromQueue(data) {
     checkZKAndNotify(
       requestStatus,
       latestBlockHeight,
-      dataJSON.idp_id,
+      message.idp_id,
       callbackUrl,
-      dataJSON
+      message
     );
-  } else if (dataJSON.as_id != null) {
+  } else if (message.as_id != null) {
     //receive data from AS
     // TODO: verifies signature of AS in blockchain.
     // Call callback to RP.
@@ -369,14 +369,14 @@ export async function handleMessageFromQueue(data) {
       //   }
       // }
 
-      await db.addDataFromAS(dataJSON.request_id, {
-        source_node_id: dataJSON.as_id,
-        service_id: dataJSON.service_id,
-        source_signature: dataJSON.signature,
-        data: dataJSON.data,
+      await db.addDataFromAS(message.request_id, {
+        source_node_id: message.as_id,
+        service_id: message.service_id,
+        source_signature: message.signature,
+        data: message.data,
       });
 
-      await setDataReceived(dataJSON.request_id, dataJSON.service_id, dataJSON.as_id);
+      await setDataReceived(message.request_id, message.service_id, message.as_id);
     } catch (error) {
       // TODO: error handling
       throw error;

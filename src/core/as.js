@@ -183,42 +183,42 @@ async function getResponseDetails(requestId) {
   };
 }
 
-export async function handleMessageFromQueue(requestJsonStr) {
+export async function handleMessageFromQueue(messageStr) {
   logger.info({
     message: 'Received message from MQ',
   });
   logger.debug({
     message: 'Message from MQ',
-    requestJsonStr,
+    messageStr,
   });
-  const request = JSON.parse(requestJsonStr);
+  const message = JSON.parse(messageStr);
 
   const latestBlockHeight = tendermint.latestBlockHeight;
-  if (latestBlockHeight <= request.height) {
+  if (latestBlockHeight <= message.height) {
     logger.debug({
       message: 'Saving message from MQ',
       tendermintLatestBlockHeight: latestBlockHeight,
-      messageBlockHeight: request.height,
+      messageBlockHeight: message.height,
     });
-    await db.setRequestReceivedFromMQ(request.request_id, request);
-    await db.addRequestIdExpectedInBlock(request.height, request.request_id);
+    await db.setRequestReceivedFromMQ(message.request_id, message);
+    await db.addRequestIdExpectedInBlock(message.height, message.request_id);
     return;
   }
 
   logger.debug({
     message: 'Processing request',
-    requestId: request.request_id,
+    requestId: message.request_id,
   });
-  const valid = await common.checkRequestIntegrity(request.request_id, request);
+  const valid = await common.checkRequestIntegrity(message.request_id, message);
   if (valid) {
     // TODO try catch / error handling
-    const responseDetails = await getResponseDetails(request.request_id);
+    const responseDetails = await getResponseDetails(message.request_id);
     //loop and check zk proof for all response
-    if (!verifyZKProof(request.request_id, request)) {
+    if (!verifyZKProof(message.request_id, message)) {
       //TODO, do not answer? or send data to rp and tell them proof is invalid?
       return;
     }
-    getDataAndSendBackToRP(request, responseDetails);
+    getDataAndSendBackToRP(message, responseDetails);
   }
 }
 
