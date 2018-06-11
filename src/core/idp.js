@@ -42,12 +42,14 @@ let callbackUrl = {};
   }
 });
 
-export async function accessorSign(hash_id, accessor_id) {
+export async function accessorSign(sid ,hash_id, accessor_id) {
   const data = {
     sid_hash: hash_id,
+    sid,
     hash_method: 'SHA256',
     key_type: 'RSA',
     sign_method: 'RSA',
+    accessor_id
   };
 
   logger.debug({
@@ -65,7 +67,7 @@ export async function accessorSign(hash_id, accessor_id) {
     },
     body: JSON.stringify(data),
   });
-  return await response.json();
+  return (await response.json()).signature;
 }
 
 export function getAccessorCallback() {

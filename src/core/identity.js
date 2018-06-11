@@ -102,7 +102,8 @@ export async function createNewIdentity(data) {
       ial,
     } = data;
 
-    let hash_id = utils.hash(namespace + ':' + identifier);
+    let sid = namespace + ':' + identifier;
+    let hash_id = utils.hash(sid);
 
     //call CheckExistingIdentity to tendermint
     let { exist } = await tendermint.query('CheckExistingIdentity', {
@@ -131,7 +132,7 @@ export async function createNewIdentity(data) {
     });
 
     db.setRequestIdByReferenceId(reference_id, request_id);
-    let encryptedHash = await accessorSign(hash_id, accessor_id);
+    let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
     let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
     let secret = padding + '|' + encryptedHash;
     
