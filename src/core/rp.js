@@ -300,6 +300,7 @@ export async function handleMessageFromQueue(data) {
           privateProofObject: {
             privateProofValue: dataJSON.privateProofValue,
             accessor_id: dataJSON.accessor_id,
+            padding: dataJSON.padding,
           },
         });
       } else {
@@ -309,6 +310,7 @@ export async function handleMessageFromQueue(data) {
             privateProofObject: {
               privateProofValue: dataJSON.privateProofValue,
               accessor_id: dataJSON.accessor_id,
+              padding: dataJSON.padding,
             },
           },
         ];

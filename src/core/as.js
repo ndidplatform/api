@@ -398,11 +398,10 @@ async function verifyZKProof(request_id, dataFromMq) {
       request_message,
       public_key,
       signature,
+      privateProofObjectList
     });
 
-    valid &= signatureValid;
-
-    valid &= utils.verifyZKProof(
+    let zkProofValid = utils.verifyZKProof(
       public_key,
       dataFromMq.challenge,
       privateProofObjectList[i].privateProofObject.privateProofValue,
@@ -414,6 +413,7 @@ async function verifyZKProof(request_id, dataFromMq) {
       privateProofValueHash,
       privateProofObjectList[i].privateProofObject.padding,
     );
+    valid = valid && signatureValid && zkProofValid;
   }
   return valid;
 }
