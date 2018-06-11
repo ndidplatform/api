@@ -96,7 +96,7 @@ export async function decryptAsymetricKey(cipher) {
         key_type: 'RSA',
       }),
     });
-    let base64 = await response.text();
+    let base64 = (await response.json()).decrypted_message;
     symKeyBuffer = Buffer.from(base64, 'base64');
   }
   else {
@@ -326,7 +326,7 @@ async function createSignatureByCallback(data, useMasterKey) {
       sign_method: 'RSA-SHA256'
     }),
   });
-  return await response.text();
+  return (await response.json()).signature;
 }
 
 export async function createSignature(data, nonce = '', useMasterKey) {
