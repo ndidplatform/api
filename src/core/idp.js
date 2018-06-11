@@ -43,9 +43,8 @@ let callbackUrl = {};
 });
 
 export async function accessorSign(hash_id, accessor_id) {
-
-  let data = {
-    hash_of_sid: hash_id,
+  const data = {
+    sid_hash: hash_id,
     hash_method: 'SHA256',
     key_type: 'RSA',
     sign_method: 'RSA',
@@ -58,14 +57,15 @@ export async function accessorSign(hash_id, accessor_id) {
     hash_id,
   });
 
-  let response = await fetch(callbackUrl.accessor + '/' + encodeURIComponent(accessor_id), {
+  const response = await fetch(callbackUrl.accessor, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Accept: 'application/json',
     },
     body: JSON.stringify(data),
   });
-  return await response.text();
+  return await response.json();
 }
 
 export function getAccessorCallback() {
@@ -85,7 +85,6 @@ export function setAccessorCallback(url) {
     });
   }
 }
-
 
 export const setCallbackUrl = (url) => {
   callbackUrl.request = url;
@@ -150,7 +149,7 @@ export async function createIdpResponse(data) {
     sendPrivateProofToRP(request_id, privateProofObject, height);
   } catch (error) {
     const err = new CustomError({
-      message: 'Cannot create IDP response',
+      message: 'Cannot create IdP response',
       cause: error,
     });
     logger.error(err.getInfoForLog());
@@ -158,24 +157,24 @@ export async function createIdpResponse(data) {
   }
 }
 
-function notifyByCallback(request) {
+function notifyByCallback(eventDataForCallback) {
   if (!callbackUrl.request) {
     logger.error({
-      message: 'Callback URL for IDP has not been set',
+      message: 'Callback URL for IdP has not been set',
     });
     return;
   }
-  return callbackToClient(callbackUrl.request, { request }, true);
+  return callbackToClient(callbackUrl.request, eventDataForCallback, true);
 }
 
 async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   let rp_id = await db.getRPIdFromRequestId(request_id);
 
   logger.info({
-    message: 'Query MQ destination for rp',
+    message: 'Query MQ destination for RP',
   });
   logger.debug({
-    message: 'Query MQ destination for rp',
+    message: 'Query MQ destination for RP',
     rp_id,
   });
 
@@ -196,57 +195,57 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   db.removeRPIdFromRequestId(request_id);
 }
 
-export async function handleMessageFromQueue(request) {
+export async function handleMessageFromQueue(messageStr) {
   logger.info({
     message: 'Received message from MQ',
   });
   logger.debug({
     message: 'Message from MQ',
-    request,
+    messageStr,
   });
-  const requestJson = JSON.parse(request);
+  const message = JSON.parse(messageStr);
   //need challenge for response
-  await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
+  await db.setRequestReceivedFromMQ(message.request_id, message);
 
   const latestBlockHeight = tendermint.latestBlockHeight;
-  if (latestBlockHeight <= requestJson.height) {
+  if (latestBlockHeight <= message.height) {
     logger.debug({
       message: 'Saving message from MQ',
       tendermintLatestBlockHeight: latestBlockHeight,
-      messageBlockHeight: requestJson.height,
+      messageBlockHeight: message.height,
     });
     await db.addRequestIdExpectedInBlock(
-      requestJson.height,
-      requestJson.request_id
+      message.height,
+      message.request_id
     );
-    await db.setRPIdFromRequestId(requestJson.request_id, requestJson.rp_id);
+    await db.setRPIdFromRequestId(message.request_id, message.rp_id);
 
-    if(requestJson.accessor_id) {
+    if(message.accessor_id) {
       //====================== COPY-PASTE from RP, need refactoring =====================
       //store private parameter from EACH idp to request, to pass along to as
-      let request = await db.getRequestToSendToAS(requestJson.request_id);
+      let request = await db.getRequestToSendToAS(message.request_id);
       //AS involve
       if (request) {
         if (request.privateProofObjectList) {
           request.privateProofObjectList.push({
-            idp_id: requestJson.idp_id,
+            idp_id: message.idp_id,
             privateProofObject: {
-              privateProofValue: requestJson.privateProofValue,
-              accessor_id: requestJson.accessor_id,
+              privateProofValue: message.privateProofValue,
+              accessor_id: message.accessor_id,
             },
           });
         } else {
           request.privateProofObjectList = [
             {
-              idp_id: requestJson.idp_id,
+              idp_id: message.idp_id,
               privateProofObject: {
-                privateProofValue: requestJson.privateProofValue,
-                accessor_id: requestJson.accessor_id,
+                privateProofValue: message.privateProofValue,
+                accessor_id: message.accessor_id,
               },
             },
           ];
         }
-        await db.setRequestToSendToAS(requestJson.request_id, request);
+        await db.setRequestToSendToAS(message.request_id, request);
       }
       //====================================================================================
     }
@@ -255,28 +254,36 @@ export async function handleMessageFromQueue(request) {
 
   logger.debug({
     message: 'Processing request',
-    requestId: requestJson.request_id,
+    requestId: message.request_id,
   });
   //onboard response
-  if(requestJson.accessor_id) {
-    if(await checkOnboardResponse(requestJson)) {
-      await identity.addAccessorAfterConsent(requestJson.request_id, requestJson.accessor_id);
+  if(message.accessor_id) {
+    if(await checkOnboardResponse(message)) {
+      await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
       notifyByCallback({
         type: 'onboard_request',
-        request_id: requestJson.request_id,
+        request_id: message.request_id,
         success: true,
       });
     }
   }
   else {
     const valid = await common.checkRequestIntegrity(
-      requestJson.request_id,
-      requestJson
+      message.request_id,
+      message
     );
     if (valid) {
       notifyByCallback({
-        //request_message_hash: utils.hash(requestJson.request_message),
-        ...requestJson,
+        type: 'request',
+        request_id: message.request_id,
+        namespace: message.namespace,
+        identifier: message.identifier,
+        request_message: message.request_message,
+        request_message_hash: utils.hash(message.request_message),
+        requester_node_id: message.rp_id,
+        min_ial: message.min_ial,
+        min_aal: message.min_aal,
+        data_request_list: message.data_request_list,
       });
     }
   }
@@ -335,12 +342,18 @@ export async function handleTendermintNewBlockHeaderEvent(
         const valid = await common.checkRequestIntegrity(requestId, message);
         if (valid) {
           notifyByCallback({
-            //request_message_hash: utils.hash(message.request_message),
-            ...message,
+            type: 'request',
+            request_id: message.request_id,
+            namespace: message.namespace,
+            identifier: message.identifier,
+            request_message: message.request_message,
+            request_message_hash: utils.hash(message.request_message),
+            requester_node_id: message.rp_id,
+            min_ial: message.min_ial,
+            min_aal: message.min_aal,
+            data_request_list: message.data_request_list,
           });
         }
-        //need challenge when respond
-        //db.removeRequestReceivedFromMQ(requestId);
       }
     })
   );
