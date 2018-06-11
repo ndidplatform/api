@@ -151,9 +151,10 @@ export function generateIdentityProof(data) {
   });
 
   let [ padding, signedHash ] = data.secret.split('|');
-  let k = randomBase64Bytes(config.zkRandomLengthForIdp);
-  let kInt = stringToBigInt(k);
   let { n, e } = extractParameterFromPublicKey(data.publicKey);
+  // -1 to garantee k < n
+  let k = randomBase64Bytes(n.toBuffer().length - 1);
+  let kInt = stringToBigInt(k);
   let signedHashInt = stringToBigInt(signedHash);
   let challenge = stringToBigInt(data.challenge);
 
