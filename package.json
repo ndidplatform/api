@@ -3,17 +3,34 @@
   "version": "0.1.0",
   "description": "",
   "scripts": {
-    "build": "npx babel src -d ./build/ --source-maps inline",
+    "build": "npx babel src -d ./build/ --source-maps inline && cp -r ./devKey ./build",
     "start": "npm run build && node build/server.js",
-    "test": "npm run build && npx mocha build/test/test.js"
+    "test": "npm run build && npx mocha build/**/*.test.js",
+    "initDevKey": "npm run build && ROLE=ndid node build/devKeyInit.js && npm run reset-data-for-dev",
+    "delete-local-db-cache": "rm -rf db-api-*",
+    "delete-latest-block-height": "rm -f latest-block-height-*",
+    "reset-data-for-dev": "npm run delete-local-db-cache && npm run delete-latest-block-height",
+    "docker-build": "docker-compose -f docker/docker-compose.build.yml build",
+    "docker-up": "docker-compose -f docker/docker-compose.yml up",
+    "docker-down": "docker-compose -f docker/docker-compose.yml down"
   },
   "dependencies": {
     "ajv": "^6.4.0",
+    "bignum": "^0.12.5",
     "body-parser": "^1.18.2",
+    "encoding-down": "^4.0.0",
     "express": "^4.16.3",
+    "leveldown": "^3.0.2",
+    "levelup": "^2.0.2",
     "morgan": "^1.9.0",
     "node-fetch": "^2.1.2",
+    "npm": "^6.1.0",
+    "sequelize": "^4.37.7",
     "source-map-support": "^0.5.4",
+    "sqlite3": "^4.0.0",
+    "winston": "^3.0.0-rc5",
+    "winston-daily-rotate-file": "^3.1.4",
+    "ws": "^5.1.1",
     "zeromq": "^4.6.0"
   },
   "devDependencies": {

@@ -2,7 +2,11 @@ import Ajv from 'ajv';
 
 import schemas from './jsonSchemas';
 
-const ajv = new Ajv();
+const ajv = new Ajv({
+  allErrors: true,
+});
+
+ajv.addSchema(schemas.defsSchema, 'defs');
 
 ajv.addFormat(
   'url-with-local-ip',
@@ -53,15 +57,12 @@ const validate = ({ method, path, params, query, body }) => {
   if (typeof params === 'object') {
     data = params;
     dataType = 'params';
-    type = 'HTTP path parameters';
   } else if (typeof query === 'object') {
     data = query;
     dataType = 'query';
-    type = 'HTTP query string';
   } else if (typeof body === 'object') {
     data = body;
     dataType = 'body';
-    type = 'HTTP body';
   }
 
   const jsonSchema = getJSONSchema(method, path, dataType);
@@ -70,7 +71,6 @@ const validate = ({ method, path, params, query, body }) => {
 
   return {
     valid,
-    type,
     errors: validate.errors,
   };
 };
