@@ -209,10 +209,21 @@ export async function checkRequestIntegrity(requestId, request) {
 
 export async function getNamespaceList() {
   try {
-    return await tendermint.query('GetNamespaceList');
+    return (await tendermint.query('GetNamespaceList')) || [];
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get namespace list from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function getServiceList() {
+  try {
+    return (await tendermint.query('GetServiceList')) || [];
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get service list from blockchain',
       cause: error,
     });
   }

@@ -96,4 +96,13 @@ router.get('/namespaces', async (req, res, next) => {
   }
 });
 
+
+router.get('/services', async (req, res, next) => {
+  try {
+    res.status(200).json(await common.getServiceList());
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

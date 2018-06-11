@@ -112,4 +112,31 @@ router.delete('/namespaces/:namespace', async (req, res, next) => {
   }
 });
 
+router.post('/services', async (req, res, next) => {
+  try {
+    const { service_id, service_name } = req.body;
+
+    await ndid.addService({
+      service_id,
+      service_name,
+    });
+    res.status(201).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/services/:service_id', async (req, res, next) => {
+  try {
+    const { service_id } = req.params;
+
+    await ndid.deleteService({
+      service_id,
+    });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

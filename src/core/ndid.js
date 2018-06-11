@@ -120,3 +120,29 @@ export async function deleteNamespace({ namespace }) {
     throw error;
   }
 }
+
+export async function addService({ service_id, service_name }) {
+  try {
+    await tendermint.transact(
+      'AddService',
+      { service_id, service_name },
+      utils.getNonce()
+    );
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function deleteService({ service_id }) {
+  try {
+    await tendermint.transact(
+      'DeleteService',
+      { service_id },
+      utils.getNonce()
+    );
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
