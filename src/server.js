@@ -40,7 +40,6 @@ logger.info({
 
 const app = express();
 
-app.use(bodyParser.urlencoded({ extended: false, limit: '2mb' }));
 app.use(bodyParser.json({ limit: '2mb' }));
 
 app.use(
