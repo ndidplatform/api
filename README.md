@@ -111,7 +111,7 @@ npm run docker-up
 or
 
 ```
-docker-compoes -f docker/docker-compose.yml up
+docker-compose -f docker/docker-compose.yml up
 ```
 
 ### Build
