@@ -54,3 +54,16 @@ if (
     `"LOG_DIRECTORY_PATH" environment variable is not set. Default to "${__dirname}"`
   );
 }
+
+if (
+  process.env.NODE_ENV === 'production' &&
+  process.env.USE_EXTERNAL_CRYPTO_SERVICE !== 'true' &&
+  process.env.PRIVATE_KEY_PATH == null &&
+  process.env.MASTER_PRIVATE_KEY_PATH == null
+) {
+  console.error(
+    'ERROR:',
+    '"PRIVATE_KEY_PATH" and "MASTER_PRIVATE_KEY_PATH" environment variables are not set. Process will now exit.'
+  );
+  process.exit(1);
+}

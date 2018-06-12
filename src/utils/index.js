@@ -1,48 +1,17 @@
 import fs from 'fs';
 import crypto from 'crypto';
-import path from 'path';
 
 import * as cryptoUtils from './crypto';
 import * as config from '../config';
-import fetch from 'node-fetch';
 import bignum from 'bignum';
 import { parseKey } from './asn1parser';
 import logger from '../logger';
 import constants from 'constants';
+import * as externalCryptoService from './externalCryptoService';
 
 //let nonce = Date.now() % 10000;
-let callbackUrl = {};
 const saltByteLength = 8;
 const saltStringLength = saltByteLength*2;
-
-const callbackUrlFilesPrefix = path.join(
-  __dirname,
-  '..',
-  '..',
-  'dpki-callback-url-' + config.nodeId,
-);
-
-[ 'signature',
-  'masterSignature',
-  'decrypt',
-].forEach((key) => {
-  try {
-    callbackUrl[key] = fs.readFileSync(callbackUrlFilesPrefix + '-' + key, 'utf8');
-  } 
-  catch (error) {
-    if (error.code === 'ENOENT') {
-      logger.warn({
-        message: 'DPKI ' + key + ' callback url file not found',
-      });
-    }
-    else {
-      logger.error({
-        message: 'Cannot read DPKI ' + key + ' callback url file(s)',
-        error,
-      });
-    }
-  }
-});
 
 export function wait(ms, stoppable) {
   let setTimeoutFn;
@@ -82,24 +51,10 @@ export function compareSaltedHash({saltedHash, plain}) {
 export async function decryptAsymetricKey(cipher) {
   const [encryptedSymKey, encryptedMessage] = cipher.split('|');
   let symKeyBuffer;
-  let decryptCallback = callbackUrl.decrypt;
 
-  if(decryptCallback) {
-    let response = await fetch( decryptCallback, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        node_id: config.nodeId,
-        encrypted_message: encryptedSymKey,
-        key_type: 'RSA',
-      }),
-    });
-    let base64 = (await response.json()).decrypted_message;
-    symKeyBuffer = Buffer.from(base64, 'base64');
-  }
-  else {
+  if (config.useExternalCryptoService) {
+    symKeyBuffer = await externalCryptoService.decryptAsymetricKey(encryptedSymKey);
+  } else {
     const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
     symKeyBuffer = cryptoUtils.privateDecrypt(privateKey, encryptedSymKey);
   }
@@ -267,76 +222,23 @@ export function verifyZKProof(publicKey,
   return stringToBigInt(publicProof).eq(tmp3);
 }
 
-export function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
-  if(signCallbackUrl) {
-    callbackUrl.signature = signCallbackUrl;
-    fs.writeFile(callbackUrlFilesPrefix + '-signature', signCallbackUrl, (err) => {
-      if (err) {
-        logger.error({
-          message: 'Cannot write DPKI sign callback url file',
-          error: err,
-        });
-      }
-    });
-  }
-  if(decryptCallbackUrl) {
-    callbackUrl.decrypt = decryptCallbackUrl;
-    fs.writeFile(callbackUrlFilesPrefix + '-decrypt', decryptCallbackUrl, (err) => {
-      if (err) {
-        logger.error({
-          message: 'Cannot write DPKI sign callback url file',
-          error: err,
-        });
-      }
-    });
-  }
-}
-
-export function setMasterSignatureCallback(url) {
-  if(url) {
-    callbackUrl.masterSignature = url;
-    fs.writeFile(callbackUrlFilesPrefix + '-master-signature', url, (err) => {
-      if (err) {
-        logger.error({
-          message: 'Cannot write DPKI master-sign callback url file',
-          error: err,
-        });
-      }
-    });
-  }
-}
-
-async function createSignatureByCallback(data, useMasterKey) {
-  //TODO implement this properly
-  //MUST be base64 format
-  let response = await fetch( useMasterKey 
-    ? callbackUrl.signature
-    : callbackUrl.masterSignature
-    , {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      node_id: config.nodeId,
-      request_message: JSON.stringify(data),
-      request_message_hash: hash(JSON.stringify(data)),
-      hash_method: 'SHA256',
-      key_type: 'RSA',
-      sign_method: 'RSA-SHA256'
-    }),
-  });
-  return (await response.json()).signature;
-}
-
 export async function createSignature(data, nonce = '', useMasterKey) {
-  if (callbackUrl.signature)
-    return await createSignatureByCallback(JSON.stringify(data) + nonce, useMasterKey);
-  let privateKey = (useMasterKey 
+  const messageToSign = JSON.stringify(data) + nonce;
+  const messageToSignHash = hash(messageToSign);
+
+  if (config.useExternalCryptoService) {
+    return await externalCryptoService.createSignature(
+      messageToSign,
+      messageToSignHash,
+      useMasterKey
+    );
+  }
+
+  const privateKey = useMasterKey
     ? fs.readFileSync(config.masterPrivateKeyPath, 'utf8')
-    : fs.readFileSync(config.privateKeyPath, 'utf8')
-  );
-  return cryptoUtils.createSignature(data, nonce, privateKey);
+    : fs.readFileSync(config.privateKeyPath, 'utf8');
+
+  return cryptoUtils.createSignature(messageToSign, privateKey);
 }
 
 export function verifySignature(signatureInBase64, publicKey, plainText) {

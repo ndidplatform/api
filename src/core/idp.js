@@ -14,6 +14,8 @@ import * as db from '../db';
 import * as mq from '../mq';
 import * as identity from './identity';
 
+import * as externalCryptoService from '../utils/externalCryptoService';
+
 const callbackUrlFilesPrefix = path.join(
   __dirname,
   '..',
@@ -366,20 +368,20 @@ export async function handleTendermintNewBlockHeaderEvent(
 //===================== Initialize before flow can start =======================
 
 export async function init() {
-  //TODO
-  //In production this should be done only once in phase 1,
+  // FIXME: In production this should be done only once. Hence, init() is not needed.
 
   // Wait for blockchain ready
   await tendermint.ready;
 
-  //when IDP request to join approved NDID
-  //after first approved, IDP can add other key and node and endorse themself
-  /*let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
-  process.env.nodeId = node_id;
-  common.addNodePubKey({
-    node_id,
-    public_key: 'very_secure_public_key_for_idp'
-  });*/
+  if (config.useExternalCryptoService) {
+    for (;;) {
+      if (externalCryptoService.isCallbackUrlsSet()) {
+        break;
+      }
+      await utils.wait(5000);
+    }
+  }
+
   common.registerMsqAddress(config.mqRegister);
 }
 

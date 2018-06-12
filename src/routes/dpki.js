@@ -3,7 +3,7 @@ import express from 'express';
 import { validateBody } from './middleware/validation';
 import * as ndid from '../core/ndid';
 import * as dpki from '../core/dpki';
-import * as utils from '../utils';
+import * as externalCryptoService from '../utils/externalCryptoService';
 
 const router = express.Router();
 
@@ -67,7 +67,7 @@ router.post('/node/register_callback', validateBody, async (req, res, next) => {
   try {
     const { sign_url, decrypt_url } = req.body;
 
-    await utils.setDpkiCallback(sign_url, decrypt_url);
+    await externalCryptoService.setDpkiCallback(sign_url, decrypt_url);
     res.status(204).end();
   } catch (error) {
     next(error);
@@ -81,7 +81,7 @@ router.post(
     try {
       const { url } = req.body;
 
-      await utils.setMasterSignatureCallback(url);
+      await externalCryptoService.setMasterSignatureCallback(url);
       res.status(204).end();
     } catch (error) {
       next(error);

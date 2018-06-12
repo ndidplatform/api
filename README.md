@@ -46,6 +46,7 @@
 - `LOG_DIRECTORY_PATH`: Directory path for log files (only in `production` environment) [Default: `__dirname` (code's directory)]
 - `CLIENT_HTTP_ERROR_CODE`: HTTP error code when responding a client error [Default: `400`]
 - `SERVER_HTTP_ERROR_CODE`: HTTP error code when responding a server error [Default: `500`]
+- `USE_EXTERNAL_CRYPTO_SERVICE`: Use external service for decrypting and signing (e.g. HSM) [Default: `false`]
 
 **_Examples_**
 

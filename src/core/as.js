@@ -9,6 +9,8 @@ import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
 
+import * as externalCryptoService from '../utils/externalCryptoService';
+
 async function sendDataToRP(data) {
   let receivers = [];
   let nodeId = data.rp_id;
@@ -323,26 +325,21 @@ export async function getServiceDetail(service_id) {
 //===================== Initialize before flow can start =======================
 
 export async function init() {
-  // In production environment, this should be done with register service process.
+  // FIXME: In production this should be done only once. Hence, init() is not needed.
 
   // Wait for blockchain ready
   await tendermint.ready;
 
-  // TODO
-  //register node id, which is substituted with ip,port for demo
-  //let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
-  //process.env.nodeId = node_id;
-  // Hard code add back statement service for demo
-  /*registerServiceDestination({
-    //as_id: config.asID,
-    service_id: 'bank_statement',
-    node_id: config.nodeId,
-  });*/
+  if (config.useExternalCryptoService) {
+    for (;;) {
+      if (externalCryptoService.isCallbackUrlsSet()) {
+        break;
+      }
+      await utils.wait(5000);
+    }
+  }
+
   common.registerMsqAddress(config.mqRegister);
-  /*common.addNodePubKey({
-    node_id,
-    public_key: 'very_secure_public_key_for_as'
-  });*/
 }
 
 async function verifyZKProof(request_id, dataFromMq) {
