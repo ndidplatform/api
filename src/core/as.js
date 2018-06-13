@@ -216,7 +216,7 @@ export async function handleMessageFromQueue(messageStr) {
     // TODO try catch / error handling
     const responseDetails = await getResponseDetails(message.request_id);
     //loop and check zk proof for all response
-    if (!verifyZKProof(message.request_id, message)) {
+    if (! (await verifyZKProof(message.request_id, message))) {
       //TODO, do not answer? or send data to rp and tell them proof is invalid?
       return;
     }
@@ -263,7 +263,7 @@ export async function handleTendermintNewBlockHeaderEvent(
       });
       const request = await db.getRequestReceivedFromMQ(requestId);
       const valid = await common.checkRequestIntegrity(requestId, request);
-      if (valid && verifyZKProof(requestId)) {
+      if (valid && await verifyZKProof(requestId)) {
         const responseDetails = await getResponseDetails(requestId);
         getDataAndSendBackToRP(request, responseDetails);
       }
