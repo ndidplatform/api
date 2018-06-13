@@ -167,8 +167,8 @@ export default {
         },
         required: [
           'request_id',
-          'namespace',
-          'identifier',
+          // 'namespace',
+          // 'identifier',
           'ial',
           'aal',
           'secret',

@@ -2,9 +2,17 @@ import fs from 'fs';
 import path from 'path';
 
 import fetch from 'node-fetch';
+
+import { hash, publicEncrypt, verifySignature } from './crypto';
+import * as tendermint from '../tendermint/ndid';
+import CustomError from '../error/customError';
+import errorType from '../error/type';
 import logger from '../logger';
 
 import * as config from '../config';
+
+const TEST_MESSAGE = 'test';
+const TEST_MESSAGE_BASE_64 = Buffer.from(TEST_MESSAGE).toString('base64');
 
 const callbackUrl = {};
 
@@ -35,6 +43,76 @@ const callbackUrlFilesPrefix = path.join(
   }
 });
 
+// FIXME: Refactor
+async function getNodePubKey(node_id) {
+  try {
+    return await tendermint.query('GetNodePublicKey', { node_id });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get node public key from blockchain',
+      cause: error,
+    });
+  }
+}
+
+async function getNodeMasterPubKey(node_id) {
+  try {
+    return await tendermint.query('GetNodeMasterPublicKey', { node_id });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get node master public key from blockchain',
+      cause: error,
+    });
+  }
+}
+
+async function testSignCallback(url, publicKey) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      node_id: config.nodeId,
+      request_message: TEST_MESSAGE,
+      request_message_hash: hash(TEST_MESSAGE),
+      hash_method: 'SHA256',
+      key_type: 'RSA',
+      sign_method: 'RSA-SHA256',
+    }),
+  });
+  const { signature } = await response.json();
+  if (!verifySignature(signature, publicKey, TEST_MESSAGE)) {
+    throw new CustomError({
+      message: 'Invalid signature',
+    });
+  }
+}
+
+async function testDecryptCallback(url, publicKey) {
+  const encryptedMessage = publicEncrypt(publicKey, TEST_MESSAGE);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      node_id: config.nodeId,
+      encrypted_message: encryptedMessage,
+      key_type: 'RSA',
+    }),
+  });
+  const decryptedMessageBase64 = (await response.json()).decrypted_message;
+  if (TEST_MESSAGE_BASE_64 !== decryptedMessageBase64) {
+    throw new CustomError({
+      message: 'Decrypted message mismatch',
+    });
+  }
+}
+
 export function isCallbackUrlsSet() {
   return (
     callbackUrl.signature != null &&
@@ -43,10 +121,23 @@ export function isCallbackUrlsSet() {
   );
 }
 
-export function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
-  // TODO: Test sign/decrypt before accepting callback URL
+export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
+  let public_key;
 
   if (signCallbackUrl) {
+    try {
+      if (public_key == null) {
+        public_key = (await getNodePubKey(config.nodeId)).public_key;
+      }
+      await testSignCallback(signCallbackUrl, public_key);
+    } catch (error) {
+      throw new CustomError({
+        message: errorType.EXTERNAL_SIGN_TEST_FAILED.message,
+        code: errorType.EXTERNAL_SIGN_TEST_FAILED.code,
+        cause: error,
+      });
+    }
+
     callbackUrl.signature = signCallbackUrl;
     fs.writeFile(
       callbackUrlFilesPrefix + '-signature',
@@ -62,6 +153,19 @@ export function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
     );
   }
   if (decryptCallbackUrl) {
+    try {
+      if (public_key == null) {
+        public_key = (await getNodePubKey(config.nodeId)).public_key;
+      }
+      await testDecryptCallback(decryptCallbackUrl, public_key);
+    } catch (error) {
+      throw new CustomError({
+        message: errorType.EXTERNAL_DECRYPT_TEST_FAILED.message,
+        code: errorType.EXTERNAL_DECRYPT_TEST_FAILED.code,
+        cause: error,
+      });
+    }
+
     callbackUrl.decrypt = decryptCallbackUrl;
     fs.writeFile(
       callbackUrlFilesPrefix + '-decrypt',
@@ -78,10 +182,19 @@ export function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
   }
 }
 
-export function setMasterSignatureCallback(url) {
-  // TODO: Test sign before accepting callback URL
-
+export async function setMasterSignatureCallback(url) {
   if (url) {
+    try {
+      const { master_public_key } = await getNodeMasterPubKey(config.nodeId);
+      await testSignCallback(url, master_public_key);
+    } catch (error) {
+      throw new CustomError({
+        message: errorType.EXTERNAL_SIGN_MASTER_TEST_FAILED.message,
+        code: errorType.EXTERNAL_SIGN_MASTER_TEST_FAILED.code,
+        cause: error,
+      });
+    }
+
     callbackUrl.masterSignature = url;
     fs.writeFile(callbackUrlFilesPrefix + '-masterSignature', url, (err) => {
       if (err) {
@@ -95,6 +208,12 @@ export function setMasterSignatureCallback(url) {
 }
 
 export async function decryptAsymetricKey(encryptedMessage) {
+  if (callbackUrl.decrypt == null) {
+    throw new CustomError({
+      message: errorType.EXTERNAL_DECRYPT_URL_NOT_SET.message,
+      code: errorType.EXTERNAL_DECRYPT_URL_NOT_SET.code,
+    });
+  }
   try {
     const response = await fetch(callbackUrl.decrypt, {
       method: 'POST',
@@ -124,6 +243,19 @@ export async function createSignature(message, messageHash, useMasterKey) {
   const url = useMasterKey
     ? callbackUrl.masterSignature
     : callbackUrl.signature;
+  if (url == null) {
+    if (useMasterKey) {
+      throw new CustomError({
+        message: errorType.EXTERNAL_SIGN_MASTER_URL_NOT_SET.message,
+        code: errorType.EXTERNAL_SIGN_MASTER_URL_NOT_SET.code,
+      });
+    } else {
+      throw new CustomError({
+        message: errorType.EXTERNAL_SIGN_URL_NOT_SET.message,
+        code: errorType.EXTERNAL_SIGN_URL_NOT_SET.code,
+      });
+    }
+  }
   try {
     const response = await fetch(url, {
       method: 'POST',
