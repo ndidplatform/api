@@ -121,6 +121,18 @@ export async function createIdpResponse(data) {
       secret,
     } = data;
 
+    const request = await common.getRequest({ requestId: request_id });
+    if (request == null) {
+      throw new CustomError({
+        message: errorType.REQUEST_NOT_FOUND.message,
+        code: errorType.REQUEST_NOT_FOUND.code,
+        clientError: true,
+        details: {
+          request_id,
+        },
+      });
+    }
+
     const accessorPublicKey = await common.getAccessorKey(accessor_id);
     if (accessorPublicKey == null) {
       throw new CustomError({

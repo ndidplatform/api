@@ -46,11 +46,13 @@ export default {
   },
   EXTERNAL_SIGN_MASTER_URL_NOT_SET: {
     code: 10011,
-    message: 'External crypto service for signing with node master key URL is not set',
+    message:
+      'External crypto service for signing with node master key URL is not set',
   },
   EXTERNAL_DECRYPT_URL_NOT_SET: {
     code: 10012,
-    message: 'External crypto service for decrypting with node key URL is not set',
+    message:
+      'External crypto service for decrypting with node key URL is not set',
   },
 
   // Client errors
@@ -105,6 +107,10 @@ export default {
   ACCESSOR_PUBLIC_KEY_NOT_FOUND: {
     code: 20011,
     message: 'Accessor public key for the input accessor ID could not be found',
+  },
+  REQUEST_NOT_FOUND: {
+    code: 20012,
+    message: 'Request with the input request ID could not be found',
   },
 
   // Errors return from ABCI app
