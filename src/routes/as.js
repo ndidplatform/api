@@ -28,9 +28,13 @@ router.get('/service/:service_id', async (req, res, next) => {
   try {
     const { service_id } = req.params;
 
-    let result = await as.getServiceDetail(service_id);
+    const result = await as.getServiceDetail(service_id);
 
-    res.status(200).json(result);
+    if (result == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(result);
+    }
   } catch (error) {
     next(error);
   }
