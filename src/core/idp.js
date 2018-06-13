@@ -412,10 +412,12 @@ async function checkOnboardResponse(message) {
       reason,
     });
 
+    db.removeChallengeFromRequestId(message.request_id);
     return false;
   }
   logger.debug({
     message: 'Onboard consented',
   });
+  db.removeChallengeFromRequestId(message.request_id);
   return true;
 }
