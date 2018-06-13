@@ -5,7 +5,7 @@ import logger from '../logger';
 
 import { tendermintAddress } from '../config';
 
-const PING_INTERVAL = 5000;
+const PING_INTERVAL = 30000;
 
 export default class TendermintWsClient extends EventEmitter {
   constructor() {
