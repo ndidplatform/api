@@ -24,15 +24,15 @@ receivingSocket.on('message', async function(jsonMessageStr) {
   });
 
   //verify digital signature
-  let [ raw_messge, msqSignature ] = decrypted.split('|');
+  let [ raw_message, msqSignature ] = decrypted.split('|');
 
   logger.debug({
     message: 'Split msqSignature',
-    raw_messge,
+    raw_message,
     msqSignature,
   });
 
-  let { idp_id, rp_id, as_id } = JSON.parse(raw_messge);
+  let { idp_id, rp_id, as_id } = JSON.parse(raw_message);
   let nodeId = idp_id || rp_id || as_id ;
   let { public_key } = await getNodePubKey(nodeId);
   if(!nodeId) throw new CustomError({
@@ -42,23 +42,23 @@ receivingSocket.on('message', async function(jsonMessageStr) {
   let signatureValid = utils.verifySignature(
     msqSignature,
     public_key,
-    raw_messge,
+    raw_message,
   );
 
   logger.debug({
     message: 'Verify signature',
     msqSignature,
     public_key,
-    raw_messge,
-    raw_message_object: JSON.parse(raw_messge),
+    raw_message,
+    raw_message_object: JSON.parse(raw_message),
     signatureValid,
   });
 
   if(signatureValid) {
-    eventEmitter.emit('message', raw_messge);
+    eventEmitter.emit('message', raw_message);
   }
   else throw new CustomError({
-    message: 'Receive message with unmatch digital signature',
+    message: 'Receive message with unmatched digital signature',
   });
 });
 
@@ -79,7 +79,7 @@ export const send = async (receivers, message) => {
     sendingSocket.connect(`tcp://${receiver.ip}:${receiver.port}`);
 
     //cannot add signature in object because JSON.stringify may produce different string
-    //for two object that is deep equal, hence, verify signature retuen false
+    //for two object that is deep equal, hence, verify signature return false
     let encryptedMessage = utils.encryptAsymetricKey(
       receiver.public_key,
       realPayload,
