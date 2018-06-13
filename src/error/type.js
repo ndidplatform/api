@@ -40,6 +40,18 @@ export default {
     code: 10009,
     message: 'Body parsing failed',
   },
+  EXTERNAL_SIGN_URL_NOT_SET: {
+    code: 10010,
+    message: 'External crypto service for signing with node key URL is not set',
+  },
+  EXTERNAL_SIGN_MASTER_URL_NOT_SET: {
+    code: 10011,
+    message: 'External crypto service for signing with node master key URL is not set',
+  },
+  EXTERNAL_DECRYPT_URL_NOT_SET: {
+    code: 10012,
+    message: 'External crypto service for decrypting with node key URL is not set',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
@@ -77,6 +89,18 @@ export default {
   BODY_PARSE_FAILED: {
     code: 20007,
     message: 'Unable to parse body',
+  },
+  EXTERNAL_SIGN_TEST_FAILED: {
+    code: 20008,
+    message: 'External service: Sign with node key test failed',
+  },
+  EXTERNAL_SIGN_MASTER_TEST_FAILED: {
+    code: 20009,
+    message: 'External service: Sign with node master key test failed',
+  },
+  EXTERNAL_DECRYPT_TEST_FAILED: {
+    code: 20010,
+    message: 'External service: Decrypt with node key test failed',
   },
 
   // Errors return from ABCI app
