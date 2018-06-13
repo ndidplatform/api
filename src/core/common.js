@@ -276,10 +276,15 @@ export async function getIdpsMsqDestination({
   min_ial,
   min_aal,
   idp_list,
+  mode,
 }) {
   const idpNodes = await getIdpNodes({
-    namespace,
-    identifier,
+    namespace: mode === 3 
+      ? namespace
+      : undefined,
+    identifier: mode === 3 
+      ? identifier
+      : undefined,
     min_ial,
     min_aal,
   });
@@ -380,8 +385,10 @@ export async function createRequest({
   min_aal,
   min_idp,
   request_timeout,
+  mode,
 }) {
   try {
+    mode = mode || 3;
     // existing reference_id, return request ID
     const requestId = await db.getRequestIdByReferenceId(reference_id);
     if (requestId) {
@@ -401,12 +408,15 @@ export async function createRequest({
       });
     }
 
+
+
     let receivers = await getIdpsMsqDestination({
       namespace,
       identifier,
       min_ial,
       min_aal,
       idp_list,
+      mode,
     });
 
     if (receivers.length === 0 && min_idp !== 0) {
@@ -463,6 +473,7 @@ export async function createRequest({
       request_timeout,
       data_request_list: data_request_list,
       request_message,
+      mode,
       // for zk proof
       challenge,
       rp_id: config.nodeId,
@@ -483,6 +494,7 @@ export async function createRequest({
       request_timeout,
       data_request_list: dataRequestListToBlockchain,
       request_message_hash: utils.hash(challenge + request_message),
+      mode,
     };
 
     // maintain mapping
@@ -520,13 +532,51 @@ export async function createRequest({
   }
 }
 
-export async function verifyZKProof(request_id, idp_id, dataFromMq) {
+export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
+
+  let {
+    namespace,
+    identifier,
+    privateProofObjectList,
+    request_message,
+  } = await db.getRequestToSendToAS(request_id);
+
+  //check only signature of idp_id
+  if(mode === 1) {
+
+    let responses = (await getRequestDetail({
+      requestId: request_id,
+    })).responses;
+    for(let i = 0 ; i < responses.length ; i++) {
+      if(responses[i].idp_id !== idp_id) continue;
+
+      let { signature } = responses[i];
+      let { public_key } = await getNodePubKey(idp_id);
+
+      logger.debug({
+        message: 'Verify signature, mode 1',
+        signature,
+        public_key,
+        request_message,
+        idp_id,
+      });
+
+      if(!utils.verifySignature(signature, public_key, JSON.stringify(request_message))) return false;
+      else return true;
+    }
+    //should not reach (idp_id not found)
+    logger.debug({
+      message: 'Code should never reach here (in common.verifyZKProof)',
+      request_id, idp_id, dataFromMq, mode,
+    });
+    return false;
+  }
+
   let challenge = await db.getChallengeFromRequestId(request_id);
   let privateProofObject = dataFromMq
     ? dataFromMq
     : await db.getProofReceivedFromMQ(request_id + ':' + idp_id);
 
-  //query and verify zk, also check conflict with each others
   logger.debug({
     message: 'Verifying zk proof',
     request_id,
@@ -534,18 +584,13 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq) {
     dataFromMq,
     challenge,
     privateProofObject,
+    mode,
   });
 
   //query accessor_group_id of this accessor_id
   let accessor_group_id = await getAccessorGroupId(
     privateProofObject.accessor_id
   );
-  let {
-    namespace,
-    identifier,
-    privateProofObjectList,
-    request_message,
-  } = await db.getRequestToSendToAS(request_id);
 
   logger.debug({
     message: 'Verifying zk proof',
