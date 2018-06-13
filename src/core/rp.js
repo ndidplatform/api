@@ -115,6 +115,7 @@ async function checkZKAndNotify(
     if (requestData != null) {
       await sendRequestToAS(requestData, height);
     }
+    db.removeChallengeFromRequestId(requestStatus.request_id);
   }
 
   const eventDataForCallback = {
