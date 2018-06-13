@@ -119,6 +119,7 @@ export async function createIdpResponse(data) {
       signature,
       accessor_id,
       secret,
+      request_message,
     } = data;
 
     const request = await common.getRequest({ requestId: request_id });
@@ -145,29 +146,48 @@ export async function createIdpResponse(data) {
       });
     }
 
-    let { blockchainProof, privateProofValue, padding } = utils.generateIdentityProof({
-      publicKey: accessorPublicKey,
-      challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge,
-      secret,
-    });
+    //TODO
+    //query mode from requestId
+    let requestStatus = await common.getRequest({ requestId: request_id });
+    let mode = requestStatus.mode;
+    let dataToBlockchain, privateProofObject;
+
+    if(mode === 3) {
+      let { blockchainProof, privateProofValue, padding } = utils.generateIdentityProof({
+        publicKey: await common.getAccessorKey(accessor_id),
+        challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge,
+        secret,
+      });
+    
+      privateProofObject = {
+        privateProofValue,
+        accessor_id,
+        padding,
+      };
+
+      dataToBlockchain = {
+        request_id,
+        aal,
+        ial,
+        status,
+        signature,
+        //accessor_id,
+        identity_proof: blockchainProof,
+        private_proof_hash: utils.hash(privateProofValue),
+      };
+    }
+    else {
+      signature = await utils.createSignature(request_message);
+      dataToBlockchain = {
+        request_id,
+        aal,
+        ial,
+        status,
+        signature,
+      };
+    }
+
     await db.removeRequestReceivedFromMQ(request_id);
-
-    let privateProofObject = {
-      privateProofValue,
-      accessor_id,
-      padding,
-    };
-
-    let dataToBlockchain = {
-      request_id,
-      aal,
-      ial,
-      status,
-      signature,
-      //accessor_id,
-      identity_proof: blockchainProof,
-      private_proof_hash: utils.hash(privateProofValue),
-    };
 
     let { height } = await tendermint.transact(
       'CreateIdpResponse',

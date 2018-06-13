@@ -22,6 +22,7 @@ router.post(
         min_aal,
         min_idp,
         request_timeout,
+        mode,
       } = req.body;
 
       const requestId = await common.createRequest({
@@ -36,6 +37,7 @@ router.post(
         min_aal,
         min_idp,
         request_timeout,
+        mode,
       });
 
       res.status(200).json({ request_id: requestId });
