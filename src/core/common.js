@@ -237,9 +237,20 @@ if (handleMessageFromQueue) {
 }
 
 export async function getAccessorGroupId(accessor_id) {
-  return (await tendermint.query('GetAccessorGroupID',{
-    accessor_id,
-  })).accessor_group_id;
+  try {
+    const accessorGroupIdObj = await tendermint.query('GetAccessorGroupID',{
+      accessor_id,
+    });
+    if (accessorGroupIdObj == null) {
+      return null;
+    }
+    return accessorGroupIdObj.accessor_group_id;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get accessor group ID from blockchain',
+      cause: error,
+    });
+  }
 }
 
 export async function getAccessorKey(accessor_id) {
