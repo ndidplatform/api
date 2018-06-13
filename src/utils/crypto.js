@@ -6,7 +6,7 @@ const AES_KEY_LENGTH_IN_BYTES = 32;
 /**
  * Hash given string with SHA-256
  * @param {string} stringToHash
- * @returns {string} hash
+ * @returns {string} hash in base64
  */
 export function hash(stringToHash) {
   const hash = crypto.createHash('sha256');

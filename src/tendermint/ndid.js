@@ -5,7 +5,7 @@ import CustomError from '../error/customError';
 import errorType from '../error/type';
 import logger from '../logger';
 
-import * as tendermintClient from './client';
+import * as tendermintHttpClient from './httpClient';
 import TendermintWsClient from './wsClient';
 import { convertAbciAppCodeToErrorType } from './abciAppCode';
 import * as utils from '../utils';
@@ -142,40 +142,54 @@ export function getBlocks(fromHeight, toHeight) {
   return tendermintWsClient.getBlocks(fromHeight, toHeight);
 }
 
-function getQueryResult(response) {
+function getQueryResult(result) {
   logger.debug({
     message: 'Tendermint query result',
-    response,
+    result,
   });
-  if (response.error) {
-    throw new CustomError({
-      message: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR.message,
-      code: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR.code,
-      details: response.error,
-    });
-  }
 
   // const currentHeight = parseInt(response.result.response.height);
 
-  //if (response.result.response.log === 'not found') {
-  if (response.result.response.log.indexOf('not found') !== -1) {
+  // if (result.check_tx.log !== 'success') {
+  //   if (result.check_tx.code != null) {
+  //     const convertedErrorType = convertAbciAppCodeToErrorType(
+  //       result.check_tx.code
+  //     );
+  //     if (convertedErrorType != null) {
+  //       throw new CustomError({
+  //         message: convertedErrorType.message,
+  //         code: convertedErrorType.code,
+  //         clientError: convertedErrorType.clientError,
+  //         details: {
+  //           abciCode: result.check_tx.code,
+  //         },
+  //       });
+  //     }
+  //   }
+  //   throw new CustomError({
+  //     message: errorType.TENDERMINT_TRANSACT_ERROR.message,
+  //     code: errorType.TENDERMINT_TRANSACT_ERROR.code,
+  //     details: {
+  //       abciCode: result.check_tx.code,
+  //     },
+  //   });
+  // }
+
+  if (result.response.log.indexOf('not found') !== -1) {
     return null;
   }
 
-  if (response.result.response.value == null) {
+  if (result.response.value == null) {
     throw new CustomError({
       message: errorType.TENDERMINT_QUERY_ERROR.message,
       code: errorType.TENDERMINT_QUERY_ERROR.code,
-      details: response.result,
+      details: result,
     });
   }
 
-  const result = Buffer.from(
-    response.result.response.value,
-    'base64'
-  ).toString();
+  const queryResult = Buffer.from(result.response.value, 'base64').toString();
   try {
-    return JSON.parse(result);
+    return JSON.parse(queryResult);
   } catch (error) {
     throw new CustomError({
       message: errorType.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR.message,
@@ -185,25 +199,22 @@ function getQueryResult(response) {
   }
 }
 
-function getTransactResult(response) {
+function getTransactResult(result) {
   logger.debug({
     message: 'Tendermint transact result',
-    response,
+    result,
   });
-  if (response.error) {
-    throw new CustomError({
-      message: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR.message,
-      code: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR.code,
-      details: response.result,
-    });
-  }
 
-  const height = response.result.height;
+  const height = result.height;
 
-  if (response.result.deliver_tx.log !== 'success') {
-    if (response.result.deliver_tx.code != null) {
+  // if (result.check_tx.code !== 0) {
+  //   throw '';
+  // }
+
+  if (result.deliver_tx.log !== 'success') {
+    if (result.deliver_tx.code != null) {
       const convertedErrorType = convertAbciAppCodeToErrorType(
-        response.result.deliver_tx.code
+        result.deliver_tx.code
       );
       if (convertedErrorType != null) {
         throw new CustomError({
@@ -211,7 +222,7 @@ function getTransactResult(response) {
           code: convertedErrorType.code,
           clientError: convertedErrorType.clientError,
           details: {
-            abciCode: response.result.deliver_tx.code,
+            abciCode: result.deliver_tx.code,
             height,
           },
         });
@@ -221,7 +232,7 @@ function getTransactResult(response) {
       message: errorType.TENDERMINT_TRANSACT_ERROR.message,
       code: errorType.TENDERMINT_TRANSACT_ERROR.code,
       details: {
-        abciCode: response.result.deliver_tx.code,
+        abciCode: result.deliver_tx.code,
         height,
       },
     });
@@ -243,11 +254,18 @@ export async function query(fnName, data) {
   const dataBase64Encoded = Buffer.from(queryData).toString('base64');
 
   try {
-    const response = await tendermintClient.abciQuery(dataBase64Encoded);
-    return getQueryResult(response);
+    const result = await tendermintHttpClient.abciQuery(dataBase64Encoded);
+    return getQueryResult(result);
   } catch (error) {
-    // TODO: error handling
-    throw error;
+    if (error.type === 'JSON-RPC ERROR') {
+      throw new CustomError({
+        message: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR.message,
+        code: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR.code,
+        details: error.error,
+      });
+    } else {
+      throw error;
+    }
   }
 }
 
@@ -273,11 +291,20 @@ export async function transact(fnName, data, nonce, useMasterKey) {
   const txBase64Encoded = Buffer.from(tx).toString('base64');
 
   try {
-    const response = await tendermintClient.broadcastTxCommit(txBase64Encoded);
-    return getTransactResult(response);
+    const result = await tendermintHttpClient.broadcastTxCommit(
+      txBase64Encoded
+    );
+    return getTransactResult(result);
   } catch (error) {
-    // TODO: error handling
-    throw error;
+    if (error.type === 'JSON-RPC ERROR') {
+      throw new CustomError({
+        message: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR.message,
+        code: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR.code,
+        details: error.error,
+      });
+    } else {
+      throw error;
+    }
   }
 }
 
