@@ -102,6 +102,10 @@ export default {
     code: 20010,
     message: 'External service: Decrypt with node key test failed',
   },
+  ACCESSOR_PUBLIC_KEY_NOT_FOUND: {
+    code: 20011,
+    message: 'Accessor public key for the input accessor ID could not be found',
+  },
 
   // Errors return from ABCI app
   // Server errors

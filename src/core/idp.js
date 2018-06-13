@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 
 import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/customError';
+import errorType from '../error/type';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
@@ -120,8 +121,20 @@ export async function createIdpResponse(data) {
       secret,
     } = data;
 
+    const accessorPublicKey = await common.getAccessorKey(accessor_id);
+    if (accessorPublicKey == null) {
+      throw new CustomError({
+        message: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.message,
+        code: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.code,
+        clientError: true,
+        details: {
+          accessor_id,
+        },
+      });
+    }
+
     let { blockchainProof, privateProofValue, padding } = utils.generateIdentityProof({
-      publicKey: await common.getAccessorKey(accessor_id),
+      publicKey: accessorPublicKey,
       challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge,
       secret,
     });

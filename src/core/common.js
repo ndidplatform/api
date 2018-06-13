@@ -243,9 +243,20 @@ export async function getAccessorGroupId(accessor_id) {
 }
 
 export async function getAccessorKey(accessor_id) {
-  return (await tendermint.query('GetAccessorKey',{
-    accessor_id,
-  })).accessor_public_key;
+  try {
+    const accessorPubKeyObj = await tendermint.query('GetAccessorKey',{
+      accessor_id,
+    });
+    if (accessorPubKeyObj == null) {
+      return null;
+    }
+    return accessorPubKeyObj.accessor_public_key;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get accessor public key from blockchain',
+      cause: error,
+    });
+  }
 }
 
 export async function getIdpsMsqDestination({
