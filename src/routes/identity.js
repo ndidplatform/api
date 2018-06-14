@@ -20,7 +20,7 @@ router.post('/', validateBody, async (req, res, next) => {
       ial,
     } = req.body;
 
-    let { request_id, exist, invalidNamespace } = await identity.createNewIdentity({
+    const { request_id, exist } = await identity.createNewIdentity({
       namespace,
       identifier,
       reference_id,
@@ -30,63 +30,53 @@ router.post('/', validateBody, async (req, res, next) => {
       ial,
     });
 
-    if(invalidNamespace) {
-      res.status(clientHttpErrorCode).send({
-        error: errorType.INVALID_NAMESPACE,
-      });
-      /*res.status(400).json({
-        what: 'what??'
-      })*/
-    }
-    else {
-      res.status(200).send({
-        request_id, exist, //secret
-      });
-    }
+    res.status(200).send({
+      request_id,
+      exist,
+    });
   } catch (error) {
     next(error);
   }
 });
 
 router.post(
-  '/:namespace/:identifier/accessors', 
-  validateBody, 
-  async (req, res, next) => 
-{
-  try {
-    const {
-      reference_id,
-      accessor_type,
-      accessor_public_key,
-      accessor_id,
-    } = req.body;
+  '/:namespace/:identifier/accessors',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const {
+        reference_id,
+        accessor_type,
+        accessor_public_key,
+        accessor_id,
+      } = req.body;
 
-    const {
-      namespace,
-      identifier
-    } = req.params;
+      const { namespace, identifier } = req.params;
 
-    let { request_id, associated } = await identity.addAccessorMethodForAssociatedIdp({
-      namespace,
-      identifier,
-      reference_id,
-      accessor_type,
-      accessor_public_key,
-      accessor_id,
-    });
+      let {
+        request_id,
+        associated,
+      } = await identity.addAccessorMethodForAssociatedIdp({
+        namespace,
+        identifier,
+        reference_id,
+        accessor_type,
+        accessor_public_key,
+        accessor_id,
+      });
 
-    if(!associated) {
-      res.status(403).send('Must already onboard this user');
-      return;
+      if (!associated) {
+        res.status(403).send('Must already onboard this user');
+        return;
+      }
+      res.status(200).send({
+        request_id,
+      });
+    } catch (error) {
+      next(error);
     }
-    res.status(200).send({
-      request_id
-    });
   }
-  catch(error) {
-    next(error);
-  }
-});
+);
 
 router.get('/:namespace/:identifier', async (req, res, next) => {
   try {

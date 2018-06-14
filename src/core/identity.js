@@ -112,20 +112,23 @@ export async function createNewIdentity(data) {
       ial,
     } = data;
 
-    let validNameSpaces = await common.getNamespaceList();
-    let valid = validNameSpaces.map((obj) => {
-      return obj.namespace === namespace;
-    }).reduce((previous, now) => {
-      return previous || now;
-    });
-    if(!valid) return {
-      invalidNamespace: true,
-    };
+    const namespaceDetails = await common.getNamespaceList();
+    const valid = namespaceDetails.find(
+      (namespaceDetail) => namespaceDetail.namespace === namespace
+    );
+    if (!valid) {
+      throw new CustomError({
+        message: errorType.INVALID_NAMESPACE.message,
+        code: errorType.INVALID_NAMESPACE.code,
+        details: {
+          namespace
+        },
+      });
+    }
 
     let sid = namespace + ':' + identifier;
     let hash_id = utils.hash(sid);
 
-    //call CheckExistingIdentity to tendermint
     let { exist } = await tendermint.query('CheckExistingIdentity', {
       hash_id,
     });
