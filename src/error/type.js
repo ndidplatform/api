@@ -159,11 +159,39 @@ export default {
     code: 15008,
     message: 'Duplicate request ID',
   }, // Server generates a duplicate request ID
+  ACCESSOR_GROUP_ID_NOT_FOUND: {
+    code: 15009,
+    message: 'Accessor group ID could not be found',
+  },
+  REQUEST_IS_NOT_COMPLETED: {
+    code: 15010,
+    message: 'Request is not completed',
+  }, // Try to add accessor when request for consent id not yet completed
+  REQUEST_IS_NOT_SPECIAL: {
+    code: 15011,
+    message: 'Request id not an onboard (special) type',
+  }, // Try to add accessor with request that is not an onboard request type
+  NODE_ID_DOES_NOT_EXIST_IN_AS_LIST: {
+    code: 15012,
+    message: 'Node ID does not exist in AS ID list',
+  }, // AS signs data to request that does not request it
+  AS_ID_DOES_NOT_EXIST_IN_AS_LIST: {
+    code: 15013,
+    message: 'AS ID does not exist in AS ID list',
+  }, // RP set received data with AS ID that does not contain in data_request_list
+  INVALID_MIN_IDP: {
+    code: 15014,
+    message: 'Invalid minimum IdP',
+  },
+  DUPLICATE_ACCESSOR_GROUP_ID: {
+    code: 15015,
+    message: 'Duplicate accessor group ID',
+  },
 
   // Client errors
   REQUEST_ID_NOT_FOUND: {
     code: 25001,
-    message: 'Request ID not found',
+    message: 'Request ID could not be found',
     clientError: true,
   },
   REQUEST_IS_CLOSED: {
@@ -188,7 +216,7 @@ export default {
   },
   TOKEN_ACCOUNT_NOT_FOUND: {
     code: 25006,
-    message: 'Token account (Node ID) not found',
+    message: 'Token account (Node ID) could not be found',
     clientError: true,
   },
   NOT_ENOUGH_TOKEN: {
@@ -228,17 +256,32 @@ export default {
   },
   NAMESPACE_NOT_FOUND: {
     code: 25014,
-    message: 'Namespace not found',
+    message: 'Namespace could not be found',
     clientError: true,
   },
   NODE_ID_NOT_FOUND: {
     code: 25015,
-    message: 'Node ID not found',
+    message: 'Node ID could not be found',
     clientError: true,
   },
   DUPLICATE_PUBLIC_KEY: {
     code: 25016,
     message: 'Duplicate public key (already used)',
+    clientError: true,
+  },
+  DUPLICATE_ACCESSOR_ID: {
+    code: 25017,
+    message: 'Duplicate accessor ID',
+    clientError: true,
+  },
+  SERVICE_ID_NOT_FOUND: {
+    code: 25018,
+    message: 'Service ID could not be found',
+    clientError: true,
+  },
+  INVALID_MODE: {
+    code: 25019,
+    message: 'Invalid mode',
     clientError: true,
   },
 

@@ -27,6 +27,16 @@ import errorType from '../error/type';
 // DuplicateRequestID     uint32 = 23
 // NodeIDNotFound         uint32 = 24
 // DuplicatePublicKey     uint32 = 25
+// DuplicateAccessorID      uint32 = 26
+// DuplicateAccessorGroupID uint32 = 27
+// AccessorGroupIDNotFound  uint32 = 28
+// RequestIsNotCompleted    uint32 = 29
+// RequestIsNotSpecial      uint32 = 30
+// InvalidMinIdp            uint32 = 31
+// NodeIDIsNotExistInASList uint32 = 32
+// AsIDIsNotExistInASList   uint32 = 33
+// ServiceIDNotFound        uint32 = 34
+// InvalidMode              uint32 = 35
 
 const codeMapping = {
   1: errorType.ENCODING_ERROR, // Not used in API (calls from API won't generate this error)
@@ -54,6 +64,16 @@ const codeMapping = {
   23: errorType.DUPLICATE_REQUEST_ID,
   24: errorType.NODE_ID_NOT_FOUND,
   25: errorType.DUPLICATE_PUBLIC_KEY,
+  26: errorType.DUPLICATE_ACCESSOR_ID,
+  27: errorType.DUPLICATE_ACCESSOR_GROUP_ID,
+  28: errorType.ACCESSOR_GROUP_ID_NOT_FOUND,
+  29: errorType.REQUEST_IS_NOT_COMPLETED,
+  30: errorType.REQUEST_IS_NOT_SPECIAL,
+  31: errorType.INVALID_MIN_IDP,
+  32: errorType.NODE_ID_DOES_NOT_EXIST_IN_AS_LIST,
+  33: errorType.AS_ID_DOES_NOT_EXIST_IN_AS_LIST,
+  34: errorType.SERVICE_ID_NOT_FOUND,
+  35: errorType.INVALID_MODE,
 };
 
 export function convertAbciAppCodeToErrorType(abciAppCode) {
