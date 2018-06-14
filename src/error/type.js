@@ -54,6 +54,10 @@ export default {
     message:
       'External crypto service for decrypting with node key URL is not set',
   },
+  SIGN_WITH_ACCESSOR_KEY_FAILED: {
+    code: 10013,
+    message: 'Cannot sign with accessor key by callback',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
@@ -111,6 +115,10 @@ export default {
   REQUEST_NOT_FOUND: {
     code: 20012,
     message: 'Request with the input request ID could not be found',
+  },
+  SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET: {
+    code: 20013,
+    message: 'Sign with accessor key callback URL has not been set',
   },
 
   // Errors return from ABCI app

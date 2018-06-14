@@ -122,6 +122,8 @@ export async function createNewIdentity(data) {
       return { request_id, exist };
     }
 
+    let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
+
     request_id = await common.createRequest({
       namespace,
       identifier,
@@ -139,10 +141,7 @@ export async function createNewIdentity(data) {
     });
 
     db.setRequestIdByReferenceId(reference_id, request_id);
-    //db.
-
-    //TODO
-    //set request_id map to { sid, hash_id, accessor_id, reference_id }
+  
     /*let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
     let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
     let secret = padding + '|' + encryptedHash;
