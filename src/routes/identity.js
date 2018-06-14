@@ -1,10 +1,8 @@
 import express from 'express';
 
-import { validateQuery, validateBody } from './middleware/validation';
+import { validateBody } from './middleware/validation';
 import * as identity from '../core/identity';
 import * as common from '../core/common';
-import { clientHttpErrorCode } from '../config';
-import errorType from '../error/type';
 
 const router = express.Router();
 
