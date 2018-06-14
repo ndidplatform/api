@@ -68,7 +68,7 @@ async function notifyRequestUpdate(requestId, height) {
   }
 
   const eventDataForCallback = {
-    type: 'request_event',
+    type: 'request_status',
     ...requestStatus,
   };
 
@@ -143,7 +143,7 @@ async function checkZKAndNotify({
   }
 
   const eventDataForCallback = {
-    type: 'request_event',
+    type: 'request_status',
     ...requestStatus,
     latest_idp_response_valid: responseValid,
   };
