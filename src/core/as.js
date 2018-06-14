@@ -277,7 +277,6 @@ export async function handleTendermintNewBlockHeaderEvent(
 
 export async function registerAsService({
   service_id,
-  service_name,
   min_ial,
   min_aal,
   url,
@@ -286,7 +285,6 @@ export async function registerAsService({
     await Promise.all([
       registerServiceDestination({
         service_id,
-        service_name,
         min_aal,
         min_ial,
         node_id: config.nodeId,
