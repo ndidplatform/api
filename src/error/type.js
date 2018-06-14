@@ -42,20 +42,24 @@ export default {
   },
   EXTERNAL_SIGN_URL_NOT_SET: {
     code: 10010,
-    message: 'External crypto service for signing with node key URL is not set',
+    message: 'External crypto service for signing with node key URL has not been set',
   },
   EXTERNAL_SIGN_MASTER_URL_NOT_SET: {
     code: 10011,
     message:
-      'External crypto service for signing with node master key URL is not set',
+      'External crypto service for signing with node master key URL has not been set',
   },
   EXTERNAL_DECRYPT_URL_NOT_SET: {
     code: 10012,
     message:
-      'External crypto service for decrypting with node key URL is not set',
+      'External crypto service for decrypting with node key URL has not been set',
+  },
+  SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET: {
+    code: 10013,
+    message: 'Sign with accessor key callback URL has not been set',
   },
   SIGN_WITH_ACCESSOR_KEY_FAILED: {
-    code: 10013,
+    code: 10014,
     message: 'Cannot sign with accessor key by callback',
   },
 
@@ -116,12 +120,8 @@ export default {
     code: 20012,
     message: 'Request with the input request ID could not be found',
   },
-  SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET: {
-    code: 20013,
-    message: 'Sign with accessor key callback URL has not been set',
-  },
   INVALID_NAMESPACE: {
-    code: 20014,
+    code: 20013,
     message: 'This namespace is not registered by NDID',
   },
 

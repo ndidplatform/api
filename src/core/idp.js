@@ -45,6 +45,10 @@ let callbackUrl = {};
   }
 });
 
+export function isAccessorSignUrlSet() {
+  return callbackUrl.accessor != null;
+}
+
 export async function accessorSign(sid ,hash_id, accessor_id) {
   const data = {
     sid_hash: hash_id,
@@ -59,7 +63,6 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
     throw new CustomError({
       message: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.message,
       code: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.code,
-      clientError: true,
     });
   }
 
