@@ -74,9 +74,13 @@ async function notifyRequestUpdate(requestId, height) {
 
   await callbackToClient(callbackUrl, eventDataForCallback, true);
 
+  if (requestStatus.status === 'completed') {
+    await closeRequest(requestId);
+  }
+
   if (
-    requestDetail.closed ||
-    requestDetail.timed_out
+    requestStatus.closed ||
+    requestStatus.timed_out
   ) {
     // Clean up
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
