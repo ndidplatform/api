@@ -74,7 +74,16 @@ async function notifyRequestUpdate(requestId, height) {
 
   await callbackToClient(callbackUrl, eventDataForCallback, true);
 
-  if (requestStatus.status === 'completed') {
+  // NOTE: Since blockchain state changes so fast (in some environment, e.g. dev env) that 
+  // getRequestDetail() cannot get the state for each event in time 
+  // (in this case AS signs and RP tells )
+  // making 'completed' status occurs more than 1 time 
+  // hence, closeRequest() will be called more than once
+  if (
+    requestStatus.status === 'completed' &&
+    !requestStatus.closed &&
+    !requestStatus.timed_out
+  ) {
     await closeRequest(requestId);
   }
 
