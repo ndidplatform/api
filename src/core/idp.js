@@ -55,6 +55,14 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
     accessor_id
   };
 
+  if (callbackUrl.accessor == null) {
+    throw new CustomError({
+      message: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.message,
+      code: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.code,
+      clientError: true,
+    });
+  }
+
   logger.debug({
     message: 'Callback to accessor sign',
     url: callbackUrl.accessor,
@@ -62,15 +70,29 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
     hash_id,
   });
 
-  const response = await fetch(callbackUrl.accessor, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-  return (await response.json()).signature;
+  try {
+    const response = await fetch(callbackUrl.accessor, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    const signatureObj = await response.json();
+    return signatureObj.signature;
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED.message,
+      code: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED.code,
+      cause: error,
+      details: {
+        callbackUrl: callbackUrl.accessor,
+        accessor_id,
+        hash_id,
+      }
+    })
+  }
 }
 
 export function getAccessorCallback() {
