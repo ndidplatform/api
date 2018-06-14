@@ -273,18 +273,18 @@ export default {
     '/identity/': {
       body: {
         properties: {
+          reference_id: { type: 'string', minLength: 1 },
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },
-          //secret: { type: 'string', minLength: 1 },
           accessor_type: { type: 'string', minLength: 1 },
           accessor_public_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
           ial: { $ref: 'defs#/definitions/ial' },
         },
         required: [
+          'reference_id',
           'namespace',
           'identifier',
-          //'secret',
           'accessor_type',
           'accessor_public_key',
           'accessor_id',
@@ -308,15 +308,24 @@ export default {
     '/identity/:namespace/:identifier/endorsement': {
       body: {
         properties: {
-          // TODO
+          // TODO: After v1.0
         },
       },
     },
     '/identity/:namespace/:identifier/accessors': {
       body: {
         properties: {
-          // TODO
+          reference_id: { type: 'string', minLength: 1 },
+          accessor_type: { type: 'string', minLength: 1 },
+          accessor_public_key: { type: 'string', minLength: 1 },
+          accessor_id: { type: 'string', minLength: 1 },
         },
+        required: [
+          'reference_id',
+          'accessor_type',
+          'accessor_public_key',
+          'accessor_id',
+        ],
       },
     },
   },
