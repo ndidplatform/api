@@ -100,6 +100,10 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   return secret;
 }
 
+// FIXME: error handling in many cases
+// when there is an error when transacting to blockchain
+// it should not create a request, e.g.
+// - duplicate accessor ID
 export async function createNewIdentity(data) {
   try {
     const {
