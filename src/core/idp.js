@@ -45,6 +45,10 @@ let callbackUrl = {};
   }
 });
 
+export function isAccessorSignUrlSet() {
+  return callbackUrl.accessor != null;
+}
+
 export async function accessorSign(sid ,hash_id, accessor_id) {
   const data = {
     sid_hash: hash_id,

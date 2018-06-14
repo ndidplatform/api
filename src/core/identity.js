@@ -1,11 +1,14 @@
 import logger from '../logger';
 
+import CustomError from '../error/customError';
+import errorType from '../error/type';
+
 import * as tendermint from '../tendermint/ndid';
 import * as utils from '../utils';
 import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
-import { accessorSign, notifyByCallback } from './idp';
+import { accessorSign, isAccessorSignUrlSet, notifyByCallback } from './idp';
 
 export async function checkAssociated({namespace, identifier}) {
   let idpList = await common.getIdpNodes({
@@ -122,7 +125,12 @@ export async function createNewIdentity(data) {
       return { request_id, exist };
     }
 
-    let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
+    if (!isAccessorSignUrlSet()) {
+      throw new CustomError({
+        message: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.message,
+        code: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.code,
+      });
+    }
 
     request_id = await common.createRequest({
       namespace,
