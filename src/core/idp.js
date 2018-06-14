@@ -227,7 +227,7 @@ export async function createIdpResponse(data) {
   }
 }
 
-function notifyByCallback(eventDataForCallback) {
+export function notifyByCallback(eventDataForCallback) {
   if (!callbackUrl.request) {
     logger.error({
       message: 'Callback URL for IdP has not been set',
@@ -329,11 +329,12 @@ export async function handleMessageFromQueue(messageStr) {
   //onboard response
   if(message.accessor_id) {
     if(await checkOnboardResponse(message)) {
-      await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
+      let secret = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
       notifyByCallback({
         type: 'onboard_request',
         request_id: message.request_id,
         success: true,
+        secret,
       });
     }
   }
@@ -400,11 +401,12 @@ export async function handleTendermintNewBlockHeaderEvent(
       //reposne for onboard
       if(message.accessor_id) {
         if(await checkOnboardResponse(message)) {
-          await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
+          let secret = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
           notifyByCallback({
             type: 'onboard_request',
             request_id: message.request_id,
             success: true,
+            secret,
           });
         }
       }

@@ -5,7 +5,7 @@ import * as utils from '../utils';
 import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
-import { accessorSign } from './idp';
+import { accessorSign, notifyByCallback } from './idp';
 
 export async function checkAssociated({namespace, identifier}) {
   let idpList = await common.getIdpNodes({
@@ -61,7 +61,8 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
     ial, 
     accessor_type, 
     accessor_public_key,
-    accessor_id,  
+    accessor_id,
+    sid,  
   } = await db.getIdentityFromRequestId(request_id);
   
   let promiseArray = [
@@ -88,6 +89,12 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   );
 
   await Promise.all(promiseArray);
+  db.removeIdentityFromRequestId(request_id);
+
+  let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
+  let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
+  let secret = padding + '|' + encryptedHash;
+  return secret;
 }
 
 export async function createNewIdentity(data) {
@@ -134,7 +141,8 @@ export async function createNewIdentity(data) {
     });
 
     db.setRequestIdByReferenceId(reference_id, request_id);
-    
+  
+    /*let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
     let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
     let secret = padding + '|' + encryptedHash;
     
@@ -145,7 +153,7 @@ export async function createNewIdentity(data) {
       secret,
       hash_id,
       accessor_id,
-    });
+    });*/
 
     if(exist) {
       //save data for add accessor to persistent
@@ -155,12 +163,14 @@ export async function createNewIdentity(data) {
         accessor_public_key,
         hash_id,
         ial,
+        sid,
       });
     }
     else {
       let accessor_group_id = utils.randomBase64Bytes(32);
       
-      await Promise.all([
+      //await Promise.all([
+      Promise.all([
         tendermint.transact('CreateIdentity',{
           accessor_type,
           accessor_public_key,
@@ -177,9 +187,22 @@ export async function createNewIdentity(data) {
           ],
           node_id: config.nodeId,
         })
-      ]);
+      ]).then(async () => {
+
+        let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
+        let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
+        let secret = padding + '|' + encryptedHash; 
+        notifyByCallback({
+          type: 'onboard_request',
+          request_id: request_id,
+          success: true,
+          secret,
+        });
+        db.removeRequestIdByReferenceId(reference_id);
+
+      });
     }
-    return { request_id, exist, secret };
+    return { request_id, exist, /*secret*/ };
   } 
   catch (error) {
     logger.error({
