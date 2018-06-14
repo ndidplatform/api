@@ -246,16 +246,18 @@ export async function handleTendermintNewBlockHeaderEvent(
         : height - missingBlockCount;
   const toHeight = height - 1;
 
-  logger.debug({
-    message: 'Getting request IDs to process',
-    fromHeight,
-    toHeight,
-  });
-
   const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
     fromHeight,
     toHeight
   );
+
+  logger.debug({
+    message: 'Getting request IDs to process',
+    fromHeight,
+    toHeight,
+    requestIdsInTendermintBlock,
+  });
+
   await Promise.all(
     requestIdsInTendermintBlock.map(async (requestId) => {
       logger.debug({
