@@ -17,7 +17,7 @@ router.post('/service/:service_id', validateBody, async (req, res, next) => {
       url,
     });
 
-    res.status(201).end();
+    res.status(204).end();
   } catch (error) {
     next(error);
   }

@@ -51,10 +51,7 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
-      let {
-        request_id,
-        associated,
-      } = await identity.addAccessorMethodForAssociatedIdp({
+      const request_id = await identity.addAccessorMethodForAssociatedIdp({
         namespace,
         identifier,
         reference_id,
@@ -63,13 +60,13 @@ router.post(
         accessor_id,
       });
 
-      if (!associated) {
-        res.status(403).send('Must already onboard this user');
-        return;
+      if (request_id == null) {
+        res.status(404).end();
+      } else {
+        res.status(200).json({
+          request_id,
+        });
       }
-      res.status(200).send({
-        request_id,
-      });
     } catch (error) {
       next(error);
     }

@@ -32,13 +32,13 @@ export async function addAccessorMethodForAssociatedIdp({
   accessor_id,
 }) {
 
-  let associated = await checkAssociated({
+  const associated = await checkAssociated({
     namespace,
     identifier,
   });
-  if(!associated) return { associated };
+  if (!associated) return null;
   
-  let { request_id } = await createNewIdentity({
+  const { request_id } = await createNewIdentity({
     namespace,
     identifier,
     reference_id,
@@ -46,7 +46,7 @@ export async function addAccessorMethodForAssociatedIdp({
     accessor_public_key,
     accessor_id,
   });
-  return { request_id, associated };
+  return request_id;
 }
 
 export async function addAccessorAfterConsent(request_id, old_accessor_id) {
