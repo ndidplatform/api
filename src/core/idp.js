@@ -59,7 +59,6 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
     throw new CustomError({
       message: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.message,
       code: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.code,
-      clientError: true,
     });
   }
 
