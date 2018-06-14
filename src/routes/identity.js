@@ -3,6 +3,8 @@ import express from 'express';
 import { validateQuery, validateBody } from './middleware/validation';
 import * as identity from '../core/identity';
 import * as common from '../core/common';
+import { clientHttpErrorCode } from '../config';
+import errorType from '../error/type';
 
 const router = express.Router();
 
@@ -18,7 +20,7 @@ router.post('/', validateBody, async (req, res, next) => {
       ial,
     } = req.body;
 
-    let { request_id, exist, secret } = await identity.createNewIdentity({
+    let { request_id, exist, invalidNamespace } = await identity.createNewIdentity({
       namespace,
       identifier,
       reference_id,
@@ -28,9 +30,19 @@ router.post('/', validateBody, async (req, res, next) => {
       ial,
     });
 
-    res.status(200).send({
-      request_id, exist, secret
-    });
+    if(invalidNamespace) {
+      res.status(clientHttpErrorCode).send({
+        error: errorType.INVALID_NAMESPACE,
+      });
+      /*res.status(400).json({
+        what: 'what??'
+      })*/
+    }
+    else {
+      res.status(200).send({
+        request_id, exist, //secret
+      });
+    }
   } catch (error) {
     next(error);
   }

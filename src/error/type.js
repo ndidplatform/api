@@ -120,6 +120,10 @@ export default {
     code: 20013,
     message: 'Sign with accessor key callback URL has not been set',
   },
+  INVALID_NAMESPACE: {
+    code: 20014,
+    message: 'This namespace is not registered by NDID',
+  },
 
   // Errors return from ABCI app
   // Server errors

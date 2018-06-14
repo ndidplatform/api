@@ -109,6 +109,16 @@ export async function createNewIdentity(data) {
       ial,
     } = data;
 
+    let validNameSpaces = await common.getNamespaceList();
+    let valid = validNameSpaces.map((obj) => {
+      return obj.namespace === namespace;
+    }).reduce((previous, now) => {
+      return previous || now;
+    });
+    if(!valid) return {
+      invalidNamespace: true,
+    };
+
     let sid = namespace + ':' + identifier;
     let hash_id = utils.hash(sid);
 
@@ -122,7 +132,7 @@ export async function createNewIdentity(data) {
       return { request_id, exist };
     }
 
-    let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
+    //let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
 
     request_id = await common.createRequest({
       namespace,
