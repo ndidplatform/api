@@ -149,6 +149,9 @@ export async function createNewIdentity(data) {
       });
     }
 
+    // TODO: Check for duplicate accessor
+    // TODO: Check for "ial" must be less than or equal than node's (IdP's) max_ial
+
     request_id = await common.createRequest({
       namespace,
       identifier,
