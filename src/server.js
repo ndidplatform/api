@@ -10,13 +10,16 @@ import './envVarValidate';
 import logger from './logger';
 
 import routes from './routes';
+import { bodyParserErrorHandler } from './routes/middleware/errorHandler';
 import { init as idp_init } from './core/idp';
 import { init as as_init } from './core/as';
-import { init as rp_init, clearAllScheduler } from './core/rp';
+import { init as rp_init } from './core/rp';
+import { clearAllScheduler } from './core/common';
 
 import { close as closeDB } from './db';
 import { tendermintWsClient } from './tendermint/ndid';
 import { close as closeMQ } from './mq';
+import { stopAllCallbackRetries } from './utils/callback';
 
 import * as config from './config';
 
@@ -38,11 +41,14 @@ logger.info({
 
 const app = express();
 
-app.use(bodyParser.urlencoded({ extended: false, limit: '2mb' }));
-app.use(bodyParser.json({ limit: '2mb' }));
+app.use(
+  morgan('combined', {
+    stream: { write: (message) => logger.info(message.trim()) },
+  })
+);
 
-app.use(morgan('combined'));
-// app.use(morgan('dev'));
+app.use(bodyParser.json({ limit: '2mb' }));
+app.use(bodyParserErrorHandler);
 
 app.use(routes);
 
@@ -85,6 +91,7 @@ function shutDown() {
       message: 'HTTP server closed',
     });
 
+    stopAllCallbackRetries();
     closeMQ();
     tendermintWsClient.close();
     // TODO: wait for async operations which going to use DB to finish before closing

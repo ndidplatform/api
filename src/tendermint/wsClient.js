@@ -5,10 +5,13 @@ import logger from '../logger';
 
 import { tendermintAddress } from '../config';
 
+const PING_INTERVAL = 30000;
+
 export default class TendermintWsClient extends EventEmitter {
   constructor() {
     super();
     this.wsConnected = false;
+    this.isAlive = false;
     this.reconnect = true;
     this.rpcId = 0;
     this.queue = [];
@@ -26,22 +29,35 @@ export default class TendermintWsClient extends EventEmitter {
       });
 
       this.wsConnected = true;
+      this.isAlive = true;
 
       this.emit('connected');
+
+      this.pingIntervalFn = setInterval(() => {
+        if (this.isAlive === false) return this.ws.terminate();
+
+        this.isAlive = false;
+        this.ws.ping();
+      }, PING_INTERVAL);
 
       this.subscribeToNewBlockHeaderEvent();
     });
 
-    this.ws.on('close', () => {
+    this.ws.on('close', (code, reason) => {
       if (this.wsConnected === true) {
         logger.info({
           message: 'Tendermint WS disconnected',
+          code,
+          reason,
         });
 
         this.emit('disconnected');
       }
 
       this.wsConnected = false;
+      this.isAlive = false;
+      clearInterval(this.pingIntervalFn);
+      this.pingIntervalFn = null;
 
       if (this.reconnect) {
         // Try reconnect
@@ -76,7 +92,10 @@ export default class TendermintWsClient extends EventEmitter {
       const rpcId = parseInt(message.id);
       if (this.queue[rpcId]) {
         if (message.error) {
-          this.queue[rpcId].promise[1](message.error);
+          this.queue[rpcId].promise[1]({
+            type: 'JSON-RPC ERROR',
+            error: message.error,
+          });
         } else {
           this.queue[rpcId].promise[0](message.result);
         }
@@ -88,10 +107,9 @@ export default class TendermintWsClient extends EventEmitter {
       this.emit(message.id, message.error, message.result);
     });
 
-    // tendermint websocket sends 'ping' periodically
-    // this.ws.on('ping', () => {
-    //   console.warn('ping received')
-    // });
+    this.ws.on('pong', () => {
+      this.isAlive = true;
+    });
   }
 
   /**
@@ -127,6 +145,28 @@ export default class TendermintWsClient extends EventEmitter {
     );
     return blocks;
   }
+
+  // NOT WORKING - Can't figure out params format. No docs on tendermint.
+  // abciQuery(data) {
+  //   return this._call('abci_query', [
+  //     '',
+  //     Buffer.from(data).toString('base64'),
+  //     '',
+  //     '',
+  //   ]);
+  // }
+
+  // broadcastTxCommit(tx) {
+  //   return this._call('broadcast_tx_commit', [
+  //     Buffer.from(tx).toString('base64'),
+  //   ]);
+  // }
+
+  // broadcastTxSync(tx) {
+  //   return this._call('broadcast_tx_sync', [
+  //     Buffer.from(tx).toString('base64'),
+  //   ]);
+  // }
 
   subscribeToNewBlockHeaderEvent() {
     if (this.wsConnected) {

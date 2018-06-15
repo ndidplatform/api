@@ -1,4 +1,5 @@
-idp-callback-url
+idp-callback-url*
+dpki-callback-url*
 as-callback-url
 
 latest-block-height-*

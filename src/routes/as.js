@@ -8,17 +8,16 @@ const router = express.Router();
 router.post('/service/:service_id', validateBody, async (req, res, next) => {
   try {
     const { service_id } = req.params;
-    const { service_name, min_ial, min_aal, url } = req.body;
+    const { min_ial, min_aal, url } = req.body;
 
     await as.registerAsService({
       service_id,
-      service_name,
       min_aal,
       min_ial,
       url,
     });
 
-    res.status(201).end();
+    res.status(204).end();
   } catch (error) {
     next(error);
   }
@@ -28,9 +27,13 @@ router.get('/service/:service_id', async (req, res, next) => {
   try {
     const { service_id } = req.params;
 
-    let result = await as.getServiceDetail(service_id);
+    const result = await as.getServiceDetail(service_id);
 
-    res.status(200).json(result);
+    if (result == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(result);
+    }
   } catch (error) {
     next(error);
   }

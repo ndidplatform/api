@@ -18,13 +18,12 @@ describe('Test MQ receiver', function () {
     var mqNode3 = new MQSend({});
     var mqNodeRecv = new MQRecv({port: 5796});
     var expectedResults = new Set([1111111,222222,333333]);
+
     mqNodeRecv.on("message", function(msg){
-     // expect(msg).to.be.a('String').and.be.within(expectedResults);  
       count++;
-     // expectedResults.delete(msg);
       if (count==3) done();
     });
-    
+
     mqNode1.send({ip:"127.0.0.1",
               port:5796
             }, "1111111");
@@ -36,10 +35,4 @@ describe('Test MQ receiver', function () {
             }, "333333");
   });
 
-
 });
-
-
-
-
-

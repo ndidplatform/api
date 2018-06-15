@@ -10,7 +10,35 @@ export async function close() {
 }
 
 //
-// Used by IDP and AS
+// Used by RP, IdP, and AS
+//
+
+export function addCallbackWithRetryData(cbId, data) {
+  return db.pushToList({
+    name: 'callbackWithRetry',
+    keyName: 'cbId',
+    key: cbId,
+    valueName: 'data',
+    value: data,
+  });
+}
+
+export function removeCallbackWithRetryData(cbId) {
+  return db.remove({
+    name: 'callbackWithRetry',
+    keyName: 'cbId',
+    key: cbId,
+  });
+}
+
+export function getAllCallbackWithRetryData() {
+  return db.getAll({
+    name: 'callbackWithRetry',
+  });
+}
+
+//
+// Used by IdP and AS
 //
 
 export function getRequestIdsExpectedInBlock(fromHeight, toHeight) {
@@ -55,37 +83,30 @@ export function removeRequestIdsExpectedInBlock(fromHeight, toHeight) {
   });
 }
 
-export function getResponseIdsExpectedInBlock(fromHeight, toHeight) {
-  return db.getListRange({
-    name: 'responseIdExpectedInBlock',
-    keyName: 'expectedBlockHeight',
-    keyRange: {
-      gte: fromHeight, // greaterThanOrEqual
-      lte: toHeight, // lessThanOrEqual
-    },
-    valueName: 'responseIdWithHeight',
-    returnKey: true,
-  });
-}
-
-export function addResponseIdsExpectedInBlock(height, responseIdWithHeight) {
-  return db.pushToList({
-    name: 'responseIdExpectedInBlock',
+export function getExpectedIdpResponseNodeId(height) {
+  return db.get({
+    name: 'expectedIdpResponseNodeId',
     keyName: 'expectedBlockHeight',
     key: height,
-    valueName: 'responseIdWithHeight',
-    value: responseIdWithHeight,
+    valueName: 'idpNodeId',
   });
 }
 
-export function removeResponseIdsExpectedInBlock(fromHeight, toHeight) {
-  return db.removeListRange({
-    name: 'responseIdExpectedInBlock',
+export function setExpectedIdpResponseNodeId(height, idpNodeId) {
+  return db.set({
+    name: 'expectedIdpResponseNodeId',
     keyName: 'expectedBlockHeight',
-    keyRange: {
-      gte: fromHeight, // greaterThanOrEqual
-      lte: toHeight, // lessThanOrEqual
-    },
+    key: height,
+    valueName: 'idpNodeId',
+    value: idpNodeId,
+  });
+}
+
+export function removeExpectedIdpResponseNodeId(height) {
+  return db.remove({
+    name: 'expectedIdpResponseNodeId',
+    keyName: 'expectedBlockHeight',
+    key: height,
   });
 }
 
@@ -138,6 +159,33 @@ export function setRPIdFromRequestId(requestId, rp_id) {
 export function removeRPIdFromRequestId(requestId) {
   return db.remove({
     name: 'rpIdFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getIdentityFromRequestId(requestId) {
+  return db.get({
+    name: 'identityRequestIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'identity',
+  });
+}
+
+export function setIdentityFromRequestId(requestId, identity) {
+  return db.set({
+    name: 'identityRequestIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'identity',
+    value: identity,
+  });
+}
+
+export function removeIdentityFromRequestId(requestId) {
+  return db.remove({
+    name: 'identityRequestIdMapping',
     keyName: 'requestId',
     key: requestId,
   });
@@ -315,6 +363,14 @@ export function getDatafromAS(requestId) {
     keyName: 'requestId',
     key: requestId,
     valueName: 'data',
+  });
+}
+
+export function countDataFromAS(requestId) {
+  return db.count({
+    name: 'dataFromAS',
+    keyName: 'requestId',
+    key: requestId,
   });
 }
 

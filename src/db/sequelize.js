@@ -23,8 +23,8 @@ const Entities = {
     requestId: Sequelize.STRING,
     expectedBlockHeight: Sequelize.INTEGER,
   }),
-  responseIdExpectedInBlock: sequelize.define('responseIdExpectedInBlock', {
-    responseIdWithHeight: Sequelize.JSON,
+  expectedIdpResponseNodeId: sequelize.define('expectedIdpResponseNodeId', {
+    idpNodeId: Sequelize.STRING,
     expectedBlockHeight: Sequelize.INTEGER,
   }),
   requestReceivedFromMQ: sequelize.define('requestReceivedFromMQ', {
@@ -67,6 +67,14 @@ const Entities = {
     requestId: Sequelize.STRING,
     unixTimeout: Sequelize.INTEGER,
   }),
+  callbackWithRetry: sequelize.define('callbackWithRetry', {
+    cbId: { type: Sequelize.STRING, primaryKey: true },
+    data: Sequelize.JSON,
+  }),
+  identityRequestIdMapping: sequelize.define('identityRequestIdMapping', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    identity: Sequelize.JSON,
+  }),
 };
 
 const initDb = sequelize.sync();
@@ -84,6 +92,16 @@ export async function getList({ name, keyName, key, valueName }) {
     },
   });
   return models.map((model) => model.get(valueName));
+}
+
+export async function count({ name, keyName, key }) {
+  await initDb;
+  const count = await Entities[name].count({
+    where: {
+      [keyName]: key,
+    },
+  });
+  return count;
 }
 
 export async function getListRange({ name, keyName, keyRange, valueName }) {
@@ -173,7 +191,7 @@ export async function set({ name, keyName, key, valueName, value }) {
   });
 }
 
-export async function remove({ name, keyName, key, valueName, value }) {
+export async function remove({ name, keyName, key }) {
   await initDb;
   await Entities[name].destroy({
     where: {

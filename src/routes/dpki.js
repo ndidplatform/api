@@ -3,16 +3,11 @@ import express from 'express';
 import { validateBody } from './middleware/validation';
 import * as ndid from '../core/ndid';
 import * as dpki from '../core/dpki';
-import * as utils from '../utils';
-import * as config from '../config';
+import * as externalCryptoService from '../utils/externalCryptoService';
 
 const router = express.Router();
 
 router.post('/node/create', validateBody, async (req, res, next) => {
-  if (config.role !== 'ndid') {
-    res.status(403).end();
-    return;
-  }
   try {
     const {
       node_id,
@@ -72,7 +67,7 @@ router.post('/node/register_callback', validateBody, async (req, res, next) => {
   try {
     const { sign_url, decrypt_url } = req.body;
 
-    await utils.setSignatureCallback(sign_url, decrypt_url);
+    await externalCryptoService.setDpkiCallback(sign_url, decrypt_url);
     res.status(204).end();
   } catch (error) {
     next(error);
@@ -86,7 +81,7 @@ router.post(
     try {
       const { url } = req.body;
 
-      await utils.setMasterSignatureCallback(url);
+      await externalCryptoService.setMasterSignatureCallback(url);
       res.status(204).end();
     } catch (error) {
       next(error);

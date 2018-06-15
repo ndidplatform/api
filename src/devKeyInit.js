@@ -1,4 +1,5 @@
 // For development use only
+import 'source-map-support/register';
 
 import fs from 'fs';
 import path from 'path';
@@ -55,6 +56,16 @@ export async function init() {
     });
     await Promise.all(promiseArr);
     console.log('========= Keys for development initialized =========');
+    console.log('========= Adding namespaces and services =========');
+    await ndid.addNamespace({
+      namespace: 'cid',
+      description: 'Thai citizen ID',
+    });
+    await ndid.addService({
+      service_id: 'bank_statement',
+      service_name: 'All transactions in the pass 3 month',
+    });
+    console.log('========= Done =========');
   } catch (error) {
     console.error('Cannot initialize NDID master key');
   }

@@ -120,9 +120,9 @@ register_node_id() {
 }
 
 set_token_for_node_id() {
+  local AMOUNT=$1
   echo "Giving ${AMOUNT} tokens to ${NODE_ID} node..."
 
-  local AMOUNT=$1
   local RESPONSE_CODE=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/addNodeToken \
     -H "Content-Type: application/json" \
     -d "{\"node_id\":\"${NODE_ID}\",\"amount\":${AMOUNT}}" \
@@ -138,6 +138,72 @@ set_token_for_node_id() {
   fi
 }
 
+register_namespace() {
+  local NAMESPACE=$1
+  local DESCRIPTION=$2
+  echo "Registering namespace ${NAMESPACE} (${DESCRIPTION}) node..."
+
+  local RESPONSE_CODE=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/namespaces \
+    -H "Content-Type: application/json" \
+    -d "{\"namespace\":\"${NAMESPACE}\",\"description\":\"${DESCRIPTION}\"}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "201" ]; then
+    echo "Registering namespace ${NAMESPACE} (${DESCRIPTION}) node succeeded"
+    return 0
+  else
+    echo "Registering namespace ${NAMESPACE} (${DESCRIPTION}) node failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
+register_service() {
+  local SERVICE_ID=$1
+  local SERVICE_NAME=$2
+  echo "Registering service ${SERVICE_ID} (${SERVICE_NAME}) node..."
+
+  local RESPONSE_CODE=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/services \
+    -H "Content-Type: application/json" \
+    -d "{\"service_id\":\"${SERVICE_ID}\",\"service_name\":\"${SERVICE_NAME}\"}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "201" ]; then
+    echo "Registering service ${SERVICE_ID} (${SERVICE_NAME}) node succeeded"
+    return 0
+  else
+    echo "Registering service ${SERVICE_ID} (${SERVICE_NAME}) node failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
+did_namespace_exist() {
+  local NAMESPACE=$1
+
+  echo "Checking if namespace=${NAMESPACE} exist..."
+  if [ "$(curl -s http://${NDID_IP}:${SERVER_PORT}/utility/namespaces | jq -r .[].namespace | grep -E ^${NAMESPACE}$)" = "" ]; then
+    echo "namespace=${NAMESPACE} does not exist"
+    return 1
+  else
+    echo "namespace=${NAMESPACE} exists"
+    return 0
+  fi
+}
+
+did_service_exist() {
+  local SERVICE_ID=$1
+
+  echo "Checking if service_id=${SERVICE_ID} exist..."
+  if [ "$(curl -s http://${NDID_IP}:${SERVER_PORT}/utility/services | jq -r .[].service_id | grep -E ^${SERVICE_ID}$)" = "" ]; then
+    echo "service_id=${SERVICE_ID} does not exist"
+    return 1
+  else
+    echo "service_id=${SERVICE_ID} exists"
+    return 0
+  fi
+}
+
 wait_for_ndid_node_to_be_ready() {
   until nc -z ${NDID_IP} ${SERVER_PORT}; do sleep 1; done;
   if [ $# -gt 0 ]; then eval "$@"; fi
@@ -147,12 +213,23 @@ wait_until_ndid_node_initialized() {
   until does_node_id_exist ndid1; do sleep 1; done;
 }
 
+wait_until_namespace_exist() {
+  until did_namespace_exist $1; do sleep 1; done;
+}
+
+wait_until_service_exist() {
+  until did_service_exist $1; do sleep 1; done;
+}
+
 case ${ROLE} in
   ndid)
     tendermint_wait_for_sync_complete
     if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ] || ! does_node_id_exist; then
       generate_key
-      wait_for_ndid_node_to_be_ready init_ndid &
+      wait_for_ndid_node_to_be_ready && \
+      init_ndid && \
+      register_namespace "cid" "Thai citizen ID" && \
+      register_service "bank_statement" "All transactions in the pass 3 month" &
     fi
     ;;
   idp|rp|as)
@@ -162,6 +239,8 @@ case ${ROLE} in
       generate_key
       generate_master_key
       wait_until_ndid_node_initialized
+      wait_until_namespace_exist "cid"
+      wait_until_service_exist "bank_statement"
       register_node_id && \
       set_token_for_node_id 10000 
     fi

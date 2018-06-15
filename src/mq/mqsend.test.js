@@ -1,34 +1,34 @@
 const chai = require('chai');
 const expect = chai.expect;
 const chaiHttp = require('chai-http');
-var assert = require('assert');
 chai.use(chaiHttp);
+var assert = require('assert');
 var zmq = require("zeromq")
-var MQSend = require('../mq/mqsend.js');
-var MQRecv = require('../mq/mqrecv.js');
+var MQSend = require('mqsend.js');
+var MQRecv = require('mqrecv.js');
 
 describe('Test message queue Sending', function () {
 
-  
+
   it('should send data to destination succesffully', function(done) {
     var sendNode = new MQSend({});
     var recvNode= new MQRecv({port: 5565});
 
     recvNode.on('message', function(msg){
-       expect(String(msg)).to.equal('test message 1');  
+       expect(String(msg)).to.equal('test message 1');
        done();
     });
-    
+
     sendNode.send({ip:'127.0.0.1',
               port:5565
               }, 'test message 1');
-    
+
   });
- 
+
   it('should send data in Thai successfully',function(done) {
     var recvNode = new MQRecv({port: 5557});
     recvNode.on("message", function(msg){
-      expect(String(msg)).to.equal('นี่คือเทสแมสเซจ');  
+      expect(String(msg)).to.equal('นี่คือเทสแมสเซจ');
       done();
     });
 
@@ -36,23 +36,23 @@ describe('Test message queue Sending', function () {
     sendNode.send({ip:"127.0.0.1",
               port:5557
               }, 'นี่คือเทสแมสเซจ');
-            
+
   });
 
   it('should send data to 1 source, 3 times, once after another properly', function(done) {
     let count = 0;
     var recvNode = new MQRecv({port: 5556});
    /// let alreadyRecv = new Set();
-    
+
    recvNode.on("message", function(msg){
-    //  expect(msg).to.be.a('String').and.be.oneOf(['test1', 'test2', 'test3']).and.not.be.oneOf(alreadyRecv.entries());  
+    //  expect(msg).to.be.a('String').and.be.oneOf(['test1', 'test2', 'test3']).and.not.be.oneOf(alreadyRecv.entries());
      // alreadyRecv.add(msg);
       count++;
       if (count == 3) done();
     });
-    
+
     var sendNode = new MQSend({});
-   
+
     sendNode.send({ip:"127.0.0.1",
               port:5556
             }, "test1");
@@ -70,19 +70,19 @@ describe('Test message queue Sending', function () {
     var mqNode1 = new MQRecv({port: 5576});
     var mqNode2 = new MQRecv({port: 5577});
     var mqNode3 = new MQRecv({port: 5578});
-   
+
     mqNode1.on("message", function(msg){
-      expect(msg).to.be.a('String').and.equal('test1');  
+      expect(msg).to.be.a('String').and.equal('test1');
       count++;
       if (count == 3) done();
     });
     mqNode2.on("message", function(msg){
-       expect(msg).to.be.a('String').and.equal('test2');  
+       expect(msg).to.be.a('String').and.equal('test2');
        count++;
        if (count == 3) done();
      });
     mqNode3.on("message", function(msg){
-       expect(msg).to.be.a('String').and.equal('test3');  
+       expect(msg).to.be.a('String').and.equal('test3');
        count++;
        if (count == 3) done();
      });
@@ -98,37 +98,37 @@ describe('Test message queue Sending', function () {
             }, "test3");
   });
 
-  
+
   it('should retry and should resume sending properly if destination dies and come up within time limit',  function(done) {
     let count = 0;
-    
+
     this.timeout(100000);
-    
+
     var mqNode1 = new MQRecv({port: 5606});
-    
+
     mqNode1.on("message", function(msg){
-      expect(msg).to.be.a('String').and.equal('test1');  
+      expect(msg).to.be.a('String').and.equal('test1');
       assert.fail();
     });
-    
+
     mqNode1.on("error", function(msg){
     });
     var mqNode = new MQSend({timeout:1000, totalTimeout:16000});
-   
+
     mqNode.send({ip:"127.0.0.1",
               port:5680
             }, "test22" );
-    
+
     var id = setTimeout(function () {
       var mqNode2 = new MQRecv({port: 5680});
         mqNode2.on("message", function(msg){
-        expect(msg).to.be.a('String').and.equal('test22');  
+        expect(msg).to.be.a('String').and.equal('test22');
         count++;
         if (count==3)done();
-      });  
+      });
     }
     , 4000);
-    
+
   });
 
 
@@ -136,22 +136,22 @@ describe('Test message queue Sending', function () {
     this.timeout(10000);
 
     var MQRecvClose = function(config) {
-  
+
       var self = this;
-    
+
       this.receivingSocket = zmq.socket('rep');
-      
+
       this.receivingSocket.bindSync('tcp://*:' + config.port);
-       
+
       this.receivingSocket.on('message', async function(jsonMessageStr) {
           // close socket
           self.receivingSocket.close();
-          
+
       });
 
       this.receivingSocket.on('error', async function(jsonMessageStr) {
-        // close socket
-        self.receivingSocket.close();
+          // close socket
+          self.receivingSocket.close();
     });
 
     };
@@ -175,15 +175,15 @@ describe('Test message queue Sending', function () {
 
   //TODO
   it('should stop sending and should not retry if it dies and recovers',  function(done)  {
-   
+
       done();
-  
+
   });
 
   //TODO
   it('should not die and receiever received all message properly if it sends out 1000000 messages',  function(done) {
       done();
-  
+
   });
 
    //TODO
@@ -194,35 +194,30 @@ describe('Test message queue Sending', function () {
       var str = "";
       for(var i = 0; i< 2000000; i++) {
             str += "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
-      }  
-      
+      }
+
       var sendNode = new MQSend({});
       var recvNode= new MQRecv({port: 5691});
-  
+
       recvNode.on('message', function(msg){
-         expect(String(msg)).to.equal(str);  
+         expect(String(msg)).to.equal(str);
          done();
       });
       sendNode.on('state', function(msg){
         console.log('xxxxx' + msg);
      });
-     
+
       sendNode.send({ip:'127.0.0.1',
                 port:5691
                 }, str);
-      
+
    });
 
 
   //TODO
   it('should only send data to the address of destination but not someone else connected to it', function(done) {
       done();
-  
+
   });
 
 });
-
-
-
-
-

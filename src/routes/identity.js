@@ -1,6 +1,6 @@
 import express from 'express';
 
-import { validateQuery, validateBody } from './middleware/validation';
+import { validateBody } from './middleware/validation';
 import * as identity from '../core/identity';
 import * as common from '../core/common';
 
@@ -11,30 +11,67 @@ router.post('/', validateBody, async (req, res, next) => {
     const {
       namespace,
       identifier,
-      //secret,
+      reference_id,
       accessor_type,
       accessor_public_key,
       accessor_id,
-      accessor_group_id,
       ial,
     } = req.body;
 
-    await identity.createNewIdentity({
+    const { request_id, exist } = await identity.createNewIdentity({
       namespace,
       identifier,
-      //secret,
+      reference_id,
       accessor_type,
       accessor_public_key,
       accessor_id,
-      accessor_group_id,
       ial,
     });
 
-    res.status(201).end();
+    res.status(200).send({
+      request_id,
+      exist,
+    });
   } catch (error) {
     next(error);
   }
 });
+
+router.post(
+  '/:namespace/:identifier/accessors',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const {
+        reference_id,
+        accessor_type,
+        accessor_public_key,
+        accessor_id,
+      } = req.body;
+
+      const { namespace, identifier } = req.params;
+
+      const request_id = await identity.addAccessorMethodForAssociatedIdp({
+        namespace,
+        identifier,
+        reference_id,
+        accessor_type,
+        accessor_public_key,
+        accessor_id,
+      });
+
+      if (request_id == null) {
+        res.status(404).end();
+      } else {
+        res.status(200).json({
+          request_id,
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
@@ -90,42 +127,6 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const { secret, accessor_type, accessor_key, accessor_id } = req.body;
-
-      // Not Implemented
-      // TODO
-
-      res.status(501).end();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.post(
-  '/:namespace/:identifier/accessors',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const { namespace, identifier } = req.params;
-      const { accessor_type, accessor_key, accessor_id } = req.body;
-
-      // Not Implemented
-      // TODO
-
-      res.status(501).end();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.get(
-  '/:namespace/:identifier/requests/history',
-  validateQuery,
-  async (req, res, next) => {
-    try {
-      const { namespace, identifier } = req.params;
-      const { count } = req.query;
 
       // Not Implemented
       // TODO

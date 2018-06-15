@@ -2,7 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
+import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/customError';
+import errorType from '../error/type';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
@@ -11,32 +13,112 @@ import * as utils from '../utils';
 import * as config from '../config';
 import * as db from '../db';
 import * as mq from '../mq';
+import * as identity from './identity';
 
-const callbackUrlFilePath = path.join(
+import * as externalCryptoService from '../utils/externalCryptoService';
+
+const callbackUrlFilesPrefix = path.join(
   __dirname,
   '..',
   '..',
-  'idp-callback-url'
+  'idp-callback-url-' + config.nodeId,
 );
-let callbackUrl = null;
-try {
-  callbackUrl = fs.readFileSync(callbackUrlFilePath, 'utf8');
-} catch (error) {
-  if (error.code === 'ENOENT') {
-    logger.warn({
-      message: 'IDP callback url file not found',
+
+let callbackUrl = {};
+
+[ 'request',
+  'accessor',
+].forEach((key) => {
+  try {
+    callbackUrl[key] = fs.readFileSync(callbackUrlFilesPrefix + '-' + key, 'utf8');
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      logger.warn({
+        message: 'IDP ' + key + ' callback url file not found',
+      });
+    } else {
+      logger.error({
+        message: 'Cannot read IDP ' + key + ' callback url file',
+        error,
+      });
+    }
+  }
+});
+
+export function isAccessorSignUrlSet() {
+  return callbackUrl.accessor != null;
+}
+
+export async function accessorSign(sid ,hash_id, accessor_id) {
+  const data = {
+    sid_hash: hash_id,
+    sid,
+    hash_method: 'SHA256',
+    key_type: 'RSA',
+    sign_method: 'RSA',
+    accessor_id
+  };
+
+  if (callbackUrl.accessor == null) {
+    throw new CustomError({
+      message: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.message,
+      code: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.code,
     });
-  } else {
-    logger.error({
-      message: 'Cannot read IDP callback url file',
-      error,
+  }
+
+  logger.debug({
+    message: 'Callback to accessor sign',
+    url: callbackUrl.accessor,
+    accessor_id,
+    hash_id,
+  });
+
+  try {
+    const response = await fetch(callbackUrl.accessor, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    const signatureObj = await response.json();
+    return signatureObj.signature;
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED.message,
+      code: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED.code,
+      cause: error,
+      details: {
+        callbackUrl: callbackUrl.accessor,
+        accessor_id,
+        hash_id,
+      }
+    })
+  }
+}
+
+export function getAccessorCallback() {
+  return callbackUrl.accessor;
+}
+
+export function setAccessorCallback(url) {
+  if(url) {
+    callbackUrl.accessor = url;
+    fs.writeFile(callbackUrlFilesPrefix + '-accessor', url, (err) => {
+      if (err) {
+        logger.error({
+          message: 'Cannot write DPKI accessor callback url file',
+          error: err,
+        });
+      }
     });
   }
 }
 
 export const setCallbackUrl = (url) => {
-  callbackUrl = url;
-  fs.writeFile(callbackUrlFilePath, url, (err) => {
+  callbackUrl.request = url;
+  fs.writeFile(callbackUrlFilesPrefix + '-request', url, (err) => {
     if (err) {
       logger.error({
         message: 'Cannot write IDP callback url file',
@@ -47,45 +129,90 @@ export const setCallbackUrl = (url) => {
 };
 
 export const getCallbackUrl = () => {
-  return callbackUrl;
+  return callbackUrl.request;
 };
 
 export async function createIdpResponse(data) {
   try {
     let {
       request_id,
-      namespace,
-      identifier,
+      //namespace,
+      //identifier,
       aal,
       ial,
       status,
       signature,
       accessor_id,
       secret,
+      request_message,
     } = data;
+
+    const request = await common.getRequest({ requestId: request_id });
+    if (request == null) {
+      throw new CustomError({
+        message: errorType.REQUEST_NOT_FOUND.message,
+        code: errorType.REQUEST_NOT_FOUND.code,
+        clientError: true,
+        details: {
+          request_id,
+        },
+      });
+    }
+
+    const accessorPublicKey = await common.getAccessorKey(accessor_id);
+    if (accessorPublicKey == null) {
+      throw new CustomError({
+        message: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.message,
+        code: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.code,
+        clientError: true,
+        details: {
+          accessor_id,
+        },
+      });
+    }
+
+    //TODO
+    //query mode from requestId
+    let requestStatus = await common.getRequest({ requestId: request_id });
+    let mode = requestStatus.mode;
+    let dataToBlockchain, privateProofObject;
+
+    if(mode === 3) {
+      let { blockchainProof, privateProofValue, padding } = utils.generateIdentityProof({
+        publicKey: await common.getAccessorKey(accessor_id),
+        challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge,
+        secret,
+      });
     
-    let [blockchainProof, privateProofValue] = utils.generateIdentityProof({
-      publicKey: await common.getAccessorKey(accessor_id),
-      challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge,
-      ...data
-    });
+      privateProofObject = {
+        privateProofValue,
+        accessor_id,
+        padding,
+      };
+
+      dataToBlockchain = {
+        request_id,
+        aal,
+        ial,
+        status,
+        signature,
+        //accessor_id,
+        identity_proof: blockchainProof,
+        private_proof_hash: utils.hash(privateProofValue),
+      };
+    }
+    else {
+      signature = await utils.createSignature(request_message);
+      dataToBlockchain = {
+        request_id,
+        aal,
+        ial,
+        status,
+        signature,
+      };
+    }
+
     await db.removeRequestReceivedFromMQ(request_id);
-
-    let privateProofObject = {
-      privateProofValue,
-      accessor_id,
-    };
-
-    let dataToBlockchain = {
-      request_id,
-      aal,
-      ial,
-      status,
-      signature,
-      //accessor_id,
-      identity_proof: blockchainProof,
-    };
-
 
     let { height } = await tendermint.transact(
       'CreateIdpResponse',
@@ -94,10 +221,9 @@ export async function createIdpResponse(data) {
     );
 
     sendPrivateProofToRP(request_id, privateProofObject, height);
-
   } catch (error) {
     const err = new CustomError({
-      message: 'Cannot create IDP response',
+      message: 'Cannot create IdP response',
       cause: error,
     });
     logger.error(err.getInfoForLog());
@@ -105,42 +231,25 @@ export async function createIdpResponse(data) {
   }
 }
 
-async function notifyByCallback(request) {
-  if (!callbackUrl) {
+export function notifyByCallback(eventDataForCallback) {
+  if (!callbackUrl.request) {
     logger.error({
-      message: 'Callback URL for IDP has not been set',
+      message: 'Callback URL for IdP has not been set',
     });
     return;
   }
-  try {
-    fetch(callbackUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ request }),
-    });
-  } catch (error) {
-    logger.error({
-      message: 'Cannot send callback to IDP',
-    });
-
-    // TODO: handle error
-    // retry?
-
-    // throw error;
-  }
+  return callbackToClient(callbackUrl.request, eventDataForCallback, true);
 }
 
 async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   let rp_id = await db.getRPIdFromRequestId(request_id);
 
   logger.info({
-    message: 'Query MQ destination for rp',
+    message: 'Query MQ destination for RP',
   });
   logger.debug({
-    message: 'Query MQ destination for rp',
-    rp_id
+    message: 'Query MQ destination for RP',
+    rp_id,
   });
 
   let { ip, port } = await common.getMsqAddress(rp_id);
@@ -154,52 +263,104 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
     request_id,
     ...privateProofObject,
     height,
-    idp_id: config.nodeId
+    idp_id: config.nodeId,
   });
 
   db.removeRPIdFromRequestId(request_id);
 }
 
-export async function handleMessageFromQueue(request) {
+export async function handleMessageFromQueue(messageStr) {
   logger.info({
     message: 'Received message from MQ',
   });
   logger.debug({
     message: 'Message from MQ',
-    request,
+    messageStr,
   });
-  const requestJson = JSON.parse(request);
+  const message = JSON.parse(messageStr);
   //need challenge for response
-  await db.setRequestReceivedFromMQ(requestJson.request_id, requestJson);
+  await db.setRequestReceivedFromMQ(message.request_id, message);
 
   const latestBlockHeight = tendermint.latestBlockHeight;
-  if (latestBlockHeight <= requestJson.height) {
+  if (latestBlockHeight <= message.height) {
     logger.debug({
       message: 'Saving message from MQ',
       tendermintLatestBlockHeight: latestBlockHeight,
-      messageBlockHeight: requestJson.height,
+      messageBlockHeight: message.height,
     });
     await db.addRequestIdExpectedInBlock(
-      requestJson.height,
-      requestJson.request_id
+      message.height,
+      message.request_id
     );
-    await db.setRPIdFromRequestId(requestJson.request_id, requestJson.rp_id);
+    await db.setRPIdFromRequestId(message.request_id, message.rp_id);
+
+    if(message.accessor_id) {
+      //====================== COPY-PASTE from RP, need refactoring =====================
+      //store private parameter from EACH idp to request, to pass along to as
+      let request = await db.getRequestToSendToAS(message.request_id);
+      //AS involve
+      if (request) {
+        if (request.privateProofObjectList) {
+          request.privateProofObjectList.push({
+            idp_id: message.idp_id,
+            privateProofObject: {
+              privateProofValue: message.privateProofValue,
+              accessor_id: message.accessor_id,
+            },
+          });
+        } else {
+          request.privateProofObjectList = [
+            {
+              idp_id: message.idp_id,
+              privateProofObject: {
+                privateProofValue: message.privateProofValue,
+                accessor_id: message.accessor_id,
+              },
+            },
+          ];
+        }
+        await db.setRequestToSendToAS(message.request_id, request);
+      }
+      //====================================================================================
+    }
     return;
   }
 
   logger.debug({
     message: 'Processing request',
-    requestId: requestJson.request_id,
+    requestId: message.request_id,
   });
-  const valid = await common.checkRequestIntegrity(
-    requestJson.request_id,
-    requestJson
-  );
-  if (valid) {
-    notifyByCallback({
-      //request_message_hash: utils.hash(requestJson.request_message),
-      ...requestJson,
-    });
+  //onboard response
+  if(message.accessor_id) {
+    if(await checkOnboardResponse(message)) {
+      let secret = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
+      notifyByCallback({
+        type: 'onboard_consent_request',
+        request_id: message.request_id,
+        success: true,
+        secret,
+      });
+    }
+  }
+  else {
+    const valid = await common.checkRequestIntegrity(
+      message.request_id,
+      message
+    );
+    if (valid) {
+      notifyByCallback({
+        type: 'consent_request',
+        request_id: message.request_id,
+        namespace: message.namespace,
+        identifier: message.identifier,
+        request_message: message.request_message,
+        request_message_hash: utils.hash(message.request_message),
+        requester_node_id: message.rp_id,
+        min_ial: message.min_ial,
+        min_aal: message.min_aal,
+        data_request_list: message.data_request_list,
+      });
+    }
   }
 }
 
@@ -241,15 +402,35 @@ export async function handleTendermintNewBlockHeaderEvent(
         requestId,
       });
       const message = await db.getRequestReceivedFromMQ(requestId);
-      const valid = await common.checkRequestIntegrity(requestId, message);
-      if (valid) {
-        notifyByCallback({
-          //request_message_hash: utils.hash(message.request_message),
-          ...message,
-        });
+      //reposne for onboard
+      if(message.accessor_id) {
+        if(await checkOnboardResponse(message)) {
+          let secret = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
+          notifyByCallback({
+            type: 'onboard_consent_request',
+            request_id: message.request_id,
+            success: true,
+            secret,
+          });
+        }
       }
-      //need challenge when respond
-      //db.removeRequestReceivedFromMQ(requestId);
+      else {
+        const valid = await common.checkRequestIntegrity(requestId, message);
+        if (valid) {
+          notifyByCallback({
+            type: 'consent_request',
+            request_id: message.request_id,
+            namespace: message.namespace,
+            identifier: message.identifier,
+            request_message: message.request_message,
+            request_message_hash: utils.hash(message.request_message),
+            requester_node_id: message.rp_id,
+            min_ial: message.min_ial,
+            min_aal: message.min_aal,
+            data_request_list: message.data_request_list,
+          });
+        }
+      }
     })
   );
 
@@ -259,19 +440,56 @@ export async function handleTendermintNewBlockHeaderEvent(
 //===================== Initialize before flow can start =======================
 
 export async function init() {
-  //TODO
-  //In production this should be done only once in phase 1,
+  // FIXME: In production this should be done only once. Hence, init() is not needed.
 
   // Wait for blockchain ready
   await tendermint.ready;
 
-  //when IDP request to join approved NDID
-  //after first approved, IDP can add other key and node and endorse themself
-  /*let node_id = config.mqRegister.ip + ':' + config.mqRegister.port;
-  process.env.nodeId = node_id;
-  common.addNodePubKey({
-    node_id,
-    public_key: 'very_secure_public_key_for_idp'
-  });*/
+  if (config.useExternalCryptoService) {
+    for (;;) {
+      if (externalCryptoService.isCallbackUrlsSet()) {
+        break;
+      }
+      await utils.wait(5000);
+    }
+  }
+
   common.registerMsqAddress(config.mqRegister);
+}
+
+async function checkOnboardResponse(message) {
+  let reason = false;
+  let requestDetail = await common.getRequestDetail({
+    requestId: message.request_id
+  });
+  let response = requestDetail.responses[0];
+  
+  if(!(await common.verifyZKProof(message.request_id, message.idp_id, message))) {
+    reason = 'Invalid response';
+  }
+  else if(response.status !== 'accept') {
+    reason = 'User rejected';
+  }
+
+  if(reason) {
+    notifyByCallback({
+      type: 'onboard_consent_request',
+      request_id: message.request_id,
+      success: false,
+      reason: reason
+    });
+
+    logger.debug({
+      message: 'Onboarding failed',
+      reason,
+    });
+
+    db.removeChallengeFromRequestId(message.request_id);
+    return false;
+  }
+  logger.debug({
+    message: 'Onboard consented',
+  });
+  db.removeChallengeFromRequestId(message.request_id);
+  return true;
 }

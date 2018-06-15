@@ -36,6 +36,32 @@ export default {
     code: 10008,
     message: 'Not connected to Tendermint. Please try again later.',
   },
+  BODY_PARSER_ERROR: {
+    code: 10009,
+    message: 'Body parsing failed',
+  },
+  EXTERNAL_SIGN_URL_NOT_SET: {
+    code: 10010,
+    message: 'External crypto service for signing with node key URL has not been set',
+  },
+  EXTERNAL_SIGN_MASTER_URL_NOT_SET: {
+    code: 10011,
+    message:
+      'External crypto service for signing with node master key URL has not been set',
+  },
+  EXTERNAL_DECRYPT_URL_NOT_SET: {
+    code: 10012,
+    message:
+      'External crypto service for decrypting with node key URL has not been set',
+  },
+  SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET: {
+    code: 10013,
+    message: 'Sign with accessor key callback URL has not been set',
+  },
+  SIGN_WITH_ACCESSOR_KEY_FAILED: {
+    code: 10014,
+    message: 'Cannot sign with accessor key by callback',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
@@ -70,6 +96,34 @@ export default {
       'Not enough IdP (the number of IdPs found is less than minimum IdP needed)',
     clientError: true,
   },
+  BODY_PARSE_FAILED: {
+    code: 20007,
+    message: 'Unable to parse body',
+  },
+  EXTERNAL_SIGN_TEST_FAILED: {
+    code: 20008,
+    message: 'External service: Sign with node key test failed',
+  },
+  EXTERNAL_SIGN_MASTER_TEST_FAILED: {
+    code: 20009,
+    message: 'External service: Sign with node master key test failed',
+  },
+  EXTERNAL_DECRYPT_TEST_FAILED: {
+    code: 20010,
+    message: 'External service: Decrypt with node key test failed',
+  },
+  ACCESSOR_PUBLIC_KEY_NOT_FOUND: {
+    code: 20011,
+    message: 'Accessor public key for the input accessor ID could not be found',
+  },
+  REQUEST_NOT_FOUND: {
+    code: 20012,
+    message: 'Request with the input request ID could not be found',
+  },
+  INVALID_NAMESPACE: {
+    code: 20013,
+    message: 'This namespace is not registered by NDID',
+  },
 
   // Errors return from ABCI app
   // Server errors
@@ -85,36 +139,59 @@ export default {
     code: 15003,
     message: 'Bad nonce',
   },
-  UNAUTHORIZED: {
-    code: 15004,
-    message:
-      'Unauthorized (You may have not registered your node with NDID or calling a function with wrong role)',
-  },
   UNMARSHAL_ERROR: {
-    code: 15005,
+    code: 15004,
     message: 'Cannot unmarshal JSON',
   },
   MARSHAL_ERROR: {
-    code: 15006,
+    code: 15005,
     message: 'Cannot marshal JSON',
   },
   WRONG_TRANSACTION_FORMAT: {
-    code: 15007,
+    code: 15006,
     message: 'Wrong transaction format',
   },
   METHOD_CAN_NOT_BE_EMPTY: {
-    code: 15008,
+    code: 15007,
     message: 'Method name cannot be empty',
   },
   DUPLICATE_REQUEST_ID: {
-    code: 15009,
+    code: 15008,
     message: 'Duplicate request ID',
   }, // Server generates a duplicate request ID
+  ACCESSOR_GROUP_ID_NOT_FOUND: {
+    code: 15009,
+    message: 'Accessor group ID could not be found',
+  },
+  REQUEST_IS_NOT_COMPLETED: {
+    code: 15010,
+    message: 'Request is not completed',
+  }, // Try to add accessor when request for consent id not yet completed
+  REQUEST_IS_NOT_SPECIAL: {
+    code: 15011,
+    message: 'Request id not an onboard (special) type',
+  }, // Try to add accessor with request that is not an onboard request type
+  NODE_ID_DOES_NOT_EXIST_IN_AS_LIST: {
+    code: 15012,
+    message: 'Node ID does not exist in AS ID list',
+  }, // AS signs data to request that does not request it
+  AS_ID_DOES_NOT_EXIST_IN_AS_LIST: {
+    code: 15013,
+    message: 'AS ID does not exist in AS ID list',
+  }, // RP set received data with AS ID that does not contain in data_request_list
+  INVALID_MIN_IDP: {
+    code: 15014,
+    message: 'Invalid minimum IdP',
+  },
+  DUPLICATE_ACCESSOR_GROUP_ID: {
+    code: 15015,
+    message: 'Duplicate accessor group ID',
+  },
 
   // Client errors
   REQUEST_ID_NOT_FOUND: {
     code: 25001,
-    message: 'Request ID not found',
+    message: 'Request ID could not be found',
     clientError: true,
   },
   REQUEST_IS_CLOSED: {
@@ -139,7 +216,7 @@ export default {
   },
   TOKEN_ACCOUNT_NOT_FOUND: {
     code: 25006,
-    message: 'Token account (Node ID) not found',
+    message: 'Token account (Node ID) could not be found',
     clientError: true,
   },
   NOT_ENOUGH_TOKEN: {
@@ -179,17 +256,38 @@ export default {
   },
   NAMESPACE_NOT_FOUND: {
     code: 25014,
-    message: 'Namespace not found',
+    message: 'Namespace could not be found',
     clientError: true,
   },
   NODE_ID_NOT_FOUND: {
     code: 25015,
-    message: 'Node ID not found',
+    message: 'Node ID could not be found',
     clientError: true,
   },
   DUPLICATE_PUBLIC_KEY: {
     code: 25016,
     message: 'Duplicate public key (already used)',
     clientError: true,
+  },
+  DUPLICATE_ACCESSOR_ID: {
+    code: 25017,
+    message: 'Duplicate accessor ID',
+    clientError: true,
+  },
+  SERVICE_ID_NOT_FOUND: {
+    code: 25018,
+    message: 'Service ID could not be found',
+    clientError: true,
+  },
+  INVALID_MODE: {
+    code: 25019,
+    message: 'Invalid mode',
+    clientError: true,
+  },
+
+  UNAUTHORIZED: {
+    code: 35001,
+    message:
+      'Unauthorized (You may have not registered your node with NDID or calling a function with a wrong role)',
   },
 };

@@ -1,129 +1,97 @@
-import fetch from 'node-fetch';
-
+import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/customError';
-import errorType from '../error/type';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint/ndid';
-import * as utils from '../utils';
 import * as mq from '../mq';
 import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
+import * as utils from '../utils';
 
-let timeoutScheduler = {};
+import * as externalCryptoService from '../utils/externalCryptoService';
 
-export function clearAllScheduler() {
-  for (let requestId in timeoutScheduler) {
-    clearTimeout(timeoutScheduler[requestId]);
-  }
-}
-
-async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
-  logger.debug({
-    message: 'RP check zk proof and notify',
-    requestId,
-    idp_id,
-  });
-
-  const request = await common.getRequest({
-    requestId,
-  });
+/**
+ *
+ * @param {string} requestId
+ * @param {integer} height
+ */
+async function notifyRequestUpdate(requestId, height) {
+  // logger.debug({
+  //   message: 'RP check zk proof and notify',
+  //   requestId,
+  // });
 
   const callbackUrl = await db.getRequestCallbackUrl(requestId);
   if (!callbackUrl) return; // This RP does not concern this request
 
-  // TODO: try catch / error handling
   const requestDetail = await common.getRequestDetail({
     requestId: requestId,
   });
 
-  if (requestDetail.responses == null) {
-    requestDetail.responses = [];
-  }
+  const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
-  const responsesValid = await verifyZKProof(requestId, idp_id, dataFromMq);
-
-  try {
-    await fetch(callbackUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type: 'request_event',
-        request_id: requestDetail.request_id,
-        status: request.status,
-        min_idp: requestDetail.min_idp,
-        answered_idp_count: requestDetail.responses.length,
-        is_closed: request.is_closed,
-        is_timed_out: request.is_timed_out,
-        service_list: requestDetail.data_request_list.map((service) => ({
-          service_id: service.service_id,
-          count: service.count,
-          answered_count:
-            service.answered_as_id_list != null
-              ? service.answered_as_id_list.length
-              : 0,
-        })),
-        responses_valid: responsesValid,
-      }),
-    });
-  } catch (error) {
-    logger.error({
-      message: 'Cannot send callback to client application',
-      error,
-    });
-
-    // TODO: error handling
-    // retry?
-  }
-
-  const idpCountOk = requestDetail.responses.length === requestDetail.min_idp;
-
-  logger.debug({
-    message: 'Check to notify AS',
-    request,
-    idpCountOk,
-    requestDetail,
-    responsesValid,
-  });
-
-  if (request.status === 'completed') {
-    // Clear callback url mapping, reference ID mapping, and request data to send to AS
-    // since the request is no longer going to have further events
-    db.removeRequestCallbackUrl(requestId);
-    db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-    db.removeRequestToSendToAS(requestId);
-    db.removeTimeoutScheduler(requestId);
-    clearTimeout(timeoutScheduler[requestId]);
-    delete timeoutScheduler[requestId];
-  } else if (request.status === 'confirmed' && idpCountOk && responsesValid) {
-    const requestData = await db.getRequestToSendToAS(requestId);
-    if (requestData != null) {
-      // const height = block.block.header.height;
-      /*tendermint.getBlockHeightFromNewBlockHeaderEvent(
-    result
-  );*/
-      // TODO: try catch / error handling
-      await sendRequestToAS(requestData, height - 1);
-    } else {
-      // Authen only, no data request
-
-      // Clear callback url mapping and reference ID mapping
-      // since the request is no longer going to have further events
-      // (the request has reached its end state)
-      db.removeRequestCallbackUrl(requestId);
-      db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-      db.removeTimeoutScheduler(requestId);
-      clearTimeout(timeoutScheduler[requestId]);
-      delete timeoutScheduler[requestId];
-    }
-  } else if (
-    request.status === 'rejected' ||
-    request.is_closed ||
-    request.is_timed_out
+  // ZK Proof verification is needed only when got new response from IdP
+  let needZKProofVerification = false;
+  if (
+    requestStatus.status !== 'pending' &&
+    requestStatus.closed === false &&
+    requestStatus.timed_out === false
   ) {
+    if (requestStatus.answered_idp_count < requestStatus.min_idp) {
+      needZKProofVerification = true;
+    } else if (requestStatus.answered_idp_count === requestStatus.min_idp) {
+      const asAnswerCount = requestStatus.service_list.reduce(
+        (total, service) => total + service.signed_data_count,
+        0
+      );
+      if (asAnswerCount === 0) {
+        needZKProofVerification = true;
+      }
+    }
+  }
+
+  if (needZKProofVerification) {
+    // Validate ZK Proof
+    const idpNodeId = await db.getExpectedIdpResponseNodeId(requestId);
+
+    if (idpNodeId == null) return;
+
+    await checkZKAndNotify({
+      requestStatus, 
+      height, 
+      idpId: idpNodeId, 
+      callbackUrl,
+      mode: requestDetail.mode,
+    });
+    return;
+  }
+
+  const eventDataForCallback = {
+    type: 'request_status',
+    ...requestStatus,
+  };
+
+  await callbackToClient(callbackUrl, eventDataForCallback, true);
+
+  // NOTE: Since blockchain state changes so fast (in some environment, e.g. dev env) that 
+  // getRequestDetail() cannot get the state for each event in time 
+  // (in this case AS signs and RP tells )
+  // making 'completed' status occurs more than 1 time 
+  // hence, closeRequest() will be called more than once
+  if (
+    requestStatus.status === 'completed' &&
+    !requestStatus.closed &&
+    !requestStatus.timed_out
+  ) {
+    await closeRequest(requestId);
+  }
+
+  if (
+    requestStatus.closed ||
+    requestStatus.timed_out
+  ) {
+    // Clean up
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
     // since the request is no longer going to have further events
     // (the request has reached its end state)
@@ -131,9 +99,59 @@ async function checkAndNotify(requestId, idp_id, height, dataFromMq) {
     db.removeRequestIdReferenceIdMappingByRequestId(requestId);
     db.removeRequestToSendToAS(requestId);
     db.removeTimeoutScheduler(requestId);
-    clearTimeout(timeoutScheduler[requestId]);
-    delete timeoutScheduler[requestId];
+    clearTimeout(common.timeoutScheduler[requestId]);
+    delete common.timeoutScheduler[requestId];
   }
+}
+
+async function checkZKAndNotify({
+  requestStatus,
+  height,
+  idpId,
+  callbackUrl,
+  requestData,
+  mode,
+}) {
+
+  logger.debug({
+    message: 'Check ZK Proof then notify',
+    requestStatus,
+    height,
+    idpId,
+    callbackUrl,
+    requestData,
+    mode,
+  });
+
+  const responseValid = await common.verifyZKProof(
+    requestStatus.request_id,
+    idpId,
+    requestData,
+    mode,
+  );
+
+  if (
+    requestStatus.status === 'confirmed' &&
+    requestStatus.answered_idp_count === requestStatus.min_idp &&
+    responseValid
+  ) {
+    const requestData = await db.getRequestToSendToAS(requestStatus.request_id);
+    if (requestData != null) {
+      await sendRequestToAS(requestData, height);
+    }
+    db.removeChallengeFromRequestId(requestStatus.request_id);
+  }
+
+  const eventDataForCallback = {
+    type: 'request_status',
+    ...requestStatus,
+    latest_idp_response_valid: responseValid,
+  };
+
+  await callbackToClient(callbackUrl, eventDataForCallback, true);
+
+  db.removeProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
+  db.removeExpectedIdpResponseNodeId(requestStatus.request_id);
 }
 
 export async function handleTendermintNewBlockHeaderEvent(
@@ -155,20 +173,22 @@ export async function handleTendermintNewBlockHeaderEvent(
     toHeight,
   });
 
-  const responseIdsInTendermintBlock = await db.getResponseIdsExpectedInBlock(
-    fromHeight,
-    toHeight
-  );
-
+  const blocks = await tendermint.getBlocks(fromHeight, toHeight);
   await Promise.all(
-    responseIdsInTendermintBlock.map(async (responseIdWithHeight) => {
-      // TODO: clear key with smart-contract, eg. request_id or requestId
-      const [requestId, idp_id] = responseIdWithHeight.responseId.split(':');
-      await checkAndNotify(requestId, idp_id, responseIdWithHeight.height);
-      db.removeProofReceivedFromMQ(responseIdWithHeight.responseId);
+    blocks.map(async (block) => {
+      const transactions = tendermint.getTransactionListFromBlockQuery(block);
+      await Promise.all(
+        transactions.map(async (transaction) => {
+          // TODO: clear key with smart-contract, eg. request_id or requestId
+          const requestId =
+            transaction.args.request_id || transaction.args.requestId; //derive from tx;
+          if (requestId == null) return;
+          const height = block.block.header.height;
+          await notifyRequestUpdate(requestId, height);
+        })
+      );
     })
   );
-  db.removeResponseIdsExpectedInBlock(fromHeight, toHeight);
 }
 
 async function getASReceiverList(data_request) {
@@ -234,203 +254,6 @@ async function sendRequestToAS(requestData, height) {
   }
 }
 
-export async function getIdpsMsqDestination({
-  namespace,
-  identifier,
-  min_ial,
-  min_aal,
-  idp_list,
-}) {
-  const idpNodes = await common.getIdpNodes({
-    namespace,
-    identifier,
-    min_ial,
-    min_aal,
-  });
-
-  let filteredIdpNodes;
-  if (idp_list != null && idp_list.length !== 0) {
-    filteredIdpNodes = idpNodes.filter(
-      (idpNode) => idp_list.indexOf(idpNode.id) >= 0
-    );
-  } else {
-    filteredIdpNodes = idpNodes;
-  }
-
-  const receivers = await Promise.all(
-    filteredIdpNodes.map(async (idpNode) => {
-      const nodeId = idpNode.id;
-      const { ip, port } = await common.getMsqAddress(nodeId);
-      return {
-        ip,
-        port,
-        ...(await common.getNodePubKey(nodeId)),
-      };
-    })
-  );
-  return receivers;
-}
-
-/**
- * Create a new request
- * @param {Object} request
- * @param {string} request.namespace
- * @param {string} request.reference_id
- * @param {Array.<string>} request.idp_list
- * @param {string} request.callback_url
- * @param {Array.<Object>} request.data_request_list
- * @param {string} request.request_message
- * @param {number} request.min_ial
- * @param {number} request.min_aal
- * @param {number} request.min_idp
- * @param {number} request.request_timeout
- * @returns {Promise<string>} Request ID
- */
-export async function createRequest({
-  namespace,
-  identifier,
-  reference_id,
-  idp_list,
-  callback_url,
-  data_request_list,
-  request_message,
-  min_ial,
-  min_aal,
-  min_idp,
-  request_timeout,
-}) {
-  try {
-    // existing reference_id, return request ID
-    const requestId = await db.getRequestIdByReferenceId(reference_id);
-    if (requestId) {
-      return requestId;
-    }
-
-    if (idp_list != null && idp_list.length > 0 && idp_list.length < min_idp) {
-      throw new CustomError({
-        message: errorType.IDP_LIST_LESS_THAN_MIN_IDP.message,
-        code: errorType.IDP_LIST_LESS_THAN_MIN_IDP.code,
-        clientError: true,
-        details: {
-          namespace,
-          identifier,
-          idp_list,
-        },
-      });
-    }
-
-    let receivers = await getIdpsMsqDestination({
-      namespace,
-      identifier,
-      min_ial,
-      min_aal,
-      idp_list,
-    });
-
-    if (receivers.length === 0) {
-      throw new CustomError({
-        message: errorType.NO_IDP_FOUND.message,
-        code: errorType.NO_IDP_FOUND.code,
-        clientError: true,
-        details: {
-          namespace,
-          identifier,
-          idp_list,
-        },
-      });
-    }
-
-    if (receivers.length < min_idp) {
-      throw new CustomError({
-        message: errorType.NOT_ENOUGH_IDP.message,
-        code: errorType.NOT_ENOUGH_IDP.code,
-        clientError: true,
-        details: {
-          namespace,
-          identifier,
-          idp_list,
-        },
-      });
-    }
-
-    const nonce = utils.getNonce();
-    const request_id = utils.createRequestId();
-
-    const dataRequestListToBlockchain = [];
-    for (let i in data_request_list) {
-      dataRequestListToBlockchain.push({
-        service_id: data_request_list[i].service_id,
-        as_id_list: data_request_list[i].as_id_list,
-        count: data_request_list[i].count,
-        request_params_hash: utils.hashWithRandomSalt(
-          JSON.stringify(data_request_list[i].request_params)
-        ),
-      });
-    }
-
-    let challenge = utils.randomBase64Bytes(config.challengeLength);
-    db.setChallengeFromRequestId(request_id, challenge);
-
-    const requestData = {
-      namespace,
-      identifier,
-      request_id,
-      min_idp: min_idp ? min_idp : 1,
-      min_aal: min_aal,
-      min_ial: min_ial,
-      request_timeout,
-      data_request_list: data_request_list,
-      request_message,
-      // for zk proof
-      challenge,
-      rp_id: config.nodeId,
-    };
-
-    // save request data to DB to send to AS via mq when authen complete
-    // store even no data require, use for zk proof
-    //if (data_request_list != null && data_request_list.length !== 0) {
-    await db.setRequestToSendToAS(request_id, requestData);
-    //}
-
-    // add data to blockchain
-    const requestDataToBlockchain = {
-      request_id,
-      min_idp: min_idp ? min_idp : 1,
-      min_aal,
-      min_ial,
-      request_timeout,
-      data_request_list: dataRequestListToBlockchain,
-      message_hash: utils.hash(challenge + request_message),
-    };
-
-    const { height } = await tendermint.transact(
-      'CreateRequest',
-      requestDataToBlockchain,
-      nonce
-    );
-
-    // send request data to IDPs via message queue
-    mq.send(receivers, {
-      ...requestData,
-      height,
-    });
-
-    addTimeoutScheduler(request_id, request_timeout);
-
-    // maintain mapping
-    await db.setRequestIdByReferenceId(reference_id, request_id);
-    await db.setRequestCallbackUrl(request_id, callback_url);
-    return request_id;
-  } catch (error) {
-    const err = new CustomError({
-      message: 'Cannot create request',
-      cause: error,
-    });
-    logger.error(err.getInfoForLog());
-    throw err;
-  }
-}
-
 export async function getRequestIdByReferenceId(referenceId) {
   try {
     return await db.getRequestIdByReferenceId(referenceId);
@@ -481,80 +304,94 @@ export async function removeAllDataFromAS() {
   }
 }
 
-export async function handleMessageFromQueue(data) {
+export async function handleMessageFromQueue(messageStr) {
   logger.info({
     message: 'Received message from MQ',
   });
   logger.debug({
     message: 'Message from MQ',
-    data,
+    messageStr,
   });
 
-  const dataJSON = JSON.parse(data);
+  const message = JSON.parse(messageStr);
 
   //distinguish between message from idp, as
-  if (dataJSON.idp_id != null) {
-    //store private parameter from EACH idp to request, to pass along to as
-    let request = await db.getRequestToSendToAS(dataJSON.request_id);
-    //AS involve
-    if (request) {
-      if (request.privateProofObjectList) {
-        request.privateProofObjectList.push({
-          idp_id: dataJSON.idp_id,
-          privateProofObject: {
-            privateProofValue: dataJSON.privateProofValue,
-            accessor_id: dataJSON.accessor_id,
-          },
-        });
-      } else {
-        request.privateProofObjectList = [
-          {
-            idp_id: dataJSON.idp_id,
+  if (message.idp_id != null) {
+    //check accessor_id, undefined means mode 1
+    if(message.accessor_id) {
+      //store private parameter from EACH idp to request, to pass along to as
+      let request = await db.getRequestToSendToAS(message.request_id);
+      //AS involve
+      if (request) {
+        if (request.privateProofObjectList) {
+          request.privateProofObjectList.push({
+            idp_id: message.idp_id,
             privateProofObject: {
-              privateProofValue: dataJSON.privateProofValue,
-              accessor_id: dataJSON.accessor_id,
+              privateProofValue: message.privateProofValue,
+              accessor_id: message.accessor_id,
+              padding: message.padding,
             },
-          },
-        ];
+          });
+        } else {
+          request.privateProofObjectList = [
+            {
+              idp_id: message.idp_id,
+              privateProofObject: {
+                privateProofValue: message.privateProofValue,
+                accessor_id: message.accessor_id,
+                padding: message.padding,
+              },
+            },
+          ];
+        }
+        await db.setRequestToSendToAS(message.request_id, request);
       }
-      await db.setRequestToSendToAS(dataJSON.request_id, request);
     }
 
     //must wait for height
     const latestBlockHeight = tendermint.latestBlockHeight;
-    const responseId = dataJSON.request_id + ':' + dataJSON.idp_id;
+    const responseId = message.request_id + ':' + message.idp_id;
 
-    if (latestBlockHeight <= dataJSON.height) {
+    if (latestBlockHeight <= message.height) {
       logger.debug({
         message: 'Saving message from MQ',
         tendermintLatestBlockHeight: latestBlockHeight,
-        messageBlockHeight: dataJSON.height,
+        messageBlockHeight: message.height,
       });
-      db.setProofReceivedFromMQ(responseId, dataJSON);
-      db.addResponseIdsExpectedInBlock(dataJSON.height, {
-        height: dataJSON.height,
-        responseId,
-      });
+      db.setProofReceivedFromMQ(responseId, message);
+      db.setExpectedIdpResponseNodeId(message.request_id, message.idp_id);
       return;
     }
-    checkAndNotify(
-      dataJSON.request_id,
-      dataJSON.idp_id,
-      latestBlockHeight,
-      dataJSON
-    );
-  } else if (dataJSON.as_id != null) {
+
+    const callbackUrl = await db.getRequestCallbackUrl(message.request_id);
+    // if (!callbackUrl) return;
+
+    const requestDetail = await common.getRequestDetail({
+      requestId: message.request_id,
+    });
+
+    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+
+    checkZKAndNotify({
+      requestStatus,
+      height: latestBlockHeight,
+      idpId: message.idp_id,
+      callbackUrl,
+      requestData: message,
+      mode: message.accessor_id ? 3 : 1,
+    });
+  } else if (message.as_id != null) {
     //receive data from AS
     // TODO: verifies signature of AS in blockchain.
     // Call callback to RP.
 
     try {
-      const requestDetail = await common.getRequestDetail({
-        requestId: dataJSON.request_id,
-      });
+      // const requestDetail = await common.getRequestDetail({
+      //   requestId: dataJSON.request_id,
+      // });
       // Note: Should check if received request id is expected?
 
-      // TODO: Need to change how BC store data
+      // Should check? (legal liability issue)
       // Check if AS signs sent data before request is closed or timed out
       // for (let i = 0; i < requestDetail.data_request_list.length; i++) {
       //   const dataRequest = requestDetail.data_request_list[i];
@@ -563,10 +400,14 @@ export async function handleMessageFromQueue(data) {
       //   }
       // }
 
-      await db.addDataFromAS(dataJSON.request_id, {
-        data: dataJSON.data,
-        as_id: dataJSON.as_id,
+      await db.addDataFromAS(message.request_id, {
+        source_node_id: message.as_id,
+        service_id: message.service_id,
+        source_signature: message.signature,
+        data: message.data,
       });
+
+      await setDataReceived(message.request_id, message.service_id, message.as_id);
     } catch (error) {
       // TODO: error handling
       throw error;
@@ -574,153 +415,60 @@ export async function handleMessageFromQueue(data) {
   }
 }
 
-async function timeoutRequest(requestId) {
+async function setDataReceived(requestId, serviceId, asNodeId) {
   try {
-    const request = await common.getRequest({ requestId });
-    switch (request.status) {
-      case 'complicated':
-      case 'pending':
-      case 'confirmed':
-        await tendermint.transact(
-          'TimeOutRequest',
-          { requestId },
-          utils.getNonce()
-        );
-        break;
-      default:
-      //Do nothing
-    }
+    const result = await tendermint.transact(
+      'SetDataReceived',
+      {
+        requestId,
+        service_id: serviceId,
+        as_id: asNodeId,
+      },
+      utils.getNonce()
+    );
+    return result;
   } catch (error) {
-    // TODO: error handling
-    throw error;
-  }
-  db.removeTimeoutScheduler(requestId);
-}
-
-function runTimeoutScheduler(requestId, secondsToTimeout) {
-  if (secondsToTimeout < 0) timeoutRequest(requestId);
-  else {
-    timeoutScheduler[requestId] = setTimeout(() => {
-      timeoutRequest(requestId);
-    }, secondsToTimeout * 1000);
+    throw new CustomError({
+      message: 'Cannot set data received to blockchain',
+      requestId,
+      serviceId,
+      asNodeId,
+      cause: error,
+    });
   }
 }
 
-function addTimeoutScheduler(requestId, secondsToTimeout) {
-  let unixTimeout = Date.now() + secondsToTimeout * 1000;
-  db.addTimeoutScheduler(requestId, unixTimeout);
-  runTimeoutScheduler(requestId, secondsToTimeout);
+export async function closeRequest(requestId) {
+  try {
+    const result = await tendermint.transact(
+      'CloseRequest',
+      { requestId },
+      utils.getNonce()
+    );
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot close a request',
+      requestId,
+      cause: error,
+    });
+  }
 }
 
 export async function init() {
-  let scheduler = await db.getAllTimeoutScheduler();
-  scheduler.forEach(({ requestId, unixTimeout }) => {
-    runTimeoutScheduler(requestId, (unixTimeout - Date.now()) / 1000);
-  });
-
-  //In production this should be done only once in phase 1,
+  // FIXME: In production this should be done only once. Hence, init() is not needed.
 
   // Wait for blockchain ready
   await tendermint.ready;
 
-  common.registerMsqAddress(config.mqRegister);
-}
-
-async function verifyZKProof(request_id, idp_id, dataFromMq) {
-  let challenge = await db.getChallengeFromRequestId(request_id);
-  let privateProofObject = dataFromMq
-    ? dataFromMq
-    : await db.getProofReceivedFromMQ(request_id + ':' + idp_id);
-
-  //query and verify zk, also check conflict with each others
-  logger.debug({
-    message: 'RP verifying zk proof',
-    request_id,
-    idp_id,
-    dataFromMq,
-    challenge,
-    privateProofObject,
-  });
-
-  //query accessor_group_id of this accessor_id
-  let accessor_group_id = await common.getAccessorGroupId(
-    privateProofObject.accessor_id
-  );
-  let { 
-    namespace,
-    identifier,
-    privateProofObjectList,
-    request_message
-  } = await db.getRequestToSendToAS(request_id);
-
-  logger.debug({
-    message: 'RP verifying zk proof',
-    privateProofObjectList,
-  });
-
-  //and check against all accessor_group_id of responses
-  for(let i = 0 ; i < privateProofObjectList.length ; i++) {
-    let otherPrivateProofObject = privateProofObjectList[i].privateProofObject;
-    let otherGroupId = await common.getAccessorGroupId(
-      otherPrivateProofObject.accessor_id
-    );
-    if (otherGroupId !== accessor_group_id) {
-      //TODO handle this, manually close?
-      logger.debug({
-        message: 'Conflict response',
-        otherGroupId,
-        otherPrivateProofObject,
-        accessor_group_id,
-        accessorId: privateProofObject.accessor_id,
-      });
-      throw 'Conflicted response';
+  if (config.useExternalCryptoService) {
+    for (;;) {
+      if (externalCryptoService.isCallbackUrlsSet()) {
+        break;
+      }
+      await utils.wait(5000);
     }
   }
 
-  //query accessor_public_key from privateProofObject.accessor_id
-  let public_key = await common.getAccessorKey(privateProofObject.accessor_id);
-
-  //query publicProof from response of idp_id in request
-  let publicProof, signature;
-  let responses = (await common.getRequestDetail({
-    requestId: request_id,
-  })).responses;
-
-  logger.debug({
-    message: 'Request detail',
-    responses,
-    request_message,
-  });
-
-  responses.forEach((response) => {
-    if(response.idp_id === idp_id) {
-      publicProof = response.identity_proof;
-      signature = response.signature;
-    }
-  });
-
-  let signatureValid = utils.verifySignature(
-    signature, 
-    public_key, 
-    request_message
-  );
-
-  logger.debug({
-    message: 'Verify signature',
-    signatureValid,
-    request_message,
-    public_key,
-    signature,
-  });
-
-  return signatureValid && utils.verifyZKProof(
-    public_key, 
-    challenge, 
-    privateProofObject.privateProofValue, 
-    publicProof, 
-    {
-      namespace,
-      identifier,
-    }
-  );
+  common.registerMsqAddress(config.mqRegister);
 }

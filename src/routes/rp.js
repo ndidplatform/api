@@ -22,9 +22,10 @@ router.post(
         min_aal,
         min_idp,
         request_timeout,
+        mode,
       } = req.body;
 
-      const requestId = await rp.createRequest({
+      const requestId = await common.createRequest({
         namespace,
         identifier,
         reference_id,
@@ -36,6 +37,7 @@ router.post(
         min_aal,
         min_idp,
         request_timeout,
+        mode,
       });
 
       res.status(200).json({ request_id: requestId });
@@ -44,24 +46,6 @@ router.post(
     }
   }
 );
-
-router.get('/requests/:request_id', async (req, res, next) => {
-  try {
-    const { request_id } = req.params;
-
-    const request = await common.getRequest({
-      requestId: request_id,
-    });
-
-    if (request != null) {
-      res.status(200).json(request);
-    } else {
-      res.status(404).end();
-    }
-  } catch (error) {
-    next(error);
-  }
-});
 
 router.get('/requests/reference/:reference_number', async (req, res, next) => {
   try {
@@ -93,20 +77,34 @@ router.get('/requests/data/:request_id', async (req, res, next) => {
   }
 });
 
-router.post('/requests/housekeeping/data/:request_id', async (req, res, next) => {
-  try {
-    const { request_id } = req.params;
+router.post(
+  '/requests/housekeeping/data/:request_id',
+  async (req, res, next) => {
+    try {
+      const { request_id } = req.params;
 
-    await rp.removeDataFromAS(request_id);
+      await rp.removeDataFromAS(request_id);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post('/requests/housekeeping/data', async (req, res, next) => {
+  try {
+    await rp.removeAllDataFromAS();
     res.status(204).end();
   } catch (error) {
     next(error);
   }
 });
 
-router.post('/requests/housekeeping/data', async (req, res, next) => {
+router.post('/requests/close', validateBody, async (req, res, next) => {
   try {
-    await rp.removeAllDataFromAS();
+    const { request_id } = req.body;
+
+    await rp.closeRequest(request_id);
     res.status(204).end();
   } catch (error) {
     next(error);

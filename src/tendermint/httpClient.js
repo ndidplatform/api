@@ -25,7 +25,12 @@ async function httpUriCall(method, params) {
   try {
     const response = await fetch(uri);
     const responseJson = await response.json();
-    return responseJson;
+
+    if (responseJson.error) {
+      throw { type: 'JSON-RPC ERROR', error: responseJson.error };
+    }
+
+    return responseJson.result;
   } catch (error) {
     throw new CustomError({
       message: errorType.TENDERMINT_HTTP_CALL_ERROR.message,
@@ -49,6 +54,15 @@ export function abciQuery(data) {
 
 export function broadcastTxCommit(tx) {
   return httpUriCall('broadcast_tx_commit', [
+    {
+      key: 'tx',
+      value: tx,
+    },
+  ]);
+}
+
+export function broadcastTxSync(tx) {
+  return httpUriCall('broadcast_tx_sync', [
     {
       key: 'tx',
       value: tx,

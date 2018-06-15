@@ -6,7 +6,7 @@ const AES_KEY_LENGTH_IN_BYTES = 32;
 /**
  * Hash given string with SHA-256
  * @param {string} stringToHash
- * @returns {string} hash
+ * @returns {string} hash in base64
  */
 export function hash(stringToHash) {
   const hash = crypto.createHash('sha256');
@@ -16,9 +16,9 @@ export function hash(stringToHash) {
 }
 
 /**
- * 
- * @param {(Object|string)} privateKey 
- * @param {(Buffer|string)} plaintext 
+ *
+ * @param {(Object|string)} privateKey
+ * @param {(Buffer|string)} plaintext
  * @returns {string} encrypted text, base64 encoded
  */
 export function privateEncrypt(privateKey, plaintext) {
@@ -30,8 +30,8 @@ export function privateEncrypt(privateKey, plaintext) {
 }
 
 /**
- * 
- * @param {(Object|string)} privateKey 
+ *
+ * @param {(Object|string)} privateKey
  * @param {string} ciphertext base64 encoded ciphertext
  * @returns {Buffer} decrypted text
  */
@@ -42,9 +42,9 @@ export function privateDecrypt(privateKey, ciphertext) {
 }
 
 /**
- * 
- * @param {(Object|string)} publicKey 
- * @param {(Buffer|string)} plaintext 
+ *
+ * @param {(Object|string)} publicKey
+ * @param {(Buffer|string)} plaintext
  * @returns {string} encrypted text, base64 encoded
  */
 export function publicEncrypt(publicKey, plaintext) {
@@ -56,8 +56,8 @@ export function publicEncrypt(publicKey, plaintext) {
 }
 
 /**
- * 
- * @param {(Object|string)} publicKey 
+ *
+ * @param {(Object|string)} publicKey
  * @param {string} ciphertext base64 encoded ciphertext
  * @returns {Buffer} decrypted text
  */
@@ -67,21 +67,23 @@ export function publicDecrypt(publicKey, ciphertext) {
   return decrypted;
 }
 
-export function createSignature(data, nonce, privateKey) {
+export function createSignature(message, privateKey) {
   return crypto
     .createSign('SHA256')
-    .update(JSON.stringify(data) + nonce)
+    .update(message)
     .sign(privateKey, 'base64');
 }
-
 
 export function verifySignature(signatureInBase64, publicKey, plainText) {
   let verifyInstance = crypto.createVerify('RSA-SHA256');
   verifyInstance.update(plainText);
-  return verifyInstance.verify(publicKey, Buffer.from(signatureInBase64,'base64'));
+  return verifyInstance.verify(
+    publicKey,
+    Buffer.from(signatureInBase64, 'base64')
+  );
 }
 /**
- * 
+ *
  * @param {number} length random bytes length
  * @returns {string} hex string of random bytes
  */
@@ -188,10 +190,4 @@ export function decryptAES256GCM(masterkey, ciphertext, deriveKey) {
   } catch (error) {
     return null;
   }
-}
-
-export function generateIdentityProof(data) {
-  // TODO:
-  //[blockchain-proof, private-proof]
-  return ['<some-voodoo-happen-here>','<another-voodoo-happen-here>'];
 }
