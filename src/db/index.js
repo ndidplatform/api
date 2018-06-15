@@ -276,6 +276,33 @@ export function removeRequestIdByReferenceId(referenceId) {
   });
 }
 
+export function getOnboardDataByReferenceId(referenceId) {
+  return db.get({
+    name: 'onboardDataReferenceIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'onboardData',
+  });
+}
+
+export function setOnboardDataByReferenceId(referenceId, onboardData) {
+  return db.set({
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'onboardData',
+    value: onboardData,
+  });
+}
+
+export function removeOnboardDataByReferenceId(referenceId) {
+  return db.remove({
+    name: 'onboardDataReferenceIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+  });
+}
+
 export function removeRequestIdReferenceIdMappingByRequestId(requestId) {
   return db.remove({
     name: 'requestIdReferenceIdMapping',

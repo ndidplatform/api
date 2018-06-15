@@ -287,7 +287,7 @@ export default {
           'identifier',
           'accessor_type',
           'accessor_public_key',
-          'accessor_id',
+          //'accessor_id',
           'ial',
         ],
       },

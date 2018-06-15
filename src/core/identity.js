@@ -112,7 +112,6 @@ export async function createNewIdentity(data) {
       reference_id,
       accessor_type,
       accessor_public_key,
-      accessor_id,
       ial,
     } = data;
 
@@ -137,10 +136,14 @@ export async function createNewIdentity(data) {
       hash_id,
     });
 
-    let request_id = await db.getRequestIdByReferenceId(reference_id);
-    if(request_id) {
-      return { request_id, exist };
+    let onboardData = await db.getOnboardDataByReferenceId(reference_id);
+    if(onboardData) {
+      let { request_id, accessor_id } = onboardData;
+      return { request_id, exist, accessor_id };
     }
+
+    let accessor_id = data.accessor_id;
+    if(!accessor_id) accessor_id = utils.randomBase64Bytes(32);
 
     if (!isAccessorSignUrlSet()) {
       throw new CustomError({
@@ -152,7 +155,7 @@ export async function createNewIdentity(data) {
     // TODO: Check for duplicate accessor
     // TODO: Check for "ial" must be less than or equal than node's (IdP's) max_ial
 
-    request_id = await common.createRequest({
+    let request_id = await common.createRequest({
       namespace,
       identifier,
       reference_id,
@@ -168,7 +171,7 @@ export async function createNewIdentity(data) {
       request_timeout: 86400,
     });
 
-    db.setRequestIdByReferenceId(reference_id, request_id);
+    db.setOnboardDataByReferenceId(reference_id, { request_id, accessor_id });
   
     /*let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
     let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
@@ -221,16 +224,17 @@ export async function createNewIdentity(data) {
         let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
         let secret = padding + '|' + encryptedHash; 
         notifyByCallback({
-          type: 'onboard_request',
+          type: 'onboard_consent_request',
           request_id: request_id,
           success: true,
           secret,
         });
-        db.removeRequestIdByReferenceId(reference_id);
+        db.removeOnboardDataByReferenceId(reference_id);
 
       });
     }
-    return { request_id, exist, /*secret*/ };
+    console.log('--->',{ request_id, exist, /*secret*/ accessor_id });
+    return { request_id, exist, /*secret*/ accessor_id };
   } 
   catch (error) {
     logger.error({

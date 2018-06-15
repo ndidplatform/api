@@ -18,7 +18,7 @@ router.post('/', validateBody, async (req, res, next) => {
       ial,
     } = req.body;
 
-    const { request_id, exist } = await identity.createNewIdentity({
+    const result = await identity.createNewIdentity({
       namespace,
       identifier,
       reference_id,
@@ -28,10 +28,7 @@ router.post('/', validateBody, async (req, res, next) => {
       ial,
     });
 
-    res.status(200).send({
-      request_id,
-      exist,
-    });
+    res.status(200).send(result);
   } catch (error) {
     next(error);
   }

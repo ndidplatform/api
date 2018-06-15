@@ -47,6 +47,10 @@ const Entities = {
     referenceId: { type: Sequelize.TEXT, primaryKey: true },
     requestId: { type: Sequelize.STRING, unique: true },
   }),
+  onboardDataReferenceIdMapping: sequelize.define('onboardDataReferenceIdMapping', {
+    referenceId: { type: Sequelize.TEXT, primaryKey: true },
+    onboardData: { type: Sequelize.JSON, },
+  }),
   requestToSendToAS: sequelize.define('requestToSendToAS', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     request: Sequelize.JSON,
