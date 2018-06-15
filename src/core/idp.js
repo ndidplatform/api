@@ -290,7 +290,7 @@ export async function handleMessageFromQueue(messageStr) {
     if(await checkOnboardResponse(message)) {
       await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
       notifyByCallback({
-        type: 'onboard_request',
+        type: 'onboard_consent_request',
         request_id: message.request_id,
         success: true,
       });
@@ -303,7 +303,7 @@ export async function handleMessageFromQueue(messageStr) {
     );
     if (valid) {
       notifyByCallback({
-        type: 'request',
+        type: 'consent_request',
         request_id: message.request_id,
         namespace: message.namespace,
         identifier: message.identifier,
@@ -361,7 +361,7 @@ export async function handleTendermintNewBlockHeaderEvent(
         if(await checkOnboardResponse(message)) {
           await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
           notifyByCallback({
-            type: 'onboard_request',
+            type: 'onboard_consent_request',
             request_id: message.request_id,
             success: true,
           });
@@ -371,7 +371,7 @@ export async function handleTendermintNewBlockHeaderEvent(
         const valid = await common.checkRequestIntegrity(requestId, message);
         if (valid) {
           notifyByCallback({
-            type: 'request',
+            type: 'consent_request',
             request_id: message.request_id,
             namespace: message.namespace,
             identifier: message.identifier,
@@ -426,7 +426,7 @@ async function checkOnboardResponse(message) {
 
   if(reason) {
     notifyByCallback({
-      type: 'onboard_request',
+      type: 'onboard_consent_request',
       request_id: message.request_id,
       success: false,
       reason: reason
