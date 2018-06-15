@@ -8,17 +8,16 @@ const router = express.Router();
 router.post('/service/:service_id', validateBody, async (req, res, next) => {
   try {
     const { service_id } = req.params;
-    const { service_name, min_ial, min_aal, url } = req.body;
+    const { min_ial, min_aal, url } = req.body;
 
     await as.registerAsService({
       service_id,
-      service_name,
       min_aal,
       min_ial,
       url,
     });
 
-    res.status(201).end();
+    res.status(204).end();
   } catch (error) {
     next(error);
   }

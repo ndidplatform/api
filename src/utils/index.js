@@ -225,7 +225,7 @@ export function verifyZKProof(publicKey,
 export async function createSignature(data, nonce = '', useMasterKey) {
   const messageToSign = JSON.stringify(data) + nonce;
   const messageToSignHash = hash(messageToSign);
-
+  
   if (config.useExternalCryptoService) {
     return await externalCryptoService.createSignature(
       messageToSign,

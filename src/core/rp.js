@@ -57,20 +57,39 @@ async function notifyRequestUpdate(requestId, height) {
 
     if (idpNodeId == null) return;
 
-    await checkZKAndNotify(requestStatus, height, idpNodeId, callbackUrl);
+    await checkZKAndNotify({
+      requestStatus, 
+      height, 
+      idpId: idpNodeId, 
+      callbackUrl,
+      mode: requestDetail.mode,
+    });
     return;
   }
 
   const eventDataForCallback = {
-    type: 'request_event',
+    type: 'request_status',
     ...requestStatus,
   };
 
   await callbackToClient(callbackUrl, eventDataForCallback, true);
 
+  // NOTE: Since blockchain state changes so fast (in some environment, e.g. dev env) that 
+  // getRequestDetail() cannot get the state for each event in time 
+  // (in this case AS signs and RP tells )
+  // making 'completed' status occurs more than 1 time 
+  // hence, closeRequest() will be called more than once
   if (
-    requestDetail.closed ||
-    requestDetail.timed_out
+    requestStatus.status === 'completed' &&
+    !requestStatus.closed &&
+    !requestStatus.timed_out
+  ) {
+    await closeRequest(requestId);
+  }
+
+  if (
+    requestStatus.closed ||
+    requestStatus.timed_out
   ) {
     // Clean up
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
@@ -85,13 +104,15 @@ async function notifyRequestUpdate(requestId, height) {
   }
 }
 
-async function checkZKAndNotify(
+async function checkZKAndNotify({
   requestStatus,
   height,
   idpId,
   callbackUrl,
-  requestData
-) {
+  requestData,
+  mode,
+}) {
+
   logger.debug({
     message: 'Check ZK Proof then notify',
     requestStatus,
@@ -99,11 +120,14 @@ async function checkZKAndNotify(
     idpId,
     callbackUrl,
     requestData,
+    mode,
   });
+
   const responseValid = await common.verifyZKProof(
     requestStatus.request_id,
     idpId,
-    requestData
+    requestData,
+    mode,
   );
 
   if (
@@ -119,7 +143,7 @@ async function checkZKAndNotify(
   }
 
   const eventDataForCallback = {
-    type: 'request_event',
+    type: 'request_status',
     ...requestStatus,
     latest_idp_response_valid: responseValid,
   };
@@ -293,32 +317,35 @@ export async function handleMessageFromQueue(messageStr) {
 
   //distinguish between message from idp, as
   if (message.idp_id != null) {
-    //store private parameter from EACH idp to request, to pass along to as
-    let request = await db.getRequestToSendToAS(message.request_id);
-    //AS involve
-    if (request) {
-      if (request.privateProofObjectList) {
-        request.privateProofObjectList.push({
-          idp_id: message.idp_id,
-          privateProofObject: {
-            privateProofValue: message.privateProofValue,
-            accessor_id: message.accessor_id,
-            padding: message.padding,
-          },
-        });
-      } else {
-        request.privateProofObjectList = [
-          {
+    //check accessor_id, undefined means mode 1
+    if(message.accessor_id) {
+      //store private parameter from EACH idp to request, to pass along to as
+      let request = await db.getRequestToSendToAS(message.request_id);
+      //AS involve
+      if (request) {
+        if (request.privateProofObjectList) {
+          request.privateProofObjectList.push({
             idp_id: message.idp_id,
             privateProofObject: {
               privateProofValue: message.privateProofValue,
               accessor_id: message.accessor_id,
               padding: message.padding,
             },
-          },
-        ];
+          });
+        } else {
+          request.privateProofObjectList = [
+            {
+              idp_id: message.idp_id,
+              privateProofObject: {
+                privateProofValue: message.privateProofValue,
+                accessor_id: message.accessor_id,
+                padding: message.padding,
+              },
+            },
+          ];
+        }
+        await db.setRequestToSendToAS(message.request_id, request);
       }
-      await db.setRequestToSendToAS(message.request_id, request);
     }
 
     //must wait for height
@@ -345,13 +372,14 @@ export async function handleMessageFromQueue(messageStr) {
 
     const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
-    checkZKAndNotify(
+    checkZKAndNotify({
       requestStatus,
-      latestBlockHeight,
-      message.idp_id,
+      height: latestBlockHeight,
+      idpId: message.idp_id,
       callbackUrl,
-      message
-    );
+      requestData: message,
+      mode: message.accessor_id ? 3 : 1,
+    });
   } else if (message.as_id != null) {
     //receive data from AS
     // TODO: verifies signature of AS in blockchain.

@@ -1,11 +1,14 @@
 import logger from '../logger';
 
+import CustomError from '../error/customError';
+import errorType from '../error/type';
+
 import * as tendermint from '../tendermint/ndid';
 import * as utils from '../utils';
 import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
-import { accessorSign } from './idp';
+import { accessorSign, isAccessorSignUrlSet, notifyByCallback } from './idp';
 
 export async function checkAssociated({namespace, identifier}) {
   let idpList = await common.getIdpNodes({
@@ -29,13 +32,13 @@ export async function addAccessorMethodForAssociatedIdp({
   accessor_id,
 }) {
 
-  let associated = await checkAssociated({
+  const associated = await checkAssociated({
     namespace,
     identifier,
   });
-  if(!associated) return { associated };
+  if (!associated) return null;
   
-  let { request_id } = await createNewIdentity({
+  const { request_id } = await createNewIdentity({
     namespace,
     identifier,
     reference_id,
@@ -43,7 +46,7 @@ export async function addAccessorMethodForAssociatedIdp({
     accessor_public_key,
     accessor_id,
   });
-  return { request_id, associated };
+  return request_id;
 }
 
 export async function addAccessorAfterConsent(request_id, old_accessor_id) {
@@ -61,7 +64,8 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
     ial, 
     accessor_type, 
     accessor_public_key,
-    accessor_id,  
+    accessor_id,
+    sid,  
   } = await db.getIdentityFromRequestId(request_id);
   
   let promiseArray = [
@@ -88,8 +92,18 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   );
 
   await Promise.all(promiseArray);
+  db.removeIdentityFromRequestId(request_id);
+
+  let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
+  let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
+  let secret = padding + '|' + encryptedHash;
+  return secret;
 }
 
+// FIXME: error handling in many cases
+// when there is an error when transacting to blockchain
+// it should not create a request, e.g.
+// - duplicate accessor ID
 export async function createNewIdentity(data) {
   try {
     const {
@@ -102,10 +116,23 @@ export async function createNewIdentity(data) {
       ial,
     } = data;
 
+    const namespaceDetails = await common.getNamespaceList();
+    const valid = namespaceDetails.find(
+      (namespaceDetail) => namespaceDetail.namespace === namespace
+    );
+    if (!valid) {
+      throw new CustomError({
+        message: errorType.INVALID_NAMESPACE.message,
+        code: errorType.INVALID_NAMESPACE.code,
+        details: {
+          namespace
+        },
+      });
+    }
+
     let sid = namespace + ':' + identifier;
     let hash_id = utils.hash(sid);
 
-    //call CheckExistingIdentity to tendermint
     let { exist } = await tendermint.query('CheckExistingIdentity', {
       hash_id,
     });
@@ -113,6 +140,13 @@ export async function createNewIdentity(data) {
     let request_id = await db.getRequestIdByReferenceId(reference_id);
     if(request_id) {
       return { request_id, exist };
+    }
+
+    if (!isAccessorSignUrlSet()) {
+      throw new CustomError({
+        message: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.message,
+        code: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.code,
+      });
     }
 
     request_id = await common.createRequest({
@@ -132,7 +166,8 @@ export async function createNewIdentity(data) {
     });
 
     db.setRequestIdByReferenceId(reference_id, request_id);
-    let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
+  
+    /*let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
     let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
     let secret = padding + '|' + encryptedHash;
     
@@ -143,7 +178,7 @@ export async function createNewIdentity(data) {
       secret,
       hash_id,
       accessor_id,
-    });
+    });*/
 
     if(exist) {
       //save data for add accessor to persistent
@@ -153,12 +188,14 @@ export async function createNewIdentity(data) {
         accessor_public_key,
         hash_id,
         ial,
+        sid,
       });
     }
     else {
       let accessor_group_id = utils.randomBase64Bytes(32);
       
-      await Promise.all([
+      //await Promise.all([
+      Promise.all([
         tendermint.transact('CreateIdentity',{
           accessor_type,
           accessor_public_key,
@@ -175,9 +212,22 @@ export async function createNewIdentity(data) {
           ],
           node_id: config.nodeId,
         })
-      ]);
+      ]).then(async () => {
+
+        let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
+        let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
+        let secret = padding + '|' + encryptedHash; 
+        notifyByCallback({
+          type: 'onboard_request',
+          request_id: request_id,
+          success: true,
+          secret,
+        });
+        db.removeRequestIdByReferenceId(reference_id);
+
+      });
     }
-    return { request_id, exist, secret };
+    return { request_id, exist, /*secret*/ };
   } 
   catch (error) {
     logger.error({

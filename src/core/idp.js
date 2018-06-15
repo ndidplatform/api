@@ -45,6 +45,10 @@ let callbackUrl = {};
   }
 });
 
+export function isAccessorSignUrlSet() {
+  return callbackUrl.accessor != null;
+}
+
 export async function accessorSign(sid ,hash_id, accessor_id) {
   const data = {
     sid_hash: hash_id,
@@ -55,6 +59,13 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
     accessor_id
   };
 
+  if (callbackUrl.accessor == null) {
+    throw new CustomError({
+      message: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.message,
+      code: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.code,
+    });
+  }
+
   logger.debug({
     message: 'Callback to accessor sign',
     url: callbackUrl.accessor,
@@ -62,15 +73,29 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
     hash_id,
   });
 
-  const response = await fetch(callbackUrl.accessor, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-  return (await response.json()).signature;
+  try {
+    const response = await fetch(callbackUrl.accessor, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    const signatureObj = await response.json();
+    return signatureObj.signature;
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED.message,
+      code: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED.code,
+      cause: error,
+      details: {
+        callbackUrl: callbackUrl.accessor,
+        accessor_id,
+        hash_id,
+      }
+    })
+  }
 }
 
 export function getAccessorCallback() {
@@ -119,6 +144,7 @@ export async function createIdpResponse(data) {
       signature,
       accessor_id,
       secret,
+      request_message,
     } = data;
 
     const request = await common.getRequest({ requestId: request_id });
@@ -145,29 +171,48 @@ export async function createIdpResponse(data) {
       });
     }
 
-    let { blockchainProof, privateProofValue, padding } = utils.generateIdentityProof({
-      publicKey: accessorPublicKey,
-      challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge,
-      secret,
-    });
+    //TODO
+    //query mode from requestId
+    let requestStatus = await common.getRequest({ requestId: request_id });
+    let mode = requestStatus.mode;
+    let dataToBlockchain, privateProofObject;
+
+    if(mode === 3) {
+      let { blockchainProof, privateProofValue, padding } = utils.generateIdentityProof({
+        publicKey: await common.getAccessorKey(accessor_id),
+        challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge,
+        secret,
+      });
+    
+      privateProofObject = {
+        privateProofValue,
+        accessor_id,
+        padding,
+      };
+
+      dataToBlockchain = {
+        request_id,
+        aal,
+        ial,
+        status,
+        signature,
+        //accessor_id,
+        identity_proof: blockchainProof,
+        private_proof_hash: utils.hash(privateProofValue),
+      };
+    }
+    else {
+      signature = await utils.createSignature(request_message);
+      dataToBlockchain = {
+        request_id,
+        aal,
+        ial,
+        status,
+        signature,
+      };
+    }
+
     await db.removeRequestReceivedFromMQ(request_id);
-
-    let privateProofObject = {
-      privateProofValue,
-      accessor_id,
-      padding,
-    };
-
-    let dataToBlockchain = {
-      request_id,
-      aal,
-      ial,
-      status,
-      signature,
-      //accessor_id,
-      identity_proof: blockchainProof,
-      private_proof_hash: utils.hash(privateProofValue),
-    };
 
     let { height } = await tendermint.transact(
       'CreateIdpResponse',
@@ -186,7 +231,7 @@ export async function createIdpResponse(data) {
   }
 }
 
-function notifyByCallback(eventDataForCallback) {
+export function notifyByCallback(eventDataForCallback) {
   if (!callbackUrl.request) {
     logger.error({
       message: 'Callback URL for IdP has not been set',
@@ -288,11 +333,12 @@ export async function handleMessageFromQueue(messageStr) {
   //onboard response
   if(message.accessor_id) {
     if(await checkOnboardResponse(message)) {
-      await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
+      let secret = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
       notifyByCallback({
         type: 'onboard_consent_request',
         request_id: message.request_id,
         success: true,
+        secret,
       });
     }
   }
@@ -359,11 +405,12 @@ export async function handleTendermintNewBlockHeaderEvent(
       //reposne for onboard
       if(message.accessor_id) {
         if(await checkOnboardResponse(message)) {
-          await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
+          let secret = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
           notifyByCallback({
             type: 'onboard_consent_request',
             request_id: message.request_id,
             success: true,
+            secret,
           });
         }
       }

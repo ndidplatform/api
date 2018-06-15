@@ -143,6 +143,7 @@ async function getDataAndSendBackToRP(request, responseDetails) {
       identifier: request.identifier,
       request_params: request.request_params,
       ...responseDetails,
+      mode: request.mode,
     },
     true,
     afterGotDataFromCallback,
@@ -245,16 +246,18 @@ export async function handleTendermintNewBlockHeaderEvent(
         : height - missingBlockCount;
   const toHeight = height - 1;
 
-  logger.debug({
-    message: 'Getting request IDs to process',
-    fromHeight,
-    toHeight,
-  });
-
   const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
     fromHeight,
     toHeight
   );
+
+  logger.debug({
+    message: 'Getting request IDs to process',
+    fromHeight,
+    toHeight,
+    requestIdsInTendermintBlock,
+  });
+
   await Promise.all(
     requestIdsInTendermintBlock.map(async (requestId) => {
       logger.debug({
@@ -276,7 +279,6 @@ export async function handleTendermintNewBlockHeaderEvent(
 
 export async function registerAsService({
   service_id,
-  service_name,
   min_ial,
   min_aal,
   url,
@@ -285,7 +287,6 @@ export async function registerAsService({
     await Promise.all([
       registerServiceDestination({
         service_id,
-        service_name,
         min_aal,
         min_ial,
         node_id: config.nodeId,
@@ -344,6 +345,7 @@ export async function init() {
 
 async function verifyZKProof(request_id, dataFromMq) {
   if (!dataFromMq) dataFromMq = await db.getRequestReceivedFromMQ(request_id);
+
   let {
     privateProofObjectList,
     namespace,
@@ -351,6 +353,21 @@ async function verifyZKProof(request_id, dataFromMq) {
     request_message,
   } = dataFromMq;
 
+  let requestDetail = await common.getRequestDetail({
+    requestId: request_id,
+  });
+  //mode 1 bypass zkp
+  //but still need to check signature of node
+  if(requestDetail.mode === 1) { 
+    let responses = requestDetail.responses;
+    for(let i = 0 ; i < responses.length ; i++) {
+      let { signature, idp_id } = responses[i];
+      let { public_key } = await common.getNodePubKey(idp_id);
+      if(!utils.verifySignature(signature, public_key, JSON.stringify(request_message))) return false; 
+    }
+    return true;
+  }
+  
   //query and verify zk, also check conflict with each others
   let accessor_group_id = await common.getAccessorGroupId(
     privateProofObjectList[0].privateProofObject.accessor_id

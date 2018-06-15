@@ -181,7 +181,6 @@ export default {
     '/as/service/:service_id': {
       body: {
         properties: {
-          service_name: { type: 'string', minLength: 1 },
           min_ial: { $ref: 'defs#/definitions/ial' },
           min_aal: { $ref: 'defs#/definitions/aal' },
           url: {
@@ -190,7 +189,7 @@ export default {
             pattern: '^(https?)://',
           },
         },
-        required: ['service_name', 'min_ial', 'min_aal', 'url'],
+        required: ['min_ial', 'min_aal', 'url'],
       },
     },
     '/dpki/node/create': {
@@ -199,9 +198,24 @@ export default {
           node_id: { type: 'string', minLength: 1 },
           node_name: { type: 'string', minLength: 1 },
           node_key: { type: 'string', minLength: 1 },
+          // node_key_type: { type: 'string' },
+          // node_key_method: { type: 'string' },
           node_master_key: { type: 'string', minLength: 1 },
+          // node_master_key_type: { type: 'string' },
+          // node_master_key_method: { type: 'string' },
+          role: { type: 'string', enum: ['rp', 'idp', 'as'] },
+          min_ial: { $ref: 'defs#/definitions/ial' },
+          min_aal: { $ref: 'defs#/definitions/aal' },
         },
-        required: ['node_id', 'node_name', 'node_key', 'node_master_key'],
+        required: [
+          'node_id',
+          'node_name',
+          'node_key',
+          'node_master_key',
+          'role',
+          'min_ial',
+          'min_aal',
+        ],
       },
     },
     '/dpki/node/update': {
@@ -259,18 +273,18 @@ export default {
     '/identity/': {
       body: {
         properties: {
+          reference_id: { type: 'string', minLength: 1 },
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },
-          //secret: { type: 'string', minLength: 1 },
           accessor_type: { type: 'string', minLength: 1 },
           accessor_public_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
           ial: { $ref: 'defs#/definitions/ial' },
         },
         required: [
+          'reference_id',
           'namespace',
           'identifier',
-          //'secret',
           'accessor_type',
           'accessor_public_key',
           'accessor_id',
@@ -294,15 +308,24 @@ export default {
     '/identity/:namespace/:identifier/endorsement': {
       body: {
         properties: {
-          // TODO
+          // TODO: After v1.0
         },
       },
     },
     '/identity/:namespace/:identifier/accessors': {
       body: {
         properties: {
-          // TODO
+          reference_id: { type: 'string', minLength: 1 },
+          accessor_type: { type: 'string', minLength: 1 },
+          accessor_public_key: { type: 'string', minLength: 1 },
+          accessor_id: { type: 'string', minLength: 1 },
         },
+        required: [
+          'reference_id',
+          'accessor_type',
+          'accessor_public_key',
+          'accessor_id',
+        ],
       },
     },
   },
