@@ -275,7 +275,7 @@ export async function getIdpsMsqDestination({
   identifier,
   min_ial,
   min_aal,
-  idp_list,
+  idp_id_list,
   mode,
 }) {
   const idpNodes = await getIdpNodes({
@@ -290,9 +290,9 @@ export async function getIdpsMsqDestination({
   });
 
   let filteredIdpNodes;
-  if (idp_list != null && idp_list.length !== 0) {
+  if (idp_id_list != null && idp_id_list.length !== 0) {
     filteredIdpNodes = idpNodes.filter(
-      (idpNode) => idp_list.indexOf(idpNode.id) >= 0
+      (idpNode) => idp_id_list.indexOf(idpNode.id) >= 0
     );
   } else {
     filteredIdpNodes = idpNodes;
@@ -363,7 +363,7 @@ export function addTimeoutScheduler(requestId, secondsToTimeout) {
  * @param {Object} request
  * @param {string} request.namespace
  * @param {string} request.reference_id
- * @param {Array.<string>} request.idp_list
+ * @param {Array.<string>} request.idp_id_list
  * @param {string} request.callback_url
  * @param {Array.<Object>} request.data_request_list
  * @param {string} request.request_message
@@ -374,10 +374,11 @@ export function addTimeoutScheduler(requestId, secondsToTimeout) {
  * @returns {Promise<string>} Request ID
  */
 export async function createRequest({
+  mode,
   namespace,
   identifier,
   reference_id,
-  idp_list,
+  idp_id_list,
   callback_url,
   data_request_list,
   request_message,
@@ -385,7 +386,6 @@ export async function createRequest({
   min_aal,
   min_idp,
   request_timeout,
-  mode,
 }) {
   try {
     mode = mode || 3;
@@ -395,7 +395,7 @@ export async function createRequest({
       return requestId;
     }
 
-    if (idp_list != null && idp_list.length > 0 && idp_list.length < min_idp) {
+    if (idp_id_list != null && idp_id_list.length > 0 && idp_id_list.length < min_idp) {
       throw new CustomError({
         message: errorType.IDP_LIST_LESS_THAN_MIN_IDP.message,
         code: errorType.IDP_LIST_LESS_THAN_MIN_IDP.code,
@@ -403,7 +403,7 @@ export async function createRequest({
         details: {
           namespace,
           identifier,
-          idp_list,
+          idp_id_list,
         },
       });
     }
@@ -415,7 +415,7 @@ export async function createRequest({
       identifier,
       min_ial,
       min_aal,
-      idp_list,
+      idp_id_list,
       mode,
     });
 
@@ -427,7 +427,7 @@ export async function createRequest({
         details: {
           namespace,
           identifier,
-          idp_list,
+          idp_id_list,
         },
       });
     }
@@ -440,7 +440,7 @@ export async function createRequest({
         details: {
           namespace,
           identifier,
-          idp_list,
+          idp_id_list,
         },
       });
     }
@@ -453,7 +453,7 @@ export async function createRequest({
       dataRequestListToBlockchain.push({
         service_id: data_request_list[i].service_id,
         as_id_list: data_request_list[i].as_id_list,
-        count: data_request_list[i].count,
+        min_as: data_request_list[i].min_as,
         request_params_hash: utils.hashWithRandomSalt(
           JSON.stringify(data_request_list[i].request_params)
         ),

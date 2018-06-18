@@ -13,8 +13,9 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const {
+        mode,
         reference_id,
-        idp_list,
+        idp_id_list,
         callback_url,
         data_request_list,
         request_message,
@@ -22,14 +23,14 @@ router.post(
         min_aal,
         min_idp,
         request_timeout,
-        mode,
       } = req.body;
 
       const requestId = await common.createRequest({
+        mode,
         namespace,
         identifier,
         reference_id,
-        idp_list,
+        idp_id_list,
         callback_url,
         data_request_list,
         request_message,
@@ -37,7 +38,6 @@ router.post(
         min_aal,
         min_idp,
         request_timeout,
-        mode,
       });
 
       res.status(200).json({ request_id: requestId });

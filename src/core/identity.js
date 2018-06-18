@@ -159,7 +159,7 @@ export async function createNewIdentity(data) {
       namespace,
       identifier,
       reference_id,
-      idp_list: [],
+      idp_id_list: [],
       callback_url: null,
       data_request_list: [],
       request_message: ial 

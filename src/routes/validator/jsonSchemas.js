@@ -14,16 +14,6 @@ export default {
     },
   },
   GET: {
-    '/identity/:namespace/:identifier/requests/history': {
-      query: {
-        properties: {
-          count: {
-            type: 'string',
-            pattern: '^\\d*[1-9]\\d*$', // number (int) > 0
-          },
-        },
-      },
-    },
     '/utility/idp': {
       query: {
         properties: {
@@ -61,7 +51,7 @@ export default {
       body: {
         properties: {
           reference_id: { type: 'string', minLength: 1 },
-          idp_list: {
+          idp_id_list: {
             type: 'array',
             items: {
               type: 'string',
@@ -89,15 +79,15 @@ export default {
                     minimum: 1,
                   },
                 },
-                count: {
+                min_as: {
                   type: 'integer',
                   minimum: 1,
                 },
                 request_params: {
-                  type: 'object',
+                  type: 'string',
                 },
               },
-              required: ['service_id'],
+              required: ['service_id', 'min_as'],
             },
           },
           request_message: { type: 'string' },
