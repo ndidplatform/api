@@ -144,7 +144,7 @@ export async function createIdpResponse(data) {
       signature,
       accessor_id,
       secret,
-      request_message,
+      //request_message,
     } = data;
 
     const request = await common.getRequest({ requestId: request_id });
@@ -178,14 +178,27 @@ export async function createIdpResponse(data) {
     let dataToBlockchain, privateProofObject;
 
     if(mode === 3) {
-      let { blockchainProof, privateProofValue, padding } = utils.generateIdentityProof({
+      let blockchainProofArray = [], privateProofValueArray = [];
+      let identityProof1 = utils.generateIdentityProof({
         publicKey: await common.getAccessorKey(accessor_id),
-        challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge,
+        challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge[0],
         secret,
+        k: (await db.getRequestReceivedFromMQ(request_id)).k[0],
+      });
+      let identityProof2 = utils.generateIdentityProof({
+        publicKey: await common.getAccessorKey(accessor_id),
+        challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge[1],
+        secret,
+        k: (await db.getRequestReceivedFromMQ(request_id)).k[1],
       });
     
+      blockchainProofArray = [identityProof1.blockchainProof, identityProof2.blockchainProof];
+      privateProofValueArray = [identityProof1.privateProofValue, identityProof2.privateProofValue];
+      //padding is the same
+      let padding = identityProof1.padding;
+
       privateProofObject = {
-        privateProofValue,
+        privateProofValueArray,
         accessor_id,
         padding,
       };
@@ -197,12 +210,12 @@ export async function createIdpResponse(data) {
         status,
         signature,
         //accessor_id,
-        identity_proof: blockchainProof,
-        private_proof_hash: utils.hash(privateProofValue),
+        identity_proof: blockchainProofArray,
+        private_proof_hash: utils.hash(privateProofValueArray),
       };
     }
     else {
-      signature = await utils.createSignature(request_message);
+      //signature = await utils.createSignature(request_message);
       dataToBlockchain = {
         request_id,
         aal,
@@ -269,6 +282,12 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   db.removeRPIdFromRequestId(request_id);
 }
 
+async function requestChallenge(request_id) {
+  //gen public proof and save to request
+  //declare public proof to blockchain
+  //send message queue with public proof
+}
+
 export async function handleMessageFromQueue(messageStr) {
   logger.info({
     message: 'Received message from MQ',
@@ -278,7 +297,32 @@ export async function handleMessageFromQueue(messageStr) {
     messageStr,
   });
   const message = JSON.parse(messageStr);
-  //need challenge for response
+  //if message is challenge for response, no need to wait for blockchain
+  if(message.challenge) {
+    //set challenge for response for request_id (update in db)
+    //db.setRequestReceivedFromMQ(message.request_id, message) and set challenge
+    //check challenge (against hash of message + challenge
+    const valid = await common.checkRequestIntegrity(
+      message.request_id,
+      message
+    );
+    if (valid) {
+      //retrieve message (actual request)
+      /*notifyByCallback({
+        type: 'consent_request',
+        request_id: message.request_id,
+        namespace: message.namespace,
+        identifier: message.identifier,
+        request_message: message.request_message,
+        request_message_hash: utils.hash(message.request_message),
+        requester_node_id: message.rp_id,
+        min_ial: message.min_ial,
+        min_aal: message.min_aal,
+        data_request_list: message.data_request_list,
+      });*/
+    }
+    return;
+  }
   await db.setRequestReceivedFromMQ(message.request_id, message);
 
   const latestBlockHeight = tendermint.latestBlockHeight;
@@ -342,25 +386,13 @@ export async function handleMessageFromQueue(messageStr) {
       });
     }
   }
+  else if(message.type === 'request_challenge') {
+    //get public proof in blockchain
+    //check public proof in blockchain and in message queue
+    //if match, send challenge
+  }
   else {
-    const valid = await common.checkRequestIntegrity(
-      message.request_id,
-      message
-    );
-    if (valid) {
-      notifyByCallback({
-        type: 'consent_request',
-        request_id: message.request_id,
-        namespace: message.namespace,
-        identifier: message.identifier,
-        request_message: message.request_message,
-        request_message_hash: utils.hash(message.request_message),
-        requester_node_id: message.rp_id,
-        min_ial: message.min_ial,
-        min_aal: message.min_aal,
-        data_request_list: message.data_request_list,
-      });
-    }
+    requestChallenge(message.request_id);
   }
 }
 
@@ -414,22 +446,13 @@ export async function handleTendermintNewBlockHeaderEvent(
           });
         }
       }
+      else if(message.type === 'request_challenge') {
+        //get public proof in blockchain
+        //check public proof in blockchain and in message queue
+        //if match, send challenge
+      }
       else {
-        const valid = await common.checkRequestIntegrity(requestId, message);
-        if (valid) {
-          notifyByCallback({
-            type: 'consent_request',
-            request_id: message.request_id,
-            namespace: message.namespace,
-            identifier: message.identifier,
-            request_message: message.request_message,
-            request_message_hash: utils.hash(message.request_message),
-            requester_node_id: message.rp_id,
-            min_ial: message.min_ial,
-            min_aal: message.min_aal,
-            data_request_list: message.data_request_list,
-          });
-        }
+        requestChallenge(message.request_id);
       }
     })
   );

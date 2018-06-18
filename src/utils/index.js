@@ -108,7 +108,7 @@ export function generateIdentityProof(data) {
   let [ padding, signedHash ] = data.secret.split('|');
   let { n, e } = extractParameterFromPublicKey(data.publicKey);
   // -1 to garantee k < n
-  let k = randomBase64Bytes(n.toBuffer().length - 1);
+  let k = data.k;//randomBase64Bytes(n.toBuffer().length - 1);
   let kInt = stringToBigInt(k);
   let signedHashInt = stringToBigInt(signedHash);
   let challenge = stringToBigInt(data.challenge);
@@ -174,8 +174,34 @@ function moduloMultiplicativeInverse(a, modulo) {
   if(!g.eq(1)) throw 'No modular inverse';
   return x.mod(modulo);
 }
-
 export function verifyZKProof(publicKey, 
+  challenges, 
+  privateProofArray, 
+  publicProofArray, 
+  sid,
+  privateProofHash,
+  padding,
+) {
+  if(challenges.length !== privateProofArray.length 
+    || challenges.length !== publicProofArray.length
+  ) return false;
+
+  let result = true;
+  for(let i = 0 ; i < challenges.length ; i++) {
+    result = result && verifyZKProofSingle(
+      publicKey,
+      challenges[i], 
+      privateProofArray[i], 
+      publicProofArray[i], 
+      sid,
+      privateProofHash,
+      padding,
+    );
+  }
+  return result;
+}
+
+export function verifyZKProofSingle(publicKey, 
   challenge, 
   privateProof, 
   publicProof, 

@@ -460,7 +460,10 @@ export async function createRequest({
       });
     }
 
-    let challenge = utils.randomBase64Bytes(config.challengeLength);
+    let challenge = [
+      utils.randomBase64Bytes(config.challengeLength),
+      utils.randomBase64Bytes(config.challengeLength),
+    ];
     db.setChallengeFromRequestId(request_id, challenge);
 
     const requestData = {
@@ -475,7 +478,7 @@ export async function createRequest({
       request_message,
       mode,
       // for zk proof
-      challenge,
+      //challenge,
       rp_id: config.nodeId,
     };
 
@@ -493,7 +496,9 @@ export async function createRequest({
       min_ial,
       request_timeout,
       data_request_list: dataRequestListToBlockchain,
-      request_message_hash: utils.hash(challenge + request_message),
+      request_message_hash: utils.hash(
+        JSON.stringify(challenge) + request_message
+      ),
       mode,
     };
 

@@ -183,8 +183,15 @@ export async function handleTendermintNewBlockHeaderEvent(
           const requestId =
             transaction.args.request_id || transaction.args.requestId; //derive from tx;
           if (requestId == null) return;
-          const height = block.block.header.height;
-          await notifyRequestUpdate(requestId, height);
+          if(transaction.args.request_challenge) {
+            //get public proof in blockchain
+            //check public proof in blockchain and in message queue
+            //if match, send challenge and return
+          }
+          else {
+            const height = block.block.header.height;
+            await notifyRequestUpdate(requestId, height);
+          }
         })
       );
     })
@@ -347,6 +354,9 @@ export async function handleMessageFromQueue(messageStr) {
         await db.setRequestToSendToAS(message.request_id, request);
       }
     }
+    else if(message.type === 'request_challenge') {
+      //save expected public proof with height
+    }
 
     //must wait for height
     const latestBlockHeight = tendermint.latestBlockHeight;
@@ -361,6 +371,11 @@ export async function handleMessageFromQueue(messageStr) {
       db.setProofReceivedFromMQ(responseId, message);
       db.setExpectedIdpResponseNodeId(message.request_id, message.idp_id);
       return;
+    }
+    if(message.type === 'request_challenge') {
+      //get public proof in blockchain
+      //check public proof in blockchain and in message queue
+      //if match, send challenge and return
     }
 
     const callbackUrl = await db.getRequestCallbackUrl(message.request_id);
