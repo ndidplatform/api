@@ -178,29 +178,25 @@ export async function createIdpResponse(data) {
     let dataToBlockchain, privateProofObject;
 
     if(mode === 3) {
-      let blockchainProofArray = [], privateProofValueArray = [];
-      let identityProof1 = utils.generateIdentityProof({
-        publicKey: await common.getAccessorKey(accessor_id),
-        challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge[0],
-        secret,
-        k: (await db.getRequestReceivedFromMQ(request_id)).k[0],
-      });
-      let identityProof2 = utils.generateIdentityProof({
-        publicKey: await common.getAccessorKey(accessor_id),
-        challenge: (await db.getRequestReceivedFromMQ(request_id)).challenge[1],
-        secret,
-        k: (await db.getRequestReceivedFromMQ(request_id)).k[1],
-      });
-    
-      blockchainProofArray = [identityProof1.blockchainProof, identityProof2.blockchainProof];
-      privateProofValueArray = [identityProof1.privateProofValue, identityProof2.privateProofValue];
-      //padding is the same
-      let padding = identityProof1.padding;
+      let blockchainProofArray = [], privateProofValueArray = [], samePadding;
+      let requestFromMq = await db.getRequestReceivedFromMQ(request_id);
 
+      for(let i = 0 ; i < requestFromMq.challenges.length ; i++) {
+        let { blockchainProof, privateProofValue, padding } = utils.generateIdentityProof({
+          publicKey: await common.getAccessorKey(accessor_id),
+          challenge: requestFromMq.challenge[i],
+          k: requestFromMq.k[i],
+          secret,
+        });
+        blockchainProofArray.push(blockchainProof);
+        privateProofValueArray.push(privateProofValue);
+        samePadding = padding;
+      }
+    
       privateProofObject = {
         privateProofValueArray,
         accessor_id,
-        padding,
+        padding: samePadding,
       };
 
       dataToBlockchain = {
@@ -283,6 +279,7 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
 }
 
 async function requestChallenge(request_id) {
+  //TODOZKP
   //gen public proof and save to request
   //declare public proof to blockchain
   //send message queue with public proof
@@ -299,6 +296,7 @@ export async function handleMessageFromQueue(messageStr) {
   const message = JSON.parse(messageStr);
   //if message is challenge for response, no need to wait for blockchain
   if(message.challenge) {
+    //TODOZKP
     //set challenge for response for request_id (update in db)
     //db.setRequestReceivedFromMQ(message.request_id, message) and set challenge
     //check challenge (against hash of message + challenge
@@ -387,6 +385,7 @@ export async function handleMessageFromQueue(messageStr) {
     }
   }
   else if(message.type === 'request_challenge') {
+    //TODOZKP
     //get public proof in blockchain
     //check public proof in blockchain and in message queue
     //if match, send challenge
@@ -447,6 +446,7 @@ export async function handleTendermintNewBlockHeaderEvent(
         }
       }
       else if(message.type === 'request_challenge') {
+        //TODOZKP
         //get public proof in blockchain
         //check public proof in blockchain and in message queue
         //if match, send challenge

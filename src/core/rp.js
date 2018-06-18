@@ -184,6 +184,7 @@ export async function handleTendermintNewBlockHeaderEvent(
             transaction.args.request_id || transaction.args.requestId; //derive from tx;
           if (requestId == null) return;
           if(transaction.args.request_challenge) {
+            //TODOZKP
             //get public proof in blockchain
             //check public proof in blockchain and in message queue
             //if match, send challenge and return
@@ -355,6 +356,7 @@ export async function handleMessageFromQueue(messageStr) {
       }
     }
     else if(message.type === 'request_challenge') {
+      //TODOZKP
       //save expected public proof with height
     }
 
@@ -373,6 +375,7 @@ export async function handleMessageFromQueue(messageStr) {
       return;
     }
     if(message.type === 'request_challenge') {
+      //TODOZKP
       //get public proof in blockchain
       //check public proof in blockchain and in message queue
       //if match, send challenge and return

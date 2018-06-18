@@ -43,7 +43,7 @@ router.post('/response', validateBody, async (req, res, next) => {
       status,
       signature,
       accessor_id,
-      request_message,
+      //request_message,
     } = req.body;
 
     await idp.createIdpResponse({
@@ -56,7 +56,7 @@ router.post('/response', validateBody, async (req, res, next) => {
       status,
       signature,
       accessor_id,
-      request_message,
+      //request_message,
     });
 
     res.status(204).end();
