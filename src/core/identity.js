@@ -18,7 +18,7 @@ export async function checkAssociated({namespace, identifier}) {
     min_ial: 1.1,
   });
   for(let i = 0 ; i < idpList.length ; i++) {
-    if(idpList[i].id === config.nodeId) return true;
+    if(idpList[i].node_id === config.nodeId) return true;
   }
   return false;
 }

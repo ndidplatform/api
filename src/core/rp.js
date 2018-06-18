@@ -251,7 +251,7 @@ async function getASReceiverList(data_request) {
     const asNodes = await common.getAsNodesByServiceId({
       service_id: data_request.service_id,
     });
-    nodeIdList = asNodes.map((asNode) => asNode.id);
+    nodeIdList = asNodes.map((asNode) => asNode.node_id);
   } else {
     nodeIdList = data_request.as_id_list;
   }

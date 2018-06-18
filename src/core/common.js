@@ -86,7 +86,7 @@ export async function getIdpNodes({ namespace, identifier, min_ial, min_aal }) {
       min_ial,
       min_aal,
     });
-    return result.node != null ? result.node : [];
+    return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get IdP nodes from blockchain',
@@ -100,7 +100,7 @@ export async function getAsNodesByServiceId({ service_id }) {
     const result = await tendermint.query('GetAsNodesByServiceId', {
       service_id,
     });
-    return result.node != null ? result.node : [];
+    return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get AS nodes by service ID from blockchain',
@@ -292,7 +292,7 @@ export async function getIdpsMsqDestination({
   let filteredIdpNodes;
   if (idp_id_list != null && idp_id_list.length !== 0) {
     filteredIdpNodes = idpNodes.filter(
-      (idpNode) => idp_id_list.indexOf(idpNode.id) >= 0
+      (idpNode) => idp_id_list.indexOf(idpNode.node_id) >= 0
     );
   } else {
     filteredIdpNodes = idpNodes;
@@ -300,7 +300,7 @@ export async function getIdpsMsqDestination({
 
   const receivers = await Promise.all(
     filteredIdpNodes.map(async (idpNode) => {
-      const nodeId = idpNode.id;
+      const nodeId = idpNode.node_id;
       const { ip, port } = await getMsqAddress(nodeId);
       return {
         ip,
