@@ -686,14 +686,13 @@ export async function handleChallengeRequest(responseId) {
   if(!public_proof_mq) return false;
 
   //get public proof in blockchain
-  let public_proof_blockchain_array = (await getRequestDetail(request_id)).public_proof;
-  if(!public_proof_blockchain_array) return false;
-
-  let public_proof_blockchain;
-  public_proof_blockchain_array.forEach((proofObject) => {
-    if(proofObject.idp_id === idp_id) 
-      public_proof_blockchain = proofObject.public_proof;
-  });
+  let public_proof_blockchain = (await tendermint.query(
+    'GetPublicProof',
+    {
+      request_id,
+      idp_id,
+    }
+  )).public_proof;
   if(!public_proof_blockchain) return false;
 
   //check public proof in blockchain and in message queue

@@ -94,7 +94,7 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
         accessor_id,
         hash_id,
       }
-    })
+    });
   }
 }
 
@@ -145,7 +145,7 @@ async function requestChallenge(request_id, accessor_id) {
   await db.setRequestReceivedFromMQ(request_id, request);
   //declare public proof to blockchain
   let { height } = await tendermint.transact(
-    'declarePublicProof',
+    'DeclarePublicProof',
     {
       request_id,
       public_proof: [ publicProof1, publicProof2 ],
