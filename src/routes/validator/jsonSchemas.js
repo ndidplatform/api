@@ -11,6 +11,11 @@ export default {
         type: 'string',
         enum: ['1', '2.1', '2.2', '3'],
       },
+      url: {
+        type: 'string',
+        format: 'uri',
+        pattern: '^(https?)://',
+      },
     },
   },
   GET: {
@@ -59,9 +64,7 @@ export default {
             },
           },
           callback_url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
+            $ref: 'defs#/definitions/url',
           },
           data_request_list: {
             type: 'array',
@@ -119,9 +122,7 @@ export default {
       body: {
         properties: {
           error_url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
+            $ref: 'defs#/definitions/url',
           },
         },
       },
@@ -129,25 +130,19 @@ export default {
     '/idp/callback': {
       body: {
         properties: {
-          url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
+          incoming_request_url: {
+            $ref: 'defs#/definitions/url',
+          },
+          identity_result_url: {
+            $ref: 'defs#/definitions/url',
+          },
+          accessor_sign_url: {
+            $ref: 'defs#/definitions/url',
+          },
+          error_url: {
+            $ref: 'defs#/definitions/url',
           },
         },
-        required: ['url'],
-      },
-    },
-    '/idp/accessor/callback': {
-      body: {
-        properties: {
-          url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
-          },
-        },
-        required: ['url'],
       },
     },
     '/idp/response': {
@@ -185,9 +180,7 @@ export default {
           min_ial: { $ref: 'defs#/definitions/ial' },
           min_aal: { $ref: 'defs#/definitions/aal' },
           url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
+            $ref: 'defs#/definitions/url',
           },
         },
         required: ['min_ial', 'min_aal', 'url'],
@@ -239,14 +232,10 @@ export default {
       body: {
         properties: {
           sign_url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
+            $ref: 'defs#/definitions/url',
           },
           decrypt_url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
+            $ref: 'defs#/definitions/url',
           },
         },
         anyOf: [
@@ -263,9 +252,7 @@ export default {
       body: {
         properties: {
           url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
+            $ref: 'defs#/definitions/url',
           },
         },
         required: ['url'],

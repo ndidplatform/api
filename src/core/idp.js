@@ -17,6 +17,8 @@ import * as identity from './identity';
 
 import * as externalCryptoService from '../utils/externalCryptoService';
 
+const callbackUrls = {};
+
 const callbackUrlFilesPrefix = path.join(
   __dirname,
   '..',
@@ -24,29 +26,72 @@ const callbackUrlFilesPrefix = path.join(
   'idp-callback-url-' + config.nodeId,
 );
 
-let callbackUrl = {};
-
-[ 'request',
-  'accessor',
-].forEach((key) => {
+[
+  { key: 'incoming_request_url', fileSuffix: 'incoming_request' },
+  { key: 'identity_result_url', fileSuffix: 'identity_result' },
+  { key: 'accessor_sign_url', fileSuffix: 'accessor_sign' },
+  { key: 'error_url', fileSuffix: 'error' },
+].forEach(({ key, fileSuffix }) => {
   try {
-    callbackUrl[key] = fs.readFileSync(callbackUrlFilesPrefix + '-' + key, 'utf8');
+    callbackUrls[key] = fs.readFileSync(
+      callbackUrlFilesPrefix + '-' + fileSuffix,
+      'utf8'
+    );
   } catch (error) {
     if (error.code === 'ENOENT') {
       logger.warn({
-        message: 'IDP ' + key + ' callback url file not found',
+        message: `${fileSuffix} callback url file not found`,
       });
     } else {
       logger.error({
-        message: 'Cannot read IDP ' + key + ' callback url file',
+        message: `Cannot read ${fileSuffix} callback url file`,
         error,
       });
     }
   }
 });
 
+function writeCallbackUrlToFile(fileSuffix, url) {
+  fs.writeFile(callbackUrlFilesPrefix + '-' + fileSuffix, url, (err) => {
+    if (err) {
+      logger.error({
+        message: `Cannot write ${fileSuffix} callback url file`,
+        error: err,
+      });
+    }
+  });
+}
+
+export function setCallbackUrls({
+  incoming_request_url,
+  identity_result_url,
+  accessor_sign_url,
+  error_url,
+}) {
+  if (incoming_request_url != null) {
+    callbackUrls.incoming_request_url = incoming_request_url;
+    writeCallbackUrlToFile('incoming_request', incoming_request_url);
+  }
+  if (identity_result_url != null) {
+    callbackUrls.identity_result_url = identity_result_url;
+    writeCallbackUrlToFile('identity_result', identity_result_url);
+  }
+  if (accessor_sign_url != null) {
+    callbackUrls.accessor_sign_url = accessor_sign_url;
+    writeCallbackUrlToFile('accessor_sign', accessor_sign_url);
+  }
+  if (error_url != null) {
+    callbackUrls.error_url = error_url;
+    writeCallbackUrlToFile('error', error_url);
+  }
+}
+
+export function getCallbackUrls() {
+  return callbackUrls;
+}
+
 export function isAccessorSignUrlSet() {
-  return callbackUrl.accessor != null;
+  return callbackUrls.accessor_sign_url != null;
 }
 
 export async function accessorSign(sid ,hash_id, accessor_id) {
@@ -59,7 +104,7 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
     accessor_id
   };
 
-  if (callbackUrl.accessor == null) {
+  if (callbackUrls.accessor_sign_url == null) {
     throw new CustomError({
       message: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.message,
       code: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.code,
@@ -68,13 +113,13 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
 
   logger.debug({
     message: 'Callback to accessor sign',
-    url: callbackUrl.accessor,
+    url: callbackUrls.accessor_sign_url,
     accessor_id,
     hash_id,
   });
 
   try {
-    const response = await fetch(callbackUrl.accessor, {
+    const response = await fetch(callbackUrls.accessor_sign_url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -90,47 +135,13 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
       code: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED.code,
       cause: error,
       details: {
-        callbackUrl: callbackUrl.accessor,
+        callbackUrl: callbackUrls.accessor_sign_url,
         accessor_id,
         hash_id,
       }
     })
   }
 }
-
-export function getAccessorCallback() {
-  return callbackUrl.accessor;
-}
-
-export function setAccessorCallback(url) {
-  if(url) {
-    callbackUrl.accessor = url;
-    fs.writeFile(callbackUrlFilesPrefix + '-accessor', url, (err) => {
-      if (err) {
-        logger.error({
-          message: 'Cannot write DPKI accessor callback url file',
-          error: err,
-        });
-      }
-    });
-  }
-}
-
-export const setCallbackUrl = (url) => {
-  callbackUrl.request = url;
-  fs.writeFile(callbackUrlFilesPrefix + '-request', url, (err) => {
-    if (err) {
-      logger.error({
-        message: 'Cannot write IDP callback url file',
-        error: err,
-      });
-    }
-  });
-};
-
-export const getCallbackUrl = () => {
-  return callbackUrl.request;
-};
 
 export async function createIdpResponse(data) {
   try {
@@ -232,13 +243,13 @@ export async function createIdpResponse(data) {
 }
 
 export function notifyByCallback(eventDataForCallback) {
-  if (!callbackUrl.request) {
+  if (!callbackUrls.incoming_request_url) {
     logger.error({
       message: 'Callback URL for IdP has not been set',
     });
     return;
   }
-  return callbackToClient(callbackUrl.request, eventDataForCallback, true);
+  return callbackToClient(callbackUrls.incoming_request_url, eventDataForCallback, true);
 }
 
 async function sendPrivateProofToRP(request_id, privateProofObject, height) {
