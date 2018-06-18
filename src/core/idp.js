@@ -308,7 +308,7 @@ export async function handleMessageFromQueue(messageStr) {
     if(message.accessor_id) {
       //====================== COPY-PASTE from RP, need refactoring =====================
       //store private parameter from EACH idp to request, to pass along to as
-      let request = await db.getRequestToSendToAS(message.request_id);
+      let request = await db.getRequestData(message.request_id);
       //AS involve
       if (request) {
         if (request.privateProofObjectList) {
@@ -317,6 +317,7 @@ export async function handleMessageFromQueue(messageStr) {
             privateProofObject: {
               privateProofValue: message.privateProofValue,
               accessor_id: message.accessor_id,
+              padding: message.padding,
             },
           });
         } else {
@@ -326,11 +327,12 @@ export async function handleMessageFromQueue(messageStr) {
               privateProofObject: {
                 privateProofValue: message.privateProofValue,
                 accessor_id: message.accessor_id,
+                padding: message.padding,
               },
             },
           ];
         }
-        await db.setRequestToSendToAS(message.request_id, request);
+        await db.setRequestData(message.request_id, request);
       }
       //====================================================================================
     }

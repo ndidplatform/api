@@ -65,9 +65,9 @@ export const getCallbackUrls = () => {
   return callbackUrls;
 };
 
-async function sendDataToRP(data) {
+async function sendDataToRP(rpId, data) {
   let receivers = [];
-  let nodeId = data.rp_id;
+  let nodeId = rpId;
   // TODO: try catch / error handling
   let { ip, port } = await common.getMsqAddress(nodeId);
   receivers.push({
@@ -81,6 +81,7 @@ async function sendDataToRP(data) {
     service_id: data.service_id,
     signature: data.signature,
     data: data.data,
+    height: data.height,
   });
 }
 
@@ -92,7 +93,7 @@ async function signData(data) {
     service_id: data.service_id,
   };
   try {
-    await tendermint.transact('SignData', dataToBlockchain, nonce);
+    return await tendermint.transact('SignData', dataToBlockchain, nonce);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot sign data',
@@ -145,21 +146,21 @@ export async function afterGotDataFromCallback(response, additionalData) {
   // AS node encrypts the response and sends it back to RP via NSQ.
   // TODO should check request status before send (whether request is closed or timeout)
   
-  sendDataToRP({
-    rp_id: additionalData.rpId,
+  // AS node adds transaction to blockchain
+  const { height } = await signData({
+    as_id,
+    request_id: additionalData.requestId,
+    signature,
+    service_id: additionalData.serviceId,
+  });
+
+  sendDataToRP(additionalData.rpId, {
     request_id: additionalData.requestId,
     as_id,
     signature,
     service_id: additionalData.serviceId,
     data,
-  });
-
-  // AS node adds transaction to blockchain
-  signData({
-    as_id,
-    request_id: additionalData.requestId,
-    signature,
-    service_id: additionalData.serviceId,
+    height,
   });
 }
 

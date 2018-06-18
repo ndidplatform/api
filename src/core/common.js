@@ -482,7 +482,7 @@ export async function createRequest({
     // save request data to DB to send to AS via mq when authen complete
     // store even no data require, use for zk proof
     //if (data_request_list != null && data_request_list.length !== 0) {
-    await db.setRequestToSendToAS(request_id, requestData);
+    await db.setRequestData(request_id, requestData);
     //}
 
     // add data to blockchain
@@ -539,7 +539,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
     identifier,
     privateProofObjectList,
     request_message,
-  } = await db.getRequestToSendToAS(request_id);
+  } = await db.getRequestData(request_id);
 
   //check only signature of idp_id
   if(mode === 1) {
@@ -668,4 +668,21 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
       privateProofObject.padding,
     )
   );
+}
+
+export async function getIdentityInfo(namespace, identifier, node_id) {
+  try {
+    const sid = namespace + ':' + identifier;
+    const hash_id = utils.hash(sid);
+
+    return await tendermint.query('GetIdentityInfo',{
+      hash_id,
+      node_id,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get accessor public key from blockchain',
+      cause: error,
+    });
+  }
 }
