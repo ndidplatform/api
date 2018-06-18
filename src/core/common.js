@@ -455,7 +455,7 @@ export async function createRequest({
         as_id_list: data_request_list[i].as_id_list,
         min_as: data_request_list[i].min_as,
         request_params_hash: utils.hashWithRandomSalt(
-          JSON.stringify(data_request_list[i].request_params)
+          data_request_list[i].request_params
         ),
       });
     }
