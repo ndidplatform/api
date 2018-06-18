@@ -133,13 +133,39 @@ export const getCallbackUrl = () => {
 };
 
 async function requestChallenge(request_id, accessor_id) {
-  //TODOZKP
+  //query public key from accessor_id
+  let { public_key } = await common.getAccessorKey(accessor_id);
   //gen public proof
-  let [ k1, publicProof1 ] = utils.generatePublicProof(config.zkRandomLengthForIdp, accessor_id);
-  let [ k2, publicProof2 ] = utils.generatePublicProof(config.zkRandomLengthForIdp, accessor_id);
+  let [ k1, publicProof1 ] = utils.generatePublicProof(public_key);
+  let [ k2, publicProof2 ] = utils.generatePublicProof(public_key);
+
   //save k to request
+  let request = await db.getRequestReceivedFromMQ(request_id);
+  request.k = [ k1, k2 ];
+  await db.setRequestReceivedFromMQ(request_id, request);
   //declare public proof to blockchain
+  let { height } = await tendermint.transact(
+    'declarePublicProof',
+    {
+      request_id,
+      public_proof: [ publicProof1, publicProof2 ],
+      idp_id: config.nodeId,
+    },
+    utils.getNonce(),
+  );
   //send message queue with public proof
+  let { ip, port } = await common.getMsqAddress(request.rp_id);
+  let receiver = [{
+    ip,
+    port,
+    ...(await common.getNodePubKey(request.rp_id)),
+  }];
+  mq.send(receiver,{
+    public_proof: [ publicProof1, publicProof2 ],
+    request_id: request_id,
+    idp_id: config.nodeId,
+    height,
+  });
 }
 
 export async function requestChallengeAndCreateResponse(data) {

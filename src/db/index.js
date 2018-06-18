@@ -137,6 +137,33 @@ export function removeRequestReceivedFromMQ(requestId) {
   });
 }
 
+export function getResponseFromRequestId(requestId) {
+  return db.get({
+    name: 'responseDataFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'response',
+  });
+}
+
+export function setResponseFromRequestId(requestId, response) {
+  return db.set({
+    name: 'responseDataFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'response',
+    value: response,
+  });
+}
+
+export function removeResponseFromRequestId(requestId) {
+  return db.remove({
+    name: 'responseDataFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 export function getRPIdFromRequestId(requestId) {
   return db.get({
     name: 'rpIdFromRequestId',

@@ -31,6 +31,10 @@ const Entities = {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     request: Sequelize.JSON,
   }),
+  responseDataFromRequestId: sequelize.define('responseDataFromRequestId', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    response: Sequelize.JSON,
+  }),
   rpIdFromRequestId: sequelize.define('rpIdFromRequestId', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     rp_id: Sequelize.STRING,
