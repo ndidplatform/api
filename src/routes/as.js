@@ -39,6 +39,20 @@ router.get('/service/:service_id', async (req, res, next) => {
   }
 });
 
+router.post('/data/:request_id/:service_id', validateBody, async (req, res, next) => {
+  try {
+    const { request_id, service_id } = req.params;
+    const { data } = req.body;
+
+    // TODO
+    // as.
+
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/callback', async (req, res, next) => {
   try {
     const urls = as.getCallbackUrls();

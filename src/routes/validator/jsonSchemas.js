@@ -186,6 +186,14 @@ export default {
         required: ['min_ial', 'min_aal', 'url'],
       },
     },
+    '/as/data/:request_id/:service_id': {
+      body: {
+        properties: {
+          data: { type: 'string', minLength: 1 },
+        },
+        required: ['data'],
+      },
+    },
     '/as/callback': {
       body: {
         properties: {
