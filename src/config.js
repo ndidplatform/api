@@ -62,4 +62,4 @@ export const masterPrivateKeyPath = useExternalCryptoService
 
 //in byte
 export const challengeLength = 16;
-//export const zkRandomLengthForIdp = 240;
+export const zkRandomLengthForIdp = 128;

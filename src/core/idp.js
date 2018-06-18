@@ -132,7 +132,23 @@ export const getCallbackUrl = () => {
   return callbackUrl.request;
 };
 
-export async function createIdpResponse(data) {
+async function requestChallenge(request_id, accessor_id) {
+  //TODOZKP
+  //gen public proof
+  let [ k1, publicProof1 ] = utils.generatePublicProof(config.zkRandomLengthForIdp, accessor_id);
+  let [ k2, publicProof2 ] = utils.generatePublicProof(config.zkRandomLengthForIdp, accessor_id);
+  //save k to request
+  //declare public proof to blockchain
+  //send message queue with public proof
+}
+
+export async function requestChallengeAndCreateResponse(data) {
+  //store response data
+  await db.setResponseFromRequestId(data.request_id, data);
+  requestChallenge(data.request_id, data.accessor_id);
+}
+
+async function createIdpResponse(data) {
   try {
     let {
       request_id,
@@ -221,8 +237,11 @@ export async function createIdpResponse(data) {
       };
     }
 
-    await db.removeRequestReceivedFromMQ(request_id);
-
+    await Promise.all([
+      db.removeRequestReceivedFromMQ(request_id),
+      db.removeResponseFromRequestId(request_id)
+    ]);
+    
     let { height } = await tendermint.transact(
       'CreateIdpResponse',
       dataToBlockchain,
@@ -278,13 +297,6 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   db.removeRPIdFromRequestId(request_id);
 }
 
-async function requestChallenge(request_id) {
-  //TODOZKP
-  //gen public proof and save to request
-  //declare public proof to blockchain
-  //send message queue with public proof
-}
-
 export async function handleMessageFromQueue(messageStr) {
   logger.info({
     message: 'Received message from MQ',
@@ -296,29 +308,13 @@ export async function handleMessageFromQueue(messageStr) {
   const message = JSON.parse(messageStr);
   //if message is challenge for response, no need to wait for blockchain
   if(message.challenge) {
-    //TODOZKP
-    //set challenge for response for request_id (update in db)
-    //db.setRequestReceivedFromMQ(message.request_id, message) and set challenge
-    //check challenge (against hash of message + challenge
-    const valid = await common.checkRequestIntegrity(
-      message.request_id,
-      message
-    );
-    if (valid) {
-      //retrieve message (actual request)
-      /*notifyByCallback({
-        type: 'consent_request',
-        request_id: message.request_id,
-        namespace: message.namespace,
-        identifier: message.identifier,
-        request_message: message.request_message,
-        request_message_hash: utils.hash(message.request_message),
-        requester_node_id: message.rp_id,
-        min_ial: message.min_ial,
-        min_aal: message.min_aal,
-        data_request_list: message.data_request_list,
-      });*/
-    }
+    //store challenge
+    let request = await db.getRequestReceivedFromMQ(message.request_id);
+    request.challenge = message.challenge;
+    await db.setRequestReceivedFromMQ(message.request_id, request);
+    //query reponse data
+    let data = await db.getResponseFromRequestId(message.request_id);
+    createIdpResponse(data);
     return;
   }
   await db.setRequestReceivedFromMQ(message.request_id, message);
@@ -385,13 +381,29 @@ export async function handleMessageFromQueue(messageStr) {
     }
   }
   else if(message.type === 'request_challenge') {
-    //TODOZKP
-    //get public proof in blockchain
-    //check public proof in blockchain and in message queue
-    //if match, send challenge
+    const responseId = message.request_id + ':' + message.idp_id;
+    common.handleChallengeRequest(responseId);
   }
+  //consent request
   else {
-    requestChallenge(message.request_id);
+    const valid = await common.checkRequestIntegrity(
+      message.request_id,
+      message
+    );
+    if (valid) {
+      notifyByCallback({
+        type: 'consent_request',
+        request_id: message.request_id,
+        namespace: message.namespace,
+        identifier: message.identifier,
+        request_message: message.request_message,
+        request_message_hash: utils.hash(message.request_message),
+        requester_node_id: message.rp_id,
+        min_ial: message.min_ial,
+        min_aal: message.min_aal,
+        data_request_list: message.data_request_list,
+      });
+    }
   }
 }
 
@@ -433,7 +445,7 @@ export async function handleTendermintNewBlockHeaderEvent(
         requestId,
       });
       const message = await db.getRequestReceivedFromMQ(requestId);
-      //reposne for onboard
+      //reponse for onboard
       if(message.accessor_id) {
         if(await checkOnboardResponse(message)) {
           let secret = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
@@ -446,13 +458,28 @@ export async function handleTendermintNewBlockHeaderEvent(
         }
       }
       else if(message.type === 'request_challenge') {
-        //TODOZKP
-        //get public proof in blockchain
-        //check public proof in blockchain and in message queue
-        //if match, send challenge
+        const responseId = message.request_id + ':' + message.idp_id;
+        common.handleChallengeRequest(responseId);
       }
       else {
-        requestChallenge(message.request_id);
+        const valid = await common.checkRequestIntegrity(
+          message.request_id,
+          message
+        );
+        if (valid) {
+          notifyByCallback({
+            type: 'consent_request',
+            request_id: message.request_id,
+            namespace: message.namespace,
+            identifier: message.identifier,
+            request_message: message.request_message,
+            request_message_hash: utils.hash(message.request_message),
+            requester_node_id: message.rp_id,
+            min_ial: message.min_ial,
+            min_aal: message.min_aal,
+            data_request_list: message.data_request_list,
+          });
+        }
       }
     })
   );

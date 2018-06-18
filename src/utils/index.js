@@ -99,6 +99,12 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
   return rawMessageBuffer.slice(0,padLength + 1).toString('base64');
 }
 
+export function generatePublicProof(length) {
+  let k = randomBase64Bytes(length);
+  let kInt = stringToBigInt(k);
+  let blockchainProof = powerMod(kInt,e,n).toBuffer().toString('base64');
+}
+
 export function generateIdentityProof(data) {
   logger.debug({
     message: 'Generating proof',

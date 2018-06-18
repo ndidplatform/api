@@ -154,44 +154,6 @@ async function checkZKAndNotify({
   db.removeExpectedIdpResponseNodeId(requestStatus.request_id);
 }
 
-async function handleChallengeRequest(responseId) {
-  let [ request_id, idp_id ] = responseId.split(':');
-
-  //get public proof from mq
-  let public_proof_mq = await db.getPublicProofReceivedFromMQ(responseId);
-  if(!public_proof_mq) return false;
-
-  //get public proof in blockchain
-  let public_proof_blockchain_array = (await common.getRequestDetail(request_id)).public_proof;
-  if(!public_proof_blockchain_array) return false;
-
-  let public_proof_blockchain;
-  public_proof_blockchain_array.forEach((proofObject) => {
-    if(proofObject.idp_id === idp_id) 
-      public_proof_blockchain = proofObject.public_proof;
-  });
-  if(!public_proof_blockchain) return false;
-
-  //check public proof in blockchain and in message queue
-  if(public_proof_blockchain.length !== public_proof_mq.length) return false;
-  for(let i = 0; i < public_proof_mq.length ; i++) {
-    if(public_proof_blockchain[i] !== public_proof_mq[i]) return false;
-  }
-
-  //if match, send challenge and return
-  let challenge = await db.getChallengeFromRequestId(request_id);
-  let { ip, port } = await common.getMsqAddress(idp_id);
-  let receiver = [{
-    ip,
-    port,
-    ...(await common.getNodePubKey(idp_id)),
-  }];
-  mq.send(receiver, {
-    challenge,
-    request_id,
-  });
-}
-
 export async function handleTendermintNewBlockHeaderEvent(
   error,
   result,
@@ -222,7 +184,7 @@ export async function handleTendermintNewBlockHeaderEvent(
             transaction.args.request_id || transaction.args.requestId; //derive from tx;
           if (requestId == null) return;
           if(transaction.args.request_challenge) {
-            handleChallengeRequest(requestId + ':' + transaction.args.idp_id);
+            common.handleChallengeRequest(requestId + ':' + transaction.args.idp_id);
           }
           else {
             const height = block.block.header.height;
@@ -410,7 +372,7 @@ export async function handleMessageFromQueue(messageStr) {
       return;
     }
     if(message.type === 'request_challenge') {
-      handleChallengeRequest(message.request_id);
+      common.handleChallengeRequest(message.request_id);
       return;
     }
 

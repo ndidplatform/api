@@ -187,7 +187,7 @@ export async function checkRequestIntegrity(requestId, request) {
   const msgBlockchain = await getRequest({ requestId });
 
   const valid = 
-    utils.hash(request.challenge + request.request_message)
+    utils.hash(request.secretSalt + request.request_message)
     === msgBlockchain.request_message_hash;
   /*utils.compareSaltedHash({
     saltedHash: msgBlockchain.messageHash,
@@ -202,7 +202,7 @@ export async function checkRequestIntegrity(requestId, request) {
       message: 'Request message hash mismatched',
       requestId,
       givenRequestMessage: request.request_message,
-      givenRequestMessageHashWithChallenge: utils.hash(request.challenge + request.request_message),
+      givenRequestMessageHashWithSalt: utils.hash(request.secretSalt + request.request_message),
       requestMessageHashFromBlockchain: msgBlockchain.request_message_hash,
     });
   }
@@ -466,6 +466,8 @@ export async function createRequest({
     ];
     db.setChallengeFromRequestId(request_id, challenge);
 
+    let secretSalt = utils.randomBase64Bytes(16);
+
     const requestData = {
       namespace,
       identifier,
@@ -480,6 +482,7 @@ export async function createRequest({
       // for zk proof
       //challenge,
       rp_id: config.nodeId,
+      secretSalt,
     };
 
     // save request data to DB to send to AS via mq when authen complete
@@ -496,9 +499,7 @@ export async function createRequest({
       min_ial,
       request_timeout,
       data_request_list: dataRequestListToBlockchain,
-      request_message_hash: utils.hash(
-        JSON.stringify(challenge) + request_message
-      ),
+      request_message_hash: utils.hash(secretSalt + request_message),
       mode,
     };
 
@@ -673,4 +674,44 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
       privateProofObject.padding,
     )
   );
+}
+
+//===== zkp and request related =====
+
+export async function handleChallengeRequest(responseId) {
+  let [ request_id, idp_id ] = responseId.split(':');
+
+  //get public proof from mq
+  let public_proof_mq = await db.getPublicProofReceivedFromMQ(responseId);
+  if(!public_proof_mq) return false;
+
+  //get public proof in blockchain
+  let public_proof_blockchain_array = (await getRequestDetail(request_id)).public_proof;
+  if(!public_proof_blockchain_array) return false;
+
+  let public_proof_blockchain;
+  public_proof_blockchain_array.forEach((proofObject) => {
+    if(proofObject.idp_id === idp_id) 
+      public_proof_blockchain = proofObject.public_proof;
+  });
+  if(!public_proof_blockchain) return false;
+
+  //check public proof in blockchain and in message queue
+  if(public_proof_blockchain.length !== public_proof_mq.length) return false;
+  for(let i = 0; i < public_proof_mq.length ; i++) {
+    if(public_proof_blockchain[i] !== public_proof_mq[i]) return false;
+  }
+
+  //if match, send challenge and return
+  let challenge = await db.getChallengeFromRequestId(request_id);
+  let { ip, port } = await getMsqAddress(idp_id);
+  let receiver = [{
+    ip,
+    port,
+    ...(await getNodePubKey(idp_id)),
+  }];
+  mq.send(receiver, {
+    challenge,
+    request_id,
+  });
 }
