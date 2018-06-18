@@ -359,12 +359,12 @@ async function verifyZKProof(request_id, dataFromMq) {
   //mode 1 bypass zkp
   //but still need to check signature of node
   if(requestDetail.mode === 1) { 
-    let responses = requestDetail.responses;
+    /*let responses = requestDetail.responses;
     for(let i = 0 ; i < responses.length ; i++) {
       let { signature, idp_id } = responses[i];
       let { public_key } = await common.getNodePubKey(idp_id);
       if(!utils.verifySignature(signature, public_key, JSON.stringify(request_message))) return false; 
-    }
+    }*/
     return true;
   }
   

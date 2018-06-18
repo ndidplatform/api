@@ -547,9 +547,9 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   } = await db.getRequestToSendToAS(request_id);
 
   //check only signature of idp_id
-  if(mode === 1) {
+  if(mode === 1) { return true;
 
-    let responses = (await getRequestDetail({
+    /*let responses = (await getRequestDetail({
       requestId: request_id,
     })).responses;
     for(let i = 0 ; i < responses.length ; i++) {
@@ -574,13 +574,13 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
       message: 'Code should never reach here (in common.verifyZKProof)',
       request_id, idp_id, dataFromMq, mode,
     });
-    return false;
+    return false;*/
   }
 
   let challenge = await db.getChallengeFromRequestId(request_id);
   let privateProofObject = dataFromMq
     ? dataFromMq
-    : await db.getProofReceivedFromMQ(request_id + ':' + idp_id);
+    : await db.getPrivateProofReceivedFromMQ(request_id + ':' + idp_id);
 
   logger.debug({
     message: 'Verifying zk proof',

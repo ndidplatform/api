@@ -42,6 +42,7 @@ const Entities = {
   proofReceivedFromMQ: sequelize.define('proofReceivedFromMQ', {
     responseId: { type: Sequelize.STRING, primaryKey: true },
     privateProofObject: Sequelize.JSON,
+    publicProofArray: Sequelize.JSON,
   }),
   requestIdReferenceIdMapping: sequelize.define('requestIdReferenceIdMapping', {
     referenceId: { type: Sequelize.TEXT, primaryKey: true },

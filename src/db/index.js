@@ -218,7 +218,7 @@ export function removeChallengeFromRequestId(requestId) {
   });
 }
 
-export function getProofReceivedFromMQ(responseId) {
+export function getPrivateProofReceivedFromMQ(responseId) {
   return db.get({
     name: 'proofReceivedFromMQ',
     keyName: 'responseId',
@@ -227,7 +227,7 @@ export function getProofReceivedFromMQ(responseId) {
   });
 }
 
-export function setProofReceivedFromMQ(responseId, privateProofObject) {
+export function setPrivateProofReceivedFromMQ(responseId, privateProofObject) {
   return db.set({
     name: 'proofReceivedFromMQ',
     keyName: 'responseId',
@@ -237,11 +237,30 @@ export function setProofReceivedFromMQ(responseId, privateProofObject) {
   });
 }
 
-export function removeProofReceivedFromMQ(responseId) {
+export function removeReceivedFromMQ(responseId) {
   return db.remove({
     name: 'proofReceivedFromMQ',
     keyName: 'responseId',
     key: responseId,
+  });
+}
+
+export function getPublicProofReceivedFromMQ(responseId) {
+  return db.get({
+    name: 'proofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'publicProofArray',
+  });
+}
+
+export function setPublicProofReceivedFromMQ(responseId, publicProofArray) {
+  return db.set({
+    name: 'proofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'publicProofArray',
+    value: publicProofArray,
   });
 }
 
