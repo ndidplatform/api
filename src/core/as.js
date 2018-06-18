@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+
 import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/customError';
 import logger from '../logger';
@@ -10,6 +13,57 @@ import * as common from './common';
 import * as db from '../db';
 
 import * as externalCryptoService from '../utils/externalCryptoService';
+
+const callbackUrls = {};
+
+const callbackUrlFilesPrefix = path.join(
+  __dirname,
+  '..',
+  '..',
+  'as-callback-url-' + config.nodeId,
+);
+
+[{ key: 'error_url', fileSuffix: 'error' }].forEach(({ key, fileSuffix }) => {
+  try {
+    callbackUrls[key] = fs.readFileSync(
+      callbackUrlFilesPrefix + '-' + fileSuffix,
+      'utf8'
+    );
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      logger.warn({
+        message: `${fileSuffix} callback url file not found`,
+      });
+    } else {
+      logger.error({
+        message: `Cannot read ${fileSuffix} callback url file`,
+        error,
+      });
+    }
+  }
+});
+
+function writeCallbackUrlToFile(fileSuffix, url) {
+  fs.writeFile(callbackUrlFilesPrefix + '-' + fileSuffix, url, (err) => {
+    if (err) {
+      logger.error({
+        message: `Cannot write ${fileSuffix} callback url file`,
+        error: err,
+      });
+    }
+  });
+}
+
+export const setCallbackUrls = ({ error_url }) => {
+  if (error_url != null) {
+    callbackUrls.error_url = error_url;
+    writeCallbackUrlToFile('error', error_url);
+  }
+};
+
+export const getCallbackUrls = () => {
+  return callbackUrls;
+};
 
 async function sendDataToRP(data) {
   let receivers = [];

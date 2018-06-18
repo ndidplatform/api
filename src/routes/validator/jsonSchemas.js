@@ -186,6 +186,15 @@ export default {
         required: ['min_ial', 'min_aal', 'url'],
       },
     },
+    '/as/callback': {
+      body: {
+        properties: {
+          error_url: {
+            $ref: 'defs#/definitions/url',
+          },
+        },
+      },
+    },
     '/dpki/node/create': {
       body: {
         properties: {

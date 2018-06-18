@@ -43,17 +43,21 @@ const callbackUrlFilesPrefix = path.join(
   }
 });
 
+function writeCallbackUrlToFile(fileSuffix, url) {
+  fs.writeFile(callbackUrlFilesPrefix + '-' + fileSuffix, url, (err) => {
+    if (err) {
+      logger.error({
+        message: `Cannot write ${fileSuffix} callback url file`,
+        error: err,
+      });
+    }
+  });
+}
+
 export const setCallbackUrls = ({ error_url }) => {
   if (error_url != null) {
     callbackUrls.error_url = error_url;
-    fs.writeFile(callbackUrlFilesPrefix + '-error', error_url, (err) => {
-      if (err) {
-        logger.error({
-          message: 'Cannot write error callback url file',
-          error: err,
-        });
-      }
-    });
+    writeCallbackUrlToFile('error', error_url);
   }
 };
 

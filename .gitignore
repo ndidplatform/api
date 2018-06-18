@@ -1,6 +1,6 @@
 idp-callback-url*
 rp-callback-url*
-as-callback-url
+as-callback-url*
 dpki-callback-url*
 
 latest-block-height-*
