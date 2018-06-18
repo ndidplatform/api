@@ -115,6 +115,17 @@ export default {
         required: ['request_id'],
       },
     },
+    '/rp/callback': {
+      body: {
+        properties: {
+          error_url: {
+            type: 'string',
+            format: 'uri',
+            pattern: '^(https?)://',
+          },
+        },
+      },
+    },
     '/idp/callback': {
       body: {
         properties: {

@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+
 import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/customError';
 import logger from '../logger';
@@ -10,6 +13,33 @@ import * as db from '../db';
 import * as utils from '../utils';
 
 import * as externalCryptoService from '../utils/externalCryptoService';
+
+const callbackUrls = {};
+
+const callbackUrlFilesPrefix = path.join(
+  __dirname,
+  '..',
+  '..',
+  'rp-callback-url-' + config.nodeId,
+);
+
+export const setCallbackUrls = ({ error_url }) => {
+  if (error_url != null) {
+    callbackUrls.error_url = error_url;
+    fs.writeFile(callbackUrlFilesPrefix + '-error', error_url, (err) => {
+      if (err) {
+        logger.error({
+          message: 'Cannot write error callback url file',
+          error: err,
+        });
+      }
+    });
+  }
+};
+
+export const getCallbackUrls = () => {
+  return callbackUrls;
+};
 
 /**
  *
