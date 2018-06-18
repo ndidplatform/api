@@ -23,6 +23,26 @@ const callbackUrlFilesPrefix = path.join(
   'rp-callback-url-' + config.nodeId,
 );
 
+[{ key: 'error_url', fileSuffix: 'error' }].forEach(({ key, fileSuffix }) => {
+  try {
+    callbackUrls[key] = fs.readFileSync(
+      callbackUrlFilesPrefix + '-' + fileSuffix,
+      'utf8'
+    );
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      logger.warn({
+        message: `${fileSuffix} callback url file not found`,
+      });
+    } else {
+      logger.error({
+        message: `Cannot read ${fileSuffix} callback url file`,
+        error,
+      });
+    }
+  }
+});
+
 export const setCallbackUrls = ({ error_url }) => {
   if (error_url != null) {
     callbackUrls.error_url = error_url;
