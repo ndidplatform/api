@@ -45,6 +45,7 @@ export async function addAccessorMethodForAssociatedIdp({
     accessor_type,
     accessor_public_key,
     accessor_id,
+    addAccessor: true,
   });
   return request_id;
 }
@@ -113,6 +114,7 @@ export async function createNewIdentity(data) {
       accessor_type,
       accessor_public_key,
       ial,
+      addAccessor,
     } = data;
 
     const namespaceDetails = await common.getNamespaceList();
@@ -125,6 +127,22 @@ export async function createNewIdentity(data) {
         code: errorType.INVALID_NAMESPACE.code,
         details: {
           namespace
+        },
+      });
+    }
+
+    let associated = await checkAssociated({
+      namespace,
+      identifier,
+    });
+    //already onboard this user
+    if(!addAccessor && associated) {
+      throw new CustomError({
+        message: errorType.ALREADY_ONBOARD.message,
+        code: errorType.ALREADY_ONBOARD.code,
+        details: {
+          namespace,
+          identifier
         },
       });
     }
