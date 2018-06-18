@@ -111,4 +111,32 @@ router.post('/requests/close', validateBody, async (req, res, next) => {
   }
 });
 
+router.get('/callback', async (req, res, next) => {
+  try {
+    const urls = rp.getCallbackUrls();
+
+    if (Object.keys(urls).length > 0) {
+      res.status(200).json(urls);
+    } else {
+      res.status(404).end();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/callback', validateBody, async (req, res, next) => {
+  try {
+    const { error_url } = req.body;
+
+    rp.setCallbackUrls({
+      error_url,
+    });
+
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

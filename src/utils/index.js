@@ -358,6 +358,7 @@ export function getDetailedRequestStatus(requestDetail) {
     }
   }
   return {
+    mode: requestDetail.mode,
     request_id: requestDetail.request_id,
     status,
     min_idp: requestDetail.min_idp,

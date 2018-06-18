@@ -39,4 +39,46 @@ router.get('/service/:service_id', async (req, res, next) => {
   }
 });
 
+router.post('/data/:request_id/:service_id', validateBody, async (req, res, next) => {
+  try {
+    const { request_id, service_id } = req.params;
+    const { data } = req.body;
+
+    // TODO
+    // as.
+
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/callback', async (req, res, next) => {
+  try {
+    const urls = as.getCallbackUrls();
+
+    if (Object.keys(urls).length > 0) {
+      res.status(200).json(urls);
+    } else {
+      res.status(404).end();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/callback', validateBody, async (req, res, next) => {
+  try {
+    const { error_url } = req.body;
+
+    as.setCallbackUrls({
+      error_url,
+    });
+
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

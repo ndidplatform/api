@@ -86,7 +86,7 @@ export async function getIdpNodes({ namespace, identifier, min_ial, min_aal }) {
       min_ial,
       min_aal,
     });
-    return result.node != null ? result.node : [];
+    return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get IdP nodes from blockchain',
@@ -100,7 +100,7 @@ export async function getAsNodesByServiceId({ service_id }) {
     const result = await tendermint.query('GetAsNodesByServiceId', {
       service_id,
     });
-    return result.node != null ? result.node : [];
+    return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get AS nodes by service ID from blockchain',
@@ -292,7 +292,7 @@ export async function getIdpsMsqDestination({
   let filteredIdpNodes;
   if (idp_id_list != null && idp_id_list.length !== 0) {
     filteredIdpNodes = idpNodes.filter(
-      (idpNode) => idp_id_list.indexOf(idpNode.id) >= 0
+      (idpNode) => idp_id_list.indexOf(idpNode.node_id) >= 0
     );
   } else {
     filteredIdpNodes = idpNodes;
@@ -300,7 +300,7 @@ export async function getIdpsMsqDestination({
 
   const receivers = await Promise.all(
     filteredIdpNodes.map(async (idpNode) => {
-      const nodeId = idpNode.id;
+      const nodeId = idpNode.node_id;
       const { ip, port } = await getMsqAddress(nodeId);
       return {
         ip,
@@ -455,7 +455,7 @@ export async function createRequest({
         as_id_list: data_request_list[i].as_id_list,
         min_as: data_request_list[i].min_as,
         request_params_hash: utils.hashWithRandomSalt(
-          JSON.stringify(data_request_list[i].request_params)
+          data_request_list[i].request_params
         ),
       });
     }
@@ -482,7 +482,7 @@ export async function createRequest({
     // save request data to DB to send to AS via mq when authen complete
     // store even no data require, use for zk proof
     //if (data_request_list != null && data_request_list.length !== 0) {
-    await db.setRequestToSendToAS(request_id, requestData);
+    await db.setRequestData(request_id, requestData);
     //}
 
     // add data to blockchain
@@ -539,7 +539,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
     identifier,
     privateProofObjectList,
     request_message,
-  } = await db.getRequestToSendToAS(request_id);
+  } = await db.getRequestData(request_id);
 
   //check only signature of idp_id
   if(mode === 1) {
@@ -668,4 +668,21 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
       privateProofObject.padding,
     )
   );
+}
+
+export async function getIdentityInfo(namespace, identifier, node_id) {
+  try {
+    const sid = namespace + ':' + identifier;
+    const hash_id = utils.hash(sid);
+
+    return await tendermint.query('GetIdentityInfo',{
+      hash_id,
+      node_id,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get accessor public key from blockchain',
+      cause: error,
+    });
+  }
 }
