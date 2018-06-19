@@ -254,7 +254,7 @@ export async function createNewIdentity(data) {
 
       });
     }
-    console.log('--->',{ request_id, exist, /*secret*/ accessor_id });
+    //console.log('--->',{ request_id, exist, /*secret*/ accessor_id });
     return { request_id, exist, /*secret*/ accessor_id };
   } 
   catch (error) {
