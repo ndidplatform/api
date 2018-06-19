@@ -10,8 +10,8 @@ router.get('/idp', validateQuery, async (req, res, next) => {
     const { min_ial = 0, min_aal = 0 } = req.query;
 
     const idpNodes = await common.getIdpNodes({
-      min_ial,
-      min_aal,
+      min_ial: parseFloat(min_ial),
+      min_aal: parseFloat(min_aal),
     });
 
     res.status(200).json(idpNodes);
@@ -31,8 +31,8 @@ router.get(
       const idpNodes = await common.getIdpNodes({
         namespace,
         identifier,
-        min_ial,
-        min_aal,
+        min_ial: parseFloat(min_ial),
+        min_aal: parseFloat(min_aal),
       });
 
       res.status(200).json(idpNodes);
@@ -95,7 +95,6 @@ router.get('/namespaces', async (req, res, next) => {
     next(error);
   }
 });
-
 
 router.get('/services', async (req, res, next) => {
   try {

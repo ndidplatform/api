@@ -86,8 +86,8 @@ export async function getIdpNodes({ namespace, identifier, min_ial, min_aal }) {
         namespace && identifier
           ? utils.hash(namespace + ':' + identifier)
           : undefined,
-      min_ial: parseInt(min_ial),
-      min_aal: parseInt(min_aal),
+      min_ial,
+      min_aal,
     });
     return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {
