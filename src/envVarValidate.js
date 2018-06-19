@@ -67,3 +67,15 @@ if (
   );
   process.exit(1);
 }
+
+if (
+  process.env.NODE_ENV === 'production' &&
+  process.env.HTTPS === 'true' &&
+  (!process.env.HTTPS_KEY_PATH || !process.env.HTTPS_CERT_PATH)
+) {
+  console.error(
+    'ERROR:',
+    '"HTTPS_KEY_PATH" and "HTTPS_CERT_PATH" environment variables are not set when "HTTPS" is set to true. Process will now exit.'
+  );
+  process.exit(1);
+}

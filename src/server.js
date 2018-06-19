@@ -1,6 +1,8 @@
 import 'source-map-support/register';
 
+import fs from 'fs';
 import http from 'http';
+import https from 'https';
 import express from 'express';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
@@ -52,11 +54,20 @@ app.use(bodyParserErrorHandler);
 
 app.use(routes);
 
-const server = http.createServer(app);
+let server;
+if (config.https) {
+  const httpsOptions = {
+    key: fs.readFileSync(config.httpsKeyPath),
+    cert: fs.readFileSync(config.httpsCertPath)
+  };
+  server = https.createServer(httpsOptions, app);
+} else {
+  server = http.createServer(app);
+}
 server.listen(config.serverPort);
 
 logger.info({
-  message: `Server listening on port ${config.serverPort}`,
+  message: `${config.https ? 'HTTPS' : 'HTTP'} server listening on port ${config.serverPort}`,
 });
 
 // TO BE REMOVED
