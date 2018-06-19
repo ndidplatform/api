@@ -63,6 +63,15 @@ router.post('/node/update', validateBody, async (req, res, next) => {
   }
 });
 
+router.get('/node/callback', async (req, res, next) => {
+  try {
+    res.status(200).send(externalCryptoService.getCallbackUrls());
+  }
+  catch(error) {
+    next(error);
+  }
+});
+
 router.post('/node/register_callback', validateBody, async (req, res, next) => {
   try {
     const { sign_url, decrypt_url } = req.body;

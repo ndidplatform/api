@@ -113,6 +113,14 @@ async function testDecryptCallback(url, publicKey) {
   }
 }
 
+export function getCallbackUrls() {
+  return {
+    signature: callbackUrl.signature,
+    decrypt: callbackUrl.decrypt,
+    master_signature: callback.masterSignature,
+  }
+}
+
 export function isCallbackUrlsSet() {
   return (
     callbackUrl.signature != null &&
