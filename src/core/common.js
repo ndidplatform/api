@@ -699,7 +699,7 @@ export async function handleChallengeRequest(responseId) {
 
   //get public proof in blockchain
   let public_proof_blockchain = (await tendermint.query(
-    'GetPublicProof',
+    'GetIdentityProof',
     {
       request_id,
       idp_id,

@@ -160,7 +160,7 @@ async function requestChallenge(request_id, accessor_id) {
   await db.setRequestReceivedFromMQ(request_id, request);
   //declare public proof to blockchain
   let { height } = await tendermint.transact(
-    'DeclarePublicProof',
+    'DeclareIdentityProof',
     {
       request_id,
       public_proof: [ publicProof1, publicProof2 ],
