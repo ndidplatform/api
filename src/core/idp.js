@@ -163,7 +163,7 @@ async function requestChallenge(request_id, accessor_id) {
     'DeclareIdentityProof',
     {
       request_id,
-      public_proof: [ publicProof1, publicProof2 ],
+      identity_proof: JSON.stringify([ publicProof1, publicProof2 ]),
       idp_id: config.nodeId,
     },
     utils.getNonce(),

@@ -700,16 +700,17 @@ export async function handleChallengeRequest(responseId) {
     responseId,
   });
 
+  //message queue not arrived yet
   if(!public_proof_mq) return false;
 
   //get public proof in blockchain
-  let public_proof_blockchain = (await tendermint.query(
+  let public_proof_blockchain = JSON.parse((await tendermint.query(
     'GetIdentityProof',
     {
       request_id,
       idp_id,
     }
-  )).public_proof;
+  )).identity_proof);
   if(!public_proof_blockchain) return false;
 
   //check public proof in blockchain and in message queue

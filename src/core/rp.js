@@ -297,7 +297,7 @@ export async function handleTendermintNewBlockHeaderEvent(
           const requestId =
             transaction.args.request_id || transaction.args.requestId; //derive from tx;
           if (requestId == null) return;
-          if(transaction.args.request_challenge) {
+          if(transaction.fnName === 'DeclareIdentityProof') {
             common.handleChallengeRequest(requestId + ':' + transaction.args.idp_id);
           }
           else {
