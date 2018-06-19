@@ -475,7 +475,7 @@ async function checkOnboardResponse(message) {
   let requestDetail = await common.getRequestDetail({
     requestId: message.request_id
   });
-  let response = requestDetail.responses[0];
+  let response = requestDetail.response_list[0];
   
   if(!(await common.verifyZKProof(message.request_id, message.idp_id, message))) {
     reason = 'Invalid response';

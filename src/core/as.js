@@ -228,7 +228,7 @@ async function getResponseDetails(requestId) {
   let signatures = [];
   let max_ial = 0;
   let max_aal = 0;
-  requestDetail.responses.forEach((response) => {
+  requestDetail.response_list.forEach((response) => {
     signatures.push(response.signature);
     if (response.aal > max_aal) max_aal = response.aal;
     if (response.ial > max_ial) max_ial = response.ial;
@@ -414,9 +414,9 @@ async function verifyZKProof(request_id, dataFromMq) {
   //mode 1 bypass zkp
   //but still need to check signature of node
   if(requestDetail.mode === 1) { 
-    let responses = requestDetail.responses;
-    for(let i = 0 ; i < responses.length ; i++) {
-      let { signature, idp_id } = responses[i];
+    let response_list = requestDetail.response_list;
+    for(let i = 0 ; i < response_list.length ; i++) {
+      let { signature, idp_id } = response_list[i];
       let { public_key } = await common.getNodePubKey(idp_id);
       if(!utils.verifySignature(signature, public_key, JSON.stringify(request_message))) return false; 
     }
@@ -438,9 +438,9 @@ async function verifyZKProof(request_id, dataFromMq) {
     }
   }
 
-  let responses = (await common.getRequestDetail({
+  let response_list = (await common.getRequestDetail({
     requestId: request_id,
-  })).responses;
+  })).response_list;
   let valid = true;
   for (let i = 0; i < privateProofObjectList.length; i++) {
     //query accessor_public_key from privateProof.accessor_id
@@ -449,7 +449,7 @@ async function verifyZKProof(request_id, dataFromMq) {
     );
     //query publicProof from response of idp_id in request
     let publicProof, signature, privateProofValueHash;
-    responses.forEach((response) => {
+    response_list.forEach((response) => {
       if (response.idp_id === privateProofObjectList[i].idp_id) {
         publicProof = response.identity_proof;
         signature = response.signature;

@@ -59,7 +59,10 @@ export async function getRequest({ requestId }) {
 
 export async function getRequestDetail({ requestId }) {
   try {
-    const requestDetail = await tendermint.query('GetRequestDetail', { requestId });
+    const { special, ...requestDetail } = await tendermint.query(
+      'GetRequestDetail',
+      { requestId }
+    );
     if (requestDetail == null) {
       return null;
     }
@@ -324,11 +327,13 @@ export function clearAllScheduler() {
 
 export async function timeoutRequest(requestId) {
   try {
+    const responseValidList = await db.getIdpResponseValidList(requestId);
+
     const request = await getRequest({ requestId });
     if (request.closed === false) {
       await tendermint.transact(
         'TimeOutRequest',
-        { requestId },
+        { requestId, response_valid_list: responseValidList },
         utils.getNonce()
       );
     }
@@ -544,13 +549,13 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   //check only signature of idp_id
   if(mode === 1) {
 
-    let responses = (await getRequestDetail({
+    let response_list = (await getRequestDetail({
       requestId: request_id,
-    })).responses;
-    for(let i = 0 ; i < responses.length ; i++) {
-      if(responses[i].idp_id !== idp_id) continue;
+    })).response_list;
+    for(let i = 0 ; i < response_list.length ; i++) {
+      if(response_list[i].idp_id !== idp_id) continue;
 
-      let { signature } = responses[i];
+      let { signature } = response_list[i];
       let { public_key } = await getNodePubKey(idp_id);
 
       logger.debug({
@@ -621,17 +626,17 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
 
   //query publicProof from response of idp_id in request
   let publicProof, signature, privateProofValueHash;
-  let responses = (await getRequestDetail({
+  let response_list = (await getRequestDetail({
     requestId: request_id,
-  })).responses;
+  })).response_list;
 
   logger.debug({
     message: 'Request detail',
-    responses,
+    response_list,
     request_message,
   });
 
-  responses.forEach((response) => {
+  response_list.forEach((response) => {
     if (response.idp_id === idp_id) {
       publicProof = response.identity_proof;
       signature = response.signature;

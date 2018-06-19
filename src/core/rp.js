@@ -118,7 +118,7 @@ async function notifyRequestUpdate(requestId, height) {
       height, 
       idpId: idpNodeId, 
       callbackUrl,
-      responseIal: requestDetail.responses.find(
+      responseIal: requestDetail.response_list.find(
         (response) => response.idp_id === idpNodeId
       ).ial,
       savedResponseValidList,
@@ -633,9 +633,11 @@ async function setDataReceived(requestId, serviceId, asNodeId) {
 
 export async function closeRequest(requestId) {
   try {
+    const responseValidList = await db.getIdpResponseValidList(requestId);
+
     const result = await tendermint.transact(
       'CloseRequest',
-      { requestId },
+      { requestId, response_valid_list: responseValidList },
       utils.getNonce()
     );
     return result;
