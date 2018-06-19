@@ -14,7 +14,7 @@ import * as config from '../config';
 const TEST_MESSAGE = 'test';
 const TEST_MESSAGE_BASE_64 = Buffer.from(TEST_MESSAGE).toString('base64');
 
-const callbackUrl = {};
+const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
   __dirname,
@@ -23,20 +23,24 @@ const callbackUrlFilesPrefix = path.join(
   'dpki-callback-url-' + config.nodeId
 );
 
-['signature', 'masterSignature', 'decrypt'].forEach((key) => {
+[
+  { key: 'sign_url', fileSuffix: 'signature' },
+  { key: 'master_sign_url', fileSuffix: 'masterSignature' },
+  { key: 'decrypt_url', fileSuffix: 'decrypt' },
+].forEach(({ key, fileSuffix }) => {
   try {
-    callbackUrl[key] = fs.readFileSync(
-      callbackUrlFilesPrefix + '-' + key,
+    callbackUrls[key] = fs.readFileSync(
+      callbackUrlFilesPrefix + '-' + fileSuffix,
       'utf8'
     );
   } catch (error) {
     if (error.code === 'ENOENT') {
       logger.warn({
-        message: 'DPKI ' + key + ' callback url file not found',
+        message: `DPKI: ${fileSuffix} callback url file not found`,
       });
     } else {
       logger.error({
-        message: 'Cannot read DPKI ' + key + ' callback url file(s)',
+        message: `Cannot read DPKI: ${fileSuffix} callback url file`,
         error,
       });
     }
@@ -114,18 +118,14 @@ async function testDecryptCallback(url, publicKey) {
 }
 
 export function getCallbackUrls() {
-  return {
-    signature: callbackUrl.signature,
-    decrypt: callbackUrl.decrypt,
-    master_signature: callback.masterSignature,
-  }
+  return callbackUrls;
 }
 
 export function isCallbackUrlsSet() {
   return (
-    callbackUrl.signature != null &&
-    callbackUrl.masterSignature != null &&
-    callbackUrl.decrypt != null
+    callbackUrls.sign_url != null &&
+    callbackUrls.master_sign_url != null &&
+    callbackUrls.decrypt_url != null
   );
 }
 
@@ -146,7 +146,7 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
       });
     }
 
-    callbackUrl.signature = signCallbackUrl;
+    callbackUrls.sign_url = signCallbackUrl;
     fs.writeFile(
       callbackUrlFilesPrefix + '-signature',
       signCallbackUrl,
@@ -174,7 +174,7 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
       });
     }
 
-    callbackUrl.decrypt = decryptCallbackUrl;
+    callbackUrls.decrypt_url = decryptCallbackUrl;
     fs.writeFile(
       callbackUrlFilesPrefix + '-decrypt',
       decryptCallbackUrl,
@@ -203,7 +203,7 @@ export async function setMasterSignatureCallback(url) {
       });
     }
 
-    callbackUrl.masterSignature = url;
+    callbackUrls.master_sign_url = url;
     fs.writeFile(callbackUrlFilesPrefix + '-masterSignature', url, (err) => {
       if (err) {
         logger.error({
@@ -216,14 +216,15 @@ export async function setMasterSignatureCallback(url) {
 }
 
 export async function decryptAsymetricKey(encryptedMessage) {
-  if (callbackUrl.decrypt == null) {
+  const url = callbackUrls.decrypt_url;
+  if (url == null) {
     throw new CustomError({
       message: errorType.EXTERNAL_DECRYPT_URL_NOT_SET.message,
       code: errorType.EXTERNAL_DECRYPT_URL_NOT_SET.code,
     });
   }
   try {
-    const response = await fetch(callbackUrl.decrypt, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -241,7 +242,7 @@ export async function decryptAsymetricKey(encryptedMessage) {
     // TODO: retry
     logger.error({
       message: 'Error calling external crypto service: decrypt',
-      callbackUrl: callbackUrl.decrypt,
+      callbackUrl: url,
     });
     throw error;
   }
@@ -249,8 +250,8 @@ export async function decryptAsymetricKey(encryptedMessage) {
 
 export async function createSignature(message, messageHash, useMasterKey) {
   const url = useMasterKey
-    ? callbackUrl.masterSignature
-    : callbackUrl.signature;
+    ? callbackUrls.master_sing_url
+    : callbackUrls.sign_url;
   if (url == null) {
     if (useMasterKey) {
       throw new CustomError({
@@ -285,6 +286,7 @@ export async function createSignature(message, messageHash, useMasterKey) {
     // TODO: retry
     logger.error({
       message: 'Error calling external crypto service: sign',
+      useMasterKey,
       callbackUrl: url,
     });
     throw error;
