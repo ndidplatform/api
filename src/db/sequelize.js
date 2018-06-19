@@ -80,7 +80,7 @@ const Entities = {
     identity: Sequelize.JSON,
   }),
   idpResponseValid: sequelize.define('idpResponseValid', {
-    requestId: { type: Sequelize.STRING, primaryKey: true },
+    requestId: Sequelize.STRING,
     validInfo: Sequelize.JSON,
   }),
 };
