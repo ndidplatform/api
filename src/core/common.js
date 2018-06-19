@@ -639,7 +639,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
 
   responses.forEach((response) => {
     if (response.idp_id === idp_id) {
-      publicProof = response.identity_proof;
+      publicProof = JSON.parse(response.identity_proof);
       signature = response.signature;
       privateProofValueHash = response.private_proof_hash;
     }

@@ -136,6 +136,7 @@ export function generateIdentityProof(data) {
     signedHashInt,
     challenge: stringToBigInt(data.challenge),
     padding,
+    blockchainProof,
   });
 
   return { 
@@ -190,34 +191,58 @@ export function verifyZKProof(publicKey,
   privateProofHash,
   padding,
 ) {
+  logger.debug({
+    message: 'ZK List',
+    publicKey, 
+    challenges, 
+    privateProofArray, 
+    publicProofArray, 
+    sid,
+    privateProofHash,
+    padding,
+  });
+
   if(challenges.length !== privateProofArray.length 
     || challenges.length !== publicProofArray.length
   ) return false;
 
-  let result = true;
+  let result = hash(JSON.stringify(privateProofArray)) === privateProofHash;
+  logger.debug({
+    message: 'Check private proof hash',
+    result
+  });
   for(let i = 0 ; i < challenges.length ; i++) {
+    logger.debug({
+      message: 'should call zk',
+      i
+    });
     result = result && verifyZKProofSingle(
       publicKey,
       challenges[i], 
       privateProofArray[i], 
       publicProofArray[i], 
       sid,
-      privateProofHash,
+      //privateProofHash,
       padding,
     );
+    logger.debug({
+      message: 'Loop ZK',
+      i,
+      result,
+    });
   }
   return result;
 }
 
-export function verifyZKProofSingle(publicKey, 
+function verifyZKProofSingle(publicKey, 
   challenge, 
   privateProof, 
   publicProof, 
   sid,
-  privateProofHash,
+  //privateProofHash,
   padding,
 ) {
-  if(privateProofHash !== hash(privateProof)) return false;
+  //if(privateProofHash !== hash(privateProof)) return false;
 
   let { n, e } = extractParameterFromPublicKey(publicKey);
   let hashedSid = hash(sid.namespace + ':' + sid.identifier);
@@ -251,6 +276,7 @@ export function verifyZKProofSingle(publicKey,
     publicProof,
     paddedHashedSid: stringToBigInt(paddedHashedSid),
     hashedSid,
+    privateProof: stringToBigInt(privateProof),
   });
 
   return stringToBigInt(publicProof).eq(tmp3);

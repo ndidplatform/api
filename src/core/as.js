@@ -451,7 +451,7 @@ async function verifyZKProof(request_id, dataFromMq) {
     let publicProof, signature, privateProofValueHash;
     responses.forEach((response) => {
       if (response.idp_id === privateProofObjectList[i].idp_id) {
-        publicProof = response.identity_proof;
+        publicProof = JSON.parse(response.identity_proof);
         signature = response.signature;
         privateProofValueHash = response.private_proof_hash;
       }

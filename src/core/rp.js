@@ -230,6 +230,12 @@ async function checkIdpResponseAndNotify({
     requestStatus.mode,
   );
 
+  logger.debug({
+    message: 'Check RP call AS',
+    requestStatus,
+    validProof,
+  });
+
   if (
     requestStatus.status === 'confirmed' &&
     requestStatus.answered_idp_count === requestStatus.min_idp &&
@@ -340,6 +346,7 @@ async function sendRequestToAS(requestData, height) {
     height,
   });
 
+  let challenge = await db.getChallengeFromRequestId(requestData.request_id);
   if (requestData.data_request_list != undefined) {
     requestData.data_request_list.forEach(async (data_request) => {
       let receivers = await getASReceiverList(data_request);
@@ -360,7 +367,8 @@ async function sendRequestToAS(requestData, height) {
         rp_id: requestData.rp_id,
         request_message: requestData.request_message,
         height,
-        challenge: await db.getChallengeFromRequestId(requestData.request_id),
+        challenge,
+        secretSalt: requestData.secretSalt,
         privateProofObjectList: requestData.privateProofObjectList,
       });
     });
@@ -440,7 +448,7 @@ export async function handleMessageFromQueue(messageStr) {
           request.privateProofObjectList.push({
             idp_id: message.idp_id,
             privateProofObject: {
-              privateProofValue: message.privateProofValue,
+              privateProofValue: message.privateProofValueArray,
               accessor_id: message.accessor_id,
               padding: message.padding,
             },
@@ -450,7 +458,7 @@ export async function handleMessageFromQueue(messageStr) {
             {
               idp_id: message.idp_id,
               privateProofObject: {
-                privateProofValue: message.privateProofValue,
+                privateProofValue: message.privateProofValueArray,
                 accessor_id: message.accessor_id,
                 padding: message.padding,
               },
