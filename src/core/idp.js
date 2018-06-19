@@ -159,7 +159,7 @@ async function requestChallenge(request_id, accessor_id) {
   });
   await db.setRequestReceivedFromMQ(request_id, request);
   //declare public proof to blockchain
-  /*let { height } = await tendermint.transact(
+  let { height } = await tendermint.transact(
     'DeclarePublicProof',
     {
       request_id,
@@ -167,7 +167,7 @@ async function requestChallenge(request_id, accessor_id) {
       idp_id: config.nodeId,
     },
     utils.getNonce(),
-  );*/
+  );
   //send message queue with public proof
   let { ip, port } = await common.getMsqAddress(request.rp_id);
   let receiver = [{
@@ -180,7 +180,7 @@ async function requestChallenge(request_id, accessor_id) {
     request_id: request_id,
     idp_id: config.nodeId,
     type: 'request_challenge',
-    //height,
+    height,
   });
 }
 

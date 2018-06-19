@@ -698,7 +698,7 @@ export async function handleChallengeRequest(responseId) {
   if(!public_proof_mq) return false;
 
   //get public proof in blockchain
-  /*let public_proof_blockchain = (await tendermint.query(
+  let public_proof_blockchain = (await tendermint.query(
     'GetPublicProof',
     {
       request_id,
@@ -711,7 +711,7 @@ export async function handleChallengeRequest(responseId) {
   if(public_proof_blockchain.length !== public_proof_mq.length) return false;
   for(let i = 0; i < public_proof_mq.length ; i++) {
     if(public_proof_blockchain[i] !== public_proof_mq[i]) return false;
-  }*/
+  }
 
   //if match, send challenge and return
   let nodeId = {};
