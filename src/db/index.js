@@ -13,6 +13,33 @@ export async function close() {
 // Used by RP, IdP, and AS
 //
 
+export function getRequestData(requestId) {
+  return db.get({
+    name: 'requestData',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+  });
+}
+
+export function setRequestData(requestId, request) {
+  return db.set({
+    name: 'requestData',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+    value: request,
+  });
+}
+
+export function removeRequestData(requestId) {
+  return db.remove({
+    name: 'requestData',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 export function addCallbackWithRetryData(cbId, data) {
   return db.pushToList({
     name: 'callbackWithRetry',
@@ -264,7 +291,7 @@ export function setPrivateProofReceivedFromMQ(responseId, privateProofObject) {
   });
 }
 
-export function removeReceivedFromMQ(responseId) {
+export function removeProofReceivedFromMQ(responseId) {
   return db.remove({
     name: 'proofReceivedFromMQ',
     keyName: 'responseId',
@@ -352,33 +379,6 @@ export function removeOnboardDataByReferenceId(referenceId) {
 export function removeRequestIdReferenceIdMappingByRequestId(requestId) {
   return db.remove({
     name: 'requestIdReferenceIdMapping',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
-export function getRequestToSendToAS(requestId) {
-  return db.get({
-    name: 'requestToSendToAS',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'request',
-  });
-}
-
-export function setRequestToSendToAS(requestId, request) {
-  return db.set({
-    name: 'requestToSendToAS',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'request',
-    value: request,
-  });
-}
-
-export function removeRequestToSendToAS(requestId) {
-  return db.remove({
-    name: 'requestToSendToAS',
     keyName: 'requestId',
     key: requestId,
   });
@@ -488,6 +488,33 @@ export function addTimeoutScheduler(requestId, unixTimeout) {
 export function removeTimeoutScheduler(requestId) {
   return db.remove({
     name: 'timeoutScheduler',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getIdpResponseValidList(requestId) {
+  return db.getList({
+    name: 'idpResponseValid',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'validInfo',
+  });
+}
+
+export function addIdpResponseValidList(requestId, validInfo) {
+  return db.pushToList({
+    name: 'idpResponseValid',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'validInfo',
+    value: validInfo,
+  });
+}
+
+export function removeIdpResponseValidList(requestId) {
+  return db.removeList({
+    name: 'idpResponseValid',
     keyName: 'requestId',
     key: requestId,
   });

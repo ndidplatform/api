@@ -293,7 +293,7 @@ export function createRequestId() {
  * @property {boolean} timed_out 
  * @property {Object} service_list 
  * @property {string} service_list.service_id 
- * @property {number} service_list.count 
+ * @property {number} service_list.min_as 
  * @property {number} service_list.signed_data_count 
  * @property {number} service_list.received_data_count 
  */
@@ -355,7 +355,7 @@ export function getDetailedRequestStatus(requestDetail) {
         : 0;
     return {
       service_id: service.service_id,
-      count: service.count,
+      min_as: service.min_as,
       signed_data_count: signedAnswerCount,
       received_data_count: receivedDataCount,
     };
@@ -371,7 +371,7 @@ export function getDetailedRequestStatus(requestDetail) {
   } else if (requestDetail.data_request_list.length > 0) {
     const asSignedAnswerCount = serviceList.reduce(
       (total, service) => ({
-        count: total.count + service.count,
+        count: total.count + service.min_as,
         signedAnswerCount: total.signedAnswerCount + service.signed_data_count,
         receivedDataCount:
           total.receivedDataCount + service.received_data_count,
@@ -392,6 +392,7 @@ export function getDetailedRequestStatus(requestDetail) {
     }
   }
   return {
+    mode: requestDetail.mode,
     request_id: requestDetail.request_id,
     status,
     min_idp: requestDetail.min_idp,

@@ -18,7 +18,7 @@ export async function checkAssociated({namespace, identifier}) {
     min_ial: 1.1,
   });
   for(let i = 0 ; i < idpList.length ; i++) {
-    if(idpList[i].id === config.nodeId) return true;
+    if(idpList[i].node_id === config.nodeId) return true;
   }
   return false;
 }
@@ -45,6 +45,7 @@ export async function addAccessorMethodForAssociatedIdp({
     accessor_type,
     accessor_public_key,
     accessor_id,
+    addAccessor: true,
   });
   return request_id;
 }
@@ -113,6 +114,7 @@ export async function createNewIdentity(data) {
       accessor_type,
       accessor_public_key,
       ial,
+      addAccessor,
     } = data;
 
     const namespaceDetails = await common.getNamespaceList();
@@ -125,6 +127,22 @@ export async function createNewIdentity(data) {
         code: errorType.INVALID_NAMESPACE.code,
         details: {
           namespace
+        },
+      });
+    }
+
+    let associated = await checkAssociated({
+      namespace,
+      identifier,
+    });
+    //already onboard this user
+    if(!addAccessor && associated) {
+      throw new CustomError({
+        message: errorType.ALREADY_ONBOARD.message,
+        code: errorType.ALREADY_ONBOARD.code,
+        details: {
+          namespace,
+          identifier
         },
       });
     }
@@ -159,7 +177,7 @@ export async function createNewIdentity(data) {
       namespace,
       identifier,
       reference_id,
-      idp_list: [],
+      idp_id_list: [],
       callback_url: null,
       data_request_list: [],
       request_message: ial 

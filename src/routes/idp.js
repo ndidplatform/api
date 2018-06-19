@@ -7,10 +7,10 @@ const router = express.Router();
 
 router.get('/callback', async (req, res, next) => {
   try {
-    const url = idp.getCallbackUrl();
+    const urls = idp.getCallbackUrls();
 
-    if (url != null) {
-      res.status(200).json({ url });
+    if (Object.keys(urls).length > 0) {
+      res.status(200).json(urls);
     } else {
       res.status(404).end();
     }
@@ -21,9 +21,19 @@ router.get('/callback', async (req, res, next) => {
 
 router.post('/callback', validateBody, async (req, res, next) => {
   try {
-    const { url } = req.body;
+    const {
+      incoming_request_url,
+      identity_result_url,
+      accessor_sign_url,
+      error_url,
+    } = req.body;
 
-    idp.setCallbackUrl(url);
+    idp.setCallbackUrls({
+      incoming_request_url,
+      identity_result_url,
+      accessor_sign_url,
+      error_url,
+    });
 
     res.status(204).end();
   } catch (error) {
@@ -58,32 +68,6 @@ router.post('/response', validateBody, async (req, res, next) => {
       accessor_id,
       //request_message,
     });
-
-    res.status(204).end();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get('/accessor/callback', async (req, res, next) => {
-  try {
-    const url = idp.getAccessorCallback();
-
-    if (url != null) {
-      res.status(200).json({ url });
-    } else {
-      res.status(404).end();
-    }
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post('/accessor/callback', validateBody, async (req, res, next) => {
-  try {
-    const { url } = req.body;
-
-    idp.setAccessorCallback(url);
 
     res.status(204).end();
   } catch (error) {

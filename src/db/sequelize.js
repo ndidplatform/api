@@ -41,7 +41,7 @@ const Entities = {
   }),
   challengeFromRequestId: sequelize.define('challengeFromRequestId', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
-    challenge: Sequelize.STRING,
+    challenge: Sequelize.JSON,
   }),
   proofReceivedFromMQ: sequelize.define('proofReceivedFromMQ', {
     responseId: { type: Sequelize.STRING, primaryKey: true },
@@ -56,7 +56,7 @@ const Entities = {
     referenceId: { type: Sequelize.TEXT, primaryKey: true },
     onboardData: { type: Sequelize.JSON, },
   }),
-  requestToSendToAS: sequelize.define('requestToSendToAS', {
+  requestData: sequelize.define('requestData', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     request: Sequelize.JSON,
   }),
@@ -83,6 +83,10 @@ const Entities = {
   identityRequestIdMapping: sequelize.define('identityRequestIdMapping', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     identity: Sequelize.JSON,
+  }),
+  idpResponseValid: sequelize.define('idpResponseValid', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    validInfo: Sequelize.JSON,
   }),
 };
 

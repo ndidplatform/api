@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+
 import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/customError';
 import logger from '../logger';
@@ -11,9 +14,60 @@ import * as db from '../db';
 
 import * as externalCryptoService from '../utils/externalCryptoService';
 
-async function sendDataToRP(data) {
+const callbackUrls = {};
+
+const callbackUrlFilesPrefix = path.join(
+  __dirname,
+  '..',
+  '..',
+  'as-callback-url-' + config.nodeId,
+);
+
+[{ key: 'error_url', fileSuffix: 'error' }].forEach(({ key, fileSuffix }) => {
+  try {
+    callbackUrls[key] = fs.readFileSync(
+      callbackUrlFilesPrefix + '-' + fileSuffix,
+      'utf8'
+    );
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      logger.warn({
+        message: `${fileSuffix} callback url file not found`,
+      });
+    } else {
+      logger.error({
+        message: `Cannot read ${fileSuffix} callback url file`,
+        error,
+      });
+    }
+  }
+});
+
+function writeCallbackUrlToFile(fileSuffix, url) {
+  fs.writeFile(callbackUrlFilesPrefix + '-' + fileSuffix, url, (err) => {
+    if (err) {
+      logger.error({
+        message: `Cannot write ${fileSuffix} callback url file`,
+        error: err,
+      });
+    }
+  });
+}
+
+export const setCallbackUrls = ({ error_url }) => {
+  if (error_url != null) {
+    callbackUrls.error_url = error_url;
+    writeCallbackUrlToFile('error', error_url);
+  }
+};
+
+export const getCallbackUrls = () => {
+  return callbackUrls;
+};
+
+async function sendDataToRP(rpId, data) {
   let receivers = [];
-  let nodeId = data.rp_id;
+  let nodeId = rpId;
   // TODO: try catch / error handling
   let { ip, port } = await common.getMsqAddress(nodeId);
   receivers.push({
@@ -27,6 +81,7 @@ async function sendDataToRP(data) {
     service_id: data.service_id,
     signature: data.signature,
     data: data.data,
+    height: data.height,
   });
 }
 
@@ -38,7 +93,7 @@ async function signData(data) {
     service_id: data.service_id,
   };
   try {
-    await tendermint.transact('SignData', dataToBlockchain, nonce);
+    return await tendermint.transact('SignData', dataToBlockchain, nonce);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot sign data',
@@ -91,21 +146,21 @@ export async function afterGotDataFromCallback(response, additionalData) {
   // AS node encrypts the response and sends it back to RP via NSQ.
   // TODO should check request status before send (whether request is closed or timeout)
   
-  sendDataToRP({
-    rp_id: additionalData.rpId,
+  // AS node adds transaction to blockchain
+  const { height } = await signData({
+    as_id,
+    request_id: additionalData.requestId,
+    signature,
+    service_id: additionalData.serviceId,
+  });
+
+  sendDataToRP(additionalData.rpId, {
     request_id: additionalData.requestId,
     as_id,
     signature,
     service_id: additionalData.serviceId,
     data,
-  });
-
-  // AS node adds transaction to blockchain
-  signData({
-    as_id,
-    request_id: additionalData.requestId,
-    signature,
-    service_id: additionalData.serviceId,
+    height,
   });
 }
 

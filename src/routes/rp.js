@@ -13,8 +13,9 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const {
+        mode,
         reference_id,
-        idp_list,
+        idp_id_list,
         callback_url,
         data_request_list,
         request_message,
@@ -22,14 +23,14 @@ router.post(
         min_aal,
         min_idp,
         request_timeout,
-        mode,
       } = req.body;
 
       const requestId = await common.createRequest({
+        mode,
         namespace,
         identifier,
         reference_id,
-        idp_list,
+        idp_id_list,
         callback_url,
         data_request_list,
         request_message,
@@ -37,7 +38,6 @@ router.post(
         min_aal,
         min_idp,
         request_timeout,
-        mode,
       });
 
       res.status(200).json({ request_id: requestId });
@@ -105,6 +105,34 @@ router.post('/requests/close', validateBody, async (req, res, next) => {
     const { request_id } = req.body;
 
     await rp.closeRequest(request_id);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/callback', async (req, res, next) => {
+  try {
+    const urls = rp.getCallbackUrls();
+
+    if (Object.keys(urls).length > 0) {
+      res.status(200).json(urls);
+    } else {
+      res.status(404).end();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/callback', validateBody, async (req, res, next) => {
+  try {
+    const { error_url } = req.body;
+
+    rp.setCallbackUrls({
+      error_url,
+    });
+
     res.status(204).end();
   } catch (error) {
     next(error);

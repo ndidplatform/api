@@ -187,6 +187,10 @@ export default {
     code: 15015,
     message: 'Duplicate accessor group ID',
   },
+  ALREADY_ONBOARD: {
+    code: 15016,
+    message: 'You already onboard this user',
+  },
 
   // Client errors
   REQUEST_ID_NOT_FOUND: {

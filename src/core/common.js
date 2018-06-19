@@ -86,7 +86,7 @@ export async function getIdpNodes({ namespace, identifier, min_ial, min_aal }) {
       min_ial,
       min_aal,
     });
-    return result.node != null ? result.node : [];
+    return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get IdP nodes from blockchain',
@@ -100,7 +100,7 @@ export async function getAsNodesByServiceId({ service_id }) {
     const result = await tendermint.query('GetAsNodesByServiceId', {
       service_id,
     });
-    return result.node != null ? result.node : [];
+    return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get AS nodes by service ID from blockchain',
@@ -275,7 +275,7 @@ export async function getIdpsMsqDestination({
   identifier,
   min_ial,
   min_aal,
-  idp_list,
+  idp_id_list,
   mode,
 }) {
   const idpNodes = await getIdpNodes({
@@ -290,9 +290,9 @@ export async function getIdpsMsqDestination({
   });
 
   let filteredIdpNodes;
-  if (idp_list != null && idp_list.length !== 0) {
+  if (idp_id_list != null && idp_id_list.length !== 0) {
     filteredIdpNodes = idpNodes.filter(
-      (idpNode) => idp_list.indexOf(idpNode.id) >= 0
+      (idpNode) => idp_id_list.indexOf(idpNode.node_id) >= 0
     );
   } else {
     filteredIdpNodes = idpNodes;
@@ -300,7 +300,7 @@ export async function getIdpsMsqDestination({
 
   const receivers = await Promise.all(
     filteredIdpNodes.map(async (idpNode) => {
-      const nodeId = idpNode.id;
+      const nodeId = idpNode.node_id;
       const { ip, port } = await getMsqAddress(nodeId);
       return {
         ip,
@@ -363,7 +363,7 @@ export function addTimeoutScheduler(requestId, secondsToTimeout) {
  * @param {Object} request
  * @param {string} request.namespace
  * @param {string} request.reference_id
- * @param {Array.<string>} request.idp_list
+ * @param {Array.<string>} request.idp_id_list
  * @param {string} request.callback_url
  * @param {Array.<Object>} request.data_request_list
  * @param {string} request.request_message
@@ -374,10 +374,11 @@ export function addTimeoutScheduler(requestId, secondsToTimeout) {
  * @returns {Promise<string>} Request ID
  */
 export async function createRequest({
+  mode,
   namespace,
   identifier,
   reference_id,
-  idp_list,
+  idp_id_list,
   callback_url,
   data_request_list,
   request_message,
@@ -385,7 +386,6 @@ export async function createRequest({
   min_aal,
   min_idp,
   request_timeout,
-  mode,
 }) {
   try {
     mode = mode || 3;
@@ -395,7 +395,7 @@ export async function createRequest({
       return requestId;
     }
 
-    if (idp_list != null && idp_list.length > 0 && idp_list.length < min_idp) {
+    if (idp_id_list != null && idp_id_list.length > 0 && idp_id_list.length < min_idp) {
       throw new CustomError({
         message: errorType.IDP_LIST_LESS_THAN_MIN_IDP.message,
         code: errorType.IDP_LIST_LESS_THAN_MIN_IDP.code,
@@ -403,7 +403,7 @@ export async function createRequest({
         details: {
           namespace,
           identifier,
-          idp_list,
+          idp_id_list,
         },
       });
     }
@@ -415,7 +415,7 @@ export async function createRequest({
       identifier,
       min_ial,
       min_aal,
-      idp_list,
+      idp_id_list,
       mode,
     });
 
@@ -427,7 +427,7 @@ export async function createRequest({
         details: {
           namespace,
           identifier,
-          idp_list,
+          idp_id_list,
         },
       });
     }
@@ -440,7 +440,7 @@ export async function createRequest({
         details: {
           namespace,
           identifier,
-          idp_list,
+          idp_id_list,
         },
       });
     }
@@ -453,9 +453,9 @@ export async function createRequest({
       dataRequestListToBlockchain.push({
         service_id: data_request_list[i].service_id,
         as_id_list: data_request_list[i].as_id_list,
-        count: data_request_list[i].count,
+        min_as: data_request_list[i].min_as,
         request_params_hash: utils.hashWithRandomSalt(
-          JSON.stringify(data_request_list[i].request_params)
+          data_request_list[i].request_params
         ),
       });
     }
@@ -488,7 +488,7 @@ export async function createRequest({
     // save request data to DB to send to AS via mq when authen complete
     // store even no data require, use for zk proof
     //if (data_request_list != null && data_request_list.length !== 0) {
-    await db.setRequestToSendToAS(request_id, requestData);
+    await db.setRequestData(request_id, requestData);
     //}
 
     // add data to blockchain
@@ -545,7 +545,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
     identifier,
     privateProofObjectList,
     request_message,
-  } = await db.getRequestToSendToAS(request_id);
+  } = await db.getRequestData(request_id);
 
   //check only signature of idp_id
   if(mode === 1) { return true;
@@ -664,7 +664,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
     utils.verifyZKProof(
       public_key,
       challenge,
-      privateProofObject.privateProofValue,
+      privateProofObject.privateProofValueArray,
       publicProof,
       {
         namespace,
@@ -679,14 +679,26 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
 //===== zkp and request related =====
 
 export async function handleChallengeRequest(responseId) {
+
+  logger.debug({
+    message: 'Handle challenge request'
+  });
+
   let [ request_id, idp_id ] = responseId.split(':');
 
   //get public proof from mq
   let public_proof_mq = await db.getPublicProofReceivedFromMQ(responseId);
+
+  logger.debug({
+    message: 'Public proof from MQ',
+    public_proof_mq,
+    responseId,
+  });
+
   if(!public_proof_mq) return false;
 
   //get public proof in blockchain
-  let public_proof_blockchain = (await tendermint.query(
+  /*let public_proof_blockchain = (await tendermint.query(
     'GetPublicProof',
     {
       request_id,
@@ -699,10 +711,17 @@ export async function handleChallengeRequest(responseId) {
   if(public_proof_blockchain.length !== public_proof_mq.length) return false;
   for(let i = 0; i < public_proof_mq.length ; i++) {
     if(public_proof_blockchain[i] !== public_proof_mq[i]) return false;
-  }
+  }*/
 
   //if match, send challenge and return
+  let nodeId = {};
+  if(config.role === 'idp') nodeId.idp_id = config.nodeId;
+  else if(config.role === 'rp') nodeId.rp_id = config.nodeId;
   let challenge = await db.getChallengeFromRequestId(request_id);
+  logger.debug({
+    message: 'Get challenge',
+    challenge,
+  });
   let { ip, port } = await getMsqAddress(idp_id);
   let receiver = [{
     ip,
@@ -712,5 +731,22 @@ export async function handleChallengeRequest(responseId) {
   mq.send(receiver, {
     challenge,
     request_id,
+    ...nodeId,
   });
+}
+export async function getIdentityInfo(namespace, identifier, node_id) {
+  try {
+    const sid = namespace + ':' + identifier;
+    const hash_id = utils.hash(sid);
+
+    return await tendermint.query('GetIdentityInfo',{
+      hash_id,
+      node_id,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get accessor public key from blockchain',
+      cause: error,
+    });
+  }
 }

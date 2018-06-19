@@ -17,6 +17,8 @@ import * as identity from './identity';
 
 import * as externalCryptoService from '../utils/externalCryptoService';
 
+const callbackUrls = {};
+
 const callbackUrlFilesPrefix = path.join(
   __dirname,
   '..',
@@ -24,29 +26,72 @@ const callbackUrlFilesPrefix = path.join(
   'idp-callback-url-' + config.nodeId,
 );
 
-let callbackUrl = {};
-
-[ 'request',
-  'accessor',
-].forEach((key) => {
+[
+  { key: 'incoming_request_url', fileSuffix: 'incoming_request' },
+  { key: 'identity_result_url', fileSuffix: 'identity_result' },
+  { key: 'accessor_sign_url', fileSuffix: 'accessor_sign' },
+  { key: 'error_url', fileSuffix: 'error' },
+].forEach(({ key, fileSuffix }) => {
   try {
-    callbackUrl[key] = fs.readFileSync(callbackUrlFilesPrefix + '-' + key, 'utf8');
+    callbackUrls[key] = fs.readFileSync(
+      callbackUrlFilesPrefix + '-' + fileSuffix,
+      'utf8'
+    );
   } catch (error) {
     if (error.code === 'ENOENT') {
       logger.warn({
-        message: 'IDP ' + key + ' callback url file not found',
+        message: `${fileSuffix} callback url file not found`,
       });
     } else {
       logger.error({
-        message: 'Cannot read IDP ' + key + ' callback url file',
+        message: `Cannot read ${fileSuffix} callback url file`,
         error,
       });
     }
   }
 });
 
+function writeCallbackUrlToFile(fileSuffix, url) {
+  fs.writeFile(callbackUrlFilesPrefix + '-' + fileSuffix, url, (err) => {
+    if (err) {
+      logger.error({
+        message: `Cannot write ${fileSuffix} callback url file`,
+        error: err,
+      });
+    }
+  });
+}
+
+export function setCallbackUrls({
+  incoming_request_url,
+  identity_result_url,
+  accessor_sign_url,
+  error_url,
+}) {
+  if (incoming_request_url != null) {
+    callbackUrls.incoming_request_url = incoming_request_url;
+    writeCallbackUrlToFile('incoming_request', incoming_request_url);
+  }
+  if (identity_result_url != null) {
+    callbackUrls.identity_result_url = identity_result_url;
+    writeCallbackUrlToFile('identity_result', identity_result_url);
+  }
+  if (accessor_sign_url != null) {
+    callbackUrls.accessor_sign_url = accessor_sign_url;
+    writeCallbackUrlToFile('accessor_sign', accessor_sign_url);
+  }
+  if (error_url != null) {
+    callbackUrls.error_url = error_url;
+    writeCallbackUrlToFile('error', error_url);
+  }
+}
+
+export function getCallbackUrls() {
+  return callbackUrls;
+}
+
 export function isAccessorSignUrlSet() {
-  return callbackUrl.accessor != null;
+  return callbackUrls.accessor_sign_url != null;
 }
 
 export async function accessorSign(sid ,hash_id, accessor_id) {
@@ -59,7 +104,7 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
     accessor_id
   };
 
-  if (callbackUrl.accessor == null) {
+  if (callbackUrls.accessor_sign_url == null) {
     throw new CustomError({
       message: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.message,
       code: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.code,
@@ -68,13 +113,13 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
 
   logger.debug({
     message: 'Callback to accessor sign',
-    url: callbackUrl.accessor,
+    url: callbackUrls.accessor_sign_url,
     accessor_id,
     hash_id,
   });
 
   try {
-    const response = await fetch(callbackUrl.accessor, {
+    const response = await fetch(callbackUrls.accessor_sign_url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -90,7 +135,7 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
       code: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED.code,
       cause: error,
       details: {
-        callbackUrl: callbackUrl.accessor,
+        callbackUrl: callbackUrls.accessor_sign_url,
         accessor_id,
         hash_id,
       }
@@ -98,43 +143,9 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
   }
 }
 
-export function getAccessorCallback() {
-  return callbackUrl.accessor;
-}
-
-export function setAccessorCallback(url) {
-  if(url) {
-    callbackUrl.accessor = url;
-    fs.writeFile(callbackUrlFilesPrefix + '-accessor', url, (err) => {
-      if (err) {
-        logger.error({
-          message: 'Cannot write DPKI accessor callback url file',
-          error: err,
-        });
-      }
-    });
-  }
-}
-
-export const setCallbackUrl = (url) => {
-  callbackUrl.request = url;
-  fs.writeFile(callbackUrlFilesPrefix + '-request', url, (err) => {
-    if (err) {
-      logger.error({
-        message: 'Cannot write IDP callback url file',
-        error: err,
-      });
-    }
-  });
-};
-
-export const getCallbackUrl = () => {
-  return callbackUrl.request;
-};
-
 async function requestChallenge(request_id, accessor_id) {
   //query public key from accessor_id
-  let { public_key } = await common.getAccessorKey(accessor_id);
+  let public_key = await common.getAccessorKey(accessor_id);
   //gen public proof
   let [ k1, publicProof1 ] = utils.generatePublicProof(public_key);
   let [ k2, publicProof2 ] = utils.generatePublicProof(public_key);
@@ -142,9 +153,13 @@ async function requestChallenge(request_id, accessor_id) {
   //save k to request
   let request = await db.getRequestReceivedFromMQ(request_id);
   request.k = [ k1, k2 ];
+  logger.debug({
+    message: 'Save K to request',
+    request,
+  });
   await db.setRequestReceivedFromMQ(request_id, request);
   //declare public proof to blockchain
-  let { height } = await tendermint.transact(
+  /*let { height } = await tendermint.transact(
     'DeclarePublicProof',
     {
       request_id,
@@ -152,7 +167,7 @@ async function requestChallenge(request_id, accessor_id) {
       idp_id: config.nodeId,
     },
     utils.getNonce(),
-  );
+  );*/
   //send message queue with public proof
   let { ip, port } = await common.getMsqAddress(request.rp_id);
   let receiver = [{
@@ -164,7 +179,8 @@ async function requestChallenge(request_id, accessor_id) {
     public_proof: [ publicProof1, publicProof2 ],
     request_id: request_id,
     idp_id: config.nodeId,
-    height,
+    type: 'request_challenge',
+    //height,
   });
 }
 
@@ -223,7 +239,12 @@ async function createIdpResponse(data) {
       let blockchainProofArray = [], privateProofValueArray = [], samePadding;
       let requestFromMq = await db.getRequestReceivedFromMQ(request_id);
 
-      for(let i = 0 ; i < requestFromMq.challenges.length ; i++) {
+      logger.debug({
+        message: 'To generate proof',
+        requestFromMq,
+      });
+
+      for(let i = 0 ; i < requestFromMq.challenge.length ; i++) {
         let { blockchainProof, privateProofValue, padding } = utils.generateIdentityProof({
           publicKey: await common.getAccessorKey(accessor_id),
           challenge: requestFromMq.challenge[i],
@@ -248,8 +269,8 @@ async function createIdpResponse(data) {
         status,
         signature,
         //accessor_id,
-        identity_proof: blockchainProofArray,
-        private_proof_hash: utils.hash(privateProofValueArray),
+        identity_proof: JSON.stringify(blockchainProofArray),
+        private_proof_hash: utils.hash(JSON.stringify(privateProofValueArray)),
       };
     }
     else {
@@ -286,13 +307,13 @@ async function createIdpResponse(data) {
 }
 
 export function notifyByCallback(eventDataForCallback) {
-  if (!callbackUrl.request) {
+  if (!callbackUrls.incoming_request_url) {
     logger.error({
       message: 'Callback URL for IdP has not been set',
     });
     return;
   }
-  return callbackToClient(callbackUrl.request, eventDataForCallback, true);
+  return callbackToClient(callbackUrls.incoming_request_url, eventDataForCallback, true);
 }
 
 async function sendPrivateProofToRP(request_id, privateProofObject, height) {
@@ -337,9 +358,18 @@ export async function handleMessageFromQueue(messageStr) {
     //store challenge
     let request = await db.getRequestReceivedFromMQ(message.request_id);
     request.challenge = message.challenge;
+    logger.debug({
+      message: 'Save challenge to request',
+      request,
+      challenge: message.challenge,
+    });
     await db.setRequestReceivedFromMQ(message.request_id, request);
     //query reponse data
     let data = await db.getResponseFromRequestId(message.request_id);
+    logger.debug({
+      message: 'Data to response',
+      data,
+    });
     createIdpResponse(data);
     return;
   }
@@ -361,7 +391,7 @@ export async function handleMessageFromQueue(messageStr) {
     if(message.accessor_id) {
       //====================== COPY-PASTE from RP, need refactoring =====================
       //store private parameter from EACH idp to request, to pass along to as
-      let request = await db.getRequestToSendToAS(message.request_id);
+      let request = await db.getRequestData(message.request_id);
       //AS involve
       if (request) {
         if (request.privateProofObjectList) {
@@ -370,6 +400,7 @@ export async function handleMessageFromQueue(messageStr) {
             privateProofObject: {
               privateProofValue: message.privateProofValue,
               accessor_id: message.accessor_id,
+              padding: message.padding,
             },
           });
         } else {
@@ -379,11 +410,12 @@ export async function handleMessageFromQueue(messageStr) {
               privateProofObject: {
                 privateProofValue: message.privateProofValue,
                 accessor_id: message.accessor_id,
+                padding: message.padding,
               },
             },
           ];
         }
-        await db.setRequestToSendToAS(message.request_id, request);
+        await db.setRequestData(message.request_id, request);
       }
       //====================================================================================
     }
