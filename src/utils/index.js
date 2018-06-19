@@ -333,22 +333,22 @@ export function createRequestId() {
  * @param {number} requestDetail.request_timeout
  * @param {Array.<Object>} requestDetail.data_request_list
  * @param {string} requestDetail.request_message_hash
- * @param {Array.<Object>} requestDetail.responses
+ * @param {Array.<Object>} requestDetail.response_list
  * @param {boolean} requestDetail.closed
  * @param {boolean} requestDetail.timed_out
  * @returns {RequestStatus} requestStatus
  */
 export function getDetailedRequestStatus(requestDetail) {
-  if (requestDetail.responses == null) {
-    requestDetail.responses = [];
+  if (requestDetail.response_list == null) {
+    requestDetail.response_list = [];
   }
 
   let status;
-  if (requestDetail.responses.length === 0) {
+  if (requestDetail.response_list.length === 0) {
     status = 'pending';
   }
   // Check response's status
-  const responseCount = requestDetail.responses.reduce(
+  const responseCount = requestDetail.response_list.reduce(
     (count, response) => {
       if (response.status === 'accept') {
         count.accept++;
@@ -389,7 +389,7 @@ export function getDetailedRequestStatus(requestDetail) {
 
   if (requestDetail.data_request_list.length === 0) {
     // No data request
-    if (requestDetail.responses.length === requestDetail.min_idp) {
+    if (requestDetail.response_list.length === requestDetail.min_idp) {
       if (responseCount.accept > 0 && responseCount.reject === 0) {
         status = 'completed';
       }
@@ -422,7 +422,7 @@ export function getDetailedRequestStatus(requestDetail) {
     request_id: requestDetail.request_id,
     status,
     min_idp: requestDetail.min_idp,
-    answered_idp_count: requestDetail.responses.length,
+    answered_idp_count: requestDetail.response_list.length,
     closed: requestDetail.closed,
     timed_out: requestDetail.timed_out,
     service_list: serviceList,

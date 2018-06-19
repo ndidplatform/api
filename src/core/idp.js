@@ -306,14 +306,58 @@ async function createIdpResponse(data) {
   }
 }
 
-export function notifyByCallback(eventDataForCallback) {
-  if (!callbackUrls.incoming_request_url) {
+function notifyByCallback({ url, type, eventDataForCallback }) {
+  if (!url) {
     logger.error({
-      message: 'Callback URL for IdP has not been set',
+      message: `Callback URL for type: ${type} has not been set`,
     });
     return;
   }
-  return callbackToClient(callbackUrls.incoming_request_url, eventDataForCallback, true);
+  return callbackToClient(
+    url,
+    {
+      type,
+      ...eventDataForCallback,
+    },
+    true
+  );
+}
+
+export function notifyIncomingRequestByCallback(eventDataForCallback) {
+  const url = callbackUrls.incoming_request_url;
+  const type = 'incoming_request';
+  if (!url) {
+    logger.error({
+      message: `Callback URL for type: ${type} has not been set`,
+    });
+    return;
+  }
+  return callbackToClient(
+    url,
+    {
+      type,
+      ...eventDataForCallback,
+    },
+    true,
+    common.shouldRetryCallback,
+    [eventDataForCallback.request_id]
+  );
+}
+
+export function notifyCreateIdentityResultByCallback(eventDataForCallback) {
+  notifyByCallback({
+    url: callbackUrls.identity_result_url,
+    type: 'create_identity_result',
+    eventDataForCallback,
+  });
+}
+
+export function notifyAddAccessorResultByCallback(eventDataForCallback) {
+  notifyByCallback({
+    url: callbackUrls.identity_result_url,
+    type: 'add_accessor_result',
+    eventDataForCallback,
+  });
 }
 
 async function sendPrivateProofToRP(request_id, privateProofObject, height) {
@@ -430,8 +474,7 @@ export async function handleMessageFromQueue(messageStr) {
   if(message.accessor_id) {
     if(await checkOnboardResponse(message)) {
       let secret = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
-      notifyByCallback({
-        type: 'onboard_consent_request',
+      notifyCreateIdentityResultByCallback({
         request_id: message.request_id,
         success: true,
         secret,
@@ -449,8 +492,7 @@ export async function handleMessageFromQueue(messageStr) {
       message
     );
     if (valid) {
-      notifyByCallback({
-        type: 'consent_request',
+      notifyIncomingRequestByCallback({
         request_id: message.request_id,
         namespace: message.namespace,
         identifier: message.identifier,
@@ -507,8 +549,7 @@ export async function handleTendermintNewBlockHeaderEvent(
       if(message.accessor_id) {
         if(await checkOnboardResponse(message)) {
           let secret = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
-          notifyByCallback({
-            type: 'onboard_consent_request',
+          notifyCreateIdentityResultByCallback({
             request_id: message.request_id,
             success: true,
             secret,
@@ -525,8 +566,7 @@ export async function handleTendermintNewBlockHeaderEvent(
           message
         );
         if (valid) {
-          notifyByCallback({
-            type: 'consent_request',
+          notifyIncomingRequestByCallback({
             request_id: message.request_id,
             namespace: message.namespace,
             identifier: message.identifier,
@@ -570,7 +610,7 @@ async function checkOnboardResponse(message) {
   let requestDetail = await common.getRequestDetail({
     requestId: message.request_id
   });
-  let response = requestDetail.responses[0];
+  let response = requestDetail.response_list[0];
   
   if(!(await common.verifyZKProof(message.request_id, message.idp_id, message))) {
     reason = 'Invalid response';
@@ -580,11 +620,9 @@ async function checkOnboardResponse(message) {
   }
 
   if(reason) {
-    notifyByCallback({
-      type: 'onboard_consent_request',
+    notifyCreateIdentityResultByCallback({
       request_id: message.request_id,
       success: false,
-      reason: reason
     });
 
     logger.debug({

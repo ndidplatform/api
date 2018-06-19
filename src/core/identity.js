@@ -8,7 +8,11 @@ import * as utils from '../utils';
 import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
-import { accessorSign, isAccessorSignUrlSet, notifyByCallback } from './idp';
+import {
+  accessorSign,
+  isAccessorSignUrlSet,
+  notifyCreateIdentityResultByCallback,
+} from './idp';
 
 export async function checkAssociated({namespace, identifier}) {
   let idpList = await common.getIdpNodes({
@@ -241,8 +245,7 @@ export async function createNewIdentity(data) {
         let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
         let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
         let secret = padding + '|' + encryptedHash; 
-        notifyByCallback({
-          type: 'onboard_consent_request',
+        notifyCreateIdentityResultByCallback({
           request_id: request_id,
           success: true,
           secret,
