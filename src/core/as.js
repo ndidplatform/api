@@ -201,6 +201,10 @@ async function getDataAndSendBackToRP(request, responseDetails) {
       mode: request.mode,
     },
     true,
+    common.shouldRetryCallback,
+    [
+      request.request_id,
+    ],
     afterGotDataFromCallback,
     {
       rpId: request.rp_id,

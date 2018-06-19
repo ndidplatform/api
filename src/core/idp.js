@@ -249,18 +249,35 @@ function notifyByCallback({ url, type, eventDataForCallback }) {
     });
     return;
   }
-  return callbackToClient(url, {
-    type,
-    ...eventDataForCallback,
-  }, true);
+  return callbackToClient(
+    url,
+    {
+      type,
+      ...eventDataForCallback,
+    },
+    true
+  );
 }
 
 export function notifyIncomingRequestByCallback(eventDataForCallback) {
-  notifyByCallback({
-    url: callbackUrls.incoming_request_url,
-    type: 'incoming_request',
-    eventDataForCallback,
-  });
+  const url = callbackUrls.incoming_request_url;
+  const type = 'incoming_request';
+  if (!url) {
+    logger.error({
+      message: `Callback URL for type: ${type} has not been set`,
+    });
+    return;
+  }
+  return callbackToClient(
+    url,
+    {
+      type,
+      ...eventDataForCallback,
+    },
+    true,
+    common.shouldRetryCallback,
+    [eventDataForCallback.request_id]
+  );
 }
 
 export function notifyCreateIdentityResultByCallback(eventDataForCallback) {

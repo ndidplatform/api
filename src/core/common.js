@@ -691,3 +691,18 @@ export async function getIdentityInfo(namespace, identifier, node_id) {
     });
   }
 }
+
+/**
+ * Returns false if request is closed or timed out
+ * @param {string} requestId
+ * @returns {boolean}
+ */
+export async function shouldRetryCallback(requestId) {
+  if (requestId) {
+    const requestDetail = await getRequestDetail({ requestId });
+    if (requestDetail.closed || requestDetail.timed_out) {
+      return false;
+    }
+  }
+  return true;
+}

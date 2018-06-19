@@ -29,6 +29,8 @@ async function callbackWithRetry(
   callbackUrl,
   body,
   cbId,
+  shouldRetry,
+  shouldRetryArguments = [],
   responseCallback,
   dataForResponseCallback
 ) {
@@ -52,8 +54,21 @@ async function callbackWithRetry(
       const nextRetry = backoff.next();
 
       logger.error({
-        message: `Cannot send callback to client application. Retrying in ${nextRetry} milliseconds`,
+        message: 'Cannot send callback to client application',
         error,
+        cbId,
+      });
+
+      if (shouldRetry) {
+        if (!(await shouldRetry(...shouldRetryArguments))) {
+          db.removeCallbackWithRetryData(cbId);
+          return;
+        }
+      }
+
+      logger.info({
+        message: `Retrying callback in ${nextRetry} milliseconds`,
+        cbId,
       });
 
       const { promise: waitPromise, stopWaiting } = wait(nextRetry, true);
@@ -69,6 +84,8 @@ async function callbackWithRetry(
  * @param {string} callbackUrl
  * @param {Object} body
  * @param {boolean} retry
+ * @param {function} shouldRetry
+ * @param {Array} shouldRetryArguments
  * @param {function} responseCallback
  * @param {Object} dataForResponseCallback
  */
@@ -76,6 +93,8 @@ export async function callbackToClient(
   callbackUrl,
   body,
   retry,
+  shouldRetry,
+  shouldRetryArguments,
   responseCallback,
   dataForResponseCallback
 ) {
@@ -84,12 +103,15 @@ export async function callbackToClient(
     await db.addCallbackWithRetryData(cbId, {
       callbackUrl,
       body,
+      shouldRetryArguments,
       dataForResponseCallback,
     });
     callbackWithRetry(
       callbackUrl,
       body,
       cbId,
+      shouldRetry,
+      shouldRetryArguments,
       responseCallback,
       dataForResponseCallback
     );
@@ -110,13 +132,15 @@ export async function callbackToClient(
  * This function should be called only when server starts
  * @param {function} responseCallback
  */
-export async function resumeCallbackToClient(responseCallback) {
+export async function resumeCallbackToClient(shouldRetry, responseCallback) {
   const callbackDatum = await db.getAllCallbackWithRetryData();
   callbackDatum.forEach((callback) =>
     callbackWithRetry(
       callback.data.callbackUrl,
       callback.data.body,
       callback.cbId,
+      shouldRetry,
+      callback.data.shouldRetryArguments,
       responseCallback,
       callback.data.dataForResponseCallback
     )
