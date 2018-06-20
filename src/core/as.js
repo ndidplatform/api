@@ -6,6 +6,7 @@ import CustomError from '../error/customError';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint';
+import * as tendermintNdid from '../tendermint/ndid';
 import * as mq from '../mq';
 import * as utils from '../utils';
 import * as config from '../config';
@@ -69,11 +70,11 @@ async function sendDataToRP(rpId, data) {
   let receivers = [];
   let nodeId = rpId;
   // TODO: try catch / error handling
-  let { ip, port } = await common.getMsqAddress(nodeId);
+  let { ip, port } = await tendermintNdid.getMsqAddress(nodeId);
   receivers.push({
     ip,
     port,
-    ...(await common.getNodePubKey(nodeId)), // TODO: try catch / error handling
+    ...(await tendermintNdid.getNodePubKey(nodeId)), // TODO: try catch / error handling
   });
   mq.send(receivers, {
     request_id: data.request_id,
@@ -85,41 +86,12 @@ async function sendDataToRP(rpId, data) {
   });
 }
 
-async function signData(data) {
-  const nonce = utils.getNonce();
-  const dataToBlockchain = {
-    request_id: data.request_id,
-    signature: data.signature,
-    service_id: data.service_id,
-  };
-  try {
-    return await tendermint.transact('SignData', dataToBlockchain, nonce);
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot sign data',
-      cause: error,
-    });
-  }
-}
-
-async function registerServiceDestination(data) {
-  try {
-    let nonce = utils.getNonce();
-    await tendermint.transact('RegisterServiceDestination', data, nonce);
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot register service destination',
-      cause: error,
-    });
-  }
-}
-
 export async function processDataForRP(data, additionalData) {
   let as_id = config.nodeId;
   let signature = await utils.createSignature(data);
   
   // AS node adds transaction to blockchain
-  const { height } = await signData({
+  const { height } = await tendermintNdid.signASData({
     as_id,
     request_id: additionalData.requestId,
     signature,
@@ -223,7 +195,7 @@ async function getDataAndSendBackToRP(request, responseDetails) {
 }
 
 async function getResponseDetails(requestId) {
-  const requestDetail = await common.getRequestDetail({
+  const requestDetail = await tendermintNdid.getRequestDetail({
     requestId,
   });
 
@@ -352,7 +324,7 @@ export async function registerAsService({
 }) {
   try {
     await Promise.all([
-      registerServiceDestination({
+      tendermintNdid.registerServiceDestination({
         service_id,
         min_aal,
         min_ial,
@@ -371,10 +343,7 @@ export async function registerAsService({
 
 export async function getServiceDetail(service_id) {
   try {
-    const result = await tendermint.query('GetServiceDetail', {
-      service_id,
-      node_id: config.nodeId,
-    });
+    const result = await tendermintNdid.getServiceDetail(service_id);
     return result
       ? {
           service_id,
@@ -407,7 +376,7 @@ export async function init() {
     }
   }
 
-  common.registerMsqAddress(config.mqRegister);
+  tendermintNdid.registerMsqAddress(config.mqRegister);
 }
 
 async function verifyZKProof(request_id, dataFromMq) {
@@ -420,7 +389,7 @@ async function verifyZKProof(request_id, dataFromMq) {
     request_message,
   } = dataFromMq;
 
-  let requestDetail = await common.getRequestDetail({
+  let requestDetail = await tendermintNdid.getRequestDetail({
     requestId: request_id,
   });
   //mode 1 bypass zkp
@@ -436,11 +405,11 @@ async function verifyZKProof(request_id, dataFromMq) {
   }
   
   //query and verify zk, also check conflict with each others
-  let accessor_group_id = await common.getAccessorGroupId(
+  let accessor_group_id = await tendermintNdid.getAccessorGroupId(
     privateProofObjectList[0].privateProofObject.accessor_id
   );
   for (let i = 1; i < privateProofObjectList.length; i++) {
-    let otherGroupId = await common.getAccessorGroupId(
+    let otherGroupId = await tendermintNdid.getAccessorGroupId(
       privateProofObjectList[i].privateProofObject.accessor_id
     );
     if (otherGroupId !== accessor_group_id) {
@@ -450,13 +419,13 @@ async function verifyZKProof(request_id, dataFromMq) {
     }
   }
 
-  let response_list = (await common.getRequestDetail({
+  let response_list = (await tendermintNdid.getRequestDetail({
     requestId: request_id,
   })).response_list;
   let valid = true;
   for (let i = 0; i < privateProofObjectList.length; i++) {
     //query accessor_public_key from privateProof.accessor_id
-    let public_key = await common.getAccessorKey(
+    let public_key = await tendermintNdid.getAccessorKey(
       privateProofObjectList[i].privateProofObject.accessor_id
     );
     //query publicProof from response of idp_id in request

@@ -4,7 +4,8 @@ import path from 'path';
 import fetch from 'node-fetch';
 
 import { hash, publicEncrypt, verifySignature } from './crypto';
-import * as tendermint from '../tendermint';
+// import * as tendermint from '../tendermint';
+import * as tendermintNdid from '../tendermint/ndid';
 import CustomError from '../error/customError';
 import errorType from '../error/type';
 import logger from '../logger';
@@ -46,29 +47,6 @@ const callbackUrlFilesPrefix = path.join(
     }
   }
 });
-
-// FIXME: Refactor
-async function getNodePubKey(node_id) {
-  try {
-    return await tendermint.query('GetNodePublicKey', { node_id });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get node public key from blockchain',
-      cause: error,
-    });
-  }
-}
-
-async function getNodeMasterPubKey(node_id) {
-  try {
-    return await tendermint.query('GetNodeMasterPublicKey', { node_id });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get node master public key from blockchain',
-      cause: error,
-    });
-  }
-}
 
 async function testSignCallback(url, publicKey) {
   const response = await fetch(url, {
@@ -135,7 +113,7 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
   if (signCallbackUrl) {
     try {
       if (public_key == null) {
-        public_key = (await getNodePubKey(config.nodeId)).public_key;
+        public_key = (await tendermintNdid.getNodePubKey(config.nodeId)).public_key;
       }
       await testSignCallback(signCallbackUrl, public_key);
     } catch (error) {
@@ -163,7 +141,7 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
   if (decryptCallbackUrl) {
     try {
       if (public_key == null) {
-        public_key = (await getNodePubKey(config.nodeId)).public_key;
+        public_key = (await tendermintNdid.getNodePubKey(config.nodeId)).public_key;
       }
       await testDecryptCallback(decryptCallbackUrl, public_key);
     } catch (error) {
@@ -193,7 +171,7 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
 export async function setMasterSignatureCallback(url) {
   if (url) {
     try {
-      const { master_public_key } = await getNodeMasterPubKey(config.nodeId);
+      const { master_public_key } = await tendermintNdid.getNodeMasterPubKey(config.nodeId);
       await testSignCallback(url, master_public_key);
     } catch (error) {
       throw new CustomError({

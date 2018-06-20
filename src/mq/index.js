@@ -6,7 +6,7 @@ import logger from '../logger';
 import * as config from '../config';
 import * as utils from '../utils';
 import CustomError from '../error/customError';
-import * as tendermint from '../tendermint';
+import * as tendermintNdid from '../tendermint/ndid';
 
 const receivingSocket = zmq.socket('pull');
 receivingSocket.bindSync('tcp://*:' + config.mqRegister.port);
@@ -34,7 +34,7 @@ receivingSocket.on('message', async function(jsonMessageStr) {
 
   let { idp_id, rp_id, as_id } = JSON.parse(raw_message);
   let nodeId = idp_id || rp_id || as_id ;
-  let { public_key } = await getNodePubKey(nodeId);
+  let { public_key } = await tendermintNdid.getNodePubKey(nodeId);
   if(!nodeId) throw new CustomError({
     message: 'Receive message from unknown node',
   });
@@ -99,16 +99,4 @@ export function close() {
   logger.info({
     message: 'Message queue socket closed',
   });
-}
-
-//cannot use common.js because circular dependency
-async function getNodePubKey(node_id) {
-  try {
-    return await tendermint.query('GetNodePublicKey', { node_id });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get node public key from blockchain',
-      cause: error,
-    });
-  }
 }
