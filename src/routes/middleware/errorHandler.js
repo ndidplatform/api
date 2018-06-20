@@ -15,7 +15,7 @@ export default function errorHandler(err, req, res, next) {
     errorMessage = err.getMessageWithCode();
     errorCode = err.getCode();
     clientError = err.isRootCauseClientError();
-    if (errorCode === 35001) {
+    if (errorCode === errorType.ABCI_UNAUTHORIZED.code) {
       unauthorizedError = true;
     }
   } else {
