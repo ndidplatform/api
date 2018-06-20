@@ -5,8 +5,6 @@ import 'winston-daily-rotate-file';
 
 import * as config from './config';
 
-const env = process.env.NODE_ENV || 'development';
-
 const logFormatForFile = winston.format.combine(
   winston.format.timestamp(),
   winston.format.json()
@@ -41,7 +39,7 @@ const customFormat = winston.format.printf((info) => {
 const logger = winston.createLogger();
 
 // If we're not in production then log to the `console`
-if (env !== 'production') {
+if (config.env !== 'production') {
   logger.configure({
     level: 'debug',
     format: winston.format.combine(

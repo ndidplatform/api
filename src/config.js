@@ -1,6 +1,11 @@
 import path from 'path';
 
-export const serverPort = process.env.SERVER_PORT || 8080;
+export const env =
+  process.env.NODE_ENV === 'production' ? 'production' : 'development';
+
+export const serverPort = process.env.SERVER_PORT
+  ? parseInt(process.env.SERVER_PORT)
+  : 8080;
 
 export const https = process.env.HTTPS === 'true' ? true : false;
 export const httpsKeyPath =
