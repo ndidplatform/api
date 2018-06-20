@@ -180,8 +180,12 @@ async function requestChallenge(request_id, accessor_id) {
 
 export async function requestChallengeAndCreateResponse(data) {
   //store response data
-  await db.setResponseFromRequestId(data.request_id, data);
-  requestChallenge(data.request_id, data.accessor_id);
+  const request = await tendermintNdid.getRequest({ requestId: data.request_id });
+  if(request.mode === 3) {
+    await db.setResponseFromRequestId(data.request_id, data);
+    requestChallenge(data.request_id, data.accessor_id);
+  }
+  else if(request.mode === 1) createIdpResponse(data);
 }
 
 async function createIdpResponse(data) {
@@ -360,6 +364,8 @@ export function notifyAddAccessorResultByCallback(eventDataForCallback) {
 }
 
 async function sendPrivateProofToRP(request_id, privateProofObject, height) {
+  //mode 1
+  if(!privateProofObject) privateProofObject = {};
   let rp_id = await db.getRPIdFromRequestId(request_id);
 
   logger.info({
