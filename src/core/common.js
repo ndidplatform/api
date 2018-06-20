@@ -1,7 +1,7 @@
 import CustomError from '../error/customError';
 import logger from '../logger';
 
-import * as tendermint from '../tendermint/ndid';
+import * as tendermint from '../tendermint';
 import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';

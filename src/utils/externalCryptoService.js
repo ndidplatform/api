@@ -4,7 +4,7 @@ import path from 'path';
 import fetch from 'node-fetch';
 
 import { hash, publicEncrypt, verifySignature } from './crypto';
-import * as tendermint from '../tendermint/ndid';
+import * as tendermint from '../tendermint';
 import CustomError from '../error/customError';
 import errorType from '../error/type';
 import logger from '../logger';
