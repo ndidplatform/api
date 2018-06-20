@@ -1,7 +1,7 @@
 import express from 'express';
 
 import { validateQuery } from './middleware/validation';
-import * as common from '../core/common';
+import * as tendermintNdid from '../tendermint/ndid';
 
 const router = express.Router();
 
@@ -9,7 +9,7 @@ router.get('/idp', validateQuery, async (req, res, next) => {
   try {
     const { min_ial = 0, min_aal = 0 } = req.query;
 
-    const idpNodes = await common.getIdpNodes({
+    const idpNodes = await tendermintNdid.getIdpNodes({
       min_ial: parseFloat(min_ial),
       min_aal: parseFloat(min_aal),
     });
@@ -28,7 +28,7 @@ router.get(
       const { namespace, identifier } = req.params;
       const { min_ial = 0, min_aal = 0 } = req.query;
 
-      const idpNodes = await common.getIdpNodes({
+      const idpNodes = await tendermintNdid.getIdpNodes({
         namespace,
         identifier,
         min_ial: parseFloat(min_ial),
@@ -45,7 +45,7 @@ router.get(
 router.get('/as/:service_id', async (req, res, next) => {
   try {
     const { service_id } = req.params;
-    let asNodes = await common.getAsNodesByServiceId({
+    let asNodes = await tendermintNdid.getAsNodesByServiceId({
       service_id,
     });
     res.status(200).json(asNodes);
@@ -58,7 +58,7 @@ router.get('/requests/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    const request = await common.getRequestDetail({
+    const request = await tendermintNdid.getRequestDetail({
       requestId: request_id,
     });
 
@@ -76,7 +76,7 @@ router.get('/node_token/:node_id', async (req, res, next) => {
   try {
     const { node_id } = req.params;
 
-    const result = await common.getNodeToken(node_id);
+    const result = await tendermintNdid.getNodeToken(node_id);
 
     if (result == null) {
       res.status(404).end();
@@ -90,7 +90,7 @@ router.get('/node_token/:node_id', async (req, res, next) => {
 
 router.get('/namespaces', async (req, res, next) => {
   try {
-    res.status(200).json(await common.getNamespaceList());
+    res.status(200).json(await tendermintNdid.getNamespaceList());
   } catch (error) {
     next(error);
   }
@@ -98,7 +98,7 @@ router.get('/namespaces', async (req, res, next) => {
 
 router.get('/services', async (req, res, next) => {
   try {
-    res.status(200).json(await common.getServiceList());
+    res.status(200).json(await tendermintNdid.getServiceList());
   } catch (error) {
     next(error);
   }

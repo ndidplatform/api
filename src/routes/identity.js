@@ -2,7 +2,7 @@ import express from 'express';
 
 import { validateBody } from './middleware/validation';
 import * as identity from '../core/identity';
-import * as common from '../core/common';
+import * as tendermintNdid from '../tendermint/ndid';
 
 const router = express.Router();
 
@@ -74,7 +74,7 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
     const { namespace, identifier } = req.params;
 
-    const idpNodes = await common.getIdpNodes({
+    const idpNodes = await tendermintNdid.getIdpNodes({
       namespace,
       identifier,
       min_ial: 0,
