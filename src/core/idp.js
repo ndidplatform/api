@@ -483,7 +483,7 @@ export async function handleMessageFromQueue(messageStr) {
   if(message.accessor_id) {
     if(await checkOnboardResponse(message)) {
       let secret = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
-      notifyCreateIdentityResultByCallback({
+      notifyAddAccessorResultByCallback({
         request_id: message.request_id,
         success: true,
         secret,
@@ -558,7 +558,7 @@ export async function handleTendermintNewBlockHeaderEvent(
       if(message.accessor_id) {
         if(await checkOnboardResponse(message)) {
           let secret = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
-          notifyCreateIdentityResultByCallback({
+          notifyAddAccessorResultByCallback({
             request_id: message.request_id,
             success: true,
             secret,
@@ -629,7 +629,7 @@ async function checkOnboardResponse(message) {
   }
 
   if(reason) {
-    notifyCreateIdentityResultByCallback({
+    notifyAddAccessorResultByCallback({
       request_id: message.request_id,
       success: false,
     });
