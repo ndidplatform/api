@@ -40,7 +40,17 @@ export async function addAccessorMethodForAssociatedIdp({
     namespace,
     identifier,
   });
-  if (!associated) return null;
+
+  if (!associated) {
+    throw new CustomError({
+      message: errorType.ABCI_NOT_ONBOARD.message,
+      code: errorType.ABCI_NOT_ONBOARD.code,
+      details: {
+        namespace,
+        identifier,
+      },
+    });
+  }
   
   const result = await createNewIdentity({
     namespace,

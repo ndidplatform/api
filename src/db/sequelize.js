@@ -27,6 +27,10 @@ const Entities = {
     idpNodeId: Sequelize.STRING,
     expectedBlockHeight: Sequelize.INTEGER,
   }),
+  requestToProcessReceivedFromMQ: sequelize.define('requestToProcessReceivedFromMQ', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    request: Sequelize.JSON,
+  }),
   requestReceivedFromMQ: sequelize.define('requestReceivedFromMQ', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     request: Sequelize.JSON,
