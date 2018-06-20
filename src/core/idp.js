@@ -194,15 +194,12 @@ async function createIdpResponse(data) {
   try {
     let {
       request_id,
-      //namespace,
-      //identifier,
       aal,
       ial,
       status,
       signature,
       accessor_id,
       secret,
-      //request_message,
     } = data;
 
     const request = await common.getRequest({ requestId: request_id });
@@ -217,25 +214,39 @@ async function createIdpResponse(data) {
       });
     }
 
-    const accessorPublicKey = await common.getAccessorKey(accessor_id);
-    if (accessorPublicKey == null) {
-      throw new CustomError({
-        message: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.message,
-        code: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.code,
-        clientError: true,
-        details: {
-          accessor_id,
-        },
-      });
+    const mode = request.mode;
+    if (mode === 3) {
+      if (accessor_id == null) {
+        throw new CustomError({
+          message: errorType.ACCESSOR_ID_NEEDED.message,
+          code: errorType.ACCESSOR_ID_NEEDED.code,
+          clientError: true,
+        });
+      }
+      if (secret == null) {
+        throw new CustomError({
+          message: errorType.SECRET_NEEDED.message,
+          code: errorType.SECRET_NEEDED.code,
+          clientError: true,
+        });
+      }
+
+      const accessorPublicKey = await common.getAccessorKey(accessor_id);
+      if (accessorPublicKey == null) {
+        throw new CustomError({
+          message: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.message,
+          code: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.code,
+          clientError: true,
+          details: {
+            accessor_id,
+          },
+        });
+      }
     }
 
-    //TODO
-    //query mode from requestId
-    let requestStatus = await common.getRequest({ requestId: request_id });
-    let mode = requestStatus.mode;
     let dataToBlockchain, privateProofObject;
 
-    if(mode === 3) {
+    if (mode === 3) {
       let blockchainProofArray = [], privateProofValueArray = [], samePadding;
       let requestFromMq = await db.getRequestReceivedFromMQ(request_id);
 
@@ -272,9 +283,7 @@ async function createIdpResponse(data) {
         identity_proof: JSON.stringify(blockchainProofArray),
         private_proof_hash: utils.hash(JSON.stringify(privateProofValueArray)),
       };
-    }
-    else {
-      //signature = await utils.createSignature(request_message);
+    } else if (mode === 1) {
       dataToBlockchain = {
         request_id,
         aal,

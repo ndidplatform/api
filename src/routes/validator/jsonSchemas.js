@@ -56,6 +56,7 @@ export default {
       body: {
         properties: {
           reference_id: { type: 'string', minLength: 1 },
+          mode: { type: 'number', enum: [1, 3] },
           idp_id_list: {
             type: 'array',
             items: {
@@ -101,6 +102,7 @@ export default {
         },
         required: [
           'reference_id',
+          'mode',
           'callback_url',
           'request_message',
           'min_ial',
@@ -149,8 +151,6 @@ export default {
       body: {
         properties: {
           request_id: { type: 'string', minimum: 1 },
-          namespace: { type: 'string', minLength: 1 },
-          identifier: { type: 'string', minLength: 1 },
           ial: { $ref: 'defs#/definitions/ial' },
           aal: { $ref: 'defs#/definitions/aal' },
           secret: { type: 'string' },
@@ -163,14 +163,12 @@ export default {
         },
         required: [
           'request_id',
-          // 'namespace',
-          // 'identifier',
           'ial',
           'aal',
-          'secret',
+          // 'secret', Not required in mode 1
           'status',
           'signature',
-          'accessor_id',
+          // 'accessor_id', Not required in mode 1
         ],
       },
     },

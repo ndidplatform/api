@@ -366,6 +366,7 @@ export function addTimeoutScheduler(requestId, secondsToTimeout) {
 /**
  * Create a new request
  * @param {Object} request
+ * @param {number} request.mode
  * @param {string} request.namespace
  * @param {string} request.reference_id
  * @param {Array.<string>} request.idp_id_list
@@ -393,7 +394,6 @@ export async function createRequest({
   request_timeout,
 }) {
   try {
-    mode = mode || 3;
     // existing reference_id, return request ID
     const requestId = await db.getRequestIdByReferenceId(reference_id);
     if (requestId) {
@@ -409,11 +409,55 @@ export async function createRequest({
           namespace,
           identifier,
           idp_id_list,
+          min_idp,
         },
       });
     }
 
+    if (mode === 1 && (idp_id_list == null || idp_id_list.length === 0)) {
+      throw new CustomError({
+        message: errorType.IDP_ID_LIST_NEEDED.message,
+        code: errorType.IDP_ID_LIST_NEEDED.code,
+        clientError: true,
+      });
+    }
 
+    if (data_request_list != null && data_request_list.length > 0) {
+      const serviceIds = [];
+      for (let i = 0; i < data_request_list.length; i++) {
+        const { service_id, as_id_list, min_as } = data_request_list[i];
+
+        if (serviceIds.includes(service_id)) {
+          throw new CustomError({
+            message: errorType.DUPLICATE_SERVICE_ID.message,
+            code: errorType.DUPLICATE_SERVICE_ID.code,
+            clientError: true,
+            details: {
+              index: i,
+              service_id,
+            },
+          });
+        }
+        serviceIds.push(service_id);
+
+        if (
+          as_id_list != null &&
+          as_id_list.length > 0 &&
+          as_id_list.length < min_as
+        ) {
+          throw new CustomError({
+            message: errorType.AS_LIST_LESS_THAN_MIN_AS.message,
+            code: errorType.AS_LIST_LESS_THAN_MIN_AS.code,
+            clientError: true,
+            details: {
+              service_id,
+              as_id_list,
+              min_as,
+            },
+          });
+        }
+      }
+    }
 
     let receivers = await getIdpsMsqDestination({
       namespace,
