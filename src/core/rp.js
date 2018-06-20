@@ -231,22 +231,12 @@ async function checkIdpResponseAndNotify({
   );
 
   logger.debug({
-    message: 'Check RP call AS',
-    requestStatus,
+    message: 'Checked ZK proof and IAL',
+    requestId,
+    idpId,
     validProof,
+    validIal,
   });
-
-  if (
-    requestStatus.status === 'confirmed' &&
-    requestStatus.answered_idp_count === requestStatus.min_idp &&
-    validProof
-  ) {
-    const requestData = await db.getRequestData(requestStatus.request_id);
-    if (requestData != null) {
-      await sendRequestToAS(requestData, height);
-    }
-    db.removeChallengeFromRequestId(requestStatus.request_id);
-  }
 
   const responseValid = {
     idp_id: idpId,
@@ -256,16 +246,41 @@ async function checkIdpResponseAndNotify({
 
   await db.addIdpResponseValidList(requestId, responseValid);
 
+  const responseValidList = savedResponseValidList.concat([responseValid]);
+
+  // Send request to AS onlt when all IdP responses' proof and IAL are valid
+  if (
+    requestStatus.status === 'confirmed' &&
+    requestStatus.answered_idp_count === requestStatus.min_idp &&
+    isAllIdpResponsesValid(responseValidList)
+  ) {
+    const requestData = await db.getRequestData(requestStatus.request_id);
+    if (requestData != null) {
+      await sendRequestToAS(requestData, height);
+    }
+    db.removeChallengeFromRequestId(requestStatus.request_id);
+  }
+
   const eventDataForCallback = {
     type: 'request_status',
     ...requestStatus,
-    response_valid_list: savedResponseValidList.concat([responseValid]),
+    response_valid_list: responseValidList,
   };
 
   await callbackToClient(callbackUrl, eventDataForCallback, true);
 
   db.removeProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
   db.removeExpectedIdpResponseNodeId(requestStatus.request_id);
+}
+
+function isAllIdpResponsesValid(responseValidList) {
+  for (let i = 0; i < responseValidList.length; i++) {
+    const { valid_proof, valid_ial } = responseValidList[i];
+    if (valid_proof !== true || valid_ial !== true) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export async function handleTendermintNewBlockHeaderEvent(
@@ -341,7 +356,7 @@ async function getASReceiverList(data_request) {
 
 async function sendRequestToAS(requestData, height) {
   logger.debug({
-    message: 'RP call AS',
+    message: 'Sending request to AS',
     requestData,
     height,
   });
