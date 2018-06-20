@@ -494,6 +494,7 @@ export async function handleMessageFromQueue(messageStr) {
     );
     if (valid) {
       notifyIncomingRequestByCallback({
+        mode: message.mode,
         request_id: message.request_id,
         namespace: message.namespace,
         identifier: message.identifier,
@@ -570,6 +571,7 @@ export async function handleTendermintNewBlockHeaderEvent(
         );
         if (valid) {
           notifyIncomingRequestByCallback({
+            mode: message.mode,
             request_id: message.request_id,
             namespace: message.namespace,
             identifier: message.identifier,

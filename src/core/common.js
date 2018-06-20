@@ -344,6 +344,7 @@ export async function createRequest({
     let secretSalt = utils.randomBase64Bytes(16);
 
     const requestData = {
+      mode,
       namespace,
       identifier,
       request_id,
@@ -353,7 +354,6 @@ export async function createRequest({
       request_timeout,
       data_request_list: data_request_list,
       request_message,
-      mode,
       // for zk proof
       //challenge,
       rp_id: config.nodeId,
@@ -368,6 +368,7 @@ export async function createRequest({
 
     // add data to blockchain
     const requestDataToBlockchain = {
+      mode,
       request_id,
       min_idp,
       min_aal,
@@ -375,7 +376,6 @@ export async function createRequest({
       request_timeout,
       data_request_list: dataRequestListToBlockchain,
       request_message_hash: utils.hash(secretSalt + request_message),
-      mode,
     };
 
     // maintain mapping
