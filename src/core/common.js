@@ -13,10 +13,40 @@ import * as config from '../config';
 import errorType from '../error/type';
 import * as mq from '../mq';
 import * as db from '../db';
+import * as externalCryptoService from '../utils/externalCryptoService';
 
 const role = config.role;
 
+let messageQueueAddressRegistered = false;
 let handleMessageFromQueue;
+
+function registerMessageQueueAddress() {
+  if (!messageQueueAddressRegistered) {
+    tendermintNdid.registerMsqAddress(config.mqRegister);
+    messageQueueAddressRegistered = true;
+  }
+}
+
+if (role === 'rp' || role === 'idp' || role === 'as') {
+  tendermint.eventEmitter.on('ready', () => {
+    if (
+      !config.useExternalCryptoService ||
+      (config.useExternalCryptoService &&
+        externalCryptoService.isCallbackUrlsSet())
+    ) {
+      registerMessageQueueAddress();
+    }
+  });
+
+  if (config.useExternalCryptoService) {
+    externalCryptoService.eventEmitter.on('allCallbacksSet', () => {
+      if (tendermint.syncing === false) {
+        registerMessageQueueAddress();
+      }
+    });
+  }
+}
+
 if (role === 'rp') {
   handleMessageFromQueue = rp.handleMessageFromQueue;
   tendermint.setTendermintNewBlockHeaderEventHandler(
@@ -314,6 +344,7 @@ export async function createRequest({
     let secretSalt = utils.randomBase64Bytes(16);
 
     const requestData = {
+      mode,
       namespace,
       identifier,
       request_id,
@@ -323,7 +354,6 @@ export async function createRequest({
       request_timeout,
       data_request_list: data_request_list,
       request_message,
-      mode,
       // for zk proof
       //challenge,
       rp_id: config.nodeId,
@@ -338,6 +368,7 @@ export async function createRequest({
 
     // add data to blockchain
     const requestDataToBlockchain = {
+      mode,
       request_id,
       min_idp,
       min_aal,
@@ -345,7 +376,6 @@ export async function createRequest({
       request_timeout,
       data_request_list: dataRequestListToBlockchain,
       request_message_hash: utils.hash(secretSalt + request_message),
-      mode,
     };
 
     // maintain mapping

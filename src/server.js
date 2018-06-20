@@ -13,13 +13,10 @@ import logger from './logger';
 
 import routes from './routes';
 import { bodyParserErrorHandler } from './routes/middleware/errorHandler';
-import { init as idp_init } from './core/idp';
-import { init as as_init } from './core/as';
-import { init as rp_init } from './core/rp';
 import { clearAllScheduler } from './core/common';
 
 import { close as closeDB } from './db';
-import { tendermintWsClient } from './tendermint/ndid';
+import { tendermintWsClient } from './tendermint';
 import { close as closeMQ } from './mq';
 import { stopAllCallbackRetries } from './utils/callback';
 
@@ -69,17 +66,6 @@ server.listen(config.serverPort);
 logger.info({
   message: `${config.https ? 'HTTPS' : 'HTTP'} server listening on port ${config.serverPort}`,
 });
-
-// TO BE REMOVED
-// Not needed in production environment
-// It should be done in onboarding process
-if (config.role === 'idp') {
-  idp_init();
-} else if (config.role === 'as') {
-  as_init();
-} else if (config.role === 'rp') {
-  rp_init();
-}
 
 // Graceful Shutdown
 let shutDownCalledOnce = false;

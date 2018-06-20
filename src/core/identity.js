@@ -145,8 +145,8 @@ export async function createNewIdentity(data) {
     //already onboard this user
     if(!addAccessor && associated) {
       throw new CustomError({
-        message: errorType.ABCI_ALREADY_ONBOARD.message,
-        code: errorType.ABCI_ALREADY_ONBOARD.code,
+        message: errorType.IDENTITY_ALREADY_CREATED.message,
+        code: errorType.IDENTITY_ALREADY_CREATED.code,
         details: {
           namespace,
           identifier

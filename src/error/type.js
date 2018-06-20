@@ -158,6 +158,10 @@ export default {
     message: 'Duplicate service ID in data request list',
     clientError: true,
   },
+  IDENTITY_ALREADY_CREATED: {
+    code: 20019,
+    message: 'Already created an idenity for this user',
+  },
 
   // Errors return from ABCI app
   // Server errors
@@ -220,10 +224,6 @@ export default {
   ABCI_DUPLICATE_ACCESSOR_GROUP_ID: {
     code: 15015,
     message: 'Duplicate accessor group ID',
-  },
-  ABCI_ALREADY_ONBOARD: {
-    code: 15016,
-    message: 'You already onboard this user',
   },
 
   // Client errors
