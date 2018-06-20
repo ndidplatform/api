@@ -160,7 +160,7 @@ export default {
   },
   IDENTITY_ALREADY_CREATED: {
     code: 20019,
-    message: 'You already created an idenity for this user',
+    message: 'Already created an idenity for this user',
   },
 
   // Errors return from ABCI app
