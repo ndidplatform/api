@@ -5,7 +5,7 @@ import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/customError';
 import logger from '../logger';
 
-import * as tendermint from '../tendermint/ndid';
+import * as tendermint from '../tendermint';
 import * as mq from '../mq';
 import * as utils from '../utils';
 import * as config from '../config';

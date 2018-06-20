@@ -6,7 +6,7 @@ import logger from '../logger';
 import * as config from '../config';
 import * as utils from '../utils';
 import CustomError from '../error/customError';
-import * as tendermint from '../tendermint/ndid';
+import * as tendermint from '../tendermint';
 
 const receivingSocket = zmq.socket('pull');
 receivingSocket.bindSync('tcp://*:' + config.mqRegister.port);
