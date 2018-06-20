@@ -5,6 +5,7 @@ import errorType from '../error/type';
 
 import * as tendermintNdid from '../tendermint/ndid';
 import * as utils from '../utils';
+import * as common from './common';
 import * as config from '../config';
 import * as db from '../db';
 import {
@@ -41,7 +42,7 @@ export async function addAccessorMethodForAssociatedIdp({
   });
   if (!associated) return null;
   
-  const { request_id } = await createNewIdentity({
+  const result = await createNewIdentity({
     namespace,
     identifier,
     reference_id,
@@ -50,7 +51,7 @@ export async function addAccessorMethodForAssociatedIdp({
     accessor_id,
     addAccessor: true,
   });
-  return request_id;
+  return result;
 }
 
 export async function addAccessorAfterConsent(request_id, old_accessor_id) {
@@ -144,8 +145,8 @@ export async function createNewIdentity(data) {
     //already onboard this user
     if(!addAccessor && associated) {
       throw new CustomError({
-        message: errorType.ALREADY_ONBOARD.message,
-        code: errorType.ALREADY_ONBOARD.code,
+        message: errorType.ABCI_ALREADY_ONBOARD.message,
+        code: errorType.ABCI_ALREADY_ONBOARD.code,
         details: {
           namespace,
           identifier
@@ -177,7 +178,7 @@ export async function createNewIdentity(data) {
     // TODO: Check for duplicate accessor
     // TODO: Check for "ial" must be less than or equal than node's (IdP's) max_ial
 
-    let request_id = await tendermintNdid.createRequest({
+    let request_id = await common.createRequest({
       namespace,
       identifier,
       reference_id,
