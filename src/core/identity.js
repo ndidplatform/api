@@ -70,7 +70,8 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
     accessor_type, 
     accessor_public_key,
     accessor_id,
-    sid,  
+    sid,
+    associated,
   } = await db.getIdentityFromRequestId(request_id);
   
   let promiseArray = [
@@ -102,7 +103,10 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
   let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
   let secret = padding + '|' + encryptedHash;
-  return secret;
+  return {
+    secret,
+    associated,
+  };
 }
 
 // FIXME: error handling in many cases
@@ -191,6 +195,7 @@ export async function createNewIdentity(data) {
       min_aal: 1,
       min_idp: exist ? 1 : 0,
       request_timeout: 86400,
+      mode: 3,
     });
 
     db.setOnboardDataByReferenceId(reference_id, { request_id, accessor_id });
@@ -217,6 +222,7 @@ export async function createNewIdentity(data) {
         hash_id,
         ial,
         sid,
+        associated,
       });
     }
     else {

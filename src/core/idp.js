@@ -482,12 +482,14 @@ export async function handleMessageFromQueue(messageStr) {
   //onboard response
   if(message.accessor_id) {
     if(await checkOnboardResponse(message)) {
-      let secret = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
-      notifyAddAccessorResultByCallback({
+      let { secret, associated } = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
+      let notifyData = {
         request_id: message.request_id,
         success: true,
         secret,
-      });
+      };
+      if(associated) notifyAddAccessorResultByCallback(notifyData);
+      else notifyCreateIdentityResultByCallback(notifyData);
     }
   }
   else if(message.type === 'request_challenge') {
@@ -557,12 +559,14 @@ export async function handleTendermintNewBlockHeaderEvent(
       //reponse for onboard
       if(message.accessor_id) {
         if(await checkOnboardResponse(message)) {
-          let secret = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
-          notifyAddAccessorResultByCallback({
+          let { secret, associated } = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
+          let notifyData = {
             request_id: message.request_id,
             success: true,
             secret,
-          });
+          };
+          if(associated) notifyAddAccessorResultByCallback(notifyData);
+          else notifyCreateIdentityResultByCallback(notifyData);
         }
       }
       else if(message.type === 'request_challenge') {
