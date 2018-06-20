@@ -2,6 +2,7 @@ import CustomError from '../error/customError';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint';
+import * as tendermintNdid from '../tendermint/ndid';
 import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';
@@ -14,7 +15,6 @@ import * as mq from '../mq';
 import * as db from '../db';
 
 const role = config.role;
-const nodeId = config.nodeId;
 
 let handleMessageFromQueue;
 if (role === 'rp') {
@@ -46,148 +46,8 @@ async function resumeTimeoutScheduler() {
   );
 }
 
-export async function getRequest({ requestId }) {
-  try {
-    return await tendermint.query('GetRequest', { requestId });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get request from blockchain',
-      cause: error,
-    });
-  }
-}
-
-export async function getRequestDetail({ requestId }) {
-  try {
-    const { special, ...requestDetail } = await tendermint.query(
-      'GetRequestDetail',
-      { requestId }
-    );
-    if (requestDetail == null) {
-      return null;
-    }
-    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
-    return {
-      ...requestDetail,
-      status: requestStatus.status,
-    };
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get request details from blockchain',
-      cause: error,
-    });
-  }
-}
-
-export async function getIdpNodes({ namespace, identifier, min_ial, min_aal }) {
-  try {
-    const result = await tendermint.query('GetIdpNodes', {
-      hash_id:
-        namespace && identifier
-          ? utils.hash(namespace + ':' + identifier)
-          : undefined,
-      min_ial,
-      min_aal,
-    });
-    return result != null ? (result.node != null ? result.node : []) : [];
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get IdP nodes from blockchain',
-      cause: error,
-    });
-  }
-}
-
-export async function getAsNodesByServiceId({ service_id }) {
-  try {
-    const result = await tendermint.query('GetAsNodesByServiceId', {
-      service_id,
-    });
-    return result != null ? (result.node != null ? result.node : []) : [];
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get AS nodes by service ID from blockchain',
-      cause: error,
-    });
-  }
-}
-
-/**
- *
- * @param {Object} data
- * @param {string} data.node_id
- * @param {string} data.public_key
- */
-export async function addNodePubKey(data) {
-  try {
-    const result = await tendermint.transact(
-      'AddNodePublicKey',
-      data,
-      utils.getNonce()
-    );
-    return result;
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot add node public key to blockchain',
-      cause: error,
-    });
-  }
-}
-
-export async function getNodePubKey(node_id) {
-  try {
-    return await tendermint.query('GetNodePublicKey', { node_id });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get node public key from blockchain',
-      cause: error,
-    });
-  }
-}
-
-export async function getMsqAddress(node_id) {
-  try {
-    return await tendermint.query('GetMsqAddress', { node_id });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get message queue address from blockchain',
-      cause: error,
-    });
-  }
-}
-
-export async function registerMsqAddress({ ip, port }) {
-  try {
-    return await tendermint.transact(
-      'RegisterMsqAddress',
-      {
-        ip,
-        port,
-        node_id: nodeId,
-      },
-      utils.getNonce()
-    );
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot register message queue address to blockchain',
-      cause: error,
-    });
-  }
-}
-
-export async function getNodeToken(node_id = nodeId) {
-  try {
-    return await tendermint.query('GetNodeToken', { node_id });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get node token from blockchain',
-      cause: error,
-    });
-  }
-}
-
 export async function checkRequestIntegrity(requestId, request) {
-  const msgBlockchain = await getRequest({ requestId });
+  const msgBlockchain = await tendermintNdid.getRequest({ requestId });
 
   const valid = 
     utils.hash(request.secretSalt + request.request_message)
@@ -213,64 +73,8 @@ export async function checkRequestIntegrity(requestId, request) {
   return valid;
 }
 
-export async function getNamespaceList() {
-  try {
-    return (await tendermint.query('GetNamespaceList')) || [];
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get namespace list from blockchain',
-      cause: error,
-    });
-  }
-}
-
-export async function getServiceList() {
-  try {
-    return (await tendermint.query('GetServiceList')) || [];
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get service list from blockchain',
-      cause: error,
-    });
-  }
-}
-
 if (handleMessageFromQueue) {
   messageQueueEvent.on('message', handleMessageFromQueue);
-}
-
-export async function getAccessorGroupId(accessor_id) {
-  try {
-    const accessorGroupIdObj = await tendermint.query('GetAccessorGroupID',{
-      accessor_id,
-    });
-    if (accessorGroupIdObj == null) {
-      return null;
-    }
-    return accessorGroupIdObj.accessor_group_id;
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get accessor group ID from blockchain',
-      cause: error,
-    });
-  }
-}
-
-export async function getAccessorKey(accessor_id) {
-  try {
-    const accessorPubKeyObj = await tendermint.query('GetAccessorKey',{
-      accessor_id,
-    });
-    if (accessorPubKeyObj == null) {
-      return null;
-    }
-    return accessorPubKeyObj.accessor_public_key;
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get accessor public key from blockchain',
-      cause: error,
-    });
-  }
 }
 
 export async function getIdpsMsqDestination({
@@ -281,7 +85,7 @@ export async function getIdpsMsqDestination({
   idp_id_list,
   mode,
 }) {
-  const idpNodes = await getIdpNodes({
+  const idpNodes = await tendermintNdid.getIdpNodes({
     namespace: mode === 3 
       ? namespace
       : undefined,
@@ -304,11 +108,11 @@ export async function getIdpsMsqDestination({
   const receivers = await Promise.all(
     filteredIdpNodes.map(async (idpNode) => {
       const nodeId = idpNode.node_id;
-      const { ip, port } = await getMsqAddress(nodeId);
+      const { ip, port } = await tendermintNdid.getMsqAddress(nodeId);
       return {
         ip,
         port,
-        ...(await getNodePubKey(nodeId)),
+        ...(await tendermintNdid.getNodePubKey(nodeId)),
       };
     })
   );
@@ -329,14 +133,7 @@ export async function timeoutRequest(requestId) {
   try {
     const responseValidList = await db.getIdpResponseValidList(requestId);
 
-    const request = await getRequest({ requestId });
-    if (request.closed === false) {
-      await tendermint.transact(
-        'TimeOutRequest',
-        { requestId, response_valid_list: responseValidList },
-        utils.getNonce()
-      );
-    }
+    await tendermintNdid.timeoutRequest({ requestId, responseValidList });
   } catch (error) {
     logger.error({
       message: 'Cannot set timed out',
@@ -494,7 +291,6 @@ export async function createRequest({
       });
     }
 
-    const nonce = utils.getNonce();
     const request_id = utils.createRequestId();
 
     const dataRequestListToBlockchain = [];
@@ -557,11 +353,7 @@ export async function createRequest({
     await db.setRequestCallbackUrl(request_id, callback_url);
 
     try {
-      const { height } = await tendermint.transact(
-        'CreateRequest',
-        requestDataToBlockchain,
-        nonce
-      );
+      const { height } = await tendermintNdid.createRequest(requestDataToBlockchain);
 
       // send request data to IDPs via message queue
       mq.send(receivers, {
@@ -643,7 +435,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   });
 
   //query accessor_group_id of this accessor_id
-  let accessor_group_id = await getAccessorGroupId(
+  let accessor_group_id = await tendermintNdid.getAccessorGroupId(
     privateProofObject.accessor_id
   );
 
@@ -655,7 +447,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   //and check against all accessor_group_id of responses
   for (let i = 0; i < privateProofObjectList.length; i++) {
     let otherPrivateProofObject = privateProofObjectList[i].privateProofObject;
-    let otherGroupId = await getAccessorGroupId(
+    let otherGroupId = await tendermintNdid.getAccessorGroupId(
       otherPrivateProofObject.accessor_id
     );
     if (otherGroupId !== accessor_group_id) {
@@ -672,11 +464,11 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   }
 
   //query accessor_public_key from privateProofObject.accessor_id
-  let public_key = await getAccessorKey(privateProofObject.accessor_id);
+  let public_key = await tendermintNdid.getAccessorKey(privateProofObject.accessor_id);
 
   //query publicProof from response of idp_id in request
   let publicProof, signature, privateProofValueHash;
-  let response_list = (await getRequestDetail({
+  let response_list = (await tendermintNdid.getRequestDetail({
     requestId: request_id,
   })).response_list;
 
@@ -748,13 +540,7 @@ export async function handleChallengeRequest(responseId) {
   if(!public_proof_mq) return false;
 
   //get public proof in blockchain
-  let public_proof_blockchain = JSON.parse((await tendermint.query(
-    'GetIdentityProof',
-    {
-      request_id,
-      idp_id,
-    }
-  )).identity_proof);
+  let public_proof_blockchain = JSON.parse(await tendermintNdid.getIdentityProof(request_id, idp_id));
   if(!public_proof_blockchain) return false;
 
   //check public proof in blockchain and in message queue
@@ -772,33 +558,17 @@ export async function handleChallengeRequest(responseId) {
     message: 'Get challenge',
     challenge,
   });
-  let { ip, port } = await getMsqAddress(idp_id);
+  let { ip, port } = await  tendermintNdid.getMsqAddress(idp_id);
   let receiver = [{
     ip,
     port,
-    ...(await getNodePubKey(idp_id)),
+    ...(await tendermintNdid.getNodePubKey(idp_id)),
   }];
   mq.send(receiver, {
     challenge,
     request_id,
     ...nodeId,
   });
-}
-export async function getIdentityInfo(namespace, identifier, node_id) {
-  try {
-    const sid = namespace + ':' + identifier;
-    const hash_id = utils.hash(sid);
-
-    return await tendermint.query('GetIdentityInfo',{
-      hash_id,
-      node_id,
-    });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get accessor public key from blockchain',
-      cause: error,
-    });
-  }
 }
 
 /**
@@ -808,7 +578,7 @@ export async function getIdentityInfo(namespace, identifier, node_id) {
  */
 export async function shouldRetryCallback(requestId) {
   if (requestId) {
-    const requestDetail = await getRequestDetail({ requestId });
+    const requestDetail = await tendermintNdid.getRequestDetail({ requestId });
     if (requestDetail.closed || requestDetail.timed_out) {
       return false;
     }

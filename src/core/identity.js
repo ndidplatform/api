@@ -3,10 +3,9 @@ import logger from '../logger';
 import CustomError from '../error/customError';
 import errorType from '../error/type';
 
-import * as tendermint from '../tendermint';
+import * as tendermintNdid from '../tendermint/ndid';
 import * as utils from '../utils';
 import * as config from '../config';
-import * as common from './common';
 import * as db from '../db';
 import {
   accessorSign,
@@ -15,7 +14,7 @@ import {
 } from './idp';
 
 export async function checkAssociated({namespace, identifier}) {
-  let idpList = await common.getIdpNodes({
+  let idpList = await tendermintNdid.getIdpNodes({
     namespace,
     identifier,
     min_aal: 1,
@@ -63,7 +62,7 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
     old_accessor_id,
   });
 
-  let accessor_group_id = await common.getAccessorGroupId(old_accessor_id);
+  let accessor_group_id = await tendermintNdid.getAccessorGroupId(old_accessor_id);
   let { 
     hash_id, 
     ial, 
@@ -74,25 +73,24 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   } = await db.getIdentityFromRequestId(request_id);
   
   let promiseArray = [
-    tendermint.transact('AddAccessorMethod',{
+    tendermintNdid.addAccessorMethod({
       request_id,
       accessor_group_id,
       accessor_type,
       accessor_id,
       accessor_public_key,
-    }, utils.getNonce()),
+    })
   ];
 
   //no ial means old idp add new accessor
   if(ial) promiseArray.push(
-    registerMqDestination({
+    tendermintNdid.registerMqDestination({
       users: [
         {
           hash_id,
           ial,
         },
       ],
-      node_id: config.nodeId,
     })
   );
 
@@ -121,7 +119,7 @@ export async function createNewIdentity(data) {
       addAccessor,
     } = data;
 
-    const namespaceDetails = await common.getNamespaceList();
+    const namespaceDetails = await tendermintNdid.getNamespaceList();
     const valid = namespaceDetails.find(
       (namespaceDetail) => namespaceDetail.namespace === namespace
     );
@@ -154,9 +152,7 @@ export async function createNewIdentity(data) {
     let sid = namespace + ':' + identifier;
     let hash_id = utils.hash(sid);
 
-    let { exist } = await tendermint.query('CheckExistingIdentity', {
-      hash_id,
-    });
+    const exist = await tendermintNdid.checkExistingIdentity(hash_id);
 
     let onboardData = await db.getOnboardDataByReferenceId(reference_id);
     if(onboardData) {
@@ -177,7 +173,7 @@ export async function createNewIdentity(data) {
     // TODO: Check for duplicate accessor
     // TODO: Check for "ial" must be less than or equal than node's (IdP's) max_ial
 
-    let request_id = await common.createRequest({
+    let request_id = await tendermintNdid.createRequest({
       namespace,
       identifier,
       reference_id,
@@ -224,21 +220,19 @@ export async function createNewIdentity(data) {
       
       //await Promise.all([
       Promise.all([
-        tendermint.transact('CreateIdentity',{
+        tendermintNdid.createIdentity({
           accessor_type,
           accessor_public_key,
           accessor_id,
           accessor_group_id
-        }, utils.getNonce()),
-
-        registerMqDestination({
+        }),
+        tendermintNdid.registerMqDestination({
           users: [
             {
               hash_id,
               ial,
             },
           ],
-          node_id: config.nodeId,
         })
       ]).then(async () => {
 
@@ -264,13 +258,4 @@ export async function createNewIdentity(data) {
     });
     throw error;
   }
-}
-
-export async function registerMqDestination(data) {
-  const result = await tendermint.transact(
-    'RegisterMsqDestination',
-    data,
-    utils.getNonce()
-  );
-  return result;
 }

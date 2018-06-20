@@ -12,7 +12,7 @@ import identityRouter from './identity';
 import utilityRouter from './utility';
 import dpkiRouter from './dpki';
 import ndidRouter from './ndid';
-import * as tendermint from '../tendermint/ndid';
+import * as tendermint from '../tendermint';
 
 import * as config from '../config';
 

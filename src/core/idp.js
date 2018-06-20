@@ -8,6 +8,7 @@ import errorType from '../error/type';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint';
+import * as tendermintNdid from '../tendermint/ndid';
 import * as common from './common';
 import * as utils from '../utils';
 import * as config from '../config';
@@ -145,7 +146,7 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
 
 async function requestChallenge(request_id, accessor_id) {
   //query public key from accessor_id
-  let public_key = await common.getAccessorKey(accessor_id);
+  let public_key = await tendermintNdid.getAccessorKey(accessor_id);
   //gen public proof
   let [ k1, publicProof1 ] = utils.generatePublicProof(public_key);
   let [ k2, publicProof2 ] = utils.generatePublicProof(public_key);
@@ -159,21 +160,16 @@ async function requestChallenge(request_id, accessor_id) {
   });
   await db.setRequestReceivedFromMQ(request_id, request);
   //declare public proof to blockchain
-  let { height } = await tendermint.transact(
-    'DeclareIdentityProof',
-    {
-      request_id,
-      identity_proof: JSON.stringify([ publicProof1, publicProof2 ]),
-      idp_id: config.nodeId,
-    },
-    utils.getNonce(),
-  );
+  let { height } = await tendermintNdid.declareIdentityProof({
+    request_id,
+    identity_proof: JSON.stringify([ publicProof1, publicProof2 ]),
+  });
   //send message queue with public proof
-  let { ip, port } = await common.getMsqAddress(request.rp_id);
+  let { ip, port } = await tendermintNdid.getMsqAddress(request.rp_id);
   let receiver = [{
     ip,
     port,
-    ...(await common.getNodePubKey(request.rp_id)),
+    ...(await tendermintNdid.getNodePubKey(request.rp_id)),
   }];
   mq.send(receiver,{
     public_proof: [ publicProof1, publicProof2 ],
@@ -202,7 +198,7 @@ async function createIdpResponse(data) {
       secret,
     } = data;
 
-    const request = await common.getRequest({ requestId: request_id });
+    const request = await tendermintNdid.getRequest({ requestId: request_id });
     if (request == null) {
       throw new CustomError({
         message: errorType.REQUEST_NOT_FOUND.message,
@@ -231,7 +227,7 @@ async function createIdpResponse(data) {
         });
       }
 
-      const accessorPublicKey = await common.getAccessorKey(accessor_id);
+      const accessorPublicKey = await tendermintNdid.getAccessorKey(accessor_id);
       if (accessorPublicKey == null) {
         throw new CustomError({
           message: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.message,
@@ -257,7 +253,7 @@ async function createIdpResponse(data) {
 
       for(let i = 0 ; i < requestFromMq.challenge.length ; i++) {
         let { blockchainProof, privateProofValue, padding } = utils.generateIdentityProof({
-          publicKey: await common.getAccessorKey(accessor_id),
+          publicKey: await tendermintNdid.getAccessorKey(accessor_id),
           challenge: requestFromMq.challenge[i],
           k: requestFromMq.k[i],
           secret,
@@ -298,11 +294,7 @@ async function createIdpResponse(data) {
       db.removeResponseFromRequestId(request_id)
     ]);
     
-    let { height } = await tendermint.transact(
-      'CreateIdpResponse',
-      dataToBlockchain,
-      utils.getNonce()
-    );
+    const { height } = await tendermintNdid.createIdpResponse(dataToBlockchain);
 
     sendPrivateProofToRP(request_id, privateProofObject, height);
   } catch (error) {
@@ -380,11 +372,11 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
     rp_id,
   });
 
-  let { ip, port } = await common.getMsqAddress(rp_id);
+  let { ip, port } = await tendermintNdid.getMsqAddress(rp_id);
   let rpMq = {
     ip,
     port,
-    ...(await common.getNodePubKey(rp_id)),
+    ...(await tendermintNdid.getNodePubKey(rp_id)),
   };
 
   mq.send([rpMq], {
@@ -611,12 +603,12 @@ export async function init() {
     }
   }
 
-  common.registerMsqAddress(config.mqRegister);
+  tendermintNdid.registerMsqAddress(config.mqRegister);
 }
 
 async function checkOnboardResponse(message) {
   let reason = false;
-  let requestDetail = await common.getRequestDetail({
+  let requestDetail = await tendermintNdid.getRequestDetail({
     requestId: message.request_id
   });
   let response = requestDetail.response_list[0];

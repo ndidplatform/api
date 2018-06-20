@@ -2,7 +2,7 @@ import logger from '../logger';
 
 import * as utils from '../utils';
 import * as config from '../config';
-import * as tendermint from '../tendermint/ndid';
+import * as tendermint from '../tendermint';
 
 let init = false;
 

@@ -6,6 +6,7 @@ import CustomError from '../error/customError';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint';
+import * as tendermintNdid from '../tendermint/ndid';
 import * as mq from '../mq';
 import * as config from '../config';
 import * as common from './common';
@@ -79,7 +80,7 @@ async function notifyRequestUpdate(requestId, height) {
   const callbackUrl = await db.getRequestCallbackUrl(requestId);
   if (!callbackUrl) return; // This RP does not concern this request
 
-  const requestDetail = await common.getRequestDetail({
+  const requestDetail = await tendermintNdid.getRequestDetail({
     requestId: requestId,
   });
 
@@ -210,7 +211,7 @@ async function checkIdpResponseAndNotify({
 
   // Check IAL
   const requestData = await db.getRequestData(requestId);
-  const identityInfo = await common.getIdentityInfo(
+  const identityInfo = await tendermintNdid.getIdentityInfo(
     requestData.namespace,
     requestData.identifier,
     idpId
@@ -328,7 +329,7 @@ export async function handleTendermintNewBlockHeaderEvent(
 async function getASReceiverList(data_request) {
   let nodeIdList;
   if (!data_request.as_id_list || data_request.as_id_list.length === 0) {
-    const asNodes = await common.getAsNodesByServiceId({
+    const asNodes = await tendermintNdid.getAsNodesByServiceId({
       service_id: data_request.service_id,
     });
     nodeIdList = asNodes.map((asNode) => asNode.node_id);
@@ -340,11 +341,11 @@ async function getASReceiverList(data_request) {
     nodeIdList.map(async (asNodeId) => {
       try {
         //let nodeId = node.node_id;
-        let { ip, port } = await common.getMsqAddress(asNodeId);
+        let { ip, port } = await tendermintNdid.getMsqAddress(asNodeId);
         return {
           ip,
           port,
-          ...(await common.getNodePubKey(asNodeId)),
+          ...(await tendermintNdid.getNodePubKey(asNodeId)),
         };
       } catch (error) {
         return null;
@@ -404,7 +405,7 @@ export async function getRequestIdByReferenceId(referenceId) {
 export async function getDataFromAS(requestId) {
   try {
     // Check if request exists
-    const request = await common.getRequest({ requestId });
+    const request = await tendermintNdid.getRequest({ requestId });
     if (request == null) {
       return null;
     }
@@ -520,7 +521,7 @@ export async function handleMessageFromQueue(messageStr) {
     const callbackUrl = await db.getRequestCallbackUrl(message.request_id);
     // if (!callbackUrl) return;
 
-    const requestDetail = await common.getRequestDetail({
+    const requestDetail = await tendermintNdid.getRequestDetail({
       requestId: message.request_id,
     });
 
@@ -546,11 +547,11 @@ export async function handleMessageFromQueue(messageStr) {
 
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (latestBlockHeight > message.height) {
-        const signatureFromBlockchain = await getDataSignature(
-          message.request_id,
-          message.service_id,
-          message.as_id
-        );
+        const signatureFromBlockchain = await tendermintNdid.getDataSignature({
+          request_id: message.request_id,
+          service_id: message.service_id,
+          node_id: message.as_id
+        });
 
         if (signatureFromBlockchain == null) return;
         // TODO: if signature is invalid or mismatch then delete data from cache
@@ -559,7 +560,11 @@ export async function handleMessageFromQueue(messageStr) {
           return;
         }
 
-        await setDataReceived(message.request_id, message.service_id, message.as_id);
+        await tendermintNdid.setDataReceived({
+          requestId: message.request_id,
+          service_id: message.service_id,
+          as_id: message.as_id,
+        });
       }
     } catch (error) {
       // TODO: error handling
@@ -569,7 +574,7 @@ export async function handleMessageFromQueue(messageStr) {
 }
 
 async function isDataSignatureValid(asNodeId, signature, data) {
-  const publicKeyObj = await common.getNodePubKey(asNodeId);
+  const publicKeyObj = await tendermintNdid.getNodePubKey(asNodeId);
   if (publicKeyObj == null) return;
   if (publicKeyObj.public_key == null) return;
 
@@ -610,83 +615,36 @@ async function checkAsDataSignaturesAndSetReceived(requestId, dataToCheckList) {
           );
           if (data == null) return; // Have not received data from AS through message queue yet
 
-          const signatureFromBlockchain = await getDataSignature(
-            requestId,
-            serviceId,
-            asId
-          );
+          const signatureFromBlockchain = await tendermintNdid.getDataSignature({
+            request_id: requestId,
+            service_id: serviceId,
+            node_id: asId
+          });
           if (signatureFromBlockchain == null) return;
           // TODO: if signature is invalid or mismatch then delete data from cache
           if (data.source_signature !== signatureFromBlockchain) return;
           if (!(await isDataSignatureValid(asId, signatureFromBlockchain, data.data))) {
             return;
           }
-          await setDataReceived(requestId, serviceId, asId);
+          await tendermintNdid.setDataReceived({
+            requestId,
+            service_id: serviceId,
+            as_id: asId,
+          });
         })
       );
     })
   );
 }
 
-async function getDataSignature(requestId, serviceId, asNodeId) {
-  try {
-    const result = await tendermint.query(
-      'GetDataSignature',
-      {
-        node_id: asNodeId,
-        request_id: requestId,
-        service_id: serviceId,
-      },
-      utils.getNonce()
-    );
-    if (result == null) {
-      return null;
-    }
-    return result.signature;
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get data signature from blockchain',
-      requestId,
-      serviceId,
-      asNodeId,
-      cause: error,
-    });
-  }
-}
-
-async function setDataReceived(requestId, serviceId, asNodeId) {
-  try {
-    const result = await tendermint.transact(
-      'SetDataReceived',
-      {
-        requestId,
-        service_id: serviceId,
-        as_id: asNodeId,
-      },
-      utils.getNonce()
-    );
-    return result;
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot set data received to blockchain',
-      requestId,
-      serviceId,
-      asNodeId,
-      cause: error,
-    });
-  }
-}
-
 export async function closeRequest(requestId) {
   try {
     const responseValidList = await db.getIdpResponseValidList(requestId);
 
-    const result = await tendermint.transact(
-      'CloseRequest',
-      { requestId, response_valid_list: responseValidList },
-      utils.getNonce()
-    );
-    return result;
+    await tendermintNdid.closeRequest({
+      requestId,
+      responseValidList,
+    });
   } catch (error) {
     throw new CustomError({
       message: 'Cannot close a request',
@@ -711,5 +669,5 @@ export async function init() {
     }
   }
 
-  common.registerMsqAddress(config.mqRegister);
+  tendermintNdid.registerMsqAddress(config.mqRegister);
 }
