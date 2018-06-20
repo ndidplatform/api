@@ -44,8 +44,10 @@ router.post('/data/:request_id/:service_id', validateBody, async (req, res, next
     const { request_id, service_id } = req.params;
     const { data } = req.body;
 
-    // TODO
-    // as.
+    as.processDataForRP(data, {
+      requestId: request_id,
+      serviceId: service_id,
+    });
 
     res.status(204).end();
   } catch (error) {
