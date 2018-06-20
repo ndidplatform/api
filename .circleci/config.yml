@@ -1,0 +1,37 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/node:8
+      - image: ndidplatform/tendermint:latest
+        environment:
+          TM_RPC_PORT: 45000
+        command:
+          - genesis
+          - --p2p.laddr=tcp://0.0.0.0:47000
+          - --rpc.laddr=tcp://0.0.0.0:45000
+          - --proxy_app=tcp://localhost:46000
+      - image: ndidplatform/abci:latest
+        command: ["tcp://0.0.0.0:46000"]
+    steps:
+      - checkout
+      - run:
+          name: Install node modules
+          command: |
+            npm install
+      - run:
+          name: Set up Development Key
+          command: |
+            TENDERMINT_IP=localhost \
+            TENDERMINT_PORT=47000 \
+            NODE_ID=ndid1 \
+            npm run initDevKey
+
+      - run:
+          name: Start service
+          command: |
+            ROLE=ndid \
+            NODE_ID=ndid1 \
+            npm start
+          background: true
+      - run: sleep 15
