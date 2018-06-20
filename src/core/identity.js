@@ -5,6 +5,7 @@ import errorType from '../error/type';
 
 import * as tendermintNdid from '../tendermint/ndid';
 import * as utils from '../utils';
+import * as common from './common';
 import * as config from '../config';
 import * as db from '../db';
 import {
@@ -177,7 +178,7 @@ export async function createNewIdentity(data) {
     // TODO: Check for duplicate accessor
     // TODO: Check for "ial" must be less than or equal than node's (IdP's) max_ial
 
-    let request_id = await tendermintNdid.createRequest({
+    let request_id = await common.createRequest({
       namespace,
       identifier,
       reference_id,
