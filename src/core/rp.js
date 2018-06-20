@@ -13,8 +13,6 @@ import * as common from './common';
 import * as db from '../db';
 import * as utils from '../utils';
 
-import * as externalCryptoService from '../utils/externalCryptoService';
-
 const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
@@ -652,22 +650,4 @@ export async function closeRequest(requestId) {
       cause: error,
     });
   }
-}
-
-export async function init() {
-  // FIXME: In production this should be done only once. Hence, init() is not needed.
-
-  // Wait for blockchain ready
-  await tendermint.ready;
-
-  if (config.useExternalCryptoService) {
-    for (;;) {
-      if (externalCryptoService.isCallbackUrlsSet()) {
-        break;
-      }
-      await utils.wait(5000);
-    }
-  }
-
-  tendermintNdid.registerMsqAddress(config.mqRegister);
 }

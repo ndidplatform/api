@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { EventEmitter } from 'events';
 
 import fetch from 'node-fetch';
 
@@ -22,6 +23,8 @@ const callbackUrlFilesPrefix = path.join(
   '..',
   'dpki-callback-url-' + config.nodeId
 );
+
+export const eventEmitter = new EventEmitter();
 
 [
   { key: 'sign_url', fileSuffix: 'signature' },
@@ -106,6 +109,12 @@ export function isCallbackUrlsSet() {
   );
 }
 
+function checkAndEmitAllCallbacksSet() {
+  if (isCallbackUrlsSet()) {
+    eventEmitter.emit('allCallbacksSet');
+  }
+}
+
 export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
   let public_key;
 
@@ -165,6 +174,7 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
       }
     );
   }
+  checkAndEmitAllCallbacksSet()
 }
 
 export async function setMasterSignatureCallback(url) {
@@ -190,6 +200,7 @@ export async function setMasterSignatureCallback(url) {
       }
     });
   }
+  checkAndEmitAllCallbacksSet();
 }
 
 export async function decryptAsymetricKey(encryptedMessage) {

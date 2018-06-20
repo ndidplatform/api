@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs';
+import { EventEmitter } from 'events';
 
 import CustomError from '../error/customError';
 import errorType from '../error/type';
@@ -16,10 +17,7 @@ let handleTendermintNewBlockHeaderEvent;
 export let syncing = null;
 export let connected = false;
 
-let readyPromise;
-export let ready = new Promise((resolve) => {
-  readyPromise = { resolve };
-});
+export const eventEmitter = new EventEmitter();
 
 const latestBlockHeightFilepath = path.join(
   __dirname,
@@ -72,7 +70,7 @@ export function setTendermintNewBlockHeaderEventHandler(handler) {
 /**
  * Poll tendermint status until syncing === false
  */
-async function pollStatusUtilSynced() {
+async function pollStatusUntilSynced() {
   logger.info({
     message: 'Waiting for Tendermint to finish syncing blockchain',
   });
@@ -84,8 +82,7 @@ async function pollStatusUtilSynced() {
         logger.info({
           message: 'Tendermint blockchain synced',
         });
-        readyPromise.resolve();
-        readyPromise = null;
+        eventEmitter.emit('ready');
         break;
       }
       await utils.wait(1000);
@@ -97,15 +94,12 @@ export const tendermintWsClient = new TendermintWsClient();
 
 tendermintWsClient.on('connected', () => {
   connected = true;
-  pollStatusUtilSynced();
+  pollStatusUntilSynced();
 });
 
 tendermintWsClient.on('disconnected', () => {
   connected = false;
   syncing = null;
-  ready = new Promise((resolve) => {
-    readyPromise = { resolve };
-  });
 });
 
 tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
