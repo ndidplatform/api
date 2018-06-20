@@ -215,10 +215,14 @@ async function checkIdpResponseAndNotify({
     idpId
   );
 
-  if (responseIal <= identityInfo.ial) {
-    validIal = true;
-  } else {
-    validIal = false;
+  if (requestStatus.mode === 1) {
+    validIal = true; // Actually, cannot check in mode 1
+  } else if (requestStatus.mode === 3) {
+    if (responseIal <= identityInfo.ial) {
+      validIal = true;
+    } else {
+      validIal = false;
+    }
   }
 
   // Check ZK Proof
