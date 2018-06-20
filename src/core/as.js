@@ -114,7 +114,37 @@ async function registerServiceDestination(data) {
   }
 }
 
+export async function processDataForRP(data, additionalData) {
+  let as_id = config.nodeId;
+  let signature = await utils.createSignature(data);
+  
+  // AS node adds transaction to blockchain
+  const { height } = await signData({
+    as_id,
+    request_id: additionalData.requestId,
+    signature,
+    service_id: additionalData.serviceId,
+  });
+
+  if(!additionalData.rpId) {
+    additionalData.rpId = await db.getRPIdFromRequestId(additionalData.requestId);
+  }
+
+  sendDataToRP(additionalData.rpId, {
+    request_id: additionalData.requestId,
+    as_id,
+    signature,
+    service_id: additionalData.serviceId,
+    data,
+    height,
+  });
+}
+
 export async function afterGotDataFromCallback(response, additionalData) {
+  if(response.status === 204) {
+    await db.setRPIdFromRequestId(additionalData.requestId, additionalData.rpId);
+    return;
+  }
   let data;
   try {
     const result = await response.json();
@@ -139,29 +169,7 @@ export async function afterGotDataFromCallback(response, additionalData) {
       cause: error,
     });
   }
-
-  // When received data
-  let as_id = config.nodeId;
-  let signature = await utils.createSignature(data);
-  // AS node encrypts the response and sends it back to RP via NSQ.
-  // TODO should check request status before send (whether request is closed or timeout)
-  
-  // AS node adds transaction to blockchain
-  const { height } = await signData({
-    as_id,
-    request_id: additionalData.requestId,
-    signature,
-    service_id: additionalData.serviceId,
-  });
-
-  sendDataToRP(additionalData.rpId, {
-    request_id: additionalData.requestId,
-    as_id,
-    signature,
-    service_id: additionalData.serviceId,
-    data,
-    height,
-  });
+  processDataForRP(data, additionalData);
 }
 
 async function getDataAndSendBackToRP(request, responseDetails) {
