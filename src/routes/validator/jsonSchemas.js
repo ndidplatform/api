@@ -327,7 +327,6 @@ export default {
           'reference_id',
           'accessor_type',
           'accessor_public_key',
-          'accessor_id',
         ],
       },
     },

@@ -422,7 +422,13 @@ export async function handleMessageFromQueue(messageStr) {
     createIdpResponse(data);
     return;
   }
-  await db.setRequestReceivedFromMQ(message.request_id, message);
+
+  //when idp add new accessor, they may request challenge from themself
+  //this is to prevent overwrite data (k, public)
+  if(message.type !== 'request_challenge') {
+    await db.setRequestReceivedFromMQ(message.request_id, message);
+  }
+  await db.setRequestToProcessReceivedFromMQ(message.request_id, message);
 
   const latestBlockHeight = tendermint.latestBlockHeight;
   if (latestBlockHeight <= message.height) {
@@ -436,6 +442,11 @@ export async function handleMessageFromQueue(messageStr) {
       message.request_id
     );
     await db.setRPIdFromRequestId(message.request_id, message.rp_id);
+
+    if(message.type === 'request_challenge') {
+      const responseId = message.request_id + ':' + message.idp_id;
+      await db.setPublicProofReceivedFromMQ(responseId, message.public_proof);
+    }
 
     if(message.accessor_id) {
       //====================== COPY-PASTE from RP, need refactoring =====================
@@ -470,6 +481,7 @@ export async function handleMessageFromQueue(messageStr) {
     }
     return;
   }
+  await db.removeRequestToProcessReceivedFromMQ(message.request_id, message);
 
   logger.debug({
     message: 'Processing request',
@@ -552,7 +564,8 @@ export async function handleTendermintNewBlockHeaderEvent(
         message: 'Processing request',
         requestId,
       });
-      const message = await db.getRequestReceivedFromMQ(requestId);
+      const message = await db.getRequestToProcessReceivedFromMQ(requestId);
+      await db.removeRequestToProcessReceivedFromMQ(requestId);
       //reponse for onboard
       if(message.accessor_id) {
         if(await checkOnboardResponse(message)) {
@@ -603,7 +616,7 @@ async function checkOnboardResponse(message) {
   });
   let response = requestDetail.response_list[0];
   
-  if(!(await common.verifyZKProof(message.request_id, message.idp_id, message))) {
+  if(!(await common.verifyZKProof(message.request_id, message.idp_id, message, 3))) {
     reason = 'Invalid response';
   }
   else if(response.status !== 'accept') {

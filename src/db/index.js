@@ -164,6 +164,33 @@ export function removeRequestReceivedFromMQ(requestId) {
   });
 }
 
+export function getRequestToProcessReceivedFromMQ(requestId) {
+  return db.get({
+    name: 'requestToProcessReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+  });
+}
+
+export function setRequestToProcessReceivedFromMQ(requestId, request) {
+  return db.set({
+    name: 'requestToProcessReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+    value: request,
+  });
+}
+
+export function removeRequestToProcessReceivedFromMQ(requestId) {
+  return db.remove({
+    name: 'requestToProcessReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 export function getResponseFromRequestId(requestId) {
   return db.get({
     name: 'responseDataFromRequestId',
