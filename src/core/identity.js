@@ -42,7 +42,7 @@ export async function addAccessorMethodForAssociatedIdp({
   });
   if (!associated) return null;
   
-  const { request_id } = await createNewIdentity({
+  const result = await createNewIdentity({
     namespace,
     identifier,
     reference_id,
@@ -51,7 +51,7 @@ export async function addAccessorMethodForAssociatedIdp({
     accessor_id,
     addAccessor: true,
   });
-  return request_id;
+  return result;
 }
 
 export async function addAccessorAfterConsent(request_id, old_accessor_id) {
