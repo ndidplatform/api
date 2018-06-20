@@ -334,8 +334,3 @@ export function getTransactionListFromBlockQuery(result) {
 export function getBlockHeightFromNewBlockHeaderEvent(result) {
   return result.data.value.header.height;
 }
-
-export function getNodeIdFromNewBlockHeaderEvent(result) {
-  //Todo
-  return 'someId'; //result.data.value.header.height;
-}
