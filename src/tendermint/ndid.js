@@ -533,6 +533,19 @@ export async function getServiceList() {
   }
 }
 
+export async function getNodeInfo(node_id) {
+  try {
+    return await tendermint.query('GetNodeInfo', {
+      node_id,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get node info from blockchain',
+      cause: error,
+    });
+  }
+}
+
 //
 // NDID only
 //

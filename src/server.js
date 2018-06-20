@@ -22,8 +22,6 @@ import { stopAllCallbackRetries } from './utils/callback';
 
 import * as config from './config';
 
-const env = process.env.NODE_ENV || 'development';
-
 process.on('unhandledRejection', function(reason, p) {
   logger.error({
     message: 'Unhandled Rejection',
@@ -34,7 +32,8 @@ process.on('unhandledRejection', function(reason, p) {
 
 logger.info({
   message: 'Starting server',
-  env,
+  NODE_ENV: process.env.NODE_ENV,
+  env: config.env,
   config,
 });
 

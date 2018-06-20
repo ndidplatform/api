@@ -12,16 +12,15 @@ import identityRouter from './identity';
 import utilityRouter from './utility';
 import dpkiRouter from './dpki';
 import ndidRouter from './ndid';
+import getInfo from './info';
 import * as tendermint from '../tendermint';
 
 import * as config from '../config';
 
 const router = express.Router();
 
-const env = process.env.NODE_ENV || 'development';
-
 // FOR DEBUG
-if (env === 'development') {
+if (config.env === 'development') {
   router.use((req, res, next) => {
     if (req.method === 'POST') {
       const { method, originalUrl, params, body } = req;
@@ -85,6 +84,8 @@ if (config.role === 'rp') {
 router.use('/identity', identityRouter);
 router.use('/utility', utilityRouter);
 router.use('/dpki', dpkiRouter);
+
+router.get('/info', getInfo);
 
 router.use(errorHandler);
 
