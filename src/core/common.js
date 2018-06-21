@@ -666,3 +666,21 @@ export async function shouldRetryCallback(requestId) {
   }
   return true;
 }
+
+export async function closeRequest(requestId) {
+  try {
+    const responseValidList = await db.getIdpResponseValidList(requestId);
+
+    await tendermintNdid.closeRequest({
+      requestId,
+      responseValidList,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot close a request',
+      requestId,
+      cause: error,
+    });
+  }
+  db.removeChallengeFromRequestId(requestId);
+}

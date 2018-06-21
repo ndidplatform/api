@@ -126,7 +126,7 @@ router.post('/requests/close', validateBody, async (req, res, next) => {
   try {
     const { request_id } = req.body;
 
-    await rp.closeRequest(request_id);
+    await common.closeRequest(request_id);
     res.status(204).end();
   } catch (error) {
     next(error);
