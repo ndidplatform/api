@@ -192,6 +192,10 @@ export default {
     code: 20021,
     message: 'Specified ial exceeds maximum ial capability',
   },
+  CONDITION_TOO_LOW: {
+    code: 20022,
+    message: 'min_ial or min_aal too low for some service requested',
+  },
 
   // Errors return from ABCI app
   // Server errors

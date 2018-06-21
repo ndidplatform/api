@@ -289,18 +289,43 @@ export async function createRequest({
         }
         serviceIds.push(service_id);
 
-        if (
+        //all as_list offer the service
+        let potential_as_list = await tendermintNdid.getAsNodesByServiceId({ service_id });
+        if(
           as_id_list != null &&
-          as_id_list.length > 0 &&
-          as_id_list.length < min_as
+          as_id_list.length > 0 
         ) {
+          if ( as_id_list.length < min_as) {
+            throw new CustomError({
+              message: errorType.AS_LIST_LESS_THAN_MIN_AS.message,
+              code: errorType.AS_LIST_LESS_THAN_MIN_AS.code,
+              clientError: true,
+              details: {
+                service_id,
+                as_id_list,
+                min_as,
+              },
+            });
+          }
+          //filter potential AS to be only in as_id_list
+          potential_as_list = potential_as_list.filter((as_node) => {
+            return (as_id_list.indexOf(as_node.id) !== -1);
+          });
+        }
+        //filter min_ial, min_aal
+        potential_as_list = potential_as_list.filter((as_node) => {
+          return (as_node.min_ial <= min_ial && as_node.min_aal <= min_aal);
+        });
+
+        if(potential_as_list.length < min_as) {
           throw new CustomError({
-            message: errorType.AS_LIST_LESS_THAN_MIN_AS.message,
-            code: errorType.AS_LIST_LESS_THAN_MIN_AS.code,
+            message: errorType.CONDITION_TOO_LOW.message,
+            code: errorType.CONDITION_TOO_LOW.code,
             clientError: true,
             details: {
               service_id,
-              as_id_list,
+              min_ial,
+              min_aal,
               min_as,
             },
           });
