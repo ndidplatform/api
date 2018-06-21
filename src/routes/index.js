@@ -113,7 +113,7 @@ router.get('/info', getInfo);
 router.use(errorHandler);
 
 router.get('/license', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../LICENSE'));
+  res.sendFile(path.join(__dirname, '..', '..', 'COPYING'));
 });
 
 router.get('/source', (req, res) => {
