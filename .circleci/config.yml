@@ -44,3 +44,11 @@ jobs:
             NODE_ID=ndid1 \
             npm start
           background: true
+      - run:
+          name: Start sample testing
+          command: |
+            sleep 15
+            curl -v http://localhost:8080/utility/namespaces
+            curl -v http://localhost:8080/utility/idp
+            curl -v http://localhost:8080/utility/services
+
