@@ -28,9 +28,13 @@ const expect = chai.expect;
 
 describe('Test crypto functions', () => {
   it('should SHA-256 hash correctly', () => {
+    // action
     const hashed = cryptoUtils.hash('test');
+    // expect
+    // return type is string
     expect(hashed).to.be.a('string');
-    expect(hashed).to.have.lengthOf(64);
+    // return value is base64
+    expect(hashed).to.match(/[A-Za-z0-9+/=]/);
   });
 
   it('should encrypt with public key and decrypt with private key correctly', () => {
