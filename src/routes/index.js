@@ -1,3 +1,17 @@
+/*
+Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED 
+
+This file is part of NDID software.
+
+NDID is the free software: you can redistribute it and/or modify  it under the terms of the Affero GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or any later version.
+
+NDID is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Affero GNU General Public License for more details.
+
+You should have received a copy of the Affero GNU General Public License along with the NDID source code.  If not, see https://www.gnu.org/licenses/agpl.txt.
+
+please contact info@ndid.co.th for any further questions
+*/
 import express from 'express';
 
 import errorType from '../error/type';
@@ -16,6 +30,7 @@ import getInfo from './info';
 import * as tendermint from '../tendermint';
 
 import * as config from '../config';
+import path from 'path';
 
 const router = express.Router();
 
@@ -88,6 +103,14 @@ router.use('/dpki', dpkiRouter);
 router.get('/info', getInfo);
 
 router.use(errorHandler);
+
+router.get('/license', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../LICENSE'));
+});
+
+router.get('/source', (req, res) => {
+  res.status(200).send('https://github.com/ndidplatform/api');
+});
 
 // All other paths besides stated above are invalid
 router.get('*', function(req, res) {
