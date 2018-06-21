@@ -20,6 +20,7 @@
  * 
  */
 
+import logger from '../../logger';
 import errorType from '../../error/type';
 import { env, clientHttpErrorCode, serverHttpErrorCode } from '../../config';
 
@@ -36,7 +37,7 @@ export default function errorHandler(err, req, res, next) {
     errorMessage = err.getMessageWithCode();
     errorCode = err.getCode();
     clientError = err.isRootCauseClientError();
-    if (errorCode === 35001) {
+    if (errorCode === errorType.ABCI_UNAUTHORIZED.code) {
       unauthorizedError = true;
     }
   } else {
@@ -45,26 +46,41 @@ export default function errorHandler(err, req, res, next) {
   }
 
   if (unauthorizedError) {
-    res.status(403).json({
+    const responseBody = {
       error: {
         code: errorCode,
         message: errorMessage,
       },
+    };
+    res.status(403).json(responseBody);
+    logger.error({
+      message: 'Responded Unauthorized with HTTP code 403',
+      responseBody,
     });
   } else if (clientError === true) {
-    res.status(clientHttpErrorCode).json({
+    const responseBody = {
       error: {
         code: errorCode,
         message: errorMessage,
       },
+    };
+    res.status(clientHttpErrorCode).json(responseBody);
+    logger.error({
+      message: `Responded Bad Request with HTTP code ${clientHttpErrorCode}`,
+      responseBody,
     });
   } else {
-    res.status(serverHttpErrorCode).json({
+    const responseBody = {
       error: {
         code: errorCode,
         message: errorMessage,
         stack: env === 'development' ? err.stack : undefined,
       },
+    };
+    res.status(serverHttpErrorCode).json(responseBody);
+    logger.error({
+      message: `Responded Internal Server Error with HTTP code ${serverHttpErrorCode}`,
+      responseBody,
     });
   }
 }
@@ -86,19 +102,29 @@ export function bodyParserErrorHandler(err, req, res, next) {
     }
 
     if (err.status === 400) {
-      res.status(clientHttpErrorCode).json({
+      const responseBody = {
         error: {
           code: errorCode,
           message: errorMessage,
         },
+      };
+      res.status(clientHttpErrorCode).json(responseBody);
+      logger.error({
+        message: `Responded Bad Request with HTTP code ${clientHttpErrorCode}`,
+        responseBody,
       });
     } else {
-      res.status(serverHttpErrorCode).json({
+      const responseBody = {
         error: {
           code: errorCode,
           message: errorMessage,
           stack: env === 'development' ? err.stack : undefined,
         },
+      };
+      res.status(serverHttpErrorCode).json(responseBody);
+      logger.error({
+        message: `Responded Internal Server Error with HTTP code ${serverHttpErrorCode}`,
+        responseBody,
       });
     }
   }
