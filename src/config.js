@@ -49,12 +49,14 @@ export const defaultMqBindingPort = (() => {
   if (process.env.ROLE === 'idp') return 5555;
   if (process.env.ROLE === 'rp') return 5556;
   if (process.env.ROLE === 'as') return 5557;
+  else return 5555;
 })();
 
 export const defaultTendermintPort = (() => {
   if (process.env.ROLE === 'idp' || process.env.ROLE === 'ndid') return '45000';
   if (process.env.ROLE === 'rp') return '45001';
   if (process.env.ROLE === 'as') return '45002';
+  else return '45000';
 })();
 
 export const tendermintIp =
