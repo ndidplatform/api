@@ -330,6 +330,14 @@ export default {
         },
       },
     },
+    '/identity/:namespace/:identifier/ial': {
+      body: {
+        properties: {
+          ial: { type: 'number', enum: [1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3] },
+        },
+        required: ['ial'],
+      },
+    },
     '/identity/:namespace/:identifier/endorsement': {
       body: {
         properties: {
