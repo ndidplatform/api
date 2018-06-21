@@ -1,29 +1,41 @@
 /**
  * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
- * 
+ *
  * This file is part of NDID software.
- * 
+ *
  * NDID is the free software: you can redistribute it and/or modify it under
  * the terms of the Affero GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or any later
  * version.
- * 
+ *
  * NDID is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the Affero GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the Affero GNU General Public License
  * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
- * 
+ *
  * Please contact info@ndid.co.th for any further questions
- * 
+ *
  */
 
 if (process.env.NODE_ENV == null || process.env.NODE_ENV === '') {
   console.warn(
     '"NODE_ENV" environment variable is not set. Default to "development"'
   );
+} else {
+  if (
+    process.env.NODE_ENV !== 'development' ||
+    process.env.NODE_ENV !== 'production' ||
+    process.env.NODE_ENV !== 'test'
+  ) {
+    console.error(
+      'ERROR:',
+      'Unsupported "NODE_ENV" environment variable value. Only "development", "production", and "test" are allowed. Process will now exit.'
+    );
+    process.exit(1);
+  }
 }
 
 if (process.env.ROLE == null) {
@@ -68,36 +80,49 @@ if (process.env.MQ_CONTACT_IP == null) {
   );
 }
 
-if (
-  process.env.NODE_ENV === 'production' &&
-  process.env.LOG_DIRECTORY_PATH == null
-) {
-  console.warn(
-    `"LOG_DIRECTORY_PATH" environment variable is not set. Default to "${__dirname}"`
-  );
-}
+if (process.env.NODE_ENV === 'production') {
+  if (process.env.LOG_DIRECTORY_PATH == null) {
+    console.warn(
+      `"LOG_DIRECTORY_PATH" environment variable is not set. Default to "${__dirname}"`
+    );
+  }
 
-if (
-  process.env.NODE_ENV === 'production' &&
-  process.env.USE_EXTERNAL_CRYPTO_SERVICE !== 'true' &&
-  process.env.PRIVATE_KEY_PATH == null &&
-  process.env.MASTER_PRIVATE_KEY_PATH == null
-) {
-  console.error(
-    'ERROR:',
-    '"PRIVATE_KEY_PATH" and "MASTER_PRIVATE_KEY_PATH" environment variables are not set. Process will now exit.'
-  );
-  process.exit(1);
-}
+  if (
+    process.env.USE_EXTERNAL_CRYPTO_SERVICE !== 'true' &&
+    process.env.PRIVATE_KEY_PATH == null &&
+    process.env.MASTER_PRIVATE_KEY_PATH == null
+  ) {
+    console.error(
+      'ERROR:',
+      '"PRIVATE_KEY_PATH" and "MASTER_PRIVATE_KEY_PATH" environment variables are not set. Process will now exit.'
+    );
+    process.exit(1);
+  }
 
-if (
-  process.env.NODE_ENV === 'production' &&
-  process.env.HTTPS === 'true' &&
-  (!process.env.HTTPS_KEY_PATH || !process.env.HTTPS_CERT_PATH)
-) {
-  console.error(
-    'ERROR:',
-    '"HTTPS_KEY_PATH" and "HTTPS_CERT_PATH" environment variables are not set when "HTTPS" is set to true. Process will now exit.'
-  );
-  process.exit(1);
+  if (
+    process.env.HTTPS === 'true' &&
+    (!process.env.HTTPS_KEY_PATH || !process.env.HTTPS_CERT_PATH)
+  ) {
+    console.error(
+      'ERROR:',
+      '"HTTPS_KEY_PATH" and "HTTPS_CERT_PATH" environment variables are not set when "HTTPS" is set to true. Process will now exit.'
+    );
+    process.exit(1);
+  }
+
+  if (process.env.CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH == null) {
+    console.error(
+      'ERROR:',
+      '"CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH" environment variable is not set. Process will now exit.'
+    );
+    process.exit(1);
+  }
+
+  if (process.env.ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH == null) {
+    console.error(
+      'ERROR:',
+      '"ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH" environment variable is not set. Process will now exit.'
+    );
+    process.exit(1);
+  }
 }
