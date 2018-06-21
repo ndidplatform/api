@@ -82,13 +82,13 @@ if (role === 'rp') {
     idp.handleTendermintNewBlockHeaderEvent
   );
   resumeTimeoutScheduler();
-  resumeCallbackToClient();
+  resumeCallbackToClient(shouldRetryCallback);
 } else if (role === 'as') {
   handleMessageFromQueue = as.handleMessageFromQueue;
   tendermint.setTendermintNewBlockHeaderEventHandler(
     as.handleTendermintNewBlockHeaderEvent
   );
-  resumeCallbackToClient(as.afterGotDataFromCallback);
+  resumeCallbackToClient(shouldRetryCallback, as.afterGotDataFromCallback);
 }
 
 async function resumeTimeoutScheduler() {
