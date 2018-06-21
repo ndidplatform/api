@@ -57,8 +57,8 @@ async function callbackWithRetry(
   dataForResponseCallback
 ) {
   const backoff = new ExponentialBackoff({
-    min: 1000,
-    max: 60000,
+    min: 5000,
+    max: 180000,
     factor: 2,
     jitter: 0.2,
   });
