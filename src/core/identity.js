@@ -35,6 +35,10 @@ import {
   isAccessorSignUrlSet,
   notifyCreateIdentityResultByCallback,
 } from './idp';
+import {
+  getRequestMessageForCreatingIdentity,
+  getRequestMessageForAddingAccessor,
+} from '../utils/requestMessage';
 
 export async function checkAssociated({namespace, identifier}) {
   let idpList = await tendermintNdid.getIdpNodes({
@@ -226,16 +230,26 @@ export async function createNewIdentity(data) {
     // TODO: Check for duplicate accessor
     // TODO: Check for "ial" must be less than or equal than node's (IdP's) max_ial
 
-    let request_id = await common.createRequest({
+    const request_id = await common.createRequest({
       namespace,
       identifier,
       reference_id,
       idp_id_list: [],
       callback_url: null,
       data_request_list: [],
-      request_message: ial 
-        ? 'Request for consent to add another IDP' 
-        : 'Request for consent to add another key from IDP: ' + config.nodeId, //Must lock?
+      request_message: ial
+        ? getRequestMessageForCreatingIdentity({
+            namespace,
+            identifier,
+            reference_id,
+            node_id: config.nodeId,
+          })
+        : getRequestMessageForAddingAccessor({
+            namespace,
+            identifier,
+            reference_id,
+            node_id: config.nodeId,
+          }),
       min_ial: 1.1,
       min_aal: 1,
       min_idp: exist ? 1 : 0,
