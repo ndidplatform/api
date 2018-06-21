@@ -69,8 +69,9 @@ export async function addAccessorMethodForAssociatedIdp({
 
   if (!associated) {
     throw new CustomError({
-      message: errorType.IDENTITY_NOT_ONBOARD.message,
-      code: errorType.IDENTITY_NOT_ONBOARD.code,
+      message: errorType.IDENTITY_NOT_FOUND.message,
+      code: errorType.IDENTITY_NOT_FOUND.code,
+      clientError: true,
       details: {
         namespace,
         identifier,
@@ -167,6 +168,7 @@ export async function createNewIdentity(data) {
       throw new CustomError({
         message: errorType.INVALID_NAMESPACE.message,
         code: errorType.INVALID_NAMESPACE.code,
+        clientError: true,
         details: {
           namespace
         },
@@ -182,6 +184,7 @@ export async function createNewIdentity(data) {
       throw new CustomError({
         message: errorType.IDENTITY_ALREADY_CREATED.message,
         code: errorType.IDENTITY_ALREADY_CREATED.code,
+        clientError: true,
         details: {
           namespace,
           identifier
@@ -195,6 +198,7 @@ export async function createNewIdentity(data) {
       throw new CustomError({
         message: errorType.MAXIMUM_IAL_EXCEED.message,
         code: errorType.MAXIMUM_IAL_EXCEED.code,
+        clientError: true,
         details: {
           namespace,
           identifier,
@@ -331,8 +335,9 @@ export async function updateIal({ namespace, identifier, ial }) {
   //check onboard
   if(!checkAssociated({namespace, identifier})) {
     throw new CustomError({
-      message: errorType.IDENTITY_NOT_ONBOARD.message,
-      code: errorType.IDENTITY_NOT_ONBOARD.code,
+      message: errorType.IDENTITY_NOT_FOUND.message,
+      code: errorType.IDENTITY_NOT_FOUND.code,
+      clientError: true,
       details: {
         namespace,
         identifier,
@@ -347,6 +352,7 @@ export async function updateIal({ namespace, identifier, ial }) {
     throw new CustomError({
       message: errorType.MAXIMUM_IAL_EXCEED.message,
       code: errorType.MAXIMUM_IAL_EXCEED.code,
+      clientError: true,
       details: {
         namespace,
         identifier,

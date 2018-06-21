@@ -183,18 +183,22 @@ export default {
   IDENTITY_ALREADY_CREATED: {
     code: 20019,
     message: 'Already created an idenity for this user',
+    clientError: true,
   },
-  IDENTITY_NOT_ONBOARD: {
+  IDENTITY_NOT_FOUND: {
     code: 20020,
-    message: 'You have not onboard this user yet',
+    message: 'An identity for this user could not be found. It may have not been created yet',
+    clientError: true,
   },
   MAXIMUM_IAL_EXCEED: {
     code: 20021,
     message: 'Specified ial exceeds maximum ial capability',
+    clientError: true,
   },
   CONDITION_TOO_LOW: {
     code: 20022,
     message: 'min_ial or min_aal too low for some service requested',
+    clientError: true,
   },
 
   // Errors return from ABCI app
