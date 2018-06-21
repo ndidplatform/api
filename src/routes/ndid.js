@@ -148,6 +148,21 @@ router.post('/services', async (req, res, next) => {
   }
 });
 
+router.post('/services/:service_id', async (req, res, next) => {
+  try {
+    const { service_name } = req.body;
+    const { service_id } = req.params;
+
+    await ndid.updateService({
+      service_id,
+      service_name,
+    });
+    res.status(201).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.delete('/services/:service_id', async (req, res, next) => {
   try {
     const { service_id } = req.params;
