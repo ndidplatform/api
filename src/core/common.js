@@ -309,7 +309,7 @@ export async function createRequest({
           }
           //filter potential AS to be only in as_id_list
           potential_as_list = potential_as_list.filter((as_node) => {
-            return (as_id_list.indexOf(as_node.id) !== -1);
+            return (as_id_list.indexOf(as_node.node_id) !== -1);
           });
         }
         //filter min_ial, min_aal
