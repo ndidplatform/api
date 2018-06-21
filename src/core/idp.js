@@ -93,14 +93,15 @@ export function isAccessorSignUrlSet() {
   return callbackUrls.accessor_sign_url != null;
 }
 
-export async function accessorSign(sid ,hash_id, accessor_id) {
+export async function accessorSign(sid ,hash_id, accessor_id, reference_id) {
   const data = {
     sid_hash: hash_id,
     sid,
     hash_method: 'SHA256',
     key_type: 'RSA',
     sign_method: 'RSA',
-    accessor_id
+    accessor_id,
+    reference_id,
   };
 
   if (callbackUrls.accessor_sign_url == null) {

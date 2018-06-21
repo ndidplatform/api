@@ -82,6 +82,7 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
     accessor_id,
     sid,
     associated,
+    secret,
   } = await db.getIdentityFromRequestId(request_id);
   
   let promiseArray = [
@@ -109,9 +110,6 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   await Promise.all(promiseArray);
   db.removeIdentityFromRequestId(request_id);
 
-  let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
-  let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
-  let secret = padding + '|' + encryptedHash;
   return {
     secret,
     associated,
@@ -185,6 +183,10 @@ export async function createNewIdentity(data) {
       });
     }
 
+    let encryptedHash = await accessorSign(sid, hash_id, accessor_id, reference_id);
+    let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
+    let secret = padding + '|' + encryptedHash;
+
     // TODO: Check for duplicate accessor
     // TODO: Check for "ial" must be less than or equal than node's (IdP's) max_ial
 
@@ -230,6 +232,7 @@ export async function createNewIdentity(data) {
         ial,
         sid,
         associated,
+        secret,
       });
     }
     else {
@@ -253,9 +256,6 @@ export async function createNewIdentity(data) {
         })
       ]).then(async () => {
 
-        let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
-        let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
-        let secret = padding + '|' + encryptedHash; 
         notifyCreateIdentityResultByCallback({
           request_id: request_id,
           success: true,
