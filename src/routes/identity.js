@@ -24,6 +24,7 @@ import express from 'express';
 
 import { validateBody } from './middleware/validation';
 import * as identity from '../core/identity';
+import * as common from '../core/common';
 import * as tendermintNdid from '../tendermint/ndid';
 
 const router = express.Router();
@@ -169,5 +170,16 @@ router.post(
     }
   }
 );
+
+router.post('/requests/close', validateBody, async (req, res, next) => {
+  try {
+    const { request_id } = req.body;
+
+    await common.closeRequest(request_id);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;
