@@ -203,7 +203,7 @@ export default {
             $ref: 'defs#/definitions/url',
           },
         },
-        required: ['min_ial', 'min_aal', 'url'],
+        required: [],
       },
     },
     '/as/data/:request_id/:service_id': {

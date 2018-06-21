@@ -34,6 +34,7 @@ import * as utils from '../utils';
 import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
+import errorType from '../error/type';
 
 const callbackUrls = {};
 
@@ -346,32 +347,36 @@ export async function upsertAsService({
     //check already register?
     let registeredASList = await tendermintNdid.getAsNodesByServiceId({service_id});
     let isRegisterd = false;
-    registeredASList.forEach(({id}) => {
-      isRegisterd = isRegisterd || id === config.nodeId;
+    registeredASList.forEach(({node_id}) => {
+      isRegisterd = isRegisterd || (node_id === config.nodeId);
     });
 
-    let myPromise;
+    let promiseArray = [];
     if(!isRegisterd) {
-      myPromise = tendermintNdid.registerServiceDestination({
+      if(!service_id || !min_aal || !min_ial || !url) {
+        throw new CustomError({
+          message: errorType.MISSING_ARGUMENTS.message,
+          code: errorType.MISSING_ARGUMENTS.code,
+          clientError: true,
+        });
+      }
+      promiseArray.push(tendermintNdid.registerServiceDestination({
         service_id,
         min_aal,
         min_ial,
         node_id: config.nodeId,
-      });
+      }));
     }
     else {
-      myPromise = tendermintNdid.updateServiceDestination({
+      promiseArray.push(tendermintNdid.updateServiceDestination({
         service_id,
         min_aal,
         min_ial,
-      });
+      }));
     }
+    if(url) promiseArray.push(db.setServiceCallbackUrl(service_id, url));
 
-    await Promise.all([
-      myPromise,
-      //store callback to persistent
-      db.setServiceCallbackUrl(service_id, url),
-    ]);
+    await Promise.all(promiseArray);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot register AS service',
