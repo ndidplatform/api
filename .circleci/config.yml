@@ -40,6 +40,8 @@ jobs:
       - run:
           name: Start service
           command: |
+            MQ_CONTACT_IP=localhost \
+            MQ_BINDING_PORT=5555 \
             ROLE=ndid \
             NODE_ID=ndid1 \
             npm start
