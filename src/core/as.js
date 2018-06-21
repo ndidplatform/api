@@ -336,20 +336,39 @@ export async function handleTendermintNewBlockHeaderEvent(
   db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 }
 
-export async function registerAsService({
+export async function upsertAsService({
   service_id,
   min_ial,
   min_aal,
   url,
 }) {
   try {
-    await Promise.all([
-      tendermintNdid.registerServiceDestination({
+    //check already register?
+    let registeredASList = await tendermintNdid.getAsNodesByServiceId({service_id});
+    let isRegisterd = false;
+    registeredASList.forEach(({id}) => {
+      isRegisterd = isRegisterd || id === config.nodeId;
+    });
+
+    let myPromise;
+    if(!isRegisterd) {
+      myPromise = tendermintNdid.registerServiceDestination({
         service_id,
         min_aal,
         min_ial,
         node_id: config.nodeId,
-      }),
+      });
+    }
+    else {
+      myPromise = tendermintNdid.updateServiceDestination({
+        service_id,
+        min_aal,
+        min_ial,
+      });
+    }
+
+    await Promise.all([
+      myPromise,
       //store callback to persistent
       db.setServiceCallbackUrl(service_id, url),
     ]);
