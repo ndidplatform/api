@@ -15,7 +15,7 @@ jobs:
         command: ["tcp://0.0.0.0:46000"]
     steps:
       - checkout
-      - run: sleep 15
+      - run: sleep 25
       - restore_cache:
           keys:
           - v1-dependencies-{{ checksum "package.json" }}
