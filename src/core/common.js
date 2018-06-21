@@ -195,6 +195,7 @@ export async function timeoutRequest(requestId) {
     throw error;
   }
   db.removeTimeoutScheduler(requestId);
+  db.removeChallengeFromRequestId(requestId);
 }
 
 export function runTimeoutScheduler(requestId, secondsToTimeout) {
@@ -635,6 +636,9 @@ export async function handleChallengeRequest(responseId) {
     message: 'Get challenge',
     challenge,
   });
+  //challenge deleted, request is done
+  if(challenge == null) return false;
+
   let { ip, port } = await  tendermintNdid.getMsqAddress(idp_id);
   let receiver = [{
     ip,

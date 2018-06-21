@@ -676,4 +676,5 @@ export async function closeRequest(requestId) {
       cause: error,
     });
   }
+  db.removeChallengeFromRequestId(requestId);
 }
