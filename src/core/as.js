@@ -34,6 +34,7 @@ import * as utils from '../utils';
 import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
+import errorType from '../error/type';
 
 const callbackUrls = {};
 
@@ -336,23 +337,46 @@ export async function handleTendermintNewBlockHeaderEvent(
   db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 }
 
-export async function registerAsService({
+export async function upsertAsService({
   service_id,
   min_ial,
   min_aal,
   url,
 }) {
   try {
-    await Promise.all([
-      tendermintNdid.registerServiceDestination({
+    //check already register?
+    let registeredASList = await tendermintNdid.getAsNodesByServiceId({service_id});
+    let isRegisterd = false;
+    registeredASList.forEach(({node_id}) => {
+      isRegisterd = isRegisterd || (node_id === config.nodeId);
+    });
+
+    let promiseArray = [];
+    if(!isRegisterd) {
+      if(!service_id || !min_aal || !min_ial || !url) {
+        throw new CustomError({
+          message: errorType.MISSING_ARGUMENTS.message,
+          code: errorType.MISSING_ARGUMENTS.code,
+          clientError: true,
+        });
+      }
+      promiseArray.push(tendermintNdid.registerServiceDestination({
         service_id,
         min_aal,
         min_ial,
         node_id: config.nodeId,
-      }),
-      //store callback to persistent
-      db.setServiceCallbackUrl(service_id, url),
-    ]);
+      }));
+    }
+    else {
+      promiseArray.push(tendermintNdid.updateServiceDestination({
+        service_id,
+        min_aal,
+        min_ial,
+      }));
+    }
+    if(url) promiseArray.push(db.setServiceCallbackUrl(service_id, url));
+
+    await Promise.all(promiseArray);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot register AS service',

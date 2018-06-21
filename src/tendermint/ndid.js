@@ -320,6 +320,18 @@ export async function registerServiceDestination(data) {
   }
 }
 
+export async function updateServiceDestination(data) {
+  try {
+    let nonce = utils.getNonce();
+    await tendermint.transact('UpdateServiceDestination', data, nonce);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot update service destination',
+      cause: error,
+    });
+  }
+}
+
 //
 // Query
 //

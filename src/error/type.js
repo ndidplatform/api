@@ -200,6 +200,10 @@ export default {
     message: '"min_ial" or "min_aal" too low for some services requested',
     clientError: true,
   },
+  MISSING_ARGUMENTS: {
+    code: 20023,
+    message: 'Some arguments is missing',
+  },
 
   // Errors return from ABCI app
   // Server errors
