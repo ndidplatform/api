@@ -15,7 +15,6 @@ jobs:
         command: ["tcp://0.0.0.0:46000"]
     steps:
       - checkout
-      - run: sleep 25
       - restore_cache:
           keys:
           - v1-dependencies-{{ checksum "package.json" }}
@@ -49,7 +48,7 @@ jobs:
       - run:
           name: Start sample testing
           command: |
-            sleep 15
+            sleep 10
             curl -v http://localhost:8080/utility/namespaces
             curl -v http://localhost:8080/utility/idp
             curl -v http://localhost:8080/utility/services
