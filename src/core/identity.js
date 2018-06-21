@@ -35,6 +35,10 @@ import {
   isAccessorSignUrlSet,
   notifyCreateIdentityResultByCallback,
 } from './idp';
+import {
+  getRequestMessageForCreatingIdentity,
+  getRequestMessageForAddingAccessor,
+} from '../utils/requestMessage';
 
 export async function checkAssociated({namespace, identifier}) {
   let idpList = await tendermintNdid.getIdpNodes({
@@ -65,8 +69,9 @@ export async function addAccessorMethodForAssociatedIdp({
 
   if (!associated) {
     throw new CustomError({
-      message: errorType.IDENTITY_NOT_ONBOARD.message,
-      code: errorType.IDENTITY_NOT_ONBOARD.code,
+      message: errorType.IDENTITY_NOT_FOUND.message,
+      code: errorType.IDENTITY_NOT_FOUND.code,
+      clientError: true,
       details: {
         namespace,
         identifier,
@@ -163,6 +168,7 @@ export async function createNewIdentity(data) {
       throw new CustomError({
         message: errorType.INVALID_NAMESPACE.message,
         code: errorType.INVALID_NAMESPACE.code,
+        clientError: true,
         details: {
           namespace
         },
@@ -178,6 +184,7 @@ export async function createNewIdentity(data) {
       throw new CustomError({
         message: errorType.IDENTITY_ALREADY_CREATED.message,
         code: errorType.IDENTITY_ALREADY_CREATED.code,
+        clientError: true,
         details: {
           namespace,
           identifier
@@ -191,6 +198,7 @@ export async function createNewIdentity(data) {
       throw new CustomError({
         message: errorType.MAXIMUM_IAL_EXCEED.message,
         code: errorType.MAXIMUM_IAL_EXCEED.code,
+        clientError: true,
         details: {
           namespace,
           identifier,
@@ -226,16 +234,26 @@ export async function createNewIdentity(data) {
     // TODO: Check for duplicate accessor
     // TODO: Check for "ial" must be less than or equal than node's (IdP's) max_ial
 
-    let request_id = await common.createRequest({
+    const request_id = await common.createRequest({
       namespace,
       identifier,
       reference_id,
       idp_id_list: [],
       callback_url: null,
       data_request_list: [],
-      request_message: ial 
-        ? 'Request for consent to add another IDP' 
-        : 'Request for consent to add another key from IDP: ' + config.nodeId, //Must lock?
+      request_message: ial
+        ? getRequestMessageForCreatingIdentity({
+            namespace,
+            identifier,
+            reference_id,
+            node_id: config.nodeId,
+          })
+        : getRequestMessageForAddingAccessor({
+            namespace,
+            identifier,
+            reference_id,
+            node_id: config.nodeId,
+          }),
       min_ial: 1.1,
       min_aal: 1,
       min_idp: exist ? 1 : 0,
@@ -317,8 +335,9 @@ export async function updateIal({ namespace, identifier, ial }) {
   //check onboard
   if(!checkAssociated({namespace, identifier})) {
     throw new CustomError({
-      message: errorType.IDENTITY_NOT_ONBOARD.message,
-      code: errorType.IDENTITY_NOT_ONBOARD.code,
+      message: errorType.IDENTITY_NOT_FOUND.message,
+      code: errorType.IDENTITY_NOT_FOUND.code,
+      clientError: true,
       details: {
         namespace,
         identifier,
@@ -333,6 +352,7 @@ export async function updateIal({ namespace, identifier, ial }) {
     throw new CustomError({
       message: errorType.MAXIMUM_IAL_EXCEED.message,
       code: errorType.MAXIMUM_IAL_EXCEED.code,
+      clientError: true,
       details: {
         namespace,
         identifier,

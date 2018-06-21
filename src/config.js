@@ -1,29 +1,28 @@
 /**
  * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
- * 
+ *
  * This file is part of NDID software.
- * 
+ *
  * NDID is the free software: you can redistribute it and/or modify it under
  * the terms of the Affero GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or any later
  * version.
- * 
+ *
  * NDID is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the Affero GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the Affero GNU General Public License
  * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
- * 
+ *
  * Please contact info@ndid.co.th for any further questions
- * 
+ *
  */
 
 import path from 'path';
 
-export const env =
-  process.env.NODE_ENV === 'production' ? 'production' : 'development';
+export const env = process.env.NODE_ENV || 'development';
 
 export const serverPort = process.env.SERVER_PORT
   ? parseInt(process.env.SERVER_PORT)
@@ -50,12 +49,14 @@ export const defaultMqBindingPort = (() => {
   if (process.env.ROLE === 'idp') return 5555;
   if (process.env.ROLE === 'rp') return 5556;
   if (process.env.ROLE === 'as') return 5557;
+  else return 5555;
 })();
 
 export const defaultTendermintPort = (() => {
   if (process.env.ROLE === 'idp' || process.env.ROLE === 'ndid') return '45000';
   if (process.env.ROLE === 'rp') return '45001';
   if (process.env.ROLE === 'as') return '45002';
+  else return '45000';
 })();
 
 export const tendermintIp =
@@ -100,3 +101,21 @@ export const masterPrivateKeyPath = useExternalCryptoService
 //in byte
 export const challengeLength = 2;
 export const zkRandomLengthForIdp = 128;
+
+export const createIdentityRequestMessageTemplateFilepath =
+  process.env.CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH ||
+  path.join(
+    __dirname,
+    '..',
+    'request_message_templates',
+    'create_identity.mustache'
+  );
+
+export const addAccessorRequestMessageTemplateFilepath =
+  process.env.ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH ||
+  path.join(
+    __dirname,
+    '..',
+    'request_message_templates',
+    'add_accessor.mustache'
+  );

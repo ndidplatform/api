@@ -50,7 +50,7 @@ router.post('/', validateBody, async (req, res, next) => {
       ial,
     });
 
-    res.status(200).send(result);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }

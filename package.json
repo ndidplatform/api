@@ -21,6 +21,7 @@
     "body-parser": "^1.18.2",
     "express": "^4.16.3",
     "morgan": "^1.9.0",
+    "mustache": "^2.3.0",
     "node-fetch": "^2.1.2",
     "sequelize": "^4.37.7",
     "simple-backoff": "^1.1.0",

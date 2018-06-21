@@ -20,23 +20,48 @@
  *
  */
 
-import * as tendermintNdid from '../tendermint/ndid';
+import fs from 'fs';
+import mustache from 'mustache';
+
 import * as config from '../config';
 
-export default async function getInfo(req, res, next) {
-  const nodeInfo = await tendermintNdid.getNodeInfo(config.nodeId);
+const createIdentityTemplate = fs.readFileSync(
+  config.createIdentityRequestMessageTemplateFilepath,
+  'utf8'
+);
+const addAccessorTemplate = fs.readFileSync(
+  config.addAccessorRequestMessageTemplateFilepath,
+  'utf8'
+);
 
-  res.status(200).json({
-    env: config.env,
-    version: null, // FIXME: read from file?
-    apiVersion: '1.0',
-    nodeId: config.nodeId,
-    nodeName: nodeInfo != null ? nodeInfo.node_name : undefined,
-    nodePublicKey: nodeInfo != null ? nodeInfo.public_key : undefined,
-    role: config.role,
-    serverListenPort: config.serverPort,
-    messageQueueIp: config.mqRegister.ip,
-    messageQueuePort: config.mqRegister.port,
-    tendermintAddress: config.tendermintAddress,
+export function getRequestMessageForCreatingIdentity({
+  reference_id,
+  namespace,
+  identifier,
+  node_id,
+  node_name,
+}) {
+  return mustache.render(createIdentityTemplate, {
+    reference_id,
+    namespace,
+    identifier,
+    node_id,
+    node_name,
+  });
+}
+
+export function getRequestMessageForAddingAccessor({
+  reference_id,
+  namespace,
+  identifier,
+  node_id,
+  node_name,
+}) {
+  return mustache.render(addAccessorTemplate, {
+    reference_id,
+    namespace,
+    identifier,
+    node_id,
+    node_name,
   });
 }
