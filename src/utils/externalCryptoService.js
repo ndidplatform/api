@@ -40,9 +40,7 @@ const TEST_MESSAGE_BASE_64 = Buffer.from(TEST_MESSAGE).toString('base64');
 const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
-  __dirname,
-  '..',
-  '..',
+  config.dataDirectoryPath,
   'dpki-callback-url-' + config.nodeId
 );
 

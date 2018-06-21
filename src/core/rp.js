@@ -38,9 +38,7 @@ import * as utils from '../utils';
 const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
-  __dirname,
-  '..',
-  '..',
+  config.dataDirectoryPath,
   'rp-callback-url-' + config.nodeId,
 );
 

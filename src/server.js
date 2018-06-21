@@ -28,6 +28,7 @@ import https from 'https';
 import express from 'express';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
+import mkdirp from 'mkdirp';
 
 import './envVarValidate';
 
@@ -58,6 +59,10 @@ logger.info({
   env: config.env,
   config,
 });
+
+// Make sure data and log directories exist
+mkdirp.sync(config.dataDirectoryPath);
+mkdirp.sync(config.logDirectoryPath);
 
 const app = express();
 

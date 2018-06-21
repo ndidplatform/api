@@ -41,9 +41,7 @@ import * as identity from './identity';
 const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
-  __dirname,
-  '..',
-  '..',
+  config.dataDirectoryPath,
   'idp-callback-url-' + config.nodeId,
 );
 

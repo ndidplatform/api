@@ -25,9 +25,15 @@ import 'source-map-support/register';
 
 import fs from 'fs';
 import path from 'path';
+import mkdirp from 'mkdirp';
 
 import * as ndid from './core/ndid';
 import * as tendermint from './tendermint/ndid';
+import * as config from './config';
+
+// Make sure data and log directories exist
+mkdirp.sync(config.dataDirectoryPath);
+mkdirp.sync(config.logDirectoryPath);
 
 async function addKeyAndSetToken(role, index) {
   const node_id = role + index.toString();

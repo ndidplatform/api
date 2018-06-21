@@ -26,9 +26,7 @@ import Sequelize from 'sequelize';
 import * as config from '../config';
 
 const dbPath = path.join(
-  __dirname,
-  '..',
-  '..',
+  config.dataDirectoryPath,
   `db-api-${config.nodeId}.sqlite`
 );
 

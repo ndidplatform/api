@@ -42,9 +42,7 @@ export let connected = false;
 export const eventEmitter = new EventEmitter();
 
 const latestBlockHeightFilepath = path.join(
-  __dirname,
-  '..',
-  '..',
+  config.dataDirectoryPath,
   `latest-block-height-${config.nodeId}`
 );
 

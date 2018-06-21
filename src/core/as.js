@@ -39,9 +39,7 @@ import errorType from '../error/type';
 const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
-  __dirname,
-  '..',
-  '..',
+  config.dataDirectoryPath,
   'as-callback-url-' + config.nodeId,
 );
 
