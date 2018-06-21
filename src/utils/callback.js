@@ -1,23 +1,23 @@
 /**
  * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
- * 
+ *
  * This file is part of NDID software.
- * 
+ *
  * NDID is the free software: you can redistribute it and/or modify it under
  * the terms of the Affero GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or any later
  * version.
- * 
+ *
  * NDID is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the Affero GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the Affero GNU General Public License
  * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
- * 
+ *
  * Please contact info@ndid.co.th for any further questions
- * 
+ *
  */
 
 import fetch from 'node-fetch';
@@ -125,7 +125,9 @@ export async function callbackToClient(
     await db.addCallbackWithRetryData(cbId, {
       callbackUrl,
       body,
+      shouldRetryFnExist: shouldRetry != null,
       shouldRetryArguments,
+      responseCallbackFnExist: responseCallback != null,
       dataForResponseCallback,
     });
     callbackWithRetry(
@@ -161,9 +163,9 @@ export async function resumeCallbackToClient(shouldRetry, responseCallback) {
       callback.data.callbackUrl,
       callback.data.body,
       callback.cbId,
-      shouldRetry,
+      callback.data.shouldRetryFnExist ? shouldRetry : null,
       callback.data.shouldRetryArguments,
-      responseCallback,
+      callback.data.responseCallbackFnExist ? responseCallback : null,
       callback.data.dataForResponseCallback
     )
   );
