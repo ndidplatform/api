@@ -111,6 +111,21 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
   }
 });
 
+router.post('/:namespace/:identifier/ial', validateBody, async (req, res, next) => {
+  try {
+    const { namespace, identifier } = req.params;
+    const { ial } = req.body;
+    await identity.updateIal({
+      namespace,
+      identifier,
+      ial,
+    });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/:namespace/:identifier', validateBody, async (req, res, next) => {
   try {
     const { namespace, identifier } = req.params;

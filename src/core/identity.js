@@ -65,8 +65,8 @@ export async function addAccessorMethodForAssociatedIdp({
 
   if (!associated) {
     throw new CustomError({
-      message: errorType.ABCI_NOT_ONBOARD.message,
-      code: errorType.ABCI_NOT_ONBOARD.code,
+      message: errorType.IDENTITY_NOT_ONBOARD.message,
+      code: errorType.IDENTITY_NOT_ONBOARD.code,
       details: {
         namespace,
         identifier,
@@ -150,9 +150,10 @@ export async function createNewIdentity(data) {
       reference_id,
       accessor_type,
       accessor_public_key,
-      ial,
       addAccessor,
     } = data;
+
+    let ial = parseFloat(data.ial);
 
     const namespaceDetails = await tendermintNdid.getNamespaceList();
     const valid = namespaceDetails.find(
@@ -180,6 +181,19 @@ export async function createNewIdentity(data) {
         details: {
           namespace,
           identifier
+        },
+      });
+    }
+
+    //check ial
+    let { max_ial } = await tendermintNdid.getNodeInfo(config.nodeId);
+    if(ial > max_ial) {
+      throw new CustomError({
+        message: errorType.MAXIMUM_IAL_EXCEED.message,
+        code: errorType.MAXIMUM_IAL_EXCEED.code,
+        details: {
+          namespace,
+          identifier,
         },
       });
     }
@@ -297,4 +311,35 @@ export async function createNewIdentity(data) {
     });
     throw error;
   }
+}
+
+export async function updateIal({ namespace, identifier, ial }) {
+  //check onboard
+  if(!checkAssociated({namespace, identifier})) {
+    throw new CustomError({
+      message: errorType.IDENTITY_NOT_ONBOARD.message,
+      code: errorType.IDENTITY_NOT_ONBOARD.code,
+      details: {
+        namespace,
+        identifier,
+      },
+    });
+  }
+
+  //check max_ial
+  ial = parseFloat(ial);
+  let { max_ial } = await tendermintNdid.getNodeInfo(config.nodeId);
+  if(ial > max_ial) {
+    throw new CustomError({
+      message: errorType.MAXIMUM_IAL_EXCEED.message,
+      code: errorType.MAXIMUM_IAL_EXCEED.code,
+      details: {
+        namespace,
+        identifier,
+      },
+    });
+  }
+
+  let hash_id = utils.hash(namespace + ':' + identifier);
+  await tendermintNdid.updateIal({ hash_id, ial });
 }

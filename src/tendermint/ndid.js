@@ -237,6 +237,26 @@ export async function setDataReceived({ requestId, service_id, as_id }) {
   }
 }
 
+export async function updateIal({ hash_id, ial }) {
+  try {
+    await tendermint.transact(
+      'UpdateIdentity',
+      {
+        hash_id,
+        ial,
+      },
+      utils.getNonce()
+    );
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot update Ial',
+      cause: error,
+      hash_id,
+      ial,
+    });
+  }
+}
+
 export async function declareIdentityProof({ request_id, identity_proof }) {
   try {
     return await tendermint.transact(

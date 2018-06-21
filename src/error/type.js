@@ -184,6 +184,14 @@ export default {
     code: 20019,
     message: 'Already created an idenity for this user',
   },
+  IDENTITY_NOT_ONBOARD: {
+    code: 20020,
+    message: 'You have not onboard this user yet',
+  },
+  MAXIMUM_IAL_EXCEED: {
+    code: 20021,
+    message: 'Specified ial exceeds maximum ial capability',
+  },
 
   // Errors return from ABCI app
   // Server errors
