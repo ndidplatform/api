@@ -47,7 +47,7 @@ jobs:
       - run:
           name: Start sample testing
           command: |
-            sleep 15
+            sleep 45
             curl -v http://localhost:8080/utility/namespaces
             curl -v http://localhost:8080/utility/idp
             curl -v http://localhost:8080/utility/services
