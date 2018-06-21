@@ -197,7 +197,7 @@ export default {
   },
   CONDITION_TOO_LOW: {
     code: 20022,
-    message: 'min_ial or min_aal too low for some service requested',
+    message: '"min_ial" or "min_aal" too low for some services requested',
     clientError: true,
   },
 
