@@ -159,23 +159,8 @@ async function notifyRequestUpdate(requestId, height) {
     requestStatus.min_idp === requestStatus.answered_idp_count &&
     requestStatus.service_list.length > 0
   ) {
-    // Get new AS data signatures
-    const dataToCheckList = requestDetail.data_request_list.reduce(
-      (dataToCheckList, dataRequest) => {
-        const asIds = dataRequest.answered_as_id_list.filter(
-          (asId) => !dataRequest.received_data_from_list.includes(asId)
-        );
-        if (asIds.length > 0) {
-          dataToCheckList.push({
-            serviceId: dataRequest.service_id,
-            asIds,
-          });
-        }
-        return dataToCheckList;
-      },
-      []
-    );
-    await checkAsDataSignaturesAndSetReceived(requestId, dataToCheckList);
+    const metadataList = await db.getExpectedDataSignInBlockList(height);
+    await checkAsDataSignaturesAndSetReceived(requestId, metadataList);
   }
 
   if (
@@ -198,6 +183,7 @@ async function notifyRequestUpdate(requestId, height) {
     db.removeRequestIdReferenceIdMappingByRequestId(requestId);
     db.removeRequestData(requestId);
     db.removeIdpResponseValidList(requestId);
+    db.removeExpectedDataSignInBlockList(requestId);
     db.removeTimeoutScheduler(requestId);
     clearTimeout(common.timeoutScheduler[requestId]);
     delete common.timeoutScheduler[requestId];
@@ -335,6 +321,7 @@ export async function handleTendermintNewBlockHeaderEvent(
           // TODO: clear key with smart-contract, eg. request_id or requestId
           const requestId =
             transaction.args.request_id || transaction.args.requestId; //derive from tx;
+          console.log('>>>', transaction.fnName)
           if (requestId == null) return;
           if(transaction.fnName === 'DeclareIdentityProof') {
             common.handleChallengeRequest(requestId + ':' + transaction.args.idp_id);
@@ -569,7 +556,13 @@ export async function handleMessageFromQueue(messageStr) {
       });
 
       const latestBlockHeight = tendermint.latestBlockHeight;
-      if (latestBlockHeight > message.height) {
+      if (latestBlockHeight <= message.height) {
+        await db.addExpectedDataSignInBlock(message.height, {
+          requestId: message.request_id,
+          serviceId: message.service_id,
+          asId: message.as_id,
+        });
+      } else {
         const signatureFromBlockchain = await tendermintNdid.getDataSignature({
           request_id: message.request_id,
           service_id: message.service_id,
@@ -620,42 +613,41 @@ async function isDataSignatureValid(asNodeId, signature, data) {
   return true;
 }
 
-async function checkAsDataSignaturesAndSetReceived(requestId, dataToCheckList) {
+async function checkAsDataSignaturesAndSetReceived(requestId, metadataList) {
   logger.debug({
     message: 'Check AS data signatures and set received (bulk)',
     requestId,
-    dataToCheckList,
+    metadataList,
   });
-  const dataFromAS = await db.getDatafromAS(requestId);
-  await Promise.all(
-    dataToCheckList.map(async (dataToCheck) => {
-      const { serviceId, asIds } = dataToCheck;
-      await Promise.all(
-        asIds.map(async (asId) => {
-          const data = dataFromAS.find(
-            (data) =>
-              data.service_id === serviceId && data.source_node_id === asId
-          );
-          if (data == null) return; // Have not received data from AS through message queue yet
 
-          const signatureFromBlockchain = await tendermintNdid.getDataSignature({
-            request_id: requestId,
-            service_id: serviceId,
-            node_id: asId
-          });
-          if (signatureFromBlockchain == null) return;
-          // TODO: if signature is invalid or mismatch then delete data from cache
-          if (data.source_signature !== signatureFromBlockchain) return;
-          if (!(await isDataSignatureValid(asId, signatureFromBlockchain, data.data))) {
-            return;
-          }
-          await tendermintNdid.setDataReceived({
-            requestId,
-            service_id: serviceId,
-            as_id: asId,
-          });
-        })
-      );
-    })
-  );
+  const dataFromAS = await db.getDatafromAS(requestId);
+
+  await Promise.all(metadataList.map(async ({
+    requestId,
+    serviceId,
+    asId,
+  }) => {
+    const data = dataFromAS.find(
+      (data) =>
+        data.service_id === serviceId && data.source_node_id === asId
+    );
+    if (data == null) return; // Have not received data from AS through message queue yet
+
+    const signatureFromBlockchain = await tendermintNdid.getDataSignature({
+      request_id: requestId,
+      service_id: serviceId,
+      node_id: asId
+    });
+    if (signatureFromBlockchain == null) return;
+    // TODO: if signature is invalid or mismatch then delete data from cache
+    if (data.source_signature !== signatureFromBlockchain) return;
+    if (!(await isDataSignatureValid(asId, signatureFromBlockchain, data.data))) {
+      return;
+    }
+    await tendermintNdid.setDataReceived({
+      requestId,
+      service_id: serviceId,
+      as_id: asId,
+    });
+  }));
 }
