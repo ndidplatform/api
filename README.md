@@ -4,6 +4,7 @@
 
 - Node.js 8.9 or later
 - npm 5.6.0 or later
+- (On Windows) [OpenSSL 1.0.2](https://slproweb.com/products/Win32OpenSSL.html) (OpenSSL 1.1.0 will not work)
 
 ## Getting started
 
