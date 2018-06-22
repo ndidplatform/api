@@ -256,7 +256,7 @@ function getTransactResult(result) {
   };
 }
 
-export async function query(fnName, data) {
+export async function query(fnName, data, height) {
   logger.debug({
     message: 'Tendermint query',
     fnName,
@@ -268,7 +268,7 @@ export async function query(fnName, data) {
   const dataBase64Encoded = Buffer.from(queryData).toString('base64');
 
   try {
-    const result = await tendermintHttpClient.abciQuery(dataBase64Encoded);
+    const result = await tendermintHttpClient.abciQuery(dataBase64Encoded, height);
     return getQueryResult(result);
   } catch (error) {
     if (error.type === 'JSON-RPC ERROR') {

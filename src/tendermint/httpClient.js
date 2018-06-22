@@ -1,23 +1,23 @@
 /**
  * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
- * 
+ *
  * This file is part of NDID software.
- * 
+ *
  * NDID is the free software: you can redistribute it and/or modify it under
  * the terms of the Affero GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or any later
  * version.
- * 
+ *
  * NDID is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the Affero GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the Affero GNU General Public License
  * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
- * 
+ *
  * Please contact info@ndid.co.th for any further questions
- * 
+ *
  */
 
 import fetch from 'node-fetch';
@@ -34,9 +34,9 @@ async function httpUriCall(method, params) {
     }
     const uriEncodedParamValue = encodeURIComponent(param.value);
     if (paramsString !== '') {
-      return paramsString + `&${param.key}="${uriEncodedParamValue}"`;
+      return paramsString + `&${param.key}=${uriEncodedParamValue}`;
     }
-    return paramsString + `${param.key}="${uriEncodedParamValue}"`;
+    return paramsString + `${param.key}=${uriEncodedParamValue}`;
   }, '');
 
   let uri = `http://${tendermintAddress}/${method}`;
@@ -65,11 +65,15 @@ async function httpUriCall(method, params) {
   }
 }
 
-export function abciQuery(data) {
+export function abciQuery(data, height) {
   return httpUriCall('abci_query', [
     {
       key: 'data',
-      value: data,
+      value: `"${data}"`,
+    },
+    {
+      key: 'height',
+      value: height,
     },
   ]);
 }
@@ -78,7 +82,7 @@ export function broadcastTxCommit(tx) {
   return httpUriCall('broadcast_tx_commit', [
     {
       key: 'tx',
-      value: tx,
+      value: `"${tx}"`,
     },
   ]);
 }
@@ -87,7 +91,7 @@ export function broadcastTxSync(tx) {
   return httpUriCall('broadcast_tx_sync', [
     {
       key: 'tx',
-      value: tx,
+      value: `"${tx}"`,
     },
   ]);
 }

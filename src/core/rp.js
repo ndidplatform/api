@@ -100,6 +100,7 @@ async function notifyRequestUpdate(requestId, height) {
 
   const requestDetail = await tendermintNdid.getRequestDetail({
     requestId: requestId,
+    height,
   });
 
   const requestStatus = utils.getDetailedRequestStatus(requestDetail);
