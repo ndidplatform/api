@@ -230,8 +230,10 @@ wait_until_service_exist() {
 case ${ROLE} in
   ndid)
     tendermint_wait_for_sync_complete
-    if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ] || ! does_node_id_exist; then
-      generate_key
+    if ! does_node_id_exist; then
+      if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ]; then
+        generate_key
+      fi
       wait_for_ndid_node_to_be_ready && \
       init_ndid && \
       register_namespace "cid" "Thai citizen ID" && \
@@ -241,9 +243,13 @@ case ${ROLE} in
   idp|rp|as)
     tendermint_wait_for_sync_complete
     
-    if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ] || ! does_node_id_exist; then
-      generate_key
-      generate_master_key
+    if ! does_node_id_exist; then
+      if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ]; then
+        generate_key
+      fi
+      if [ ! -f ${MASTER_KEY_PATH} ] || [ ! -f ${MASTER_KEY_PATH}.pub ]; then
+        generate_master_key
+      fi
       wait_until_ndid_node_initialized
       wait_until_namespace_exist "cid"
       wait_until_service_exist "bank_statement"
