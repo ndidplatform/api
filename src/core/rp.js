@@ -129,20 +129,27 @@ async function notifyRequestUpdate(requestId, height) {
 
   if (needResponseVerification) {
     // Validate ZK Proof and IAL
-    const idpNodeId = await db.getExpectedIdpResponseNodeId(requestId);
+    const responseMetadataList = await db.getExpectedIdpResponseNodeIdInBlockList(height);
+    const idpNodeIds = responseMetadataList
+      .filter(({ requestId: reqId }) => requestId === reqId)
+      .map((metadata) => metadata.idpId);
+      
+    if (idpNodeIds.length === 0) return;
 
-    if (idpNodeId == null) return;
-
-    await checkIdpResponseAndNotify({
-      requestStatus, 
-      height, 
-      idpId: idpNodeId, 
-      callbackUrl,
-      responseIal: requestDetail.response_list.find(
-        (response) => response.idp_id === idpNodeId
-      ).ial,
-      savedResponseValidList,
-    });
+    await Promise.all(
+      idpNodeIds.map((idpNodeId) =>
+        checkIdpResponseAndNotify({
+          requestStatus,
+          height,
+          idpId: idpNodeId,
+          callbackUrl,
+          responseIal: requestDetail.response_list.find(
+            (response) => response.idp_id === idpNodeId
+          ).ial,
+          savedResponseValidList,
+        })
+      )
+    );
     return;
   }
 
@@ -183,7 +190,6 @@ async function notifyRequestUpdate(requestId, height) {
     db.removeRequestIdReferenceIdMappingByRequestId(requestId);
     db.removeRequestData(requestId);
     db.removeIdpResponseValidList(requestId);
-    db.removeExpectedDataSignInBlockList(requestId);
     db.removeTimeoutScheduler(requestId);
     clearTimeout(common.timeoutScheduler[requestId]);
     delete common.timeoutScheduler[requestId];
@@ -280,7 +286,6 @@ async function checkIdpResponseAndNotify({
   await callbackToClient(callbackUrl, eventDataForCallback, true);
 
   db.removeProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
-  db.removeExpectedIdpResponseNodeId(requestStatus.request_id);
 }
 
 function isAllIdpResponsesValid(responseValidList) {
@@ -328,6 +333,8 @@ export async function handleTendermintNewBlockHeaderEvent(
           else {
             const height = block.block.header.height;
             await notifyRequestUpdate(requestId, height);
+            db.removeExpectedIdpResponseNodeIdInBlockList(height);
+            db.removeExpectedDataSignInBlockList(height);
           }
         })
       );
@@ -519,7 +526,10 @@ export async function handleMessageFromQueue(messageStr) {
         messageBlockHeight: message.height,
       });
       db.setPrivateProofReceivedFromMQ(responseId, message);
-      db.setExpectedIdpResponseNodeId(message.request_id, message.idp_id);
+      db.addExpectedIdpResponseNodeIdInBlock(message.height, {
+        requestId: message.request_id,
+        idpId: message.idp_id,
+      });
       return;
     }
     if(message.type === 'request_challenge') {
