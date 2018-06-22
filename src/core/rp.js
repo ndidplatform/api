@@ -34,6 +34,7 @@ import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
 import * as utils from '../utils';
+import EventEmitter from 'events';
 
 const callbackUrls = {};
 
@@ -61,6 +62,51 @@ const callbackUrlFilesPrefix = path.join(
     }
   }
 });
+
+//==================================== mutex =====================================
+
+let mutexIsLocking = {};
+let mutexTicket = {};
+const mutexEvent = new EventEmitter();
+
+function requestMutexLock(request_id) {
+  if(!mutexTicket[request_id]) mutexTicket[request_id] = 0;
+  return mutexTicket[request_id]++;
+}
+
+async function waitMutexLock(request_id, ticket) {
+  return new Promise((resolve) => {
+    if(!mutexIsLocking[request_id]) {
+      mutexIsLocking[request_id] = {
+        lock: true,
+        lastLockBy: ticket,
+      };
+      resolve();
+    }
+    else {
+      let unlockHandler = function() {
+        let lockObject = mutexIsLocking[request_id];
+        if(!lockObject.lock && lockObject.lastLockBy === ticket - 1) {
+          lockObject.lock = true;
+          lockObject.lastLockBy = ticket;
+          resolve();
+          return true;
+        }
+        return false;
+      };
+      if(!unlockHandler()) mutexEvent.on('unlock', unlockHandler);
+    }
+  });
+}
+
+function mutexUnlock(request_id, ticket) {
+  if(mutexIsLocking[request_id].lastLockBy === ticket) {
+    mutexIsLocking[request_id].lock = false;
+    mutexEvent.emit('unlock');
+  }
+}
+
+//================================================================================
 
 function writeCallbackUrlToFile(fileSuffix, url) {
   fs.writeFile(callbackUrlFilesPrefix + '-' + fileSuffix, url, (err) => {
@@ -98,11 +144,11 @@ async function notifyRequestUpdate(requestId, height) {
   const callbackUrl = await db.getRequestCallbackUrl(requestId);
   if (!callbackUrl) return; // This RP does not concern this request
 
-  const requestDetail = await tendermintNdid.getRequestDetail({
+  let requestDetail = await tendermintNdid.getRequestDetail({
     requestId: requestId,
   });
 
-  const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+  let requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
   // ZK Proof and IAL verification is needed only when got new response from IdP
   let needResponseVerification = false;
@@ -153,6 +199,16 @@ async function notifyRequestUpdate(requestId, height) {
 
   await callbackToClient(callbackUrl, eventDataForCallback, true);
 
+  //mutex lock && re-query data
+  let mutexTicket = requestMutexLock(requestId);
+  await waitMutexLock(requestId, mutexTicket);
+
+  requestDetail = await tendermintNdid.getRequestDetail({
+    requestId: requestId,
+  });
+
+  requestStatus = utils.getDetailedRequestStatus(requestDetail);
+
   if (
     requestStatus.status === 'confirmed' &&
     requestStatus.min_idp === requestStatus.answered_idp_count &&
@@ -201,6 +257,7 @@ async function notifyRequestUpdate(requestId, height) {
     clearTimeout(common.timeoutScheduler[requestId]);
     delete common.timeoutScheduler[requestId];
   }
+  mutexUnlock(requestId, mutexTicket);
 }
 
 async function checkIdpResponseAndNotify({
