@@ -321,7 +321,6 @@ export async function handleTendermintNewBlockHeaderEvent(
           // TODO: clear key with smart-contract, eg. request_id or requestId
           const requestId =
             transaction.args.request_id || transaction.args.requestId; //derive from tx;
-          console.log('>>>', transaction.fnName)
           if (requestId == null) return;
           if(transaction.fnName === 'DeclareIdentityProof') {
             common.handleChallengeRequest(requestId + ':' + transaction.args.idp_id);
