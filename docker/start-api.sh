@@ -3,6 +3,11 @@
 TENDERMINT_PORT=${TENDERMINT_PORT:-45000}
 MQ_BINDING_PORT=${MQ_BINDING_PORT:-5555}
 SERVER_PORT=${SERVER_PORT:-8080}
+if [ ${HTTPS:-true} = "true" ]; then
+  PROTOCOL=https
+else  
+  PROTOCOL=http
+fi
 
 exit_missing_env() {
   echo "MISSING ENV: ${1} is not set"
@@ -71,7 +76,7 @@ does_node_id_exist() {
 
   echo "Checking if node_id=${_NODE_ID} exist..."
   local DATA=$(echo "GetNodePublicKey|{\"node_id\":\"${_NODE_ID}\"}" | base64 | sed 's/\//%2F/g;s/+/%2B/g')
-  if [ "$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/abci_query?data=\"${DATA}\" | jq -r .result.response.value | base64 -d | jq -r .public_key)" = "" ]; then
+  if [ "$(curl -sk http://${TENDERMINT_IP}:${TENDERMINT_PORT}/abci_query?data=\"${DATA}\" | jq -r .result.response.value | base64 -d | jq -r .public_key)" = "" ]; then
     echo "node_id=${_NODE_ID} does not exist"
     return 1
   else
@@ -84,7 +89,8 @@ init_ndid() {
   echo "Initializing NDID node..."
 
   local PUBLIC_KEY=$(tr '\n' '#' < ${KEY_PATH}.pub | sed 's/#/\\n/g')
-  local RESPONSE_CODE=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/initNDID \
+  
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/ndid/initNDID \
     -H "Content-Type: application/json" \
     -d "{\"public_key\":\"${PUBLIC_KEY}\"}" \
     -w '%{http_code}' \
@@ -104,7 +110,7 @@ register_node_id() {
   
   local PUBLIC_KEY=$(tr '\n' '#' < ${KEY_PATH}.pub | sed 's/#/\\n/g')
   local MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${MASTER_KEY_PATH}.pub | sed 's/#/\\n/g')
-  local RESPONSE_CODE=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/registerNode \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/ndid/registerNode \
     -H "Content-Type: application/json" \
     -d "{\"public_key\":\"${PUBLIC_KEY}\",\"master_public_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"This is name: ${NODE_ID}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3}}" \
     -w '%{http_code}' \
@@ -123,7 +129,7 @@ set_token_for_node_id() {
   local AMOUNT=$1
   echo "Giving ${AMOUNT} tokens to ${NODE_ID} node..."
 
-  local RESPONSE_CODE=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/addNodeToken \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/ndid/addNodeToken \
     -H "Content-Type: application/json" \
     -d "{\"node_id\":\"${NODE_ID}\",\"amount\":${AMOUNT}}" \
     -w '%{http_code}' \
@@ -143,7 +149,7 @@ register_namespace() {
   local DESCRIPTION=$2
   echo "Registering namespace ${NAMESPACE} (${DESCRIPTION}) node..."
 
-  local RESPONSE_CODE=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/namespaces \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/ndid/namespaces \
     -H "Content-Type: application/json" \
     -d "{\"namespace\":\"${NAMESPACE}\",\"description\":\"${DESCRIPTION}\"}" \
     -w '%{http_code}' \
@@ -163,7 +169,7 @@ register_service() {
   local SERVICE_NAME=$2
   echo "Registering service ${SERVICE_ID} (${SERVICE_NAME}) node..."
 
-  local RESPONSE_CODE=$(curl -sX POST http://${NDID_IP}:${SERVER_PORT}/ndid/services \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/ndid/services \
     -H "Content-Type: application/json" \
     -d "{\"service_id\":\"${SERVICE_ID}\",\"service_name\":\"${SERVICE_NAME}\"}" \
     -w '%{http_code}' \
@@ -182,7 +188,7 @@ did_namespace_exist() {
   local NAMESPACE=$1
 
   echo "Checking if namespace=${NAMESPACE} exist..."
-  if [ "$(curl -s http://${NDID_IP}:${SERVER_PORT}/utility/namespaces | jq -r .[].namespace | grep -E ^${NAMESPACE}$)" = "" ]; then
+  if [ "$(curl -sk ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/utility/namespaces | jq -r .[].namespace | grep -E ^${NAMESPACE}$)" = "" ]; then
     echo "namespace=${NAMESPACE} does not exist"
     return 1
   else
@@ -195,7 +201,7 @@ did_service_exist() {
   local SERVICE_ID=$1
 
   echo "Checking if service_id=${SERVICE_ID} exist..."
-  if [ "$(curl -s http://${NDID_IP}:${SERVER_PORT}/utility/services | jq -r .[].service_id | grep -E ^${SERVICE_ID}$)" = "" ]; then
+  if [ "$(curl -sk ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/utility/services | jq -r .[].service_id | grep -E ^${SERVICE_ID}$)" = "" ]; then
     echo "service_id=${SERVICE_ID} does not exist"
     return 1
   else
@@ -224,8 +230,10 @@ wait_until_service_exist() {
 case ${ROLE} in
   ndid)
     tendermint_wait_for_sync_complete
-    if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ] || ! does_node_id_exist; then
-      generate_key
+    if ! does_node_id_exist; then
+      if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ]; then
+        generate_key
+      fi
       wait_for_ndid_node_to_be_ready && \
       init_ndid && \
       register_namespace "cid" "Thai citizen ID" && \
@@ -235,9 +243,13 @@ case ${ROLE} in
   idp|rp|as)
     tendermint_wait_for_sync_complete
     
-    if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ] || ! does_node_id_exist; then
-      generate_key
-      generate_master_key
+    if ! does_node_id_exist; then
+      if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ]; then
+        generate_key
+      fi
+      if [ ! -f ${MASTER_KEY_PATH} ] || [ ! -f ${MASTER_KEY_PATH}.pub ]; then
+        generate_master_key
+      fi
       wait_until_ndid_node_initialized
       wait_until_namespace_exist "cid"
       wait_until_service_exist "bank_statement"

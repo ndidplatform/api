@@ -112,6 +112,10 @@ const Entities = {
     requestId: Sequelize.STRING,
     validInfo: Sequelize.JSON,
   }),
+  expectedDataSignInBlock: sequelize.define('expectedDataSignInBlock', {
+    expectedBlockHeight: Sequelize.INTEGER,
+    metadata: Sequelize.JSON,
+  })
 };
 
 const initDb = sequelize.sync();

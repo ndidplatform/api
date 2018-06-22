@@ -568,3 +568,30 @@ export function removeIdpResponseValidList(requestId) {
     key: requestId,
   });
 }
+
+export function getExpectedDataSignInBlockList(height) {
+  return db.getList({
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'metadata',
+  });
+}
+
+export function addExpectedDataSignInBlock(height, metadata) {
+  return db.pushToList({
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'metadata',
+    value: metadata,
+  });
+}
+
+export function removeExpectedDataSignInBlockList(height) {
+  return db.removeList({
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+  });
+}
