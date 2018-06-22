@@ -133,7 +133,7 @@ async function notifyRequestUpdate(requestId, height) {
     const idpNodeIds = responseMetadataList
       .filter(({ requestId: reqId }) => requestId === reqId)
       .map((metadata) => metadata.idpId);
-      
+
     if (idpNodeIds.length === 0) return;
 
     await Promise.all(
@@ -542,9 +542,14 @@ export async function handleMessageFromQueue(messageStr) {
 
     const requestDetail = await tendermintNdid.getRequestDetail({
       requestId: message.request_id,
+      height: message.height,
     });
 
     const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+
+    const savedResponseValidList = await db.getIdpResponseValidList(
+      message.request_id
+    );
 
     await checkIdpResponseAndNotify({
       requestStatus,
@@ -552,7 +557,10 @@ export async function handleMessageFromQueue(messageStr) {
       idpId: message.idp_id,
       callbackUrl,
       requestDataFromMq: message,
-      mode: message.accessor_id ? 3 : 1,
+      responseIal: requestDetail.response_list.find(
+        (response) => response.idp_id === message.idp_id
+      ).ial,
+      savedResponseValidList,
     });
   } else if (message.as_id != null) {
     // Receive data from AS
