@@ -64,9 +64,15 @@ export function validateQuery(req, res, next) {
 }
 
 export function validateBody(req, res, next) {
+  let baseUrl = req.baseUrl;
+  if (baseUrl.indexOf('/v1') >= 0) {
+    const splittedBaseUrl = baseUrl.split('/');
+    splittedBaseUrl.splice(1, 1);
+    baseUrl = splittedBaseUrl.join('/');
+  }
   const bodyValidationResult = validate({
     method: req.method,
-    path: `${req.baseUrl}${req.route.path}`,
+    path: `${baseUrl}${req.route.path}`,
     body: req.body,
   });
   if (!bodyValidationResult.valid) {
