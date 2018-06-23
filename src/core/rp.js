@@ -1,23 +1,23 @@
 /**
  * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
- * 
+ *
  * This file is part of NDID software.
- * 
+ *
  * NDID is the free software: you can redistribute it and/or modify it under
  * the terms of the Affero GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or any later
  * version.
- * 
+ *
  * NDID is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the Affero GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the Affero GNU General Public License
  * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
- * 
+ *
  * Please contact info@ndid.co.th for any further questions
- * 
+ *
  */
 
 import fs from 'fs';
@@ -39,7 +39,7 @@ const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
   config.dataDirectoryPath,
-  'rp-callback-url-' + config.nodeId,
+  'rp-callback-url-' + config.nodeId
 );
 
 [{ key: 'error_url', fileSuffix: 'error' }].forEach(({ key, fileSuffix }) => {
@@ -129,7 +129,9 @@ async function notifyRequestUpdate(requestId, height) {
 
   if (needResponseVerification) {
     // Validate ZK Proof and IAL
-    const responseMetadataList = await db.getExpectedIdpResponseNodeIdInBlockList(height);
+    const responseMetadataList = await db.getExpectedIdpResponseNodeIdInBlockList(
+      height
+    );
     const idpNodeIds = responseMetadataList
       .filter(({ requestId: reqId }) => requestId === reqId)
       .map((metadata) => metadata.idpId);
@@ -178,10 +180,7 @@ async function notifyRequestUpdate(requestId, height) {
     await common.closeRequest(requestId);
   }
 
-  if (
-    requestStatus.closed ||
-    requestStatus.timed_out
-  ) {
+  if (requestStatus.closed || requestStatus.timed_out) {
     // Clean up
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
     // since the request is no longer going to have further events
@@ -243,7 +242,7 @@ async function checkIdpResponseAndNotify({
     requestStatus.request_id,
     idpId,
     requestDataFromMq,
-    requestStatus.mode,
+    requestStatus.mode
   );
 
   logger.debug({
@@ -327,10 +326,11 @@ export async function handleTendermintNewBlockHeaderEvent(
           const requestId =
             transaction.args.request_id || transaction.args.requestId; //derive from tx;
           if (requestId == null) return;
-          if(transaction.fnName === 'DeclareIdentityProof') {
-            common.handleChallengeRequest(requestId + ':' + transaction.args.idp_id);
-          }
-          else {
+          if (transaction.fnName === 'DeclareIdentityProof') {
+            common.handleChallengeRequest(
+              requestId + ':' + transaction.args.idp_id
+            );
+          } else {
             const height = block.block.header.height;
             await notifyRequestUpdate(requestId, height);
             db.removeExpectedIdpResponseNodeIdInBlockList(height);
@@ -472,7 +472,7 @@ export async function handleMessageFromQueue(messageStr) {
   //distinguish between message from idp, as
   if (message.idp_id != null) {
     //check accessor_id, undefined means mode 1
-    if(message.accessor_id) {
+    if (message.accessor_id) {
       //store private parameter from EACH idp to request, to pass along to as
       let request = await db.getRequestData(message.request_id);
       //AS involve
@@ -500,8 +500,7 @@ export async function handleMessageFromQueue(messageStr) {
         }
         await db.setRequestData(message.request_id, request);
       }
-    }
-    else if(message.type === 'request_challenge') {
+    } else if (message.type === 'request_challenge') {
       const responseId = message.request_id + ':' + message.idp_id;
       logger.debug({
         message: 'Save public proof from MQ',
@@ -513,7 +512,7 @@ export async function handleMessageFromQueue(messageStr) {
 
     logger.debug({
       message: 'check height',
-      wait: tendermint.latestBlockHeight <= message.height
+      wait: tendermint.latestBlockHeight <= message.height,
     });
 
     //must wait for height
@@ -533,7 +532,7 @@ export async function handleMessageFromQueue(messageStr) {
       });
       return;
     }
-    if(message.type === 'request_challenge') {
+    if (message.type === 'request_challenge') {
       common.handleChallengeRequest(message.request_id + ':' + message.idp_id);
       return;
     }
@@ -584,13 +583,19 @@ export async function handleMessageFromQueue(messageStr) {
         const signatureFromBlockchain = await tendermintNdid.getDataSignature({
           request_id: message.request_id,
           service_id: message.service_id,
-          node_id: message.as_id
+          node_id: message.as_id,
         });
 
         if (signatureFromBlockchain == null) return;
         // TODO: if signature is invalid or mismatch then delete data from cache
         if (message.signature !== signatureFromBlockchain) return;
-        if (!(await isDataSignatureValid(message.as_id, signatureFromBlockchain, message.data))) {
+        if (
+          !(await isDataSignatureValid(
+            message.as_id,
+            signatureFromBlockchain,
+            message.data
+          ))
+        ) {
           return;
         }
 
@@ -619,7 +624,13 @@ async function isDataSignatureValid(asNodeId, signature, data) {
     signature,
     data,
   });
-  if (!utils.verifySignature(signature, publicKeyObj.public_key, JSON.stringify(data))) {
+  if (
+    !utils.verifySignature(
+      signature,
+      publicKeyObj.public_key,
+      JSON.stringify(data)
+    )
+  ) {
     logger.warn({
       message: 'Data signature from AS is not valid',
       signature,
@@ -640,32 +651,31 @@ async function checkAsDataSignaturesAndSetReceived(requestId, metadataList) {
 
   const dataFromAS = await db.getDatafromAS(requestId);
 
-  await Promise.all(metadataList.map(async ({
-    requestId,
-    serviceId,
-    asId,
-  }) => {
-    const data = dataFromAS.find(
-      (data) =>
-        data.service_id === serviceId && data.source_node_id === asId
-    );
-    if (data == null) return; // Have not received data from AS through message queue yet
+  await Promise.all(
+    metadataList.map(async ({ requestId, serviceId, asId }) => {
+      const data = dataFromAS.find(
+        (data) => data.service_id === serviceId && data.source_node_id === asId
+      );
+      if (data == null) return; // Have not received data from AS through message queue yet
 
-    const signatureFromBlockchain = await tendermintNdid.getDataSignature({
-      request_id: requestId,
-      service_id: serviceId,
-      node_id: asId
-    });
-    if (signatureFromBlockchain == null) return;
-    // TODO: if signature is invalid or mismatch then delete data from cache
-    if (data.source_signature !== signatureFromBlockchain) return;
-    if (!(await isDataSignatureValid(asId, signatureFromBlockchain, data.data))) {
-      return;
-    }
-    await tendermintNdid.setDataReceived({
-      requestId,
-      service_id: serviceId,
-      as_id: asId,
-    });
-  }));
+      const signatureFromBlockchain = await tendermintNdid.getDataSignature({
+        request_id: requestId,
+        service_id: serviceId,
+        node_id: asId,
+      });
+      if (signatureFromBlockchain == null) return;
+      // TODO: if signature is invalid or mismatch then delete data from cache
+      if (data.source_signature !== signatureFromBlockchain) return;
+      if (
+        !(await isDataSignatureValid(asId, signatureFromBlockchain, data.data))
+      ) {
+        return;
+      }
+      await tendermintNdid.setDataReceived({
+        requestId,
+        service_id: serviceId,
+        as_id: asId,
+      });
+    })
+  );
 }
