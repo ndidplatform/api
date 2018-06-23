@@ -214,6 +214,30 @@ did_service_exist() {
   fi
 }
 
+tendermint_add_validator() {
+  echo "Getting tendermint public key..."
+
+  local PUBKEY=$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/status | jq -r .result.validator_info.pub_key.value)
+
+  echo "Tendermint public key is ${PUBKEY}"
+
+  echo "Adding node as a validator..."
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/validator \
+    -H "Content-Type: application/json" \
+    -d "{\"public_key\":\"${PUBKEY}\",\"power\":10}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Adding node as a validator succeeded"
+    return 0
+  else
+    echo "Adding node as a validator failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
 wait_for_ndid_node_to_be_ready() {
   while [ "$(curl -sk ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/info | jq -r .error.code)" = "10008" ]; do sleep 1; done;
   if [ $# -gt 0 ]; then eval "$@"; fi
@@ -257,8 +281,9 @@ case ${ROLE} in
       wait_until_ndid_node_initialized
       wait_until_namespace_exist "cid"
       wait_until_service_exist "bank_statement"
-      until register_node_id; do sleep 1; done && \
-      set_token_for_node_id 10000 
+      until register_node_id; do sleep 1; done
+      until set_token_for_node_id 10000; do sleep 1; done
+      until tendermint_add_validator; do sleep 1; done
     fi
     ;;
   *) 
