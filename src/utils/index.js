@@ -82,7 +82,14 @@ export async function decryptAsymetricKey(cipher) {
     );
   } else {
     const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
-    symKeyBuffer = cryptoUtils.privateDecrypt(privateKey, encryptedSymKey);
+    const passphrase = config.privateKeyPassphrase;
+    symKeyBuffer = cryptoUtils.privateDecrypt(
+      {
+        key: privateKey,
+        passphrase,
+      },
+      encryptedSymKey
+    );
   }
 
   return cryptoUtils.decryptAES256GCM(symKeyBuffer, encryptedMessage, false);
@@ -339,8 +346,14 @@ export async function createSignature(data, nonce = '', useMasterKey) {
   const privateKey = useMasterKey
     ? fs.readFileSync(config.masterPrivateKeyPath, 'utf8')
     : fs.readFileSync(config.privateKeyPath, 'utf8');
+  const passphrase = useMasterKey
+    ? config.masterPrivateKeyPassphrase
+    : config.privateKeyPassphrase;
 
-  return cryptoUtils.createSignature(messageToSign, privateKey);
+  return cryptoUtils.createSignature(messageToSign, {
+    key: privateKey,
+    passphrase,
+  });
 }
 
 export function verifySignature(signatureInBase64, publicKey, plainText) {

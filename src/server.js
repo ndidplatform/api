@@ -53,11 +53,15 @@ process.on('unhandledRejection', function(reason, p) {
   });
 });
 
+const {
+  privateKeyPassphrase,
+  masterPrivateKeyPassphrase,
+  ...configToLog
+} = config;
 logger.info({
   message: 'Starting server',
   NODE_ENV: process.env.NODE_ENV,
-  env: config.env,
-  config,
+  config: configToLog,
 });
 
 // Make sure data and log directories exist

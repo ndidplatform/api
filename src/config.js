@@ -97,12 +97,18 @@ export const privateKeyPath = useExternalCryptoService
   : process.env.PRIVATE_KEY_PATH == null
     ? path.join(__dirname, '..', 'devKey', role, nodeId)
     : process.env.PRIVATE_KEY_PATH;
+export const privateKeyPassphrase = useExternalCryptoService
+  ? null
+  : process.env.PRIVATE_KEY_PASSPHRASE;
 
 export const masterPrivateKeyPath = useExternalCryptoService
   ? null
   : process.env.MASTER_PRIVATE_KEY_PATH == null
     ? path.join(__dirname, '..', 'devKey', role, nodeId + '_master')
     : process.env.MASTER_PRIVATE_KEY_PATH;
+export const masterPrivateKeyPassphrase = useExternalCryptoService
+  ? null
+  : process.env.MASTER_PRIVATE_KEY_PASSPHRASE;
 
 //in byte
 export const challengeLength = 2;

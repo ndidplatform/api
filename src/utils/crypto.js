@@ -39,7 +39,7 @@ export function hash(stringToHash) {
 
 /**
  *
- * @param {(Object|string)} privateKey
+ * @param {({key: string, passphrase: string}|string)} privateKey
  * @param {(Buffer|string)} plaintext
  * @returns {string} encrypted text, base64 encoded
  */
@@ -53,7 +53,7 @@ export function privateEncrypt(privateKey, plaintext) {
 
 /**
  *
- * @param {(Object|string)} privateKey
+ * @param {({key: string, passphrase: string}|string)} privateKey
  * @param {string} ciphertext base64 encoded ciphertext
  * @returns {Buffer} decrypted text
  */
@@ -89,6 +89,11 @@ export function publicDecrypt(publicKey, ciphertext) {
   return decrypted;
 }
 
+/**
+ *
+ * @param {string} message
+ * @param {({key: string, passphrase: string}|string)} privateKey
+ */
 export function createSignature(message, privateKey) {
   return crypto
     .createSign('SHA256')
