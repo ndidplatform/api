@@ -211,7 +211,7 @@ did_service_exist() {
 }
 
 wait_for_ndid_node_to_be_ready() {
-  until nc -z ${NDID_IP} ${SERVER_PORT}; do sleep 1; done;
+  while [ "$(curl -sk ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/info | jq -r .error.code)" = "10008" ]; do sleep 1; done;
   if [ $# -gt 0 ]; then eval "$@"; fi
 }
 
