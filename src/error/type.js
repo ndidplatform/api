@@ -273,6 +273,14 @@ export default {
     code: 15015,
     message: 'Duplicate accessor group ID',
   },
+  ABCI_DUPLICATE_IDENTITY_PROOF: {
+    code: 15016,
+    message: 'Duplicate identity proof',
+  },
+  ABCI_WRONG_IDENTITY_PROOF: {
+    code: 15017,
+    message: 'Wrong identity proof',
+  },
 
   // Client errors
   ABCI_REQUEST_ID_NOT_FOUND: {
@@ -370,6 +378,36 @@ export default {
     message: 'Invalid mode',
     clientError: true,
   },
+  ABCI_HASH_ID_NOT_FOUND: {
+    code: 25020,
+    message: 'Hash ID could not be found',
+    clientError: true,
+  },
+  ABCI_DUPLICATE_AS_IN_DATA_REQUEST: {
+    code: 25021,
+    message: 'Duplicate AS in data request list',
+    clientError: true,
+  },
+  ABCI_DUPLICATE_ANSWERED_AS_ID: {
+    code: 25022,
+    message: 'Duplicate answered AS ID',
+    clientError: true,
+  },
+  ABCI_DUPLICATE_SERVICE_ID_IN_DATA_REQUEST: {
+    code: 25023,
+    message: 'Duplicate service ID in data request list',
+    clientError: true,
+  },
+  ABCI_SERVICE_DESTINATION_NOT_FOUND: {
+    code: 25024,
+    message: 'Service destination could not be found',
+    clientError: true,
+  },
+  ABCI_DATA_REQUEST_IS_COMPLETED: {
+    code: 25025,
+    message: 'Data request is already completed',
+    clientError: true,
+  }, // AS could not sign data in time
 
   ABCI_UNAUTHORIZED: {
     code: 35001,

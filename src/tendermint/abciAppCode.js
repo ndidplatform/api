@@ -59,6 +59,14 @@ import errorType from '../error/type';
 // AsIDIsNotExistInASList   uint32 = 33
 // ServiceIDNotFound        uint32 = 34
 // InvalidMode              uint32 = 35
+// HashIDNotFound                  uint32 = 36
+// DuplicateIdentityProof          uint32 = 37
+// WrongIdentityProof              uint32 = 38
+// DuplicateASInDataRequest        uint32 = 39
+// DuplicateAnsweredAsIDList       uint32 = 40
+// DuplicateServiceIDInDataRequest uint32 = 41
+// ServiceDestinationNotFound      uint32 = 42
+// DataRequestIsCompleted          uint32 = 43
 
 const codeMapping = {
   1: errorType.ABCI_ENCODING_ERROR, // Not used in API (calls from API won't generate this error)
@@ -96,6 +104,14 @@ const codeMapping = {
   33: errorType.ABCI_AS_ID_DOES_NOT_EXIST_IN_AS_LIST,
   34: errorType.ABCI_SERVICE_ID_NOT_FOUND,
   35: errorType.ABCI_INVALID_MODE,
+  36: errorType.ABCI_HASH_ID_NOT_FOUND,
+  37: errorType.ABCI_DUPLICATE_IDENTITY_PROOF,
+  38: errorType.ABCI_WRONG_IDENTITY_PROOF,
+  39: errorType.ABCI_DUPLICATE_AS_IN_DATA_REQUEST,
+  40: errorType.ABCI_DUPLICATE_ANSWERED_AS_ID,
+  41: errorType.ABCI_DUPLICATE_SERVICE_ID_IN_DATA_REQUEST,
+  42: errorType.ABCI_SERVICE_DESTINATION_NOT_FOUND,
+  43: errorType.ABCI_DATA_REQUEST_IS_COMPLETED,
 };
 
 export function convertAbciAppCodeToErrorType(abciAppCode) {
