@@ -204,6 +204,12 @@ export default {
     code: 20023,
     message: 'Some arguments is missing',
   },
+  NOT_ENOUGH_AS: {
+    code: 20024,
+    message:
+      'Not enough AS (the number of AS offer the service is less than minimum AS needed)',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

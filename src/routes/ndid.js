@@ -176,4 +176,18 @@ router.delete('/services/:service_id', async (req, res, next) => {
   }
 });
 
+router.post('/validator', async (req, res, next) => {
+  try {
+    const { public_key, power } = req.body;
+
+    await ndid.setValidator({
+      public_key,
+      power
+    });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

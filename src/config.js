@@ -24,6 +24,9 @@ import path from 'path';
 
 export const env = process.env.NODE_ENV || 'development';
 
+//allow self signed https callback
+if(env === 'development') process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 export const serverPort = process.env.SERVER_PORT
   ? parseInt(process.env.SERVER_PORT)
   : 8080;

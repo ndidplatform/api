@@ -308,6 +308,20 @@ export async function createRequest({
               },
             });
           }
+
+          if ( potential_as_list.length < min_as) {
+            throw new CustomError({
+              message: errorType.NOT_ENOUGH_AS.message,
+              code: errorType.NOT_ENOUGH_AS.code,
+              clientError: true,
+              details: {
+                service_id,
+                potential_as_list,
+                min_as,
+              },
+            });
+          }
+
           //filter potential AS to be only in as_id_list
           potential_as_list = potential_as_list.filter((as_node) => {
             return (as_id_list.indexOf(as_node.node_id) !== -1);

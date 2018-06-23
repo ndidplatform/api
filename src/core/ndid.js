@@ -181,3 +181,16 @@ export async function deleteService({ service_id }) {
     throw error;
   }
 }
+
+export async function setValidator({ public_key, power }) {
+  try {
+    await tendermint.transact(
+      'SetValidator',
+      { public_key, power },
+      utils.getNonce()
+    );
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
