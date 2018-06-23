@@ -207,7 +207,7 @@ export async function requestChallengeAndCreateResponse(data) {
       await db.setResponseFromRequestId(data.request_id, data);
       requestChallenge(data.request_id, data.accessor_id);
     } catch(error) {
-      callbackToClient(data.callbackUrl, {
+      callbackToClient(data.callback_url, {
         type: 'create_response',
         success: false,
         request_id: data.request_id,
@@ -228,7 +228,7 @@ async function createIdpResponse(data) {
       signature,
       accessor_id,
       secret,
-      callbackUrl,
+      callback_url,
     } = data;
 
     const request = await tendermintNdid.getRequest({ requestId: request_id });
@@ -328,7 +328,7 @@ async function createIdpResponse(data) {
     const { height } = await tendermintNdid.createIdpResponse(dataToBlockchain);
     sendPrivateProofToRP(request_id, privateProofObject, height);
 
-    callbackToClient(callbackUrl, {
+    callbackToClient(callback_url, {
       type: 'create_response',
       success: true,
       request_id,
@@ -341,7 +341,7 @@ async function createIdpResponse(data) {
     });
     logger.error(err.getInfoForLog());
 
-    callbackToClient(data.callbackUrl, {
+    callbackToClient(data.callback_url, {
       type: 'create_response',
       success: false,
       request_id: data.request_id,
@@ -465,7 +465,7 @@ export async function handleMessageFromQueue(messageStr) {
       });
       createIdpResponse(data);
     } catch(error) {
-      callbackToClient(data.callbackUrl, {
+      callbackToClient(data.callback_url, {
         type: 'create_response',
         success: false,
         request_id: data.request_id,
