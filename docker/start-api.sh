@@ -3,7 +3,7 @@
 TENDERMINT_PORT=${TENDERMINT_PORT:-45000}
 MQ_BINDING_PORT=${MQ_BINDING_PORT:-5555}
 SERVER_PORT=${SERVER_PORT:-8080}
-if [ ${HTTPS:-true} = "true" ]; then
+if [ ${HTTPS:-false} = "true" ]; then
   PROTOCOL=https
 else  
   PROTOCOL=http
