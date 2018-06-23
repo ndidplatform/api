@@ -30,8 +30,12 @@ if [ -z ${NODE_ID} ]; then exit_missing_env NODE_ID; fi
 if [ -z ${ROLE} ]; then exit_missing_env ROLE; fi
 if [ -z ${NDID_IP} ]; then exit_missing_env NDID_IP; fi
 
-KEY_PATH=/api/build/devKey/${ROLE}/${NODE_ID}
-MASTER_KEY_PATH=/api/build/devKey/${ROLE}/master/${NODE_ID}
+if [ -z ${NDID_PORT} ]; then NDID_PORT=${SERVER_PORT}; fi
+
+KEY_PATH=/api/keys/node.pem
+MASTER_KEY_PATH=/api/keys/master.pem
+PUBLIC_KEY_PATH=/api/keys/node.pub
+MASTER_PUBLIC_KEY_PATH=/api/keys/master.pub
 
 tendermint_wait_for_sync_complete() {
   echo "Waiting for tendermint at ${TENDERMINT_IP}:${TENDERMINT_PORT} to be ready..."
@@ -44,13 +48,13 @@ tendermint_wait_for_sync_complete() {
 generate_key() {
   mkdir -p $(dirname ${KEY_PATH}) && \
   openssl genrsa -out ${KEY_PATH} 2048 && \
-  openssl rsa -in ${KEY_PATH} -pubout -out ${KEY_PATH}.pub
+  openssl rsa -in ${KEY_PATH} -pubout -out ${PUBLIC_KEY_PATH}
 
   if [ $? -eq 0 ]; then
-    echo "Keypair is generated at ${KEY_PATH} and ${KEY_PATH}.pub"
+    echo "Keypair is generated at ${KEY_PATH} and ${PUBLIC_KEY_PATH}"
     return 0
   else
-    echo "Failed to generate keypair at ${KEY_PATH} and ${KEY_PATH}.pub"
+    echo "Failed to generate keypair at ${KEY_PATH} and ${PUBLIC_KEY_PATH}"
     return 1
   fi
 }
@@ -58,13 +62,13 @@ generate_key() {
 generate_master_key() {
   mkdir -p $(dirname ${MASTER_KEY_PATH}) && \
   openssl genrsa -out ${MASTER_KEY_PATH} 2048 && \
-  openssl rsa -in ${MASTER_KEY_PATH} -pubout -out ${MASTER_KEY_PATH}.pub
+  openssl rsa -in ${MASTER_KEY_PATH} -pubout -out ${MASTER_PUBLIC_KEY_PATH}
 
   if [ $? -eq 0 ]; then
-    echo "Keypair is generated at ${MASTER_KEY_PATH} and ${MASTER_KEY_PATH}.pub"
+    echo "Keypair is generated at ${MASTER_KEY_PATH} and ${MASTER_PUBLIC_KEY_PATH}"
     return 0
   else
-    echo "Failed to generate keypair at ${MASTER_KEY_PATH} and ${MASTER_KEY_PATH}.pub"
+    echo "Failed to generate keypair at ${MASTER_KEY_PATH} and ${MASTER_PUBLIC_KEY_PATH}"
     return 1
   fi
 }
@@ -88,9 +92,9 @@ does_node_id_exist() {
 init_ndid() {
   echo "Initializing NDID node..."
 
-  local PUBLIC_KEY=$(tr '\n' '#' < ${KEY_PATH}.pub | sed 's/#/\\n/g')
+  local PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
   
-  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/ndid/initNDID \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/initNDID \
     -H "Content-Type: application/json" \
     -d "{\"public_key\":\"${PUBLIC_KEY}\"}" \
     -w '%{http_code}' \
@@ -108,9 +112,9 @@ init_ndid() {
 register_node_id() {
   echo "Registering ${NODE_ID} node..."
   
-  local PUBLIC_KEY=$(tr '\n' '#' < ${KEY_PATH}.pub | sed 's/#/\\n/g')
-  local MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${MASTER_KEY_PATH}.pub | sed 's/#/\\n/g')
-  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/ndid/registerNode \
+  local PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${MASTER_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/registerNode \
     -H "Content-Type: application/json" \
     -d "{\"public_key\":\"${PUBLIC_KEY}\",\"master_public_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"This is name: ${NODE_ID}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3}}" \
     -w '%{http_code}' \
@@ -129,7 +133,7 @@ set_token_for_node_id() {
   local AMOUNT=$1
   echo "Giving ${AMOUNT} tokens to ${NODE_ID} node..."
 
-  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/ndid/addNodeToken \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/addNodeToken \
     -H "Content-Type: application/json" \
     -d "{\"node_id\":\"${NODE_ID}\",\"amount\":${AMOUNT}}" \
     -w '%{http_code}' \
@@ -149,7 +153,7 @@ register_namespace() {
   local DESCRIPTION=$2
   echo "Registering namespace ${NAMESPACE} (${DESCRIPTION}) node..."
 
-  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/ndid/namespaces \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/namespaces \
     -H "Content-Type: application/json" \
     -d "{\"namespace\":\"${NAMESPACE}\",\"description\":\"${DESCRIPTION}\"}" \
     -w '%{http_code}' \
@@ -169,7 +173,7 @@ register_service() {
   local SERVICE_NAME=$2
   echo "Registering service ${SERVICE_ID} (${SERVICE_NAME}) node..."
 
-  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/ndid/services \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/services \
     -H "Content-Type: application/json" \
     -d "{\"service_id\":\"${SERVICE_ID}\",\"service_name\":\"${SERVICE_NAME}\"}" \
     -w '%{http_code}' \
@@ -188,7 +192,7 @@ did_namespace_exist() {
   local NAMESPACE=$1
 
   echo "Checking if namespace=${NAMESPACE} exist..."
-  if [ "$(curl -sk ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/utility/namespaces | jq -r .[].namespace | grep -E ^${NAMESPACE}$)" = "" ]; then
+  if [ "$(curl -sk ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/utility/namespaces | jq -r .[].namespace | grep -E ^${NAMESPACE}$)" = "" ]; then
     echo "namespace=${NAMESPACE} does not exist"
     return 1
   else
@@ -201,7 +205,7 @@ did_service_exist() {
   local SERVICE_ID=$1
 
   echo "Checking if service_id=${SERVICE_ID} exist..."
-  if [ "$(curl -sk ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/utility/services | jq -r .[].service_id | grep -E ^${SERVICE_ID}$)" = "" ]; then
+  if [ "$(curl -sk ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/utility/services | jq -r .[].service_id | grep -E ^${SERVICE_ID}$)" = "" ]; then
     echo "service_id=${SERVICE_ID} does not exist"
     return 1
   else
@@ -211,7 +215,7 @@ did_service_exist() {
 }
 
 wait_for_ndid_node_to_be_ready() {
-  while [ "$(curl -sk ${PROTOCOL}://${NDID_IP}:${SERVER_PORT}/info | jq -r .error.code)" = "10008" ]; do sleep 1; done;
+  while [ "$(curl -sk ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/info | jq -r .error.code)" = "10008" ]; do sleep 1; done;
   if [ $# -gt 0 ]; then eval "$@"; fi
 }
 
@@ -231,7 +235,7 @@ case ${ROLE} in
   ndid)
     tendermint_wait_for_sync_complete
     if ! does_node_id_exist; then
-      if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ]; then
+      if [ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]; then
         generate_key
       fi
       wait_for_ndid_node_to_be_ready && \
@@ -244,10 +248,10 @@ case ${ROLE} in
     tendermint_wait_for_sync_complete
     
     if ! does_node_id_exist; then
-      if [ ! -f ${KEY_PATH} ] || [ ! -f ${KEY_PATH}.pub ]; then
+      if [ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]; then
         generate_key
       fi
-      if [ ! -f ${MASTER_KEY_PATH} ] || [ ! -f ${MASTER_KEY_PATH}.pub ]; then
+      if [ ! -f ${MASTER_KEY_PATH} ] || [ ! -f ${MASTER_PUBLIC_KEY_PATH} ]; then
         generate_master_key
       fi
       wait_until_ndid_node_initialized
