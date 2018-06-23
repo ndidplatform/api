@@ -235,7 +235,7 @@ case ${ROLE} in
         generate_key
       fi
       wait_for_ndid_node_to_be_ready && \
-      init_ndid && \
+      until init_ndid; do sleep 1; done && \
       register_namespace "cid" "Thai citizen ID" && \
       register_service "bank_statement" "All transactions in the pass 3 month" &
     fi
@@ -253,7 +253,7 @@ case ${ROLE} in
       wait_until_ndid_node_initialized
       wait_until_namespace_exist "cid"
       wait_until_service_exist "bank_statement"
-      register_node_id && \
+      until register_node_id; do sleep 1; done && \
       set_token_for_node_id 10000 
     fi
     ;;
