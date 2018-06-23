@@ -392,6 +392,7 @@ async function sendRequestToAS(requestData, height) {
 
       mq.send(receivers, {
         request_id: requestData.request_id,
+        mode: requestData.mode,
         namespace: requestData.namespace,
         identifier: requestData.identifier,
         service_id: data_request.service_id,

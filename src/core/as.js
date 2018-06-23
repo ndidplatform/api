@@ -192,12 +192,14 @@ async function getDataAndSendBackToRP(request, responseDetails) {
   callbackToClient(
     callbackUrl,
     {
+      type: 'data_request',
       request_id: request.request_id,
+      mode: request.mode,
       namespace: request.namespace,
       identifier: request.identifier,
+      service_id: request.service_id,
       request_params: request.request_params,
       ...responseDetails,
-      mode: request.mode,
     },
     true,
     common.shouldRetryCallback,
@@ -228,17 +230,17 @@ async function getResponseDetails(requestId) {
 
   // Get all signatures
   // and calculate max ial && max aal
-  let signatures = [];
+  let response_signature_list = [];
   let max_ial = 0;
   let max_aal = 0;
   requestDetail.response_list.forEach((response) => {
-    signatures.push(response.signature);
+    response_signature_list.push(response.signature);
     if (response.aal > max_aal) max_aal = response.aal;
     if (response.ial > max_ial) max_ial = response.ial;
   });
 
   return {
-    signatures,
+    response_signature_list,
     max_aal,
     max_ial,
   };
