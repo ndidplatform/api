@@ -262,4 +262,6 @@ case ${ROLE} in
     ;;
 esac
 
-PRIVATE_KEY_PATH=${KEY_PATH} MASTER_PRIVATE_KEY_PATH=${MASTER_KEY_PATH} node /api/build/server.js
+export PRIVATE_KEY_PATH=${KEY_PATH} 
+export MASTER_PRIVATE_KEY_PATH=${MASTER_KEY_PATH} 
+node /api/build/server.js
