@@ -54,8 +54,8 @@ process.on('unhandledRejection', function(reason, p) {
 });
 
 const {
-  privateKeyPassphrase,
-  masterPrivateKeyPassphrase,
+  privateKeyPassphrase, // eslint-disable-line no-unused-vars
+  masterPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
   ...configToLog
 } = config;
 logger.info({
