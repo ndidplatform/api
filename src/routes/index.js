@@ -29,13 +29,11 @@ import errorType from '../error/type';
 import logger from '../logger';
 
 import errorHandler from './middleware/errorHandler';
-
 import ndidRouter from './ndid';
-import getInfo from './info';
-import * as tendermint from '../tendermint';
-
 import apiV1Router from './v1';
 import apiV2Router from './v2';
+import getInfo from './info';
+import * as tendermint from '../tendermint';
 
 import * as config from '../config';
 
