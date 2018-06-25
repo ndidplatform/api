@@ -145,6 +145,29 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   };
 }
 
+async function handleIdentityExist(request_id, data) {
+
+  //note, data has these key
+  /*let {
+    accessor_type,
+    accessor_id,
+    accessor_public_key,
+    hash_id,
+    ial,
+    sid,
+    associated,
+    secret,
+  } = data;*/
+
+  notifyCreateIdentityResultByCallback({
+    request_id: request_id,
+    exist: true,
+  });
+
+  //save data for add accessor to persistent
+  db.setIdentityFromRequestId(request_id, data);
+}
+
 // FIXME: error handling in many cases
 // when there is an error when transacting to blockchain
 // it should not create a request, e.g.
@@ -159,6 +182,12 @@ export async function createNewIdentity(data) {
       accessor_public_key,
       addAccessor,
     } = data;
+
+    let onboardData = await db.getOnboardDataByReferenceId(reference_id);
+    if(onboardData) {
+      let { request_id, accessor_id } = onboardData;
+      return { request_id, /*exist,*/ accessor_id };
+    }
 
     let ial = parseFloat(data.ial);
 
@@ -211,13 +240,7 @@ export async function createNewIdentity(data) {
     let sid = namespace + ':' + identifier;
     let hash_id = utils.hash(sid);
 
-    const exist = await tendermintNdid.checkExistingIdentity(hash_id);
-
-    let onboardData = await db.getOnboardDataByReferenceId(reference_id);
-    if (onboardData) {
-      let { request_id, accessor_id } = onboardData;
-      return { request_id, exist, accessor_id };
-    }
+    const exist = await tendermintNdid.checkExistingIdentityAndMarkFirst(hash_id);
 
     let accessor_id = data.accessor_id;
     if (!accessor_id) accessor_id = utils.randomBase64Bytes(32);
@@ -273,22 +296,8 @@ export async function createNewIdentity(data) {
 
     db.setOnboardDataByReferenceId(reference_id, { request_id, accessor_id });
 
-    /*let encryptedHash = await accessorSign(sid, hash_id, accessor_id);
-    let padding = utils.extractPaddingFromPrivateEncrypt(encryptedHash, accessor_public_key);
-    let secret = padding + '|' + encryptedHash;
-    
-    logger.debug({
-      message: 'encryptedHash from accessor callback',
-      encryptedHash,
-      padding,
-      secret,
-      hash_id,
-      accessor_id,
-    });*/
-
-    if (exist) {
-      //save data for add accessor to persistent
-      db.setIdentityFromRequestId(request_id, {
+    if(exist) {
+      handleIdentityExist(request_id,{
         accessor_type,
         accessor_id,
         accessor_public_key,
@@ -299,25 +308,19 @@ export async function createNewIdentity(data) {
         secret,
       });
     } else {
+      notifyCreateIdentityResultByCallback({
+        request_id: request_id,
+        exist: false,
+      });
+
       let accessor_group_id = utils.randomBase64Bytes(32);
 
-      //await Promise.all([
-      Promise.all([
-        tendermintNdid.createIdentity({
-          accessor_type,
-          accessor_public_key,
-          accessor_id,
-          accessor_group_id,
-        }),
-        tendermintNdid.registerMqDestination({
-          users: [
-            {
-              hash_id,
-              ial,
-            },
-          ],
-        }),
-      ]).then(async () => {
+      tendermintNdid.createIdentity({
+        accessor_type,
+        accessor_public_key,
+        accessor_id,
+        accessor_group_id
+      }).then(async () => {
         notifyCreateIdentityResultByCallback({
           request_id: request_id,
           success: true,
@@ -326,9 +329,9 @@ export async function createNewIdentity(data) {
         db.removeOnboardDataByReferenceId(reference_id);
       });
     }
-    //console.log('--->',{ request_id, exist, /*secret*/ accessor_id });
-    return { request_id, exist, /*secret*/ accessor_id };
-  } catch (error) {
+    return { request_id, /*exist, secret*/ accessor_id };
+  } 
+  catch (error) {
     logger.error({
       message: 'Cannot create new identity',
       error,
