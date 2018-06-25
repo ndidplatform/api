@@ -253,7 +253,8 @@ export async function createNewIdentity(data) {
           ],
         });
       } catch(error) {
-        if(/*TODO: check error code if duplicate first*/ exist === exist) exist = true;
+        let errorInfo = error.getInfoForLog();
+        if(errorInfo.details.abciCode === 44) exist = true;
         else throw error;
       }
     }
