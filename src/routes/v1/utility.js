@@ -22,8 +22,8 @@
 
 import express from 'express';
 
-import { validateQuery } from './middleware/validation';
-import * as tendermintNdid from '../tendermint/ndid';
+import { validateQuery } from '../middleware/validation';
+import * as tendermintNdid from '../../tendermint/ndid';
 
 const router = express.Router();
 

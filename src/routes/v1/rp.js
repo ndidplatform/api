@@ -22,9 +22,9 @@
 
 import express from 'express';
 
-import { validateBody } from './middleware/validation';
-import * as rp from '../core/rp';
-import * as common from '../core/common';
+import { validateBody } from '../middleware/validation';
+import * as rp from '../../core/rp';
+import * as common from '../../core/common';
 
 const router = express.Router();
 

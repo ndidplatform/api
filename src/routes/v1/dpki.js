@@ -22,10 +22,10 @@
 
 import express from 'express';
 
-import { validateBody } from './middleware/validation';
-import * as ndid from '../core/ndid';
-import * as dpki from '../core/dpki';
-import * as externalCryptoService from '../utils/externalCryptoService';
+import { validateBody } from '../middleware/validation';
+import * as ndid from '../../core/ndid';
+import * as dpki from '../../core/dpki';
+import * as externalCryptoService from '../../utils/externalCryptoService';
 
 const router = express.Router();
 

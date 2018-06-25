@@ -22,10 +22,10 @@
 
 import express from 'express';
 
-import { validateBody } from './middleware/validation';
-import * as identity from '../core/identity';
-import * as common from '../core/common';
-import * as tendermintNdid from '../tendermint/ndid';
+import { validateBody } from '../middleware/validation';
+import * as identity from '../../core/identity';
+import * as common from '../../core/common';
+import * as tendermintNdid from '../../tendermint/ndid';
 
 const router = express.Router();
 

@@ -22,8 +22,8 @@
 
 import express from 'express';
 
-import { validateBody } from './middleware/validation';
-import * as idp from '../core/idp';
+import { validateBody } from '../middleware/validation';
+import * as idp from '../../core/idp';
 
 const router = express.Router();
 

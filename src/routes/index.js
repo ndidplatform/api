@@ -29,20 +29,17 @@ import errorType from '../error/type';
 import logger from '../logger';
 
 import errorHandler from './middleware/errorHandler';
-import rpRouter from './rp';
-import idpRouter from './idp';
-import asRouter from './as';
-import identityRouter from './identity';
-import utilityRouter from './utility';
-import dpkiRouter from './dpki';
+
 import ndidRouter from './ndid';
 import getInfo from './info';
 import * as tendermint from '../tendermint';
 
+import apiV1Router from './v1';
+import apiV2Router from './v2';
+
 import * as config from '../config';
 
 const router = express.Router();
-const apiRouter = express.Router();
 
 // FOR DEBUG
 if (config.env === 'development') {
@@ -109,21 +106,13 @@ router.use((req, res, next) => {
   next();
 });
 
-if (config.role === 'rp') {
-  apiRouter.use('/rp', rpRouter);
-} else if (config.role === 'idp') {
-  apiRouter.use('/idp', idpRouter);
-} else if (config.role === 'as') {
-  apiRouter.use('/as', asRouter);
-} else if (config.role === 'ndid') {
-  apiRouter.use('/ndid', ndidRouter);
+if (config.role === 'ndid') {
+  router.use('/ndid', ndidRouter);
 }
-apiRouter.use('/identity', identityRouter);
-apiRouter.use('/utility', utilityRouter);
-apiRouter.use('/dpki', dpkiRouter);
 
-router.use(apiRouter);
-router.use('/v1', apiRouter);
+router.use(apiV2Router);
+router.use('/v1', apiV1Router);
+router.use('/v2', apiV2Router);
 
 router.get('/info', getInfo);
 
