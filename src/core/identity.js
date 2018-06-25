@@ -240,7 +240,23 @@ export async function createNewIdentity(data) {
     let sid = namespace + ':' + identifier;
     let hash_id = utils.hash(sid);
 
-    const exist = await tendermintNdid.checkExistingIdentityAndMarkFirst(hash_id);
+    let exist = await tendermintNdid.checkExistingIdentity(hash_id);
+    if(!exist) {
+      try {
+        await tendermintNdid.registerMqDestination({
+          users: [
+            {
+              hash_id,
+              ial,
+              first: true,
+            },
+          ],
+        });
+      } catch(error) {
+        if(/*TODO: check error code if duplicate first*/ exist === exist) exist = true;
+        else throw error;
+      }
+    }
 
     let accessor_id = data.accessor_id;
     if (!accessor_id) accessor_id = utils.randomBase64Bytes(32);

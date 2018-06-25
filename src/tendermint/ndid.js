@@ -481,16 +481,12 @@ export async function getAccessorKey(accessor_id) {
   }
 }
 
-export async function checkExistingIdentityAndMarkFirst(hash_id) {
+export async function checkExistingIdentity(hash_id) {
   try {
     const { exist } = await tendermint.query('CheckExistingIdentity', {
       hash_id,
     });
-    if(exist) return exist;
-    else {
-      //TODO
-      //try to mark first; if fail return true, if success return false
-    }
+    return exist;
   } catch (error) {
     throw new CustomError({
       message: 'Cannot check existing identity from blockchain',
