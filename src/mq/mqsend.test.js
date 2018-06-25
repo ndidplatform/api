@@ -2,17 +2,30 @@ const chai = require('chai');
 const expect = chai.expect;
 const chaiHttp = require('chai-http');
 chai.use(chaiHttp);
-var assert = require('assert');
-var zmq = require("zeromq")
-var MQSend = require('mqsend.js');
-var MQRecv = require('mqrecv.js');
+let assert = require('assert');
+let zmq = require("zeromq")
+let MQSend = require('./mqsendcontroller.js');
+let MQRecv = require('./mqrecvcontroller.js');
 
-describe('Test message queue Sending', function () {
+describe('Unit Test sending', function () {
+});
+
+describe('Functional Test with real sockets', function () {
+  let portIdx = 5555;
+  let getPort = function(numports) {
+     let ret = [];
+     for (let i=0; i<numports; i++) {
+       portIdx++;
+       ret.push(portIdx);
+     }
+     return ret;
+  }
 
 
   it('should send data to destination succesffully', function(done) {
-    var sendNode = new MQSend({});
-    var recvNode= new MQRecv({port: 5565});
+    let ports = getPort(1);
+    let sendNode = new MQSend({});
+    let recvNode= new MQRecv({port: ports[0]});
 
     recvNode.on('message', function(msg){
        expect(String(msg)).to.equal('test message 1');
@@ -20,204 +33,347 @@ describe('Test message queue Sending', function () {
     });
 
     sendNode.send({ip:'127.0.0.1',
-              port:5565
+              port:ports[0]
               }, 'test message 1');
 
   });
 
   it('should send data in Thai successfully',function(done) {
-    var recvNode = new MQRecv({port: 5557});
+    let ports = getPort(1);
+    let recvNode = new MQRecv({port: ports[0]});
     recvNode.on("message", function(msg){
       expect(String(msg)).to.equal('นี่คือเทสแมสเซจ');
       done();
     });
 
-    var sendNode = new MQSend({});
+    let sendNode = new MQSend({});
     sendNode.send({ip:"127.0.0.1",
-              port:5557
-              }, 'นี่คือเทสแมสเซจ');
-
+              port:ports[0]
+            }, 'นี่คือเทสแมสเซจ');
   });
 
   it('should send data to 1 source, 3 times, once after another properly', function(done) {
-    let count = 0;
-    var recvNode = new MQRecv({port: 5556});
-   /// let alreadyRecv = new Set();
+    let ports = getPort(1);
+    let recvNode = new MQRecv({port: ports[0]});
+    let alreadyRecv = [];
 
-   recvNode.on("message", function(msg){
-    //  expect(msg).to.be.a('String').and.be.oneOf(['test1', 'test2', 'test3']).and.not.be.oneOf(alreadyRecv.entries());
-     // alreadyRecv.add(msg);
-      count++;
-      if (count == 3) done();
+    recvNode.on("message", function(msg){
+      expect(msg).to.be.a('String')
+      expect(parseInt(msg)).to.be.oneOf([111111,222222,333333]).and.to.not.be.oneOf(alreadyRecv);
+      alreadyRecv.push(parseInt(msg));
+      if (alreadyRecv.length == 3) done();
     });
 
-    var sendNode = new MQSend({});
+    let sendNode = new MQSend({});
 
-    sendNode.send({ip:"127.0.0.1",
-              port:5556
-            }, "test1");
-    sendNode.send({ip:"127.0.0.1",
-              port:5556
-            }, "test2");
-    sendNode.send({ip:"127.0.0.1",
-              port:5556
-            }, "test3");
+    sendNode.send({ip:"127.0.0.1", port:ports[0] }, "111111");
+    sendNode.send({ip:"127.0.0.1", port:ports[0] }, "222222");
+    sendNode.send({ip:"127.0.0.1", port:ports[0] }, "333333");
   });
 
   it('should send data to 3 sources at the same time properly', function(done){
+    let ports = getPort(3);
     let count = 0;
-    var mqNode = new MQSend({});
-    var mqNode1 = new MQRecv({port: 5576});
-    var mqNode2 = new MQRecv({port: 5577});
-    var mqNode3 = new MQRecv({port: 5578});
+    let alreadyRecv = [];
+
+    let mqNode1 = new MQRecv({port: ports[0]});
+    let mqNode2 = new MQRecv({port: ports[1]});
+    let mqNode3 = new MQRecv({port: ports[2]});
 
     mqNode1.on("message", function(msg){
-      expect(msg).to.be.a('String').and.equal('test1');
-      count++;
-      if (count == 3) done();
+      expect(msg).to.be.a('String')
+      expect(parseInt(msg)).to.equal(111111).and.to.not.be.oneOf(alreadyRecv);
+      alreadyRecv.push(parseInt(msg));
+      if (alreadyRecv.length == 3) done();
     });
     mqNode2.on("message", function(msg){
-       expect(msg).to.be.a('String').and.equal('test2');
-       count++;
-       if (count == 3) done();
+       expect(msg).to.be.a('String');
+       expect(parseInt(msg)).to.equal(222222).and.to.not.be.oneOf(alreadyRecv);
+       alreadyRecv.push(parseInt(msg));
+       if (alreadyRecv.length == 3) done();
      });
     mqNode3.on("message", function(msg){
-       expect(msg).to.be.a('String').and.equal('test3');
-       count++;
-       if (count == 3) done();
-     });
+        expect(msg).to.be.a('String');
+        expect(parseInt(msg)).to.equal(333333).and.to.not.be.oneOf(alreadyRecv);
+        alreadyRecv.push(parseInt(msg));
+        if (alreadyRecv.length == 3) done();
+    });
 
-    mqNode.send({ip:"127.0.0.1",
-              port:5576
-            }, "test1");
-    mqNode.send({ip:"127.0.0.1",
-              port:5577
-            }, "test2");
-    mqNode.send({ip:"127.0.0.1",
-              port:5578
-            }, "test3");
+    let mqNode = new MQSend({});
+    mqNode.send({ip:"127.0.0.1", port:ports[0]}, "111111");
+    mqNode.send({ip:"127.0.0.1", port:ports[1]}, "222222");
+    mqNode.send({ip:"127.0.0.1", port:ports[2]}, "333333");
+
   });
 
 
-  it('should retry and should resume sending properly if destination dies and come up within time limit',  function(done) {
-    let count = 0;
-
-    this.timeout(100000);
-
-    var mqNode1 = new MQRecv({port: 5606});
-
-    mqNode1.on("message", function(msg){
-      expect(msg).to.be.a('String').and.equal('test1');
-      assert.fail();
+  it('should retry and should resume sending if destination start up late but within time limit',  function(done) {
+    this.timeout(20000);
+    let ports = getPort(1);
+    let notDone = true;
+    let mqNode = new MQSend({id: 'test_retry', timeout:2000, totalTimeout:16000});
+    mqNode.on("error", function(error){
+        assert.fail('this one should not fire error, but it fired: ' + error);
     });
 
-    mqNode1.on("error", function(msg){
-    });
-    var mqNode = new MQSend({timeout:1000, totalTimeout:16000});
+    mqNode.send({ip:"127.0.0.1", port:ports[0]}, 'test' );
 
-    mqNode.send({ip:"127.0.0.1",
-              port:5680
-            }, "test22" );
+    let id = setTimeout(function () {
+      let mqNode2 = new MQRecv({port: ports[0]});
 
-    var id = setTimeout(function () {
-      var mqNode2 = new MQRecv({port: 5680});
         mqNode2.on("message", function(msg){
-        expect(msg).to.be.a('String').and.equal('test22');
-        count++;
-        if (count==3)done();
+        expect(msg).to.be.a('String').and.equal('test');
+        if (notDone == true) {
+          done();
+          notDone=false;
+        }
       });
-    }
-    , 4000);
-
+    }, 7000);
   });
 
-
-  it('should not retry but should fire error downstream if upstream return error',  function(done)   {
+  it('should retry and should resume sending properly if destination dies but resumes but within time limit',  function(done) {
     this.timeout(10000);
+    let ports = getPort(1);
 
-    var MQRecvClose = function(config) {
-
-      var self = this;
-
-      this.receivingSocket = zmq.socket('rep');
-
-      this.receivingSocket.bindSync('tcp://*:' + config.port);
-
-      this.receivingSocket.on('message', async function(jsonMessageStr) {
-          // close socket
-          self.receivingSocket.close();
-
+    let MQRecvDieFirst = function(config) {
+      let receivingSocket = zmq.socket('rep');
+      receivingSocket.setsockopt(zmq.ZMQ_LINGER, 0);
+      receivingSocket.bindSync('tcp://*:' + config.port);
+      receivingSocket.on('message', async function(jsonMessageStr) {
+          //just close the connection.....
+          receivingSocket.close();
       });
 
-      this.receivingSocket.on('error', async function(jsonMessageStr) {
-          // close socket
-          self.receivingSocket.close();
-    });
+      receivingSocket.on('error', async function(jsonMessageStr) {
+          assert.fail('there should be no error at receiving part');
+      });
 
     };
 
-    var recv = new MQRecvClose( {port:4444});
-    var mqNode = new MQSend({timeout:5000, totalTimeout:1600});
-    mqNode.on('error', function(mag) {
-      console.log("Error in message queue");
+    // first timenode will die;
+    let nodetoDie = new MQRecvDieFirst({port:ports[0]});
+    let mqNode = new MQSend({timeout:2000, totalTimeout:16000});
+    mqNode.on("error", function(msg){
+      assert.fail('this one should not fire error');
+    });
+    mqNode.send({ip:"127.0.0.1", port:ports[0]}, "test" );
+
+    // create proper one later
+    let id = setTimeout(function () {
+      let mqNode2 = new MQRecv({port:ports[0]});
+        mqNode2.on("message", function(msg){
+        expect(msg).to.be.a('String').and.equal('test');
+        done();
+      });
+      mqNode2.on("error", function(msg){
+        assert.fail('this one should not fire error');
+      });
+    }
+    , 4000);
+  });
+
+
+  it('should retry and should eventually fire error downstream if receiver keep rejecting connection',  function(done){
+    this.timeout(10000);
+    let ports = getPort(1);
+
+    let MQRecvClose = function(config) {
+      let receivingSocket = zmq.socket('rep');
+      receivingSocket.setsockopt(zmq.ZMQ_LINGER, 0);
+      receivingSocket.bindSync('tcp://*:' + config.port);
+      receivingSocket.on('message', async function(jsonMessageStr) {
+          receivingSocket.close();
+      });
+      receivingSocket.on('error', async function(err) {
+          assert.fail('there should be no error at receiving part but it fired: ' + err);
+      });
+    };
+
+    let recv = new MQRecvClose({port:ports[0]});
+    let mqNode = new MQSend({timeout:500, totalTimeout:1500});
+    mqNode.on('error', function(err) {
+        expect(err.code).to.equal('MQERR_TIMEOUT');
         done();
     });
 
-    mqNode.send({ip:"127.0.0.1",
-    port:4444
-  }, "test22" );
+    mqNode.send({ip:"127.0.0.1", port:ports[0]}, "test" );
  });
 
-  //TODO
-  it('must fire timeout event downstream and stop sending if destination dies but come up after time limit',  function(done)  {
+ it('should retry just like normal timeout and eventually timeout and fires MQERR_TIMEOUT error downstream if upstream return error due to size issue',  function(done)   {
+     this.timeout(10000);
+     let ports = getPort(1);
+
+     let mqRecvSmallSize = new MQRecv({port: ports[0], maxMsgSize:10});
+     let mqNode = new MQSend({timeout:500, totalTimeout:1500});
+     mqNode.on('error', function(err) {
+         expect(err.code).to.equal('MQERR_TIMEOUT');
+         done();
+     });
+
+     mqNode.send({ip:"127.0.0.1", port:ports[0]}, "testbigbig12345678901234567890" );
+   });
+
+
+  it('should fire timeout event downstream and stop sending if destination dies but come up after time limit and should no longer retry',  function(done)  {
+    this.timeout(10000);
+    let ports = getPort(1);
+
+    let MQRecvDieFirst = function(config) {
+      let receivingSocket = zmq.socket('rep');
+      receivingSocket.setsockopt(zmq.ZMQ_LINGER, 0);
+      receivingSocket.bindSync('tcp://*:' + config.port);
+      receivingSocket.on('message', async function(jsonMessageStr) {
+          //just close the connection.....
+          receivingSocket.close();
+      });
+
+      receivingSocket.on('error', async function(jsonMessageStr) {
+          assert.fail('there should be no error at receiving part');
+      });
+
+    };
+
+    // first timenode will die;
+    let nodetoDie = new MQRecvDieFirst({port:ports[0]});
+    let mqNode = new MQSend({id:'test3', timeout:1000, totalTimeout:3000});
+    mqNode.on("error", function(err){
+
+      expect(err.code).to.equal('MQERR_TIMEOUT');
       done();
+    });
+
+    mqNode.send({ip:"127.0.0.1", port:ports[0]}, "test" );
+
+    // create proper one later
+    let id = setTimeout(function () {
+      let mqNode2 = new MQRecv({port:ports[0]});
+      mqNode2.on("message", function(msg){
+        assert.fail('this one should not receive no more');
+      });
+      mqNode2.on("error", function(msg){
+        assert.fail('this one should not fire error');
+      });
+    }
+    , 10000);
+
+  });
+});
+
+describe.skip ('mq extreme case. Keep it there but dont run by default', function(){
+
+  it('should not die and receiever received all messages properly if it sends out 900 messages',  function(done) {
+    this.timeout(100000);
+    const ports = getPort(1);
+
+    let sendNode = new MQSend({});
+    sendNode.on('error', function(err){
+        assert.fail('there should be no error but it fired:' + err.code + err.message);
+    });
+
+    let count = 0;
+    let recvNode= new MQRecv({port: ports[0]});
+    recvNode.on('message', function(msg){
+           ++count;
+           if (count == 900)
+              done();
+        });
+    recvNode.on('error', function(err){
+          assert.fail('there should be no error but it fired:' + err.code + err.message);
+        });
+
+    for(let i = 0; i< 900; i++) {
+      sendNode.send({ip:'127.0.0.1', port:ports[0]}, 'msg' + i);
+    }
   });
 
-  //TODO
-  it('should stop sending and should not retry if it dies and recovers',  function(done)  {
+  it('should throw exception with Too many open files reason if it sends out 1800 messages',  function(done) {
+    this.timeout(10000);
+    const ports = getPort(1);
+    let hasDone = false;
+    let sendNode = new MQSend({});
+    sendNode.on('error', function(err){
+        assert.fail('there should be no error from emit. However, this threw ' + err);
+    });
 
+    let recvNode= new MQRecv({port: ports[0]});
+    recvNode.on('message', function(msg){
+        // do nothing.
+        });
+
+    try {
+      for(let i = 0; i< 1800; i++)
+        sendNode.send({ip:'127.0.0.1',port:ports[0]}, 'msg' + i);
+    } catch(err) {
+      expect(err.message).to.equal('Error: Too many open files');
       done();
-
+    }
   });
 
-  //TODO
-  it('should not die and receiever received all message properly if it sends out 1000000 messages',  function(done) {
-      done();
 
-  });
 
-   //TODO
-   it('should not die and receiever received all messages properly if it sends out a file with 200000000m size',  function(done) {
+it('should not die if it sends out 900 messages, wait until they are all done, then send another 900 messages',  function(done) {
+      this.timeout(100000);
+      const ports = getPort(1);
+
+      let sendNode = new MQSend({});
+      sendNode.on('error', function(err){
+          assert.fail('there should be no error but it fired:' + err.code);
+      });
+
+      let fn2 =  function() {
+        for(let i = 0; i< 900; i++) {
+          sendNode.send({ip:'127.0.0.1', port:ports[0]}, 'msg' + i);
+        }
+      }
+      fn2();
+      let count = 0;
+      let recvNode= new MQRecv({port: ports[0]});
+      recvNode.on('message', function(msg){
+             ++count;
+             if (count == 900){
+               let id = setTimeout(function () {
+                 fn2();
+               }
+               ,5000);
+             }
+             if (count == 1800)
+                done();
+          });
+      recvNode.on('error', function(err){
+            assert.fail('there should be no error but it fired:' + err.code);
+          });
+    });
+
+  it('should not die and receiever received all messages properly if it sends out a file with 20000000m size',  function(done) {
       // create data with 20 mb
       this.timeout(100000);
+      const ports = getPort(1);
 
-      var str = "";
-      for(var i = 0; i< 2000000; i++) {
+      let str = "";
+      for(let i = 0; i< 200000; i++) {
             str += "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
       }
 
-      var sendNode = new MQSend({});
-      var recvNode= new MQRecv({port: 5691});
+      let sendNode = new MQSend({});
+      let recvNode= new MQRecv({port: port[0]});
 
       recvNode.on('message', function(msg){
          expect(String(msg)).to.equal(str);
          done();
       });
       sendNode.on('state', function(msg){
-        console.log('xxxxx' + msg);
      });
 
       sendNode.send({ip:'127.0.0.1',
-                port:5691
+                port:ports[0]
                 }, str);
 
+      // create proper one later
+      let id = setTimeout(function () {
+        let mqNode2 = new MQRecv({port:ports[0]});
+        mqNode2.on("message", function(msg){
+          assert.fail('this one should not receive no more');
+        });
    });
-
-
-  //TODO
-  it('should only send data to the address of destination but not someone else connected to it', function(done) {
-      done();
-
-  });
-
+ });
 });
