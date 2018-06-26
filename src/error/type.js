@@ -1,23 +1,23 @@
 /**
  * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
- * 
+ *
  * This file is part of NDID software.
- * 
+ *
  * NDID is the free software: you can redistribute it and/or modify it under
  * the terms of the Affero GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or any later
  * version.
- * 
+ *
  * NDID is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the Affero GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the Affero GNU General Public License
  * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
- * 
+ *
  * Please contact info@ndid.co.th for any further questions
- * 
+ *
  */
 
 export default {
@@ -187,7 +187,8 @@ export default {
   },
   IDENTITY_NOT_FOUND: {
     code: 20020,
-    message: 'An identity for this user could not be found. It may have not been created yet',
+    message:
+      'An identity for this user could not be found. It may have not been created yet',
     clientError: true,
   },
   MAXIMUM_IAL_EXCEED: {
@@ -272,6 +273,14 @@ export default {
   ABCI_DUPLICATE_ACCESSOR_GROUP_ID: {
     code: 15015,
     message: 'Duplicate accessor group ID',
+  },
+  ABCI_DUPLICATE_IDENTITY_PROOF: {
+    code: 15016,
+    message: 'Duplicate identity proof',
+  },
+  ABCI_WRONG_IDENTITY_PROOF: {
+    code: 15017,
+    message: 'Wrong identity proof',
   },
 
   // Client errors
@@ -370,6 +379,36 @@ export default {
     message: 'Invalid mode',
     clientError: true,
   },
+  ABCI_HASH_ID_NOT_FOUND: {
+    code: 25020,
+    message: 'Hash ID could not be found',
+    clientError: true,
+  },
+  ABCI_DUPLICATE_AS_IN_DATA_REQUEST: {
+    code: 25021,
+    message: 'Duplicate AS in data request list',
+    clientError: true,
+  },
+  ABCI_DUPLICATE_ANSWERED_AS_ID: {
+    code: 25022,
+    message: 'Duplicate answered AS ID',
+    clientError: true,
+  },
+  ABCI_DUPLICATE_SERVICE_ID_IN_DATA_REQUEST: {
+    code: 25023,
+    message: 'Duplicate service ID in data request list',
+    clientError: true,
+  },
+  ABCI_SERVICE_DESTINATION_NOT_FOUND: {
+    code: 25024,
+    message: 'Service destination could not be found',
+    clientError: true,
+  },
+  ABCI_DATA_REQUEST_IS_COMPLETED: {
+    code: 25025,
+    message: 'Data request is already completed',
+    clientError: true,
+  }, // AS could not sign data in time
 
   ABCI_UNAUTHORIZED: {
     code: 35001,

@@ -40,8 +40,10 @@
 - `MQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted [Required]
 - `MQ_BINDING_PORT`: A port to bind message queue [Default: `5555`]
 - `SERVER_PORT`: API server port [Default: `8080`]
-- `PRIVATE_KEY_PATH`: Path to private key (if call back to create signature is not set) [Default: using pre-generated development key]
-- `MASTER_PRIVATE_KEY_PATH`: Path to master private key (if call back to create signature is not set) [Default: using pre-generated development key]
+- `PRIVATE_KEY_PATH`: Path to node's private key (if call back to create signature is not set) [Default: using pre-generated development key]
+- `PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key
+- `MASTER_PRIVATE_KEY_PATH`: Path to node's master private key (if call back to create signature is not set) [Default: using pre-generated development key]
+- `MASTER_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's master private key
 - `NODE_ID`: Node ID. Only when there are more than one node per role in the system. This ID tie to public key, in dev mode we have `rp1`, `rp2`, `rp3`, `idp1`, `idp2`, `idp3`, `as1`, `as2`, `as3` [Required]
 - `DATA_DIRECTORY_PATH`: Directory path for persistence data files [Default: `__dirname/../data` (`data` directory in repository's directory)]
 - `LOG_DIRECTORY_PATH`: Directory path for log files (only in `production` environment) [Default: `__dirname` (code's directory)]

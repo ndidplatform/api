@@ -20,15 +20,21 @@
  *
  */
 
+import path from 'path';
+import fs from 'fs';
+
 import * as tendermintNdid from '../tendermint/ndid';
 import * as config from '../config';
+import logger from '../logger';
+
+let version;
 
 export default async function getInfo(req, res, next) {
   const nodeInfo = await tendermintNdid.getNodeInfo(config.nodeId);
 
   res.status(200).json({
     env: config.env,
-    version: null, // FIXME: read from file?
+    version: version == null ? null : version,
     apiVersion: '1.0',
     nodeId: config.nodeId,
     nodeName: nodeInfo != null ? nodeInfo.node_name : undefined,
@@ -40,3 +46,17 @@ export default async function getInfo(req, res, next) {
     tendermintAddress: config.tendermintAddress,
   });
 }
+
+fs.readFile(
+  path.join(__dirname, '..', '..', 'VERSION'),
+  'utf8',
+  (err, data) => {
+    if (err) {
+      logger.error({
+        message: 'Unable to read VERSION file',
+        err,
+      });
+    }
+    version = data;
+  }
+);
