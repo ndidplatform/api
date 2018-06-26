@@ -445,7 +445,11 @@ export function getDetailedRequestStatus(requestDetail) {
   if (requestDetail.data_request_list.length === 0) {
     // No data request
     if (requestDetail.response_list.length === requestDetail.min_idp) {
-      if (responseCount.accept > 0 && responseCount.reject === 0) {
+      if( responseCount.reject === 0 &&
+          (responseCount.accept > 0 || 
+            (responseCount.accept === 0 && requestDetail.special) 
+          )
+      ) {
         status = 'completed';
       }
     }
