@@ -65,6 +65,15 @@ async function callbackWithRetry(
 
   for (;;) {
     if (stopCallbackRetry) return;
+    logger.info({
+      message: 'Sending a callback with retry',
+      url: callbackUrl,
+      cbId,
+    });
+    logger.debug({
+      message: 'Callback data in body',
+      body,
+    });
     try {
       const response = await httpPost(callbackUrl, body);
       db.removeCallbackWithRetryData(cbId);
@@ -122,6 +131,11 @@ export async function callbackToClient(
 ) {
   if (retry) {
     const cbId = randomBase64Bytes(10);
+    logger.info({
+      message: 'Saving data for callback with retry',
+      url: callbackUrl,
+      cbId,
+    });
     await db.addCallbackWithRetryData(cbId, {
       callbackUrl,
       body,
@@ -140,6 +154,14 @@ export async function callbackToClient(
       dataForResponseCallback
     );
   } else {
+    logger.info({
+      message: 'Sending a callback without retry',
+      url: callbackUrl,
+    });
+    logger.debug({
+      message: 'Callback data in body',
+      body,
+    });
     try {
       await httpPost(callbackUrl, body);
     } catch (error) {

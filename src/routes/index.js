@@ -42,6 +42,7 @@ import * as tendermint from '../tendermint';
 import * as config from '../config';
 
 const router = express.Router();
+const apiRouter = express.Router();
 
 // FOR DEBUG
 if (config.env === 'development') {
@@ -109,17 +110,20 @@ router.use((req, res, next) => {
 });
 
 if (config.role === 'rp') {
-  router.use('/rp', rpRouter);
+  apiRouter.use('/rp', rpRouter);
 } else if (config.role === 'idp') {
-  router.use('/idp', idpRouter);
+  apiRouter.use('/idp', idpRouter);
 } else if (config.role === 'as') {
-  router.use('/as', asRouter);
+  apiRouter.use('/as', asRouter);
 } else if (config.role === 'ndid') {
-  router.use('/ndid', ndidRouter);
+  apiRouter.use('/ndid', ndidRouter);
 }
-router.use('/identity', identityRouter);
-router.use('/utility', utilityRouter);
-router.use('/dpki', dpkiRouter);
+apiRouter.use('/identity', identityRouter);
+apiRouter.use('/utility', utilityRouter);
+apiRouter.use('/dpki', dpkiRouter);
+
+router.use(apiRouter);
+router.use('/v1', apiRouter);
 
 router.get('/info', getInfo);
 

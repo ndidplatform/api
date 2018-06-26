@@ -1,23 +1,23 @@
 /**
  * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
- * 
+ *
  * This file is part of NDID software.
- * 
+ *
  * NDID is the free software: you can redistribute it and/or modify it under
  * the terms of the Affero GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or any later
  * version.
- * 
+ *
  * NDID is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the Affero GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the Affero GNU General Public License
  * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
- * 
+ *
  * Please contact info@ndid.co.th for any further questions
- * 
+ *
  */
 
 import validate from '../validator';
@@ -64,9 +64,15 @@ export function validateQuery(req, res, next) {
 }
 
 export function validateBody(req, res, next) {
+  let baseUrl = req.baseUrl;
+  if (baseUrl.indexOf('/v1') >= 0) {
+    const splittedBaseUrl = baseUrl.split('/');
+    splittedBaseUrl.splice(1, 1);
+    baseUrl = splittedBaseUrl.join('/');
+  }
   const bodyValidationResult = validate({
     method: req.method,
-    path: `${req.baseUrl}${req.route.path}`,
+    path: `${baseUrl}${req.route.path}`,
     body: req.body,
   });
   if (!bodyValidationResult.valid) {

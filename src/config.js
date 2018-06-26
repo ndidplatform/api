@@ -25,7 +25,7 @@ import path from 'path';
 export const env = process.env.NODE_ENV || 'development';
 
 //allow self signed https callback
-if(env === 'development') process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+if (env === 'development') process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 export const serverPort = process.env.SERVER_PORT
   ? parseInt(process.env.SERVER_PORT)
@@ -97,12 +97,18 @@ export const privateKeyPath = useExternalCryptoService
   : process.env.PRIVATE_KEY_PATH == null
     ? path.join(__dirname, '..', 'devKey', role, nodeId)
     : process.env.PRIVATE_KEY_PATH;
+export const privateKeyPassphrase = useExternalCryptoService
+  ? null
+  : process.env.PRIVATE_KEY_PASSPHRASE;
 
 export const masterPrivateKeyPath = useExternalCryptoService
   ? null
   : process.env.MASTER_PRIVATE_KEY_PATH == null
     ? path.join(__dirname, '..', 'devKey', role, nodeId + '_master')
     : process.env.MASTER_PRIVATE_KEY_PATH;
+export const masterPrivateKeyPassphrase = useExternalCryptoService
+  ? null
+  : process.env.MASTER_PRIVATE_KEY_PASSPHRASE;
 
 //in byte
 export const challengeLength = 2;

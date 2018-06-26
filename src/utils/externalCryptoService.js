@@ -1,23 +1,23 @@
 /**
  * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
- * 
+ *
  * This file is part of NDID software.
- * 
+ *
  * NDID is the free software: you can redistribute it and/or modify it under
  * the terms of the Affero GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or any later
  * version.
- * 
+ *
  * NDID is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the Affero GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the Affero GNU General Public License
  * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
- * 
+ *
  * Please contact info@ndid.co.th for any further questions
- * 
+ *
  */
 
 import fs from 'fs';
@@ -141,7 +141,8 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
   if (signCallbackUrl) {
     try {
       if (public_key == null) {
-        public_key = (await tendermintNdid.getNodePubKey(config.nodeId)).public_key;
+        public_key = (await tendermintNdid.getNodePubKey(config.nodeId))
+          .public_key;
       }
       await testSignCallback(signCallbackUrl, public_key);
     } catch (error) {
@@ -169,7 +170,8 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
   if (decryptCallbackUrl) {
     try {
       if (public_key == null) {
-        public_key = (await tendermintNdid.getNodePubKey(config.nodeId)).public_key;
+        public_key = (await tendermintNdid.getNodePubKey(config.nodeId))
+          .public_key;
       }
       await testDecryptCallback(decryptCallbackUrl, public_key);
     } catch (error) {
@@ -194,13 +196,15 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
       }
     );
   }
-  checkAndEmitAllCallbacksSet()
+  checkAndEmitAllCallbacksSet();
 }
 
 export async function setMasterSignatureCallback(url) {
   if (url) {
     try {
-      const { master_public_key } = await tendermintNdid.getNodeMasterPubKey(config.nodeId);
+      const { master_public_key } = await tendermintNdid.getNodeMasterPubKey(
+        config.nodeId
+      );
       await testSignCallback(url, master_public_key);
     } catch (error) {
       throw new CustomError({
