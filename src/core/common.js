@@ -451,10 +451,12 @@ export async function createRequest({
       );
 
       // send request data to IDPs via message queue
-      mq.send(receivers, {
-        ...requestData,
-        height,
-      });
+      if(min_idp > 0) {
+        mq.send(receivers, {
+          ...requestData,
+          height,
+        });
+      }
     } catch (error) {
       await db.removeRequestIdByReferenceId(reference_id);
       await db.removeRequestCallbackUrl(request_id);
