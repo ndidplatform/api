@@ -393,7 +393,7 @@ export async function getRequest({ requestId }) {
 
 export async function getRequestDetail({ requestId, height }) {
   try {
-    const { special, ...requestDetail } = await tendermint.query(
+    const requestDetail = await tendermint.query(
       'GetRequestDetail',
       { requestId },
       height
