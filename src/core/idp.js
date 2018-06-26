@@ -210,7 +210,7 @@ export async function requestChallengeAndCreateResponse(data) {
       requestChallenge(data.request_id, data.accessor_id);
     } catch(error) {
       callbackToClient(data.callback_url, {
-        type: 'create_response',
+        type: 'response_result',
         success: false,
         request_id: data.request_id,
         error,
@@ -337,7 +337,7 @@ async function createIdpResponse(data) {
     sendPrivateProofToRP(request_id, privateProofObject, height);
 
     callbackToClient(callback_url, {
-      type: 'create_response',
+      type: 'response_result',
       success: true,
       request_id,
     } ,true);
@@ -350,7 +350,7 @@ async function createIdpResponse(data) {
     logger.error(err.getInfoForLog());
 
     callbackToClient(data.callback_url, {
-      type: 'create_response',
+      type: 'response_result',
       success: false,
       request_id: data.request_id,
       error,
@@ -474,7 +474,7 @@ export async function handleMessageFromQueue(messageStr) {
       createIdpResponse(data);
     } catch(error) {
       callbackToClient(data.callback_url, {
-        type: 'create_response',
+        type: 'response_result',
         success: false,
         request_id: data.request_id,
         error,
