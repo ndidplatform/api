@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import crypto from 'crypto';
 
 const PBKDF2_ITERATIONS = 10000;
@@ -17,7 +39,7 @@ export function hash(stringToHash) {
 
 /**
  *
- * @param {(Object|string)} privateKey
+ * @param {({key: string, passphrase: string}|string)} privateKey
  * @param {(Buffer|string)} plaintext
  * @returns {string} encrypted text, base64 encoded
  */
@@ -31,7 +53,7 @@ export function privateEncrypt(privateKey, plaintext) {
 
 /**
  *
- * @param {(Object|string)} privateKey
+ * @param {({key: string, passphrase: string}|string)} privateKey
  * @param {string} ciphertext base64 encoded ciphertext
  * @returns {Buffer} decrypted text
  */
@@ -67,6 +89,11 @@ export function publicDecrypt(publicKey, ciphertext) {
   return decrypted;
 }
 
+/**
+ *
+ * @param {string} message
+ * @param {({key: string, passphrase: string}|string)} privateKey
+ */
 export function createSignature(message, privateKey) {
   return crypto
     .createSign('SHA256')

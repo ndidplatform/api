@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import * as tendermint from './index';
 import * as utils from '../utils';
 import * as config from '../config';
@@ -215,6 +237,26 @@ export async function setDataReceived({ requestId, service_id, as_id }) {
   }
 }
 
+export async function updateIal({ hash_id, ial }) {
+  try {
+    await tendermint.transact(
+      'UpdateIdentity',
+      {
+        hash_id,
+        ial,
+      },
+      utils.getNonce()
+    );
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot update Ial',
+      cause: error,
+      hash_id,
+      ial,
+    });
+  }
+}
+
 export async function declareIdentityProof({ request_id, identity_proof }) {
   try {
     return await tendermint.transact(
@@ -273,6 +315,18 @@ export async function registerServiceDestination(data) {
   } catch (error) {
     throw new CustomError({
       message: 'Cannot register service destination',
+      cause: error,
+    });
+  }
+}
+
+export async function updateServiceDestination(data) {
+  try {
+    let nonce = utils.getNonce();
+    await tendermint.transact('UpdateServiceDestination', data, nonce);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot update service destination',
       cause: error,
     });
   }
@@ -337,11 +391,12 @@ export async function getRequest({ requestId }) {
   }
 }
 
-export async function getRequestDetail({ requestId }) {
+export async function getRequestDetail({ requestId, height }) {
   try {
     const { special, ...requestDetail } = await tendermint.query(
       'GetRequestDetail',
-      { requestId }
+      { requestId },
+      height
     );
     if (requestDetail == null) {
       return null;
@@ -528,6 +583,19 @@ export async function getServiceList() {
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get service list from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function getNodeInfo(node_id) {
+  try {
+    return await tendermint.query('GetNodeInfo', {
+      node_id,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get node info from blockchain',
       cause: error,
     });
   }

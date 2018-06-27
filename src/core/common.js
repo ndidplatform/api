@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import CustomError from '../error/customError';
 import logger from '../logger';
 
@@ -60,18 +82,18 @@ if (role === 'rp') {
     idp.handleTendermintNewBlockHeaderEvent
   );
   resumeTimeoutScheduler();
-  resumeCallbackToClient();
+  resumeCallbackToClient(shouldRetryCallback);
 } else if (role === 'as') {
   handleMessageFromQueue = as.handleMessageFromQueue;
   tendermint.setTendermintNewBlockHeaderEventHandler(
     as.handleTendermintNewBlockHeaderEvent
   );
-  resumeCallbackToClient(as.afterGotDataFromCallback);
+  resumeCallbackToClient(shouldRetryCallback, as.afterGotDataFromCallback);
 }
 
 async function resumeTimeoutScheduler() {
   let scheduler = await db.getAllTimeoutScheduler();
-  scheduler.forEach(({ requestId, unixTimeout }) => 
+  scheduler.forEach(({ requestId, unixTimeout }) =>
     runTimeoutScheduler(requestId, (unixTimeout - Date.now()) / 1000)
   );
 }
@@ -79,9 +101,9 @@ async function resumeTimeoutScheduler() {
 export async function checkRequestIntegrity(requestId, request) {
   const msgBlockchain = await tendermintNdid.getRequest({ requestId });
 
-  const valid = 
-    utils.hash(request.secretSalt + request.request_message)
-    === msgBlockchain.request_message_hash;
+  const valid =
+    utils.hash(request.secretSalt + request.request_message) ===
+    msgBlockchain.request_message_hash;
   /*utils.compareSaltedHash({
     saltedHash: msgBlockchain.messageHash,
     plain: request.request_message,
@@ -95,7 +117,9 @@ export async function checkRequestIntegrity(requestId, request) {
       message: 'Request message hash mismatched',
       requestId,
       givenRequestMessage: request.request_message,
-      givenRequestMessageHashWithSalt: utils.hash(request.secretSalt + request.request_message),
+      givenRequestMessageHashWithSalt: utils.hash(
+        request.secretSalt + request.request_message
+      ),
       requestMessageHashFromBlockchain: msgBlockchain.request_message_hash,
     });
   }
@@ -116,12 +140,8 @@ export async function getIdpsMsqDestination({
   mode,
 }) {
   const idpNodes = await tendermintNdid.getIdpNodes({
-    namespace: mode === 3 
-      ? namespace
-      : undefined,
-    identifier: mode === 3 
-      ? identifier
-      : undefined,
+    namespace: mode === 3 ? namespace : undefined,
+    identifier: mode === 3 ? identifier : undefined,
     min_ial,
     min_aal,
   });
@@ -173,6 +193,7 @@ export async function timeoutRequest(requestId) {
     throw error;
   }
   db.removeTimeoutScheduler(requestId);
+  db.removeChallengeFromRequestId(requestId);
 }
 
 export function runTimeoutScheduler(requestId, secondsToTimeout) {
@@ -227,7 +248,11 @@ export async function createRequest({
       return requestId;
     }
 
-    if (idp_id_list != null && idp_id_list.length > 0 && idp_id_list.length < min_idp) {
+    if (
+      idp_id_list != null &&
+      idp_id_list.length > 0 &&
+      idp_id_list.length < min_idp
+    ) {
       throw new CustomError({
         message: errorType.IDP_LIST_LESS_THAN_MIN_IDP.message,
         code: errorType.IDP_LIST_LESS_THAN_MIN_IDP.code,
@@ -267,18 +292,56 @@ export async function createRequest({
         }
         serviceIds.push(service_id);
 
-        if (
-          as_id_list != null &&
-          as_id_list.length > 0 &&
-          as_id_list.length < min_as
-        ) {
+        //all as_list offer the service
+        let potential_as_list = await tendermintNdid.getAsNodesByServiceId({
+          service_id,
+        });
+        if (as_id_list != null && as_id_list.length > 0) {
+          if (as_id_list.length < min_as) {
+            throw new CustomError({
+              message: errorType.AS_LIST_LESS_THAN_MIN_AS.message,
+              code: errorType.AS_LIST_LESS_THAN_MIN_AS.code,
+              clientError: true,
+              details: {
+                service_id,
+                as_id_list,
+                min_as,
+              },
+            });
+          }
+
+          if (potential_as_list.length < min_as) {
+            throw new CustomError({
+              message: errorType.NOT_ENOUGH_AS.message,
+              code: errorType.NOT_ENOUGH_AS.code,
+              clientError: true,
+              details: {
+                service_id,
+                potential_as_list,
+                min_as,
+              },
+            });
+          }
+
+          //filter potential AS to be only in as_id_list
+          potential_as_list = potential_as_list.filter((as_node) => {
+            return as_id_list.indexOf(as_node.node_id) !== -1;
+          });
+        }
+        //filter min_ial, min_aal
+        potential_as_list = potential_as_list.filter((as_node) => {
+          return as_node.min_ial <= min_ial && as_node.min_aal <= min_aal;
+        });
+
+        if (potential_as_list.length < min_as) {
           throw new CustomError({
-            message: errorType.AS_LIST_LESS_THAN_MIN_AS.message,
-            code: errorType.AS_LIST_LESS_THAN_MIN_AS.code,
+            message: errorType.CONDITION_TOO_LOW.message,
+            code: errorType.CONDITION_TOO_LOW.code,
             clientError: true,
             details: {
               service_id,
-              as_id_list,
+              min_ial,
+              min_aal,
               min_as,
             },
           });
@@ -383,7 +446,9 @@ export async function createRequest({
     await db.setRequestCallbackUrl(request_id, callback_url);
 
     try {
-      const { height } = await tendermintNdid.createRequest(requestDataToBlockchain);
+      const { height } = await tendermintNdid.createRequest(
+        requestDataToBlockchain
+      );
 
       // send request data to IDPs via message queue
       mq.send(receivers, {
@@ -410,7 +475,6 @@ export async function createRequest({
 }
 
 export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
-
   let {
     namespace,
     identifier,
@@ -419,7 +483,8 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   } = await db.getRequestData(request_id);
 
   //check only signature of idp_id
-  if(mode === 1) { return true;
+  if (mode === 1) {
+    return true;
 
     /*let response_list = (await getRequestDetail({
       requestId: request_id,
@@ -494,7 +559,9 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   }
 
   //query accessor_public_key from privateProofObject.accessor_id
-  let public_key = await tendermintNdid.getAccessorKey(privateProofObject.accessor_id);
+  let public_key = await tendermintNdid.getAccessorKey(
+    privateProofObject.accessor_id
+  );
 
   //query publicProof from response of idp_id in request
   let publicProof, signature, privateProofValueHash;
@@ -542,7 +609,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
         identifier,
       },
       privateProofValueHash,
-      privateProofObject.padding,
+      privateProofObject.padding
     )
   );
 }
@@ -550,12 +617,11 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
 //===== zkp and request related =====
 
 export async function handleChallengeRequest(responseId) {
-
   logger.debug({
-    message: 'Handle challenge request'
+    message: 'Handle challenge request',
   });
 
-  let [ request_id, idp_id ] = responseId.split(':');
+  let [request_id, idp_id] = responseId.split(':');
 
   //get public proof from mq
   let public_proof_mq = await db.getPublicProofReceivedFromMQ(responseId);
@@ -567,33 +633,40 @@ export async function handleChallengeRequest(responseId) {
   });
 
   //message queue not arrived yet
-  if(!public_proof_mq) return false;
+  if (!public_proof_mq) return false;
 
   //get public proof in blockchain
-  let public_proof_blockchain = JSON.parse(await tendermintNdid.getIdentityProof(request_id, idp_id));
-  if(!public_proof_blockchain) return false;
+  let public_proof_blockchain = JSON.parse(
+    await tendermintNdid.getIdentityProof(request_id, idp_id)
+  );
+  if (!public_proof_blockchain) return false;
 
   //check public proof in blockchain and in message queue
-  if(public_proof_blockchain.length !== public_proof_mq.length) return false;
-  for(let i = 0; i < public_proof_mq.length ; i++) {
-    if(public_proof_blockchain[i] !== public_proof_mq[i]) return false;
+  if (public_proof_blockchain.length !== public_proof_mq.length) return false;
+  for (let i = 0; i < public_proof_mq.length; i++) {
+    if (public_proof_blockchain[i] !== public_proof_mq[i]) return false;
   }
 
   //if match, send challenge and return
   let nodeId = {};
-  if(config.role === 'idp') nodeId.idp_id = config.nodeId;
-  else if(config.role === 'rp') nodeId.rp_id = config.nodeId;
+  if (config.role === 'idp') nodeId.idp_id = config.nodeId;
+  else if (config.role === 'rp') nodeId.rp_id = config.nodeId;
   let challenge = await db.getChallengeFromRequestId(request_id);
   logger.debug({
     message: 'Get challenge',
     challenge,
   });
-  let { ip, port } = await  tendermintNdid.getMsqAddress(idp_id);
-  let receiver = [{
-    ip,
-    port,
-    ...(await tendermintNdid.getNodePubKey(idp_id)),
-  }];
+  //challenge deleted, request is done
+  if (challenge == null) return false;
+
+  let { ip, port } = await tendermintNdid.getMsqAddress(idp_id);
+  let receiver = [
+    {
+      ip,
+      port,
+      ...(await tendermintNdid.getNodePubKey(idp_id)),
+    },
+  ];
   mq.send(receiver, {
     challenge,
     request_id,
@@ -614,4 +687,22 @@ export async function shouldRetryCallback(requestId) {
     }
   }
   return true;
+}
+
+export async function closeRequest(requestId) {
+  try {
+    const responseValidList = await db.getIdpResponseValidList(requestId);
+
+    await tendermintNdid.closeRequest({
+      requestId,
+      responseValidList,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot close a request',
+      requestId,
+      cause: error,
+    });
+  }
+  db.removeChallengeFromRequestId(requestId);
 }

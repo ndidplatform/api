@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import fs from 'fs';
 import crypto from 'crypto';
 
@@ -11,11 +33,13 @@ import * as externalCryptoService from './externalCryptoService';
 
 //let nonce = Date.now() % 10000;
 const saltByteLength = 8;
-const saltStringLength = saltByteLength*2;
+const saltStringLength = saltByteLength * 2;
 
 export function wait(ms, stoppable) {
   let setTimeoutFn;
-  const promise = new Promise((resolve) => setTimeoutFn = setTimeout(resolve, ms));
+  const promise = new Promise(
+    (resolve) => (setTimeoutFn = setTimeout(resolve, ms))
+  );
   if (stoppable) {
     return {
       promise,
@@ -43,8 +67,8 @@ export function hashWithRandomSalt(stringToHash) {
   return saltString + hash(saltString + stringToHash);
 }
 
-export function compareSaltedHash({saltedHash, plain}) {
-  let saltString = saltedHash.substring(0,saltStringLength);
+export function compareSaltedHash({ saltedHash, plain }) {
+  let saltString = saltedHash.substring(0, saltStringLength);
   return saltedHash === saltString + hash(saltString + plain);
 }
 
@@ -53,12 +77,21 @@ export async function decryptAsymetricKey(cipher) {
   let symKeyBuffer;
 
   if (config.useExternalCryptoService) {
-    symKeyBuffer = await externalCryptoService.decryptAsymetricKey(encryptedSymKey);
+    symKeyBuffer = await externalCryptoService.decryptAsymetricKey(
+      encryptedSymKey
+    );
   } else {
     const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
-    symKeyBuffer = cryptoUtils.privateDecrypt(privateKey, encryptedSymKey);
+    const passphrase = config.privateKeyPassphrase;
+    symKeyBuffer = cryptoUtils.privateDecrypt(
+      {
+        key: privateKey,
+        passphrase,
+      },
+      encryptedSymKey
+    );
   }
-  
+
   return cryptoUtils.decryptAES256GCM(symKeyBuffer, encryptedMessage, false);
 }
 
@@ -74,18 +107,22 @@ export function encryptAsymetricKey(publicKey, message) {
 }
 
 export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
-  const rawMessageBuffer = cryptoUtils.publicDecrypt({
-    key: publicKey,
-    padding: constants.RSA_NO_PADDING,
-  }, Buffer.from(cipher,'base64'));
+  const rawMessageBuffer = cryptoUtils.publicDecrypt(
+    {
+      key: publicKey,
+      padding: constants.RSA_NO_PADDING,
+    },
+    Buffer.from(cipher, 'base64')
+  );
 
   //RSA PKCS v. 1.5
-  if( rawMessageBuffer[0] !== 0 ||
-      ( rawMessageBuffer[1] !== 0 &&
-      rawMessageBuffer[1] !== 1)
-    ) throw 'Invalid cipher';
+  if (
+    rawMessageBuffer[0] !== 0 ||
+    (rawMessageBuffer[1] !== 0 && rawMessageBuffer[1] !== 1)
+  )
+    throw 'Invalid cipher';
   let padLength = 2;
-  while(rawMessageBuffer[padLength] !== 0) padLength++;
+  while (rawMessageBuffer[padLength] !== 0) padLength++;
 
   logger.debug({
     message: 'padding extracted',
@@ -96,15 +133,17 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
     padLength,
   });
 
-  return rawMessageBuffer.slice(0,padLength + 1).toString('base64');
+  return rawMessageBuffer.slice(0, padLength + 1).toString('base64');
 }
 
 export function generatePublicProof(publicKey) {
   let { n, e } = extractParameterFromPublicKey(publicKey);
   let k = randomBase64Bytes(n.toBuffer().length - 1);
   let kInt = stringToBigInt(k);
-  let blockchainProof = powerMod(kInt,e,n).toBuffer().toString('base64');
-  return [ k, blockchainProof ];
+  let blockchainProof = powerMod(kInt, e, n)
+    .toBuffer()
+    .toString('base64');
+  return [k, blockchainProof];
 }
 
 export function generateIdentityProof(data) {
@@ -113,33 +152,38 @@ export function generateIdentityProof(data) {
     data,
   });
 
-  let [ padding, signedHash ] = data.secret.split('|');
+  let [padding, signedHash] = data.secret.split('|');
   let { n, e } = extractParameterFromPublicKey(data.publicKey);
   // -1 to garantee k < n
-  let k = data.k;//randomBase64Bytes(n.toBuffer().length - 1);
+  let k = data.k; //randomBase64Bytes(n.toBuffer().length - 1);
   let kInt = stringToBigInt(k);
   let signedHashInt = stringToBigInt(signedHash);
   let challenge = stringToBigInt(data.challenge);
 
-  let blockchainProof = powerMod(kInt,e,n).toBuffer().toString('base64');
+  let blockchainProof = powerMod(kInt, e, n)
+    .toBuffer()
+    .toString('base64');
   //console.log(blockchainProof);
-  let privateProof = kInt.mul( 
-    powerMod(signedHashInt,challenge,n) 
-  ).mod(n).toBuffer().toString('base64');
+  let privateProof = kInt
+    .mul(powerMod(signedHashInt, challenge, n))
+    .mod(n)
+    .toBuffer()
+    .toString('base64');
 
   logger.debug({
     message: 'Proof generated',
     k: stringToBigInt(k),
     bcInt: stringToBigInt(blockchainProof),
     pvInt: stringToBigInt(privateProof),
-    n,e,
+    n,
+    e,
     signedHashInt,
     challenge: stringToBigInt(data.challenge),
     padding,
     blockchainProof,
   });
 
-  return { 
+  return {
     blockchainProof,
     privateProofValue: privateProof,
     padding: data.secret.split('|')[0],
@@ -150,7 +194,7 @@ function extractParameterFromPublicKey(publicKey) {
   const parsedKey = parseKey(publicKey);
   return {
     n: stringToBigInt(parsedKey.modulus.toBuffer().toString('base64')),
-    e: bignum(parsedKey.publicExponent.toString(10))
+    e: bignum(parsedKey.publicExponent.toString(10)),
   };
 }
 
@@ -159,72 +203,76 @@ function powerMod(base, exponent, modulus) {
 }
 
 function stringToBigInt(string) {
-  return bignum.fromBuffer(Buffer.from(string,'base64'));
+  return bignum.fromBuffer(Buffer.from(string, 'base64'));
 }
 
 function euclideanGCD(a, b) {
-  if( a.eq(bignum('0')) ) return [b, bignum('0'), bignum('1')];
-  let [g, y, x] = euclideanGCD(b.mod(a),a);
+  if (a.eq(bignum('0'))) return [b, bignum('0'), bignum('1')];
+  let [g, y, x] = euclideanGCD(b.mod(a), a);
   return [
-    g, 
+    g,
     x.sub(
-      b.sub(
-        b.mod(a)
-      )
-      .div(a)
-      .mul(y)
+      b
+        .sub(b.mod(a))
+        .div(a)
+        .mul(y)
     ),
-    y
+    y,
   ];
 }
 
 function moduloMultiplicativeInverse(a, modulo) {
   let [g, x, y] = euclideanGCD(a, modulo);
-  if(!g.eq(1)) throw 'No modular inverse';
+  if (!g.eq(1)) throw 'No modular inverse';
   return x.mod(modulo);
 }
-export function verifyZKProof(publicKey, 
-  challenges, 
-  privateProofArray, 
-  publicProofArray, 
+export function verifyZKProof(
+  publicKey,
+  challenges,
+  privateProofArray,
+  publicProofArray,
   sid,
   privateProofHash,
-  padding,
+  padding
 ) {
   logger.debug({
     message: 'ZK List',
-    publicKey, 
-    challenges, 
-    privateProofArray, 
-    publicProofArray, 
+    publicKey,
+    challenges,
+    privateProofArray,
+    publicProofArray,
     sid,
     privateProofHash,
     padding,
   });
 
-  if(challenges.length !== privateProofArray.length 
-    || challenges.length !== publicProofArray.length
-  ) return false;
+  if (
+    challenges.length !== privateProofArray.length ||
+    challenges.length !== publicProofArray.length
+  )
+    return false;
 
   let result = hash(JSON.stringify(privateProofArray)) === privateProofHash;
   logger.debug({
     message: 'Check private proof hash',
-    result
+    result,
   });
-  for(let i = 0 ; i < challenges.length ; i++) {
+  for (let i = 0; i < challenges.length; i++) {
     logger.debug({
       message: 'should call zk',
-      i
+      i,
     });
-    result = result && verifyZKProofSingle(
-      publicKey,
-      challenges[i], 
-      privateProofArray[i], 
-      publicProofArray[i], 
-      sid,
-      //privateProofHash,
-      padding,
-    );
+    result =
+      result &&
+      verifyZKProofSingle(
+        publicKey,
+        challenges[i],
+        privateProofArray[i],
+        publicProofArray[i],
+        sid,
+        //privateProofHash,
+        padding
+      );
     logger.debug({
       message: 'Loop ZK',
       i,
@@ -234,13 +282,14 @@ export function verifyZKProof(publicKey,
   return result;
 }
 
-function verifyZKProofSingle(publicKey, 
-  challenge, 
-  privateProof, 
-  publicProof, 
+function verifyZKProofSingle(
+  publicKey,
+  challenge,
+  privateProof,
+  publicProof,
   sid,
   //privateProofHash,
-  padding,
+  padding
 ) {
   //if(privateProofHash !== hash(privateProof)) return false;
 
@@ -248,27 +297,27 @@ function verifyZKProofSingle(publicKey,
   let hashedSid = hash(sid.namespace + ':' + sid.identifier);
 
   let paddedHashedSid = Buffer.concat([
-    Buffer.from(padding,'base64'),
-    Buffer.from(hashedSid,'base64')
+    Buffer.from(padding, 'base64'),
+    Buffer.from(hashedSid, 'base64'),
   ]).toString('base64');
 
-  let inverseHashSid = moduloMultiplicativeInverse(stringToBigInt(paddedHashedSid), n);
-  if(inverseHashSid.lt(bignum(0))) inverseHashSid = inverseHashSid.add(n);
+  let inverseHashSid = moduloMultiplicativeInverse(
+    stringToBigInt(paddedHashedSid),
+    n
+  );
+  if (inverseHashSid.lt(bignum(0))) inverseHashSid = inverseHashSid.add(n);
 
-  let tmp1 = powerMod(stringToBigInt(privateProof),e,n);
-  let tmp2 = powerMod(
-    inverseHashSid, 
-    stringToBigInt(challenge),
-    n,
-  ); 
+  let tmp1 = powerMod(stringToBigInt(privateProof), e, n);
+  let tmp2 = powerMod(inverseHashSid, stringToBigInt(challenge), n);
 
-  let tmp3 = (tmp1.mul(tmp2)).mod(n);
+  let tmp3 = tmp1.mul(tmp2).mod(n);
 
   logger.debug({
     message: 'ZK Verify result',
     hashBigInt: stringToBigInt(hashedSid),
     inverseHashSid,
-    n,e,
+    n,
+    e,
     tmp1,
     tmp2,
     tmp3,
@@ -285,7 +334,7 @@ function verifyZKProofSingle(publicKey,
 export async function createSignature(data, nonce = '', useMasterKey) {
   const messageToSign = JSON.stringify(data) + nonce;
   const messageToSignHash = hash(messageToSign);
-  
+
   if (config.useExternalCryptoService) {
     return await externalCryptoService.createSignature(
       messageToSign,
@@ -297,8 +346,14 @@ export async function createSignature(data, nonce = '', useMasterKey) {
   const privateKey = useMasterKey
     ? fs.readFileSync(config.masterPrivateKeyPath, 'utf8')
     : fs.readFileSync(config.privateKeyPath, 'utf8');
+  const passphrase = useMasterKey
+    ? config.masterPrivateKeyPassphrase
+    : config.privateKeyPassphrase;
 
-  return cryptoUtils.createSignature(messageToSign, privateKey);
+  return cryptoUtils.createSignature(messageToSign, {
+    key: privateKey,
+    passphrase,
+  });
 }
 
 export function verifySignature(signatureInBase64, publicKey, plainText) {
@@ -311,22 +366,22 @@ export function createRequestId() {
 
 /**
  * @typedef {Object} RequestStatus
- * @property {string} request_id 
- * @property {string} status 
- * @property {number} min_idp 
- * @property {number} answered_idp_count 
- * @property {boolean} closed 
- * @property {boolean} timed_out 
- * @property {Object} service_list 
- * @property {string} service_list.service_id 
- * @property {number} service_list.min_as 
- * @property {number} service_list.signed_data_count 
- * @property {number} service_list.received_data_count 
+ * @property {string} request_id
+ * @property {string} status
+ * @property {number} min_idp
+ * @property {number} answered_idp_count
+ * @property {boolean} closed
+ * @property {boolean} timed_out
+ * @property {Object} service_list
+ * @property {string} service_list.service_id
+ * @property {number} service_list.min_as
+ * @property {number} service_list.signed_data_count
+ * @property {number} service_list.received_data_count
  */
 /**
- * 
- * @param {Object} requestDetail 
- * @param {string} requestDetail.request_id 
+ *
+ * @param {Object} requestDetail
+ * @param {string} requestDetail.request_id
  * @param {number} requestDetail.min_idp
  * @param {number} requestDetail.min_ial
  * @param {number} requestDetail.min_aal
@@ -375,7 +430,7 @@ export function getDetailedRequestStatus(requestDetail) {
       service.answered_as_id_list != null
         ? service.answered_as_id_list.length
         : 0;
-    const receivedDataCount = 
+    const receivedDataCount =
       service.received_data_from_list != null
         ? service.received_data_from_list.length
         : 0;

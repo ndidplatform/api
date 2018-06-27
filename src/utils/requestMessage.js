@@ -20,8 +20,48 @@
  *
  */
 
-import * as tendermintNdid from '../tendermint/ndid';
+import fs from 'fs';
+import mustache from 'mustache';
 
-export async function updateNode({ public_key, master_public_key }) {
-  return tendermintNdid.updateNode({ public_key, master_public_key });
+import * as config from '../config';
+
+const createIdentityTemplate = fs.readFileSync(
+  config.createIdentityRequestMessageTemplateFilepath,
+  'utf8'
+);
+const addAccessorTemplate = fs.readFileSync(
+  config.addAccessorRequestMessageTemplateFilepath,
+  'utf8'
+);
+
+export function getRequestMessageForCreatingIdentity({
+  reference_id,
+  namespace,
+  identifier,
+  node_id,
+  node_name,
+}) {
+  return mustache.render(createIdentityTemplate, {
+    reference_id,
+    namespace,
+    identifier,
+    node_id,
+    node_name,
+  });
+}
+
+export function getRequestMessageForAddingAccessor({
+  reference_id,
+  namespace,
+  identifier,
+  node_id,
+  node_name,
+}) {
+  return mustache.render(addAccessorTemplate, {
+    reference_id,
+    namespace,
+    identifier,
+    node_id,
+    node_name,
+  });
 }

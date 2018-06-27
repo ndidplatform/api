@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import * as db from './sequelize';
 
 import logger from '../logger';
@@ -110,28 +132,28 @@ export function removeRequestIdsExpectedInBlock(fromHeight, toHeight) {
   });
 }
 
-export function getExpectedIdpResponseNodeId(height) {
-  return db.get({
-    name: 'expectedIdpResponseNodeId',
+export function getExpectedIdpResponseNodeIdInBlockList(height) {
+  return db.getList({
+    name: 'expectedIdpResponseNodeIdInBlock',
     keyName: 'expectedBlockHeight',
     key: height,
-    valueName: 'idpNodeId',
+    valueName: 'responseMetadata',
   });
 }
 
-export function setExpectedIdpResponseNodeId(height, idpNodeId) {
-  return db.set({
-    name: 'expectedIdpResponseNodeId',
+export function addExpectedIdpResponseNodeIdInBlock(height, responseMetadata) {
+  return db.pushToList({
+    name: 'expectedIdpResponseNodeIdInBlock',
     keyName: 'expectedBlockHeight',
     key: height,
-    valueName: 'idpNodeId',
-    value: idpNodeId,
+    valueName: 'responseMetadata',
+    value: responseMetadata,
   });
 }
 
-export function removeExpectedIdpResponseNodeId(height) {
-  return db.remove({
-    name: 'expectedIdpResponseNodeId',
+export function removeExpectedIdpResponseNodeIdInBlockList(height) {
+  return db.removeList({
+    name: 'expectedIdpResponseNodeIdInBlock',
     keyName: 'expectedBlockHeight',
     key: height,
   });
@@ -159,6 +181,33 @@ export function setRequestReceivedFromMQ(requestId, request) {
 export function removeRequestReceivedFromMQ(requestId) {
   return db.remove({
     name: 'requestReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getRequestToProcessReceivedFromMQ(requestId) {
+  return db.get({
+    name: 'requestToProcessReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+  });
+}
+
+export function setRequestToProcessReceivedFromMQ(requestId, request) {
+  return db.set({
+    name: 'requestToProcessReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+    value: request,
+  });
+}
+
+export function removeRequestToProcessReceivedFromMQ(requestId) {
+  return db.remove({
+    name: 'requestToProcessReceivedFromMQ',
     keyName: 'requestId',
     key: requestId,
   });
@@ -517,5 +566,32 @@ export function removeIdpResponseValidList(requestId) {
     name: 'idpResponseValid',
     keyName: 'requestId',
     key: requestId,
+  });
+}
+
+export function getExpectedDataSignInBlockList(height) {
+  return db.getList({
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'metadata',
+  });
+}
+
+export function addExpectedDataSignInBlock(height, metadata) {
+  return db.pushToList({
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'metadata',
+    value: metadata,
+  });
+}
+
+export function removeExpectedDataSignInBlockList(height) {
+  return db.removeList({
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
   });
 }

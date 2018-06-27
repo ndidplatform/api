@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import fs from 'fs';
 import path from 'path';
 
@@ -12,14 +34,13 @@ import * as utils from '../utils';
 import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
+import errorType from '../error/type';
 
 const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
-  __dirname,
-  '..',
-  '..',
-  'as-callback-url-' + config.nodeId,
+  config.dataDirectoryPath,
+  'as-callback-url-' + config.nodeId
 );
 
 [{ key: 'error_url', fileSuffix: 'error' }].forEach(({ key, fileSuffix }) => {
@@ -87,7 +108,7 @@ async function sendDataToRP(rpId, data) {
 export async function processDataForRP(data, additionalData) {
   let as_id = config.nodeId;
   let signature = await utils.createSignature(data);
-  
+
   // AS node adds transaction to blockchain
   const { height } = await tendermintNdid.signASData({
     as_id,
@@ -96,8 +117,10 @@ export async function processDataForRP(data, additionalData) {
     service_id: additionalData.serviceId,
   });
 
-  if(!additionalData.rpId) {
-    additionalData.rpId = await db.getRPIdFromRequestId(additionalData.requestId);
+  if (!additionalData.rpId) {
+    additionalData.rpId = await db.getRPIdFromRequestId(
+      additionalData.requestId
+    );
   }
 
   sendDataToRP(additionalData.rpId, {
@@ -111,8 +134,11 @@ export async function processDataForRP(data, additionalData) {
 }
 
 export async function afterGotDataFromCallback(response, additionalData) {
-  if(response.status === 204) {
-    await db.setRPIdFromRequestId(additionalData.requestId, additionalData.rpId);
+  if (response.status === 204) {
+    await db.setRPIdFromRequestId(
+      additionalData.requestId,
+      additionalData.rpId
+    );
     return;
   }
   let data;
@@ -171,18 +197,18 @@ async function getDataAndSendBackToRP(request, responseDetails) {
   callbackToClient(
     callbackUrl,
     {
+      type: 'data_request',
       request_id: request.request_id,
+      mode: request.mode,
       namespace: request.namespace,
       identifier: request.identifier,
+      service_id: request.service_id,
       request_params: request.request_params,
       ...responseDetails,
-      mode: request.mode,
     },
     true,
     common.shouldRetryCallback,
-    [
-      request.request_id,
-    ],
+    [request.request_id],
     afterGotDataFromCallback,
     {
       rpId: request.rp_id,
@@ -207,17 +233,17 @@ async function getResponseDetails(requestId) {
 
   // Get all signatures
   // and calculate max ial && max aal
-  let signatures = [];
+  let response_signature_list = [];
   let max_ial = 0;
   let max_aal = 0;
   requestDetail.response_list.forEach((response) => {
-    signatures.push(response.signature);
+    response_signature_list.push(response.signature);
     if (response.aal > max_aal) max_aal = response.aal;
     if (response.ial > max_ial) max_ial = response.ial;
   });
 
   return {
-    signatures,
+    response_signature_list,
     max_aal,
     max_ial,
   };
@@ -254,7 +280,7 @@ export async function handleMessageFromQueue(messageStr) {
     // TODO try catch / error handling
     const responseDetails = await getResponseDetails(message.request_id);
     //loop and check zk proof for all response
-    if (! (await verifyZKProof(message.request_id, message))) {
+    if (!(await verifyZKProof(message.request_id, message))) {
       //TODO, do not answer? or send data to rp and tell them proof is invalid?
       return;
     }
@@ -303,7 +329,7 @@ export async function handleTendermintNewBlockHeaderEvent(
       });
       const request = await db.getRequestReceivedFromMQ(requestId);
       const valid = await common.checkRequestIntegrity(requestId, request);
-      if (valid && await verifyZKProof(requestId)) {
+      if (valid && (await verifyZKProof(requestId))) {
         const responseDetails = await getResponseDetails(requestId);
         getDataAndSendBackToRP(request, responseDetails);
       }
@@ -314,23 +340,46 @@ export async function handleTendermintNewBlockHeaderEvent(
   db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 }
 
-export async function registerAsService({
-  service_id,
-  min_ial,
-  min_aal,
-  url,
-}) {
+export async function upsertAsService({ service_id, min_ial, min_aal, url }) {
   try {
-    await Promise.all([
-      tendermintNdid.registerServiceDestination({
-        service_id,
-        min_aal,
-        min_ial,
-        node_id: config.nodeId,
-      }),
-      //store callback to persistent
-      db.setServiceCallbackUrl(service_id, url),
-    ]);
+    //check already register?
+    let registeredASList = await tendermintNdid.getAsNodesByServiceId({
+      service_id,
+    });
+    let isRegisterd = false;
+    registeredASList.forEach(({ node_id }) => {
+      isRegisterd = isRegisterd || node_id === config.nodeId;
+    });
+
+    let promiseArray = [];
+    if (!isRegisterd) {
+      if (!service_id || !min_aal || !min_ial || !url) {
+        throw new CustomError({
+          message: errorType.MISSING_ARGUMENTS.message,
+          code: errorType.MISSING_ARGUMENTS.code,
+          clientError: true,
+        });
+      }
+      promiseArray.push(
+        tendermintNdid.registerServiceDestination({
+          service_id,
+          min_aal,
+          min_ial,
+          node_id: config.nodeId,
+        })
+      );
+    } else {
+      promiseArray.push(
+        tendermintNdid.updateServiceDestination({
+          service_id,
+          min_aal,
+          min_ial,
+        })
+      );
+    }
+    if (url) promiseArray.push(db.setServiceCallbackUrl(service_id, url));
+
+    await Promise.all(promiseArray);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot register AS service',
@@ -372,7 +421,7 @@ async function verifyZKProof(request_id, dataFromMq) {
   });
   //mode 1 bypass zkp
   //but still need to check signature of node
-  if(requestDetail.mode === 1) { 
+  if (requestDetail.mode === 1) {
     /*let response_list = requestDetail.response_list;
     for(let i = 0 ; i < response_list.length ; i++) {
       let { signature, idp_id } = response_list[i];
@@ -381,7 +430,7 @@ async function verifyZKProof(request_id, dataFromMq) {
     }*/
     return true;
   }
-  
+
   //query and verify zk, also check conflict with each others
   let accessor_group_id = await tendermintNdid.getAccessorGroupId(
     privateProofObjectList[0].privateProofObject.accessor_id
@@ -428,7 +477,7 @@ async function verifyZKProof(request_id, dataFromMq) {
       request_message,
       public_key,
       signature,
-      privateProofObjectList
+      privateProofObjectList,
     });
 
     let zkProofValid = utils.verifyZKProof(
@@ -441,7 +490,7 @@ async function verifyZKProof(request_id, dataFromMq) {
         identifier,
       },
       privateProofValueHash,
-      privateProofObjectList[i].privateProofObject.padding,
+      privateProofObjectList[i].privateProofObject.padding
     );
     valid = valid && signatureValid && zkProofValid;
   }

@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 export default {
   defsSchema: {
     definitions: {
@@ -120,6 +142,14 @@ export default {
         required: ['request_id'],
       },
     },
+    '/identity/requests/close': {
+      body: {
+        properties: {
+          request_id: { type: 'string', minLength: 1 },
+        },
+        required: ['request_id'],
+      },
+    },
     '/rp/callback': {
       body: {
         properties: {
@@ -181,7 +211,7 @@ export default {
             $ref: 'defs#/definitions/url',
           },
         },
-        required: ['min_ial', 'min_aal', 'url'],
+        required: [],
       },
     },
     '/as/data/:request_id/:service_id': {
@@ -308,11 +338,12 @@ export default {
         },
       },
     },
-    '/identity/:namespace/:identifier/endorsement': {
+    '/identity/:namespace/:identifier/ial': {
       body: {
         properties: {
-          // TODO: After v1.0
+          ial: { $ref: 'defs#/definitions/ial' },
         },
+        required: ['ial'],
       },
     },
     '/identity/:namespace/:identifier/accessors': {
@@ -323,12 +354,14 @@ export default {
           accessor_public_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
         },
-        required: [
-          'reference_id',
-          'accessor_type',
-          'accessor_public_key',
-          'accessor_id',
-        ],
+        required: ['reference_id', 'accessor_type', 'accessor_public_key'],
+      },
+    },
+    '/identity/:namespace/:identifier/endorsement': {
+      body: {
+        properties: {
+          // TODO: After v1.0
+        },
       },
     },
   },

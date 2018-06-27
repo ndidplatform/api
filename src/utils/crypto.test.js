@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import crypto from 'crypto';
 import * as cryptoUtils from './crypto';
 
@@ -6,9 +28,13 @@ const expect = chai.expect;
 
 describe('Test crypto functions', () => {
   it('should SHA-256 hash correctly', () => {
+    // action
     const hashed = cryptoUtils.hash('test');
+    // expect
+    // return type is string
     expect(hashed).to.be.a('string');
-    expect(hashed).to.have.lengthOf(64);
+    // return value is base64
+    expect(hashed).to.match(/[A-Za-z0-9+/=]/);
   });
 
   it('should encrypt with public key and decrypt with private key correctly', () => {

@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import fs from 'fs';
 import path from 'path';
 import { EventEmitter } from 'events';
@@ -18,9 +40,7 @@ const TEST_MESSAGE_BASE_64 = Buffer.from(TEST_MESSAGE).toString('base64');
 const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
-  __dirname,
-  '..',
-  '..',
+  config.dataDirectoryPath,
   'dpki-callback-url-' + config.nodeId
 );
 
@@ -121,7 +141,8 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
   if (signCallbackUrl) {
     try {
       if (public_key == null) {
-        public_key = (await tendermintNdid.getNodePubKey(config.nodeId)).public_key;
+        public_key = (await tendermintNdid.getNodePubKey(config.nodeId))
+          .public_key;
       }
       await testSignCallback(signCallbackUrl, public_key);
     } catch (error) {
@@ -149,7 +170,8 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
   if (decryptCallbackUrl) {
     try {
       if (public_key == null) {
-        public_key = (await tendermintNdid.getNodePubKey(config.nodeId)).public_key;
+        public_key = (await tendermintNdid.getNodePubKey(config.nodeId))
+          .public_key;
       }
       await testDecryptCallback(decryptCallbackUrl, public_key);
     } catch (error) {
@@ -174,13 +196,15 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
       }
     );
   }
-  checkAndEmitAllCallbacksSet()
+  checkAndEmitAllCallbacksSet();
 }
 
 export async function setMasterSignatureCallback(url) {
   if (url) {
     try {
-      const { master_public_key } = await tendermintNdid.getNodeMasterPubKey(config.nodeId);
+      const { master_public_key } = await tendermintNdid.getNodeMasterPubKey(
+        config.nodeId
+      );
       await testSignCallback(url, master_public_key);
     } catch (error) {
       throw new CustomError({
@@ -211,6 +235,10 @@ export async function decryptAsymetricKey(encryptedMessage) {
       code: errorType.EXTERNAL_DECRYPT_URL_NOT_SET.code,
     });
   }
+  logger.info({
+    message: 'Calling external decrypt with node key',
+    url,
+  });
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -224,7 +252,12 @@ export async function decryptAsymetricKey(encryptedMessage) {
         key_type: 'RSA',
       }),
     });
-    const decryptedMessageBase64 = (await response.json()).decrypted_message;
+    const result = await response.json();
+    logger.debug({
+      message: 'External decrypt with node key response body',
+      result,
+    });
+    const decryptedMessageBase64 = result.decrypted_message;
     return Buffer.from(decryptedMessageBase64, 'base64');
   } catch (error) {
     // TODO: retry
@@ -253,6 +286,10 @@ export async function createSignature(message, messageHash, useMasterKey) {
       });
     }
   }
+  logger.info({
+    message: 'Calling external sign with node key',
+    url,
+  });
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -269,7 +306,12 @@ export async function createSignature(message, messageHash, useMasterKey) {
         sign_method: 'RSA-SHA256',
       }),
     });
-    return (await response.json()).signature;
+    const result = await response.json();
+    logger.debug({
+      message: 'External sign with node key response body',
+      result,
+    });
+    return result.signature;
   } catch (error) {
     // TODO: retry
     logger.error({

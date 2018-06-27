@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import express from 'express';
 
 import { validateBody } from './middleware/validation';
@@ -10,7 +32,7 @@ router.post('/service/:service_id', validateBody, async (req, res, next) => {
     const { service_id } = req.params;
     const { min_ial, min_aal, url } = req.body;
 
-    await as.registerAsService({
+    await as.upsertAsService({
       service_id,
       min_aal,
       min_ial,
@@ -39,21 +61,25 @@ router.get('/service/:service_id', async (req, res, next) => {
   }
 });
 
-router.post('/data/:request_id/:service_id', validateBody, async (req, res, next) => {
-  try {
-    const { request_id, service_id } = req.params;
-    const { data } = req.body;
+router.post(
+  '/data/:request_id/:service_id',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { request_id, service_id } = req.params;
+      const { data } = req.body;
 
-    as.processDataForRP(data, {
-      requestId: request_id,
-      serviceId: service_id,
-    });
+      as.processDataForRP(data, {
+        requestId: request_id,
+        serviceId: service_id,
+      });
 
-    res.status(204).end();
-  } catch (error) {
-    next(error);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 router.get('/callback', async (req, res, next) => {
   try {

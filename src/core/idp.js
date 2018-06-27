@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
@@ -19,10 +41,8 @@ import * as identity from './identity';
 const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
-  __dirname,
-  '..',
-  '..',
-  'idp-callback-url-' + config.nodeId,
+  config.dataDirectoryPath,
+  'idp-callback-url-' + config.nodeId
 );
 
 [
@@ -93,14 +113,15 @@ export function isAccessorSignUrlSet() {
   return callbackUrls.accessor_sign_url != null;
 }
 
-export async function accessorSign(sid ,hash_id, accessor_id) {
+export async function accessorSign(sid, hash_id, accessor_id, reference_id) {
   const data = {
     sid_hash: hash_id,
     sid,
     hash_method: 'SHA256',
     key_type: 'RSA',
     sign_method: 'RSA',
-    accessor_id
+    accessor_id,
+    reference_id,
   };
 
   if (callbackUrls.accessor_sign_url == null) {
@@ -137,7 +158,7 @@ export async function accessorSign(sid ,hash_id, accessor_id) {
         callbackUrl: callbackUrls.accessor_sign_url,
         accessor_id,
         hash_id,
-      }
+      },
     });
   }
 }
@@ -146,12 +167,12 @@ async function requestChallenge(request_id, accessor_id) {
   //query public key from accessor_id
   let public_key = await tendermintNdid.getAccessorKey(accessor_id);
   //gen public proof
-  let [ k1, publicProof1 ] = utils.generatePublicProof(public_key);
-  let [ k2, publicProof2 ] = utils.generatePublicProof(public_key);
+  let [k1, publicProof1] = utils.generatePublicProof(public_key);
+  let [k2, publicProof2] = utils.generatePublicProof(public_key);
 
   //save k to request
   let request = await db.getRequestReceivedFromMQ(request_id);
-  request.k = [ k1, k2 ];
+  request.k = [k1, k2];
   logger.debug({
     message: 'Save K to request',
     request,
@@ -160,17 +181,19 @@ async function requestChallenge(request_id, accessor_id) {
   //declare public proof to blockchain
   let { height } = await tendermintNdid.declareIdentityProof({
     request_id,
-    identity_proof: JSON.stringify([ publicProof1, publicProof2 ]),
+    identity_proof: JSON.stringify([publicProof1, publicProof2]),
   });
   //send message queue with public proof
   let { ip, port } = await tendermintNdid.getMsqAddress(request.rp_id);
-  let receiver = [{
-    ip,
-    port,
-    ...(await tendermintNdid.getNodePubKey(request.rp_id)),
-  }];
-  mq.send(receiver,{
-    public_proof: [ publicProof1, publicProof2 ],
+  let receiver = [
+    {
+      ip,
+      port,
+      ...(await tendermintNdid.getNodePubKey(request.rp_id)),
+    },
+  ];
+  mq.send(receiver, {
+    public_proof: [publicProof1, publicProof2],
     request_id: request_id,
     idp_id: config.nodeId,
     type: 'request_challenge',
@@ -180,25 +203,18 @@ async function requestChallenge(request_id, accessor_id) {
 
 export async function requestChallengeAndCreateResponse(data) {
   //store response data
-  const request = await tendermintNdid.getRequest({ requestId: data.request_id });
-  if(request.mode === 3) {
+  const request = await tendermintNdid.getRequest({
+    requestId: data.request_id,
+  });
+  if (request.mode === 3) {
     await db.setResponseFromRequestId(data.request_id, data);
     requestChallenge(data.request_id, data.accessor_id);
-  }
-  else if(request.mode === 1) createIdpResponse(data);
+  } else if (request.mode === 1) createIdpResponse(data);
 }
 
 async function createIdpResponse(data) {
   try {
-    let {
-      request_id,
-      aal,
-      ial,
-      status,
-      signature,
-      accessor_id,
-      secret,
-    } = data;
+    let { request_id, aal, ial, status, signature, accessor_id, secret } = data;
 
     const request = await tendermintNdid.getRequest({ requestId: request_id });
     if (request == null) {
@@ -229,7 +245,9 @@ async function createIdpResponse(data) {
         });
       }
 
-      const accessorPublicKey = await tendermintNdid.getAccessorKey(accessor_id);
+      const accessorPublicKey = await tendermintNdid.getAccessorKey(
+        accessor_id
+      );
       if (accessorPublicKey == null) {
         throw new CustomError({
           message: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.message,
@@ -245,7 +263,9 @@ async function createIdpResponse(data) {
     let dataToBlockchain, privateProofObject;
 
     if (mode === 3) {
-      let blockchainProofArray = [], privateProofValueArray = [], samePadding;
+      let blockchainProofArray = [],
+        privateProofValueArray = [],
+        samePadding;
       let requestFromMq = await db.getRequestReceivedFromMQ(request_id);
 
       logger.debug({
@@ -253,8 +273,12 @@ async function createIdpResponse(data) {
         requestFromMq,
       });
 
-      for(let i = 0 ; i < requestFromMq.challenge.length ; i++) {
-        let { blockchainProof, privateProofValue, padding } = utils.generateIdentityProof({
+      for (let i = 0; i < requestFromMq.challenge.length; i++) {
+        let {
+          blockchainProof,
+          privateProofValue,
+          padding,
+        } = utils.generateIdentityProof({
           publicKey: await tendermintNdid.getAccessorKey(accessor_id),
           challenge: requestFromMq.challenge[i],
           k: requestFromMq.k[i],
@@ -264,7 +288,7 @@ async function createIdpResponse(data) {
         privateProofValueArray.push(privateProofValue);
         samePadding = padding;
       }
-    
+
       privateProofObject = {
         privateProofValueArray,
         accessor_id,
@@ -293,9 +317,9 @@ async function createIdpResponse(data) {
 
     await Promise.all([
       db.removeRequestReceivedFromMQ(request_id),
-      db.removeResponseFromRequestId(request_id)
+      db.removeResponseFromRequestId(request_id),
     ]);
-    
+
     const { height } = await tendermintNdid.createIdpResponse(dataToBlockchain);
 
     sendPrivateProofToRP(request_id, privateProofObject, height);
@@ -365,7 +389,7 @@ export function notifyAddAccessorResultByCallback(eventDataForCallback) {
 
 async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   //mode 1
-  if(!privateProofObject) privateProofObject = {};
+  if (!privateProofObject) privateProofObject = {};
   let rp_id = await db.getRPIdFromRequestId(request_id);
 
   logger.info({
@@ -403,7 +427,7 @@ export async function handleMessageFromQueue(messageStr) {
   });
   const message = JSON.parse(messageStr);
   //if message is challenge for response, no need to wait for blockchain
-  if(message.challenge) {
+  if (message.challenge) {
     //store challenge
     let request = await db.getRequestReceivedFromMQ(message.request_id);
     request.challenge = message.challenge;
@@ -422,7 +446,13 @@ export async function handleMessageFromQueue(messageStr) {
     createIdpResponse(data);
     return;
   }
-  await db.setRequestReceivedFromMQ(message.request_id, message);
+
+  //when idp add new accessor, they may request challenge from themself
+  //this is to prevent overwrite data (k, public)
+  if (message.type !== 'request_challenge') {
+    await db.setRequestReceivedFromMQ(message.request_id, message);
+  }
+  await db.setRequestToProcessReceivedFromMQ(message.request_id, message);
 
   const latestBlockHeight = tendermint.latestBlockHeight;
   if (latestBlockHeight <= message.height) {
@@ -431,13 +461,15 @@ export async function handleMessageFromQueue(messageStr) {
       tendermintLatestBlockHeight: latestBlockHeight,
       messageBlockHeight: message.height,
     });
-    await db.addRequestIdExpectedInBlock(
-      message.height,
-      message.request_id
-    );
+    await db.addRequestIdExpectedInBlock(message.height, message.request_id);
     await db.setRPIdFromRequestId(message.request_id, message.rp_id);
 
-    if(message.accessor_id) {
+    if (message.type === 'request_challenge') {
+      const responseId = message.request_id + ':' + message.idp_id;
+      await db.setPublicProofReceivedFromMQ(responseId, message.public_proof);
+    }
+
+    if (message.accessor_id) {
       //====================== COPY-PASTE from RP, need refactoring =====================
       //store private parameter from EACH idp to request, to pass along to as
       let request = await db.getRequestData(message.request_id);
@@ -470,25 +502,28 @@ export async function handleMessageFromQueue(messageStr) {
     }
     return;
   }
+  await db.removeRequestToProcessReceivedFromMQ(message.request_id, message);
 
   logger.debug({
     message: 'Processing request',
     requestId: message.request_id,
   });
   //onboard response
-  if(message.accessor_id) {
-    if(await checkOnboardResponse(message)) {
-      let { secret, associated } = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
+  if (message.accessor_id) {
+    if (await checkOnboardResponse(message)) {
+      let { secret, associated } = await identity.addAccessorAfterConsent(
+        message.request_id,
+        message.accessor_id
+      );
       let notifyData = {
         request_id: message.request_id,
         success: true,
         secret,
       };
-      if(associated) notifyAddAccessorResultByCallback(notifyData);
+      if (associated) notifyAddAccessorResultByCallback(notifyData);
       else notifyCreateIdentityResultByCallback(notifyData);
     }
-  }
-  else if(message.type === 'request_challenge') {
+  } else if (message.type === 'request_challenge') {
     const responseId = message.request_id + ':' + message.idp_id;
     common.handleChallengeRequest(responseId);
   }
@@ -552,25 +587,27 @@ export async function handleTendermintNewBlockHeaderEvent(
         message: 'Processing request',
         requestId,
       });
-      const message = await db.getRequestReceivedFromMQ(requestId);
+      const message = await db.getRequestToProcessReceivedFromMQ(requestId);
+      await db.removeRequestToProcessReceivedFromMQ(requestId);
       //reponse for onboard
-      if(message.accessor_id) {
-        if(await checkOnboardResponse(message)) {
-          let { secret, associated } = await identity.addAccessorAfterConsent(message.request_id, message.accessor_id);
+      if (message.accessor_id) {
+        if (await checkOnboardResponse(message)) {
+          let { secret, associated } = await identity.addAccessorAfterConsent(
+            message.request_id,
+            message.accessor_id
+          );
           let notifyData = {
             request_id: message.request_id,
             success: true,
             secret,
           };
-          if(associated) notifyAddAccessorResultByCallback(notifyData);
+          if (associated) notifyAddAccessorResultByCallback(notifyData);
           else notifyCreateIdentityResultByCallback(notifyData);
         }
-      }
-      else if(message.type === 'request_challenge') {
+      } else if (message.type === 'request_challenge') {
         const responseId = message.request_id + ':' + message.idp_id;
         common.handleChallengeRequest(responseId);
-      }
-      else {
+      } else {
         const valid = await common.checkRequestIntegrity(
           message.request_id,
           message
@@ -599,18 +636,24 @@ export async function handleTendermintNewBlockHeaderEvent(
 async function checkOnboardResponse(message) {
   let reason = false;
   let requestDetail = await tendermintNdid.getRequestDetail({
-    requestId: message.request_id
+    requestId: message.request_id,
   });
   let response = requestDetail.response_list[0];
-  
-  if(!(await common.verifyZKProof(message.request_id, message.idp_id, message))) {
+
+  if (
+    !(await common.verifyZKProof(
+      message.request_id,
+      message.idp_id,
+      message,
+      3
+    ))
+  ) {
     reason = 'Invalid response';
-  }
-  else if(response.status !== 'accept') {
+  } else if (response.status !== 'accept') {
     reason = 'User rejected';
   }
 
-  if(reason) {
+  if (reason) {
     notifyAddAccessorResultByCallback({
       request_id: message.request_id,
       success: false,

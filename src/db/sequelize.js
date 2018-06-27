@@ -1,12 +1,32 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import path from 'path';
 import Sequelize from 'sequelize';
 
 import * as config from '../config';
 
 const dbPath = path.join(
-  __dirname,
-  '..',
-  '..',
+  config.dataDirectoryPath,
   `db-api-${config.nodeId}.sqlite`
 );
 
@@ -23,10 +43,20 @@ const Entities = {
     requestId: Sequelize.STRING,
     expectedBlockHeight: Sequelize.INTEGER,
   }),
-  expectedIdpResponseNodeId: sequelize.define('expectedIdpResponseNodeId', {
-    idpNodeId: Sequelize.STRING,
-    expectedBlockHeight: Sequelize.INTEGER,
-  }),
+  expectedIdpResponseNodeIdInBlock: sequelize.define(
+    'expectedIdpResponseNodeIdInBlock',
+    {
+      responseMetadata: Sequelize.JSON,
+      expectedBlockHeight: Sequelize.INTEGER,
+    }
+  ),
+  requestToProcessReceivedFromMQ: sequelize.define(
+    'requestToProcessReceivedFromMQ',
+    {
+      requestId: { type: Sequelize.STRING, primaryKey: true },
+      request: Sequelize.JSON,
+    }
+  ),
   requestReceivedFromMQ: sequelize.define('requestReceivedFromMQ', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     request: Sequelize.JSON,
@@ -52,10 +82,13 @@ const Entities = {
     referenceId: { type: Sequelize.TEXT, primaryKey: true },
     requestId: { type: Sequelize.STRING, unique: true },
   }),
-  onboardDataReferenceIdMapping: sequelize.define('onboardDataReferenceIdMapping', {
-    referenceId: { type: Sequelize.TEXT, primaryKey: true },
-    onboardData: { type: Sequelize.JSON, },
-  }),
+  onboardDataReferenceIdMapping: sequelize.define(
+    'onboardDataReferenceIdMapping',
+    {
+      referenceId: { type: Sequelize.TEXT, primaryKey: true },
+      onboardData: { type: Sequelize.JSON },
+    }
+  ),
   requestData: sequelize.define('requestData', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     request: Sequelize.JSON,
@@ -87,6 +120,10 @@ const Entities = {
   idpResponseValid: sequelize.define('idpResponseValid', {
     requestId: Sequelize.STRING,
     validInfo: Sequelize.JSON,
+  }),
+  expectedDataSignInBlock: sequelize.define('expectedDataSignInBlock', {
+    expectedBlockHeight: Sequelize.INTEGER,
+    metadata: Sequelize.JSON,
   }),
 };
 
