@@ -1,0 +1,93 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/node:8
+      - image: ndidplatform/tendermint:latest
+        environment:
+          TM_RPC_PORT: 45000
+        command:
+          - genesis
+          - --p2p.laddr=tcp://0.0.0.0:47000
+          - --rpc.laddr=tcp://0.0.0.0:45000
+          - --proxy_app=tcp://localhost:46000
+      - image: ndidplatform/abci:latest
+        command: ["tcp://0.0.0.0:46000"]
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+      - run:
+          name: Install node modules
+          command: |
+            npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+      - run:
+          name: Set up Development Key
+          command: |
+            TENDERMINT_IP=localhost \
+            TENDERMINT_PORT=45000 \
+            NODE_ID=ndid1 \
+            npm run initDevKey
+
+      - run:
+          name: Start service
+          command: |
+            MQ_CONTACT_IP=localhost \
+            MQ_BINDING_PORT=5555 \
+            ROLE=ndid \
+            NODE_ID=ndid1 \
+            npm start
+          background: true
+      - run:
+          name: Start sample testing
+          command: |
+            sleep 10
+            curl -v http://localhost:8080/utility/namespaces
+            curl -v http://localhost:8080/utility/idp
+            curl -v http://localhost:8080/utility/services
+  push_to_docker_hub:
+    docker:
+      - image: circleci/node:carbon
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build docker images
+          command: |
+            cd docker
+            REPO_NAME=${REPO_NAME:-$DOCKER_USER}
+            DOCKER_TAG=${DOCKER_TAG:-latest}
+            ./build.sh
+      - run:
+          name: Push to docker hub
+          command: |
+            if [ ! "$DOCKER_USER"  -o  ! "$DOCKER_PASS"  ]
+            then
+              echo "Missing required environment variables"
+              echo "- DOCKER_USER"
+              echo "- DOCKER_PASS"
+              exit 1
+            fi
+            REPO_NAME=${REPO_NAME:-$DOCKER_USER}
+            DOCKER_TAG=${DOCKER_TAG:-latest}
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker push $REPO_NAME/api:$DOCKER_TAG
+
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - build
+      - push_to_docker_hub:
+          filters:
+            branches:
+              only: master
+          requires:
+            - build
