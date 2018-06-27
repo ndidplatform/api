@@ -207,7 +207,7 @@ export async function requestChallengeAndCreateResponse(data) {
   if(request.mode === 3) {
     try {
       await db.setResponseFromRequestId(data.request_id, data);
-      requestChallenge(data.request_id, data.accessor_id);
+      await requestChallenge(data.request_id, data.accessor_id);
     } catch(error) {
       callbackToClient(data.callback_url, {
         type: 'response_result',
@@ -215,6 +215,7 @@ export async function requestChallengeAndCreateResponse(data) {
         request_id: data.request_id,
         error,
       } ,true);
+      db.removeResponseFromRequestId(data.request_id);
     }
   }
   else if(request.mode === 1) createIdpResponse(data);
@@ -341,6 +342,7 @@ async function createIdpResponse(data) {
       success: true,
       request_id,
     } ,true);
+    db.removeResponseFromRequestId(request_id);
 
   } catch (error) {
     const err = new CustomError({
@@ -355,6 +357,7 @@ async function createIdpResponse(data) {
       request_id: data.request_id,
       error,
     } ,true);
+    db.removeResponseFromRequestId(data.request_id);
 
     //throw err;
   }
@@ -479,6 +482,7 @@ export async function handleMessageFromQueue(messageStr) {
         request_id: data.request_id,
         error,
       } ,true);
+      db.removeResponseFromRequestId(data.request_id);
     }
     return;
   }
