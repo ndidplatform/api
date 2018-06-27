@@ -390,14 +390,17 @@ export async function upsertAsService({ service_id, min_ial, min_aal, url }) {
 
 export async function getServiceDetail(service_id) {
   try {
-    const result = await tendermintNdid.getServiceDetail(service_id);
-    return result
-      ? {
-          service_id,
-          url: await db.getServiceCallbackUrl(service_id),
-          ...result,
-        }
-      : null;
+    //const result = await tendermintNdid.getServiceDetail(service_id);
+    const result = await tendermintNdid.getAsNodesByServiceId({ service_id });
+    if(!result) return null;
+    let myServiceDetail = result.filter((elem) => {
+      return elem.id === config.nodeId;
+    })[0];
+    return {
+      url: await db.getServiceCallbackUrl(service_id),
+      min_ial: myServiceDetail.min_ial,
+      min_aal: myServiceDetail.min_aal,
+    };
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get service details',
