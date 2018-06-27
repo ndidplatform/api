@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/ndidplatform/api.svg?style=svg)](https://circleci.com/gh/ndidplatform/api)
+
 # NDID API (Node.js)
 
 ## Prerequisites
