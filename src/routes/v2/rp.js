@@ -62,7 +62,7 @@ router.post(
         request_timeout,
       });
 
-      res.status(200).json({ request_id: requestId });
+      res.status(202).json({ request_id: requestId });
     } catch (error) {
       next(error);
     }

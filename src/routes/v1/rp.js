@@ -47,20 +47,23 @@ router.post(
         request_timeout,
       } = req.body;
 
-      const requestId = await common.createRequest({
-        mode,
-        namespace,
-        identifier,
-        reference_id,
-        idp_id_list,
-        callback_url,
-        data_request_list,
-        request_message,
-        min_ial,
-        min_aal,
-        min_idp,
-        request_timeout,
-      });
+      const requestId = await common.createRequest(
+        {
+          mode,
+          namespace,
+          identifier,
+          reference_id,
+          idp_id_list,
+          callback_url,
+          data_request_list,
+          request_message,
+          min_ial,
+          min_aal,
+          min_idp,
+          request_timeout,
+        },
+        true
+      );
 
       res.status(200).json({ request_id: requestId });
     } catch (error) {
