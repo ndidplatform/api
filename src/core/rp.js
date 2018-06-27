@@ -126,6 +126,7 @@ async function notifyRequestUpdate(requestId, height) {
   }
 
   const savedResponseValidList = await db.getIdpResponseValidList(requestId);
+  let responseValidList;
 
   if (needResponseVerification) {
     // Validate ZK Proof and IAL
@@ -138,30 +139,39 @@ async function notifyRequestUpdate(requestId, height) {
 
     if (idpNodeIds.length === 0) return;
 
-    await Promise.all(
+    const responseValids = await Promise.all(
       idpNodeIds.map((idpNodeId) =>
-        checkIdpResponseAndNotify({
+        checkIdpResponse({
           requestStatus,
           height,
           idpId: idpNodeId,
-          callbackUrl,
           responseIal: requestDetail.response_list.find(
             (response) => response.idp_id === idpNodeId
           ).ial,
-          savedResponseValidList,
         })
       )
     );
-    return;
+
+    responseValidList = savedResponseValidList.concat(responseValids);
+  } else {
+    responseValidList = savedResponseValidList;
   }
 
   const eventDataForCallback = {
     type: 'request_status',
     ...requestStatus,
-    response_valid_list: savedResponseValidList,
+    response_valid_list: responseValidList,
   };
 
   await callbackToClient(callbackUrl, eventDataForCallback, true);
+
+  if (shouldSendRequestDataToAS({ requestStatus, responseValidList })) {
+    const requestData = await db.getRequestData(requestId);
+    if (requestData != null) {
+      await sendRequestToAS(requestData, height);
+    }
+    db.removeChallengeFromRequestId(requestId);
+  }
 
   if (
     requestStatus.status === 'confirmed' &&
@@ -195,13 +205,11 @@ async function notifyRequestUpdate(requestId, height) {
   }
 }
 
-async function checkIdpResponseAndNotify({
+async function checkIdpResponse({
   requestStatus,
   height,
   idpId,
-  callbackUrl,
   responseIal,
-  savedResponseValidList,
   requestDataFromMq,
 }) {
   logger.debug({
@@ -209,9 +217,7 @@ async function checkIdpResponseAndNotify({
     requestStatus,
     height,
     idpId,
-    callbackUrl,
     responseIal,
-    savedResponseValidList,
     requestDataFromMq,
   });
 
@@ -261,30 +267,9 @@ async function checkIdpResponseAndNotify({
 
   await db.addIdpResponseValidList(requestId, responseValid);
 
-  const responseValidList = savedResponseValidList.concat([responseValid]);
-
-  // Send request to AS onlt when all IdP responses' proof and IAL are valid
-  if (
-    requestStatus.status === 'confirmed' &&
-    requestStatus.answered_idp_count === requestStatus.min_idp &&
-    isAllIdpResponsesValid(responseValidList)
-  ) {
-    const requestData = await db.getRequestData(requestStatus.request_id);
-    if (requestData != null) {
-      await sendRequestToAS(requestData, height);
-    }
-    db.removeChallengeFromRequestId(requestStatus.request_id);
-  }
-
-  const eventDataForCallback = {
-    type: 'request_status',
-    ...requestStatus,
-    response_valid_list: responseValidList,
-  };
-
-  await callbackToClient(callbackUrl, eventDataForCallback, true);
-
   db.removeProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
+
+  return responseValid;
 }
 
 function isAllIdpResponsesValid(responseValidList) {
@@ -295,6 +280,24 @@ function isAllIdpResponsesValid(responseValidList) {
     }
   }
   return true;
+}
+
+function shouldSendRequestDataToAS({ requestStatus, responseValidList }) {
+  if (requestStatus.status !== 'confirmed') return false;
+  if (requestStatus.answered_idp_count !== requestStatus.min_idp) return false;
+  if (requestStatus.closed === true || requestStatus.timed_out === true)
+    return false;
+  const asAnswerCount = requestStatus.service_list.reduce(
+    (total, service) => total + service.signed_data_count,
+    0
+  );
+  if (asAnswerCount === 0) {
+    // Send request to AS only when all IdP responses' proof and IAL are valid
+    if (isAllIdpResponsesValid(responseValidList)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export async function handleTendermintNewBlockHeaderEvent(
@@ -551,17 +554,33 @@ export async function handleMessageFromQueue(messageStr) {
       message.request_id
     );
 
-    await checkIdpResponseAndNotify({
+    const responseValid = await checkIdpResponse({
       requestStatus,
       height: latestBlockHeight,
       idpId: message.idp_id,
-      callbackUrl,
       requestDataFromMq: message,
       responseIal: requestDetail.response_list.find(
         (response) => response.idp_id === message.idp_id
       ).ial,
-      savedResponseValidList,
     });
+
+    const responseValidList = savedResponseValidList.concat([responseValid]);
+
+    const eventDataForCallback = {
+      type: 'request_status',
+      ...requestStatus,
+      response_valid_list: responseValidList,
+    };
+
+    await callbackToClient(callbackUrl, eventDataForCallback, true);
+
+    if (shouldSendRequestDataToAS({ requestStatus, responseValidList })) {
+      const requestData = await db.getRequestData(message.request_id);
+      if (requestData != null) {
+        await sendRequestToAS(requestData, message.height);
+      }
+      db.removeChallengeFromRequestId(message.request_id);
+    }
   } else if (message.as_id != null) {
     // Receive data from AS
     try {
