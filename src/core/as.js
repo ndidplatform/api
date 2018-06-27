@@ -394,7 +394,7 @@ export async function getServiceDetail(service_id) {
     const result = await tendermintNdid.getAsNodesByServiceId({ service_id });
     if(!result) return null;
     let myServiceDetail = result.filter((elem) => {
-      return elem.id === config.nodeId;
+      return elem.node_id === config.nodeId;
     })[0];
     return {
       url: await db.getServiceCallbackUrl(service_id),
