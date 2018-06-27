@@ -8,8 +8,8 @@ import * as utils from '../utils';
 import CustomError from '../error/customError';
 import * as tendermint from '../tendermint/ndid';
 
-import MQSend from './mqsend.js';
-import MQRecv from './mqrecv.js';
+import MQSend from './mqsendcontroller.js';
+import MQRecv from './mqrecvcontroller.js';
 
 const mqSend = new MQSend({});
 const mqRecv = new MQRecv({port: config.mqRegister.port});

@@ -7,10 +7,8 @@ let zmq = require("zeromq")
 let MQSend = require('./mqsendcontroller.js');
 let MQRecv = require('./mqrecvcontroller.js');
 
-describe('Unit Test sending', function () {
-});
 
-describe('Functional Test with real sockets', function () {
+describe('Functional Test for MQ Sender with real sockets', function () {
   let portIdx = 5555;
   let getPort = function(numports) {
      let ret = [];

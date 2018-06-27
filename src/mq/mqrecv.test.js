@@ -9,7 +9,7 @@ let MQRecv = require('../mq/mqrecvcontroller.js');
 let MQSend = require('../mq/mqsendcontroller.js');
 
 
-describe('Test MQ receiver', function () {
+describe('Functional Test for MQ receiver with real socket', function () {
   let portIdx = 5655;
   let getPort = function(numports) {
      let ret = [];
@@ -54,10 +54,10 @@ describe('Test MQ receiver', function () {
 
         this.timeout(10000);
         let mqRecvSmallSize = new MQRecv({port: ports[0], maxMsgSize:10});
-        mqRecvSmallSize.on('message', async function(jsonMessageStr) {
+        mqRecvSmallSize.on('message', function(jsonMessageStr) {
             assert.fail('there should not be message coming through')
          });
-        mqRecvSmallSize.on('error', async function(jsonMessageStr) {
+        mqRecvSmallSize.on('error', function(jsonMessageStr) {
             assert.fail('there should be no error at receiving part');
         });
 
@@ -66,7 +66,7 @@ describe('Test MQ receiver', function () {
            done();
        });
 
-     mqNode.send({ip:"127.0.0.1", port:ports[0]}, "testbigbig12345678901234567890" );
+       mqNode.send({ip:"127.0.0.1", port:ports[0]}, "testbigbig12345678901234567890" );
   });
 
 });

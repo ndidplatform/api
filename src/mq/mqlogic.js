@@ -4,7 +4,6 @@ let EventEmitter = require('events').EventEmitter;
 
 
 let MQLogic = function(config) {
-  let self = this;
   const totalTimeout = config.totalTimeout || 120000;
   this.timeout = config.timeout || 30000;
   this.maxRetries = totalTimeout / this.timeout;
@@ -45,7 +44,6 @@ MQLogic.prototype.AckReceived = function ( msgId ){
     this._cleanUp(msgId);
 }
 
-// maginfo receiver msg, msg id, request id, seocket retrycount
 MQLogic.prototype._retry = function ( dest, payload, msgId, seqId, retryCount ) {
   if (this.seqMap.has(seqId)) {
     if (retryCount >= this.maxRetries) {
