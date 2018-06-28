@@ -1,8 +1,30 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import logger from '../logger';
 
 import * as utils from '../utils';
 import * as config from '../config';
-import * as tendermint from '../tendermint/ndid';
+import * as tendermint from '../tendermint';
 
 let init = false;
 
@@ -71,14 +93,14 @@ export async function reduceNodeToken(data) {
 }
 
 export async function registerNode(data) {
-  const { 
-    node_id, 
-    public_key, 
-    role, 
-    max_ial, 
-    max_aal, 
-    node_name, 
-    master_public_key 
+  const {
+    node_id,
+    public_key,
+    role,
+    max_ial,
+    max_aal,
+    node_name,
+    master_public_key,
   } = data;
 
   data.role = data.role.toUpperCase();
@@ -134,11 +156,37 @@ export async function addService({ service_id, service_name }) {
   }
 }
 
+export async function updateService({ service_id, service_name }) {
+  try {
+    await tendermint.transact(
+      'UpdateService',
+      { service_id, service_name },
+      utils.getNonce()
+    );
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
 export async function deleteService({ service_id }) {
   try {
     await tendermint.transact(
       'DeleteService',
       { service_id },
+      utils.getNonce()
+    );
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function setValidator({ public_key, power }) {
+  try {
+    await tendermint.transact(
+      'SetValidator',
+      { public_key, power },
       utils.getNonce()
     );
   } catch (error) {

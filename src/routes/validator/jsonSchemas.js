@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 export default {
   defsSchema: {
     definitions: {
@@ -11,19 +33,14 @@ export default {
         type: 'string',
         enum: ['1', '2.1', '2.2', '3'],
       },
+      url: {
+        type: 'string',
+        format: 'uri',
+        pattern: '^(https?)://',
+      },
     },
   },
   GET: {
-    '/identity/:namespace/:identifier/requests/history': {
-      query: {
-        properties: {
-          count: {
-            type: 'string',
-            pattern: '^\\d*[1-9]\\d*$', // number (int) > 0
-          },
-        },
-      },
-    },
     '/utility/idp': {
       query: {
         properties: {
@@ -61,7 +78,8 @@ export default {
       body: {
         properties: {
           reference_id: { type: 'string', minLength: 1 },
-          idp_list: {
+          mode: { type: 'number', enum: [1, 3] },
+          idp_id_list: {
             type: 'array',
             items: {
               type: 'string',
@@ -69,9 +87,7 @@ export default {
             },
           },
           callback_url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
+            $ref: 'defs#/definitions/url',
           },
           data_request_list: {
             type: 'array',
@@ -89,15 +105,15 @@ export default {
                     minimum: 1,
                   },
                 },
-                count: {
+                min_as: {
                   type: 'integer',
                   minimum: 1,
                 },
                 request_params: {
-                  type: 'object',
+                  type: 'string',
                 },
               },
-              required: ['service_id'],
+              required: ['service_id', 'min_as'],
             },
           },
           request_message: { type: 'string' },
@@ -108,6 +124,7 @@ export default {
         },
         required: [
           'reference_id',
+          'mode',
           'callback_url',
           'request_message',
           'min_ial',
@@ -125,36 +142,45 @@ export default {
         required: ['request_id'],
       },
     },
+    '/identity/requests/close': {
+      body: {
+        properties: {
+          request_id: { type: 'string', minLength: 1 },
+        },
+        required: ['request_id'],
+      },
+    },
+    '/rp/callback': {
+      body: {
+        properties: {
+          error_url: {
+            $ref: 'defs#/definitions/url',
+          },
+        },
+      },
+    },
     '/idp/callback': {
       body: {
         properties: {
-          url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
+          incoming_request_url: {
+            $ref: 'defs#/definitions/url',
+          },
+          identity_result_url: {
+            $ref: 'defs#/definitions/url',
+          },
+          accessor_sign_url: {
+            $ref: 'defs#/definitions/url',
+          },
+          error_url: {
+            $ref: 'defs#/definitions/url',
           },
         },
-        required: ['url'],
-      },
-    },
-    '/idp/accessor/callback': {
-      body: {
-        properties: {
-          url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
-          },
-        },
-        required: ['url'],
       },
     },
     '/idp/response': {
       body: {
         properties: {
           request_id: { type: 'string', minimum: 1 },
-          namespace: { type: 'string', minLength: 1 },
-          identifier: { type: 'string', minLength: 1 },
           ial: { $ref: 'defs#/definitions/ial' },
           aal: { $ref: 'defs#/definitions/aal' },
           secret: { type: 'string' },
@@ -167,14 +193,12 @@ export default {
         },
         required: [
           'request_id',
-          // 'namespace',
-          // 'identifier',
           'ial',
           'aal',
-          'secret',
+          // 'secret', Not required in mode 1
           'status',
           'signature',
-          'accessor_id',
+          // 'accessor_id', Not required in mode 1
         ],
       },
     },
@@ -184,12 +208,27 @@ export default {
           min_ial: { $ref: 'defs#/definitions/ial' },
           min_aal: { $ref: 'defs#/definitions/aal' },
           url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
+            $ref: 'defs#/definitions/url',
           },
         },
-        required: ['min_ial', 'min_aal', 'url'],
+        required: [],
+      },
+    },
+    '/as/data/:request_id/:service_id': {
+      body: {
+        properties: {
+          data: { type: 'string', minLength: 1 },
+        },
+        required: ['data'],
+      },
+    },
+    '/as/callback': {
+      body: {
+        properties: {
+          error_url: {
+            $ref: 'defs#/definitions/url',
+          },
+        },
       },
     },
     '/dpki/node/create': {
@@ -238,14 +277,10 @@ export default {
       body: {
         properties: {
           sign_url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
+            $ref: 'defs#/definitions/url',
           },
           decrypt_url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
+            $ref: 'defs#/definitions/url',
           },
         },
         anyOf: [
@@ -262,9 +297,7 @@ export default {
       body: {
         properties: {
           url: {
-            type: 'string',
-            format: 'uri',
-            pattern: '^(https?)://',
+            $ref: 'defs#/definitions/url',
           },
         },
         required: ['url'],
@@ -287,7 +320,7 @@ export default {
           'identifier',
           'accessor_type',
           'accessor_public_key',
-          'accessor_id',
+          //'accessor_id',
           'ial',
         ],
       },
@@ -305,11 +338,12 @@ export default {
         },
       },
     },
-    '/identity/:namespace/:identifier/endorsement': {
+    '/identity/:namespace/:identifier/ial': {
       body: {
         properties: {
-          // TODO: After v1.0
+          ial: { $ref: 'defs#/definitions/ial' },
         },
+        required: ['ial'],
       },
     },
     '/identity/:namespace/:identifier/accessors': {
@@ -320,12 +354,14 @@ export default {
           accessor_public_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
         },
-        required: [
-          'reference_id',
-          'accessor_type',
-          'accessor_public_key',
-          'accessor_id',
-        ],
+        required: ['reference_id', 'accessor_type', 'accessor_public_key'],
+      },
+    },
+    '/identity/:namespace/:identifier/endorsement': {
+      body: {
+        properties: {
+          // TODO: After v1.0
+        },
       },
     },
   },

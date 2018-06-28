@@ -9,6 +9,7 @@ let MQLogic = function(config) {
   this.maxRetries = totalTimeout / this.timeout;
   this.maxSeqId = 0;
   this.maxMsgId = 0;
+  this.id = config.id || '';
   this.seqMap = new Map();
 };
 
@@ -37,7 +38,7 @@ MQLogic.prototype._performSend = function (dest, payload, msgId, retryCount=0) {
                  dest, payload, msgId, seqId, ++retryCount);
   this.seqMap.set(seqId, { seqId:seqId, msgId:msgId, timerId:timerId });
 
-  this.emit('PerformSend', {dest:dest, payload:payload, msgId:msgId, seqId:seqId} );
+  this.emit('PerformSend', {id: this.id, dest:dest, payload:payload, msgId:msgId, seqId:seqId} );
 }
 
 MQLogic.prototype.AckReceived = function ( msgId ){
@@ -48,7 +49,7 @@ MQLogic.prototype._retry = function ( dest, payload, msgId, seqId, retryCount ) 
   if (this.seqMap.has(seqId)) {
     if (retryCount >= this.maxRetries) {
       this._cleanUp(msgId);
-      this.emit('PerformTotalTimeout', {msgId:msgId});
+      this.emit('PerformTotalTimeout', {id: this.id, msgId:msgId});
     }
     else {
       this._performSend( dest, payload, msgId, retryCount );

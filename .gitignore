@@ -1,10 +1,4 @@
-idp-callback-url*
-dpki-callback-url*
-as-callback-url
-
-latest-block-height-*
-
-/db-api-*
+/data
 
 # production
 /build

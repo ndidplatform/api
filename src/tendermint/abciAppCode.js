@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import errorType from '../error/type';
 
 // Response codes from ABCI app
@@ -37,43 +59,59 @@ import errorType from '../error/type';
 // AsIDIsNotExistInASList   uint32 = 33
 // ServiceIDNotFound        uint32 = 34
 // InvalidMode              uint32 = 35
+// HashIDNotFound                  uint32 = 36
+// DuplicateIdentityProof          uint32 = 37
+// WrongIdentityProof              uint32 = 38
+// DuplicateASInDataRequest        uint32 = 39
+// DuplicateAnsweredAsIDList       uint32 = 40
+// DuplicateServiceIDInDataRequest uint32 = 41
+// ServiceDestinationNotFound      uint32 = 42
+// DataRequestIsCompleted          uint32 = 43
 
 const codeMapping = {
-  1: errorType.ENCODING_ERROR, // Not used in API (calls from API won't generate this error)
-  2: errorType.DECODING_ERROR, // Cannot base64 decode transaction
-  3: errorType.BAD_NONCE,
-  4: errorType.UNAUTHORIZED,
-  5: errorType.UNMARSHAL_ERROR,
-  6: errorType.MARSHAL_ERROR,
-  7: errorType.REQUEST_ID_NOT_FOUND,
-  8: errorType.REQUEST_IS_CLOSED,
-  9: errorType.REQUEST_IS_TIMED_OUT,
-  10: errorType.REQUEST_IS_COMPLETED,
-  11: errorType.DUPLICATE_SERVICE_ID,
-  12: errorType.TOKEN_ACCOUNT_NOT_FOUND, // Node ID not found
-  13: errorType.NOT_ENOUGH_TOKEN,
-  14: errorType.WRONG_TRANSACTION_FORMAT,
-  15: errorType.METHOD_CAN_NOT_BE_EMPTY,
-  16: errorType.DUPLICATE_RESPONSE,
-  17: errorType.AAL_ERROR,
-  18: errorType.IAL_ERROR,
-  19: errorType.DUPLICATE_NODE_ID,
-  20: errorType.WRONG_ROLE,
-  21: errorType.DUPLICATE_NAMESPACE,
-  22: errorType.NAMESPACE_NOT_FOUND,
-  23: errorType.DUPLICATE_REQUEST_ID,
-  24: errorType.NODE_ID_NOT_FOUND,
-  25: errorType.DUPLICATE_PUBLIC_KEY,
-  26: errorType.DUPLICATE_ACCESSOR_ID,
-  27: errorType.DUPLICATE_ACCESSOR_GROUP_ID,
-  28: errorType.ACCESSOR_GROUP_ID_NOT_FOUND,
-  29: errorType.REQUEST_IS_NOT_COMPLETED,
-  30: errorType.REQUEST_IS_NOT_SPECIAL,
-  31: errorType.INVALID_MIN_IDP,
-  32: errorType.NODE_ID_DOES_NOT_EXIST_IN_AS_LIST,
-  33: errorType.AS_ID_DOES_NOT_EXIST_IN_AS_LIST,
-  34: errorType.SERVICE_ID_NOT_FOUND,
-  35: errorType.INVALID_MODE,
+  1: errorType.ABCI_ENCODING_ERROR, // Not used in API (calls from API won't generate this error)
+  2: errorType.ABCI_DECODING_ERROR, // Cannot base64 decode transaction
+  3: errorType.ABCI_BAD_NONCE,
+  4: errorType.ABCI_UNAUTHORIZED,
+  5: errorType.ABCI_UNMARSHAL_ERROR,
+  6: errorType.ABCI_MARSHAL_ERROR,
+  7: errorType.ABCI_REQUEST_ID_NOT_FOUND,
+  8: errorType.ABCI_REQUEST_IS_CLOSED,
+  9: errorType.ABCI_REQUEST_IS_TIMED_OUT,
+  10: errorType.ABCI_REQUEST_IS_COMPLETED,
+  11: errorType.ABCI_DUPLICATE_SERVICE_ID,
+  12: errorType.ABCI_TOKEN_ACCOUNT_NOT_FOUND, // Node ID not found
+  13: errorType.ABCI_NOT_ENOUGH_TOKEN,
+  14: errorType.ABCI_WRONG_TRANSACTION_FORMAT,
+  15: errorType.ABCI_METHOD_CAN_NOT_BE_EMPTY,
+  16: errorType.ABCI_DUPLICATE_RESPONSE,
+  17: errorType.ABCI_AAL_ERROR,
+  18: errorType.ABCI_IAL_ERROR,
+  19: errorType.ABCI_DUPLICATE_NODE_ID,
+  20: errorType.ABCI_WRONG_ROLE,
+  21: errorType.ABCI_DUPLICATE_NAMESPACE,
+  22: errorType.ABCI_NAMESPACE_NOT_FOUND,
+  23: errorType.ABCI_DUPLICATE_REQUEST_ID,
+  24: errorType.ABCI_NODE_ID_NOT_FOUND,
+  25: errorType.ABCI_DUPLICATE_PUBLIC_KEY,
+  26: errorType.ABCI_DUPLICATE_ACCESSOR_ID,
+  27: errorType.ABCI_DUPLICATE_ACCESSOR_GROUP_ID,
+  28: errorType.ABCI_ACCESSOR_GROUP_ID_NOT_FOUND,
+  29: errorType.ABCI_REQUEST_IS_NOT_COMPLETED,
+  30: errorType.ABCI_REQUEST_IS_NOT_SPECIAL,
+  31: errorType.ABCI_INVALID_MIN_IDP,
+  32: errorType.ABCI_NODE_ID_DOES_NOT_EXIST_IN_AS_LIST,
+  33: errorType.ABCI_AS_ID_DOES_NOT_EXIST_IN_AS_LIST,
+  34: errorType.ABCI_SERVICE_ID_NOT_FOUND,
+  35: errorType.ABCI_INVALID_MODE,
+  36: errorType.ABCI_HASH_ID_NOT_FOUND,
+  37: errorType.ABCI_DUPLICATE_IDENTITY_PROOF,
+  38: errorType.ABCI_WRONG_IDENTITY_PROOF,
+  39: errorType.ABCI_DUPLICATE_AS_IN_DATA_REQUEST,
+  40: errorType.ABCI_DUPLICATE_ANSWERED_AS_ID,
+  41: errorType.ABCI_DUPLICATE_SERVICE_ID_IN_DATA_REQUEST,
+  42: errorType.ABCI_SERVICE_DESTINATION_NOT_FOUND,
+  43: errorType.ABCI_DATA_REQUEST_IS_COMPLETED,
 };
 
 export function convertAbciAppCodeToErrorType(abciAppCode) {

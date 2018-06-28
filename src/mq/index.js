@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import EventEmitter from 'events';
 import zmq from 'zeromq';
 import logger from '../logger';
@@ -6,7 +28,7 @@ import * as config from '../config';
 import * as utils from '../utils';
 
 import CustomError from '../error/customError';
-import * as tendermint from '../tendermint/ndid';
+import * as tendermintNdid from '../tendermint/ndid';
 
 import MQSend from './mqsendcontroller.js';
 import MQRecv from './mqrecvcontroller.js';
@@ -28,7 +50,7 @@ mqRecv.on('message', async function(jsonMessageStr) {
   });
 
   //verify digital signature
-  let [ raw_message, msqSignature ] = decrypted.split('|');
+  let [raw_message, msqSignature] = decrypted.split('|');
 
   logger.debug({
     message: 'Split msqSignature',
@@ -37,16 +59,17 @@ mqRecv.on('message', async function(jsonMessageStr) {
   });
 
   let { idp_id, rp_id, as_id } = JSON.parse(raw_message);
-  let nodeId = idp_id || rp_id || as_id ;
-  let { public_key } = await getNodePubKey(nodeId);
-  if(!nodeId) throw new CustomError({
-    message: 'Receive message from unknown node',
-  });
+  let nodeId = idp_id || rp_id || as_id;
+  let { public_key } = await tendermintNdid.getNodePubKey(nodeId);
+  if (!nodeId)
+    throw new CustomError({
+      message: 'Receive message from unknown node',
+    });
 
   let signatureValid = utils.verifySignature(
     msqSignature,
     public_key,
-    raw_message,
+    raw_message
   );
 
   logger.debug({
@@ -58,16 +81,15 @@ mqRecv.on('message', async function(jsonMessageStr) {
     signatureValid,
   });
 
-  if(signatureValid) {
+  if (signatureValid) {
     eventEmitter.emit('message', raw_message);
-  }
-  else throw new CustomError({
-    message: 'Receive message with unmatched digital signature',
-  });
+  } else
+    throw new CustomError({
+      message: 'Receive message with unmatched digital signature',
+    });
 });
 
 export const send = async (receivers, message) => {
-
   let msqSignature = await utils.createSignature(message);
   let realPayload = JSON.stringify(message) + '|' + msqSignature;
 
@@ -82,7 +104,7 @@ export const send = async (receivers, message) => {
 
     let encryptedMessage = utils.encryptAsymetricKey(
       receiver.public_key,
-      realPayload,
+      realPayload
     );
 
     mqSend.send(receiver, JSON.stringify(encryptedMessage));

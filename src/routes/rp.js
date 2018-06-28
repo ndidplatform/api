@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import express from 'express';
 
 import { validateBody } from './middleware/validation';
@@ -13,8 +35,9 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const {
+        mode,
         reference_id,
-        idp_list,
+        idp_id_list,
         callback_url,
         data_request_list,
         request_message,
@@ -22,14 +45,14 @@ router.post(
         min_aal,
         min_idp,
         request_timeout,
-        mode,
       } = req.body;
 
       const requestId = await common.createRequest({
+        mode,
         namespace,
         identifier,
         reference_id,
-        idp_list,
+        idp_id_list,
         callback_url,
         data_request_list,
         request_message,
@@ -37,7 +60,6 @@ router.post(
         min_aal,
         min_idp,
         request_timeout,
-        mode,
       });
 
       res.status(200).json({ request_id: requestId });
@@ -104,7 +126,35 @@ router.post('/requests/close', validateBody, async (req, res, next) => {
   try {
     const { request_id } = req.body;
 
-    await rp.closeRequest(request_id);
+    await common.closeRequest(request_id);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/callback', async (req, res, next) => {
+  try {
+    const urls = rp.getCallbackUrls();
+
+    if (Object.keys(urls).length > 0) {
+      res.status(200).json(urls);
+    } else {
+      res.status(404).end();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/callback', validateBody, async (req, res, next) => {
+  try {
+    const { error_url } = req.body;
+
+    rp.setCallbackUrls({
+      error_url,
+    });
+
     res.status(204).end();
   } catch (error) {
     next(error);

@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import * as db from './sequelize';
 
 import logger from '../logger';
@@ -12,6 +34,33 @@ export async function close() {
 //
 // Used by RP, IdP, and AS
 //
+
+export function getRequestData(requestId) {
+  return db.get({
+    name: 'requestData',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+  });
+}
+
+export function setRequestData(requestId, request) {
+  return db.set({
+    name: 'requestData',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+    value: request,
+  });
+}
+
+export function removeRequestData(requestId) {
+  return db.remove({
+    name: 'requestData',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
 
 export function addCallbackWithRetryData(cbId, data) {
   return db.pushToList({
@@ -83,28 +132,28 @@ export function removeRequestIdsExpectedInBlock(fromHeight, toHeight) {
   });
 }
 
-export function getExpectedIdpResponseNodeId(height) {
-  return db.get({
-    name: 'expectedIdpResponseNodeId',
+export function getExpectedIdpResponseNodeIdInBlockList(height) {
+  return db.getList({
+    name: 'expectedIdpResponseNodeIdInBlock',
     keyName: 'expectedBlockHeight',
     key: height,
-    valueName: 'idpNodeId',
+    valueName: 'responseMetadata',
   });
 }
 
-export function setExpectedIdpResponseNodeId(height, idpNodeId) {
-  return db.set({
-    name: 'expectedIdpResponseNodeId',
+export function addExpectedIdpResponseNodeIdInBlock(height, responseMetadata) {
+  return db.pushToList({
+    name: 'expectedIdpResponseNodeIdInBlock',
     keyName: 'expectedBlockHeight',
     key: height,
-    valueName: 'idpNodeId',
-    value: idpNodeId,
+    valueName: 'responseMetadata',
+    value: responseMetadata,
   });
 }
 
-export function removeExpectedIdpResponseNodeId(height) {
-  return db.remove({
-    name: 'expectedIdpResponseNodeId',
+export function removeExpectedIdpResponseNodeIdInBlockList(height) {
+  return db.removeList({
+    name: 'expectedIdpResponseNodeIdInBlock',
     keyName: 'expectedBlockHeight',
     key: height,
   });
@@ -132,6 +181,60 @@ export function setRequestReceivedFromMQ(requestId, request) {
 export function removeRequestReceivedFromMQ(requestId) {
   return db.remove({
     name: 'requestReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getRequestToProcessReceivedFromMQ(requestId) {
+  return db.get({
+    name: 'requestToProcessReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+  });
+}
+
+export function setRequestToProcessReceivedFromMQ(requestId, request) {
+  return db.set({
+    name: 'requestToProcessReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+    value: request,
+  });
+}
+
+export function removeRequestToProcessReceivedFromMQ(requestId) {
+  return db.remove({
+    name: 'requestToProcessReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getResponseFromRequestId(requestId) {
+  return db.get({
+    name: 'responseDataFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'response',
+  });
+}
+
+export function setResponseFromRequestId(requestId, response) {
+  return db.set({
+    name: 'responseDataFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'response',
+    value: response,
+  });
+}
+
+export function removeResponseFromRequestId(requestId) {
+  return db.remove({
+    name: 'responseDataFromRequestId',
     keyName: 'requestId',
     key: requestId,
   });
@@ -218,7 +321,7 @@ export function removeChallengeFromRequestId(requestId) {
   });
 }
 
-export function getProofReceivedFromMQ(responseId) {
+export function getPrivateProofReceivedFromMQ(responseId) {
   return db.get({
     name: 'proofReceivedFromMQ',
     keyName: 'responseId',
@@ -227,7 +330,7 @@ export function getProofReceivedFromMQ(responseId) {
   });
 }
 
-export function setProofReceivedFromMQ(responseId, privateProofObject) {
+export function setPrivateProofReceivedFromMQ(responseId, privateProofObject) {
   return db.set({
     name: 'proofReceivedFromMQ',
     keyName: 'responseId',
@@ -242,6 +345,25 @@ export function removeProofReceivedFromMQ(responseId) {
     name: 'proofReceivedFromMQ',
     keyName: 'responseId',
     key: responseId,
+  });
+}
+
+export function getPublicProofReceivedFromMQ(responseId) {
+  return db.get({
+    name: 'proofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'publicProofArray',
+  });
+}
+
+export function setPublicProofReceivedFromMQ(responseId, publicProofArray) {
+  return db.set({
+    name: 'proofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'publicProofArray',
+    value: publicProofArray,
   });
 }
 
@@ -276,36 +398,36 @@ export function removeRequestIdByReferenceId(referenceId) {
   });
 }
 
+export function getOnboardDataByReferenceId(referenceId) {
+  return db.get({
+    name: 'onboardDataReferenceIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'onboardData',
+  });
+}
+
+export function setOnboardDataByReferenceId(referenceId, onboardData) {
+  return db.set({
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'onboardData',
+    value: onboardData,
+  });
+}
+
+export function removeOnboardDataByReferenceId(referenceId) {
+  return db.remove({
+    name: 'onboardDataReferenceIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+  });
+}
+
 export function removeRequestIdReferenceIdMappingByRequestId(requestId) {
   return db.remove({
     name: 'requestIdReferenceIdMapping',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
-export function getRequestToSendToAS(requestId) {
-  return db.get({
-    name: 'requestToSendToAS',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'request',
-  });
-}
-
-export function setRequestToSendToAS(requestId, request) {
-  return db.set({
-    name: 'requestToSendToAS',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'request',
-    value: request,
-  });
-}
-
-export function removeRequestToSendToAS(requestId) {
-  return db.remove({
-    name: 'requestToSendToAS',
     keyName: 'requestId',
     key: requestId,
   });
@@ -417,5 +539,59 @@ export function removeTimeoutScheduler(requestId) {
     name: 'timeoutScheduler',
     keyName: 'requestId',
     key: requestId,
+  });
+}
+
+export function getIdpResponseValidList(requestId) {
+  return db.getList({
+    name: 'idpResponseValid',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'validInfo',
+  });
+}
+
+export function addIdpResponseValidList(requestId, validInfo) {
+  return db.pushToList({
+    name: 'idpResponseValid',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'validInfo',
+    value: validInfo,
+  });
+}
+
+export function removeIdpResponseValidList(requestId) {
+  return db.removeList({
+    name: 'idpResponseValid',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getExpectedDataSignInBlockList(height) {
+  return db.getList({
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'metadata',
+  });
+}
+
+export function addExpectedDataSignInBlock(height, metadata) {
+  return db.pushToList({
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'metadata',
+    value: metadata,
+  });
+}
+
+export function removeExpectedDataSignInBlockList(height) {
+  return db.removeList({
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
   });
 }

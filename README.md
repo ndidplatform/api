@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/ndidplatform/api.svg?style=svg)](https://circleci.com/gh/ndidplatform/api)
+
 # NDID API (Node.js)
 
 ## Prerequisites
@@ -40,13 +42,21 @@
 - `MQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted [Required]
 - `MQ_BINDING_PORT`: A port to bind message queue [Default: `5555`]
 - `SERVER_PORT`: API server port [Default: `8080`]
-- `PRIVATE_KEY_PATH`: Path to private key (if call back to create signature is not set) [Default: using pre-generated development key]
-- `MASTER_PRIVATE_KEY_PATH`: Path to master private key (if call back to create signature is not set) [Default: using pre-generated development key]
+- `PRIVATE_KEY_PATH`: Path to node's private key (if call back to create signature is not set) [Default: using pre-generated development key]
+- `PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key
+- `MASTER_PRIVATE_KEY_PATH`: Path to node's master private key (if call back to create signature is not set) [Default: using pre-generated development key]
+- `MASTER_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's master private key
 - `NODE_ID`: Node ID. Only when there are more than one node per role in the system. This ID tie to public key, in dev mode we have `rp1`, `rp2`, `rp3`, `idp1`, `idp2`, `idp3`, `as1`, `as2`, `as3` [Required]
+- `DATA_DIRECTORY_PATH`: Directory path for persistence data files [Default: `__dirname/../data` (`data` directory in repository's directory)]
 - `LOG_DIRECTORY_PATH`: Directory path for log files (only in `production` environment) [Default: `__dirname` (code's directory)]
 - `CLIENT_HTTP_ERROR_CODE`: HTTP error code when responding a client error [Default: `400`]
 - `SERVER_HTTP_ERROR_CODE`: HTTP error code when responding a server error [Default: `500`]
 - `USE_EXTERNAL_CRYPTO_SERVICE`: Use external service for decrypting and signing (e.g. HSM) [Default: `false`]
+- `HTTPS`: Use HTTPS server [Default: `false`]
+- `HTTPS_KEY_PATH`: HTTPS private key file path. Required when HTTPS=true [Default: pre-generated development key]
+- `HTTPS_CERT_PATH`: HTTPS certificate file path. Required when HTTPS=true [Default: pre-generated development cert]
+- `CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH`: Request message template in mustache format filepath to use in consent request when creating identity [Default: `../request_message_templates/create_identity.mustache`] [Required in production]
+- `ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH`: Request message template in mustache format filepath to use in consent request when adding new accessor [Default: `../request_message_templates/add_accessor.mustache`] [Required in production]
 
 **_Examples_**
 

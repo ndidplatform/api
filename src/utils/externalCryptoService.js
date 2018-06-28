@@ -1,10 +1,33 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import fs from 'fs';
 import path from 'path';
+import { EventEmitter } from 'events';
 
 import fetch from 'node-fetch';
 
 import { hash, publicEncrypt, verifySignature } from './crypto';
-import * as tendermint from '../tendermint/ndid';
+import * as tendermintNdid from '../tendermint/ndid';
 import CustomError from '../error/customError';
 import errorType from '../error/type';
 import logger from '../logger';
@@ -14,57 +37,38 @@ import * as config from '../config';
 const TEST_MESSAGE = 'test';
 const TEST_MESSAGE_BASE_64 = Buffer.from(TEST_MESSAGE).toString('base64');
 
-const callbackUrl = {};
+const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
-  __dirname,
-  '..',
-  '..',
+  config.dataDirectoryPath,
   'dpki-callback-url-' + config.nodeId
 );
 
-['signature', 'masterSignature', 'decrypt'].forEach((key) => {
+export const eventEmitter = new EventEmitter();
+
+[
+  { key: 'sign_url', fileSuffix: 'signature' },
+  { key: 'master_sign_url', fileSuffix: 'masterSignature' },
+  { key: 'decrypt_url', fileSuffix: 'decrypt' },
+].forEach(({ key, fileSuffix }) => {
   try {
-    callbackUrl[key] = fs.readFileSync(
-      callbackUrlFilesPrefix + '-' + key,
+    callbackUrls[key] = fs.readFileSync(
+      callbackUrlFilesPrefix + '-' + fileSuffix,
       'utf8'
     );
   } catch (error) {
     if (error.code === 'ENOENT') {
       logger.warn({
-        message: 'DPKI ' + key + ' callback url file not found',
+        message: `DPKI: ${fileSuffix} callback url file not found`,
       });
     } else {
       logger.error({
-        message: 'Cannot read DPKI ' + key + ' callback url file(s)',
+        message: `Cannot read DPKI: ${fileSuffix} callback url file`,
         error,
       });
     }
   }
 });
-
-// FIXME: Refactor
-async function getNodePubKey(node_id) {
-  try {
-    return await tendermint.query('GetNodePublicKey', { node_id });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get node public key from blockchain',
-      cause: error,
-    });
-  }
-}
-
-async function getNodeMasterPubKey(node_id) {
-  try {
-    return await tendermint.query('GetNodeMasterPublicKey', { node_id });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get node master public key from blockchain',
-      cause: error,
-    });
-  }
-}
 
 async function testSignCallback(url, publicKey) {
   const response = await fetch(url, {
@@ -113,12 +117,22 @@ async function testDecryptCallback(url, publicKey) {
   }
 }
 
+export function getCallbackUrls() {
+  return callbackUrls;
+}
+
 export function isCallbackUrlsSet() {
   return (
-    callbackUrl.signature != null &&
-    callbackUrl.masterSignature != null &&
-    callbackUrl.decrypt != null
+    callbackUrls.sign_url != null &&
+    callbackUrls.master_sign_url != null &&
+    callbackUrls.decrypt_url != null
   );
+}
+
+function checkAndEmitAllCallbacksSet() {
+  if (isCallbackUrlsSet()) {
+    eventEmitter.emit('allCallbacksSet');
+  }
 }
 
 export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
@@ -127,7 +141,8 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
   if (signCallbackUrl) {
     try {
       if (public_key == null) {
-        public_key = (await getNodePubKey(config.nodeId)).public_key;
+        public_key = (await tendermintNdid.getNodePubKey(config.nodeId))
+          .public_key;
       }
       await testSignCallback(signCallbackUrl, public_key);
     } catch (error) {
@@ -138,7 +153,7 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
       });
     }
 
-    callbackUrl.signature = signCallbackUrl;
+    callbackUrls.sign_url = signCallbackUrl;
     fs.writeFile(
       callbackUrlFilesPrefix + '-signature',
       signCallbackUrl,
@@ -155,7 +170,8 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
   if (decryptCallbackUrl) {
     try {
       if (public_key == null) {
-        public_key = (await getNodePubKey(config.nodeId)).public_key;
+        public_key = (await tendermintNdid.getNodePubKey(config.nodeId))
+          .public_key;
       }
       await testDecryptCallback(decryptCallbackUrl, public_key);
     } catch (error) {
@@ -166,7 +182,7 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
       });
     }
 
-    callbackUrl.decrypt = decryptCallbackUrl;
+    callbackUrls.decrypt_url = decryptCallbackUrl;
     fs.writeFile(
       callbackUrlFilesPrefix + '-decrypt',
       decryptCallbackUrl,
@@ -180,12 +196,15 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
       }
     );
   }
+  checkAndEmitAllCallbacksSet();
 }
 
 export async function setMasterSignatureCallback(url) {
   if (url) {
     try {
-      const { master_public_key } = await getNodeMasterPubKey(config.nodeId);
+      const { master_public_key } = await tendermintNdid.getNodeMasterPubKey(
+        config.nodeId
+      );
       await testSignCallback(url, master_public_key);
     } catch (error) {
       throw new CustomError({
@@ -195,7 +214,7 @@ export async function setMasterSignatureCallback(url) {
       });
     }
 
-    callbackUrl.masterSignature = url;
+    callbackUrls.master_sign_url = url;
     fs.writeFile(callbackUrlFilesPrefix + '-masterSignature', url, (err) => {
       if (err) {
         logger.error({
@@ -205,17 +224,23 @@ export async function setMasterSignatureCallback(url) {
       }
     });
   }
+  checkAndEmitAllCallbacksSet();
 }
 
 export async function decryptAsymetricKey(encryptedMessage) {
-  if (callbackUrl.decrypt == null) {
+  const url = callbackUrls.decrypt_url;
+  if (url == null) {
     throw new CustomError({
       message: errorType.EXTERNAL_DECRYPT_URL_NOT_SET.message,
       code: errorType.EXTERNAL_DECRYPT_URL_NOT_SET.code,
     });
   }
+  logger.info({
+    message: 'Calling external decrypt with node key',
+    url,
+  });
   try {
-    const response = await fetch(callbackUrl.decrypt, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -227,13 +252,18 @@ export async function decryptAsymetricKey(encryptedMessage) {
         key_type: 'RSA',
       }),
     });
-    const decryptedMessageBase64 = (await response.json()).decrypted_message;
+    const result = await response.json();
+    logger.debug({
+      message: 'External decrypt with node key response body',
+      result,
+    });
+    const decryptedMessageBase64 = result.decrypted_message;
     return Buffer.from(decryptedMessageBase64, 'base64');
   } catch (error) {
     // TODO: retry
     logger.error({
       message: 'Error calling external crypto service: decrypt',
-      callbackUrl: callbackUrl.decrypt,
+      callbackUrl: url,
     });
     throw error;
   }
@@ -241,8 +271,8 @@ export async function decryptAsymetricKey(encryptedMessage) {
 
 export async function createSignature(message, messageHash, useMasterKey) {
   const url = useMasterKey
-    ? callbackUrl.masterSignature
-    : callbackUrl.signature;
+    ? callbackUrls.master_sing_url
+    : callbackUrls.sign_url;
   if (url == null) {
     if (useMasterKey) {
       throw new CustomError({
@@ -256,6 +286,10 @@ export async function createSignature(message, messageHash, useMasterKey) {
       });
     }
   }
+  logger.info({
+    message: 'Calling external sign with node key',
+    url,
+  });
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -272,11 +306,17 @@ export async function createSignature(message, messageHash, useMasterKey) {
         sign_method: 'RSA-SHA256',
       }),
     });
-    return (await response.json()).signature;
+    const result = await response.json();
+    logger.debug({
+      message: 'External sign with node key response body',
+      result,
+    });
+    return result.signature;
   } catch (error) {
     // TODO: retry
     logger.error({
       message: 'Error calling external crypto service: sign',
+      useMasterKey,
       callbackUrl: url,
     });
     throw error;

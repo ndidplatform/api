@@ -1,9 +1,34 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import 'source-map-support/register';
 
+import fs from 'fs';
 import http from 'http';
+import https from 'https';
 import express from 'express';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
+import mkdirp from 'mkdirp';
 
 import './envVarValidate';
 
@@ -11,19 +36,14 @@ import logger from './logger';
 
 import routes from './routes';
 import { bodyParserErrorHandler } from './routes/middleware/errorHandler';
-import { init as idp_init } from './core/idp';
-import { init as as_init } from './core/as';
-import { init as rp_init } from './core/rp';
 import { clearAllScheduler } from './core/common';
 
 import { close as closeDB } from './db';
-import { tendermintWsClient } from './tendermint/ndid';
+import { tendermintWsClient } from './tendermint';
 import { close as closeMQ } from './mq';
 import { stopAllCallbackRetries } from './utils/callback';
 
 import * as config from './config';
-
-const env = process.env.NODE_ENV || 'development';
 
 process.on('unhandledRejection', function(reason, p) {
   logger.error({
@@ -33,11 +53,20 @@ process.on('unhandledRejection', function(reason, p) {
   });
 });
 
+const {
+  privateKeyPassphrase, // eslint-disable-line no-unused-vars
+  masterPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
+  ...configToLog
+} = config;
 logger.info({
   message: 'Starting server',
-  env,
-  config,
+  NODE_ENV: process.env.NODE_ENV,
+  config: configToLog,
 });
+
+// Make sure data and log directories exist
+mkdirp.sync(config.dataDirectoryPath);
+mkdirp.sync(config.logDirectoryPath);
 
 const app = express();
 
@@ -52,23 +81,23 @@ app.use(bodyParserErrorHandler);
 
 app.use(routes);
 
-const server = http.createServer(app);
+let server;
+if (config.https) {
+  const httpsOptions = {
+    key: fs.readFileSync(config.httpsKeyPath),
+    cert: fs.readFileSync(config.httpsCertPath),
+  };
+  server = https.createServer(httpsOptions, app);
+} else {
+  server = http.createServer(app);
+}
 server.listen(config.serverPort);
 
 logger.info({
-  message: `Server listening on port ${config.serverPort}`,
+  message: `${config.https ? 'HTTPS' : 'HTTP'} server listening on port ${
+    config.serverPort
+  }`,
 });
-
-// TO BE REMOVED
-// Not needed in production environment
-// It should be done in onboarding process
-if (config.role === 'idp') {
-  idp_init();
-} else if (config.role === 'as') {
-  as_init();
-} else if (config.role === 'rp') {
-  rp_init();
-}
 
 // Graceful Shutdown
 let shutDownCalledOnce = false;

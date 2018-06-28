@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import fetch from 'node-fetch';
 import { ExponentialBackoff } from 'simple-backoff';
 
@@ -29,18 +51,29 @@ async function callbackWithRetry(
   callbackUrl,
   body,
   cbId,
+  shouldRetry,
+  shouldRetryArguments = [],
   responseCallback,
   dataForResponseCallback
 ) {
   const backoff = new ExponentialBackoff({
-    min: 1000,
-    max: 60000,
+    min: 5000,
+    max: 180000,
     factor: 2,
     jitter: 0.2,
   });
 
   for (;;) {
     if (stopCallbackRetry) return;
+    logger.info({
+      message: 'Sending a callback with retry',
+      url: callbackUrl,
+      cbId,
+    });
+    logger.debug({
+      message: 'Callback data in body',
+      body,
+    });
     try {
       const response = await httpPost(callbackUrl, body);
       db.removeCallbackWithRetryData(cbId);
@@ -52,8 +85,21 @@ async function callbackWithRetry(
       const nextRetry = backoff.next();
 
       logger.error({
-        message: `Cannot send callback to client application. Retrying in ${nextRetry} milliseconds`,
+        message: 'Cannot send callback to client application',
         error,
+        cbId,
+      });
+
+      if (shouldRetry) {
+        if (!(await shouldRetry(...shouldRetryArguments))) {
+          db.removeCallbackWithRetryData(cbId);
+          return;
+        }
+      }
+
+      logger.info({
+        message: `Retrying callback in ${nextRetry} milliseconds`,
+        cbId,
       });
 
       const { promise: waitPromise, stopWaiting } = wait(nextRetry, true);
@@ -69,6 +115,8 @@ async function callbackWithRetry(
  * @param {string} callbackUrl
  * @param {Object} body
  * @param {boolean} retry
+ * @param {function} shouldRetry
+ * @param {Array} shouldRetryArguments
  * @param {function} responseCallback
  * @param {Object} dataForResponseCallback
  */
@@ -76,24 +124,44 @@ export async function callbackToClient(
   callbackUrl,
   body,
   retry,
+  shouldRetry,
+  shouldRetryArguments,
   responseCallback,
   dataForResponseCallback
 ) {
   if (retry) {
     const cbId = randomBase64Bytes(10);
+    logger.info({
+      message: 'Saving data for callback with retry',
+      url: callbackUrl,
+      cbId,
+    });
     await db.addCallbackWithRetryData(cbId, {
       callbackUrl,
       body,
+      shouldRetryFnExist: shouldRetry != null,
+      shouldRetryArguments,
+      responseCallbackFnExist: responseCallback != null,
       dataForResponseCallback,
     });
     callbackWithRetry(
       callbackUrl,
       body,
       cbId,
+      shouldRetry,
+      shouldRetryArguments,
       responseCallback,
       dataForResponseCallback
     );
   } else {
+    logger.info({
+      message: 'Sending a callback without retry',
+      url: callbackUrl,
+    });
+    logger.debug({
+      message: 'Callback data in body',
+      body,
+    });
     try {
       await httpPost(callbackUrl, body);
     } catch (error) {
@@ -110,14 +178,16 @@ export async function callbackToClient(
  * This function should be called only when server starts
  * @param {function} responseCallback
  */
-export async function resumeCallbackToClient(responseCallback) {
+export async function resumeCallbackToClient(shouldRetry, responseCallback) {
   const callbackDatum = await db.getAllCallbackWithRetryData();
   callbackDatum.forEach((callback) =>
     callbackWithRetry(
       callback.data.callbackUrl,
       callback.data.body,
       callback.cbId,
-      responseCallback,
+      callback.data.shouldRetryFnExist ? shouldRetry : null,
+      callback.data.shouldRetryArguments,
+      callback.data.responseCallbackFnExist ? responseCallback : null,
       callback.data.dataForResponseCallback
     )
   );

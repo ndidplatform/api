@@ -1,3 +1,25 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
 import express from 'express';
 
 import { validateBody } from './middleware/validation';
@@ -126,12 +148,41 @@ router.post('/services', async (req, res, next) => {
   }
 });
 
+router.post('/services/:service_id', async (req, res, next) => {
+  try {
+    const { service_name } = req.body;
+    const { service_id } = req.params;
+
+    await ndid.updateService({
+      service_id,
+      service_name,
+    });
+    res.status(201).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.delete('/services/:service_id', async (req, res, next) => {
   try {
     const { service_id } = req.params;
 
     await ndid.deleteService({
       service_id,
+    });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/validator', async (req, res, next) => {
+  try {
+    const { public_key, power } = req.body;
+
+    await ndid.setValidator({
+      public_key,
+      power,
     });
     res.status(204).end();
   } catch (error) {

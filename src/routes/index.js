@@ -1,3 +1,27 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
+import path from 'path';
+import fs from 'fs';
 import express from 'express';
 
 import errorType from '../error/type';
@@ -12,16 +36,16 @@ import identityRouter from './identity';
 import utilityRouter from './utility';
 import dpkiRouter from './dpki';
 import ndidRouter from './ndid';
-import * as tendermint from '../tendermint/ndid';
+import getInfo from './info';
+import * as tendermint from '../tendermint';
 
 import * as config from '../config';
 
 const router = express.Router();
-
-const env = process.env.NODE_ENV || 'development';
+const apiRouter = express.Router();
 
 // FOR DEBUG
-if (env === 'development') {
+if (config.env === 'development') {
   router.use((req, res, next) => {
     if (req.method === 'POST') {
       const { method, originalUrl, params, body } = req;
@@ -46,6 +70,18 @@ if (env === 'development') {
     next();
   });
 }
+
+router.get('/license', (req, res) => {
+  const licenseText = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'COPYING')
+  );
+  res.set('Content-Type', 'text/plain');
+  res.status(200).send(licenseText);
+});
+
+router.get('/source', (req, res) => {
+  res.status(200).send('https://github.com/ndidplatform/api');
+});
 
 router.use((req, res, next) => {
   // Reject all requests when tendermint is not yet ready.
@@ -74,17 +110,22 @@ router.use((req, res, next) => {
 });
 
 if (config.role === 'rp') {
-  router.use('/rp', rpRouter);
+  apiRouter.use('/rp', rpRouter);
 } else if (config.role === 'idp') {
-  router.use('/idp', idpRouter);
+  apiRouter.use('/idp', idpRouter);
 } else if (config.role === 'as') {
-  router.use('/as', asRouter);
+  apiRouter.use('/as', asRouter);
 } else if (config.role === 'ndid') {
-  router.use('/ndid', ndidRouter);
+  apiRouter.use('/ndid', ndidRouter);
 }
-router.use('/identity', identityRouter);
-router.use('/utility', utilityRouter);
-router.use('/dpki', dpkiRouter);
+apiRouter.use('/identity', identityRouter);
+apiRouter.use('/utility', utilityRouter);
+apiRouter.use('/dpki', dpkiRouter);
+
+router.use(apiRouter);
+router.use('/v1', apiRouter);
+
+router.get('/info', getInfo);
 
 router.use(errorHandler);
 
