@@ -131,3 +131,9 @@ export const addAccessorRequestMessageTemplateFilepath =
     'request_message_templates',
     'add_accessor.mustache'
   );
+
+// Callback retry timeout in seconds
+export const callbackRetryTimeout =
+  process.env.CALLBACK_RETRY_TIMEOUT == null
+    ? 600
+    : parseInt(process.env.CALLBACK_RETRY_TIMEOUT);
