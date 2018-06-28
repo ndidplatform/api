@@ -90,11 +90,12 @@ router.get('/requests/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    const request = await tendermintNdid.getRequestDetail({
+    const requestWithSpecialTag = await tendermintNdid.getRequestDetail({
       requestId: request_id,
     });
 
-    if (request != null) {
+    if (requestWithSpecialTag != null) {
+      const { special, ...request } = requestWithSpecialTag;
       res.status(200).json(request);
     } else {
       res.status(404).end();
