@@ -65,12 +65,18 @@ export function validateQuery(req, res, next) {
 
 export function validateBody(req, res, next) {
   let baseUrl = req.baseUrl;
-  if (baseUrl.indexOf('/v1') >= 0) {
+  const matchedPath = baseUrl.match(/^\/v([0-9]+)/);
+  let apiVersion;
+  if (matchedPath != null) {
     const splittedBaseUrl = baseUrl.split('/');
     splittedBaseUrl.splice(1, 1);
     baseUrl = splittedBaseUrl.join('/');
+    apiVersion = parseInt(matchedPath[1]);
+  } else {
+    apiVersion = 2;
   }
   const bodyValidationResult = validate({
+    apiVersion,
     method: req.method,
     path: `${baseUrl}${req.route.path}`,
     body: req.body,
