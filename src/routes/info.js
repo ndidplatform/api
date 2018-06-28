@@ -39,7 +39,7 @@ export default async function getInfo(req, res, next) {
     nodeId: config.nodeId,
     nodeName: nodeInfo != null ? nodeInfo.node_name : undefined,
     nodePublicKey: nodeInfo != null ? nodeInfo.public_key : undefined,
-    role: config.role,
+    role: nodeInfo != null ? nodeInfo.role : undefined,
     serverListenPort: config.serverPort,
     messageQueueIp: config.mqRegister.ip,
     messageQueuePort: config.mqRegister.port,

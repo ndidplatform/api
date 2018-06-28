@@ -235,6 +235,10 @@ export async function decryptAsymetricKey(encryptedMessage) {
       code: errorType.EXTERNAL_DECRYPT_URL_NOT_SET.code,
     });
   }
+  logger.info({
+    message: 'Calling external decrypt with node key',
+    url,
+  });
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -248,7 +252,12 @@ export async function decryptAsymetricKey(encryptedMessage) {
         key_type: 'RSA',
       }),
     });
-    const decryptedMessageBase64 = (await response.json()).decrypted_message;
+    const result = await response.json();
+    logger.debug({
+      message: 'External decrypt with node key response body',
+      result,
+    });
+    const decryptedMessageBase64 = result.decrypted_message;
     return Buffer.from(decryptedMessageBase64, 'base64');
   } catch (error) {
     // TODO: retry
@@ -277,6 +286,10 @@ export async function createSignature(message, messageHash, useMasterKey) {
       });
     }
   }
+  logger.info({
+    message: 'Calling external sign with node key',
+    url,
+  });
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -293,7 +306,12 @@ export async function createSignature(message, messageHash, useMasterKey) {
         sign_method: 'RSA-SHA256',
       }),
     });
-    return (await response.json()).signature;
+    const result = await response.json();
+    logger.debug({
+      message: 'External sign with node key response body',
+      result,
+    });
+    return result.signature;
   } catch (error) {
     // TODO: retry
     logger.error({
