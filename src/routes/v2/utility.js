@@ -67,17 +67,20 @@ router.get(
 router.get('/as/:service_id', async (req, res, next) => {
   try {
     const { service_id } = req.params;
-    let asNodes = await tendermintNdid.getAsNodesByServiceId({
+    const asNodes = await tendermintNdid.getAsNodesByServiceId({
       service_id,
     });
-    if(asNodes.length === 0) {
-      let allServiceList = await tendermintNdid.getServiceList();
-      if(allServiceList.indexOf(service_id) === -1) {
+    if (asNodes.length === 0) {
+      const services = await tendermintNdid.getServiceList();
+      const service = services.find(
+        (service) => service.service_id === service_id
+      );
+      if (service == null) {
         res.status(404).end();
         return;
       }
     }
-    else res.status(200).json(asNodes);
+    res.status(200).json(asNodes);
   } catch (error) {
     next(error);
   }
