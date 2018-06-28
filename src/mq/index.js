@@ -21,7 +21,6 @@
  */
 
 import EventEmitter from 'events';
-import zmq from 'zeromq';
 import logger from '../logger';
 
 import * as config from '../config';
@@ -33,8 +32,8 @@ import * as tendermintNdid from '../tendermint/ndid';
 import MQSend from './mqsendcontroller.js';
 import MQRecv from './mqrecvcontroller.js';
 
-const mqSend = new MQSend({});
-const mqRecv = new MQRecv({port: config.mqRegister.port});
+const mqSend = new MQSend({timeout:60000, totalTimeout:500000});
+const mqRecv = new MQRecv({port: config.mqRegister.port, maxMsgSize:2000000});
 
 export const eventEmitter = new EventEmitter();
 
@@ -116,16 +115,4 @@ export function close() {
   logger.info({
     message: 'Message queue socket closed',
   });
-}
-
-//cannot use common.js because circular dependency
-async function getNodePubKey(node_id) {
-  try {
-    return await tendermint.query('GetNodePublicKey', { node_id });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get node public key from blockchain',
-      cause: error,
-    });
-  }
 }

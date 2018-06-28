@@ -5,8 +5,8 @@ chai.use(chaiHttp);
 
 var mq = require('./index.js');
 
-
-describe('Test mq usage', function () {
+//TODO: get the test done here
+describe.skip('Test mq usage', function () {
 
   before(function() {
 
@@ -30,4 +30,5 @@ describe('Test mq usage', function () {
 
 
 });
+
 */
