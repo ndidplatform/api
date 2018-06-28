@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/ndidplatform/api.svg?style=svg)](https://circleci.com/gh/ndidplatform/api)
+
 # NDID API (Node.js)
 
 ## Prerequisites
@@ -55,6 +57,7 @@
 - `HTTPS_CERT_PATH`: HTTPS certificate file path. Required when HTTPS=true [Default: pre-generated development cert]
 - `CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH`: Request message template in mustache format filepath to use in consent request when creating identity [Default: `../request_message_templates/create_identity.mustache`] [Required in production]
 - `ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH`: Request message template in mustache format filepath to use in consent request when adding new accessor [Default: `../request_message_templates/add_accessor.mustache`] [Required in production]
+- `CALLBACK_RETRY_TIMEOUT`: Callback retry timeout in seconds. Only applies to some callbacks (that do not have shouldRetry function check e.g. request status update callback to RP client) [Default: `600`]
 
 **_Examples_**
 
