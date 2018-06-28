@@ -72,12 +72,15 @@ router.get('/as/:service_id', async (req, res, next) => {
     });
     if(asNodes.length === 0) {
       let allServiceList = await tendermintNdid.getServiceList();
-      if(allServiceList.indexOf(service_id) === -1) {
+      let filterServiceList = allServiceList.filter((elem) => {
+        return elem.service_id === service_id;
+      });
+      if(filterServiceList.length === 0) {
         res.status(404).end();
         return;
       }
     }
-    else res.status(200).json(asNodes);
+    res.status(200).json(asNodes);
   } catch (error) {
     next(error);
   }
