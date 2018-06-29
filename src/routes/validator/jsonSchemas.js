@@ -190,6 +190,7 @@ export default {
           },
           signature: { type: 'string' },
           accessor_id: { type: 'string' },
+          callback_url: { $ref: 'defs#/definitions/url' },
         },
         required: [
           'request_id',
@@ -199,6 +200,7 @@ export default {
           'status',
           'signature',
           // 'accessor_id', Not required in mode 1
+          'callback_url',
         ],
       },
     },

@@ -146,7 +146,7 @@ export default {
   },
   REQUEST_NOT_FOUND: {
     code: 20012,
-    message: 'Request with the input request ID could not be found',
+    message: 'Request ID could not be found',
     clientError: true,
   },
   INVALID_NAMESPACE: {
