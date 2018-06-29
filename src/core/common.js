@@ -33,6 +33,7 @@ import { resumeCallbackToClient, callbackToClient } from '../utils/callback';
 import * as utils from '../utils';
 import * as config from '../config';
 import errorType from '../error/type';
+import { getErrorObjectForClient } from '../error/helpers';
 import * as mq from '../mq';
 import * as db from '../db';
 import * as externalCryptoService from '../utils/externalCryptoService';
@@ -521,12 +522,16 @@ async function createRequestInternalAsync(
     await db.removeRequestCallbackUrl(request_id);
 
     if (!synchronous) {
-      await callbackToClient(callback_url, {
-        success: false,
-        reference_id,
-        request_id,
-        error, // FIXME: error object format
-      });
+      await callbackToClient(
+        callback_url,
+        {
+          success: false,
+          reference_id,
+          request_id,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
     }
 
     throw error;
