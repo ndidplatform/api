@@ -35,6 +35,9 @@ import * as common from './common';
 import * as db from '../db';
 import * as utils from '../utils';
 
+const successBase64 = Buffer.from('success').toString('base64');
+const trueBase64 = Buffer.from('true').toString('base64');
+
 const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
@@ -316,10 +319,24 @@ export async function handleTendermintNewBlockHeaderEvent(
     toHeight,
   });
 
-  const blocks = await tendermint.getBlocks(fromHeight, toHeight);
+  const [blocks, blockResults] = await Promise.all([
+    tendermint.getBlocks(fromHeight, toHeight),
+    tendermint.getBlockResults(fromHeight, toHeight),
+  ]);
   await Promise.all(
-    blocks.map(async (block) => {
-      const transactions = tendermint.getTransactionListFromBlockQuery(block);
+    blocks.map(async (block, blockIndex) => {
+      let transactions = tendermint.getTransactionListFromBlockQuery(block);
+      transactions = transactions.filter((transaction, index) => {
+        const deliverTxResult =
+          blockResults[blockIndex].results.DeliverTx[index];
+        const successTag = deliverTxResult.tags.find(
+          (tag) => tag.key === successBase64
+        );
+        if (successTag) {
+          return successTag.value === trueBase64;
+        }
+        return false;
+      });
       await Promise.all(
         transactions.map(async (transaction) => {
           // TODO: clear key with smart-contract, eg. request_id or requestId
