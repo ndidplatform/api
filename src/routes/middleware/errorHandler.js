@@ -22,61 +22,40 @@
 
 import logger from '../../logger';
 import errorType from '../../error/type';
+import { getErrorObjectForClient } from '../../error/helpers';
 import { env, clientHttpErrorCode, serverHttpErrorCode } from '../../config';
 
 export default function errorHandler(err, req, res, next) {
   if (res.headersSent) {
     return next(err);
   }
-  let errorMessage;
-  let errorCode;
+
   let clientError;
   let unauthorizedError;
-
   if (err.name === 'CustomError') {
-    errorMessage = err.getMessageWithCode();
-    errorCode = err.getCode();
     clientError = err.isRootCauseClientError();
-    if (errorCode === errorType.ABCI_UNAUTHORIZED.code) {
+    if (err.getCode() === errorType.ABCI_UNAUTHORIZED.code) {
       unauthorizedError = true;
     }
-  } else {
-    errorMessage = err.message;
-    errorCode = err.code != null ? err.code : undefined;
   }
 
+  const responseBody = {
+    error: getErrorObjectForClient(err),
+  };
+
   if (unauthorizedError) {
-    const responseBody = {
-      error: {
-        code: errorCode,
-        message: errorMessage,
-      },
-    };
     res.status(403).json(responseBody);
     logger.error({
       message: 'Responded Unauthorized with HTTP code 403',
       responseBody,
     });
   } else if (clientError === true) {
-    const responseBody = {
-      error: {
-        code: errorCode,
-        message: errorMessage,
-      },
-    };
     res.status(clientHttpErrorCode).json(responseBody);
     logger.error({
       message: `Responded Bad Request with HTTP code ${clientHttpErrorCode}`,
       responseBody,
     });
   } else {
-    const responseBody = {
-      error: {
-        code: errorCode,
-        message: errorMessage,
-        stack: env === 'development' ? err.stack : undefined,
-      },
-    };
     res.status(serverHttpErrorCode).json(responseBody);
     logger.error({
       message: `Responded Internal Server Error with HTTP code ${serverHttpErrorCode}`,
