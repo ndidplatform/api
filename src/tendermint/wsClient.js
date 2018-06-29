@@ -151,21 +151,8 @@ export default class TendermintWsClient extends EventEmitter {
     return this._call('block', [height]);
   }
 
-  /**
-   *
-   * @param {number} fromHeight
-   * @param {number} toHeight
-   * @returns {Promise<Object[]>}
-   */
-  async getBlocks(fromHeight, toHeight) {
-    const heights = Array.from(
-      { length: toHeight - fromHeight + 1 },
-      (v, i) => i + fromHeight
-    );
-    const blocks = await Promise.all(
-      heights.map((height) => this.getBlock(height))
-    );
-    return blocks;
+  getBlockResults(height) {
+    return this._call('block_results', [height]);
   }
 
   // NOT WORKING - Can't figure out params format. No docs on tendermint.

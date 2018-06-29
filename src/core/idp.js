@@ -524,6 +524,7 @@ export async function handleMessageFromQueue(messageStr) {
   //this is to prevent overwrite data (k, public)
   if (message.type !== 'request_challenge') {
     await db.setRequestReceivedFromMQ(message.request_id, message);
+    await db.setRPIdFromRequestId(message.request_id, message.rp_id);
   }
   await db.setRequestToProcessReceivedFromMQ(message.request_id, message);
 
@@ -535,7 +536,6 @@ export async function handleMessageFromQueue(messageStr) {
       messageBlockHeight: message.height,
     });
     await db.addRequestIdExpectedInBlock(message.height, message.request_id);
-    await db.setRPIdFromRequestId(message.request_id, message.rp_id);
 
     if (message.type === 'request_challenge') {
       const responseId = message.request_id + ':' + message.idp_id;
