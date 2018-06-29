@@ -524,9 +524,9 @@ export async function handleMessageFromQueue(messageStr) {
   //this is to prevent overwrite data (k, public)
   if (message.type !== 'request_challenge') {
     await db.setRequestReceivedFromMQ(message.request_id, message);
+    await db.setRPIdFromRequestId(message.request_id, message.rp_id);
   }
   await db.setRequestToProcessReceivedFromMQ(message.request_id, message);
-  await db.setRPIdFromRequestId(message.request_id, message.rp_id);
 
   const latestBlockHeight = tendermint.latestBlockHeight;
   if (latestBlockHeight <= message.height) {
