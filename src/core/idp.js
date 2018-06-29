@@ -493,6 +493,7 @@ export async function handleMessageFromQueue(messageStr) {
     await db.setRequestReceivedFromMQ(message.request_id, message);
   }
   await db.setRequestToProcessReceivedFromMQ(message.request_id, message);
+  await db.setRPIdFromRequestId(message.request_id, message.rp_id);
 
   const latestBlockHeight = tendermint.latestBlockHeight;
   if (latestBlockHeight <= message.height) {
@@ -502,7 +503,6 @@ export async function handleMessageFromQueue(messageStr) {
       messageBlockHeight: message.height,
     });
     await db.addRequestIdExpectedInBlock(message.height, message.request_id);
-    await db.setRPIdFromRequestId(message.request_id, message.rp_id);
 
     if (message.type === 'request_challenge') {
       const responseId = message.request_id + ':' + message.idp_id;
