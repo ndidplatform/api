@@ -79,7 +79,7 @@ router.post('/response', validateBody, async (req, res, next) => {
       //request_message,
     } = req.body;
 
-    idp.requestChallengeAndCreateResponse({
+    await idp.requestChallengeAndCreateResponse({
       request_id,
       //namespace,
       //identifier,
