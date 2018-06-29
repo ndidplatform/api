@@ -102,6 +102,24 @@ export function broadcastTxSync(tx) {
   ]);
 }
 
+export function block(height) {
+  return httpUriCall('block', [
+    {
+      key: 'height',
+      value: height,
+    },
+  ]);
+}
+
+export function blockResults(height) {
+  return httpUriCall('block_results', [
+    {
+      key: 'height',
+      value: height,
+    },
+  ]);
+}
+
 export function status() {
   return httpUriCall('status');
 }

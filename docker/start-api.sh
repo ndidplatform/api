@@ -259,28 +259,38 @@ case ${ROLE} in
   ndid)
     tendermint_wait_for_sync_complete
     if ! does_node_id_exist; then
-      if [ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]; then
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]); then
         generate_key
       fi
       wait_for_ndid_node_to_be_ready && \
       until init_ndid; do sleep 1; done && \
       register_namespace "cid" "Thai citizen ID" && \
-      register_service "bank_statement" "All transactions in the pass 3 month" &
+      register_namespace "confirm_1" "Wait 1s then Confirm" && \
+      register_namespace "confirm_10" "Wait 10s then Confirm" && \
+      register_namespace "reject_1" "Wait 1s then Reject" && \
+      register_namespace "reject_10" "Wait 10s then Reject" && \
+      register_service "bank_statement" "All transactions in the pass 3 month" && \
+      register_service "customer_info" "Customer Information" &
     fi
     ;;
   idp|rp|as)
     tendermint_wait_for_sync_complete
     
     if ! does_node_id_exist; then
-      if [ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]; then
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]); then
         generate_key
       fi
-      if [ ! -f ${MASTER_KEY_PATH} ] || [ ! -f ${MASTER_PUBLIC_KEY_PATH} ]; then
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${MASTER_KEY_PATH} ] || [ ! -f ${MASTER_PUBLIC_KEY_PATH} ]); then
         generate_master_key
       fi
       wait_until_ndid_node_initialized
       wait_until_namespace_exist "cid"
+      wait_until_namespace_exist "confirm_1"
+      wait_until_namespace_exist "confirm_10"
+      wait_until_namespace_exist "reject_1"
+      wait_until_namespace_exist "reject_10"
       wait_until_service_exist "bank_statement"
+      wait_until_service_exist "customer_info"
       until register_node_id; do sleep 1; done
       until set_token_for_node_id 10000; do sleep 1; done
       until tendermint_add_validator; do sleep 1; done
