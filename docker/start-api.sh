@@ -3,6 +3,7 @@
 TENDERMINT_PORT=${TENDERMINT_PORT:-45000}
 MQ_BINDING_PORT=${MQ_BINDING_PORT:-5555}
 SERVER_PORT=${SERVER_PORT:-8080}
+
 if [ ${HTTPS:-false} = "true" ]; then
   PROTOCOL=https
 else  
@@ -32,10 +33,10 @@ if [ -z ${NDID_IP} ]; then exit_missing_env NDID_IP; fi
 
 if [ -z ${NDID_PORT} ]; then NDID_PORT=${SERVER_PORT}; fi
 
-KEY_PATH=/api/keys/node.pem
-MASTER_KEY_PATH=/api/keys/master.pem
-PUBLIC_KEY_PATH=/api/keys/node.pub
-MASTER_PUBLIC_KEY_PATH=/api/keys/master.pub
+KEY_PATH=${PRIVATE_KEY_PATH:-/api/keys/node.pem}
+MASTER_KEY_PATH=${MASTER_PRIVATE_KEY_PATH:-/api/keys/master.pem}
+PUBLIC_KEY_PATH=${PUBLIC_KEY_PATH:-/api/keys/node.pub}
+MASTER_PUBLIC_KEY_PATH=${MASTER_PRIVATE_KEY_PATH:-/api/keyes/master.pub}
 
 tendermint_wait_for_sync_complete() {
   echo "Waiting for tendermint at ${TENDERMINT_IP}:${TENDERMINT_PORT} to be ready..."
@@ -93,7 +94,7 @@ init_ndid() {
   echo "Initializing NDID node..."
 
   local PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
-  
+
   local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/initNDID \
     -H "Content-Type: application/json" \
     -d "{\"public_key\":\"${PUBLIC_KEY}\"}" \
