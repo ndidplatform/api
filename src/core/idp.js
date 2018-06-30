@@ -218,6 +218,26 @@ export async function requestChallengeAndCreateResponse(data) {
         },
       });
     }
+    if (request.closed) {
+      throw new CustomError({
+        message: errorType.REQUEST_IS_CLOSED.message,
+        code: errorType.REQUEST_IS_CLOSED.code,
+        clientError: true,
+        details: {
+          requestId: data.request_id,
+        },
+      });
+    }
+    if (request.timed_out) {
+      throw new CustomError({
+        message: errorType.REQUEST_IS_TIMED_OUT.message,
+        code: errorType.REQUEST_IS_TIMED_OUT.code,
+        clientError: true,
+        details: {
+          requestId: data.request_id,
+        },
+      });
+    }
     if (request.mode === 3) {
       await db.setResponseFromRequestId(data.request_id, data);
     }

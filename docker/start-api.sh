@@ -3,6 +3,7 @@
 TENDERMINT_PORT=${TENDERMINT_PORT:-45000}
 MQ_BINDING_PORT=${MQ_BINDING_PORT:-5555}
 SERVER_PORT=${SERVER_PORT:-8080}
+
 if [ ${HTTPS:-false} = "true" ]; then
   PROTOCOL=https
 else  
@@ -32,10 +33,10 @@ if [ -z ${NDID_IP} ]; then exit_missing_env NDID_IP; fi
 
 if [ -z ${NDID_PORT} ]; then NDID_PORT=${SERVER_PORT}; fi
 
-KEY_PATH=/api/keys/node.pem
-MASTER_KEY_PATH=/api/keys/master.pem
-PUBLIC_KEY_PATH=/api/keys/node.pub
-MASTER_PUBLIC_KEY_PATH=/api/keys/master.pub
+KEY_PATH=${PRIVATE_KEY_PATH:-/api/keys/node.pem}
+MASTER_KEY_PATH=${MASTER_PRIVATE_KEY_PATH:-/api/keys/master.pem}
+PUBLIC_KEY_PATH=${PUBLIC_KEY_PATH:-/api/keys/node.pub}
+MASTER_PUBLIC_KEY_PATH=${MASTER_PRIVATE_KEY_PATH:-/api/keyes/master.pub}
 
 tendermint_wait_for_sync_complete() {
   echo "Waiting for tendermint at ${TENDERMINT_IP}:${TENDERMINT_PORT} to be ready..."
@@ -93,7 +94,7 @@ init_ndid() {
   echo "Initializing NDID node..."
 
   local PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
-  
+
   local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/initNDID \
     -H "Content-Type: application/json" \
     -d "{\"public_key\":\"${PUBLIC_KEY}\"}" \
@@ -217,7 +218,10 @@ did_service_exist() {
 tendermint_add_validator() {
   echo "Getting tendermint public key..."
 
-  local PUBKEY=$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/status | jq -r .result.validator_info.pub_key.value)
+  until local PUBKEY=$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/status | jq -r .result.validator_info.pub_key.value)
+  do
+    sleep 1
+  done
 
   echo "Tendermint public key is ${PUBKEY}"
 
@@ -264,13 +268,17 @@ case ${ROLE} in
       fi
       wait_for_ndid_node_to_be_ready && \
       until init_ndid; do sleep 1; done && \
-      register_namespace "cid" "Thai citizen ID" && \
-      register_namespace "confirm_1" "Wait 1s then Confirm" && \
-      register_namespace "confirm_10" "Wait 10s then Confirm" && \
-      register_namespace "reject_1" "Wait 1s then Reject" && \
-      register_namespace "reject_10" "Wait 10s then Reject" && \
-      register_service "bank_statement" "All transactions in the pass 3 month" && \
-      register_service "customer_info" "Customer Information" &
+      until 
+        register_namespace "cid" "Thai citizen ID" && \
+        register_namespace "confirm_1" "Wait 1s then Confirm" && \
+        register_namespace "confirm_10" "Wait 10s then Confirm" && \
+        register_namespace "reject_1" "Wait 1s then Reject" && \
+        register_namespace "reject_10" "Wait 10s then Reject" && \
+        register_service "bank_statement" "All transactions in the pass 3 month" && \
+        register_service "customer_info" "Customer Information"
+      do 
+        sleep 1; 
+      done &
     fi
     ;;
   idp|rp|as)

@@ -211,6 +211,16 @@ export default {
       'Not enough AS (the number of AS offer the service is less than minimum AS needed)',
     clientError: true,
   },
+  REQUEST_IS_CLOSED: {
+    code: 20025,
+    message: 'Request is already closed',
+    clientError: true,
+  },
+  REQUEST_IS_TIMED_OUT: {
+    code: 20026,
+    message: 'Request is already timed out',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
