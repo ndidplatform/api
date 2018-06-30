@@ -22,4 +22,4 @@ BUG FIXES:
 
 ## 0.1.0 (June 24, 2018)
 
-Initial release of NDID Smart Contract
+Initial release of NDID API
