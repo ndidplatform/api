@@ -92,7 +92,7 @@ export const getCallbackUrls = () => {
  * @param {string} requestId
  * @param {integer} height
  */
-async function notifyRequestUpdate(requestId, height) {
+async function processRequestUpdate(requestId, height) {
   // logger.debug({
   //   message: 'RP check zk proof and notify',
   //   requestId,
@@ -340,24 +340,36 @@ export async function handleTendermintNewBlockHeaderEvent(
         }
         return false;
       });
-      await Promise.all(
-        transactions.map(async (transaction) => {
-          // TODO: clear key with smart-contract, eg. request_id or requestId
-          const requestId =
-            transaction.args.request_id || transaction.args.requestId; //derive from tx;
-          if (requestId == null) return;
-          if (transaction.fnName === 'DeclareIdentityProof') {
-            common.handleChallengeRequest(
-              requestId + ':' + transaction.args.idp_id
-            );
-          } else {
-            const height = block.block.header.height;
-            await notifyRequestUpdate(requestId, height);
-            db.removeExpectedIdpResponseNodeIdInBlockList(height);
-            db.removeExpectedDataSignInBlockList(height);
-          }
-        })
-      );
+      const height = block.block.header.height;
+      let requestsToHandleChallenge = [];
+      let requestIdsToProcessUpdate = [];
+
+      transactions.forEach((transaction) => {
+        // TODO: clear key with smart-contract, eg. request_id or requestId
+        const requestId =
+          transaction.args.request_id || transaction.args.requestId;
+        if (requestId == null) return;
+        if (transaction.fnName === 'DeclareIdentityProof') {
+          requestsToHandleChallenge.push({
+            requestId,
+            idpId: transaction.args.idp_id,
+          });
+        } else {
+          requestIdsToProcessUpdate.push(requestId);
+        }
+      });
+      requestIdsToProcessUpdate = [...new Set(requestIdsToProcessUpdate)];
+
+      await Promise.all([
+        ...requestsToHandleChallenge.map(({ requestId, idpId }) =>
+          common.handleChallengeRequest(requestId + ':' + idpId)
+        ),
+        ...requestIdsToProcessUpdate.map(async (requestId) => {
+          await processRequestUpdate(requestId, height);
+          db.removeExpectedIdpResponseNodeIdInBlockList(height);
+          db.removeExpectedDataSignInBlockList(height);
+        }),
+      ]);
     })
   );
 }
