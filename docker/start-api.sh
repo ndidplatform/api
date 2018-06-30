@@ -218,7 +218,10 @@ did_service_exist() {
 tendermint_add_validator() {
   echo "Getting tendermint public key..."
 
-  local PUBKEY=$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/status | jq -r .result.validator_info.pub_key.value)
+  until local PUBKEY=$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/status | jq -r .result.validator_info.pub_key.value)
+  do
+    sleep 1
+  done
 
   echo "Tendermint public key is ${PUBKEY}"
 
@@ -265,13 +268,17 @@ case ${ROLE} in
       fi
       wait_for_ndid_node_to_be_ready && \
       until init_ndid; do sleep 1; done && \
-      register_namespace "cid" "Thai citizen ID" && \
-      register_namespace "confirm_1" "Wait 1s then Confirm" && \
-      register_namespace "confirm_10" "Wait 10s then Confirm" && \
-      register_namespace "reject_1" "Wait 1s then Reject" && \
-      register_namespace "reject_10" "Wait 10s then Reject" && \
-      register_service "bank_statement" "All transactions in the pass 3 month" && \
-      register_service "customer_info" "Customer Information" &
+      until 
+        register_namespace "cid" "Thai citizen ID" && \
+        register_namespace "confirm_1" "Wait 1s then Confirm" && \
+        register_namespace "confirm_10" "Wait 10s then Confirm" && \
+        register_namespace "reject_1" "Wait 1s then Reject" && \
+        register_namespace "reject_10" "Wait 10s then Reject" && \
+        register_service "bank_statement" "All transactions in the pass 3 month" && \
+        register_service "customer_info" "Customer Information"
+      do 
+        sleep 1; 
+      done &
     fi
     ;;
   idp|rp|as)
