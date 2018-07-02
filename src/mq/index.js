@@ -33,14 +33,15 @@ import MQSend from './mqsendcontroller.js';
 import MQRecv from './mqrecvcontroller.js';
 
 const mqSend = new MQSend({
-  timeout: 60000,
-  totalTimeout: 500000,
+  timeout: 30000,
+  totalTimeout: 300000,
   id: config.nodeId,
 });
 const mqRecv = new MQRecv({
   port: config.mqRegister.port,
   maxMsgSize: 2000000,
-  ackSaveTimeout: 500000,
+  //should match sender's total timeout
+  ackSaveTimeout: 300000,
 });
 
 export const eventEmitter = new EventEmitter();
