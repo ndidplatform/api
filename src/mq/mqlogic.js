@@ -1,7 +1,27 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
 
-let util = require('util');
-let EventEmitter = require('events').EventEmitter;
-
+import * as util from 'util';
+import EventEmitter from 'events';
 
 let MQLogic = function(config) {
   const totalTimeout = config.totalTimeout || 120000;
@@ -17,39 +37,68 @@ MQLogic.prototype._cleanUp = function(msgId){
 
   let itemToDelete = [];
   for (var [key, value] of this.seqMap) {
-    if(value.msgId==msgId) {
-      clearTimeout(value.timerId)
-      this.emit('PerformCleanUp', value.seqId );
+    if(value.msgId == msgId) {
+      clearTimeout(value.timerId);
+      this.emit('PerformCleanUp', value.seqId);
       itemToDelete.push(key);
     }
   }
 
-  for (let i = 0; i < itemToDelete.length; i++)
-  {
+  for (let i = 0; i < itemToDelete.length; i++) {
     this.seqMap.delete(itemToDelete[i]);
   }
-}
+};
 
-MQLogic.prototype._performSend = function (dest, payload, msgId, retryCount=0) {
+MQLogic.prototype._performSend = function (
+  dest, 
+  payload, 
+  msgId, 
+  retryCount = 0
+) {
   this.maxSeqId++;
   const seqId = this.maxSeqId;
 
-  let timerId = setTimeout(this._retry.bind(this), this.timeout,
-                 dest, payload, msgId, seqId, ++retryCount);
-  this.seqMap.set(seqId, { seqId:seqId, msgId:msgId, timerId:timerId });
+  let timerId = setTimeout(
+    this._retry.bind(this), 
+    this.timeout,
+    dest, 
+    payload, 
+    msgId, 
+    seqId, 
+    ++retryCount
+  );
+  this.seqMap.set(seqId, { 
+    seqId: seqId, 
+    msgId: msgId, 
+    timerId: timerId 
+  });
+  this.emit('PerformSend', {
+    id: this.id, 
+    dest: dest, 
+    payload: payload, 
+    msgId: msgId, 
+    seqId: seqId
+  });
+};
 
-  this.emit('PerformSend', {id: this.id, dest:dest, payload:payload, msgId:msgId, seqId:seqId} );
-}
+MQLogic.prototype.AckReceived = function ( msgId ) {
+  this._cleanUp(msgId);
+};
 
-MQLogic.prototype.AckReceived = function ( msgId ){
-    this._cleanUp(msgId);
-}
-
-MQLogic.prototype._retry = function ( dest, payload, msgId, seqId, retryCount ) {
+MQLogic.prototype._retry = function ( 
+  dest, 
+  payload, 
+  msgId, 
+  seqId, 
+  retryCount 
+) {
   if (this.seqMap.has(seqId)) {
     if (retryCount >= this.maxRetries) {
       this._cleanUp(msgId);
-      this.emit('PerformTotalTimeout', {id: this.id, msgId:msgId});
+      this.emit('PerformTotalTimeout', {
+        id: this.id, 
+        msgId: msgId
+      });
     }
     else {
       this._performSend( dest, payload, msgId, retryCount );
@@ -58,9 +107,9 @@ MQLogic.prototype._retry = function ( dest, payload, msgId, seqId, retryCount ) 
 };
 
 MQLogic.prototype.Send = function (dest, payload) {
-   this.maxMsgId++;
-   this._performSend(dest, payload, this.maxMsgId);
-}
+  this.maxMsgId++;
+  this._performSend(dest, payload, this.maxMsgId);
+};
 
 util.inherits(MQLogic, EventEmitter);
-module.exports = MQLogic;
+export default MQLogic;

@@ -32,8 +32,14 @@ import * as tendermintNdid from '../tendermint/ndid';
 import MQSend from './mqsendcontroller.js';
 import MQRecv from './mqrecvcontroller.js';
 
-const mqSend = new MQSend({timeout:60000, totalTimeout:500000});
-const mqRecv = new MQRecv({port: config.mqRegister.port, maxMsgSize:2000000});
+const mqSend = new MQSend({
+  timeout:60000,
+  totalTimeout:500000
+});
+const mqRecv = new MQRecv({
+  port: config.mqRegister.port,
+  maxMsgSize:2000000
+});
 
 export const eventEmitter = new EventEmitter();
 
