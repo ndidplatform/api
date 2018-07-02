@@ -31,7 +31,7 @@ export const serverPort = process.env.SERVER_PORT
   ? parseInt(process.env.SERVER_PORT)
   : 8080;
 
-export const https = process.env.HTTPS === 'true' ? true : false;
+export const https = process.env.HTTPS === 'true';
 export const httpsKeyPath =
   process.env.HTTPS_KEY_PATH != null
     ? process.env.HTTPS_KEY_PATH
@@ -47,7 +47,18 @@ export const serverHttpErrorCode = process.env.SERVER_HTTP_ERROR_CODE || 500;
 export const dataDirectoryPath =
   process.env.DATA_DIRECTORY_PATH || path.join(__dirname, '..', 'data');
 
-export const logDirectoryPath = process.env.LOG_DIRECTORY_PATH || __dirname;
+export const logLevel =
+  process.env.LOG_LEVEL || (env === 'development' ? 'debug' : 'info');
+export const logTarget =
+  process.env.LOG_TARGET || (env === 'development' ? 'console' : 'file');
+export const logColor =
+  process.env.LOG_COLOR == null
+    ? logTarget === 'console'
+      ? true
+      : false
+    : process.env.LOG_COLOR === 'true';
+export const logDirectoryPath =
+  process.env.LOG_DIRECTORY_PATH || path.join(__dirname, '..', 'log');
 
 export const role = process.env.ROLE;
 
@@ -90,7 +101,7 @@ export const mqRegister = {
 };
 
 export const useExternalCryptoService =
-  process.env.USE_EXTERNAL_CRYPTO_SERVICE === 'true' ? true : false;
+  process.env.USE_EXTERNAL_CRYPTO_SERVICE === 'true';
 
 export const privateKeyPath = useExternalCryptoService
   ? null

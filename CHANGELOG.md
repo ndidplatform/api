@@ -3,22 +3,29 @@
 ## TBD
 
 BREAKING CHANGES:
+
 - API version 2.0
 - All APIs which make transactions to blockchain are now asynchronous.
 
 IMPROVEMENTS:
-- 
+
+- Configurable log level. Can be set with `LOG_LEVEL` environment variable.
+- Configurable log target. Can be set with `LOG_TARGET` environment variable.
+- Configurable log highlight color (enabled/disabled). Can be set with `LOG_COLOR` environment variable.
 
 BUG FIXES:
-- 
+
+-
 
 ## 0.2.0 (June 30, 2018)
 
 BREAKING CHANGES:
+
 - API version 1.1
 - POST `/idp/response` is now asynchronous. `callback_url` is required in a request body.
 
 IMPROVEMENTS:
+
 - [CircleCI] Add a configuration for automatic test, build, and deploy image to dockerhub. ([#23](https://github.com/ndidplatform/api/pull/23))
 - Configurable callback retry timeout. The config only applies to some callbacks. Can be set with `CALLBACK_RETRY_TIMEOUT` environment variable. Accept number in seconds. ([#25](https://github.com/ndidplatform/api/issues/25))
 - Handle error when IdP sending a response to a closed or timed out request. Send back a correct error code/message. ([#29](https://github.com/ndidplatform/api/issues/29))
@@ -27,6 +34,7 @@ IMPROVEMENTS:
 - [Docker] Improve robustness of docker startup script
 
 BUG FIXES:
+
 - Fix GET `/utility/requests/:request_id` response with error 500 when `request_id` does not exist. ([#19](https://github.com/ndidplatform/api/issues/19))
 - Fix creating identity request final status stuck at "pending". ([#20](https://github.com/ndidplatform/api/issues/20))
 - Fix GET `/as/service/:service_id` response with a wrong format. ([#21](https://github.com/ndidplatform/api/issues/21))

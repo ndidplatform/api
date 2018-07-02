@@ -45,7 +45,7 @@ const customFormat = winston.format.printf((info) => {
     typeof message === 'object'
       ? util.inspect(message, {
           depth: null,
-          colors: true,
+          colors: config.logColor,
         })
       : message;
   if (Object.keys(rest).length === 0) {
@@ -53,28 +53,16 @@ const customFormat = winston.format.printf((info) => {
   } else {
     return `${level}: ${messageToDisplay} ${util.inspect(rest, {
       depth: null,
-      colors: true,
+      colors: config.logColor,
     })}`;
   }
 });
 
 const logger = winston.createLogger();
 
-// If we're not in production then log to the `console`
-if (config.env !== 'production') {
+if (config.logTarget === 'file') {
   logger.configure({
-    level: 'debug',
-    format: winston.format.combine(
-      winston.format.colorize(),
-      // winston.format.timestamp(),
-      customFormat
-    ),
-    transports: [new winston.transports.Console()],
-    exitOnError: false,
-  });
-} else {
-  logger.configure({
-    level: 'info',
+    level: config.logLevel,
     format: logFormatForFile,
     transports: [
       // new winston.transports.File({
@@ -96,6 +84,19 @@ if (config.env !== 'production') {
         zippedArchive: true, // gzip archived log files
       }),
     ],
+    exitOnError: false,
+  });
+} else {
+  logger.configure({
+    level: config.logLevel,
+    format: config.logColor
+      ? winston.format.combine(
+          winston.format.colorize(),
+          // winston.format.timestamp(),
+          customFormat
+        )
+      : winston.format.combine(customFormat),
+    transports: [new winston.transports.Console()],
     exitOnError: false,
   });
 }
