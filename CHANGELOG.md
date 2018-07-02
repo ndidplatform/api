@@ -1,5 +1,17 @@
 # Changelog
 
+## TBD
+
+BREAKING CHANGES:
+- API version 2.0
+- All APIs which make transactions to blockchain are now asynchronous.
+
+IMPROVEMENTS:
+- 
+
+BUG FIXES:
+- 
+
 ## 0.2.0 (June 30, 2018)
 
 BREAKING CHANGES:
