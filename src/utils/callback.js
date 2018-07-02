@@ -28,6 +28,7 @@ import { randomBase64Bytes } from './crypto';
 import { wait } from '../utils';
 import * as db from '../db';
 import logger from '../logger';
+import * as config from '../config';
 
 const waitStopFunction = [];
 let stopCallbackRetry = false;
@@ -63,6 +64,8 @@ async function callbackWithRetry(
     jitter: 0.2,
   });
 
+  const startTime = Date.now();
+
   for (;;) {
     if (stopCallbackRetry) return;
     logger.info({
@@ -92,6 +95,19 @@ async function callbackWithRetry(
 
       if (shouldRetry) {
         if (!(await shouldRetry(...shouldRetryArguments))) {
+          db.removeCallbackWithRetryData(cbId);
+          return;
+        }
+      } else {
+        if (
+          Date.now() - startTime + nextRetry >
+          config.callbackRetryTimeout * 1000
+        ) {
+          logger.warn({
+            message: 'Callback retry timed out',
+            url: callbackUrl,
+            cbId,
+          });
           db.removeCallbackWithRetryData(cbId);
           return;
         }

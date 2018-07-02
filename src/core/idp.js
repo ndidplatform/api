@@ -27,6 +27,7 @@ import fetch from 'node-fetch';
 import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/customError';
 import errorType from '../error/type';
+import { getErrorObjectForClient } from '../error/helpers';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint';
@@ -203,18 +204,88 @@ async function requestChallenge(request_id, accessor_id) {
 
 export async function requestChallengeAndCreateResponse(data) {
   //store response data
-  const request = await tendermintNdid.getRequest({
-    requestId: data.request_id,
-  });
-  if (request.mode === 3) {
-    await db.setResponseFromRequestId(data.request_id, data);
-    requestChallenge(data.request_id, data.accessor_id);
-  } else if (request.mode === 1) createIdpResponse(data);
+  try {
+    const request = await tendermintNdid.getRequest({
+      requestId: data.request_id,
+    });
+    if (request == null) {
+      throw new CustomError({
+        message: errorType.REQUEST_NOT_FOUND.message,
+        code: errorType.REQUEST_NOT_FOUND.code,
+        clientError: true,
+        details: {
+          requestId: data.request_id,
+        },
+      });
+    }
+    if (request.closed) {
+      throw new CustomError({
+        message: errorType.REQUEST_IS_CLOSED.message,
+        code: errorType.REQUEST_IS_CLOSED.code,
+        clientError: true,
+        details: {
+          requestId: data.request_id,
+        },
+      });
+    }
+    if (request.timed_out) {
+      throw new CustomError({
+        message: errorType.REQUEST_IS_TIMED_OUT.message,
+        code: errorType.REQUEST_IS_TIMED_OUT.code,
+        clientError: true,
+        details: {
+          requestId: data.request_id,
+        },
+      });
+    }
+    if (request.mode === 3) {
+      await db.setResponseFromRequestId(data.request_id, data);
+    }
+    requestChallengeAndCreateResponseInternalAsync(data, request);
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Cannot request challenge and create IdP response',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    throw err;
+  }
+}
+
+async function requestChallengeAndCreateResponseInternalAsync(data, request) {
+  try {
+    if (request.mode === 3) {
+      await requestChallenge(data.request_id, data.accessor_id);
+    } else if (request.mode === 1) {
+      await createIdpResponse(data);
+    }
+  } catch (error) {
+    callbackToClient(
+      data.callback_url,
+      {
+        type: 'response_result',
+        success: false,
+        request_id: data.request_id,
+        error: getErrorObjectForClient(error),
+      },
+      true
+    );
+    db.removeResponseFromRequestId(data.request_id);
+  }
 }
 
 async function createIdpResponse(data) {
   try {
-    let { request_id, aal, ial, status, signature, accessor_id, secret } = data;
+    let {
+      request_id,
+      aal,
+      ial,
+      status,
+      signature,
+      accessor_id,
+      secret,
+      callback_url,
+    } = data;
 
     const request = await tendermintNdid.getRequest({ requestId: request_id });
     if (request == null) {
@@ -229,6 +300,8 @@ async function createIdpResponse(data) {
     }
 
     const mode = request.mode;
+    let dataToBlockchain, privateProofObject;
+
     if (mode === 3) {
       if (accessor_id == null) {
         throw new CustomError({
@@ -258,11 +331,7 @@ async function createIdpResponse(data) {
           },
         });
       }
-    }
 
-    let dataToBlockchain, privateProofObject;
-
-    if (mode === 3) {
       let blockchainProofArray = [],
         privateProofValueArray = [],
         samePadding;
@@ -321,8 +390,18 @@ async function createIdpResponse(data) {
     ]);
 
     const { height } = await tendermintNdid.createIdpResponse(dataToBlockchain);
-
     sendPrivateProofToRP(request_id, privateProofObject, height);
+
+    callbackToClient(
+      callback_url,
+      {
+        type: 'response_result',
+        success: true,
+        request_id,
+      },
+      true
+    );
+    db.removeResponseFromRequestId(request_id);
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot create IdP response',
@@ -429,21 +508,35 @@ export async function handleMessageFromQueue(messageStr) {
   //if message is challenge for response, no need to wait for blockchain
   if (message.challenge) {
     //store challenge
-    let request = await db.getRequestReceivedFromMQ(message.request_id);
-    request.challenge = message.challenge;
-    logger.debug({
-      message: 'Save challenge to request',
-      request,
-      challenge: message.challenge,
-    });
-    await db.setRequestReceivedFromMQ(message.request_id, request);
-    //query reponse data
     let data = await db.getResponseFromRequestId(message.request_id);
-    logger.debug({
-      message: 'Data to response',
-      data,
-    });
-    createIdpResponse(data);
+    try {
+      let request = await db.getRequestReceivedFromMQ(message.request_id);
+      request.challenge = message.challenge;
+      logger.debug({
+        message: 'Save challenge to request',
+        request,
+        challenge: message.challenge,
+      });
+      await db.setRequestReceivedFromMQ(message.request_id, request);
+      //query reponse data
+      logger.debug({
+        message: 'Data to response',
+        data,
+      });
+      await createIdpResponse(data);
+    } catch (error) {
+      callbackToClient(
+        data.callback_url,
+        {
+          type: 'response_result',
+          success: false,
+          request_id: data.request_id,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+      db.removeResponseFromRequestId(data.request_id);
+    }
     return;
   }
 
@@ -451,6 +544,7 @@ export async function handleMessageFromQueue(messageStr) {
   //this is to prevent overwrite data (k, public)
   if (message.type !== 'request_challenge') {
     await db.setRequestReceivedFromMQ(message.request_id, message);
+    await db.setRPIdFromRequestId(message.request_id, message.rp_id);
   }
   await db.setRequestToProcessReceivedFromMQ(message.request_id, message);
 
@@ -462,7 +556,6 @@ export async function handleMessageFromQueue(messageStr) {
       messageBlockHeight: message.height,
     });
     await db.addRequestIdExpectedInBlock(message.height, message.request_id);
-    await db.setRPIdFromRequestId(message.request_id, message.rp_id);
 
     if (message.type === 'request_challenge') {
       const responseId = message.request_id + ':' + message.idp_id;

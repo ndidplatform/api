@@ -26,6 +26,7 @@ import CustomError from '../error/customError';
 import errorType from '../error/type';
 
 import { tendermintAddress } from '../config';
+import logger from '../logger';
 
 async function httpUriCall(method, params) {
   const queryString = params.reduce((paramsString, param) => {
@@ -49,7 +50,12 @@ async function httpUriCall(method, params) {
     const responseJson = await response.json();
 
     if (responseJson.error) {
-      throw { type: 'JSON-RPC ERROR', error: responseJson.error };
+      const error = new CustomError({
+        message: 'JSON-RPC ERROR',
+        details: responseJson.error,
+      });
+      logger.error(error.getInfoForLog());
+      throw error;
     }
 
     return responseJson.result;
@@ -92,6 +98,24 @@ export function broadcastTxSync(tx) {
     {
       key: 'tx',
       value: `"${tx}"`,
+    },
+  ]);
+}
+
+export function block(height) {
+  return httpUriCall('block', [
+    {
+      key: 'height',
+      value: height,
+    },
+  ]);
+}
+
+export function blockResults(height) {
+  return httpUriCall('block_results', [
+    {
+      key: 'height',
+      value: height,
     },
   ]);
 }

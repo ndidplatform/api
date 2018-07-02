@@ -75,6 +75,7 @@ router.post('/response', validateBody, async (req, res, next) => {
       status,
       signature,
       accessor_id,
+      callback_url,
       //request_message,
     } = req.body;
 
@@ -88,10 +89,11 @@ router.post('/response', validateBody, async (req, res, next) => {
       status,
       signature,
       accessor_id,
+      callback_url,
       //request_message,
     });
 
-    res.status(204).end();
+    res.status(202).end();
   } catch (error) {
     next(error);
   }

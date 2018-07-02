@@ -146,7 +146,7 @@ export default {
   },
   REQUEST_NOT_FOUND: {
     code: 20012,
-    message: 'Request with the input request ID could not be found',
+    message: 'Request ID could not be found',
     clientError: true,
   },
   INVALID_NAMESPACE: {
@@ -209,6 +209,16 @@ export default {
     code: 20024,
     message:
       'Not enough AS (the number of AS offer the service is less than minimum AS needed)',
+    clientError: true,
+  },
+  REQUEST_IS_CLOSED: {
+    code: 20025,
+    message: 'Request is already closed',
+    clientError: true,
+  },
+  REQUEST_IS_TIMED_OUT: {
+    code: 20026,
+    message: 'Request is already timed out',
     clientError: true,
   },
 

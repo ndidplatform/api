@@ -67,9 +67,19 @@ router.get(
 router.get('/as/:service_id', async (req, res, next) => {
   try {
     const { service_id } = req.params;
-    let asNodes = await tendermintNdid.getAsNodesByServiceId({
+    const asNodes = await tendermintNdid.getAsNodesByServiceId({
       service_id,
     });
+    if (asNodes.length === 0) {
+      const services = await tendermintNdid.getServiceList();
+      const service = services.find(
+        (service) => service.service_id === service_id
+      );
+      if (service == null) {
+        res.status(404).end();
+        return;
+      }
+    }
     res.status(200).json(asNodes);
   } catch (error) {
     next(error);
@@ -80,11 +90,12 @@ router.get('/requests/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    const request = await tendermintNdid.getRequestDetail({
+    const requestWithSpecialTag = await tendermintNdid.getRequestDetail({
       requestId: request_id,
     });
 
-    if (request != null) {
+    if (requestWithSpecialTag != null) {
+      const { special, ...request } = requestWithSpecialTag;
       res.status(200).json(request);
     } else {
       res.status(404).end();
