@@ -21,7 +21,59 @@
  */
 
 import * as tendermintNdid from '../tendermint/ndid';
+import logger from '../logger';
+import { callbackToClient } from '../utils/callback';
+import { getErrorObjectForClient } from '../error/helpers';
 
-export async function updateNode({ public_key, master_public_key }) {
-  return tendermintNdid.updateNode({ public_key, master_public_key });
+export async function updateNode(
+  { reference_id, callback_url, public_key, master_public_key },
+  { synchronous = false }
+) {
+  if (synchronous) {
+    await updateNodeInternalAsync(...arguments);
+  } else {
+    updateNodeInternalAsync(...arguments);
+  }
+}
+
+async function updateNodeInternalAsync(
+  { reference_id, callback_url, public_key, master_public_key },
+  { synchronous = false }
+) {
+  try {
+    await tendermintNdid.updateNode({ public_key, master_public_key });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          reference_id,
+          success: true,
+        },
+        true
+      );
+    }
+  } catch (error) {
+    logger.error({
+      message: 'Update node internal async error',
+      originalArgs: arguments[0],
+      options: arguments[1],
+      additionalArgs: arguments[2],
+      error,
+    });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          reference_id,
+          success: false,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+    }
+
+    throw error;
+  }
 }

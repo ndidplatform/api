@@ -27,6 +27,8 @@ import * as identity from '../../core/identity';
 import * as common from '../../core/common';
 import * as tendermintNdid from '../../tendermint/ndid';
 
+import errorType from '../../error/type';
+
 const router = express.Router();
 
 router.post('/', validateBody, async (req, res, next) => {
@@ -41,15 +43,18 @@ router.post('/', validateBody, async (req, res, next) => {
       ial,
     } = req.body;
 
-    const result = await identity.createNewIdentity({
-      namespace,
-      identifier,
-      reference_id,
-      accessor_type,
-      accessor_public_key,
-      accessor_id,
-      ial,
-    });
+    const result = await identity.createNewIdentity(
+      {
+        namespace,
+        identifier,
+        reference_id,
+        accessor_type,
+        accessor_public_key,
+        accessor_id,
+        ial,
+      },
+      { synchronous: true }
+    );
 
     res.status(200).json(result);
   } catch (error) {
@@ -71,21 +76,24 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
-      const result = await identity.addAccessorMethodForAssociatedIdp({
-        namespace,
-        identifier,
-        reference_id,
-        accessor_type,
-        accessor_public_key,
-        accessor_id,
-      });
+      const result = await identity.addAccessorMethodForAssociatedIdp(
+        {
+          namespace,
+          identifier,
+          reference_id,
+          accessor_type,
+          accessor_public_key,
+          accessor_id,
+        },
+        { synchronous: true }
+      );
 
-      if (result.request_id == null) {
-        res.status(404).end();
-      } else {
-        res.status(200).json(result);
-      }
+      res.status(200).json(result);
     } catch (error) {
+      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
+        res.status(404).end();
+        return;
+      }
       next(error);
     }
   }
@@ -119,11 +127,14 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const { ial } = req.body;
-      await identity.updateIal({
-        namespace,
-        identifier,
-        ial,
-      });
+      await identity.updateIal(
+        {
+          namespace,
+          identifier,
+          ial,
+        },
+        { synchronous: true }
+      );
       res.status(204).end();
     } catch (error) {
       next(error);
@@ -179,7 +190,7 @@ router.post('/requests/close', validateBody, async (req, res, next) => {
   try {
     const { request_id } = req.body;
 
-    await common.closeRequest(request_id);
+    await common.closeRequest({ request_id }, { synchronous: true });
     res.status(204).end();
   } catch (error) {
     next(error);

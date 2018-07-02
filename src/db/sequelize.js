@@ -80,7 +80,7 @@ const Entities = {
   }),
   requestIdReferenceIdMapping: sequelize.define('requestIdReferenceIdMapping', {
     referenceId: { type: Sequelize.TEXT, primaryKey: true },
-    requestId: { type: Sequelize.STRING, unique: true },
+    requestId: { type: Sequelize.STRING, primaryKey: true },
   }),
   onboardDataReferenceIdMapping: sequelize.define(
     'onboardDataReferenceIdMapping',

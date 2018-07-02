@@ -32,12 +32,15 @@ router.post('/service/:service_id', validateBody, async (req, res, next) => {
     const { service_id } = req.params;
     const { min_ial, min_aal, url } = req.body;
 
-    await as.upsertAsService({
-      service_id,
-      min_aal,
-      min_ial,
-      url,
-    });
+    await as.registerOrUpdateASService(
+      {
+        service_id,
+        min_aal,
+        min_ial,
+        url,
+      },
+      { synchronous: true }
+    );
 
     res.status(204).end();
   } catch (error) {

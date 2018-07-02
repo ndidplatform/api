@@ -48,6 +48,8 @@ router.post('/node/create', validateBody, async (req, res, next) => {
     } = req.body;
 
     await ndid.registerNode({
+      reference_id,
+      callback_url,
       node_id,
       node_name,
       public_key: node_key,
@@ -79,6 +81,8 @@ router.post('/node/update', validateBody, async (req, res, next) => {
 
     //should we allow organization to update their node's name?
     let result = await dpki.updateNode({
+      reference_id,
+      callback_url,
       public_key: node_key,
       master_public_key: node_master_key,
     });

@@ -77,7 +77,7 @@ router.post('/node/update', validateBody, async (req, res, next) => {
     let result = await dpki.updateNode({
       public_key: node_key,
       master_public_key: node_master_key,
-    });
+    }, { synchronous: true });
 
     res.status(200).json(result);
   } catch (error) {

@@ -230,6 +230,7 @@ export function addTimeoutScheduler(requestId, secondsToTimeout) {
  */
 export async function createRequest(
   {
+    request_id, // Pre-generated request ID. Used by create identity function.
     mode,
     namespace,
     identifier,
@@ -243,7 +244,7 @@ export async function createRequest(
     min_idp,
     request_timeout,
   },
-  synchronous = false
+  { synchronous = false }
 ) {
   try {
     // existing reference_id, return request ID
@@ -388,7 +389,9 @@ export async function createRequest(
       });
     }
 
-    const request_id = utils.createRequestId();
+    if (request_id == null) {
+      request_id = utils.createRequestId();
+    }
 
     const challenge = [
       utils.randomBase64Bytes(config.challengeLength),
@@ -467,7 +470,7 @@ async function createRequestInternalAsync(
     min_idp,
     request_timeout,
   },
-  synchronous = false,
+  { synchronous = false },
   { request_id, secretSalt, receivers, requestData }
 ) {
   try {
@@ -520,6 +523,14 @@ async function createRequestInternalAsync(
   } catch (error) {
     await db.removeRequestIdByReferenceId(reference_id);
     await db.removeRequestCallbackUrl(request_id);
+
+    logger.error({
+      message: 'Create request internal async error',
+      originalArgs: arguments[0],
+      options: arguments[1],
+      additionalArgs: arguments[2],
+      error,
+    });
 
     if (!synchronous) {
       await callbackToClient(
@@ -753,20 +764,75 @@ export async function shouldRetryCallback(requestId) {
   return true;
 }
 
-export async function closeRequest(requestId) {
+export async function closeRequest(
+  { reference_id, callback_url, request_id },
+  { synchronous = false }
+) {
   try {
-    const responseValidList = await db.getIdpResponseValidList(requestId);
-
-    await tendermintNdid.closeRequest({
-      requestId,
-      responseValidList,
-    });
+    if (synchronous) {
+      await closeRequestInternalAsync(...arguments);
+    } else {
+      closeRequestInternalAsync(...arguments);
+    }
   } catch (error) {
     throw new CustomError({
       message: 'Cannot close a request',
-      requestId,
+      reference_id,
+      callback_url,
+      request_id,
+      synchronous,
       cause: error,
     });
   }
-  db.removeChallengeFromRequestId(requestId);
+}
+
+export async function closeRequestInternalAsync(
+  { reference_id, callback_url, request_id },
+  { synchronous = false }
+) {
+  try {
+    const responseValidList = await db.getIdpResponseValidList(request_id);
+
+    await tendermintNdid.closeRequest({
+      request_id,
+      responseValidList,
+    });
+
+    db.removeChallengeFromRequestId(request_id);
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          success: true,
+          reference_id,
+          request_id,
+        },
+        true
+      );
+    }
+  } catch (error) {
+    logger.error({
+      message: 'Close request internal async error',
+      originalArgs: arguments[0],
+      options: arguments[1],
+      additionalArgs: arguments[2],
+      error,
+    });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          success: false,
+          reference_id,
+          request_id,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+    }
+
+    throw error;
+  }
 }

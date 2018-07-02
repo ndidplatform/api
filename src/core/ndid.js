@@ -92,8 +92,10 @@ export async function reduceNodeToken(data) {
   }
 }
 
-export async function registerNode(data) {
+export async function registerNode(data, { synchronous = false }) {
   const {
+    reference_id,
+    callback_url,
     node_id,
     public_key,
     role,

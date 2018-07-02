@@ -27,6 +27,8 @@ import * as identity from '../../core/identity';
 import * as common from '../../core/common';
 import * as tendermintNdid from '../../tendermint/ndid';
 
+import errorType from '../../error/type';
+
 const router = express.Router();
 
 router.post('/', validateBody, async (req, res, next) => {
@@ -43,16 +45,17 @@ router.post('/', validateBody, async (req, res, next) => {
     } = req.body;
 
     const result = await identity.createNewIdentity({
+      reference_id,
+      callback_url,
       namespace,
       identifier,
-      reference_id,
       accessor_type,
       accessor_public_key,
       accessor_id,
       ial,
     });
 
-    res.status(200).json(result);
+    res.status(202).json(result);
   } catch (error) {
     next(error);
   }
@@ -74,20 +77,21 @@ router.post(
       const { namespace, identifier } = req.params;
 
       const result = await identity.addAccessorMethodForAssociatedIdp({
+        reference_id,
+        callback_url,
         namespace,
         identifier,
-        reference_id,
         accessor_type,
         accessor_public_key,
         accessor_id,
       });
 
-      if (result.request_id == null) {
-        res.status(404).end();
-      } else {
-        res.status(200).json(result);
-      }
+      res.status(202).json(result);
     } catch (error) {
+      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
+        res.status(404).end();
+        return;
+      }
       next(error);
     }
   }
@@ -122,11 +126,13 @@ router.post(
       const { namespace, identifier } = req.params;
       const { reference_id, callback_url, ial } = req.body;
       await identity.updateIal({
+        reference_id,
+        callback_url,
         namespace,
         identifier,
         ial,
       });
-      res.status(204).end();
+      res.status(202).end();
     } catch (error) {
       next(error);
     }
@@ -188,8 +194,8 @@ router.post('/requests/close', validateBody, async (req, res, next) => {
   try {
     const { reference_id, callback_url, request_id } = req.body;
 
-    await common.closeRequest(request_id);
-    res.status(204).end();
+    await common.closeRequest({ reference_id, callback_url, request_id });
+    res.status(202).end();
   } catch (error) {
     next(error);
   }

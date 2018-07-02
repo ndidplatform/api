@@ -265,6 +265,7 @@ async function requestChallengeAndCreateResponseInternalAsync(data, request) {
       {
         type: 'response_result',
         success: false,
+        reference_id: data.reference_id,
         request_id: data.request_id,
         error: getErrorObjectForClient(error),
       },
@@ -276,7 +277,9 @@ async function requestChallengeAndCreateResponseInternalAsync(data, request) {
 
 async function createIdpResponse(data) {
   try {
-    let {
+    const {
+      reference_id,
+      callback_url,
       request_id,
       aal,
       ial,
@@ -284,7 +287,6 @@ async function createIdpResponse(data) {
       signature,
       accessor_id,
       secret,
-      callback_url,
     } = data;
 
     const request = await tendermintNdid.getRequest({ requestId: request_id });
@@ -397,6 +399,7 @@ async function createIdpResponse(data) {
       {
         type: 'response_result',
         success: true,
+        reference_id,
         request_id,
       },
       true
@@ -508,7 +511,7 @@ export async function handleMessageFromQueue(messageStr) {
   //if message is challenge for response, no need to wait for blockchain
   if (message.challenge) {
     //store challenge
-    let data = await db.getResponseFromRequestId(message.request_id);
+    const data = await db.getResponseFromRequestId(message.request_id);
     try {
       let request = await db.getRequestReceivedFromMQ(message.request_id);
       request.challenge = message.challenge;
@@ -530,6 +533,7 @@ export async function handleMessageFromQueue(messageStr) {
         {
           type: 'response_result',
           success: false,
+          reference_id: data.reference_id,
           request_id: data.request_id,
           error: getErrorObjectForClient(error),
         },
@@ -608,13 +612,16 @@ export async function handleMessageFromQueue(messageStr) {
         message.request_id,
         message.accessor_id
       );
+      const reference_id = await db.getReferenceIdByRequestId(message.request_id);
       let notifyData = {
+        reference_id,
         request_id: message.request_id,
         success: true,
         secret,
       };
       if (associated) notifyAddAccessorResultByCallback(notifyData);
       else notifyCreateIdentityResultByCallback(notifyData);
+      db.removeReferenceIdByRequestId(message.request_id);
     }
   } else if (message.type === 'request_challenge') {
     const responseId = message.request_id + ':' + message.idp_id;
@@ -689,13 +696,16 @@ export async function handleTendermintNewBlockHeaderEvent(
             message.request_id,
             message.accessor_id
           );
+          const reference_id = await db.getReferenceIdByRequestId(message.request_id);
           let notifyData = {
+            reference_id,
             request_id: message.request_id,
             success: true,
             secret,
           };
           if (associated) notifyAddAccessorResultByCallback(notifyData);
           else notifyCreateIdentityResultByCallback(notifyData);
+          db.removeReferenceIdByRequestId(message.request_id);
         }
       } else if (message.type === 'request_challenge') {
         const responseId = message.request_id + ':' + message.idp_id;

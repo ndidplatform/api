@@ -595,3 +595,34 @@ export function removeExpectedDataSignInBlockList(height) {
     key: height,
   });
 }
+
+//
+// Used by IdP
+//
+
+export function getReferenceIdByRequestId(requestId) {
+  return db.get({
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'referenceId',
+  });
+}
+
+export function setReferenceIdByRequestId(requestId, referenceId) {
+  return db.set({
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'referenceId',
+    value: referenceId,
+  });
+}
+
+export function removeReferenceIdByRequestId(requestId) {
+  return db.remove({
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}

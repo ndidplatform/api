@@ -62,7 +62,7 @@ router.post(
           min_idp,
           request_timeout,
         },
-        true
+        { synchronous: true }
       );
 
       res.status(200).json({ request_id: requestId });
@@ -129,7 +129,7 @@ router.post('/requests/close', validateBody, async (req, res, next) => {
   try {
     const { request_id } = req.body;
 
-    await common.closeRequest(request_id);
+    await common.closeRequest({ request_id }, { synchronous: true });
     res.status(204).end();
   } catch (error) {
     next(error);

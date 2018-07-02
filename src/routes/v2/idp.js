@@ -75,6 +75,8 @@ router.post('/response', validateBody, async (req, res, next) => {
     } = req.body;
 
     await idp.requestChallengeAndCreateResponse({
+      reference_id,
+      callback_url,
       request_id,
       //namespace,
       //identifier,
@@ -84,7 +86,6 @@ router.post('/response', validateBody, async (req, res, next) => {
       status,
       signature,
       accessor_id,
-      callback_url,
       //request_message,
     });
 

@@ -32,14 +32,16 @@ router.post('/service/:service_id', validateBody, async (req, res, next) => {
     const { service_id } = req.params;
     const { reference_id, callback_url, min_ial, min_aal, url } = req.body;
 
-    await as.upsertAsService({
+    await as.registerOrUpdateASService({
       service_id,
+      reference_id,
+      callback_url,
       min_aal,
       min_ial,
       url,
     });
 
-    res.status(204).end();
+    res.status(202).end();
   } catch (error) {
     next(error);
   }
@@ -70,11 +72,13 @@ router.post(
       const { reference_id, callback_url, data } = req.body;
 
       as.processDataForRP(data, {
+        reference_id,
+        callback_url,
         requestId: request_id,
         serviceId: service_id,
       });
 
-      res.status(204).end();
+      res.status(202).end();
     } catch (error) {
       next(error);
     }
