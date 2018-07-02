@@ -35,10 +35,10 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const {
-        mode,
         reference_id,
-        idp_id_list,
         callback_url,
+        mode,
+        idp_id_list,
         data_request_list,
         request_message,
         min_ial,
@@ -124,7 +124,7 @@ router.post('/requests/housekeeping/data', async (req, res, next) => {
 
 router.post('/requests/close', validateBody, async (req, res, next) => {
   try {
-    const { request_id } = req.body;
+    const { reference_id, callback_url, request_id } = req.body;
 
     await common.closeRequest(request_id);
     res.status(204).end();

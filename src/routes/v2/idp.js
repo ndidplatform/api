@@ -43,16 +43,10 @@ router.get('/callback', async (req, res, next) => {
 
 router.post('/callback', validateBody, async (req, res, next) => {
   try {
-    const {
-      incoming_request_url,
-      identity_result_url,
-      accessor_sign_url,
-      error_url,
-    } = req.body;
+    const { incoming_request_url, accessor_sign_url, error_url } = req.body;
 
     idp.setCallbackUrls({
       incoming_request_url,
-      identity_result_url,
       accessor_sign_url,
       error_url,
     });
@@ -66,6 +60,8 @@ router.post('/callback', validateBody, async (req, res, next) => {
 router.post('/response', validateBody, async (req, res, next) => {
   try {
     const {
+      reference_id,
+      callback_url,
       request_id,
       //namespace,
       //identifier,
@@ -75,7 +71,6 @@ router.post('/response', validateBody, async (req, res, next) => {
       status,
       signature,
       accessor_id,
-      callback_url,
       //request_message,
     } = req.body;
 

@@ -30,7 +30,7 @@ const router = express.Router();
 router.post('/service/:service_id', validateBody, async (req, res, next) => {
   try {
     const { service_id } = req.params;
-    const { min_ial, min_aal, url } = req.body;
+    const { reference_id, callback_url, min_ial, min_aal, url } = req.body;
 
     await as.upsertAsService({
       service_id,
@@ -67,7 +67,7 @@ router.post(
   async (req, res, next) => {
     try {
       const { request_id, service_id } = req.params;
-      const { data } = req.body;
+      const { reference_id, callback_url, data } = req.body;
 
       as.processDataForRP(data, {
         requestId: request_id,

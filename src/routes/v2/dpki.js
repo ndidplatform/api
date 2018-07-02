@@ -32,6 +32,8 @@ const router = express.Router();
 router.post('/node/create', validateBody, async (req, res, next) => {
   try {
     const {
+      reference_id,
+      callback_url,
       node_id,
       node_name,
       node_key,
@@ -64,6 +66,8 @@ router.post('/node/create', validateBody, async (req, res, next) => {
 router.post('/node/update', validateBody, async (req, res, next) => {
   try {
     const {
+      reference_id,
+      callback_url,
       //node_name,
       node_key,
       //node_key_type,

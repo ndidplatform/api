@@ -32,9 +32,10 @@ const router = express.Router();
 router.post('/', validateBody, async (req, res, next) => {
   try {
     const {
+      reference_id,
+      callback_url,
       namespace,
       identifier,
-      reference_id,
       accessor_type,
       accessor_public_key,
       accessor_id,
@@ -64,6 +65,7 @@ router.post(
     try {
       const {
         reference_id,
+        callback_url,
         accessor_type,
         accessor_public_key,
         accessor_id,
@@ -118,7 +120,7 @@ router.post(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { ial } = req.body;
+      const { reference_id, callback_url, ial } = req.body;
       await identity.updateIal({
         namespace,
         identifier,
@@ -134,6 +136,7 @@ router.post(
 router.post('/:namespace/:identifier', validateBody, async (req, res, next) => {
   try {
     const { namespace, identifier } = req.params;
+    const { reference_id, callback_url, identifier_list } = req.body;
 
     // Not Implemented
     // TODO
@@ -163,7 +166,13 @@ router.post(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { secret, accessor_type, accessor_key, accessor_id } = req.body;
+      const {
+        reference_id,
+        callback_url,
+        accessor_type,
+        accessor_key,
+        accessor_id,
+      } = req.body;
 
       // Not Implemented
       // TODO
@@ -177,7 +186,7 @@ router.post(
 
 router.post('/requests/close', validateBody, async (req, res, next) => {
   try {
-    const { request_id } = req.body;
+    const { reference_id, callback_url, request_id } = req.body;
 
     await common.closeRequest(request_id);
     res.status(204).end();
