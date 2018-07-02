@@ -26,6 +26,7 @@ MQProtocol.prototype._applyRetrySpec = function ( message, retryspec ) {
   let ret = JSON.stringify ({
     msgId: retryspec.msgId,
     seqId: retryspec.seqId, 
+    senderId: retryspec.senderId,
     message: message
   });
   return ret;
@@ -36,7 +37,8 @@ MQProtocol.prototype._extractRetrySpec = function ( message ) {
   return { 
     retryspec: {
       msgId: jsonMsg.msgId, 
-      seqId: jsonMsg.seqId
+      seqId: jsonMsg.seqId,
+      senderId: jsonMsg.senderId,
     }, 
     message: jsonMsg.message 
   };

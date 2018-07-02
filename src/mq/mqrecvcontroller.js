@@ -30,8 +30,10 @@ let protocol = new MQProtocol();
 let MQRecv = function(config) {
   this.recvSocket = new MQRecvSocket({
     maxMsgSize: config.maxMsgSize, 
-    port: config.port
+    port: config.port,
   });
+
+  this.ackSave = {};
 
   this.recvSocket.on('message',  function(jsonMessageStr) {
     const jsonMessage = protocol.ExtractMsg(jsonMessageStr);
@@ -41,7 +43,23 @@ let MQRecv = function(config) {
     });
 
     this.recvSocket.send(ackMSG);
-    this.emit('message', jsonMessage.message);
+
+    const msgId = jsonMessage.retryspec.msgId;
+    const senderId = jsonMessage.retryspec.senderId;
+
+    //first time received from this sender
+    if(!this.ackSave[senderId]) this.ackSave[senderId] = {};
+
+    //this message not received yet
+    if(!this.ackSave[senderId][msgId]) {
+      this.emit('message', jsonMessage.message);
+      this.ackSave[senderId][msgId] = true;
+      let _this = this;
+      setTimeout(() => {
+        delete _this.ackSave[senderId][msgId];
+      }, config.ackSaveTimeout);
+    }
+
   }.bind(this));
 
   this.recvSocket.on('error',  function(error) {

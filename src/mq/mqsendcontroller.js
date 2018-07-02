@@ -42,8 +42,9 @@ let MQSend = function(config) {
   this.logic.on('PerformSend', function (params) {
     let message = protocol.GenerateSendMsg(
       params.payload, {
-        msgId:params.msgId,
-        seqId:params.seqId
+        msgId: params.msgId,
+        seqId: params.seqId,
+        senderId: this.id,
     });
     this.emit('debug', this.id + ': sending msg' + params.msgId);
 
