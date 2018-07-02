@@ -34,6 +34,7 @@ let MQRecv = function(config) {
   });
 
   this.ackSave = {};
+  this.ackSaveTimerId = {};
 
   this.recvSocket.on('message',  function(jsonMessageStr) {
     const jsonMessage = protocol.ExtractMsg(jsonMessageStr);
@@ -49,14 +50,17 @@ let MQRecv = function(config) {
 
     //first time received from this sender
     if(!this.ackSave[senderId]) this.ackSave[senderId] = {};
+    if(!this.ackSaveTimerId[senderId]) this.ackSaveTimerId[senderId] = {};
 
     //this message not received yet
     if(!this.ackSave[senderId][msgId]) {
       this.emit('message', jsonMessage.message);
       this.ackSave[senderId][msgId] = true;
       let _this = this;
-      setTimeout(() => {
+
+      this.ackSaveTimerId[senderId][msgId] = setTimeout(() => {
         delete _this.ackSave[senderId][msgId];
+        delete _this.ackSaveTimerId[senderId][msgId];
       }, config.ackSaveTimeout);
     }
 
@@ -69,6 +73,11 @@ let MQRecv = function(config) {
 
 MQRecv.prototype.close = function() {
   this.recvSocket.close();
+  for(let senderId in this.ackSaveTimerId) {
+    for(let msgId in this.ackSaveTimerId[senderId]) {
+      clearTimeout(this.ackSaveTimerId[senderId][msgId]);
+    }
+  }
 };
 
 util.inherits(MQRecv, EventEmitter);
