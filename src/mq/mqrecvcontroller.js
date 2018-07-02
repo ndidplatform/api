@@ -67,6 +67,10 @@ let MQRecv = function(config) {
   }.bind(this));
 };
 
+MQRecv.prototype.close = function() {
+  this.recvSocket.close();
+};
+
 util.inherits(MQRecv, EventEmitter);
 
 export default MQRecv;

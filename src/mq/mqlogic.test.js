@@ -1,7 +1,6 @@
-const chai = require('chai');
+import chai from 'chai';
 const expect = chai.expect;
-let assert = require('assert');
-let MQLogic = require('./mqlogic.js');
+import MQLogic from './mqlogic';
 
 describe('MQ Retry Logic Unit Test', function () {
   

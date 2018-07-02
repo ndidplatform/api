@@ -1,7 +1,6 @@
-const chai = require('chai');
+import chai from 'chai';
 const expect = chai.expect;
-let assert = require('assert');
-let MQProtocol = require('./mqprotocol.js');
+import MQProtocol from './mqprotocol';
 
 describe('MQ Protocol Unit Test', function () {
   

@@ -47,6 +47,10 @@ MQRecvSocket.prototype.send = function(payload){
   this.receivingSocket.send(payload);
 };
 
+MQRecvSocket.prototype.close = function() {
+  this.receivingSocket.close();
+};
+
 util.inherits(MQRecvSocket, EventEmitter);
 
 export default MQRecvSocket;
