@@ -156,17 +156,20 @@ export async function getIdpsMsqDestination({
     filteredIdpNodes = idpNodes;
   }
 
-  const receivers = await Promise.all(
+  const receivers = (await Promise.all(
     filteredIdpNodes.map(async (idpNode) => {
       const nodeId = idpNode.node_id;
-      const { ip, port } = await tendermintNdid.getMsqAddress(nodeId);
+      const mqAddress = await tendermintNdid.getMsqAddress(nodeId);
+      if (mqAddress == null) {
+        return null;
+      }
       return {
-        ip,
-        port,
+        ip: mqAddress.ip,
+        port: mqAddress.port,
         ...(await tendermintNdid.getNodePubKey(nodeId)),
       };
     })
-  );
+  )).filter((receiver) => receiver != null);
   return receivers;
 }
 
