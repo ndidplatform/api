@@ -33,6 +33,7 @@ import errorType from '../error/type';
 import logger from '../logger';
 
 import * as config from '../config';
+import crypto from 'crypto';
 
 const TEST_MESSAGE = 'test';
 const TEST_MESSAGE_BASE_64 = Buffer.from(TEST_MESSAGE).toString('base64');
@@ -95,7 +96,10 @@ async function testSignCallback(url, publicKey) {
 }
 
 async function testDecryptCallback(url, publicKey) {
-  const encryptedMessage = publicEncrypt(publicKey, TEST_MESSAGE);
+  const encryptedMessage = publicEncrypt({
+    key: publicKey,
+    padding: crypto.constants.RSA_PKCS1_PADDING,
+  }, TEST_MESSAGE);
 
   const response = await fetch(url, {
     method: 'POST',

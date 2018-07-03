@@ -87,6 +87,7 @@ export async function decryptAsymetricKey(cipher) {
       {
         key: privateKey,
         passphrase,
+        padding: crypto.constants.RSA_PKCS1_PADDING,
       },
       encryptedSymKey
     );
@@ -97,7 +98,10 @@ export async function decryptAsymetricKey(cipher) {
 
 export function encryptAsymetricKey(publicKey, message) {
   const symKeyBuffer = crypto.randomBytes(32);
-  const encryptedSymKey = cryptoUtils.publicEncrypt(publicKey, symKeyBuffer);
+  const encryptedSymKey = cryptoUtils.publicEncrypt({
+    key: publicKey,
+    padding: crypto.constants.RSA_PKCS1_PADDING,
+  }, symKeyBuffer);
   const encryptedMessage = cryptoUtils.encryptAES256GCM(
     symKeyBuffer,
     message,
