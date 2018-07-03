@@ -72,10 +72,14 @@ router.post(
       const { request_id, service_id } = req.params;
       const { data } = req.body;
 
-      as.processDataForRP(data, {
-        requestId: request_id,
-        serviceId: service_id,
-      });
+      as.processDataForRP(
+        data,
+        {
+          requestId: request_id,
+          serviceId: service_id,
+        },
+        { synchronous: true }
+      );
 
       res.status(204).end();
     } catch (error) {

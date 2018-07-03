@@ -65,7 +65,7 @@ export async function addAccessorMethodForAssociatedIdp(
     accessor_public_key,
     accessor_id,
   },
-  { synchronous = false }
+  { synchronous = false } = {}
 ) {
   const associated = await checkAssociated({
     namespace,
@@ -155,6 +155,34 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   };
 }
 
+export async function isIdentityExist({ namespace, identifier, ial }) {
+  const sid = namespace + ':' + identifier;
+  const hash_id = utils.hash(sid);
+
+  let exist = await tendermintNdid.checkExistingIdentity(hash_id);
+  if (!exist) {
+    try {
+      await tendermintNdid.registerMqDestination({
+        users: [
+          {
+            hash_id,
+            ial,
+            first: true,
+          },
+        ],
+      });
+    } catch (error) {
+      let errorInfo = error.getInfoForLog();
+      if (errorInfo.details.abciCode === 44) {
+        exist = true;
+      } else {
+        throw error;
+      }
+    }
+  }
+  return exist;
+}
+
 // FIXME: error handling in many cases
 // when there is an error when transacting to blockchain
 // it should not create a request, e.g.
@@ -171,7 +199,7 @@ export async function createNewIdentity(
     ial,
     addAccessor,
   },
-  { synchronous = false, apiVersion }
+  { synchronous = false, apiVersion } = {}
 ) {
   try {
     let onboardData = await db.getOnboardDataByReferenceId(reference_id);
@@ -244,6 +272,7 @@ export async function createNewIdentity(
       createNewIdentityInternalAsync(...arguments, {
         request_id,
         associated,
+        generated_accessor_id: accessor_id,
         exist,
       });
       return { request_id, exist, accessor_id };
@@ -251,6 +280,7 @@ export async function createNewIdentity(
       createNewIdentityInternalAsync(...arguments, {
         request_id,
         associated,
+        generated_accessor_id: accessor_id,
       });
       return { request_id, accessor_id };
     }
@@ -262,34 +292,6 @@ export async function createNewIdentity(
     logger.error(err.getInfoForLog());
     throw err;
   }
-}
-
-export async function isIdentityExist({ namespace, identifier, ial }) {
-  const sid = namespace + ':' + identifier;
-  const hash_id = utils.hash(sid);
-
-  let exist = await tendermintNdid.checkExistingIdentity(hash_id);
-  if (!exist) {
-    try {
-      await tendermintNdid.registerMqDestination({
-        users: [
-          {
-            hash_id,
-            ial,
-            first: true,
-          },
-        ],
-      });
-    } catch (error) {
-      let errorInfo = error.getInfoForLog();
-      if (errorInfo.details.abciCode === 44) {
-        exist = true;
-      } else {
-        throw error;
-      }
-    }
-  }
-  return exist;
 }
 
 async function createNewIdentityInternalAsync(
@@ -305,11 +307,15 @@ async function createNewIdentityInternalAsync(
     addAccessor,
   },
   { synchronous = false, apiVersion },
-  { request_id, associated, exist }
+  { request_id, associated, generated_accessor_id, exist }
 ) {
   try {
     if (exist == null) {
       exist = await isIdentityExist({ namespace, identifier, ial });
+    }
+
+    if (accessor_id == null) {
+      accessor_id = generated_accessor_id;
     }
 
     const sid = namespace + ':' + identifier;
@@ -451,7 +457,7 @@ async function createNewIdentityInternalAsync(
 
 export async function updateIal(
   { reference_id, callback_url, namespace, identifier, ial },
-  { synchronous = false }
+  { synchronous = false } = {}
 ) {
   try {
     //check onboard

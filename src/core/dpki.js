@@ -27,7 +27,7 @@ import { getErrorObjectForClient } from '../error/helpers';
 
 export async function updateNode(
   { reference_id, callback_url, public_key, master_public_key },
-  { synchronous = false }
+  { synchronous = false } = {}
 ) {
   if (synchronous) {
     await updateNodeInternalAsync(...arguments);

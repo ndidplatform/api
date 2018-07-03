@@ -109,7 +109,7 @@ async function sendDataToRP(rpId, data) {
 export async function processDataForRP(
   data,
   { reference_id, callback_url, requestId, serviceId, rpId },
-  { synchronous = false }
+  { synchronous = false } = {}
 ) {
   try {
     if (synchronous) {
@@ -131,7 +131,7 @@ export async function processDataForRP(
   }
 }
 
-export async function processDataForRPInternalAsync(
+async function processDataForRPInternalAsync(
   data,
   { reference_id, callback_url, requestId, serviceId, rpId },
   { synchronous = false }
@@ -408,7 +408,7 @@ export async function handleTendermintNewBlockHeaderEvent(
 
 export async function registerOrUpdateASService(
   { service_id, reference_id, callback_url, min_ial, min_aal, url },
-  { synchronous = false }
+  { synchronous = false } = {}
 ) {
   try {
     //check already register?
@@ -454,7 +454,7 @@ export async function registerOrUpdateASService(
   }
 }
 
-export async function registerOrUpdateASServiceInternalAsync(
+async function registerOrUpdateASServiceInternalAsync(
   { service_id, reference_id, callback_url, min_ial, min_aal, url },
   { synchronous = false },
   { isRegisterd }

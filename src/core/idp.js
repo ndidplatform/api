@@ -612,7 +612,9 @@ export async function handleMessageFromQueue(messageStr) {
         message.request_id,
         message.accessor_id
       );
-      const reference_id = await db.getReferenceIdByRequestId(message.request_id);
+      const reference_id = await db.getReferenceIdByRequestId(
+        message.request_id
+      );
       let notifyData = {
         reference_id,
         request_id: message.request_id,
@@ -696,7 +698,9 @@ export async function handleTendermintNewBlockHeaderEvent(
             message.request_id,
             message.accessor_id
           );
-          const reference_id = await db.getReferenceIdByRequestId(message.request_id);
+          const reference_id = await db.getReferenceIdByRequestId(
+            message.request_id
+          );
           let notifyData = {
             reference_id,
             request_id: message.request_id,

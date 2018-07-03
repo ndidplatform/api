@@ -244,7 +244,7 @@ export async function createRequest(
     min_idp,
     request_timeout,
   },
-  { synchronous = false }
+  { synchronous = false } = {}
 ) {
   try {
     // existing reference_id, return request ID
@@ -766,7 +766,7 @@ export async function shouldRetryCallback(requestId) {
 
 export async function closeRequest(
   { reference_id, callback_url, request_id },
-  { synchronous = false }
+  { synchronous = false } = {}
 ) {
   try {
     if (synchronous) {
@@ -786,7 +786,7 @@ export async function closeRequest(
   }
 }
 
-export async function closeRequestInternalAsync(
+async function closeRequestInternalAsync(
   { reference_id, callback_url, request_id },
   { synchronous = false }
 ) {
@@ -794,7 +794,7 @@ export async function closeRequestInternalAsync(
     const responseValidList = await db.getIdpResponseValidList(request_id);
 
     await tendermintNdid.closeRequest({
-      request_id,
+      requestId : request_id,
       responseValidList,
     });
 
