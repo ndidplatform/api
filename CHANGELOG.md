@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 (July 3, 2018)
+
+BUG FIXES:
+- Fix destructure variables error when IdP message queue address is not found.
+- Change public encrypt and private decrypt padding scheme. (Default(PKCS#1 OAEP) to PKCS#1 v1.5).
+
 ## 0.2.0 (June 30, 2018)
 
 BREAKING CHANGES:
