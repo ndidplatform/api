@@ -32,70 +32,77 @@ import * as tendermintNdid from '../tendermint/ndid';
 import MQSend from './mqsendcontroller.js';
 import MQRecv from './mqrecvcontroller.js';
 
+export const eventEmitter = new EventEmitter();
+
+//all time is in milliseconds
 const mqSend = new MQSend({
   timeout: 30000,
   totalTimeout: 300000,
   id: config.nodeId,
 });
+
 const mqRecv = new MQRecv({
   port: config.mqRegister.port,
   maxMsgSize: 2000000,
+});
+
+initReceivingQueue({
   //should match sender's total timeout
   ackSaveTimeout: 300000,
 });
 
-export const eventEmitter = new EventEmitter();
+async function initReceivingQueue() {
+  await mqRecv.init();
 
-mqRecv.on('message', async function(jsonMessageStr) {
+  mqRecv.on('message', async function(jsonMessageStr) {
+    const jsonMessage = JSON.parse(jsonMessageStr);
+    let decrypted = await utils.decryptAsymetricKey(jsonMessage);
 
-  const jsonMessage = JSON.parse(jsonMessageStr);
-
-  let decrypted = await utils.decryptAsymetricKey(jsonMessage);
-
-  logger.debug({
-    message: 'Raw decrypted message from message queue',
-    decrypted,
-  });
-
-  //verify digital signature
-  let [raw_message, msqSignature] = decrypted.split('|');
-
-  logger.debug({
-    message: 'Split msqSignature',
-    raw_message,
-    msqSignature,
-  });
-
-  let { idp_id, rp_id, as_id } = JSON.parse(raw_message);
-  let nodeId = idp_id || rp_id || as_id;
-  let { public_key } = await tendermintNdid.getNodePubKey(nodeId);
-  if (!nodeId)
-    throw new CustomError({
-      message: 'Receive message from unknown node',
+    logger.debug({
+      message: 'Raw decrypted message from message queue',
+      decrypted,
     });
 
-  let signatureValid = utils.verifySignature(
-    msqSignature,
-    public_key,
-    raw_message
-  );
+    //verify digital signature
+    let [raw_message, msqSignature] = decrypted.split('|');
 
-  logger.debug({
-    message: 'Verify signature',
-    msqSignature,
-    public_key,
-    raw_message,
-    raw_message_object: JSON.parse(raw_message),
-    signatureValid,
-  });
-
-  if (signatureValid) {
-    eventEmitter.emit('message', raw_message);
-  } else
-    throw new CustomError({
-      message: 'Receive message with unmatched digital signature',
+    logger.debug({
+      message: 'Split msqSignature',
+      raw_message,
+      msqSignature,
     });
-});
+
+    let { idp_id, rp_id, as_id } = JSON.parse(raw_message);
+    let nodeId = idp_id || rp_id || as_id;
+    let { public_key } = await tendermintNdid.getNodePubKey(nodeId);
+    if (!nodeId)
+      throw new CustomError({
+        message: 'Receive message from unknown node',
+      });
+
+    let signatureValid = utils.verifySignature(
+      msqSignature,
+      public_key,
+      raw_message
+    );
+
+    logger.debug({
+      message: 'Verify signature',
+      msqSignature,
+      public_key,
+      raw_message,
+      raw_message_object: JSON.parse(raw_message),
+      signatureValid,
+    });
+
+    if (signatureValid) {
+      eventEmitter.emit('message', raw_message);
+    } else
+      throw new CustomError({
+        message: 'Receive message with unmatched digital signature',
+      });
+  });
+}
 
 export const send = async (receivers, message) => {
   let msqSignature = await utils.createSignature(message);

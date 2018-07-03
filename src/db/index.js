@@ -542,6 +542,28 @@ export function removeTimeoutScheduler(requestId) {
   });
 }
 
+export function getAllDuplicateMessageCheck() {
+  return db.getAll({ name: 'duplicateMessageCheck' });
+}
+
+export function setDuplicateMessageCheck(senderId, checkObject) {
+  return db.set({
+    name: 'duplicateMessageCheck',
+    keyName: 'senderId',
+    key: senderId,
+    valueName: 'checkObject',
+    value: checkObject,
+  });
+}
+
+export function removeDuplicateMessageCheck(senderId) {
+  return db.remove({
+    name: 'duplicateMessageCheck',
+    keyName: 'senderId',
+    key: senderId,
+  });
+}
+
 export function getIdpResponseValidList(requestId) {
   return db.getList({
     name: 'idpResponseValid',

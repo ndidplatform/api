@@ -109,6 +109,10 @@ const Entities = {
     requestId: Sequelize.STRING,
     unixTimeout: Sequelize.INTEGER,
   }),
+  duplicateMessageCheck: sequelize.define('duplicateMessageCheck', {
+    senderId: Sequelize.STRING,
+    checkObject: Sequelize.JSON,
+  }),
   callbackWithRetry: sequelize.define('callbackWithRetry', {
     cbId: { type: Sequelize.STRING, primaryKey: true },
     data: Sequelize.JSON,
