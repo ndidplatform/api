@@ -7,6 +7,7 @@ BUG FIXES:
 - Fix destructure variables error when IdP message queue address is not found.
 - Change public encrypt and private decrypt padding scheme. (Default(PKCS#1 OAEP) to PKCS#1 v1.5).
 - Add missing value for accessorSign callback (type, padding) and fix sign_method
+- [Docker] Fix issue which incorrectly set master public key as empty string when register a new node
 
 ## 0.2.0 (June 30, 2018)
 
