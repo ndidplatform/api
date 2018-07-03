@@ -50,6 +50,12 @@ export default function errorHandler(err, req, res, next) {
       responseBody,
     });
   } else if (clientError === true) {
+    if (
+      err.getCode() === errorType.QUERY_STRING_VALIDATION_FAILED.code ||
+      err.getCode() === errorType.BODY_VALIDATION_FAILED.code
+    ) {
+      responseBody.details = err.details;
+    }
     res.status(clientHttpErrorCode).json(responseBody);
     logger.error({
       message: `Responded Bad Request with HTTP code ${clientHttpErrorCode}`,
