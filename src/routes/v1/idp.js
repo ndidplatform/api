@@ -66,6 +66,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
 router.post('/response', validateBody, async (req, res, next) => {
   try {
     const {
+      reference_id,
       request_id,
       //namespace,
       //identifier,
@@ -80,6 +81,7 @@ router.post('/response', validateBody, async (req, res, next) => {
     } = req.body;
 
     await idp.requestChallengeAndCreateResponse({
+      reference_id,
       request_id,
       //namespace,
       //identifier,
