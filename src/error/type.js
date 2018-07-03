@@ -85,6 +85,14 @@ export default {
     code: 10014,
     message: 'Cannot sign with accessor key by callback',
   },
+  INVALID_RESPONSE: {
+    code: 10015,
+    message: 'Invalid response from IdP (Invalid signature or ZK proof)',
+  },
+  USER_REJECTED: {
+    code: 10016,
+    message: 'User has rejected to give a consent',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {

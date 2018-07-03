@@ -20,13 +20,13 @@
  *
  */
 
+import * as utils from '../utils';
+import * as tendermint from '../tendermint';
 import logger from '../logger';
 import { callbackToClient } from '../utils/callback';
-import { getErrorObjectForClient } from '../error/helpers';
 
-import * as utils from '../utils';
-import * as config from '../config';
-import * as tendermint from '../tendermint';
+import CustomError from '../error/customError';
+import { getErrorObjectForClient } from '../error/helpers';
 
 let init = false;
 
@@ -134,6 +134,7 @@ async function registerNodeInternalAsync(data, { synchronous = false }) {
       await callbackToClient(
         callback_url,
         {
+          type: 'create_node_result',
           reference_id,
           success: true,
         },
@@ -153,6 +154,7 @@ async function registerNodeInternalAsync(data, { synchronous = false }) {
       await callbackToClient(
         callback_url,
         {
+          type: 'create_node_result',
           reference_id,
           success: false,
           error: getErrorObjectForClient(error),

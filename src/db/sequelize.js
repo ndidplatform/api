@@ -39,6 +39,10 @@ const sequelize = new Sequelize('ndid-api', null, null, {
 
 // Models
 const Entities = {
+  callbackUrl: sequelize.define('callbackUrl', {
+    referenceId: { type: Sequelize.STRING, primaryKey: true },
+    url: Sequelize.TEXT,
+  }),
   requestIdExpectedInBlock: sequelize.define('requestIdExpectedInBlock', {
     requestId: Sequelize.STRING,
     expectedBlockHeight: Sequelize.INTEGER,

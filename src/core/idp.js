@@ -453,6 +453,10 @@ export function notifyIncomingRequestByCallback(eventDataForCallback) {
   );
 }
 
+/**
+ * USE WITH API v1 ONLY
+ * @param {Object} eventDataForCallback
+ */
 export function notifyCreateIdentityResultByCallback(eventDataForCallback) {
   notifyByCallback({
     url: callbackUrls.identity_result_url,
@@ -461,6 +465,10 @@ export function notifyCreateIdentityResultByCallback(eventDataForCallback) {
   });
 }
 
+/**
+ * USE WITH API v1 ONLY
+ * @param {Object} eventDataForCallback
+ */
 export function notifyAddAccessorResultByCallback(eventDataForCallback) {
   notifyByCallback({
     url: callbackUrls.identity_result_url,
@@ -615,14 +623,44 @@ export async function handleMessageFromQueue(messageStr) {
       const reference_id = await db.getReferenceIdByRequestId(
         message.request_id
       );
-      let notifyData = {
+      const callbackUrl = await db.getCallbackUrlByReferenceId(reference_id);
+      const notifyData = {
+        success: true,
         reference_id,
         request_id: message.request_id,
-        success: true,
         secret,
       };
-      if (associated) notifyAddAccessorResultByCallback(notifyData);
-      else notifyCreateIdentityResultByCallback(notifyData);
+      if (associated) {
+        if (callbackUrl == null) {
+          // Implies API v1
+          notifyAddAccessorResultByCallback(notifyData);
+        } else {
+          await callbackToClient(
+            callbackUrl,
+            {
+              type: 'add_accessor_result',
+              ...notifyData,
+            },
+            true
+          );
+          db.removeCallbackUrlByReferenceId(reference_id);
+        }
+      } else {
+        if (callbackUrl == null) {
+          // Implies API v1
+          notifyCreateIdentityResultByCallback(notifyData);
+        } else {
+          await callbackToClient(
+            callbackUrl,
+            {
+              type: 'create_identity_result',
+              ...notifyData,
+            },
+            true
+          );
+          db.removeCallbackUrlByReferenceId(reference_id);
+        }
+      }
       db.removeReferenceIdByRequestId(message.request_id);
     }
   } else if (message.type === 'request_challenge') {
@@ -701,14 +739,46 @@ export async function handleTendermintNewBlockHeaderEvent(
           const reference_id = await db.getReferenceIdByRequestId(
             message.request_id
           );
-          let notifyData = {
+          const callbackUrl = await db.getCallbackUrlByReferenceId(
+            reference_id
+          );
+          const notifyData = {
+            success: true,
             reference_id,
             request_id: message.request_id,
-            success: true,
             secret,
           };
-          if (associated) notifyAddAccessorResultByCallback(notifyData);
-          else notifyCreateIdentityResultByCallback(notifyData);
+          if (associated) {
+            if (callbackUrl == null) {
+              // Implies API v1
+              notifyAddAccessorResultByCallback(notifyData);
+            } else {
+              await callbackToClient(
+                callbackUrl,
+                {
+                  type: 'add_accessor_result',
+                  ...notifyData,
+                },
+                true
+              );
+              db.removeCallbackUrlByReferenceId(reference_id);
+            }
+          } else {
+            if (callbackUrl == null) {
+              // Implies API v1
+              notifyCreateIdentityResultByCallback(notifyData);
+            } else {
+              await callbackToClient(
+                callbackUrl,
+                {
+                  type: 'create_identity_result',
+                  ...notifyData,
+                },
+                true
+              );
+              db.removeCallbackUrlByReferenceId(reference_id);
+            }
+          }
           db.removeReferenceIdByRequestId(message.request_id);
         }
       } else if (message.type === 'request_challenge') {
@@ -741,42 +811,95 @@ export async function handleTendermintNewBlockHeaderEvent(
 }
 
 async function checkOnboardResponse(message) {
-  let reason = false;
-  let requestDetail = await tendermintNdid.getRequestDetail({
-    requestId: message.request_id,
-  });
-  let response = requestDetail.response_list[0];
-
-  if (
-    !(await common.verifyZKProof(
-      message.request_id,
-      message.idp_id,
-      message,
-      3
-    ))
-  ) {
-    reason = 'Invalid response';
-  } else if (response.status !== 'accept') {
-    reason = 'User rejected';
-  }
-
-  if (reason) {
-    notifyAddAccessorResultByCallback({
-      request_id: message.request_id,
-      success: false,
+  try {
+    let requestDetail = await tendermintNdid.getRequestDetail({
+      requestId: message.request_id,
     });
+    let response = requestDetail.response_list[0];
+
+    if (
+      !(await common.verifyZKProof(
+        message.request_id,
+        message.idp_id,
+        message,
+        3
+      ))
+    ) {
+      throw new CustomError({
+        message: errorType.INVALID_RESPONSE.message,
+        code: errorType.INVALID_RESPONSE.code,
+      });
+    } else if (response.status !== 'accept') {
+      throw new CustomError({
+        message: errorType.USER_REJECTED.message,
+        code: errorType.USER_REJECTED.code,
+      });
+    }
+
+    logger.debug({
+      message: 'Onboard consented',
+    });
+    db.removeChallengeFromRequestId(message.request_id);
+    return true;
+  } catch (error) {
+    const { associated } = await db.getIdentityFromRequestId(
+      message.request_id
+    );
+
+    const reference_id = await db.getReferenceIdByRequestId(message.request_id);
+    const callbackUrl = await db.getCallbackUrlByReferenceId(reference_id);
+    if (associated) {
+      if (callbackUrl == null) {
+        // Implies API v1
+        notifyAddAccessorResultByCallback({
+          request_id: message.request_id,
+          success: false,
+          error: getErrorObjectForClient(error),
+        });
+      } else {
+        await callbackToClient(
+          callbackUrl,
+          {
+            type: 'add_accessor_result',
+            success: false,
+            reference_id,
+            request_id: message.request_id,
+            error: getErrorObjectForClient(error),
+          },
+          true
+        );
+        db.removeCallbackUrlByReferenceId(reference_id);
+      }
+    } else {
+      if (callbackUrl == null) {
+        // Implies API v1
+        notifyCreateIdentityResultByCallback({
+          request_id: message.request_id,
+          success: false,
+          error: getErrorObjectForClient(error),
+        });
+      } else {
+        await callbackToClient(
+          callbackUrl,
+          {
+            type: 'create_identity_result',
+            success: false,
+            reference_id,
+            request_id: message.request_id,
+            error: getErrorObjectForClient(error),
+          },
+          true
+        );
+        db.removeCallbackUrlByReferenceId(reference_id);
+      }
+    }
 
     logger.debug({
       message: 'Onboarding failed',
-      reason,
+      error,
     });
 
     db.removeChallengeFromRequestId(message.request_id);
     return false;
   }
-  logger.debug({
-    message: 'Onboard consented',
-  });
-  db.removeChallengeFromRequestId(message.request_id);
-  return true;
 }

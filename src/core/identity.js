@@ -65,7 +65,7 @@ export async function addAccessorMethodForAssociatedIdp(
     accessor_public_key,
     accessor_id,
   },
-  { synchronous = false } = {}
+  { synchronous = false, apiVersion } = {}
 ) {
   const associated = await checkAssociated({
     namespace,
@@ -95,7 +95,7 @@ export async function addAccessorMethodForAssociatedIdp(
       accessor_id,
       addAccessor: true,
     },
-    { synchronous }
+    { synchronous, apiVersion }
   );
   return result;
 }
@@ -277,6 +277,8 @@ export async function createNewIdentity(
       });
       return { request_id, exist, accessor_id };
     } else {
+      await db.setCallbackUrlByReferenceId(reference_id, callback_url);
+
       createNewIdentityInternalAsync(...arguments, {
         request_id,
         associated,
@@ -421,12 +423,26 @@ async function createNewIdentityInternalAsync(
         accessor_group_id,
       });
 
-      notifyCreateIdentityResultByCallback({
-        reference_id,
-        request_id,
-        success: true,
-        secret,
-      });
+      if (apiVersion === 1) {
+        notifyCreateIdentityResultByCallback({
+          reference_id,
+          request_id,
+          success: true,
+          secret,
+        });
+      } else {
+        await callbackToClient(
+          callback_url,
+          {
+            type: 'create_identity_result',
+            success: true,
+            reference_id,
+            request_id,
+            secret,
+          },
+          true
+        );
+      }
       db.removeOnboardDataByReferenceId(reference_id);
     }
   } catch (error) {
@@ -442,6 +458,7 @@ async function createNewIdentityInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          type: 'create_identity_request_result',
           success: false,
           reference_id,
           request_id,
@@ -515,6 +532,7 @@ async function updateIalInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          type: 'update_ial_result',
           success: true,
           reference_id,
         },
@@ -534,6 +552,7 @@ async function updateIalInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          type: 'update_ial_result',
           success: false,
           reference_id,
           error: getErrorObjectForClient(error),

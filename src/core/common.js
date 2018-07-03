@@ -513,6 +513,7 @@ async function createRequestInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          type: 'create_request_result',
           success: true,
           reference_id,
           request_id,
@@ -536,6 +537,7 @@ async function createRequestInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          type: 'create_request_result',
           success: false,
           reference_id,
           request_id,
@@ -804,6 +806,7 @@ async function closeRequestInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          type: 'close_request_result',
           success: true,
           reference_id,
           request_id,
@@ -824,6 +827,7 @@ async function closeRequestInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          type: 'close_request_result',
           success: false,
           reference_id,
           request_id,

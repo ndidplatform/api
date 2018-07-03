@@ -47,6 +47,7 @@ async function updateNodeInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          type: 'update_node_result',
           reference_id,
           success: true,
         },
@@ -66,6 +67,7 @@ async function updateNodeInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          type: 'update_node_result',
           reference_id,
           success: false,
           error: getErrorObjectForClient(error),

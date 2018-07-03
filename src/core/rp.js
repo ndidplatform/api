@@ -190,7 +190,7 @@ async function processRequestUpdate(requestId, height) {
     !requestStatus.closed &&
     !requestStatus.timed_out
   ) {
-    await common.closeRequest(requestId);
+    await common.closeRequest({ request_id: requestId }, { synchronous: true });
   }
 
   if (requestStatus.closed || requestStatus.timed_out) {

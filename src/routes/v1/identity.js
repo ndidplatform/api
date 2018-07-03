@@ -53,7 +53,7 @@ router.post('/', validateBody, async (req, res, next) => {
         accessor_id,
         ial,
       },
-      { synchronous: true }
+      { synchronous: true, apiVersion: 1 }
     );
 
     res.status(200).json(result);
@@ -85,7 +85,7 @@ router.post(
           accessor_public_key,
           accessor_id,
         },
-        { synchronous: true }
+        { synchronous: true, apiVersion: 1 }
       );
 
       res.status(200).json(result);

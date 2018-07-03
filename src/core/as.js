@@ -165,6 +165,7 @@ async function processDataForRPInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          type: 'send_data_result',
           success: true,
           reference_id,
           request_id: requestId,
@@ -186,6 +187,7 @@ async function processDataForRPInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          type: 'send_data_result',
           success: false,
           reference_id,
           request_id: requestId,
@@ -489,6 +491,7 @@ async function registerOrUpdateASServiceInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          type: 'add_or_update_service_result',
           success: true,
           reference_id,
         },
@@ -508,6 +511,7 @@ async function registerOrUpdateASServiceInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          type: 'add_or_update_service_result',
           success: false,
           reference_id,
           error: getErrorObjectForClient(error),
