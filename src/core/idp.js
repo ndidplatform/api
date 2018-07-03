@@ -120,7 +120,9 @@ export async function accessorSign(sid, hash_id, accessor_id, reference_id) {
     sid,
     hash_method: 'SHA256',
     key_type: 'RSA',
-    sign_method: 'RSA',
+    sign_method: 'RSA-SHA256',
+    type: 'accessor_sign',
+    padding: 'PKCS#1v1.5',
     accessor_id,
     reference_id,
   };
