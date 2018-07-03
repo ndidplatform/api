@@ -16,7 +16,7 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
--
+- Fix wrong callback `type` value when create identity failed (user does not give a consent or got an invalid response from IdP).
 
 ## 0.2.0 (June 30, 2018)
 
