@@ -47,14 +47,17 @@ router.post('/registerNode', async (req, res, next) => {
       max_ial,
     } = req.body;
 
-    await ndid.registerNode({
-      node_id,
-      public_key,
-      master_public_key,
-      role,
-      max_aal,
-      max_ial,
-    });
+    await ndid.registerNode(
+      {
+        node_id,
+        public_key,
+        master_public_key,
+        role,
+        max_aal,
+        max_ial,
+      },
+      { synchronous: true }
+    );
 
     res.status(201).end();
   } catch (error) {

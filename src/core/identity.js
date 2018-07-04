@@ -308,7 +308,7 @@ async function createNewIdentityInternalAsync(
     ial,
     addAccessor,
   },
-  { synchronous = false, apiVersion },
+  { synchronous = false, apiVersion } = {},
   { request_id, associated, generated_accessor_id, exist }
 ) {
   try {
@@ -522,7 +522,7 @@ export async function updateIal(
 
 async function updateIalInternalAsync(
   { reference_id, callback_url, namespace, identifier, ial },
-  { synchronous = false }
+  { synchronous = false } = {}
 ) {
   try {
     const hash_id = utils.hash(namespace + ':' + identifier);

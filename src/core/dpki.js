@@ -38,7 +38,7 @@ export async function updateNode(
 
 async function updateNodeInternalAsync(
   { reference_id, callback_url, public_key, master_public_key },
-  { synchronous = false }
+  { synchronous = false } = {}
 ) {
   try {
     await tendermintNdid.updateNode({ public_key, master_public_key });

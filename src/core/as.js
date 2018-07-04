@@ -134,7 +134,7 @@ export async function processDataForRP(
 async function processDataForRPInternalAsync(
   data,
   { reference_id, callback_url, requestId, serviceId, rpId },
-  { synchronous = false }
+  { synchronous = false } = {}
 ) {
   try {
     const as_id = config.nodeId;
@@ -458,7 +458,7 @@ export async function registerOrUpdateASService(
 
 async function registerOrUpdateASServiceInternalAsync(
   { service_id, reference_id, callback_url, min_ial, min_aal, url },
-  { synchronous = false },
+  { synchronous = false } = {},
   { isRegisterd }
 ) {
   try {

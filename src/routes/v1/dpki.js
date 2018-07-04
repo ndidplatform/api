@@ -53,7 +53,7 @@ router.post('/node/create', validateBody, async (req, res, next) => {
       role,
       max_ial,
       max_aal,
-    });
+    }, { synchronous: true });
 
     res.status(201).end();
   } catch (error) {

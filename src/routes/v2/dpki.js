@@ -59,7 +59,7 @@ router.post('/node/create', validateBody, async (req, res, next) => {
       max_aal,
     });
 
-    res.status(201).end();
+    res.status(202).end();
   } catch (error) {
     next(error);
   }
@@ -87,7 +87,7 @@ router.post('/node/update', validateBody, async (req, res, next) => {
       master_public_key: node_master_key,
     });
 
-    res.status(200).json(result);
+    res.status(202).json(result);
   } catch (error) {
     next(error);
   }

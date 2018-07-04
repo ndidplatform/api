@@ -473,7 +473,7 @@ async function createRequestInternalAsync(
     min_idp,
     request_timeout,
   },
-  { synchronous = false },
+  { synchronous = false } = {},
   { request_id, secretSalt, receivers, requestData }
 ) {
   try {
@@ -793,7 +793,7 @@ export async function closeRequest(
 
 async function closeRequestInternalAsync(
   { reference_id, callback_url, request_id },
-  { synchronous = false }
+  { synchronous = false } = {}
 ) {
   try {
     const responseValidList = await db.getIdpResponseValidList(request_id);

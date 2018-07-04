@@ -111,7 +111,7 @@ export async function registerNode(data, { synchronous = false } = {}) {
   }
 }
 
-async function registerNodeInternalAsync(data, { synchronous = false }) {
+async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
   const {
     reference_id,
     callback_url,
