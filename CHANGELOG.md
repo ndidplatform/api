@@ -10,7 +10,8 @@ BREAKING CHANGES:
 
 IMPROVEMENTS:
 
-- Add more logging for callback (HTTP response code, callback ID)
+- Add more logging for callback (HTTP response code, callback ID).
+- Add logging for DPKI (external crypto service) callback.
 - Configurable log level. Can be set with `LOG_LEVEL` environment variable.
 - Configurable log target. Can be set with `LOG_TARGET` environment variable.
 - Configurable log highlight color (enabled/disabled). Can be set with `LOG_COLOR` environment variable.
