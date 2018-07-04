@@ -40,6 +40,7 @@ import getInfo from './info';
 import * as tendermint from '../tendermint';
 
 import * as config from '../config';
+import { registeredMsqAddress } from '../core/common';
 
 const router = express.Router();
 const apiRouter = express.Router();
@@ -106,6 +107,18 @@ router.use((req, res, next) => {
     });
     return;
   }
+
+  // Reject POST call when not register msq yet
+  if(!registeredMsqAddress() && req.method === 'POST') {
+    res.status(503).json({
+      error: {
+        message: errorType.WAIT_FOR_MESSAGE_QUEUE.message,
+        code: errorType.WAIT_FOR_MESSAGE_QUEUE.code,
+      },
+    });
+    return;
+  }
+
   next();
 });
 

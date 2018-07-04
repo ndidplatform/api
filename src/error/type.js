@@ -85,6 +85,10 @@ export default {
     code: 10014,
     message: 'Cannot sign with accessor key by callback',
   },
+  WAIT_FOR_MESSAGE_QUEUE: {
+    code: 10015,
+    message: 'Wait for message queue address to be registered',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
