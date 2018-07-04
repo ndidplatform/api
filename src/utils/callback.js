@@ -38,14 +38,27 @@ let stopCallbackRetry = false;
  * @param {string} callbackUrl
  * @param {Object} body
  */
-function httpPost(callbackUrl, body) {
-  return fetch(callbackUrl, {
+async function httpPost(cbId, callbackUrl, body) {
+  const response = await fetch(callbackUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
   });
+
+  logger.info({
+    message: 'Got callback response',
+    cbId,
+    httpStatusCode: response.status,
+  });
+  logger.debug({
+    message: 'Callback response body',
+    cbId,
+    body: await response.text(),
+  });
+
+  return response;
 }
 
 async function callbackWithRetry(
@@ -76,9 +89,11 @@ async function callbackWithRetry(
     logger.debug({
       message: 'Callback data in body',
       body,
+      cbId,
     });
     try {
-      const response = await httpPost(callbackUrl, body);
+      const response = await httpPost(cbId, callbackUrl, body);
+
       db.removeCallbackWithRetryData(cbId);
       if (responseCallback) {
         responseCallback(response, dataForResponseCallback);
@@ -145,8 +160,8 @@ export async function callbackToClient(
   responseCallback,
   dataForResponseCallback
 ) {
+  const cbId = randomBase64Bytes(10);
   if (retry) {
-    const cbId = randomBase64Bytes(10);
     logger.info({
       message: 'Saving data for callback with retry',
       url: callbackUrl,
@@ -173,13 +188,18 @@ export async function callbackToClient(
     logger.info({
       message: 'Sending a callback without retry',
       url: callbackUrl,
+      cbId,
     });
     logger.debug({
       message: 'Callback data in body',
       body,
+      cbId,
     });
     try {
-      await httpPost(callbackUrl, body);
+      const response = await httpPost(cbId, callbackUrl, body);
+      if (responseCallback) {
+        responseCallback(response, dataForResponseCallback);
+      }
     } catch (error) {
       logger.error({
         message: 'Cannot send callback to client application',

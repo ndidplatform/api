@@ -9,6 +9,10 @@ BUG FIXES:
 - Add missing value for accessorSign callback (type, padding) and fix sign_method
 - [Docker] Fix issue which incorrectly set master public key as empty string when register a new node
 
+IMPROVEMENTS:
+
+- Add more logging for callback (HTTP response code, callback ID)
+
 ## 0.2.0 (June 30, 2018)
 
 BREAKING CHANGES:
