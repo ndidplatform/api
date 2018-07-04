@@ -150,7 +150,16 @@ export async function accessorSign(sid, hash_id, accessor_id, reference_id) {
       },
       body: JSON.stringify(data),
     });
-    const signatureObj = await response.json();
+    const responseBody = await response.text();
+    logger.info({
+      message: 'Accessor sign response',
+      httpStatusCode: response.status,
+    });
+    logger.debug({
+      message: 'Accessor sign response body',
+      body: responseBody,
+    });
+    const signatureObj = JSON.parse(responseBody);
     return signatureObj.signature;
   } catch (error) {
     throw new CustomError({
