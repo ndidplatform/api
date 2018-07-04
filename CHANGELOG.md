@@ -4,7 +4,8 @@
 
 IMPROVEMENTS:
 
-- Add more logging for callback (HTTP response code, callback ID)
+- Add more logging for callback (HTTP response code, callback ID).
+- Add logging for DPKI (external crypto service) callback.
 
 ## 0.2.1 (July 3, 2018)
 
