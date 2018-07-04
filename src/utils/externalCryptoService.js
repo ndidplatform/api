@@ -99,12 +99,13 @@ async function testSignCallback(url, publicKey) {
     },
     body: JSON.stringify(body),
   });
+  const responseBody = await response.text();
   logger.info({
     message: 'Testing external sign with node key: response',
     httpStatusCode: response.status,
-    body: await response.text(),
+    body: responseBody,
   });
-  const { signature } = await response.json();
+  const { signature } = JSON.parse(responseBody);
   if (!verifySignature(signature, publicKey, TEST_MESSAGE)) {
     throw new CustomError({
       message: 'Invalid signature',
@@ -140,12 +141,13 @@ async function testDecryptCallback(url, publicKey) {
     },
     body: JSON.stringify(body),
   });
+  const responseBody = await response.text();
   logger.info({
     message: 'Testing external decrypt with node key: response',
     httpStatusCode: response.status,
-    body: await response.text(),
+    body: responseBody,
   });
-  const decryptedMessageBase64 = (await response.json()).decrypted_message;
+  const decryptedMessageBase64 = JSON.parse(responseBody).decrypted_message;
   if (TEST_MESSAGE_BASE_64 !== decryptedMessageBase64) {
     throw new CustomError({
       message: 'Decrypted message mismatch',

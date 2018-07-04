@@ -47,6 +47,8 @@ async function httpPost(cbId, callbackUrl, body) {
     body: JSON.stringify(body),
   });
 
+  const responseBody = await response.text();
+
   logger.info({
     message: 'Got callback response',
     cbId,
@@ -55,10 +57,13 @@ async function httpPost(cbId, callbackUrl, body) {
   logger.debug({
     message: 'Callback response body',
     cbId,
-    body: await response.text(),
+    body: responseBody,
   });
 
-  return response;
+  return {
+    response,
+    body: responseBody,
+  };
 }
 
 async function callbackWithRetry(
