@@ -5,7 +5,6 @@ import assert from 'assert';
 import MQRecv from '../mq/mqrecvcontroller';
 import MQSend from '../mq/mqsendcontroller';
 
-
 describe('Functional Test for MQ receiver with real socket', function () {
   let portIdx = 5655;
   let getPort = function(numports) {
@@ -27,25 +26,28 @@ describe('Functional Test for MQ receiver with real socket', function () {
     let mqNodeRecv = new MQRecv({port: ports[0]});
     let expectedResults = [1111111,222222,333333];
 
-    mqNodeRecv.on("message", function(msg){
-      expect(parseInt(msg)).to.be.oneOf(expectedResults);
+    mqNodeRecv.init({ackSaveTimeout: 3000}).then(() => {
+      mqNodeRecv.on("message", function(msg){
+        expect(parseInt(msg)).to.be.oneOf(expectedResults);
 
-      count++;
-      if (count==3)  {
-        done();
-        mqNodeRecv.recvSocket.close();
-      }
-    });
+        count++;
+        if (count==3)  {
+          done();
+          mqNodeRecv.recvSocket.close();
+        }
+      });
 
-    mqNode1.send({ip:"127.0.0.1",
+      mqNode1.send({ip:"127.0.0.1",
               port:ports[0]
             }, "1111111");
-    mqNode2.send({ip:"127.0.0.1",
-              port:ports[0]
-            }, "222222");
-    mqNode3.send({ip:"127.0.0.1",
-              port:ports[0]
-            }, "333333");
+      mqNode2.send({ip:"127.0.0.1",
+                port:ports[0]
+              }, "222222");
+      mqNode3.send({ip:"127.0.0.1",
+                port:ports[0]
+              }, "333333");
+
+    });
   });
 
 
@@ -54,11 +56,13 @@ describe('Functional Test for MQ receiver with real socket', function () {
 
         this.timeout(10000);
         let mqRecvSmallSize = new MQRecv({port: ports[0], maxMsgSize:10});
-        mqRecvSmallSize.on('message', function(jsonMessageStr) {
-            assert.fail('there should not be message coming through')
-         });
-        mqRecvSmallSize.on('error', function(jsonMessageStr) {
-            assert.fail('there should be no error at receiving part');
+        mqRecvSmallSize.init({ackSaveTimeout: 3000}).then(() => {
+          mqRecvSmallSize.on('message', function(jsonMessageStr) {
+              assert.fail('there should not be message coming through')
+          });
+          mqRecvSmallSize.on('error', function(jsonMessageStr) {
+              assert.fail('there should be no error at receiving part');
+          });
         });
 
        let mqNode = new MQSend({timeout:500, totalTimeout:1500});
