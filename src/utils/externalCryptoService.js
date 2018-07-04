@@ -77,20 +77,32 @@ export const eventEmitter = new EventEmitter();
 });
 
 async function testSignCallback(url, publicKey) {
+  const body = {
+    node_id: config.nodeId,
+    request_message: TEST_MESSAGE,
+    request_message_hash: hash(TEST_MESSAGE),
+    hash_method: 'SHA256',
+    key_type: 'RSA',
+    sign_method: 'RSA-SHA256',
+  };
+  logger.info({
+    message: 'Testing external sign with node key',
+    url,
+    publicKey,
+    body,
+  });
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
-    body: JSON.stringify({
-      node_id: config.nodeId,
-      request_message: TEST_MESSAGE,
-      request_message_hash: hash(TEST_MESSAGE),
-      hash_method: 'SHA256',
-      key_type: 'RSA',
-      sign_method: 'RSA-SHA256',
-    }),
+    body: JSON.stringify(body),
+  });
+  logger.info({
+    message: 'Testing external sign with node key: response',
+    httpStatusCode: response.status,
+    body: await response.text(),
   });
   const { signature } = await response.json();
   if (!verifySignature(signature, publicKey, TEST_MESSAGE)) {
@@ -108,18 +120,30 @@ async function testDecryptCallback(url, publicKey) {
     },
     TEST_MESSAGE
   );
+  const body = {
+    node_id: config.nodeId,
+    encrypted_message: encryptedMessage,
+    key_type: 'RSA',
+  };
 
+  logger.info({
+    message: 'Testing external decrypt with node key',
+    url,
+    publicKey,
+    body,
+  });
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
-    body: JSON.stringify({
-      node_id: config.nodeId,
-      encrypted_message: encryptedMessage,
-      key_type: 'RSA',
-    }),
+    body: JSON.stringify(body),
+  });
+  logger.info({
+    message: 'Testing external decrypt with node key: response',
+    httpStatusCode: response.status,
+    body: await response.text(),
   });
   const decryptedMessageBase64 = (await response.json()).decrypted_message;
   if (TEST_MESSAGE_BASE_64 !== decryptedMessageBase64) {
@@ -276,12 +300,22 @@ export async function decryptAsymetricKey(encryptedMessage) {
       cbId,
       httpStatusCode: response.status,
     });
-    logger.debug({
-      message: 'External decrypt with node key response body',
-      cbId,
-      body: await response.text(),
-    });
-    const result = await response.json();
+    let result;
+    try {
+      result = await response.json();
+      logger.debug({
+        message: 'External decrypt with node key response body',
+        cbId,
+        body: result,
+      });
+    } catch (error) {
+      logger.debug({
+        message: 'External decrypt with node key response body',
+        cbId,
+        body: await response.text(),
+      });
+      throw error;
+    }
     const decryptedMessageBase64 = result.decrypted_message;
     return Buffer.from(decryptedMessageBase64, 'base64');
   } catch (error) {
@@ -343,12 +377,22 @@ export async function createSignature(message, messageHash, useMasterKey) {
       cbId,
       httpStatusCode: response.status,
     });
-    logger.debug({
-      message: 'External sign with node key response body',
-      cbId,
-      body: await response.text(),
-    });
-    const result = await response.json();
+    let result;
+    try {
+      result = await response.json();
+      logger.debug({
+        message: 'External sign with node key response body',
+        cbId,
+        body: result,
+      });
+    } catch (error) {
+      logger.debug({
+        message: 'External sign with node key response body',
+        cbId,
+        body: await response.text(),
+      });
+      throw error;
+    }
     return result.signature;
   } catch (error) {
     // TODO: retry
