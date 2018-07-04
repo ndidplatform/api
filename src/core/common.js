@@ -38,6 +38,8 @@ import * as db from '../db';
 import * as externalCryptoService from '../utils/externalCryptoService';
 
 const role = config.role;
+const registerAtStartup = config.mqRegister.registerAtStartup;
+delete config.mqRegister.registerAtStartup;
 
 let messageQueueAddressRegistered = false;
 let handleMessageFromQueue;
@@ -56,14 +58,14 @@ if (role === 'rp' || role === 'idp' || role === 'as') {
       (config.useExternalCryptoService &&
         externalCryptoService.isCallbackUrlsSet())
     ) {
-      registerMessageQueueAddress();
+      if(registerAtStartup) registerMessageQueueAddress();
     }
   });
 
   if (config.useExternalCryptoService) {
     externalCryptoService.eventEmitter.on('allCallbacksSet', () => {
       if (tendermint.syncing === false) {
-        registerMessageQueueAddress();
+        if(registerAtStartup) registerMessageQueueAddress();
       }
     });
   }

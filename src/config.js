@@ -87,6 +87,10 @@ export const mqRegister = {
     process.env.MQ_BINDING_PORT == null
       ? defaultMqBindingPort
       : parseInt(process.env.MQ_BINDING_PORT),
+  registerAtStartup: 
+    process.env.REGISTER_MQ_AT_STARTUP === 'false' 
+      ? false 
+      : true,
 };
 
 export const useExternalCryptoService =
