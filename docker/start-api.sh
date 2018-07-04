@@ -36,7 +36,7 @@ if [ -z ${NDID_PORT} ]; then NDID_PORT=${SERVER_PORT}; fi
 KEY_PATH=${PRIVATE_KEY_PATH:-/api/keys/node.pem}
 MASTER_KEY_PATH=${MASTER_PRIVATE_KEY_PATH:-/api/keys/master.pem}
 PUBLIC_KEY_PATH=${PUBLIC_KEY_PATH:-/api/keys/node.pub}
-MASTER_PUBLIC_KEY_PATH=${MASTER_PRIVATE_KEY_PATH:-/api/keyes/master.pub}
+MASTER_PUBLIC_KEY_PATH=${MASTER_PUBLIC_KEY_PATH:-/api/keys/master.pub}
 
 tendermint_wait_for_sync_complete() {
   echo "Waiting for tendermint at ${TENDERMINT_IP}:${TENDERMINT_PORT} to be ready..."
