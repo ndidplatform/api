@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+IMPROVEMENTS:
+
+- Add more logging for callback (HTTP response code, callback ID)
+
 ## 0.2.1 (July 3, 2018)
 
 BUG FIXES:
@@ -8,10 +14,6 @@ BUG FIXES:
 - Change public encrypt and private decrypt padding scheme. (Default(PKCS#1 OAEP) to PKCS#1 v1.5).
 - Add missing value for accessorSign callback (type, padding) and fix sign_method
 - [Docker] Fix issue which incorrectly set master public key as empty string when register a new node
-
-IMPROVEMENTS:
-
-- Add more logging for callback (HTTP response code, callback ID)
 
 ## 0.2.0 (June 30, 2018)
 
