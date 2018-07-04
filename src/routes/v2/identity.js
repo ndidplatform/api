@@ -44,16 +44,19 @@ router.post('/', validateBody, async (req, res, next) => {
       ial,
     } = req.body;
 
-    const result = await identity.createNewIdentity({
-      reference_id,
-      callback_url,
-      namespace,
-      identifier,
-      accessor_type,
-      accessor_public_key,
-      accessor_id,
-      ial,
-    });
+    const result = await identity.createNewIdentity(
+      {
+        reference_id,
+        callback_url,
+        namespace,
+        identifier,
+        accessor_type,
+        accessor_public_key,
+        accessor_id,
+        ial,
+      },
+      { synchronous: false }
+    );
 
     res.status(202).json(result);
   } catch (error) {
@@ -76,15 +79,18 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
-      const result = await identity.addAccessorMethodForAssociatedIdp({
-        reference_id,
-        callback_url,
-        namespace,
-        identifier,
-        accessor_type,
-        accessor_public_key,
-        accessor_id,
-      });
+      const result = await identity.addAccessorMethodForAssociatedIdp(
+        {
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          accessor_type,
+          accessor_public_key,
+          accessor_id,
+        },
+        { synchronous: false }
+      );
 
       res.status(202).json(result);
     } catch (error) {
@@ -125,13 +131,16 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const { reference_id, callback_url, ial } = req.body;
-      await identity.updateIal({
-        reference_id,
-        callback_url,
-        namespace,
-        identifier,
-        ial,
-      });
+      await identity.updateIal(
+        {
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          ial,
+        },
+        { synchronous: false }
+      );
       res.status(202).end();
     } catch (error) {
       next(error);
@@ -194,7 +203,10 @@ router.post('/requests/close', validateBody, async (req, res, next) => {
   try {
     const { reference_id, callback_url, request_id } = req.body;
 
-    await common.closeRequest({ reference_id, callback_url, request_id });
+    await common.closeRequest(
+      { reference_id, callback_url, request_id },
+      { synchronous: false }
+    );
     res.status(202).end();
   } catch (error) {
     next(error);

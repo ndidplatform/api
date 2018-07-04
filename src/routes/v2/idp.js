@@ -74,20 +74,23 @@ router.post('/response', validateBody, async (req, res, next) => {
       //request_message,
     } = req.body;
 
-    await idp.requestChallengeAndCreateResponse({
-      reference_id,
-      callback_url,
-      request_id,
-      //namespace,
-      //identifier,
-      ial,
-      aal,
-      secret,
-      status,
-      signature,
-      accessor_id,
-      //request_message,
-    });
+    await idp.requestChallengeAndCreateResponse(
+      {
+        reference_id,
+        callback_url,
+        request_id,
+        //namespace,
+        //identifier,
+        ial,
+        aal,
+        secret,
+        status,
+        signature,
+        accessor_id,
+        //request_message,
+      },
+      { synchronous: false }
+    );
 
     res.status(202).end();
   } catch (error) {

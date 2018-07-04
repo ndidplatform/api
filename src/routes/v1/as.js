@@ -72,7 +72,7 @@ router.post(
       const { request_id, service_id } = req.params;
       const { data } = req.body;
 
-      as.processDataForRP(
+      await as.processDataForRP(
         data,
         {
           requestId: request_id,

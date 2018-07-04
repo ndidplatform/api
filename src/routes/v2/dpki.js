@@ -47,17 +47,20 @@ router.post('/node/create', validateBody, async (req, res, next) => {
       max_ial,
     } = req.body;
 
-    await ndid.registerNode({
-      reference_id,
-      callback_url,
-      node_id,
-      node_name,
-      public_key: node_key,
-      master_public_key: node_master_key,
-      role,
-      max_ial,
-      max_aal,
-    });
+    await ndid.registerNode(
+      {
+        reference_id,
+        callback_url,
+        node_id,
+        node_name,
+        public_key: node_key,
+        master_public_key: node_master_key,
+        role,
+        max_ial,
+        max_aal,
+      },
+      { synchronous: false }
+    );
 
     res.status(202).end();
   } catch (error) {
@@ -80,12 +83,15 @@ router.post('/node/update', validateBody, async (req, res, next) => {
     } = req.body;
 
     //should we allow organization to update their node's name?
-    let result = await dpki.updateNode({
-      reference_id,
-      callback_url,
-      public_key: node_key,
-      master_public_key: node_master_key,
-    });
+    let result = await dpki.updateNode(
+      {
+        reference_id,
+        callback_url,
+        public_key: node_key,
+        master_public_key: node_master_key,
+      },
+      { synchronous: false }
+    );
 
     res.status(202).json(result);
   } catch (error) {
