@@ -201,7 +201,10 @@ async function processDataForRPInternalAsync(
   }
 }
 
-export async function afterGotDataFromCallback(response, additionalData) {
+export async function afterGotDataFromCallback(
+  { response, body },
+  additionalData
+) {
   if (response.status === 204) {
     await db.setRPIdFromRequestId(
       additionalData.requestId,
@@ -211,7 +214,7 @@ export async function afterGotDataFromCallback(response, additionalData) {
   }
   let data;
   try {
-    const result = await response.json();
+    const result = JSON.parse(body);
 
     logger.info({
       message: 'Received data from AS',
