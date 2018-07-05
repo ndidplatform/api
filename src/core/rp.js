@@ -340,7 +340,7 @@ export async function handleTendermintNewBlockHeaderEvent(
         }
         return false;
       });
-      const height = block.block.header.height;
+      const height = parseInt(block.block.header.height);
       let requestsToHandleChallenge = [];
       let requestIdsToProcessUpdate = [];
 

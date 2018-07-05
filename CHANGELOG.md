@@ -7,6 +7,7 @@ BREAKING CHANGES:
 - API version 2.0
 - All APIs which make transactions to blockchain are now asynchronous.
 - API version 1.1 is available with path prefix `/v1`.
+- Support Tendermint 0.22 (RPC call spec changes).
 
 IMPROVEMENTS:
 

@@ -97,7 +97,7 @@ async function pollStatusUntilSynced() {
   if (syncing == null || syncing === true) {
     for (;;) {
       const status = await tendermintWsClient.getStatus();
-      syncing = status.sync_info.syncing;
+      syncing = status.sync_info.catching_up;
       if (syncing === false) {
         logger.info({
           message: 'Tendermint blockchain synced',
@@ -126,7 +126,7 @@ tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
   if (syncing !== false) {
     return;
   }
-  const blockHeight = result.data.value.header.height;
+  const blockHeight = parseInt(result.data.value.header.height);
 
   logger.debug({
     message: 'Tendermint NewBlockHeader event received',
@@ -379,5 +379,5 @@ export function getTransactionListFromBlockQuery(result) {
 }
 
 export function getBlockHeightFromNewBlockHeaderEvent(result) {
-  return result.data.value.header.height;
+  return parseInt(result.data.value.header.height);
 }
