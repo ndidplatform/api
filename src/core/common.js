@@ -39,10 +39,8 @@ import * as db from '../db';
 import * as externalCryptoService from '../utils/externalCryptoService';
 
 const role = config.role;
-const registerAtStartup = config.mqRegister.registerAtStartup;
-delete config.mqRegister.registerAtStartup;
 
-let messageQueueAddressRegistered = !registerAtStartup;
+let messageQueueAddressRegistered = !config.registerMqAtStartup;
 let handleMessageFromQueue;
 
 export function registeredMsqAddress() {
@@ -52,19 +50,18 @@ export function registeredMsqAddress() {
 async function registerMessageQueueAddress() {
   if (!messageQueueAddressRegistered) {
     //query current self msq
-    let selfMsqAddress = await tendermintNdid.getMsqAddress(config.nodeId);
-    if(selfMsqAddress) {
-      let { ip, port } = selfMsqAddress;
+    const selfMqAddress = await tendermintNdid.getMsqAddress(config.nodeId);
+    if (selfMqAddress) {
+      const { ip, port } = selfMqAddress;
       //if not same
-      if( ip !== config.mqRegister.ip 
-          || port !== config.mqRegister.port
-      ) {
+      if (ip !== config.mqRegister.ip || port !== config.mqRegister.port) {
         //work only for broadcast tx commit
         await tendermintNdid.registerMsqAddress(config.mqRegister);
       }
+    } else {
+      //work only for broadcast tx commit
+      await tendermintNdid.registerMsqAddress(config.mqRegister);
     }
-    //work only for broadcast tx commit
-    else await tendermintNdid.registerMsqAddress(config.mqRegister);
     messageQueueAddressRegistered = true;
   }
 }
@@ -818,7 +815,7 @@ async function closeRequestInternalAsync(
     const responseValidList = await db.getIdpResponseValidList(request_id);
 
     await tendermintNdid.closeRequest({
-      requestId : request_id,
+      requestId: request_id,
       responseValidList,
     });
 

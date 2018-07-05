@@ -93,7 +93,7 @@ export default {
     code: 10016,
     message: 'User has rejected to give a consent',
   },
-  WAIT_FOR_MESSAGE_QUEUE: {
+  REGISTERING_MESSAGE_QUEUE_ADDRESS: {
     code: 10017,
     message: 'Message queue address is being registered',
   },

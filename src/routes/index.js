@@ -103,12 +103,12 @@ router.use((req, res, next) => {
     return;
   }
 
-  // Reject POST call when not register msq yet
-  if(!registeredMsqAddress() && req.method === 'POST') {
+  // Reject all POST calls while message queue address is being registered
+  if (!registeredMsqAddress() && req.method === 'POST') {
     res.status(503).json({
       error: {
-        message: errorType.WAIT_FOR_MESSAGE_QUEUE.message,
-        code: errorType.WAIT_FOR_MESSAGE_QUEUE.code,
+        message: errorType.REGISTERING_MESSAGE_QUEUE_ADDRESS.message,
+        code: errorType.REGISTERING_MESSAGE_QUEUE_ADDRESS.code,
       },
     });
     return;
