@@ -302,19 +302,20 @@ export async function decryptAsymetricKey(encryptedMessage) {
       cbId,
       httpStatusCode: response.status,
     });
+    const responseBody = await response.text();
     let result;
     try {
-      result = await response.json();
+      result = JSON.parse(responseBody);
       logger.debug({
         message: 'External decrypt with node key response body',
         cbId,
-        body: result,
+        bodyJSON: result,
       });
     } catch (error) {
       logger.debug({
         message: 'External decrypt with node key response body',
         cbId,
-        body: await response.text(),
+        body: responseBody,
       });
       throw error;
     }
@@ -379,19 +380,20 @@ export async function createSignature(message, messageHash, useMasterKey) {
       cbId,
       httpStatusCode: response.status,
     });
+    const responseBody = await response.text();
     let result;
     try {
-      result = await response.json();
+      result = JSON.parse(responseBody);
       logger.debug({
         message: 'External sign with node key response body',
         cbId,
-        body: result,
+        bodyJSON: result,
       });
     } catch (error) {
       logger.debug({
         message: 'External sign with node key response body',
         cbId,
-        body: await response.text(),
+        body: responseBody,
       });
       throw error;
     }
