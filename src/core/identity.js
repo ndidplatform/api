@@ -379,12 +379,20 @@ async function createNewIdentityInternalAsync(
       if (!synchronous) {
         await callbackToClient(
           callback_url,
-          {
-            type: 'create_identity_request_result',
-            reference_id,
-            request_id,
-            exist: true,
-          },
+          addAccessor
+            ? {
+                type: 'add_accessor_request_result',
+                reference_id,
+                request_id,
+                success: true,
+              }
+            : {
+                type: 'create_identity_request_result',
+                reference_id,
+                request_id,
+                success: true,
+                exist: true,
+              },
           true
         );
       }
@@ -404,12 +412,20 @@ async function createNewIdentityInternalAsync(
       if (!synchronous) {
         await callbackToClient(
           callback_url,
-          {
-            type: 'create_identity_request_result',
-            reference_id,
-            request_id,
-            exist: false,
-          },
+          addAccessor
+            ? {
+                type: 'add_accessor_request_result',
+                reference_id,
+                request_id,
+                success: true,
+              }
+            : {
+                type: 'create_identity_request_result',
+                reference_id,
+                request_id,
+                success: true,
+                exist: false,
+              },
           true
         );
       }
@@ -458,7 +474,9 @@ async function createNewIdentityInternalAsync(
       await callbackToClient(
         callback_url,
         {
-          type: 'create_identity_request_result',
+          type: addAccessor
+            ? 'add_accessor_request_result'
+            : 'create_identity_request_result',
           success: false,
           reference_id,
           request_id,
