@@ -39,13 +39,32 @@ import * as db from '../db';
 import * as externalCryptoService from '../utils/externalCryptoService';
 
 const role = config.role;
+const registerAtStartup = config.mqRegister.registerAtStartup;
+delete config.mqRegister.registerAtStartup;
 
-let messageQueueAddressRegistered = false;
+let messageQueueAddressRegistered = !registerAtStartup;
 let handleMessageFromQueue;
 
-function registerMessageQueueAddress() {
+export function registeredMsqAddress() {
+  return messageQueueAddressRegistered;
+}
+
+async function registerMessageQueueAddress() {
   if (!messageQueueAddressRegistered) {
-    tendermintNdid.registerMsqAddress(config.mqRegister);
+    //query current self msq
+    let selfMsqAddress = await tendermintNdid.getMsqAddress(config.nodeId);
+    if(selfMsqAddress) {
+      let { ip, port } = selfMsqAddress;
+      //if not same
+      if( ip !== config.mqRegister.ip 
+          || port !== config.mqRegister.port
+      ) {
+        //work only for broadcast tx commit
+        await tendermintNdid.registerMsqAddress(config.mqRegister);
+      }
+    }
+    //work only for broadcast tx commit
+    else await tendermintNdid.registerMsqAddress(config.mqRegister);
     messageQueueAddressRegistered = true;
   }
 }
