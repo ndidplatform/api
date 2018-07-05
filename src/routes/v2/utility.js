@@ -105,7 +105,23 @@ router.get('/requests/:request_id', async (req, res, next) => {
   }
 });
 
-router.get('/node_token/:node_id', async (req, res, next) => {
+router.get('/nodes/:node_id', async (req, res, next) => {
+  try {
+    const { node_id } = req.params;
+
+    const result = await tendermintNdid.getNodeInfo(node_id);
+
+    if (result == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(result);
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/nodes/:node_id/token', async (req, res, next) => {
   try {
     const { node_id } = req.params;
 
