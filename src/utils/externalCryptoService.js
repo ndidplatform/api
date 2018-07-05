@@ -173,7 +173,11 @@ function checkAndEmitAllCallbacksSet() {
   }
 }
 
-export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
+export async function setDpkiCallback({
+  signCallbackUrl,
+  masterSignCallbackUrl,
+  decryptCallbackUrl,
+}) {
   let public_key;
 
   if (signCallbackUrl) {
@@ -199,6 +203,34 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
         if (err) {
           logger.error({
             message: 'Cannot write DPKI sign callback url file',
+            error: err,
+          });
+        }
+      }
+    );
+  }
+  if (masterSignCallbackUrl) {
+    try {
+      const { master_public_key } = await tendermintNdid.getNodeMasterPubKey(
+        config.nodeId
+      );
+      await testSignCallback(masterSignCallbackUrl, master_public_key);
+    } catch (error) {
+      throw new CustomError({
+        message: errorType.EXTERNAL_SIGN_MASTER_TEST_FAILED.message,
+        code: errorType.EXTERNAL_SIGN_MASTER_TEST_FAILED.code,
+        cause: error,
+      });
+    }
+
+    callbackUrls.master_sign_url = masterSignCallbackUrl;
+    fs.writeFile(
+      callbackUrlFilesPrefix + '-masterSignature',
+      masterSignCallbackUrl,
+      (err) => {
+        if (err) {
+          logger.error({
+            message: 'Cannot write DPKI master-sign callback url file',
             error: err,
           });
         }
@@ -233,34 +265,6 @@ export async function setDpkiCallback(signCallbackUrl, decryptCallbackUrl) {
         }
       }
     );
-  }
-  checkAndEmitAllCallbacksSet();
-}
-
-export async function setMasterSignatureCallback(url) {
-  if (url) {
-    try {
-      const { master_public_key } = await tendermintNdid.getNodeMasterPubKey(
-        config.nodeId
-      );
-      await testSignCallback(url, master_public_key);
-    } catch (error) {
-      throw new CustomError({
-        message: errorType.EXTERNAL_SIGN_MASTER_TEST_FAILED.message,
-        code: errorType.EXTERNAL_SIGN_MASTER_TEST_FAILED.code,
-        cause: error,
-      });
-    }
-
-    callbackUrls.master_sign_url = url;
-    fs.writeFile(callbackUrlFilesPrefix + '-masterSignature', url, (err) => {
-      if (err) {
-        logger.error({
-          message: 'Cannot write DPKI master-sign callback url file',
-          error: err,
-        });
-      }
-    });
   }
   checkAndEmitAllCallbacksSet();
 }

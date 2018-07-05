@@ -45,15 +45,18 @@ router.post('/node/create', validateBody, async (req, res, next) => {
       max_ial,
     } = req.body;
 
-    await ndid.registerNode({
-      node_id,
-      node_name,
-      public_key: node_key,
-      master_public_key: node_master_key,
-      role,
-      max_ial,
-      max_aal,
-    }, { synchronous: true });
+    await ndid.registerNode(
+      {
+        node_id,
+        node_name,
+        public_key: node_key,
+        master_public_key: node_master_key,
+        role,
+        max_ial,
+        max_aal,
+      },
+      { synchronous: true }
+    );
 
     res.status(201).end();
   } catch (error) {
@@ -74,10 +77,13 @@ router.post('/node/update', validateBody, async (req, res, next) => {
     } = req.body;
 
     //should we allow organization to update their node's name?
-    let result = await dpki.updateNode({
-      public_key: node_key,
-      master_public_key: node_master_key,
-    }, { synchronous: true });
+    let result = await dpki.updateNode(
+      {
+        public_key: node_key,
+        master_public_key: node_master_key,
+      },
+      { synchronous: true }
+    );
 
     res.status(200).json(result);
   } catch (error) {
@@ -103,7 +109,10 @@ router.post('/node/register_callback', validateBody, async (req, res, next) => {
   try {
     const { sign_url, decrypt_url } = req.body;
 
-    await externalCryptoService.setDpkiCallback(sign_url, decrypt_url);
+    await externalCryptoService.setDpkiCallback({
+      signCallbackUrl: sign_url,
+      decryptCallbackUrl: decrypt_url,
+    });
     res.status(204).end();
   } catch (error) {
     next(error);
@@ -117,7 +126,9 @@ router.post(
     try {
       const { url } = req.body;
 
-      await externalCryptoService.setMasterSignatureCallback(url);
+      await externalCryptoService.setDpkiCallback({
+        masterSignCallbackUrl: url,
+      });
       res.status(204).end();
     } catch (error) {
       next(error);

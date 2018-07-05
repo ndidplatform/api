@@ -276,10 +276,13 @@ export default {
         ],
       },
     },
-    '/dpki/node/register_callback': {
+    '/dpki/node/callback': {
       body: {
         properties: {
           sign_url: {
+            $ref: 'defs#/definitions/url',
+          },
+          master_sign_url: {
             $ref: 'defs#/definitions/url',
           },
           decrypt_url: {
@@ -291,19 +294,12 @@ export default {
             required: ['sign_url'],
           },
           {
+            required: ['master_sign_url'],
+          },
+          {
             required: ['decrypt_url'],
           },
         ],
-      },
-    },
-    '/dpki/node/register_callback_master': {
-      body: {
-        properties: {
-          url: {
-            $ref: 'defs#/definitions/url',
-          },
-        },
-        required: ['url'],
       },
     },
     '/identity/': {

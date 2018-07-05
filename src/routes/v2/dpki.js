@@ -113,30 +113,19 @@ router.get('/node/callback', async (req, res, next) => {
   }
 });
 
-router.post('/node/register_callback', validateBody, async (req, res, next) => {
+router.post('/node/callback', validateBody, async (req, res, next) => {
   try {
-    const { sign_url, decrypt_url } = req.body;
+    const { sign_url, master_sign_url, decrypt_url } = req.body;
 
-    await externalCryptoService.setDpkiCallback(sign_url, decrypt_url);
+    await externalCryptoService.setDpkiCallback({
+      signCallbackUrl: sign_url,
+      masterSignCallbackUrl: master_sign_url,
+      decryptCallbackUrl: decrypt_url,
+    });
     res.status(204).end();
   } catch (error) {
     next(error);
   }
 });
-
-router.post(
-  '/node/register_callback_master',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const { url } = req.body;
-
-      await externalCryptoService.setMasterSignatureCallback(url);
-      res.status(204).end();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
 
 export default router;
