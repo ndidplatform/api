@@ -41,7 +41,7 @@ MASTER_PUBLIC_KEY_PATH=${MASTER_PUBLIC_KEY_PATH:-/api/keys/master.pub}
 tendermint_wait_for_sync_complete() {
   echo "Waiting for tendermint at ${TENDERMINT_IP}:${TENDERMINT_PORT} to be ready..."
   while true; do 
-    [ ! "$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/status | jq -r .result.sync_info.syncing)" = "false" ] || break  
+    [ ! "$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/status | jq -r .result.sync_info.catching_up)" = "false" ] || break  
     sleep 1
   done
 }
