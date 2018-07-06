@@ -474,6 +474,9 @@ export function notifyCreateIdentityResultByCallback(eventDataForCallback) {
     type: 'create_identity_result',
     eventDataForCallback,
   });
+  if(eventDataForCallback.success) {
+    tendermintNdid.closeRequest(eventDataForCallback.request_id);
+  }
 }
 
 /**
@@ -486,6 +489,9 @@ export function notifyAddAccessorResultByCallback(eventDataForCallback) {
     type: 'add_accessor_result',
     eventDataForCallback,
   });
+  if(eventDataForCallback.success) {
+    tendermintNdid.closeRequest(eventDataForCallback.request_id);
+  }
 }
 
 async function sendPrivateProofToRP(request_id, privateProofObject, height) {
