@@ -24,19 +24,16 @@ import path from 'path';
 import fs from 'fs';
 import express from 'express';
 
-import errorType from '../error/type';
-
 import logger from '../logger';
 
+import readyHandler from './middleware/readyHandler';
 import errorHandler from './middleware/errorHandler';
 import ndidRouter from './ndid';
 import apiV1Router from './v1';
 import apiV2Router from './v2';
 import getInfo from './info';
-import * as tendermint from '../tendermint';
 
 import * as config from '../config';
-import { registeredMsqAddress } from '../core/common';
 
 const router = express.Router();
 
@@ -79,47 +76,7 @@ router.get('/source', (req, res) => {
   res.status(200).send('https://github.com/ndidplatform/api');
 });
 
-router.use((req, res, next) => {
-  // Reject all requests when tendermint is not yet ready.
-  // This includes when tendermint is syncing (happens when starting a new node or resuming tendermint)
-
-  if (tendermint.connected !== true) {
-    res.status(503).json({
-      error: {
-        message: errorType.TENDERMINT_NOT_CONNECTED.message,
-        code: errorType.TENDERMINT_NOT_CONNECTED.code,
-      },
-    });
-    return;
-  }
-
-  if (tendermint.syncing == null || tendermint.syncing === true) {
-    res.status(503).json({
-      error: {
-        message: errorType.TENDERMINT_SYNCING.message,
-        code: errorType.TENDERMINT_SYNCING.code,
-      },
-    });
-    return;
-  }
-
-  // Reject all POST calls while message queue address is being registered
-  if ( !registeredMsqAddress() && 
-    req.method === 'POST' && 
-    req.url !== '/v2/dpki/node/callback' &&
-    req.url !== '/v1/dpki/node/callback'
-  ) {
-    res.status(503).json({
-      error: {
-        message: errorType.REGISTERING_MESSAGE_QUEUE_ADDRESS.message,
-        code: errorType.REGISTERING_MESSAGE_QUEUE_ADDRESS.code,
-      },
-    });
-    return;
-  }
-
-  next();
-});
+router.use(readyHandler);
 
 if (config.role === 'ndid') {
   router.use('/ndid', ndidRouter);
