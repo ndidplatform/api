@@ -212,7 +212,7 @@ export async function afterGotDataFromCallback(
     );
     return;
   }
-  let data;
+  let data, synchronous;
   try {
     const result = JSON.parse(body);
 
@@ -225,6 +225,9 @@ export async function afterGotDataFromCallback(
     });
 
     data = result.data;
+    additionalData.reference_id = result.reference_id;
+    additionalData.callback_url = result.callback_url;
+    synchronous = !additionalData.reference_id || !additionalData.callback_url;
   } catch (error) {
     logger.error({
       message: 'Cannot parse data from AS',
@@ -236,7 +239,7 @@ export async function afterGotDataFromCallback(
       cause: error,
     });
   }
-  processDataForRP(data, additionalData, { synchronous: true });
+  processDataForRP(data, additionalData, { synchronous });
 }
 
 async function getDataAndSendBackToRP(request, responseDetails) {
