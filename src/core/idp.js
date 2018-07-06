@@ -660,6 +660,9 @@ export async function handleMessageFromQueue(messageStr) {
             },
             true
           );
+          if(notifyData.success) {
+            tendermintNdid.closeRequest(notifyData.request_id);
+          }
           db.removeCallbackUrlByReferenceId(reference_id);
         }
       } else {
@@ -675,6 +678,9 @@ export async function handleMessageFromQueue(messageStr) {
             },
             true
           );
+          if(notifyData.success) {
+            tendermintNdid.closeRequest(notifyData.request_id);
+          }
           db.removeCallbackUrlByReferenceId(reference_id);
         }
       }
@@ -778,6 +784,9 @@ export async function handleTendermintNewBlockHeaderEvent(
                 },
                 true
               );
+              if(notifyData.success) {
+                tendermintNdid.closeRequest(notifyData.request_id);
+              }
               db.removeCallbackUrlByReferenceId(reference_id);
             }
           } else {
@@ -793,6 +802,9 @@ export async function handleTendermintNewBlockHeaderEvent(
                 },
                 true
               );
+              if(notifyData.success) {
+                tendermintNdid.closeRequest(notifyData.request_id);
+              }
               db.removeCallbackUrlByReferenceId(reference_id);
             }
           }

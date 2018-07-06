@@ -465,6 +465,7 @@ async function createNewIdentityInternalAsync(
           },
           true
         );
+        tendermintNdid.closeRequest(request_id);
       }
       db.removeOnboardDataByReferenceId(reference_id);
     }
