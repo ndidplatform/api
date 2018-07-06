@@ -36,6 +36,15 @@ router.post('/initNDID', async (req, res, next) => {
   }
 });
 
+router.post('/approveService', async (req, res, next) => {
+  try {
+    await ndid.approveService(req.body);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/registerNode', async (req, res, next) => {
   try {
     const {

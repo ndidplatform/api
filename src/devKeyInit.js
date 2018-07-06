@@ -96,6 +96,20 @@ export async function init() {
       service_id: 'bank_statement',
       service_name: 'All transactions in the pass 3 month',
     });
+    await Promise.all([
+      ndid.approveService({
+        node_id: 'as1',
+        service_id: 'bank_statement',
+      }),
+      ndid.approveService({
+        node_id: 'as2',
+        service_id: 'bank_statement',
+      }),
+      ndid.approveService({
+        node_id: 'as3',
+        service_id: 'bank_statement',
+      }),
+    ]);
     console.log('========= Done =========');
   } catch (error) {
     console.error('Cannot initialize NDID master key', error);

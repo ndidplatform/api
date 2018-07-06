@@ -52,6 +52,25 @@ export async function initNDID(public_key) {
   }
 }
 
+export async function approveService({
+  node_id,
+  service_id,
+}) {
+  try {
+    await tendermint.transact(
+      'RegisterServiceDestinationByNDID',
+      { node_id, service_id },
+      utils.getNonce()
+    );
+  } catch (error) {
+    logger.error({
+      message: 'Cannot approve service for AS',
+      error,
+    });
+    throw error;
+  }
+}
+
 export async function setNodeToken(data) {
   const { node_id, amount } = data;
 
