@@ -130,7 +130,7 @@ router.get('/info', getInfo);
 router.use(errorHandler);
 
 // All other paths besides stated above are invalid
-router.get('*', function(req, res) {
+router.use('*', function(req, res) {
   res.status(404).end();
 });
 
