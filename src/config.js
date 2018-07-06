@@ -103,7 +103,9 @@ export const mqRegister = {
 export const registerMqAtStartup =
   process.env.REGISTER_MQ_AT_STARTUP != null
     ? process.env.REGISTER_MQ_AT_STARTUP === 'true'
-    : true;
+    : role === 'ndid'
+      ? false
+      : true;
 
 export const useExternalCryptoService =
   process.env.USE_EXTERNAL_CRYPTO_SERVICE === 'true';
