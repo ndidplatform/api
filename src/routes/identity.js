@@ -91,6 +91,17 @@ router.post(
   }
 );
 
+router.post('/requests/close', validateBody, async (req, res, next) => {
+  try {
+    const { request_id } = req.body;
+
+    await common.closeRequest(request_id);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
     const { namespace, identifier } = req.params;
@@ -174,16 +185,5 @@ router.post(
     }
   }
 );
-
-router.post('/requests/close', validateBody, async (req, res, next) => {
-  try {
-    const { request_id } = req.body;
-
-    await common.closeRequest(request_id);
-    res.status(204).end();
-  } catch (error) {
-    next(error);
-  }
-});
 
 export default router;
