@@ -475,7 +475,7 @@ export function notifyCreateIdentityResultByCallback(eventDataForCallback) {
     eventDataForCallback,
   });
   if(eventDataForCallback.success) {
-    tendermintNdid.closeRequest(eventDataForCallback.request_id);
+    tendermintNdid.closeRequest({requestId: eventDataForCallback.request_id});
   }
 }
 
@@ -490,7 +490,7 @@ export function notifyAddAccessorResultByCallback(eventDataForCallback) {
     eventDataForCallback,
   });
   if(eventDataForCallback.success) {
-    tendermintNdid.closeRequest(eventDataForCallback.request_id);
+    tendermintNdid.closeRequest({requestId: eventDataForCallback.request_id});
   }
 }
 
@@ -661,7 +661,7 @@ export async function handleMessageFromQueue(messageStr) {
             true
           );
           if(notifyData.success) {
-            tendermintNdid.closeRequest(notifyData.request_id);
+            tendermintNdid.closeRequest({requestId: notifyData.request_id});
           }
           db.removeCallbackUrlByReferenceId(reference_id);
         }
@@ -679,7 +679,7 @@ export async function handleMessageFromQueue(messageStr) {
             true
           );
           if(notifyData.success) {
-            tendermintNdid.closeRequest(notifyData.request_id);
+            tendermintNdid.closeRequest({requestId: notifyData.request_id});
           }
           db.removeCallbackUrlByReferenceId(reference_id);
         }
@@ -785,7 +785,7 @@ export async function handleTendermintNewBlockHeaderEvent(
                 true
               );
               if(notifyData.success) {
-                tendermintNdid.closeRequest(notifyData.request_id);
+                tendermintNdid.closeRequest({requestId: notifyData.request_id});
               }
               db.removeCallbackUrlByReferenceId(reference_id);
             }
@@ -803,7 +803,7 @@ export async function handleTendermintNewBlockHeaderEvent(
                 true
               );
               if(notifyData.success) {
-                tendermintNdid.closeRequest(notifyData.request_id);
+                tendermintNdid.closeRequest({requestId: notifyData.request_id});
               }
               db.removeCallbackUrlByReferenceId(reference_id);
             }
