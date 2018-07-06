@@ -172,8 +172,10 @@ export async function isIdentityExist({ namespace, identifier, ial }) {
         ],
       });
     } catch (error) {
-      let errorInfo = error.getInfoForLog();
-      if (errorInfo.details.abciCode === 44) {
+      if (
+        error.getCode &&
+        error.getCode() === errorType.ABCI_NOT_FIRST_IDP.code
+      ) {
         exist = true;
       } else {
         throw error;

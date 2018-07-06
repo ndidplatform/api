@@ -304,6 +304,11 @@ export default {
     code: 15017,
     message: 'Wrong identity proof',
   },
+  ABCI_NOT_FIRST_IDP: {
+    code: 15018,
+    message:
+      'Cannot register message queue destination for identity as the first IdP',
+  },
 
   // Client errors
   ABCI_REQUEST_ID_NOT_FOUND: {
