@@ -64,44 +64,19 @@ router.post('/', validateBody, async (req, res, next) => {
   }
 });
 
-router.post(
-  '/:namespace/:identifier/accessors',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const {
-        reference_id,
-        callback_url,
-        accessor_type,
-        accessor_public_key,
-        accessor_id,
-      } = req.body;
+router.post('/requests/close', validateBody, async (req, res, next) => {
+  try {
+    const { reference_id, callback_url, request_id } = req.body;
 
-      const { namespace, identifier } = req.params;
-
-      const result = await identity.addAccessorMethodForAssociatedIdp(
-        {
-          reference_id,
-          callback_url,
-          namespace,
-          identifier,
-          accessor_type,
-          accessor_public_key,
-          accessor_id,
-        },
-        { synchronous: false }
-      );
-
-      res.status(202).json(result);
-    } catch (error) {
-      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
-        res.status(404).end();
-        return;
-      }
-      next(error);
-    }
+    await common.closeRequest(
+      { reference_id, callback_url, request_id },
+      { synchronous: false }
+    );
+    res.status(202).end();
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
@@ -119,6 +94,20 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/:namespace/:identifier', validateBody, async (req, res, next) => {
+  try {
+    const { namespace, identifier } = req.params;
+    const { reference_id, callback_url, identifier_list } = req.body;
+
+    // Not Implemented
+    // TODO
+
+    res.status(501).end();
   } catch (error) {
     next(error);
   }
@@ -147,20 +136,6 @@ router.post(
     }
   }
 );
-
-router.post('/:namespace/:identifier', validateBody, async (req, res, next) => {
-  try {
-    const { namespace, identifier } = req.params;
-    const { reference_id, callback_url, identifier_list } = req.body;
-
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
-  } catch (error) {
-    next(error);
-  }
-});
 
 router.get('/:namespace/:identifier/endorsement', async (req, res, next) => {
   try {
@@ -199,18 +174,43 @@ router.post(
   }
 );
 
-router.post('/requests/close', validateBody, async (req, res, next) => {
-  try {
-    const { reference_id, callback_url, request_id } = req.body;
+router.post(
+  '/:namespace/:identifier/accessors',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const {
+        reference_id,
+        callback_url,
+        accessor_type,
+        accessor_public_key,
+        accessor_id,
+      } = req.body;
 
-    await common.closeRequest(
-      { reference_id, callback_url, request_id },
-      { synchronous: false }
-    );
-    res.status(202).end();
-  } catch (error) {
-    next(error);
+      const { namespace, identifier } = req.params;
+
+      const result = await identity.addAccessorMethodForAssociatedIdp(
+        {
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          accessor_type,
+          accessor_public_key,
+          accessor_id,
+        },
+        { synchronous: false }
+      );
+
+      res.status(202).json(result);
+    } catch (error) {
+      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
+        res.status(404).end();
+        return;
+      }
+      next(error);
+    }
   }
-});
+);
 
 export default router;
