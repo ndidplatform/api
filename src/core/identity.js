@@ -176,6 +176,11 @@ export async function isIdentityExist({ namespace, identifier, ial }) {
         error.getCode &&
         error.getCode() === errorType.ABCI_NOT_FIRST_IDP.code
       ) {
+        logger.debug({
+          message:
+            'Unable to register message queue destination for an identity as the first IdP. Switching to ask for consent mode.',
+          hash_id,
+        });
         exist = true;
       } else {
         throw error;
