@@ -474,9 +474,9 @@ export function notifyCreateIdentityResultByCallback(eventDataForCallback) {
     type: 'create_identity_result',
     eventDataForCallback,
   });
-  if(eventDataForCallback.success) {
-    tendermintNdid.closeRequest({requestId: eventDataForCallback.request_id});
-  }
+  tendermintNdid.closeRequest({
+    requestId: eventDataForCallback.request_id
+  });
 }
 
 /**
@@ -489,9 +489,9 @@ export function notifyAddAccessorResultByCallback(eventDataForCallback) {
     type: 'add_accessor_result',
     eventDataForCallback,
   });
-  if(eventDataForCallback.success) {
-    tendermintNdid.closeRequest({requestId: eventDataForCallback.request_id});
-  }
+  tendermintNdid.closeRequest({
+    requestId: eventDataForCallback.request_id
+  });
 }
 
 async function sendPrivateProofToRP(request_id, privateProofObject, height) {
@@ -660,9 +660,9 @@ export async function handleMessageFromQueue(messageStr) {
             },
             true
           );
-          if(notifyData.success) {
-            tendermintNdid.closeRequest({requestId: notifyData.request_id});
-          }
+          tendermintNdid.closeRequest({
+            requestId: notifyData.request_id
+          });
           db.removeCallbackUrlByReferenceId(reference_id);
         }
       } else {
@@ -678,9 +678,9 @@ export async function handleMessageFromQueue(messageStr) {
             },
             true
           );
-          if(notifyData.success) {
-            tendermintNdid.closeRequest({requestId: notifyData.request_id});
-          }
+          tendermintNdid.closeRequest({
+            requestId: notifyData.request_id
+          });
           db.removeCallbackUrlByReferenceId(reference_id);
         }
       }
@@ -784,9 +784,9 @@ export async function handleTendermintNewBlockHeaderEvent(
                 },
                 true
               );
-              if(notifyData.success) {
-                tendermintNdid.closeRequest({requestId: notifyData.request_id});
-              }
+              tendermintNdid.closeRequest({
+                requestId: notifyData.request_id
+              });
               db.removeCallbackUrlByReferenceId(reference_id);
             }
           } else {
@@ -802,9 +802,9 @@ export async function handleTendermintNewBlockHeaderEvent(
                 },
                 true
               );
-              if(notifyData.success) {
-                tendermintNdid.closeRequest({requestId: notifyData.request_id});
-              }
+              tendermintNdid.closeRequest({
+                requestId: notifyData.request_id
+              });
               db.removeCallbackUrlByReferenceId(reference_id);
             }
           }
