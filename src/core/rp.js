@@ -389,7 +389,9 @@ async function getASReceiverList(data_request) {
     nodeIdList.map(async (asNodeId) => {
       try {
         //let nodeId = node.node_id;
-        let { ip, port } = await tendermintNdid.getMsqAddress(asNodeId);
+        let mqAddress = await tendermintNdid.getMsqAddress(asNodeId);
+        if(!mqAddress) return null;
+        let { ip, port } = mqAddress;
         return {
           ip,
           port,

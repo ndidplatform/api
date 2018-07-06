@@ -90,7 +90,20 @@ async function sendDataToRP(rpId, data) {
   let receivers = [];
   let nodeId = rpId;
   // TODO: try catch / error handling
-  let { ip, port } = await tendermintNdid.getMsqAddress(nodeId);
+  let mqAddress = await tendermintNdid.getMsqAddress(nodeId);
+  if(!mqAddress) {
+    callbackToClient(
+      callbackUrls.error_url,
+      {
+        type: 'error',
+        action: 'sendDataToRP',
+        request_id: data.request_id,
+        error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+      }
+    ); 
+    return;
+  }
+  let { ip, port } = mqAddress;
   receivers.push({
     ip,
     port,

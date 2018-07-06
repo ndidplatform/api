@@ -755,7 +755,23 @@ export async function handleChallengeRequest(responseId) {
   //challenge deleted, request is done
   if (challenge == null) return false;
 
-  let { ip, port } = await tendermintNdid.getMsqAddress(idp_id);
+  let mqAddress = await tendermintNdid.getMsqAddress(idp_id);
+  if(!mqAddress) {
+    let error_url = config.role === 'rp' 
+      ? rp.getCallbackUrls.error_url
+      : idp.getCallbackUrls.error_url ;
+    callbackToClient(
+      error_url,
+      {
+        type: 'error',
+        action: 'handleChallengeRequest',
+        request_id,
+        error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+      }
+    ); 
+    return;
+  }
+  let { ip, port } = mqAddress;
   let receiver = [
     {
       ip,

@@ -97,6 +97,10 @@ export default {
     code: 10017,
     message: 'Message queue address is being registered',
   },
+  MESSAGE_QUEUE_ADDRESS_NOT_FOUND: {
+    code: 10018,
+    message: 'Message queue destination not found',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {

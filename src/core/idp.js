@@ -196,7 +196,20 @@ async function requestChallenge(request_id, accessor_id) {
     identity_proof: JSON.stringify([publicProof1, publicProof2]),
   });
   //send message queue with public proof
-  let { ip, port } = await tendermintNdid.getMsqAddress(request.rp_id);
+  let mqAddress = await tendermintNdid.getMsqAddress(request.rp_id);
+  if(!mqAddress) {
+    callbackToClient(
+      callbackUrls.error_url,
+      {
+        type: 'error',
+        action: 'requestChallenge',
+        request_id,
+        error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+      }
+    ); 
+    return;
+  }
+  let { ip, port } = mqAddress;
   let receiver = [
     {
       ip,
@@ -507,7 +520,20 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
     rp_id,
   });
 
-  let { ip, port } = await tendermintNdid.getMsqAddress(rp_id);
+  let mqAddress = await tendermintNdid.getMsqAddress(rp_id);
+  if(!mqAddress) {
+    callbackToClient(
+      callbackUrls.error_url,
+      {
+        type: 'error',
+        action: 'sendPrivateProofToRP',
+        request_id,
+        error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+      }
+    ); 
+    return;
+  }
+  let { ip, port } = mqAddress;
   let rpMq = {
     ip,
     port,
