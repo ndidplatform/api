@@ -538,6 +538,7 @@ export async function getServiceDetail(service_id) {
     let myServiceDetail = result.filter((elem) => {
       return elem.node_id === config.nodeId;
     })[0];
+    if(!myServiceDetail) return null;
     return {
       url: await db.getServiceCallbackUrl(service_id),
       min_ial: myServiceDetail.min_ial,
