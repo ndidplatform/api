@@ -114,6 +114,13 @@ router.post('/namespaces', async (req, res, next) => {
   try {
     const { namespace, description } = req.body;
 
+    if (namespace === 'requests' || namespace === 'housekeeping') {
+      res.status(400).json({
+        message: 'Input namespace cannot be reserved words ("requests" and "housekeeping")'
+      });
+      return;
+    }
+
     await ndid.addNamespace({
       namespace,
       description,

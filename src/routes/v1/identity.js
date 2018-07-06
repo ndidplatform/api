@@ -62,6 +62,104 @@ router.post('/', validateBody, async (req, res, next) => {
   }
 });
 
+router.post('/requests/close', validateBody, async (req, res, next) => {
+  try {
+    const { request_id } = req.body;
+
+    await common.closeRequest(request_id);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/:namespace/:identifier', async (req, res, next) => {
+  try {
+    const { namespace, identifier } = req.params;
+
+    const idpNodes = await tendermintNdid.getIdpNodes({
+      namespace,
+      identifier,
+      min_ial: 0,
+      min_aal: 0,
+    });
+
+    if (idpNodes.length !== 0) {
+      res.status(204).end();
+    } else {
+      res.status(404).end();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/:namespace/:identifier', validateBody, async (req, res, next) => {
+  try {
+    const { namespace, identifier } = req.params;
+
+    // Not Implemented
+    // TODO
+
+    res.status(501).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post(
+  '/:namespace/:identifier/ial',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { namespace, identifier } = req.params;
+      const { ial } = req.body;
+      await identity.updateIal(
+        {
+          namespace,
+          identifier,
+          ial,
+        },
+        { synchronous: true }
+      );
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get('/:namespace/:identifier/endorsement', async (req, res, next) => {
+  try {
+    const { namespace, identifier } = req.params;
+
+    // Not Implemented
+    // TODO
+
+    res.status(501).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post(
+  '/:namespace/:identifier/endorsement',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { namespace, identifier } = req.params;
+      const { secret, accessor_type, accessor_key, accessor_id } = req.body;
+
+      // Not Implemented
+      // TODO
+
+      res.status(501).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 router.post(
   '/:namespace/:identifier/accessors',
   validateBody,
@@ -98,103 +196,5 @@ router.post(
     }
   }
 );
-
-router.get('/:namespace/:identifier', async (req, res, next) => {
-  try {
-    const { namespace, identifier } = req.params;
-
-    const idpNodes = await tendermintNdid.getIdpNodes({
-      namespace,
-      identifier,
-      min_ial: 0,
-      min_aal: 0,
-    });
-
-    if (idpNodes.length !== 0) {
-      res.status(204).end();
-    } else {
-      res.status(404).end();
-    }
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post(
-  '/:namespace/:identifier/ial',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const { namespace, identifier } = req.params;
-      const { ial } = req.body;
-      await identity.updateIal(
-        {
-          namespace,
-          identifier,
-          ial,
-        },
-        { synchronous: true }
-      );
-      res.status(204).end();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.post('/:namespace/:identifier', validateBody, async (req, res, next) => {
-  try {
-    const { namespace, identifier } = req.params;
-
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get('/:namespace/:identifier/endorsement', async (req, res, next) => {
-  try {
-    const { namespace, identifier } = req.params;
-
-    // Not Implemented
-    // TODO
-
-    res.status(501).end();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post(
-  '/:namespace/:identifier/endorsement',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const { namespace, identifier } = req.params;
-      const { secret, accessor_type, accessor_key, accessor_id } = req.body;
-
-      // Not Implemented
-      // TODO
-
-      res.status(501).end();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.post('/requests/close', validateBody, async (req, res, next) => {
-  try {
-    const { request_id } = req.body;
-
-    await common.closeRequest({ request_id }, { synchronous: true });
-    res.status(204).end();
-  } catch (error) {
-    next(error);
-  }
-});
 
 export default router;
