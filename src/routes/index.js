@@ -104,7 +104,11 @@ router.use((req, res, next) => {
   }
 
   // Reject all POST calls while message queue address is being registered
-  if (!registeredMsqAddress() && req.method === 'POST') {
+  if ( !registeredMsqAddress() && 
+    req.method === 'POST' && 
+    req.url !== '/v2/dpki/node/callback' &&
+    req.url !== '/v1/dpki/node/callback'
+  ) {
     res.status(503).json({
       error: {
         message: errorType.REGISTERING_MESSAGE_QUEUE_ADDRESS.message,
