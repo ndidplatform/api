@@ -91,16 +91,13 @@ async function sendDataToRP(rpId, data) {
   let nodeId = rpId;
   // TODO: try catch / error handling
   let mqAddress = await tendermintNdid.getMsqAddress(nodeId);
-  if(!mqAddress) {
-    callbackToClient(
-      callbackUrls.error_url,
-      {
-        type: 'error',
-        action: 'sendDataToRP',
-        request_id: data.request_id,
-        error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
-      }
-    ); 
+  if (!mqAddress) {
+    callbackToClient(callbackUrls.error_url, {
+      type: 'error',
+      action: 'sendDataToRP',
+      request_id: data.request_id,
+      error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+    });
     return;
   }
   let { ip, port } = mqAddress;
@@ -545,17 +542,19 @@ async function registerOrUpdateASServiceInternalAsync(
 
 export async function getServiceDetail(service_id) {
   try {
-    //const result = await tendermintNdid.getServiceDetail(service_id);
-    const result = await tendermintNdid.getAsNodesByServiceId({ service_id });
-    if (!result) return null;
-    let myServiceDetail = result.filter((elem) => {
-      return elem.node_id === config.nodeId;
-    })[0];
-    if(!myServiceDetail) return null;
+    const services = await tendermintNdid.getServicesByAsID({
+      as_id: config.nodeId,
+    });
+    const service = services.find((service) => {
+      return service.service_id === service_id;
+    });
+    if (service == null) return null;
     return {
       url: await db.getServiceCallbackUrl(service_id),
-      min_ial: myServiceDetail.min_ial,
-      min_aal: myServiceDetail.min_aal,
+      min_ial: service.min_ial,
+      min_aal: service.min_aal,
+      active: service.active,
+      suspended: service.suspended,
     };
   } catch (error) {
     throw new CustomError({
