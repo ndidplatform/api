@@ -786,6 +786,71 @@ export async function handleChallengeRequest(responseId) {
   });
 }
 
+export async function checkIdpResponse({
+  requestStatus,
+  idpId,
+  responseIal,
+  requestDataFromMq,
+}) {
+  logger.debug({
+    message: 'Checking IdP response (ZK Proof, IAL)',
+    requestStatus,
+    idpId,
+    responseIal,
+    requestDataFromMq,
+  });
+
+  let validIal;
+
+  const requestId = requestStatus.request_id;
+
+  // Check IAL
+  const requestData = await db.getRequestData(requestId);
+  const identityInfo = await tendermintNdid.getIdentityInfo(
+    requestData.namespace,
+    requestData.identifier,
+    idpId
+  );
+
+  if (requestStatus.mode === 1) {
+    validIal = true; // Actually, cannot check in mode 1
+  } else if (requestStatus.mode === 3) {
+    if (responseIal <= identityInfo.ial) {
+      validIal = true;
+    } else {
+      validIal = false;
+    }
+  }
+
+  // Check ZK Proof
+  const validProof = await verifyZKProof(
+    requestStatus.request_id,
+    idpId,
+    requestDataFromMq,
+    requestStatus.mode
+  );
+
+  logger.debug({
+    message: 'Checked ZK proof and IAL',
+    requestId,
+    idpId,
+    validProof,
+    validIal,
+  });
+
+  const responseValid = {
+    idp_id: idpId,
+    valid_proof: validProof,
+    valid_ial: validIal,
+  };
+
+  await db.addIdpResponseValidList(requestId, responseValid);
+
+  db.removeProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
+
+  return responseValid;
+}
+
 /**
  * Returns false if request is closed or timed out
  * @param {string} requestId

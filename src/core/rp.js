@@ -144,9 +144,8 @@ async function processRequestUpdate(requestId, height) {
 
     const responseValids = await Promise.all(
       idpNodeIds.map((idpNodeId) =>
-        checkIdpResponse({
+        common.checkIdpResponse({
           requestStatus,
-          height,
           idpId: idpNodeId,
           responseIal: requestDetail.response_list.find(
             (response) => response.idp_id === idpNodeId
@@ -206,73 +205,6 @@ async function processRequestUpdate(requestId, height) {
     clearTimeout(common.timeoutScheduler[requestId]);
     delete common.timeoutScheduler[requestId];
   }
-}
-
-async function checkIdpResponse({
-  requestStatus,
-  height,
-  idpId,
-  responseIal,
-  requestDataFromMq,
-}) {
-  logger.debug({
-    message: 'Check IdP response (ZK Proof, IAL) then notify',
-    requestStatus,
-    height,
-    idpId,
-    responseIal,
-    requestDataFromMq,
-  });
-
-  let validIal;
-
-  const requestId = requestStatus.request_id;
-
-  // Check IAL
-  const requestData = await db.getRequestData(requestId);
-  const identityInfo = await tendermintNdid.getIdentityInfo(
-    requestData.namespace,
-    requestData.identifier,
-    idpId
-  );
-
-  if (requestStatus.mode === 1) {
-    validIal = true; // Actually, cannot check in mode 1
-  } else if (requestStatus.mode === 3) {
-    if (responseIal <= identityInfo.ial) {
-      validIal = true;
-    } else {
-      validIal = false;
-    }
-  }
-
-  // Check ZK Proof
-  const validProof = await common.verifyZKProof(
-    requestStatus.request_id,
-    idpId,
-    requestDataFromMq,
-    requestStatus.mode
-  );
-
-  logger.debug({
-    message: 'Checked ZK proof and IAL',
-    requestId,
-    idpId,
-    validProof,
-    validIal,
-  });
-
-  const responseValid = {
-    idp_id: idpId,
-    valid_proof: validProof,
-    valid_ial: validIal,
-  };
-
-  await db.addIdpResponseValidList(requestId, responseValid);
-
-  db.removeProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
-
-  return responseValid;
 }
 
 function isAllIdpResponsesValid(responseValidList) {
@@ -585,9 +517,8 @@ export async function handleMessageFromQueue(messageStr) {
       message.request_id
     );
 
-    const responseValid = await checkIdpResponse({
+    const responseValid = await common.checkIdpResponse({
       requestStatus,
-      height: latestBlockHeight,
       idpId: message.idp_id,
       requestDataFromMq: message,
       responseIal: requestDetail.response_list.find(

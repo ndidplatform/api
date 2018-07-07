@@ -465,9 +465,12 @@ async function createNewIdentityInternalAsync(
           },
           true
         );
-        tendermintNdid.closeRequest({
-          requestId: request_id
-        });
+        await common.closeRequest(
+          {
+            request_id,
+          },
+          { synchronous: true }
+        );
       }
       db.removeOnboardDataByReferenceId(reference_id);
     }

@@ -197,16 +197,13 @@ async function requestChallenge(request_id, accessor_id) {
   });
   //send message queue with public proof
   let mqAddress = await tendermintNdid.getMsqAddress(request.rp_id);
-  if(!mqAddress) {
-    callbackToClient(
-      callbackUrls.error_url,
-      {
-        type: 'error',
-        action: 'requestChallenge',
-        request_id,
-        error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
-      }
-    ); 
+  if (!mqAddress) {
+    callbackToClient(callbackUrls.error_url, {
+      type: 'error',
+      action: 'requestChallenge',
+      request_id,
+      error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+    });
     return;
   }
   let { ip, port } = mqAddress;
@@ -487,9 +484,6 @@ export function notifyCreateIdentityResultByCallback(eventDataForCallback) {
     type: 'create_identity_result',
     eventDataForCallback,
   });
-  tendermintNdid.closeRequest({
-    requestId: eventDataForCallback.request_id
-  });
 }
 
 /**
@@ -501,9 +495,6 @@ export function notifyAddAccessorResultByCallback(eventDataForCallback) {
     url: callbackUrls.identity_result_url,
     type: 'add_accessor_result',
     eventDataForCallback,
-  });
-  tendermintNdid.closeRequest({
-    requestId: eventDataForCallback.request_id
   });
 }
 
@@ -521,16 +512,13 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   });
 
   let mqAddress = await tendermintNdid.getMsqAddress(rp_id);
-  if(!mqAddress) {
-    callbackToClient(
-      callbackUrls.error_url,
-      {
-        type: 'error',
-        action: 'sendPrivateProofToRP',
-        request_id,
-        error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
-      }
-    ); 
+  if (!mqAddress) {
+    callbackToClient(callbackUrls.error_url, {
+      type: 'error',
+      action: 'sendPrivateProofToRP',
+      request_id,
+      error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+    });
     return;
   }
   let { ip, port } = mqAddress;
@@ -658,7 +646,7 @@ export async function handleMessageFromQueue(messageStr) {
   });
   //onboard response
   if (message.accessor_id) {
-    if (await checkOnboardResponse(message)) {
+    if (await checkCreateIdentityResponse(message)) {
       let { secret, associated } = await identity.addAccessorAfterConsent(
         message.request_id,
         message.accessor_id
@@ -686,9 +674,6 @@ export async function handleMessageFromQueue(messageStr) {
             },
             true
           );
-          tendermintNdid.closeRequest({
-            requestId: notifyData.request_id
-          });
           db.removeCallbackUrlByReferenceId(reference_id);
         }
       } else {
@@ -704,13 +689,16 @@ export async function handleMessageFromQueue(messageStr) {
             },
             true
           );
-          tendermintNdid.closeRequest({
-            requestId: notifyData.request_id
-          });
           db.removeCallbackUrlByReferenceId(reference_id);
         }
       }
       db.removeReferenceIdByRequestId(message.request_id);
+      await common.closeRequest(
+        {
+          request_id: message.request_id,
+        },
+        { synchronous: true }
+      );
     }
   } else if (message.type === 'request_challenge') {
     const responseId = message.request_id + ':' + message.idp_id;
@@ -780,7 +768,7 @@ export async function handleTendermintNewBlockHeaderEvent(
       await db.removeRequestToProcessReceivedFromMQ(requestId);
       //reponse for onboard
       if (message.accessor_id) {
-        if (await checkOnboardResponse(message)) {
+        if (await checkCreateIdentityResponse(message)) {
           let { secret, associated } = await identity.addAccessorAfterConsent(
             message.request_id,
             message.accessor_id
@@ -810,9 +798,6 @@ export async function handleTendermintNewBlockHeaderEvent(
                 },
                 true
               );
-              tendermintNdid.closeRequest({
-                requestId: notifyData.request_id
-              });
               db.removeCallbackUrlByReferenceId(reference_id);
             }
           } else {
@@ -828,13 +813,16 @@ export async function handleTendermintNewBlockHeaderEvent(
                 },
                 true
               );
-              tendermintNdid.closeRequest({
-                requestId: notifyData.request_id
-              });
               db.removeCallbackUrlByReferenceId(reference_id);
             }
           }
           db.removeReferenceIdByRequestId(message.request_id);
+          await common.closeRequest(
+            {
+              request_id: message.request_id,
+            },
+            { synchronous: true }
+          );
         }
       } else if (message.type === 'request_challenge') {
         const responseId = message.request_id + ':' + message.idp_id;
@@ -865,26 +853,32 @@ export async function handleTendermintNewBlockHeaderEvent(
   db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 }
 
-async function checkOnboardResponse(message) {
+async function checkCreateIdentityResponse(message) {
   try {
-    let requestDetail = await tendermintNdid.getRequestDetail({
+    const requestDetail = await tendermintNdid.getRequestDetail({
       requestId: message.request_id,
     });
-    let response = requestDetail.response_list[0];
+    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
-    if (
-      !(await common.verifyZKProof(
-        message.request_id,
-        message.idp_id,
-        message,
-        3
-      ))
-    ) {
+    const responseValid = await common.checkIdpResponse({
+      requestStatus,
+      idpId: message.idp_id,
+      requestDataFromMq: message,
+      responseIal: requestDetail.response_list.find(
+        (response) => response.idp_id === message.idp_id
+      ).ial,
+    });
+
+    if (!responseValid.valid_proof || !responseValid.valid_ial) {
       throw new CustomError({
         message: errorType.INVALID_RESPONSE.message,
         code: errorType.INVALID_RESPONSE.code,
       });
-    } else if (response.status !== 'accept') {
+    }
+
+    const response = requestDetail.response_list[0];
+
+    if (response.status !== 'accept') {
       throw new CustomError({
         message: errorType.USER_REJECTED.message,
         code: errorType.USER_REJECTED.code,
@@ -892,9 +886,8 @@ async function checkOnboardResponse(message) {
     }
 
     logger.debug({
-      message: 'Onboard consented',
+      message: 'Create identity consented',
     });
-    db.removeChallengeFromRequestId(message.request_id);
     return true;
   } catch (error) {
     const { associated } = await db.getIdentityFromRequestId(
@@ -948,13 +941,18 @@ async function checkOnboardResponse(message) {
         db.removeCallbackUrlByReferenceId(reference_id);
       }
     }
+    db.removeOnboardDataByReferenceId(reference_id);
+    await common.closeRequest(
+      {
+        request_id: message.request_id,
+      },
+      { synchronous: true }
+    );
 
     logger.debug({
-      message: 'Onboarding failed',
+      message: 'Create identity failed',
       error,
     });
-
-    db.removeChallengeFromRequestId(message.request_id);
     return false;
   }
 }
