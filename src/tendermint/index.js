@@ -293,15 +293,14 @@ export async function query(fnName, data, height) {
     data,
   });
 
-  const queryData = fnName + '|' + JSON.stringify(data);
-
-  const dataBase64Encoded = Buffer.from(queryData).toString('base64');
+  const dataStr = JSON.stringify(data);
+  const queryData =
+    fnName +
+    '|' +
+    (dataStr != null ? Buffer.from(dataStr).toString('base64') : '');
 
   try {
-    const result = await tendermintHttpClient.abciQuery(
-      dataBase64Encoded,
-      height
-    );
+    const result = await tendermintHttpClient.abciQuery(queryData, height);
     return getQueryResult(result);
   } catch (error) {
     if (error.type === 'JSON-RPC ERROR') {
@@ -324,23 +323,20 @@ export async function transact(fnName, data, nonce, useMasterKey) {
     nonce,
   });
 
+  const dataStr = JSON.stringify(data);
   const tx =
     fnName +
     '|' +
-    JSON.stringify(data) +
+    (dataStr != null ? Buffer.from(dataStr).toString('base64') : '') +
     '|' +
     nonce +
     '|' +
     (await utils.createSignature(data, nonce, useMasterKey)) +
     '|' +
-    config.nodeId;
-
-  const txBase64Encoded = Buffer.from(tx).toString('base64');
+    Buffer.from(config.nodeId).toString('base64');
 
   try {
-    const result = await tendermintHttpClient.broadcastTxCommit(
-      txBase64Encoded
-    );
+    const result = await tendermintHttpClient.broadcastTxCommit(tx);
     return getTransactResult(result);
   } catch (error) {
     if (error.type === 'JSON-RPC ERROR') {
@@ -364,14 +360,12 @@ export function getTransactionListFromBlockQuery(result) {
   }
 
   const transactions = txs.map((tx) => {
-    // Decode base64 2 times because we send transactions to tendermint in base64 format
-    const txContentBase64 = Buffer.from(tx, 'base64').toString();
-    const txContent = Buffer.from(txContentBase64, 'base64')
+    const txContent = Buffer.from(tx, 'base64')
       .toString()
       .split('|');
     return {
       fnName: txContent[0],
-      args: JSON.parse(txContent[1]),
+      args: JSON.parse(Buffer.from(txContent[1], 'base64').toString()),
     };
   });
 

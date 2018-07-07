@@ -35,6 +35,7 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+- Change transaction message format to fix error when `|` character is in a parameter.
 - Fix wrong callback `type` value when create identity failed (user does not give a consent or got an invalid response from IdP).
 - Fix API path name colision resulting in making `requests` and `housekeeping` reserved words (cannot be used as a namespace).
 - Fix create identity requests do not get closed automatically.
