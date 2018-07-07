@@ -189,6 +189,25 @@ register_service() {
   fi
 }
 
+approve_service() {
+  local SERVICE_ID=$1
+  echo "Approving service ${SERVICE_ID} for node ${NODE_ID}..."
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/approveService \
+    -H "Content-Type: application/json" \
+    -d "{\"service_id\":\"${SERVICE_ID}\",\"node_id\":\"${NODE_ID}\"}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Approving service ${SERVICE_ID} for node ${NODE_ID} succeeded"
+    return 0
+  else
+    echo "Approving service ${SERVICE_ID} for node ${NODE_ID} failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
 did_namespace_exist() {
   local NAMESPACE=$1
 
@@ -302,6 +321,10 @@ case ${ROLE} in
       until register_node_id; do sleep 1; done
       until set_token_for_node_id 10000; do sleep 1; done
       until tendermint_add_validator; do sleep 1; done
+      if [ "${ROLE}" = "as" ]; then
+        until approve_service "bank_statement"; do sleep 1; done
+        until approve_service "customer_info"; do sleep 1; done
+      fi
     fi
     ;;
   *) 
