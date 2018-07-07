@@ -1,16 +1,32 @@
 # Changelog
 
-## TBD
+## 0.3.0 (July 7, 2018)
 
 BREAKING CHANGES:
 
 - API version 2.0
-- All APIs which make transactions to blockchain are now asynchronous.
+  - All APIs which make transactions to blockchain are now asynchronous. `callback_url` and `reference_id` are required in the request body.
+    - POST `/as/service/:service_id`
+    - POST `/as/data/:request_id/:service_id`
+    - POST `/dpki/node/create`
+    - POST `/dpki/node/update`
+    - POST `/identity`
+    - POST `/identity/:namespace/:identifier/ial`
+    - POST `/identity/:namespace/:identifier/accessors`
+    - POST `/identity/requests/close`
+    - POST `/idp/response`
+    - POST `/rp/requests/:namespace/:identifier`
+    - POST `/rp/requests/close`
+  - Path names change.
+    - POST `/dpki/node/register_callback` and POST `/dpki/node/register_callback_master` get combined to POST `/dpki/node/callback`
+  - New utility API for querying node's information. (GET `/utility/nodes/:node_id`)
 - API version 1.1 is available with path prefix `/v1`.
-- Support Tendermint 0.22 (RPC call spec changes).
+- Support Tendermint 0.22 (RPC spec changes).
 
 IMPROVEMENTS:
 
+- Configurable auto message queue address registering at server startup. Can be set with `REGISTER_MQ_AT_STARTUP` environment variable.
+- Check for different registered message queue address and configured message queue address before setting it to the blockchain. (If the address is the same as the one in the blockchain, the server will not make a transaction to set the address)
 - Add more logging for callback (HTTP response code, callback ID).
 - Add logging for DPKI (external crypto service) callback.
 - Configurable log level. Can be set with `LOG_LEVEL` environment variable.
@@ -20,6 +36,10 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - Fix wrong callback `type` value when create identity failed (user does not give a consent or got an invalid response from IdP).
+- Fix API path name colision resulting in making `requests` and `housekeeping` reserved words (cannot be used as a namespace).
+- Fix create identity requests do not get closed automatically.
+- Fix multiple accessor groups get created for the same user when more than one IdP trying to create an identity as the first IdP at the same time.
+- Fix returning response body content is HTML when getting an invalid API path request with methods other than GET.
 
 ## 0.2.1 (July 3, 2018)
 
