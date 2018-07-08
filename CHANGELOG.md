@@ -32,6 +32,7 @@ IMPROVEMENTS:
 - Configurable log level. Can be set with `LOG_LEVEL` environment variable.
 - Configurable log target. Can be set with `LOG_TARGET` environment variable.
 - Configurable log highlight color (enabled/disabled). Can be set with `LOG_COLOR` environment variable.
+- [Docker] Support Tendermint 0.22.0
 
 BUG FIXES:
 
