@@ -760,19 +760,15 @@ export async function handleChallengeRequest(responseId) {
   //challenge deleted, request is done
   if (challenge == null) return false;
 
-  let mqAddress = await tendermintNdid.getMsqAddress(idp_id);
-  if (!mqAddress) {
-    let error_url =
-      config.role === 'rp'
-        ? rp.getCallbackUrls.error_url
-        : idp.getCallbackUrls.error_url;
-    callbackToClient(error_url, {
-      type: 'error',
-      action: 'handleChallengeRequest',
-      request_id,
-      error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+  const mqAddress = await tendermintNdid.getMsqAddress(idp_id);
+  if (mqAddress == null) {
+    throw new CustomError({
+      message: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.message,
+      code: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.code,
+      details: {
+        request_id,
+      },
     });
-    return;
   }
   let { ip, port } = mqAddress;
   let receiver = [
@@ -947,4 +943,26 @@ async function closeRequestInternalAsync(
 
     throw error;
   }
+}
+
+export async function notifyError({ callbackUrl, action, error, requestId }) {
+  logger.debug({
+    message: 'Notifying error through callback',
+  });
+  if (callbackUrl == null) {
+    logger.warn({
+      message: 'Error callback URL has not been set',
+    });
+    return;
+  }
+  await callbackToClient(
+    callbackUrl,
+    {
+      type: 'error',
+      action,
+      request_id: requestId,
+      error: getErrorObjectForClient(error),
+    },
+    false
+  );
 }
