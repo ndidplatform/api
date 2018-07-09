@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "description": "",
   "scripts": {
-    "build": "npx babel src -d ./build/ --source-maps inline && cp -r ./devKey ./build",
+    "build": "npx babel src -d ./build/ --source-maps inline && cp -r ./dev_key ./build",
     "start": "npm run build && node build/server.js",
     "test": "npm run build && npx mocha build/**/*.test.js",
     "test:es6": "mocha src/**/*.test.js --watch --compilers js:babel-register",
