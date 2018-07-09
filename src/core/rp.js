@@ -163,6 +163,7 @@ async function processRequestUpdate(requestId, height) {
     type: 'request_status',
     ...requestStatus,
     response_valid_list: responseValidList,
+    block_height: height,
   };
 
   await callbackToClient(callbackUrl, eventDataForCallback, true);
@@ -538,6 +539,7 @@ export async function handleMessageFromQueue(messageStr) {
         type: 'request_status',
         ...requestStatus,
         response_valid_list: responseValidList,
+        block_height: message.height,
       };
 
       await callbackToClient(callbackUrl, eventDataForCallback, true);
