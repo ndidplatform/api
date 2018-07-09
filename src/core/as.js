@@ -35,6 +35,7 @@ import * as config from '../config';
 import * as common from './common';
 import * as db from '../db';
 import errorType from '../error/type';
+import { getErrorObjectForClient } from '../error/helpers';
 
 const callbackUrls = {};
 
@@ -89,7 +90,17 @@ async function sendDataToRP(rpId, data) {
   let receivers = [];
   let nodeId = rpId;
   // TODO: try catch / error handling
-  let { ip, port } = await tendermintNdid.getMsqAddress(nodeId);
+  let mqAddress = await tendermintNdid.getMsqAddress(nodeId);
+  if (!mqAddress) {
+    callbackToClient(callbackUrls.error_url, {
+      type: 'error',
+      action: 'sendDataToRP',
+      request_id: data.request_id,
+      error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+    });
+    return;
+  }
+  let { ip, port } = mqAddress;
   receivers.push({
     ip,
     port,
@@ -105,35 +116,105 @@ async function sendDataToRP(rpId, data) {
   });
 }
 
-export async function processDataForRP(data, additionalData) {
-  let as_id = config.nodeId;
-  let signature = await utils.createSignature(data);
-
-  // AS node adds transaction to blockchain
-  const { height } = await tendermintNdid.signASData({
-    as_id,
-    request_id: additionalData.requestId,
-    signature,
-    service_id: additionalData.serviceId,
-  });
-
-  if (!additionalData.rpId) {
-    additionalData.rpId = await db.getRPIdFromRequestId(
-      additionalData.requestId
-    );
+export async function processDataForRP(
+  data,
+  { reference_id, callback_url, requestId, serviceId, rpId },
+  { synchronous = false } = {}
+) {
+  try {
+    if (synchronous) {
+      await processDataForRPInternalAsync(...arguments);
+    } else {
+      processDataForRPInternalAsync(...arguments);
+    }
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot send data to RP',
+      reference_id,
+      callback_url,
+      requestId,
+      serviceId,
+      rpId,
+      synchronous,
+      cause: error,
+    });
   }
-
-  sendDataToRP(additionalData.rpId, {
-    request_id: additionalData.requestId,
-    as_id,
-    signature,
-    service_id: additionalData.serviceId,
-    data,
-    height,
-  });
 }
 
-export async function afterGotDataFromCallback(response, additionalData) {
+async function processDataForRPInternalAsync(
+  data,
+  { reference_id, callback_url, requestId, serviceId, rpId },
+  { synchronous = false } = {}
+) {
+  try {
+    const as_id = config.nodeId;
+    const signature = await utils.createSignature(data);
+
+    // AS node adds transaction to blockchain
+    const { height } = await tendermintNdid.signASData({
+      as_id,
+      request_id: requestId,
+      signature,
+      service_id: serviceId,
+    });
+
+    if (!rpId) {
+      rpId = await db.getRPIdFromRequestId(requestId);
+    }
+
+    sendDataToRP(rpId, {
+      request_id: requestId,
+      as_id,
+      signature,
+      service_id: serviceId,
+      data,
+      height,
+    });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'send_data_result',
+          success: true,
+          reference_id,
+          request_id: requestId,
+        },
+        true
+      );
+    }
+  } catch (error) {
+    logger.error({
+      message: 'Send data to RP internal async error',
+      data,
+      originalArgs: arguments[1],
+      options: arguments[2],
+      additionalArgs: arguments[3],
+      error,
+    });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'send_data_result',
+          success: false,
+          reference_id,
+          request_id: requestId,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+    }
+
+    throw error;
+  }
+}
+
+export async function afterGotDataFromCallback(
+  { response, body },
+  additionalData
+) {
   if (response.status === 204) {
     await db.setRPIdFromRequestId(
       additionalData.requestId,
@@ -141,9 +222,9 @@ export async function afterGotDataFromCallback(response, additionalData) {
     );
     return;
   }
-  let data;
+  let data, synchronous;
   try {
-    const result = await response.json();
+    const result = JSON.parse(body);
 
     logger.info({
       message: 'Received data from AS',
@@ -154,6 +235,9 @@ export async function afterGotDataFromCallback(response, additionalData) {
     });
 
     data = result.data;
+    additionalData.reference_id = result.reference_id;
+    additionalData.callback_url = result.callback_url;
+    synchronous = !additionalData.reference_id || !additionalData.callback_url;
   } catch (error) {
     logger.error({
       message: 'Cannot parse data from AS',
@@ -165,7 +249,7 @@ export async function afterGotDataFromCallback(response, additionalData) {
       cause: error,
     });
   }
-  processDataForRP(data, additionalData);
+  processDataForRP(data, additionalData, { synchronous });
 }
 
 async function getDataAndSendBackToRP(request, responseDetails) {
@@ -340,7 +424,10 @@ export async function handleTendermintNewBlockHeaderEvent(
   db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 }
 
-export async function upsertAsService({ service_id, min_ial, min_aal, url }) {
+export async function registerOrUpdateASService(
+  { service_id, reference_id, callback_url, min_ial, min_aal, url },
+  { synchronous = false } = {}
+) {
   try {
     //check already register?
     let registeredASList = await tendermintNdid.getAsNodesByServiceId({
@@ -351,7 +438,6 @@ export async function upsertAsService({ service_id, min_ial, min_aal, url }) {
       isRegisterd = isRegisterd || node_id === config.nodeId;
     });
 
-    let promiseArray = [];
     if (!isRegisterd) {
       if (!service_id || !min_aal || !min_ial || !url) {
         throw new CustomError({
@@ -360,7 +446,41 @@ export async function upsertAsService({ service_id, min_ial, min_aal, url }) {
           clientError: true,
         });
       }
-      promiseArray.push(
+    }
+
+    if (synchronous) {
+      await registerOrUpdateASServiceInternalAsync(...arguments, {
+        isRegisterd,
+      });
+    } else {
+      registerOrUpdateASServiceInternalAsync(...arguments, {
+        isRegisterd,
+      });
+    }
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot register/update AS service',
+      service_id,
+      reference_id,
+      callback_url,
+      min_ial,
+      min_aal,
+      url,
+      synchronous,
+      cause: error,
+    });
+  }
+}
+
+async function registerOrUpdateASServiceInternalAsync(
+  { service_id, reference_id, callback_url, min_ial, min_aal, url },
+  { synchronous = false } = {},
+  { isRegisterd }
+) {
+  try {
+    const promises = [];
+    if (!isRegisterd) {
+      promises.push(
         tendermintNdid.registerServiceDestination({
           service_id,
           min_aal,
@@ -369,7 +489,7 @@ export async function upsertAsService({ service_id, min_ial, min_aal, url }) {
         })
       );
     } else {
-      promiseArray.push(
+      promises.push(
         tendermintNdid.updateServiceDestination({
           service_id,
           min_aal,
@@ -377,29 +497,64 @@ export async function upsertAsService({ service_id, min_ial, min_aal, url }) {
         })
       );
     }
-    if (url) promiseArray.push(db.setServiceCallbackUrl(service_id, url));
+    if (url) {
+      promises.push(db.setServiceCallbackUrl(service_id, url));
+    }
 
-    await Promise.all(promiseArray);
+    await Promise.all(promises);
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'add_or_update_service_result',
+          success: true,
+          reference_id,
+        },
+        true
+      );
+    }
   } catch (error) {
-    throw new CustomError({
-      message: 'Cannot register AS service',
-      cause: error,
+    logger.error({
+      message: 'Upsert AS service internal async error',
+      originalArgs: arguments[0],
+      options: arguments[1],
+      additionalArgs: arguments[2],
+      error,
     });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'add_or_update_service_result',
+          success: false,
+          reference_id,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+    }
+
+    throw error;
   }
 }
 
 export async function getServiceDetail(service_id) {
   try {
-    //const result = await tendermintNdid.getServiceDetail(service_id);
-    const result = await tendermintNdid.getAsNodesByServiceId({ service_id });
-    if(!result) return null;
-    let myServiceDetail = result.filter((elem) => {
-      return elem.node_id === config.nodeId;
-    })[0];
+    const services = await tendermintNdid.getServicesByAsID({
+      as_id: config.nodeId,
+    });
+    const service = services.find((service) => {
+      return service.service_id === service_id;
+    });
+    if (service == null) return null;
     return {
       url: await db.getServiceCallbackUrl(service_id),
-      min_ial: myServiceDetail.min_ial,
-      min_aal: myServiceDetail.min_aal,
+      min_ial: service.min_ial,
+      min_aal: service.min_aal,
+      active: service.active,
+      suspended: service.suspended,
     };
   } catch (error) {
     throw new CustomError({

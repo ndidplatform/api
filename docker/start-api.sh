@@ -36,12 +36,12 @@ if [ -z ${NDID_PORT} ]; then NDID_PORT=${SERVER_PORT}; fi
 KEY_PATH=${PRIVATE_KEY_PATH:-/api/keys/node.pem}
 MASTER_KEY_PATH=${MASTER_PRIVATE_KEY_PATH:-/api/keys/master.pem}
 PUBLIC_KEY_PATH=${PUBLIC_KEY_PATH:-/api/keys/node.pub}
-MASTER_PUBLIC_KEY_PATH=${MASTER_PRIVATE_KEY_PATH:-/api/keyes/master.pub}
+MASTER_PUBLIC_KEY_PATH=${MASTER_PUBLIC_KEY_PATH:-/api/keys/master.pub}
 
 tendermint_wait_for_sync_complete() {
   echo "Waiting for tendermint at ${TENDERMINT_IP}:${TENDERMINT_PORT} to be ready..."
   while true; do 
-    [ ! "$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/status | jq -r .result.sync_info.syncing)" = "false" ] || break  
+    [ ! "$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/status | jq -r .result.sync_info.catching_up)" = "false" ] || break  
     sleep 1
   done
 }
@@ -80,7 +80,8 @@ does_node_id_exist() {
   if [ $# -gt 0 ]; then _NODE_ID=$1; fi
 
   echo "Checking if node_id=${_NODE_ID} exist..."
-  local DATA=$(echo "GetNodePublicKey|{\"node_id\":\"${_NODE_ID}\"}" | base64 | sed 's/\//%2F/g;s/+/%2B/g')
+  local PARAMS=$(echo "{\"node_id\":\"${_NODE_ID}\"}" | base64 | sed 's/\//%2F/g;s/+/%2B/g')
+  local DATA="GetNodePublicKey|${PARAMS}"
   if [ "$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/abci_query?data=\"${DATA}\" | jq -r .result.response.value | base64 -d | jq -r .public_key)" = "" ]; then
     echo "node_id=${_NODE_ID} does not exist"
     return 1
@@ -185,6 +186,25 @@ register_service() {
     return 0
   else
     echo "Registering service ${SERVICE_ID} (${SERVICE_NAME}) node failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
+approve_service() {
+  local SERVICE_ID=$1
+  echo "Approving service ${SERVICE_ID} for node ${NODE_ID}..."
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/approveService \
+    -H "Content-Type: application/json" \
+    -d "{\"service_id\":\"${SERVICE_ID}\",\"node_id\":\"${NODE_ID}\"}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Approving service ${SERVICE_ID} for node ${NODE_ID} succeeded"
+    return 0
+  else
+    echo "Approving service ${SERVICE_ID} for node ${NODE_ID} failed: ${RESPONSE_CODE}"
     return 1
   fi
 }
@@ -302,6 +322,10 @@ case ${ROLE} in
       until register_node_id; do sleep 1; done
       until set_token_for_node_id 10000; do sleep 1; done
       until tendermint_add_validator; do sleep 1; done
+      if [ "${ROLE}" = "as" ]; then
+        until approve_service "bank_statement"; do sleep 1; done
+        until approve_service "customer_info"; do sleep 1; done
+      fi
     fi
     ;;
   *) 

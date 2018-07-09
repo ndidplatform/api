@@ -22,60 +22,18 @@
 
 import Ajv from 'ajv';
 
-import schemas from './jsonSchemas';
+import schemasV1 from './jsonSchema/v1';
+import schemasV2 from './jsonSchema/v2';
 
-const ajv = new Ajv({
+const ajvOptions = {
   allErrors: true,
-});
+};
 
-ajv.addSchema(schemas.defsSchema, 'defs');
+const ajv = new Ajv(ajvOptions);
 
-ajv.addFormat(
-  'url-with-local-ip',
-  '^' +
-    // protocol identifier
-    '(?:https?://)' +
-    // user:pass authentication
-    '(?:\\S+(?::\\S*)?@)?' +
-    '(?:' +
-    // IP address exclusion
-    // private & local networks
-    // "(?!(?:10|127)(?:\\.\\d{1,3}){3})" +
-    // "(?!(?:169\\.254|192\\.168)(?:\\.\\d{1,3}){2})" +
-    // "(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3}){2})" +
-
-    // Allow localhost
-    '(?:localhost)' +
-    '|' +
-    // IP address dotted notation octets
-    // excludes loopback network 0.0.0.0
-    // excludes reserved space >= 224.0.0.0
-    // excludes network & broadcast addresses
-    // (first & last IP address of each class)
-    '(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])' +
-    '(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}' +
-    '(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))' +
-    '|' +
-    // host name
-    '(?:(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)' +
-    // domain name
-    '(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*' +
-    // TLD identifier
-    '(?:\\.(?:[a-z\\u00a1-\\uffff]{2,}))' +
-    // TLD may end with dot
-    '\\.?' +
-    ')' +
-    // port number
-    '(?::\\d{2,5})?' +
-    // resource path
-    '(?:[/?#]\\S*)?' +
-    '$'
-);
-
-const validate = ({ method, path, params, query, body }) => {
+const validate = ({ apiVersion, method, path, params, query, body }) => {
   let data;
   let dataType;
-  let type;
   if (typeof params === 'object') {
     data = params;
     dataType = 'params';
@@ -87,7 +45,15 @@ const validate = ({ method, path, params, query, body }) => {
     dataType = 'body';
   }
 
-  const jsonSchema = getJSONSchema(method, path, dataType);
+  ajv.removeSchema('defs');
+
+  if (apiVersion === 1) {
+    ajv.addSchema(schemasV1.defsSchema, 'defs');
+  } else {
+    ajv.addSchema(schemasV2.defsSchema, 'defs');
+  }
+
+  const jsonSchema = getJSONSchema(apiVersion, method, path, dataType);
   const validate = ajv.compile(jsonSchema);
   const valid = validate(data);
 
@@ -97,9 +63,13 @@ const validate = ({ method, path, params, query, body }) => {
   };
 };
 
-const getJSONSchema = (method, path, dataType) => {
+const getJSONSchema = (apiVersion, method, path, dataType) => {
   try {
-    return schemas[method][path][dataType];
+    if (apiVersion === 1) {
+      return schemasV1[method][path][dataType];
+    } else {
+      return schemasV2[method][path][dataType];
+    }
   } catch (error) {
     throw new Error('Cannot find JSON schema for validation');
   }

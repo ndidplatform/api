@@ -23,7 +23,7 @@
 import validate from '../validator';
 import errorType from '../../error/type';
 
-import { clientHttpErrorCode } from '../../config';
+import CustomError from '../../error/customError';
 
 // Path params validation (no rules = not needed according to specs)
 // export function validatePath(req, res, next) {
@@ -51,13 +51,14 @@ export function validateQuery(req, res, next) {
     query: req.query,
   });
   if (!queryValidationResult.valid) {
-    res.status(clientHttpErrorCode).json({
-      error: {
+    next(
+      new CustomError({
         message: errorType.QUERY_STRING_VALIDATION_FAILED.message,
         code: errorType.QUERY_STRING_VALIDATION_FAILED.code,
+        clientError: true,
         details: queryValidationResult,
-      },
-    });
+      })
+    );
     return;
   }
   next();
@@ -65,24 +66,31 @@ export function validateQuery(req, res, next) {
 
 export function validateBody(req, res, next) {
   let baseUrl = req.baseUrl;
-  if (baseUrl.indexOf('/v1') >= 0) {
+  const matchedPath = baseUrl.match(/^\/v([0-9]+)/);
+  let apiVersion;
+  if (matchedPath != null) {
     const splittedBaseUrl = baseUrl.split('/');
     splittedBaseUrl.splice(1, 1);
     baseUrl = splittedBaseUrl.join('/');
+    apiVersion = parseInt(matchedPath[1]);
+  } else {
+    apiVersion = 2;
   }
   const bodyValidationResult = validate({
+    apiVersion,
     method: req.method,
     path: `${baseUrl}${req.route.path}`,
     body: req.body,
   });
   if (!bodyValidationResult.valid) {
-    res.status(clientHttpErrorCode).json({
-      error: {
+    next(
+      new CustomError({
         message: errorType.BODY_VALIDATION_FAILED.message,
         code: errorType.BODY_VALIDATION_FAILED.code,
+        clientError: true,
         details: bodyValidationResult,
-      },
-    });
+      })
+    );
     return;
   }
   next();

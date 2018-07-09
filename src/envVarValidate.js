@@ -20,6 +20,8 @@
  *
  */
 
+import path from 'path';
+
 if (process.env.NODE_ENV == null || process.env.NODE_ENV === '') {
   console.warn(
     '"NODE_ENV" environment variable is not set. Default to "development"'
@@ -80,13 +82,47 @@ if (process.env.MQ_CONTACT_IP == null) {
   );
 }
 
-if (process.env.NODE_ENV === 'production') {
+if (
+  process.env.LOG_LEVEL != null &&
+  process.env.LOG_LEVEL !== 'error' &&
+  process.env.LOG_LEVEL !== 'warn' &&
+  process.env.LOG_LEVEL !== 'info' &&
+  process.env.LOG_LEVEL !== 'verbose' &&
+  process.env.LOG_LEVEL !== 'debug' &&
+  process.env.LOG_LEVEL !== 'silly'
+) {
+  console.error(
+    'ERROR:',
+    'Unsupported "LOG_LEVEL" environment variable value. Only "error", "warn", "info", "verbose", "debug", and "silly" are allowed. Process will now exit.'
+  );
+  process.exit(1);
+}
+
+if (
+  process.env.LOG_TARGET != null &&
+  process.env.LOG_TARGET !== 'console' &&
+  process.env.LOG_TARGET !== 'file'
+) {
+  console.error(
+    'ERROR:',
+    'Unsupported "LOG_TARGET" environment variable value. Only "console" and "file" are allowed. Process will now exit.'
+  );
+  process.exit(1);
+}
+
+if (process.env.LOG_TARGET === 'file') {
   if (process.env.LOG_DIRECTORY_PATH == null) {
     console.warn(
-      `"LOG_DIRECTORY_PATH" environment variable is not set. Default to "${__dirname}"`
+      `"LOG_DIRECTORY_PATH" environment variable is not set. Default to "${path.join(
+        __dirname,
+        '..',
+        'log'
+      )}"`
     );
   }
+}
 
+if (process.env.NODE_ENV === 'production') {
   if (
     process.env.USE_EXTERNAL_CRYPTO_SERVICE !== 'true' &&
     (process.env.PRIVATE_KEY_PATH == null ||

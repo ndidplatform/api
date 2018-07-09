@@ -48,7 +48,10 @@
 - `MASTER_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's master private key
 - `NODE_ID`: Node ID. Only when there are more than one node per role in the system. This ID tie to public key, in dev mode we have `rp1`, `rp2`, `rp3`, `idp1`, `idp2`, `idp3`, `as1`, `as2`, `as3` [Required]
 - `DATA_DIRECTORY_PATH`: Directory path for persistence data files [Default: `__dirname/../data` (`data` directory in repository's directory)]
-- `LOG_DIRECTORY_PATH`: Directory path for log files (only in `production` environment) [Default: `__dirname` (code's directory)]
+- `LOG_LEVEL`: Log level. Allowed values are `error`, `warn`, `info`, `verbose`, `debug` and `silly` [Default: `debug` in development, `info` in production]
+- `LOG_TARGET`: Where should logger writes logs to. Allowed values are `console` and `file` [Default: `console` in development, `file` in production]
+- `LOG_COLOR`: Log highlight color [Default: `true` when log target is console, `false` otherwise]
+- `LOG_DIRECTORY_PATH`: Directory path for log files (only in `production` environment) [Default: `__dirname/../log` (`log` directory in repository's directory)]
 - `CLIENT_HTTP_ERROR_CODE`: HTTP error code when responding a client error [Default: `400`]
 - `SERVER_HTTP_ERROR_CODE`: HTTP error code when responding a server error [Default: `500`]
 - `USE_EXTERNAL_CRYPTO_SERVICE`: Use external service for decrypting and signing (e.g. HSM) [Default: `false`]
@@ -58,6 +61,7 @@
 - `CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH`: Request message template in mustache format filepath to use in consent request when creating identity [Default: `../request_message_templates/create_identity.mustache`] [Required in production]
 - `ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH`: Request message template in mustache format filepath to use in consent request when adding new accessor [Default: `../request_message_templates/add_accessor.mustache`] [Required in production]
 - `CALLBACK_RETRY_TIMEOUT`: Callback retry timeout in seconds. Only applies to some callbacks (that do not have shouldRetry function check e.g. request status update callback to RP client) [Default: `600`]
+- `REGISTER_MQ_AT_STARTUP`: Flag to tell API node whether to register message queue address when start (will override previously registered address) [Default: `true` for RP, IdP, and AS roles, `false` for NDID role]
 
 **_Examples_**
 

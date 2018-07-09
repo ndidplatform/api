@@ -22,16 +22,18 @@
 
 import express from 'express';
 
-import { validateBody } from './middleware/validation';
-import * as ndid from '../core/ndid';
-import * as dpki from '../core/dpki';
-import * as externalCryptoService from '../utils/externalCryptoService';
+import { validateBody } from '../middleware/validation';
+import * as ndid from '../../core/ndid';
+import * as dpki from '../../core/dpki';
+import * as externalCryptoService from '../../utils/externalCryptoService';
 
 const router = express.Router();
 
 router.post('/node/create', validateBody, async (req, res, next) => {
   try {
     const {
+      reference_id,
+      callback_url,
       node_id,
       node_name,
       node_key,
@@ -45,17 +47,22 @@ router.post('/node/create', validateBody, async (req, res, next) => {
       max_ial,
     } = req.body;
 
-    await ndid.registerNode({
-      node_id,
-      node_name,
-      public_key: node_key,
-      master_public_key: node_master_key,
-      role,
-      max_ial,
-      max_aal,
-    });
+    await ndid.registerNode(
+      {
+        reference_id,
+        callback_url,
+        node_id,
+        node_name,
+        public_key: node_key,
+        master_public_key: node_master_key,
+        role,
+        max_ial,
+        max_aal,
+      },
+      { synchronous: false }
+    );
 
-    res.status(201).end();
+    res.status(202).end();
   } catch (error) {
     next(error);
   }
@@ -64,6 +71,8 @@ router.post('/node/create', validateBody, async (req, res, next) => {
 router.post('/node/update', validateBody, async (req, res, next) => {
   try {
     const {
+      reference_id,
+      callback_url,
       //node_name,
       node_key,
       //node_key_type,
@@ -74,12 +83,17 @@ router.post('/node/update', validateBody, async (req, res, next) => {
     } = req.body;
 
     //should we allow organization to update their node's name?
-    let result = await dpki.updateNode({
-      public_key: node_key,
-      master_public_key: node_master_key,
-    });
+    let result = await dpki.updateNode(
+      {
+        reference_id,
+        callback_url,
+        public_key: node_key,
+        master_public_key: node_master_key,
+      },
+      { synchronous: false }
+    );
 
-    res.status(200).json(result);
+    res.status(202).json(result);
   } catch (error) {
     next(error);
   }
@@ -99,30 +113,19 @@ router.get('/node/callback', async (req, res, next) => {
   }
 });
 
-router.post('/node/register_callback', validateBody, async (req, res, next) => {
+router.post('/node/callback', validateBody, async (req, res, next) => {
   try {
-    const { sign_url, decrypt_url } = req.body;
+    const { sign_url, master_sign_url, decrypt_url } = req.body;
 
-    await externalCryptoService.setDpkiCallback(sign_url, decrypt_url);
+    await externalCryptoService.setDpkiCallback({
+      signCallbackUrl: sign_url,
+      masterSignCallbackUrl: master_sign_url,
+      decryptCallbackUrl: decrypt_url,
+    });
     res.status(204).end();
   } catch (error) {
     next(error);
   }
 });
-
-router.post(
-  '/node/register_callback_master',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const { url } = req.body;
-
-      await externalCryptoService.setMasterSignatureCallback(url);
-      res.status(204).end();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
 
 export default router;

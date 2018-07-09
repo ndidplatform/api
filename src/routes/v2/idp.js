@@ -22,68 +22,14 @@
 
 import express from 'express';
 
-import { validateBody } from './middleware/validation';
-import * as as from '../core/as';
+import { validateBody } from '../middleware/validation';
+import * as idp from '../../core/idp';
 
 const router = express.Router();
 
-router.post('/service/:service_id', validateBody, async (req, res, next) => {
-  try {
-    const { service_id } = req.params;
-    const { min_ial, min_aal, url } = req.body;
-
-    await as.upsertAsService({
-      service_id,
-      min_aal,
-      min_ial,
-      url,
-    });
-
-    res.status(204).end();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get('/service/:service_id', async (req, res, next) => {
-  try {
-    const { service_id } = req.params;
-
-    const result = await as.getServiceDetail(service_id);
-
-    if (result == null) {
-      res.status(404).end();
-    } else {
-      res.status(200).json(result);
-    }
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post(
-  '/data/:request_id/:service_id',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const { request_id, service_id } = req.params;
-      const { data } = req.body;
-
-      as.processDataForRP(data, {
-        requestId: request_id,
-        serviceId: service_id,
-      });
-
-      res.status(204).end();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
 router.get('/callback', async (req, res, next) => {
   try {
-    const urls = as.getCallbackUrls();
+    const urls = idp.getCallbackUrls();
 
     if (Object.keys(urls).length > 0) {
       res.status(200).json(urls);
@@ -97,13 +43,56 @@ router.get('/callback', async (req, res, next) => {
 
 router.post('/callback', validateBody, async (req, res, next) => {
   try {
-    const { error_url } = req.body;
+    const { incoming_request_url, accessor_sign_url, error_url } = req.body;
 
-    as.setCallbackUrls({
+    idp.setCallbackUrls({
+      incoming_request_url,
+      accessor_sign_url,
       error_url,
     });
 
     res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/response', validateBody, async (req, res, next) => {
+  try {
+    const {
+      reference_id,
+      callback_url,
+      request_id,
+      //namespace,
+      //identifier,
+      ial,
+      aal,
+      secret,
+      status,
+      signature,
+      accessor_id,
+      //request_message,
+    } = req.body;
+
+    await idp.requestChallengeAndCreateResponse(
+      {
+        reference_id,
+        callback_url,
+        request_id,
+        //namespace,
+        //identifier,
+        ial,
+        aal,
+        secret,
+        status,
+        signature,
+        accessor_id,
+        //request_message,
+      },
+      { synchronous: false }
+    );
+
+    res.status(202).end();
   } catch (error) {
     next(error);
   }

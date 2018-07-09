@@ -29,22 +29,39 @@ import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';
 import { eventEmitter as messageQueueEvent } from '../mq';
-import { resumeCallbackToClient } from '../utils/callback';
+import { resumeCallbackToClient, callbackToClient } from '../utils/callback';
 import * as utils from '../utils';
 import * as config from '../config';
 import errorType from '../error/type';
+import { getErrorObjectForClient } from '../error/helpers';
 import * as mq from '../mq';
 import * as db from '../db';
 import * as externalCryptoService from '../utils/externalCryptoService';
 
 const role = config.role;
 
-let messageQueueAddressRegistered = false;
+let messageQueueAddressRegistered = !config.registerMqAtStartup;
 let handleMessageFromQueue;
 
-function registerMessageQueueAddress() {
+export function registeredMsqAddress() {
+  return messageQueueAddressRegistered;
+}
+
+async function registerMessageQueueAddress() {
   if (!messageQueueAddressRegistered) {
-    tendermintNdid.registerMsqAddress(config.mqRegister);
+    //query current self msq
+    const selfMqAddress = await tendermintNdid.getMsqAddress(config.nodeId);
+    if (selfMqAddress) {
+      const { ip, port } = selfMqAddress;
+      //if not same
+      if (ip !== config.mqRegister.ip || port !== config.mqRegister.port) {
+        //work only for broadcast tx commit
+        await tendermintNdid.registerMsqAddress(config.mqRegister);
+      }
+    } else {
+      //work only for broadcast tx commit
+      await tendermintNdid.registerMsqAddress(config.mqRegister);
+    }
     messageQueueAddressRegistered = true;
   }
 }
@@ -155,17 +172,20 @@ export async function getIdpsMsqDestination({
     filteredIdpNodes = idpNodes;
   }
 
-  const receivers = await Promise.all(
+  const receivers = (await Promise.all(
     filteredIdpNodes.map(async (idpNode) => {
       const nodeId = idpNode.node_id;
-      const { ip, port } = await tendermintNdid.getMsqAddress(nodeId);
+      const mqAddress = await tendermintNdid.getMsqAddress(nodeId);
+      if (mqAddress == null) {
+        return null;
+      }
       return {
-        ip,
-        port,
+        ip: mqAddress.ip,
+        port: mqAddress.port,
         ...(await tendermintNdid.getNodePubKey(nodeId)),
       };
     })
-  );
+  )).filter((receiver) => receiver != null);
   return receivers;
 }
 
@@ -181,7 +201,11 @@ export function clearAllScheduler() {
 
 export async function timeoutRequest(requestId) {
   try {
-    const responseValidList = await db.getIdpResponseValidList(requestId);
+    const request = await tendermintNdid.getRequest({ requestId });
+    let responseValidList;
+    if (request.mode === 3) {
+      responseValidList = await db.getIdpResponseValidList(requestId);
+    }
 
     await tendermintNdid.timeoutRequest({ requestId, responseValidList });
   } catch (error) {
@@ -227,20 +251,24 @@ export function addTimeoutScheduler(requestId, secondsToTimeout) {
  * @param {number} request.request_timeout
  * @returns {Promise<string>} Request ID
  */
-export async function createRequest({
-  mode,
-  namespace,
-  identifier,
-  reference_id,
-  idp_id_list,
-  callback_url,
-  data_request_list,
-  request_message,
-  min_ial,
-  min_aal,
-  min_idp,
-  request_timeout,
-}) {
+export async function createRequest(
+  {
+    request_id, // Pre-generated request ID. Used by create identity function.
+    mode,
+    namespace,
+    identifier,
+    reference_id,
+    idp_id_list,
+    callback_url,
+    data_request_list,
+    request_message,
+    min_ial,
+    min_aal,
+    min_idp,
+    request_timeout,
+  },
+  { synchronous = false } = {}
+) {
   try {
     // existing reference_id, return request ID
     const requestId = await db.getRequestIdByReferenceId(reference_id);
@@ -384,21 +412,11 @@ export async function createRequest({
       });
     }
 
-    const request_id = utils.createRequestId();
-
-    const dataRequestListToBlockchain = [];
-    for (let i in data_request_list) {
-      dataRequestListToBlockchain.push({
-        service_id: data_request_list[i].service_id,
-        as_id_list: data_request_list[i].as_id_list,
-        min_as: data_request_list[i].min_as,
-        request_params_hash: utils.hashWithRandomSalt(
-          data_request_list[i].request_params
-        ),
-      });
+    if (request_id == null) {
+      request_id = utils.createRequestId();
     }
 
-    let challenge = [
+    const challenge = [
       utils.randomBase64Bytes(config.challengeLength),
       utils.randomBase64Bytes(config.challengeLength),
     ];
@@ -424,12 +442,73 @@ export async function createRequest({
     };
 
     // save request data to DB to send to AS via mq when authen complete
-    // store even no data require, use for zk proof
-    //if (data_request_list != null && data_request_list.length !== 0) {
+    // and for zk proof
     await db.setRequestData(request_id, requestData);
-    //}
 
-    // add data to blockchain
+    // maintain mapping
+    await db.setRequestIdByReferenceId(reference_id, request_id);
+    await db.setRequestCallbackUrl(request_id, callback_url);
+
+    addTimeoutScheduler(request_id, request_timeout);
+
+    if (synchronous) {
+      await createRequestInternalAsync(...arguments, {
+        request_id,
+        secretSalt,
+        receivers,
+        requestData,
+      });
+    } else {
+      createRequestInternalAsync(...arguments, {
+        request_id,
+        secretSalt,
+        receivers,
+        requestData,
+      });
+    }
+
+    return request_id;
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Cannot create request',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    throw err;
+  }
+}
+
+async function createRequestInternalAsync(
+  {
+    mode,
+    namespace,
+    identifier,
+    reference_id,
+    idp_id_list,
+    callback_url,
+    data_request_list,
+    request_message,
+    min_ial,
+    min_aal,
+    min_idp,
+    request_timeout,
+  },
+  { synchronous = false } = {},
+  { request_id, secretSalt, receivers, requestData }
+) {
+  try {
+    const dataRequestListToBlockchain = [];
+    for (let i in data_request_list) {
+      dataRequestListToBlockchain.push({
+        service_id: data_request_list[i].service_id,
+        as_id_list: data_request_list[i].as_id_list,
+        min_as: data_request_list[i].min_as,
+        request_params_hash: utils.hashWithRandomSalt(
+          data_request_list[i].request_params
+        ),
+      });
+    }
+
     const requestDataToBlockchain = {
       mode,
       request_id,
@@ -441,36 +520,57 @@ export async function createRequest({
       request_message_hash: utils.hash(secretSalt + request_message),
     };
 
-    // maintain mapping
-    await db.setRequestIdByReferenceId(reference_id, request_id);
-    await db.setRequestCallbackUrl(request_id, callback_url);
+    const { height } = await tendermintNdid.createRequest(
+      requestDataToBlockchain
+    );
 
-    try {
-      const { height } = await tendermintNdid.createRequest(
-        requestDataToBlockchain
-      );
-
-      // send request data to IDPs via message queue
+    // send request data to IDPs via message queue
+    if (min_idp > 0) {
       mq.send(receivers, {
         ...requestData,
         height,
       });
-    } catch (error) {
-      await db.removeRequestIdByReferenceId(reference_id);
-      await db.removeRequestCallbackUrl(request_id);
-      throw error;
     }
 
-    addTimeoutScheduler(request_id, request_timeout);
-
-    return request_id;
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'create_request_result',
+          success: true,
+          reference_id,
+          request_id,
+        },
+        true
+      );
+    }
   } catch (error) {
-    const err = new CustomError({
-      message: 'Cannot create request',
-      cause: error,
+    await db.removeRequestIdByReferenceId(reference_id);
+    await db.removeRequestCallbackUrl(request_id);
+
+    logger.error({
+      message: 'Create request internal async error',
+      originalArgs: arguments[0],
+      options: arguments[1],
+      additionalArgs: arguments[2],
+      error,
     });
-    logger.error(err.getInfoForLog());
-    throw err;
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'create_request_result',
+          success: false,
+          reference_id,
+          request_id,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+    }
+
+    throw error;
   }
 }
 
@@ -484,7 +584,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
 
   //check only signature of idp_id
   if (mode === 1) {
-    return true;
+    return null; // Cannot check in mode 1
 
     /*let response_list = (await getRequestDetail({
       requestId: request_id,
@@ -659,7 +759,21 @@ export async function handleChallengeRequest(responseId) {
   //challenge deleted, request is done
   if (challenge == null) return false;
 
-  let { ip, port } = await tendermintNdid.getMsqAddress(idp_id);
+  let mqAddress = await tendermintNdid.getMsqAddress(idp_id);
+  if (!mqAddress) {
+    let error_url =
+      config.role === 'rp'
+        ? rp.getCallbackUrls.error_url
+        : idp.getCallbackUrls.error_url;
+    callbackToClient(error_url, {
+      type: 'error',
+      action: 'handleChallengeRequest',
+      request_id,
+      error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+    });
+    return;
+  }
+  let { ip, port } = mqAddress;
   let receiver = [
     {
       ip,
@@ -672,6 +786,71 @@ export async function handleChallengeRequest(responseId) {
     request_id,
     ...nodeId,
   });
+}
+
+export async function checkIdpResponse({
+  requestStatus,
+  idpId,
+  responseIal,
+  requestDataFromMq,
+}) {
+  logger.debug({
+    message: 'Checking IdP response (ZK Proof, IAL)',
+    requestStatus,
+    idpId,
+    responseIal,
+    requestDataFromMq,
+  });
+
+  let validIal;
+
+  const requestId = requestStatus.request_id;
+
+  // Check IAL
+  const requestData = await db.getRequestData(requestId);
+  const identityInfo = await tendermintNdid.getIdentityInfo(
+    requestData.namespace,
+    requestData.identifier,
+    idpId
+  );
+
+  if (requestStatus.mode === 1) {
+    validIal = null; // Cannot check in mode 1
+  } else if (requestStatus.mode === 3) {
+    if (responseIal <= identityInfo.ial) {
+      validIal = true;
+    } else {
+      validIal = false;
+    }
+  }
+
+  // Check ZK Proof
+  const validProof = await verifyZKProof(
+    requestStatus.request_id,
+    idpId,
+    requestDataFromMq,
+    requestStatus.mode
+  );
+
+  logger.debug({
+    message: 'Checked ZK proof and IAL',
+    requestId,
+    idpId,
+    validProof,
+    validIal,
+  });
+
+  const responseValid = {
+    idp_id: idpId,
+    valid_proof: validProof,
+    valid_ial: validIal,
+  };
+
+  await db.addIdpResponseValidList(requestId, responseValid);
+
+  db.removeProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
+
+  return responseValid;
 }
 
 /**
@@ -689,20 +868,81 @@ export async function shouldRetryCallback(requestId) {
   return true;
 }
 
-export async function closeRequest(requestId) {
+export async function closeRequest(
+  { reference_id, callback_url, request_id },
+  { synchronous = false } = {}
+) {
   try {
-    const responseValidList = await db.getIdpResponseValidList(requestId);
-
-    await tendermintNdid.closeRequest({
-      requestId,
-      responseValidList,
-    });
+    if (synchronous) {
+      await closeRequestInternalAsync(...arguments);
+    } else {
+      closeRequestInternalAsync(...arguments);
+    }
   } catch (error) {
     throw new CustomError({
       message: 'Cannot close a request',
-      requestId,
+      reference_id,
+      callback_url,
+      request_id,
+      synchronous,
       cause: error,
     });
   }
-  db.removeChallengeFromRequestId(requestId);
+}
+
+async function closeRequestInternalAsync(
+  { reference_id, callback_url, request_id },
+  { synchronous = false } = {}
+) {
+  try {
+    const request = await tendermintNdid.getRequest({ requestId: request_id });
+    let responseValidList;
+    if (request.mode === 3) {
+      responseValidList = await db.getIdpResponseValidList(request_id);
+    }
+
+    await tendermintNdid.closeRequest({
+      requestId: request_id,
+      responseValidList,
+    });
+
+    db.removeChallengeFromRequestId(request_id);
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'close_request_result',
+          success: true,
+          reference_id,
+          request_id,
+        },
+        true
+      );
+    }
+  } catch (error) {
+    logger.error({
+      message: 'Close request internal async error',
+      originalArgs: arguments[0],
+      options: arguments[1],
+      additionalArgs: arguments[2],
+      error,
+    });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'close_request_result',
+          success: false,
+          reference_id,
+          request_id,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+    }
+
+    throw error;
+  }
 }

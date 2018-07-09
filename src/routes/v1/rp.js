@@ -22,11 +22,34 @@
 
 import express from 'express';
 
-import { validateBody } from './middleware/validation';
-import * as rp from '../core/rp';
-import * as common from '../core/common';
+import { validateBody } from '../middleware/validation';
+import * as rp from '../../core/rp';
+import * as common from '../../core/common';
 
 const router = express.Router();
+
+router.post(
+  '/requests/housekeeping/data/:request_id',
+  async (req, res, next) => {
+    try {
+      const { request_id } = req.params;
+
+      await rp.removeDataFromAS(request_id);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post('/requests/housekeeping/data', async (req, res, next) => {
+  try {
+    await rp.removeAllDataFromAS();
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.post(
   '/requests/:namespace/:identifier',
@@ -47,20 +70,23 @@ router.post(
         request_timeout,
       } = req.body;
 
-      const requestId = await common.createRequest({
-        mode,
-        namespace,
-        identifier,
-        reference_id,
-        idp_id_list,
-        callback_url,
-        data_request_list,
-        request_message,
-        min_ial,
-        min_aal,
-        min_idp,
-        request_timeout,
-      });
+      const requestId = await common.createRequest(
+        {
+          mode,
+          namespace,
+          identifier,
+          reference_id,
+          idp_id_list,
+          callback_url,
+          data_request_list,
+          request_message,
+          min_ial,
+          min_aal,
+          min_idp,
+          request_timeout,
+        },
+        { synchronous: true }
+      );
 
       res.status(200).json({ request_id: requestId });
     } catch (error) {
@@ -99,34 +125,11 @@ router.get('/requests/data/:request_id', async (req, res, next) => {
   }
 });
 
-router.post(
-  '/requests/housekeeping/data/:request_id',
-  async (req, res, next) => {
-    try {
-      const { request_id } = req.params;
-
-      await rp.removeDataFromAS(request_id);
-      res.status(204).end();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.post('/requests/housekeeping/data', async (req, res, next) => {
-  try {
-    await rp.removeAllDataFromAS();
-    res.status(204).end();
-  } catch (error) {
-    next(error);
-  }
-});
-
 router.post('/requests/close', validateBody, async (req, res, next) => {
   try {
     const { request_id } = req.body;
 
-    await common.closeRequest(request_id);
+    await common.closeRequest({ request_id }, { synchronous: true });
     res.status(204).end();
   } catch (error) {
     next(error);

@@ -36,6 +36,15 @@ router.post('/initNDID', async (req, res, next) => {
   }
 });
 
+router.post('/approveService', async (req, res, next) => {
+  try {
+    await ndid.approveService(req.body);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/registerNode', async (req, res, next) => {
   try {
     const {
@@ -47,14 +56,17 @@ router.post('/registerNode', async (req, res, next) => {
       max_ial,
     } = req.body;
 
-    await ndid.registerNode({
-      node_id,
-      public_key,
-      master_public_key,
-      role,
-      max_aal,
-      max_ial,
-    });
+    await ndid.registerNode(
+      {
+        node_id,
+        public_key,
+        master_public_key,
+        role,
+        max_aal,
+        max_ial,
+      },
+      { synchronous: true }
+    );
 
     res.status(201).end();
   } catch (error) {
@@ -110,6 +122,13 @@ router.post('/reduceNodeToken', async (req, res, next) => {
 router.post('/namespaces', async (req, res, next) => {
   try {
     const { namespace, description } = req.body;
+
+    if (namespace === 'requests' || namespace === 'housekeeping') {
+      res.status(400).json({
+        message: 'Input namespace cannot be reserved words ("requests" and "housekeeping")'
+      });
+      return;
+    }
 
     await ndid.addNamespace({
       namespace,

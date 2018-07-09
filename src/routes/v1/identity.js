@@ -22,10 +22,12 @@
 
 import express from 'express';
 
-import { validateBody } from './middleware/validation';
-import * as identity from '../core/identity';
-import * as common from '../core/common';
-import * as tendermintNdid from '../tendermint/ndid';
+import { validateBody } from '../middleware/validation';
+import * as identity from '../../core/identity';
+import * as common from '../../core/common';
+import * as tendermintNdid from '../../tendermint/ndid';
+
+import errorType from '../../error/type';
 
 const router = express.Router();
 
@@ -41,15 +43,18 @@ router.post('/', validateBody, async (req, res, next) => {
       ial,
     } = req.body;
 
-    const result = await identity.createNewIdentity({
-      namespace,
-      identifier,
-      reference_id,
-      accessor_type,
-      accessor_public_key,
-      accessor_id,
-      ial,
-    });
+    const result = await identity.createNewIdentity(
+      {
+        namespace,
+        identifier,
+        reference_id,
+        accessor_type,
+        accessor_public_key,
+        accessor_id,
+        ial,
+      },
+      { synchronous: true, apiVersion: 1 }
+    );
 
     res.status(200).json(result);
   } catch (error) {
@@ -57,39 +62,16 @@ router.post('/', validateBody, async (req, res, next) => {
   }
 });
 
-router.post(
-  '/:namespace/:identifier/accessors',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const {
-        reference_id,
-        accessor_type,
-        accessor_public_key,
-        accessor_id,
-      } = req.body;
+router.post('/requests/close', validateBody, async (req, res, next) => {
+  try {
+    const { request_id } = req.body;
 
-      const { namespace, identifier } = req.params;
-
-      const result = await identity.addAccessorMethodForAssociatedIdp({
-        namespace,
-        identifier,
-        reference_id,
-        accessor_type,
-        accessor_public_key,
-        accessor_id,
-      });
-
-      if (result.request_id == null) {
-        res.status(404).end();
-      } else {
-        res.status(200).json(result);
-      }
-    } catch (error) {
-      next(error);
-    }
+    await common.closeRequest(request_id);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
@@ -112,25 +94,6 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
   }
 });
 
-router.post(
-  '/:namespace/:identifier/ial',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const { namespace, identifier } = req.params;
-      const { ial } = req.body;
-      await identity.updateIal({
-        namespace,
-        identifier,
-        ial,
-      });
-      res.status(204).end();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
 router.post('/:namespace/:identifier', validateBody, async (req, res, next) => {
   try {
     const { namespace, identifier } = req.params;
@@ -143,6 +106,28 @@ router.post('/:namespace/:identifier', validateBody, async (req, res, next) => {
     next(error);
   }
 });
+
+router.post(
+  '/:namespace/:identifier/ial',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { namespace, identifier } = req.params;
+      const { ial } = req.body;
+      await identity.updateIal(
+        {
+          namespace,
+          identifier,
+          ial,
+        },
+        { synchronous: true }
+      );
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 router.get('/:namespace/:identifier/endorsement', async (req, res, next) => {
   try {
@@ -175,15 +160,41 @@ router.post(
   }
 );
 
-router.post('/requests/close', validateBody, async (req, res, next) => {
-  try {
-    const { request_id } = req.body;
+router.post(
+  '/:namespace/:identifier/accessors',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const {
+        reference_id,
+        accessor_type,
+        accessor_public_key,
+        accessor_id,
+      } = req.body;
 
-    await common.closeRequest(request_id);
-    res.status(204).end();
-  } catch (error) {
-    next(error);
+      const { namespace, identifier } = req.params;
+
+      const result = await identity.addAccessorMethodForAssociatedIdp(
+        {
+          namespace,
+          identifier,
+          reference_id,
+          accessor_type,
+          accessor_public_key,
+          accessor_id,
+        },
+        { synchronous: true, apiVersion: 1 }
+      );
+
+      res.status(200).json(result);
+    } catch (error) {
+      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
+        res.status(404).end();
+        return;
+      }
+      next(error);
+    }
   }
-});
+);
 
 export default router;

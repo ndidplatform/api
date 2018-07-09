@@ -67,6 +67,7 @@ import errorType from '../error/type';
 // DuplicateServiceIDInDataRequest uint32 = 41
 // ServiceDestinationNotFound      uint32 = 42
 // DataRequestIsCompleted          uint32 = 43
+// NotFirstIdP                     uint32 = 44
 
 const codeMapping = {
   1: errorType.ABCI_ENCODING_ERROR, // Not used in API (calls from API won't generate this error)
@@ -112,6 +113,7 @@ const codeMapping = {
   41: errorType.ABCI_DUPLICATE_SERVICE_ID_IN_DATA_REQUEST,
   42: errorType.ABCI_SERVICE_DESTINATION_NOT_FOUND,
   43: errorType.ABCI_DATA_REQUEST_IS_COMPLETED,
+  44: errorType.ABCI_NOT_FIRST_IDP,
 };
 
 export function convertAbciAppCodeToErrorType(abciAppCode) {

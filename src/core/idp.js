@@ -120,7 +120,9 @@ export async function accessorSign(sid, hash_id, accessor_id, reference_id) {
     sid,
     hash_method: 'SHA256',
     key_type: 'RSA',
-    sign_method: 'RSA',
+    sign_method: 'RSA-SHA256',
+    type: 'accessor_sign',
+    padding: 'PKCS#1v1.5',
     accessor_id,
     reference_id,
   };
@@ -148,7 +150,16 @@ export async function accessorSign(sid, hash_id, accessor_id, reference_id) {
       },
       body: JSON.stringify(data),
     });
-    const signatureObj = await response.json();
+    const responseBody = await response.text();
+    logger.info({
+      message: 'Accessor sign response',
+      httpStatusCode: response.status,
+    });
+    logger.debug({
+      message: 'Accessor sign response body',
+      body: responseBody,
+    });
+    const signatureObj = JSON.parse(responseBody);
     return signatureObj.signature;
   } catch (error) {
     throw new CustomError({
@@ -185,7 +196,17 @@ async function requestChallenge(request_id, accessor_id) {
     identity_proof: JSON.stringify([publicProof1, publicProof2]),
   });
   //send message queue with public proof
-  let { ip, port } = await tendermintNdid.getMsqAddress(request.rp_id);
+  let mqAddress = await tendermintNdid.getMsqAddress(request.rp_id);
+  if (!mqAddress) {
+    callbackToClient(callbackUrls.error_url, {
+      type: 'error',
+      action: 'requestChallenge',
+      request_id,
+      error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+    });
+    return;
+  }
+  let { ip, port } = mqAddress;
   let receiver = [
     {
       ip,
@@ -265,6 +286,7 @@ async function requestChallengeAndCreateResponseInternalAsync(data, request) {
       {
         type: 'response_result',
         success: false,
+        reference_id: data.reference_id,
         request_id: data.request_id,
         error: getErrorObjectForClient(error),
       },
@@ -276,7 +298,9 @@ async function requestChallengeAndCreateResponseInternalAsync(data, request) {
 
 async function createIdpResponse(data) {
   try {
-    let {
+    const {
+      reference_id,
+      callback_url,
       request_id,
       aal,
       ial,
@@ -284,7 +308,6 @@ async function createIdpResponse(data) {
       signature,
       accessor_id,
       secret,
-      callback_url,
     } = data;
 
     const request = await tendermintNdid.getRequest({ requestId: request_id });
@@ -397,6 +420,7 @@ async function createIdpResponse(data) {
       {
         type: 'response_result',
         success: true,
+        reference_id,
         request_id,
       },
       true
@@ -450,6 +474,10 @@ export function notifyIncomingRequestByCallback(eventDataForCallback) {
   );
 }
 
+/**
+ * USE WITH API v1 ONLY
+ * @param {Object} eventDataForCallback
+ */
 export function notifyCreateIdentityResultByCallback(eventDataForCallback) {
   notifyByCallback({
     url: callbackUrls.identity_result_url,
@@ -458,6 +486,10 @@ export function notifyCreateIdentityResultByCallback(eventDataForCallback) {
   });
 }
 
+/**
+ * USE WITH API v1 ONLY
+ * @param {Object} eventDataForCallback
+ */
 export function notifyAddAccessorResultByCallback(eventDataForCallback) {
   notifyByCallback({
     url: callbackUrls.identity_result_url,
@@ -479,7 +511,17 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
     rp_id,
   });
 
-  let { ip, port } = await tendermintNdid.getMsqAddress(rp_id);
+  let mqAddress = await tendermintNdid.getMsqAddress(rp_id);
+  if (!mqAddress) {
+    callbackToClient(callbackUrls.error_url, {
+      type: 'error',
+      action: 'sendPrivateProofToRP',
+      request_id,
+      error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+    });
+    return;
+  }
+  let { ip, port } = mqAddress;
   let rpMq = {
     ip,
     port,
@@ -508,7 +550,7 @@ export async function handleMessageFromQueue(messageStr) {
   //if message is challenge for response, no need to wait for blockchain
   if (message.challenge) {
     //store challenge
-    let data = await db.getResponseFromRequestId(message.request_id);
+    const data = await db.getResponseFromRequestId(message.request_id);
     try {
       let request = await db.getRequestReceivedFromMQ(message.request_id);
       request.challenge = message.challenge;
@@ -530,6 +572,7 @@ export async function handleMessageFromQueue(messageStr) {
         {
           type: 'response_result',
           success: false,
+          reference_id: data.reference_id,
           request_id: data.request_id,
           error: getErrorObjectForClient(error),
         },
@@ -603,18 +646,59 @@ export async function handleMessageFromQueue(messageStr) {
   });
   //onboard response
   if (message.accessor_id) {
-    if (await checkOnboardResponse(message)) {
+    if (await checkCreateIdentityResponse(message)) {
       let { secret, associated } = await identity.addAccessorAfterConsent(
         message.request_id,
         message.accessor_id
       );
-      let notifyData = {
-        request_id: message.request_id,
+      const reference_id = await db.getReferenceIdByRequestId(
+        message.request_id
+      );
+      const callbackUrl = await db.getCallbackUrlByReferenceId(reference_id);
+      const notifyData = {
         success: true,
+        reference_id,
+        request_id: message.request_id,
         secret,
       };
-      if (associated) notifyAddAccessorResultByCallback(notifyData);
-      else notifyCreateIdentityResultByCallback(notifyData);
+      if (associated) {
+        if (callbackUrl == null) {
+          // Implies API v1
+          notifyAddAccessorResultByCallback(notifyData);
+        } else {
+          await callbackToClient(
+            callbackUrl,
+            {
+              type: 'add_accessor_result',
+              ...notifyData,
+            },
+            true
+          );
+          db.removeCallbackUrlByReferenceId(reference_id);
+        }
+      } else {
+        if (callbackUrl == null) {
+          // Implies API v1
+          notifyCreateIdentityResultByCallback(notifyData);
+        } else {
+          await callbackToClient(
+            callbackUrl,
+            {
+              type: 'create_identity_result',
+              ...notifyData,
+            },
+            true
+          );
+          db.removeCallbackUrlByReferenceId(reference_id);
+        }
+      }
+      db.removeReferenceIdByRequestId(message.request_id);
+      await common.closeRequest(
+        {
+          request_id: message.request_id,
+        },
+        { synchronous: true }
+      );
     }
   } else if (message.type === 'request_challenge') {
     const responseId = message.request_id + ':' + message.idp_id;
@@ -684,18 +768,61 @@ export async function handleTendermintNewBlockHeaderEvent(
       await db.removeRequestToProcessReceivedFromMQ(requestId);
       //reponse for onboard
       if (message.accessor_id) {
-        if (await checkOnboardResponse(message)) {
+        if (await checkCreateIdentityResponse(message)) {
           let { secret, associated } = await identity.addAccessorAfterConsent(
             message.request_id,
             message.accessor_id
           );
-          let notifyData = {
-            request_id: message.request_id,
+          const reference_id = await db.getReferenceIdByRequestId(
+            message.request_id
+          );
+          const callbackUrl = await db.getCallbackUrlByReferenceId(
+            reference_id
+          );
+          const notifyData = {
             success: true,
+            reference_id,
+            request_id: message.request_id,
             secret,
           };
-          if (associated) notifyAddAccessorResultByCallback(notifyData);
-          else notifyCreateIdentityResultByCallback(notifyData);
+          if (associated) {
+            if (callbackUrl == null) {
+              // Implies API v1
+              notifyAddAccessorResultByCallback(notifyData);
+            } else {
+              await callbackToClient(
+                callbackUrl,
+                {
+                  type: 'add_accessor_result',
+                  ...notifyData,
+                },
+                true
+              );
+              db.removeCallbackUrlByReferenceId(reference_id);
+            }
+          } else {
+            if (callbackUrl == null) {
+              // Implies API v1
+              notifyCreateIdentityResultByCallback(notifyData);
+            } else {
+              await callbackToClient(
+                callbackUrl,
+                {
+                  type: 'create_identity_result',
+                  ...notifyData,
+                },
+                true
+              );
+              db.removeCallbackUrlByReferenceId(reference_id);
+            }
+          }
+          db.removeReferenceIdByRequestId(message.request_id);
+          await common.closeRequest(
+            {
+              request_id: message.request_id,
+            },
+            { synchronous: true }
+          );
         }
       } else if (message.type === 'request_challenge') {
         const responseId = message.request_id + ':' + message.idp_id;
@@ -726,43 +853,106 @@ export async function handleTendermintNewBlockHeaderEvent(
   db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 }
 
-async function checkOnboardResponse(message) {
-  let reason = false;
-  let requestDetail = await tendermintNdid.getRequestDetail({
-    requestId: message.request_id,
-  });
-  let response = requestDetail.response_list[0];
-
-  if (
-    !(await common.verifyZKProof(
-      message.request_id,
-      message.idp_id,
-      message,
-      3
-    ))
-  ) {
-    reason = 'Invalid response';
-  } else if (response.status !== 'accept') {
-    reason = 'User rejected';
-  }
-
-  if (reason) {
-    notifyAddAccessorResultByCallback({
-      request_id: message.request_id,
-      success: false,
+async function checkCreateIdentityResponse(message) {
+  try {
+    const requestDetail = await tendermintNdid.getRequestDetail({
+      requestId: message.request_id,
     });
+    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+
+    const responseValid = await common.checkIdpResponse({
+      requestStatus,
+      idpId: message.idp_id,
+      requestDataFromMq: message,
+      responseIal: requestDetail.response_list.find(
+        (response) => response.idp_id === message.idp_id
+      ).ial,
+    });
+
+    if (!responseValid.valid_proof || !responseValid.valid_ial) {
+      throw new CustomError({
+        message: errorType.INVALID_RESPONSE.message,
+        code: errorType.INVALID_RESPONSE.code,
+      });
+    }
+
+    const response = requestDetail.response_list[0];
+
+    if (response.status !== 'accept') {
+      throw new CustomError({
+        message: errorType.USER_REJECTED.message,
+        code: errorType.USER_REJECTED.code,
+      });
+    }
 
     logger.debug({
-      message: 'Onboarding failed',
-      reason,
+      message: 'Create identity consented',
     });
+    return true;
+  } catch (error) {
+    const { associated } = await db.getIdentityFromRequestId(
+      message.request_id
+    );
 
-    db.removeChallengeFromRequestId(message.request_id);
+    const reference_id = await db.getReferenceIdByRequestId(message.request_id);
+    const callbackUrl = await db.getCallbackUrlByReferenceId(reference_id);
+    if (associated) {
+      if (callbackUrl == null) {
+        // Implies API v1
+        notifyAddAccessorResultByCallback({
+          request_id: message.request_id,
+          success: false,
+          error: getErrorObjectForClient(error),
+        });
+      } else {
+        await callbackToClient(
+          callbackUrl,
+          {
+            type: 'add_accessor_result',
+            success: false,
+            reference_id,
+            request_id: message.request_id,
+            error: getErrorObjectForClient(error),
+          },
+          true
+        );
+        db.removeCallbackUrlByReferenceId(reference_id);
+      }
+    } else {
+      if (callbackUrl == null) {
+        // Implies API v1
+        notifyCreateIdentityResultByCallback({
+          request_id: message.request_id,
+          success: false,
+          error: getErrorObjectForClient(error),
+        });
+      } else {
+        await callbackToClient(
+          callbackUrl,
+          {
+            type: 'create_identity_result',
+            success: false,
+            reference_id,
+            request_id: message.request_id,
+            error: getErrorObjectForClient(error),
+          },
+          true
+        );
+        db.removeCallbackUrlByReferenceId(reference_id);
+      }
+    }
+    db.removeOnboardDataByReferenceId(reference_id);
+    await common.closeRequest(
+      {
+        request_id: message.request_id,
+      },
+      { synchronous: true }
+    );
+
+    logger.debug({
+      message: 'Create identity failed',
+      error,
+    });
     return false;
   }
-  logger.debug({
-    message: 'Onboard consented',
-  });
-  db.removeChallengeFromRequestId(message.request_id);
-  return true;
 }

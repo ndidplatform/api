@@ -447,6 +447,20 @@ export async function getAsNodesByServiceId({ service_id }) {
   }
 }
 
+export async function getServicesByAsID({ as_id }) {
+  try {
+    const result = await tendermint.query('GetServicesByAsID', {
+      as_id,
+    });
+    return result != null ? (result.services != null ? result.services : []) : [];
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get servies by AS ID from blockchain',
+      cause: error,
+    });
+  }
+}
+
 export async function getAccessorGroupId(accessor_id) {
   try {
     const accessorGroupIdObj = await tendermint.query('GetAccessorGroupID', {

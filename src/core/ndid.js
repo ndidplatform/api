@@ -20,11 +20,13 @@
  *
  */
 
-import logger from '../logger';
-
 import * as utils from '../utils';
-import * as config from '../config';
 import * as tendermint from '../tendermint';
+import logger from '../logger';
+import { callbackToClient } from '../utils/callback';
+
+import CustomError from '../error/customError';
+import { getErrorObjectForClient } from '../error/helpers';
 
 let init = false;
 
@@ -44,6 +46,25 @@ export async function initNDID(public_key) {
   } catch (error) {
     logger.error({
       message: 'Cannot init NDID',
+      error,
+    });
+    throw error;
+  }
+}
+
+export async function approveService({
+  node_id,
+  service_id,
+}) {
+  try {
+    await tendermint.transact(
+      'RegisterServiceDestinationByNDID',
+      { node_id, service_id },
+      utils.getNonce()
+    );
+  } catch (error) {
+    logger.error({
+      message: 'Cannot approve service for AS',
       error,
     });
     throw error;
@@ -92,8 +113,27 @@ export async function reduceNodeToken(data) {
   }
 }
 
-export async function registerNode(data) {
+export async function registerNode(data, { synchronous = false } = {}) {
+  try {
+    if (synchronous) {
+      await registerNodeInternalAsync(...arguments);
+    } else {
+      registerNodeInternalAsync(...arguments);
+    }
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Cannot register node',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    throw err;
+  }
+}
+
+async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
   const {
+    reference_id,
+    callback_url,
     node_id,
     public_key,
     role,
@@ -108,11 +148,40 @@ export async function registerNode(data) {
 
   try {
     await tendermint.transact('RegisterNode', data, utils.getNonce());
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'create_node_result',
+          reference_id,
+          success: true,
+        },
+        true
+      );
+    }
   } catch (error) {
     logger.error({
-      message: 'Cannot register node',
+      message: 'Update node internal async error',
+      originalArgs: arguments[0],
+      options: arguments[1],
+      additionalArgs: arguments[2],
       error,
     });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'create_node_result',
+          reference_id,
+          success: false,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+    }
+
     throw error;
   }
 }

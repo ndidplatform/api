@@ -85,6 +85,22 @@ export default {
     code: 10014,
     message: 'Cannot sign with accessor key by callback',
   },
+  INVALID_RESPONSE: {
+    code: 10015,
+    message: 'Invalid response from IdP (Invalid signature or ZK proof)',
+  },
+  USER_REJECTED: {
+    code: 10016,
+    message: 'User has rejected to give a consent',
+  },
+  REGISTERING_MESSAGE_QUEUE_ADDRESS: {
+    code: 10017,
+    message: 'Message queue address is being registered',
+  },
+  MESSAGE_QUEUE_ADDRESS_NOT_FOUND: {
+    code: 10018,
+    message: 'Message queue destination not found',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
@@ -291,6 +307,11 @@ export default {
   ABCI_WRONG_IDENTITY_PROOF: {
     code: 15017,
     message: 'Wrong identity proof',
+  },
+  ABCI_NOT_FIRST_IDP: {
+    code: 15018,
+    message:
+      'Cannot register message queue destination for identity as the first IdP',
   },
 
   // Client errors

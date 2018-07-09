@@ -26,6 +26,7 @@ import WebSocket from 'ws';
 import logger from '../logger';
 
 import { tendermintAddress } from '../config';
+import CustomError from '../error/customError';
 
 const PING_INTERVAL = 30000;
 
@@ -114,10 +115,15 @@ export default class TendermintWsClient extends EventEmitter {
       const rpcId = parseInt(message.id);
       if (this.queue[rpcId]) {
         if (message.error) {
-          this.queue[rpcId].promise[1]({
-            type: 'JSON-RPC ERROR',
-            error: message.error,
-          });
+          this.queue[rpcId].promise[1](
+            new CustomError({
+              message: 'JSON-RPC ERROR',
+              details: {
+                error: message.error,
+                rpcId,
+              },
+            })
+          );
         } else {
           this.queue[rpcId].promise[0](message.result);
         }
@@ -148,11 +154,11 @@ export default class TendermintWsClient extends EventEmitter {
    * @returns {Promise<Object>}
    */
   getBlock(height) {
-    return this._call('block', [height]);
+    return this._call('block', [`${height}`]);
   }
 
   getBlockResults(height) {
-    return this._call('block_results', [height]);
+    return this._call('block_results', [`${height}`]);
   }
 
   // NOT WORKING - Can't figure out params format. No docs on tendermint.
@@ -210,9 +216,21 @@ export default class TendermintWsClient extends EventEmitter {
         id: id.toString(),
       };
 
+      logger.debug({
+        message: 'Calling Tendermint through WS',
+        payload: message,
+      });
       this.ws.send(JSON.stringify(message), wsOpts, (error) => {
         if (error) {
-          return reject(error);
+          return reject(
+            new CustomError({
+              message: 'Tendermint WS send error',
+              details: {
+                error,
+                rpcId: id,
+              },
+            })
+          );
         }
 
         this.queue[id] = { promise: [resolve, reject] };

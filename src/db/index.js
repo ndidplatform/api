@@ -35,6 +35,33 @@ export async function close() {
 // Used by RP, IdP, and AS
 //
 
+export function getCallbackUrlByReferenceId(referenceId) {
+  return db.get({
+    name: 'callbackUrl',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'url',
+  });
+}
+
+export function setCallbackUrlByReferenceId(referenceId, callbackUrl) {
+  return db.set({
+    name: 'callbackUrl',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'url',
+    value: callbackUrl,
+  });
+}
+
+export function removeCallbackUrlByReferenceId(referenceId) {
+  return db.remove({
+    name: 'callbackUrl',
+    keyName: 'referenceId',
+    key: referenceId,
+  });
+}
+
 export function getRequestData(requestId) {
   return db.get({
     name: 'requestData',
@@ -615,5 +642,36 @@ export function removeExpectedDataSignInBlockList(height) {
     name: 'expectedDataSignInBlock',
     keyName: 'expectedBlockHeight',
     key: height,
+  });
+}
+
+//
+// Used by IdP
+//
+
+export function getReferenceIdByRequestId(requestId) {
+  return db.get({
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'referenceId',
+  });
+}
+
+export function setReferenceIdByRequestId(requestId, referenceId) {
+  return db.set({
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'referenceId',
+    value: referenceId,
+  });
+}
+
+export function removeReferenceIdByRequestId(requestId) {
+  return db.remove({
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'requestId',
+    key: requestId,
   });
 }

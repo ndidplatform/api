@@ -49,15 +49,18 @@ async function addKeyAndSetToken(role, index) {
   );
   const master_public_key = fs.readFileSync(masterFilePath, 'utf8').toString();
 
-  await ndid.registerNode({
-    node_id,
-    node_name,
-    public_key,
-    master_public_key,
-    role,
-    max_ial: 3,
-    max_aal: 3,
-  });
+  await ndid.registerNode(
+    {
+      node_id,
+      node_name,
+      public_key,
+      master_public_key,
+      role,
+      max_ial: 3,
+      max_aal: 3,
+    },
+    { synchronous: true }
+  );
 
   await ndid.setNodeToken({
     node_id,
@@ -93,9 +96,23 @@ export async function init() {
       service_id: 'bank_statement',
       service_name: 'All transactions in the pass 3 month',
     });
+    await Promise.all([
+      ndid.approveService({
+        node_id: 'as1',
+        service_id: 'bank_statement',
+      }),
+      ndid.approveService({
+        node_id: 'as2',
+        service_id: 'bank_statement',
+      }),
+      ndid.approveService({
+        node_id: 'as3',
+        service_id: 'bank_statement',
+      }),
+    ]);
     console.log('========= Done =========');
   } catch (error) {
-    console.error('Cannot initialize NDID master key');
+    console.error('Cannot initialize NDID master key', error);
   }
 
   process.exit();

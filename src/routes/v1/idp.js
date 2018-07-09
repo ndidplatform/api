@@ -22,8 +22,8 @@
 
 import express from 'express';
 
-import { validateBody } from './middleware/validation';
-import * as idp from '../core/idp';
+import { validateBody } from '../middleware/validation';
+import * as idp from '../../core/idp';
 
 const router = express.Router();
 
@@ -66,6 +66,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
 router.post('/response', validateBody, async (req, res, next) => {
   try {
     const {
+      reference_id,
       request_id,
       //namespace,
       //identifier,
@@ -80,6 +81,7 @@ router.post('/response', validateBody, async (req, res, next) => {
     } = req.body;
 
     await idp.requestChallengeAndCreateResponse({
+      reference_id,
       request_id,
       //namespace,
       //identifier,
