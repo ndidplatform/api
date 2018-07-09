@@ -31,6 +31,9 @@ import logger from '../logger';
 import constants from 'constants';
 import * as externalCryptoService from './external_crypto_service';
 
+const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
+const masterPrivateKey = fs.readFileSync(config.masterPrivateKeyPath, 'utf8');
+
 //let nonce = Date.now() % 10000;
 const saltByteLength = 8;
 const saltStringLength = saltByteLength * 2;
@@ -81,7 +84,6 @@ export async function decryptAsymetricKey(cipher) {
       encryptedSymKey
     );
   } else {
-    const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
     const passphrase = config.privateKeyPassphrase;
     symKeyBuffer = cryptoUtils.privateDecrypt(
       {
@@ -98,10 +100,13 @@ export async function decryptAsymetricKey(cipher) {
 
 export function encryptAsymetricKey(publicKey, message) {
   const symKeyBuffer = crypto.randomBytes(32);
-  const encryptedSymKey = cryptoUtils.publicEncrypt({
-    key: publicKey,
-    padding: crypto.constants.RSA_PKCS1_PADDING,
-  }, symKeyBuffer);
+  const encryptedSymKey = cryptoUtils.publicEncrypt(
+    {
+      key: publicKey,
+      padding: crypto.constants.RSA_PKCS1_PADDING,
+    },
+    symKeyBuffer
+  );
   const encryptedMessage = cryptoUtils.encryptAES256GCM(
     symKeyBuffer,
     message,
@@ -347,15 +352,13 @@ export async function createSignature(data, nonce = '', useMasterKey) {
     );
   }
 
-  const privateKey = useMasterKey
-    ? fs.readFileSync(config.masterPrivateKeyPath, 'utf8')
-    : fs.readFileSync(config.privateKeyPath, 'utf8');
+  const key = useMasterKey ? masterPrivateKey : privateKey;
   const passphrase = useMasterKey
     ? config.masterPrivateKeyPassphrase
     : config.privateKeyPassphrase;
 
   return cryptoUtils.createSignature(messageToSign, {
-    key: privateKey,
+    key,
     passphrase,
   });
 }
@@ -449,10 +452,10 @@ export function getDetailedRequestStatus(requestDetail) {
   if (requestDetail.data_request_list.length === 0) {
     // No data request
     if (requestDetail.response_list.length === requestDetail.min_idp) {
-      if( responseCount.reject === 0 &&
-          (responseCount.accept > 0 || 
-            (responseCount.accept === 0 && requestDetail.special) 
-          )
+      if (
+        responseCount.reject === 0 &&
+        (responseCount.accept > 0 ||
+          (responseCount.accept === 0 && requestDetail.special))
       ) {
         status = 'completed';
       }
