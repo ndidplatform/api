@@ -22,7 +22,7 @@
 
 import logger from '../logger';
 
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 import { getErrorObjectForClient } from '../error/helpers';
 
@@ -40,7 +40,7 @@ import {
 import {
   getRequestMessageForCreatingIdentity,
   getRequestMessageForAddingAccessor,
-} from '../utils/requestMessage';
+} from '../utils/request_message';
 
 export async function checkAssociated({ namespace, identifier }) {
   let idpList = await tendermintNdid.getIdpNodes({

@@ -29,7 +29,7 @@ import bignum from 'bignum';
 import { parseKey } from './asn1parser';
 import logger from '../logger';
 import constants from 'constants';
-import * as externalCryptoService from './externalCryptoService';
+import * as externalCryptoService from './external_crypto_service';
 
 //let nonce = Date.now() % 10000;
 const saltByteLength = 8;

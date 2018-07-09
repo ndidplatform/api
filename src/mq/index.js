@@ -27,7 +27,7 @@ import logger from '../logger';
 
 import * as config from '../config';
 import * as utils from '../utils';
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 import * as tendermintNdid from '../tendermint/ndid';
 
 const receivingSocket = zmq.socket('pull');

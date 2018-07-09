@@ -20,7 +20,7 @@
  *
  */
 
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint';
@@ -36,7 +36,7 @@ import errorType from '../error/type';
 import { getErrorObjectForClient } from '../error/helpers';
 import * as mq from '../mq';
 import * as db from '../db';
-import * as externalCryptoService from '../utils/externalCryptoService';
+import * as externalCryptoService from '../utils/external_crypto_service';
 
 const role = config.role;
 

@@ -24,7 +24,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { callbackToClient } from '../utils/callback';
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint';

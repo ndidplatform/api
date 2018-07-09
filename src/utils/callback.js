@@ -25,7 +25,7 @@ import { ExponentialBackoff } from 'simple-backoff';
 
 import { randomBase64Bytes } from './crypto';
 
-import { wait } from '../utils';
+import { wait } from '.';
 import * as db from '../db';
 import logger from '../logger';
 import * as config from '../config';

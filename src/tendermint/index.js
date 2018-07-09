@@ -24,13 +24,13 @@ import path from 'path';
 import fs from 'fs';
 import { EventEmitter } from 'events';
 
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 import logger from '../logger';
 
-import * as tendermintHttpClient from './httpClient';
-import TendermintWsClient from './wsClient';
-import { convertAbciAppCodeToErrorType } from './abciAppCode';
+import * as tendermintHttpClient from './http_client';
+import TendermintWsClient from './ws_client';
+import { convertAbciAppCodeToErrorType } from './abci_app_code';
 import * as utils from '../utils';
 import * as config from '../config';
 

@@ -7,7 +7,7 @@
     "start": "npm run build && node build/server.js",
     "test": "npm run build && npx mocha build/**/*.test.js",
     "test:es6": "mocha src/**/*.test.js --watch --compilers js:babel-register",
-    "initDevKey": "npm run build && ROLE=ndid node build/devKeyInit.js && npm run delete-local-data-cache",
+    "initDevKey": "npm run build && ROLE=ndid node build/dev_key_init.js && npm run delete-local-data-cache",
     "delete-local-data-cache": "rm -rf data",
     "docker-build": "./docker/build.sh",
     "docker-up": "docker-compose -f docker/docker-compose.yml up",

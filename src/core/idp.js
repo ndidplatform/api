@@ -25,7 +25,7 @@ import path from 'path';
 import fetch from 'node-fetch';
 
 import { callbackToClient } from '../utils/callback';
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 import { getErrorObjectForClient } from '../error/helpers';
 import logger from '../logger';

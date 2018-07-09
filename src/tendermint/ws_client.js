@@ -26,7 +26,7 @@ import WebSocket from 'ws';
 import logger from '../logger';
 
 import { tendermintAddress } from '../config';
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 
 const PING_INTERVAL = 30000;
 

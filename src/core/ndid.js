@@ -25,7 +25,7 @@ import * as tendermint from '../tendermint';
 import logger from '../logger';
 import { callbackToClient } from '../utils/callback';
 
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 import { getErrorObjectForClient } from '../error/helpers';
 
 let init = false;

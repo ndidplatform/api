@@ -30,12 +30,12 @@ import bodyParser from 'body-parser';
 import morgan from 'morgan';
 import mkdirp from 'mkdirp';
 
-import './envVarValidate';
+import './env_var_validate';
 
 import logger from './logger';
 
 import routes from './routes';
-import { bodyParserErrorHandler } from './routes/middleware/errorHandler';
+import { bodyParserErrorHandler } from './routes/middleware/error_handler';
 import { clearAllScheduler } from './core/common';
 
 import { close as closeDB } from './db';

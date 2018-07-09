@@ -26,8 +26,8 @@ import express from 'express';
 
 import logger from '../logger';
 
-import readyHandler from './middleware/readyHandler';
-import errorHandler from './middleware/errorHandler';
+import readyHandler from './middleware/ready_handler';
+import errorHandler from './middleware/error_handler';
 import ndidRouter from './ndid';
 import apiV1Router from './v1';
 import apiV2Router from './v2';
