@@ -5,6 +5,8 @@
 BUG FIXES:
 
 - Fix requests in mode 1 imply `valid_proof` and `valid_ial` as true.
+- Fix create identity request related cached data do not get cleaned up after closed.
+- Fix unnecessary cache data.
 
 ## 0.3.0 (July 7, 2018)
 
