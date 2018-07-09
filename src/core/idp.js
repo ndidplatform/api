@@ -542,6 +542,92 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   db.removeRPIdFromRequestId(request_id);
 }
 
+async function processMessage(message) {
+  logger.debug({
+    message: 'Processing message',
+    messagePayload: message,
+  });
+  if (message.type === 'idp_response') {
+    //reponse for onboard
+    if (await checkCreateIdentityResponse(message)) {
+      const { secret, associated } = await identity.addAccessorAfterConsent(
+        message.request_id,
+        message.accessor_id
+      );
+      const reference_id = await db.getReferenceIdByRequestId(
+        message.request_id
+      );
+      const callbackUrl = await db.getCallbackUrlByReferenceId(reference_id);
+      const notifyData = {
+        success: true,
+        reference_id,
+        request_id: message.request_id,
+        secret,
+      };
+      if (associated) {
+        if (callbackUrl == null) {
+          // Implies API v1
+          notifyAddAccessorResultByCallback(notifyData);
+        } else {
+          await callbackToClient(
+            callbackUrl,
+            {
+              type: 'add_accessor_result',
+              ...notifyData,
+            },
+            true
+          );
+          db.removeCallbackUrlByReferenceId(reference_id);
+        }
+      } else {
+        if (callbackUrl == null) {
+          // Implies API v1
+          notifyCreateIdentityResultByCallback(notifyData);
+        } else {
+          await callbackToClient(
+            callbackUrl,
+            {
+              type: 'create_identity_result',
+              ...notifyData,
+            },
+            true
+          );
+          db.removeCallbackUrlByReferenceId(reference_id);
+        }
+      }
+      db.removeReferenceIdByRequestId(message.request_id);
+      await common.closeRequest(
+        {
+          request_id: message.request_id,
+        },
+        { synchronous: true }
+      );
+    }
+  } else if (message.type === 'challenge_request') {
+    const responseId = message.request_id + ':' + message.idp_id;
+    common.handleChallengeRequest(responseId);
+  } else if (message.type === 'consent_request') {
+    const valid = await common.checkRequestIntegrity(
+      message.request_id,
+      message
+    );
+    if (valid) {
+      notifyIncomingRequestByCallback({
+        mode: message.mode,
+        request_id: message.request_id,
+        namespace: message.namespace,
+        identifier: message.identifier,
+        request_message: message.request_message,
+        request_message_hash: utils.hash(message.request_message),
+        requester_node_id: message.rp_id,
+        min_ial: message.min_ial,
+        min_aal: message.min_aal,
+        data_request_list: message.data_request_list,
+      });
+    }
+  }
+}
+
 export async function handleMessageFromQueue(messageStr) {
   logger.info({
     message: 'Received message from MQ',
@@ -669,91 +755,6 @@ export async function handleMessageFromQueue(messageStr) {
       }
     }
   }
-
-  logger.debug({
-    message: 'Processing request',
-    requestId: message.request_id,
-  });
-
-  if (message.type === 'idp_response') {
-    //onboard response
-    if (await checkCreateIdentityResponse(message)) {
-      let { secret, associated } = await identity.addAccessorAfterConsent(
-        message.request_id,
-        message.accessor_id
-      );
-      const reference_id = await db.getReferenceIdByRequestId(
-        message.request_id
-      );
-      const callbackUrl = await db.getCallbackUrlByReferenceId(reference_id);
-      const notifyData = {
-        success: true,
-        reference_id,
-        request_id: message.request_id,
-        secret,
-      };
-      if (associated) {
-        if (callbackUrl == null) {
-          // Implies API v1
-          notifyAddAccessorResultByCallback(notifyData);
-        } else {
-          await callbackToClient(
-            callbackUrl,
-            {
-              type: 'add_accessor_result',
-              ...notifyData,
-            },
-            true
-          );
-          db.removeCallbackUrlByReferenceId(reference_id);
-        }
-      } else {
-        if (callbackUrl == null) {
-          // Implies API v1
-          notifyCreateIdentityResultByCallback(notifyData);
-        } else {
-          await callbackToClient(
-            callbackUrl,
-            {
-              type: 'create_identity_result',
-              ...notifyData,
-            },
-            true
-          );
-          db.removeCallbackUrlByReferenceId(reference_id);
-        }
-      }
-      db.removeReferenceIdByRequestId(message.request_id);
-      await common.closeRequest(
-        {
-          request_id: message.request_id,
-        },
-        { synchronous: true }
-      );
-    }
-  } else if (message.type === 'challenge_request') {
-    const responseId = message.request_id + ':' + message.idp_id;
-    common.handleChallengeRequest(responseId);
-  } else if (message.type === 'consent_request') {
-    const valid = await common.checkRequestIntegrity(
-      message.request_id,
-      message
-    );
-    if (valid) {
-      notifyIncomingRequestByCallback({
-        mode: message.mode,
-        request_id: message.request_id,
-        namespace: message.namespace,
-        identifier: message.identifier,
-        request_message: message.request_message,
-        request_message_hash: utils.hash(message.request_message),
-        requester_node_id: message.rp_id,
-        min_ial: message.min_ial,
-        min_aal: message.min_aal,
-        data_request_list: message.data_request_list,
-      });
-    }
-  }
 }
 
 export async function handleTendermintNewBlockHeaderEvent(
@@ -789,93 +790,9 @@ export async function handleTendermintNewBlockHeaderEvent(
   );
   await Promise.all(
     requestIdsInTendermintBlock.map(async (requestId) => {
-      logger.debug({
-        message: 'Processing request',
-        requestId,
-      });
       const message = await db.getRequestToProcessReceivedFromMQ(requestId);
+      await processMessage(message);
       await db.removeRequestToProcessReceivedFromMQ(requestId);
-      if (message.type === 'idp_response') {
-        //reponse for onboard
-        if (await checkCreateIdentityResponse(message)) {
-          let { secret, associated } = await identity.addAccessorAfterConsent(
-            message.request_id,
-            message.accessor_id
-          );
-          const reference_id = await db.getReferenceIdByRequestId(
-            message.request_id
-          );
-          const callbackUrl = await db.getCallbackUrlByReferenceId(
-            reference_id
-          );
-          const notifyData = {
-            success: true,
-            reference_id,
-            request_id: message.request_id,
-            secret,
-          };
-          if (associated) {
-            if (callbackUrl == null) {
-              // Implies API v1
-              notifyAddAccessorResultByCallback(notifyData);
-            } else {
-              await callbackToClient(
-                callbackUrl,
-                {
-                  type: 'add_accessor_result',
-                  ...notifyData,
-                },
-                true
-              );
-              db.removeCallbackUrlByReferenceId(reference_id);
-            }
-          } else {
-            if (callbackUrl == null) {
-              // Implies API v1
-              notifyCreateIdentityResultByCallback(notifyData);
-            } else {
-              await callbackToClient(
-                callbackUrl,
-                {
-                  type: 'create_identity_result',
-                  ...notifyData,
-                },
-                true
-              );
-              db.removeCallbackUrlByReferenceId(reference_id);
-            }
-          }
-          db.removeReferenceIdByRequestId(message.request_id);
-          await common.closeRequest(
-            {
-              request_id: message.request_id,
-            },
-            { synchronous: true }
-          );
-        }
-      } else if (message.type === 'challenge_request') {
-        const responseId = message.request_id + ':' + message.idp_id;
-        common.handleChallengeRequest(responseId);
-      } else if (message.type === 'consent_request') {
-        const valid = await common.checkRequestIntegrity(
-          message.request_id,
-          message
-        );
-        if (valid) {
-          notifyIncomingRequestByCallback({
-            mode: message.mode,
-            request_id: message.request_id,
-            namespace: message.namespace,
-            identifier: message.identifier,
-            request_message: message.request_message,
-            request_message_hash: utils.hash(message.request_message),
-            requester_node_id: message.rp_id,
-            min_ial: message.min_ial,
-            min_aal: message.min_aal,
-            data_request_list: message.data_request_list,
-          });
-        }
-      }
     })
   );
 
