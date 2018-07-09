@@ -201,7 +201,11 @@ export function clearAllScheduler() {
 
 export async function timeoutRequest(requestId) {
   try {
-    const responseValidList = await db.getIdpResponseValidList(requestId);
+    const request = await tendermintNdid.getRequest({ requestId });
+    let responseValidList;
+    if (request.mode === 3) {
+      responseValidList = await db.getIdpResponseValidList(requestId);
+    }
 
     await tendermintNdid.timeoutRequest({ requestId, responseValidList });
   } catch (error) {
@@ -580,7 +584,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
 
   //check only signature of idp_id
   if (mode === 1) {
-    return true;
+    return null; // Cannot check in mode 1
 
     /*let response_list = (await getRequestDetail({
       requestId: request_id,
@@ -756,19 +760,17 @@ export async function handleChallengeRequest(responseId) {
   if (challenge == null) return false;
 
   let mqAddress = await tendermintNdid.getMsqAddress(idp_id);
-  if(!mqAddress) {
-    let error_url = config.role === 'rp' 
-      ? rp.getCallbackUrls.error_url
-      : idp.getCallbackUrls.error_url ;
-    callbackToClient(
-      error_url,
-      {
-        type: 'error',
-        action: 'handleChallengeRequest',
-        request_id,
-        error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
-      }
-    ); 
+  if (!mqAddress) {
+    let error_url =
+      config.role === 'rp'
+        ? rp.getCallbackUrls.error_url
+        : idp.getCallbackUrls.error_url;
+    callbackToClient(error_url, {
+      type: 'error',
+      action: 'handleChallengeRequest',
+      request_id,
+      error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+    });
     return;
   }
   let { ip, port } = mqAddress;
@@ -813,7 +815,7 @@ export async function checkIdpResponse({
   );
 
   if (requestStatus.mode === 1) {
-    validIal = true; // Actually, cannot check in mode 1
+    validIal = null; // Cannot check in mode 1
   } else if (requestStatus.mode === 3) {
     if (responseIal <= identityInfo.ial) {
       validIal = true;
@@ -893,7 +895,11 @@ async function closeRequestInternalAsync(
   { synchronous = false } = {}
 ) {
   try {
-    const responseValidList = await db.getIdpResponseValidList(request_id);
+    const request = await tendermintNdid.getRequest({ requestId: request_id });
+    let responseValidList;
+    if (request.mode === 3) {
+      responseValidList = await db.getIdpResponseValidList(request_id);
+    }
 
     await tendermintNdid.closeRequest({
       requestId: request_id,

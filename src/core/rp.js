@@ -227,8 +227,11 @@ function shouldSendRequestDataToAS({ requestStatus, responseValidList }) {
     0
   );
   if (asAnswerCount === 0) {
-    // Send request to AS only when all IdP responses' proof and IAL are valid
-    if (isAllIdpResponsesValid(responseValidList)) {
+    // Send request to AS only when all IdP responses' proof and IAL are valid in mode 3
+    if (
+      requestStatus.mode === 1 ||
+      (requestStatus.mode === 3 && isAllIdpResponsesValid(responseValidList))
+    ) {
       return true;
     }
   }
@@ -322,7 +325,7 @@ async function getASReceiverList(data_request) {
       try {
         //let nodeId = node.node_id;
         let mqAddress = await tendermintNdid.getMsqAddress(asNodeId);
-        if(!mqAddress) return null;
+        if (!mqAddress) return null;
         let { ip, port } = mqAddress;
         return {
           ip,
