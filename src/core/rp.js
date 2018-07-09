@@ -486,7 +486,6 @@ export async function handleMessageFromQueue(messageStr) {
         message: 'Saving message from MQ',
         tendermintLatestBlockHeight: latestBlockHeight,
         messageBlockHeight: message.height,
-        messagePayload: message,
       });
       db.setPrivateProofReceivedFromMQ(responseId, message);
       db.addExpectedIdpResponseNodeIdInBlock(message.height, {
