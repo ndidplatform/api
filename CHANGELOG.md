@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix requests in mode 1 imply `valid_proof` and `valid_ial` as true.
+
 ## 0.3.0 (July 7, 2018)
 
 BREAKING CHANGES:
