@@ -107,6 +107,7 @@ async function sendDataToRP(rpId, data) {
     ...(await tendermintNdid.getNodePubKey(nodeId)), // TODO: try catch / error handling
   });
   mq.send(receivers, {
+    type: 'as_data_response',
     request_id: data.request_id,
     as_id: data.as_id,
     service_id: data.service_id,

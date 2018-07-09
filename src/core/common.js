@@ -527,6 +527,7 @@ async function createRequestInternalAsync(
     // send request data to IDPs via message queue
     if (min_idp > 0) {
       mq.send(receivers, {
+        type: 'consent_request',
         ...requestData,
         height,
       });
@@ -782,6 +783,7 @@ export async function handleChallengeRequest(responseId) {
     },
   ];
   mq.send(receiver, {
+    type: 'challenge_response',
     challenge,
     request_id,
     ...nodeId,

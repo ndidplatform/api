@@ -167,7 +167,7 @@ async function processRequestUpdate(requestId, height) {
 
   await callbackToClient(callbackUrl, eventDataForCallback, true);
 
-  if (shouldSendRequestDataToAS({ requestStatus, responseValidList })) {
+  if (isAllIdpRespondedAndValid({ requestStatus, responseValidList })) {
     const requestData = await db.getRequestData(requestId);
     if (requestData != null) {
       await sendRequestToAS(requestData, height);
@@ -217,7 +217,7 @@ function isAllIdpResponsesValid(responseValidList) {
   return true;
 }
 
-function shouldSendRequestDataToAS({ requestStatus, responseValidList }) {
+function isAllIdpRespondedAndValid({ requestStatus, responseValidList }) {
   if (requestStatus.status !== 'confirmed') return false;
   if (requestStatus.answered_idp_count !== requestStatus.min_idp) return false;
   if (requestStatus.closed === true || requestStatus.timed_out === true)
@@ -360,6 +360,7 @@ async function sendRequestToAS(requestData, height) {
       }
 
       mq.send(receivers, {
+        type: 'data_request',
         request_id: requestData.request_id,
         mode: requestData.mode,
         namespace: requestData.namespace,
@@ -438,8 +439,14 @@ export async function handleMessageFromQueue(messageStr) {
 
   const message = JSON.parse(messageStr);
 
-  //distinguish between message from idp, as
-  if (message.idp_id != null) {
+  const latestBlockHeight = tendermint.latestBlockHeight;
+
+  logger.debug({
+    message: 'Check height',
+    wait: latestBlockHeight <= message.height,
+  });
+
+  if (message.type === 'idp_response') {
     //check accessor_id, undefined means mode 1
     if (message.accessor_id) {
       //store private parameter from EACH idp to request, to pass along to as
@@ -469,23 +476,9 @@ export async function handleMessageFromQueue(messageStr) {
         }
         await db.setRequestData(message.request_id, request);
       }
-    } else if (message.type === 'request_challenge') {
-      const responseId = message.request_id + ':' + message.idp_id;
-      logger.debug({
-        message: 'Save public proof from MQ',
-        responseId,
-        public_proof: message.public_proof,
-      });
-      db.setPublicProofReceivedFromMQ(responseId, message.public_proof);
     }
 
-    logger.debug({
-      message: 'check height',
-      wait: tendermint.latestBlockHeight <= message.height,
-    });
-
     //must wait for height
-    const latestBlockHeight = tendermint.latestBlockHeight;
     const responseId = message.request_id + ':' + message.idp_id;
 
     if (latestBlockHeight <= message.height) {
@@ -493,16 +486,13 @@ export async function handleMessageFromQueue(messageStr) {
         message: 'Saving message from MQ',
         tendermintLatestBlockHeight: latestBlockHeight,
         messageBlockHeight: message.height,
+        messagePayload: message,
       });
       db.setPrivateProofReceivedFromMQ(responseId, message);
       db.addExpectedIdpResponseNodeIdInBlock(message.height, {
         requestId: message.request_id,
         idpId: message.idp_id,
       });
-      return;
-    }
-    if (message.type === 'request_challenge') {
-      common.handleChallengeRequest(message.request_id + ':' + message.idp_id);
       return;
     }
 
@@ -539,14 +529,27 @@ export async function handleMessageFromQueue(messageStr) {
 
     await callbackToClient(callbackUrl, eventDataForCallback, true);
 
-    if (shouldSendRequestDataToAS({ requestStatus, responseValidList })) {
+    if (isAllIdpRespondedAndValid({ requestStatus, responseValidList })) {
       const requestData = await db.getRequestData(message.request_id);
       if (requestData != null) {
         await sendRequestToAS(requestData, message.height);
       }
       db.removeChallengeFromRequestId(message.request_id);
     }
-  } else if (message.as_id != null) {
+  } else if (message.type === 'challenge_request') {
+    const responseId = message.request_id + ':' + message.idp_id;
+    logger.debug({
+      message: 'Save public proof from MQ',
+      responseId,
+      public_proof: message.public_proof,
+    });
+    db.setPublicProofReceivedFromMQ(responseId, message.public_proof);
+
+    if (latestBlockHeight > message.height) {
+      common.handleChallengeRequest(message.request_id + ':' + message.idp_id);
+      return;
+    }
+  } else if (message.type === 'as_data_response') {
     // Receive data from AS
     try {
       await db.addDataFromAS(message.request_id, {

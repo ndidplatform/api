@@ -39,6 +39,9 @@ import * as db from '../db';
 import * as mq from '../mq';
 import * as identity from './identity';
 
+const successBase64 = Buffer.from('success').toString('base64');
+const trueBase64 = Buffer.from('true').toString('base64');
+
 const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
@@ -218,7 +221,7 @@ async function requestChallenge(request_id, accessor_id) {
     public_proof: [publicProof1, publicProof2],
     request_id: request_id,
     idp_id: config.nodeId,
-    type: 'request_challenge',
+    type: 'challenge_request',
     height,
   });
 }
@@ -529,6 +532,7 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   };
 
   mq.send([rpMq], {
+    type: 'idp_response',
     request_id,
     ...privateProofObject,
     height,
@@ -547,8 +551,11 @@ export async function handleMessageFromQueue(messageStr) {
     messageStr,
   });
   const message = JSON.parse(messageStr);
+
+  const latestBlockHeight = tendermint.latestBlockHeight;
+
   //if message is challenge for response, no need to wait for blockchain
-  if (message.challenge) {
+  if (message.type === 'challenge_response') {
     //store challenge
     const data = await db.getResponseFromRequestId(message.request_id);
     try {
@@ -581,71 +588,95 @@ export async function handleMessageFromQueue(messageStr) {
       db.removeResponseFromRequestId(data.request_id);
     }
     return;
-  }
+  } else {
+    if (message.type === 'challenge_request') {
+      if (latestBlockHeight <= message.height) {
+        logger.debug({
+          message: 'Saving challege request message from MQ',
+          tendermintLatestBlockHeight: latestBlockHeight,
+          messageBlockHeight: message.height,
+        });
+        await db.setRequestToProcessReceivedFromMQ(message.request_id, message);
+        await db.addRequestIdExpectedInBlock(
+          message.height,
+          message.request_id
+        );
 
-  //when idp add new accessor, they may request challenge from themself
-  //this is to prevent overwrite data (k, public)
-  if (message.type !== 'request_challenge') {
-    await db.setRequestReceivedFromMQ(message.request_id, message);
-    await db.setRPIdFromRequestId(message.request_id, message.rp_id);
-  }
-  await db.setRequestToProcessReceivedFromMQ(message.request_id, message);
+        const responseId = message.request_id + ':' + message.idp_id;
+        await db.setPublicProofReceivedFromMQ(responseId, message.public_proof);
+        return;
+      }
+    } else if (message.type === 'consent_request') {
+      await db.setRequestReceivedFromMQ(message.request_id, message);
+      await db.setRPIdFromRequestId(message.request_id, message.rp_id);
 
-  const latestBlockHeight = tendermint.latestBlockHeight;
-  if (latestBlockHeight <= message.height) {
-    logger.debug({
-      message: 'Saving message from MQ',
-      tendermintLatestBlockHeight: latestBlockHeight,
-      messageBlockHeight: message.height,
-    });
-    await db.addRequestIdExpectedInBlock(message.height, message.request_id);
+      if (latestBlockHeight <= message.height) {
+        logger.debug({
+          message: 'Saving consent request message from MQ',
+          tendermintLatestBlockHeight: latestBlockHeight,
+          messageBlockHeight: message.height,
+        });
+        await db.setRequestToProcessReceivedFromMQ(message.request_id, message);
+        await db.addRequestIdExpectedInBlock(
+          message.height,
+          message.request_id
+        );
+        return;
+      }
+    } else if (message.type === 'idp_response') {
+      if (latestBlockHeight <= message.height) {
+        logger.debug({
+          message: 'Saving IdP response message from MQ',
+          tendermintLatestBlockHeight: latestBlockHeight,
+          messageBlockHeight: message.height,
+        });
+        await db.setRequestToProcessReceivedFromMQ(message.request_id, message);
+        await db.addRequestIdExpectedInBlock(
+          message.height,
+          message.request_id
+        );
 
-    if (message.type === 'request_challenge') {
-      const responseId = message.request_id + ':' + message.idp_id;
-      await db.setPublicProofReceivedFromMQ(responseId, message.public_proof);
-    }
-
-    if (message.accessor_id) {
-      //====================== COPY-PASTE from RP, need refactoring =====================
-      //store private parameter from EACH idp to request, to pass along to as
-      let request = await db.getRequestData(message.request_id);
-      //AS involve
-      if (request) {
-        if (request.privateProofObjectList) {
-          request.privateProofObjectList.push({
-            idp_id: message.idp_id,
-            privateProofObject: {
-              privateProofValue: message.privateProofValue,
-              accessor_id: message.accessor_id,
-              padding: message.padding,
-            },
-          });
-        } else {
-          request.privateProofObjectList = [
-            {
+        //====================== COPY-PASTE from RP, need refactoring =====================
+        //store private parameter from EACH idp to request, to pass along to as
+        let request = await db.getRequestData(message.request_id);
+        //AS involve
+        if (request) {
+          if (request.privateProofObjectList) {
+            request.privateProofObjectList.push({
               idp_id: message.idp_id,
               privateProofObject: {
                 privateProofValue: message.privateProofValue,
                 accessor_id: message.accessor_id,
                 padding: message.padding,
               },
-            },
-          ];
+            });
+          } else {
+            request.privateProofObjectList = [
+              {
+                idp_id: message.idp_id,
+                privateProofObject: {
+                  privateProofValue: message.privateProofValue,
+                  accessor_id: message.accessor_id,
+                  padding: message.padding,
+                },
+              },
+            ];
+          }
+          await db.setRequestData(message.request_id, request);
         }
-        await db.setRequestData(message.request_id, request);
+        //====================================================================================
+        return;
       }
-      //====================================================================================
     }
-    return;
   }
-  await db.removeRequestToProcessReceivedFromMQ(message.request_id, message);
 
   logger.debug({
     message: 'Processing request',
     requestId: message.request_id,
   });
-  //onboard response
-  if (message.accessor_id) {
+
+  if (message.type === 'idp_response') {
+    //onboard response
     if (await checkCreateIdentityResponse(message)) {
       let { secret, associated } = await identity.addAccessorAfterConsent(
         message.request_id,
@@ -700,12 +731,10 @@ export async function handleMessageFromQueue(messageStr) {
         { synchronous: true }
       );
     }
-  } else if (message.type === 'request_challenge') {
+  } else if (message.type === 'challenge_request') {
     const responseId = message.request_id + ':' + message.idp_id;
     common.handleChallengeRequest(responseId);
-  }
-  //consent request
-  else {
+  } else if (message.type === 'consent_request') {
     const valid = await common.checkRequestIntegrity(
       message.request_id,
       message
@@ -766,8 +795,8 @@ export async function handleTendermintNewBlockHeaderEvent(
       });
       const message = await db.getRequestToProcessReceivedFromMQ(requestId);
       await db.removeRequestToProcessReceivedFromMQ(requestId);
-      //reponse for onboard
-      if (message.accessor_id) {
+      if (message.type === 'idp_response') {
+        //reponse for onboard
         if (await checkCreateIdentityResponse(message)) {
           let { secret, associated } = await identity.addAccessorAfterConsent(
             message.request_id,
@@ -824,10 +853,10 @@ export async function handleTendermintNewBlockHeaderEvent(
             { synchronous: true }
           );
         }
-      } else if (message.type === 'request_challenge') {
+      } else if (message.type === 'challenge_request') {
         const responseId = message.request_id + ':' + message.idp_id;
         common.handleChallengeRequest(responseId);
-      } else {
+      } else if (message.type === 'consent_request') {
         const valid = await common.checkRequestIntegrity(
           message.request_id,
           message
@@ -851,6 +880,57 @@ export async function handleTendermintNewBlockHeaderEvent(
   );
 
   db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
+
+  // Clean up closed or timed out create identity requests
+  const [blocks, blockResults] = await Promise.all([
+    tendermint.getBlocks(fromHeight, toHeight),
+    tendermint.getBlockResults(fromHeight, toHeight),
+  ]);
+
+  await Promise.all(
+    blocks.map(async (block, blockIndex) => {
+      let transactions = tendermint.getTransactionListFromBlockQuery(block);
+      transactions = transactions.filter((transaction, index) => {
+        const deliverTxResult =
+          blockResults[blockIndex].results.DeliverTx[index];
+        const successTag = deliverTxResult.tags.find(
+          (tag) => tag.key === successBase64
+        );
+        if (successTag) {
+          return successTag.value === trueBase64;
+        }
+        return false;
+      });
+      // const height = parseInt(block.block.header.height);
+      let requestIdsToCleanUp = [];
+
+      transactions.forEach((transaction) => {
+        // TODO: clear key with smart-contract, eg. request_id or requestId
+        const requestId =
+          transaction.args.request_id || transaction.args.requestId;
+        if (requestId == null) return;
+        if (
+          transaction.fnName === 'CloseRequest' ||
+          transaction.fnName === 'TimeOutRequest'
+        ) {
+          requestIdsToCleanUp.push(requestId);
+        }
+      });
+      requestIdsToCleanUp = [...new Set(requestIdsToCleanUp)];
+
+      await Promise.all(
+        requestIdsToCleanUp.map(async (requestId) => {
+          const callbackUrl = await db.getRequestCallbackUrl(requestId);
+          if (!callbackUrl) return;
+          db.removeRequestCallbackUrl(requestId);
+          db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+          db.removeRequestData(requestId);
+          db.removeIdpResponseValidList(requestId);
+          db.removeTimeoutScheduler(requestId);
+        })
+      );
+    })
+  );
 }
 
 async function checkCreateIdentityResponse(message) {

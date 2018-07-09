@@ -352,7 +352,7 @@ async function createNewIdentityInternalAsync(
         identifier,
         reference_id,
         idp_id_list: [],
-        callback_url: null,
+        callback_url: 'none_system_generated',
         data_request_list: [],
         request_message: ial
           ? getRequestMessageForCreatingIdentity({
@@ -465,6 +465,7 @@ async function createNewIdentityInternalAsync(
           },
           true
         );
+        db.removeCallbackUrlByReferenceId(reference_id);
         await common.closeRequest(
           {
             request_id,

@@ -249,7 +249,7 @@ function getTransactResult(result) {
     result,
   });
 
-  const height = result.height;
+  const height = parseInt(result.height);
 
   // if (result.check_tx.code !== 0) {
   //   throw '';
