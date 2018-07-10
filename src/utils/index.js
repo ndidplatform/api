@@ -33,8 +33,12 @@ import * as externalCryptoService from './external_crypto_service';
 import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 
-const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
-const masterPrivateKey = fs.readFileSync(config.masterPrivateKeyPath, 'utf8');
+let privateKey;
+let masterPrivateKey;
+if (!config.useExternalCryptoService) {
+  privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
+  masterPrivateKey = fs.readFileSync(config.masterPrivateKeyPath, 'utf8');
+}
 
 //let nonce = Date.now() % 10000;
 const saltByteLength = 8;
