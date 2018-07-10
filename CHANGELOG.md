@@ -2,6 +2,10 @@
 
 ## TBD
 
+IMPROVEMENTS:
+
+- Update `bignum` dependency to support Node.js 10.
+
 BUG FIXES:
 
 - Fix requests in mode 1 imply `valid_proof` and `valid_ial` as true.
