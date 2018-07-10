@@ -105,6 +105,14 @@ export default {
     code: 10019,
     message: 'Conflicted accessor group ID',
   },
+  MESSAGE_FROM_UNKNOWN_NODE: {
+    code: 10020,
+    message: 'Received message from unknown node',
+  },
+  INVALID_MESSAGE_SIGNATURE: {
+    code: 10021,
+    message: 'Invalid message signature',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {

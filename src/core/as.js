@@ -75,16 +75,20 @@ function writeCallbackUrlToFile(fileSuffix, url) {
   });
 }
 
-export const setCallbackUrls = ({ error_url }) => {
+export function setCallbackUrls({ error_url }) {
   if (error_url != null) {
     callbackUrls.error_url = error_url;
     writeCallbackUrlToFile('error', error_url);
   }
-};
+}
 
-export const getCallbackUrls = () => {
+export function getCallbackUrls() {
   return callbackUrls;
-};
+}
+
+export function getErrorCallbackUrl() {
+  return callbackUrls.error_url;
+}
 
 async function sendDataToRP(rpId, data) {
   let receivers = [];

@@ -28,6 +28,7 @@ import logger from '../logger';
 import * as config from '../config';
 import * as utils from '../utils';
 import CustomError from '../error/custom_error';
+import errorType from '../error/type';
 import * as tendermintNdid from '../tendermint/ndid';
 
 const receivingSocket = zmq.socket('pull');
@@ -35,57 +36,67 @@ receivingSocket.bindSync('tcp://*:' + config.mqRegister.port);
 
 export const eventEmitter = new EventEmitter();
 
-receivingSocket.on('message', async function(jsonMessageStr) {
-  const jsonMessage = JSON.parse(jsonMessageStr);
+async function onMessage(jsonMessageStr) {
+  try {
+    const jsonMessage = JSON.parse(jsonMessageStr);
 
-  let decrypted = await utils.decryptAsymetricKey(jsonMessage);
+    const decrypted = await utils.decryptAsymetricKey(jsonMessage);
 
-  logger.debug({
-    message: 'Raw decrypted message from message queue',
-    decrypted,
-  });
-
-  //verify digital signature
-  let [raw_message, msqSignature] = decrypted.split('|');
-
-  logger.debug({
-    message: 'Split msqSignature',
-    raw_message,
-    msqSignature,
-  });
-
-  let { idp_id, rp_id, as_id } = JSON.parse(raw_message);
-  let nodeId = idp_id || rp_id || as_id;
-  let { public_key } = await tendermintNdid.getNodePubKey(nodeId);
-  if (!nodeId)
-    throw new CustomError({
-      message: 'Receive message from unknown node',
+    logger.debug({
+      message: 'Raw decrypted message from message queue',
+      decrypted,
     });
 
-  let signatureValid = utils.verifySignature(
-    msqSignature,
-    public_key,
-    raw_message
-  );
+    //verify digital signature
+    const [raw_message, msqSignature] = decrypted.split('|');
 
-  logger.debug({
-    message: 'Verify signature',
-    msqSignature,
-    public_key,
-    raw_message,
-    raw_message_object: JSON.parse(raw_message),
-    signatureValid,
-  });
-
-  if (signatureValid) {
-    eventEmitter.emit('message', raw_message);
-  } else
-    throw new CustomError({
-      message: 'Receive message with unmatched digital signature',
+    logger.debug({
+      message: 'Split msqSignature',
+      raw_message,
+      msqSignature,
     });
-});
 
-export const send = async (receivers, message) => {
+    const { idp_id, rp_id, as_id } = JSON.parse(raw_message);
+    const nodeId = idp_id || rp_id || as_id;
+    const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
+    if (!nodeId) {
+      throw new CustomError({
+        message: errorType.MESSAGE_FROM_UNKNOWN_NODE.message,
+        code: errorType.MESSAGE_FROM_UNKNOWN_NODE.code,
+      });
+    }
+
+    const signatureValid = utils.verifySignature(
+      msqSignature,
+      public_key,
+      raw_message
+    );
+
+    logger.debug({
+      message: 'Verifying signature',
+      msqSignature,
+      public_key,
+      raw_message,
+      raw_message_object: JSON.parse(raw_message),
+      signatureValid,
+    });
+
+    if (signatureValid) {
+      eventEmitter.emit('message', raw_message);
+    } else {
+      throw new CustomError({
+        message: errorType.INVALID_MESSAGE_SIGNATURE.message,
+        code: errorType.INVALID_MESSAGE_SIGNATURE.code,
+      });
+    }
+  } catch (error) {
+    eventEmitter.emit('error', error);
+  }
+}
+
+receivingSocket.on('message', onMessage);
+
+export async function send(receivers, message) {
   let msqSignature = await utils.createSignature(message);
   let realPayload = JSON.stringify(message) + '|' + msqSignature;
 
@@ -114,7 +125,7 @@ export const send = async (receivers, message) => {
     // Hence, the receiver may not get the messages.
     sendingSocket.disconnect(`tcp://${receiver.ip}:${receiver.port}`);
   });
-};
+}
 
 export function close() {
   receivingSocket.close();

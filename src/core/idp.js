@@ -114,6 +114,10 @@ export function getCallbackUrls() {
   return callbackUrls;
 }
 
+export function getErrorCallbackUrl() {
+  return callbackUrls.error_url;
+}
+
 export function isAccessorSignUrlSet() {
   return callbackUrls.accessor_sign_url != null;
 }

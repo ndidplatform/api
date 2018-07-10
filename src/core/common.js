@@ -28,13 +28,12 @@ import * as tendermintNdid from '../tendermint/ndid';
 import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';
-import { eventEmitter as messageQueueEvent } from '../mq';
+import * as mq from '../mq';
 import { resumeCallbackToClient, callbackToClient } from '../utils/callback';
 import * as utils from '../utils';
 import * as config from '../config';
 import errorType from '../error/type';
 import { getErrorObjectForClient } from '../error/helpers';
-import * as mq from '../mq';
 import * as db from '../db';
 import * as externalCryptoService from '../utils/external_crypto_service';
 
@@ -144,9 +143,31 @@ export async function checkRequestIntegrity(requestId, request) {
   return valid;
 }
 
-if (handleMessageFromQueue) {
-  messageQueueEvent.on('message', handleMessageFromQueue);
+async function handleMessageQueueError(error) {
+  const err = new CustomError({
+    message: 'Message queue receiving error',
+    cause: error,
+  });
+  logger.error(err.getInfoForLog());
+  let callbackUrl;
+  if (config.role === 'rp') {
+    callbackUrl = rp.getErrorCallbackUrl();
+  } else if (config.role === 'idp') {
+    callbackUrl = idp.getErrorCallbackUrl();
+  } else if (config.role === 'as') {
+    callbackUrl = as.getErrorCallbackUrl();
+  }
+  await notifyError({
+    callbackUrl,
+    action: 'onMessage',
+    error: err,
+  });
 }
+
+if (handleMessageFromQueue) {
+  mq.eventEmitter.on('message', handleMessageFromQueue);
+}
+mq.eventEmitter.on('error', handleMessageQueueError);
 
 export async function getIdpsMsqDestination({
   namespace,
