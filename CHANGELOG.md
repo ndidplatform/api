@@ -5,6 +5,7 @@
 IMPROVEMENTS:
 
 - Update `bignum` dependency to support Node.js 10.
+- Send `block_height` along with request status when calling a callback to RP to let the client app knows which event comes first.
 
 BUG FIXES:
 
