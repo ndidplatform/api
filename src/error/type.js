@@ -101,6 +101,10 @@ export default {
     code: 10018,
     message: 'Message queue destination not found',
   },
+  DIFFERENT_ACCESSOR_GROUP_ID: {
+    code: 10019,
+    message: 'Conflicted accessor group ID',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
@@ -235,6 +239,16 @@ export default {
   REQUEST_IS_TIMED_OUT: {
     code: 20026,
     message: 'Request is already timed out',
+    clientError: true,
+  },
+  INVALID_CIPHER: {
+    code: 20027,
+    message: 'Invalid cipher suite',
+    clientError: true,
+  },
+  INVALID_ACCESSOR_SIGNATURE: {
+    code: 20028,
+    message: 'Invalid accessor signature',
     clientError: true,
   },
 

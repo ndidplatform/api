@@ -655,7 +655,16 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
         accessor_group_id,
         accessorId: privateProofObject.accessor_id,
       });
-      throw 'Conflicted response';
+
+      throw new CustomError({
+        message: errorType.DIFFERENT_ACCESSOR_GROUP_ID.message,
+        code: errorType.DIFFERENT_ACCESSOR_GROUP_ID.code,
+        details: {
+          accessorId: privateProofObject.accessor_id,
+          accessor_group_id,
+          otherGroupId,
+        },
+      });
     }
   }
 

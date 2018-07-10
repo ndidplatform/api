@@ -26,10 +26,12 @@ import crypto from 'crypto';
 import * as cryptoUtils from './crypto';
 import * as config from '../config';
 import bignum from 'bignum';
-import { parseKey } from './asn1parser';
+import { parseKey, parseSignature, encodeSignature } from './asn1parser';
 import logger from '../logger';
 import constants from 'constants';
 import * as externalCryptoService from './external_crypto_service';
+import CustomError from '../error/custom_error';
+import errorType from '../error/type';
 
 const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
 const masterPrivateKey = fs.readFileSync(config.masterPrivateKeyPath, 'utf8');
@@ -128,8 +130,13 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
   if (
     rawMessageBuffer[0] !== 0 ||
     (rawMessageBuffer[1] !== 0 && rawMessageBuffer[1] !== 1)
-  )
-    throw 'Invalid cipher';
+  ) {
+    throw new CustomError({
+      message: errorType.INVALID_CIPHER.message,
+      code: errorType.INVALID_CIPHER.code,
+      clientError: true,
+    });
+  }
   let padLength = 2;
   while (rawMessageBuffer[padLength] !== 0) padLength++;
 
@@ -305,9 +312,14 @@ function verifyZKProofSingle(
   let { n, e } = extractParameterFromPublicKey(publicKey);
   let hashedSid = hash(sid.namespace + ':' + sid.identifier);
 
+  const sha256SignatureEncoded = encodeSignature(
+    [2, 16, 840, 1, 101, 3, 4, 2, 1],
+    Buffer.from(hashedSid, 'base64')
+  );
+
   let paddedHashedSid = Buffer.concat([
     Buffer.from(padding, 'base64'),
-    Buffer.from(hashedSid, 'base64'),
+    sha256SignatureEncoded,
   ]).toString('base64');
 
   let inverseHashSid = moduloMultiplicativeInverse(
@@ -365,6 +377,11 @@ export async function createSignature(data, nonce = '', useMasterKey) {
 
 export function verifySignature(signatureInBase64, publicKey, plainText) {
   return cryptoUtils.verifySignature(signatureInBase64, publicKey, plainText);
+}
+
+export function extractDigestFromSignature(signature, publicKey) {
+  const decryptedSignature = cryptoUtils.publicDecrypt(publicKey, signature);
+  return parseSignature(decryptedSignature).digest.toString('base64');
 }
 
 export function createRequestId() {

@@ -24,6 +24,7 @@ import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
+import { verifySignature } from '../utils';
 import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/custom_error';
 import errorType from '../error/type';
@@ -117,7 +118,13 @@ export function isAccessorSignUrlSet() {
   return callbackUrls.accessor_sign_url != null;
 }
 
-export async function accessorSign(sid, hash_id, accessor_id, reference_id) {
+export async function accessorSign({
+  sid,
+  hash_id,
+  accessor_id,
+  accessor_public_key,
+  reference_id,
+}) {
   const data = {
     sid_hash: hash_id,
     sid,
@@ -140,7 +147,9 @@ export async function accessorSign(sid, hash_id, accessor_id, reference_id) {
   logger.debug({
     message: 'Callback to accessor sign',
     url: callbackUrls.accessor_sign_url,
+    reference_id,
     accessor_id,
+    accessor_public_key,
     hash_id,
   });
 
@@ -163,7 +172,15 @@ export async function accessorSign(sid, hash_id, accessor_id, reference_id) {
       body: responseBody,
     });
     const signatureObj = JSON.parse(responseBody);
-    return signatureObj.signature;
+    const signature = signatureObj.signature;
+    if (!verifySignature(signature, accessor_public_key, sid)) {
+      throw new CustomError({
+        message: errorType.INVALID_ACCESSOR_SIGNATURE.message,
+        code: errorType.INVALID_ACCESSOR_SIGNATURE.code,
+        clientError: true,
+      });
+    }
+    return signature;
   } catch (error) {
     throw new CustomError({
       message: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED.message,
