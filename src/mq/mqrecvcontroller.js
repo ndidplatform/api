@@ -20,7 +20,6 @@
  *
  */
 
-import * as util from 'util';
 import EventEmitter from 'events';
 import MQProtocol from './mqprotocol.js';
 import MQRecvSocket from './mqrecvsocket.js';
@@ -40,90 +39,91 @@ function clearAckTimer({senderId, msgId}) {
 
 let protocol = new MQProtocol();
 
-let MQRecv = function(config) {
-  this.recvSocket = new MQRecvSocket({
-    maxMsgSize: config.maxMsgSize, 
-    port: config.port,
-  });
+class MQRecv extends EventEmitter {
+  constructor (config) {
+    super();
+    this.recvSocket = new MQRecvSocket({
+      maxMsgSize: config.maxMsgSize, 
+      port: config.port,
+    });
 
-  this.recvSocket.on('error',  function(error) {
-    this.emit('error', error);
-  }.bind(this));
-};
+    this.recvSocket.on('error',  function(error) {
+      this.emit('error', error);
+    }.bind(this));
+  }
 
-MQRecv.prototype.close = function() {
-  this.recvSocket.close();
-  for(let senderId in this.ackSaveTimerId) {
-    for(let msgId in this.ackSaveTimerId[senderId]) {
-      clearTimeout(this.ackSaveTimerId[senderId][msgId]);
+  close() {
+    this.recvSocket.close();
+    for(let senderId in this.ackSaveTimerId) {
+      for(let msgId in this.ackSaveTimerId[senderId]) {
+        clearTimeout(this.ackSaveTimerId[senderId][msgId]);
+      }
     }
   }
-};
 
-MQRecv.prototype.init = async function(config) {
+  async init(config) {
 
-  this.ackSave = {};
-  this.ackSaveTimerId = {};
-  let checkDuplicateMessage = await db.getAllDuplicateMessageCheck();
+    this.ackSave = {};
+    this.ackSaveTimerId = {};
+    let checkDuplicateMessage = await db.getAllDuplicateMessageCheck();
 
-  checkDuplicateMessage.forEach(({senderId, checkObject}) => {
-    this.ackSave[senderId] = checkObject;
-    let timerCount = 0;
+    checkDuplicateMessage.forEach(({senderId, checkObject}) => {
+      this.ackSave[senderId] = checkObject;
+      let timerCount = 0;
 
-    for(let msgId in this.ackSave[senderId]) {
-      let unixTimeout = this.ackSave[senderId][msgId];
-      if(unixTimeout > Date.now()) {
-        delete this.ackSave[senderId][msgId];
+      for(let msgId in this.ackSave[senderId]) {
+        let unixTimeout = this.ackSave[senderId][msgId];
+        if(unixTimeout > Date.now()) {
+          delete this.ackSave[senderId][msgId];
+        }
+        else {
+          timerCount++;
+          if(!this.ackSaveTimerId[senderId]) this.ackSaveTimerId[senderId] = {};
+          this.ackSaveTimerId[senderId][msgId] = setTimeout(
+            clearAckTimer.bind(this),
+            Date.now() - unixTimeout,
+            { senderId, msgId },
+          );
+        }
       }
-      else {
-        timerCount++;
-        if(!this.ackSaveTimerId[senderId]) this.ackSaveTimerId[senderId] = {};
+      //all ack is timeout
+      if(timerCount === 0) delete this.ackSave[senderId];
+      db.setDuplicateMessageCheck(senderId, this.ackSave[senderId]);
+    });
+
+    this.recvSocket.on('message',  async function(jsonMessageStr) {
+      const jsonMessage = protocol.ExtractMsg(jsonMessageStr);
+      const ackMSG = protocol.GenerateAckMsg({
+        msgId: jsonMessage.retryspec.msgId, 
+        seqId: jsonMessage.retryspec.seqId
+      });
+
+      this.recvSocket.send(ackMSG);
+
+      const msgId = jsonMessage.retryspec.msgId;
+      const senderId = jsonMessage.retryspec.senderId;
+
+      //first time received from this sender
+      if(!this.ackSave[senderId]) this.ackSave[senderId] = {};
+      if(!this.ackSaveTimerId[senderId]) this.ackSaveTimerId[senderId] = {};
+
+      //this message not been received yet
+      if(!this.ackSave[senderId][msgId]) {
+        this.emit('message', jsonMessage.message);
+
+        let unixTimeout = Date.now() + config.ackSaveTimeout;
+        this.ackSave[senderId][msgId] = unixTimeout;
+        db.setDuplicateMessageCheck(senderId, this.ackSave[senderId]);
+
         this.ackSaveTimerId[senderId][msgId] = setTimeout(
           clearAckTimer.bind(this),
-          Date.now() - unixTimeout,
+          config.ackSaveTimeout,
           { senderId, msgId },
         );
       }
-    }
-    //all ack is timeout
-    if(timerCount === 0) delete this.ackSave[senderId];
-    db.setDuplicateMessageCheck(senderId, this.ackSave[senderId]);
-  });
 
-  this.recvSocket.on('message',  async function(jsonMessageStr) {
-    const jsonMessage = protocol.ExtractMsg(jsonMessageStr);
-    const ackMSG = protocol.GenerateAckMsg({
-      msgId: jsonMessage.retryspec.msgId, 
-      seqId: jsonMessage.retryspec.seqId
-    });
-
-    this.recvSocket.send(ackMSG);
-
-    const msgId = jsonMessage.retryspec.msgId;
-    const senderId = jsonMessage.retryspec.senderId;
-
-    //first time received from this sender
-    if(!this.ackSave[senderId]) this.ackSave[senderId] = {};
-    if(!this.ackSaveTimerId[senderId]) this.ackSaveTimerId[senderId] = {};
-
-    //this message not been received yet
-    if(!this.ackSave[senderId][msgId]) {
-      this.emit('message', jsonMessage.message);
-
-      let unixTimeout = Date.now() + config.ackSaveTimeout;
-      this.ackSave[senderId][msgId] = unixTimeout;
-      db.setDuplicateMessageCheck(senderId, this.ackSave[senderId]);
-
-      this.ackSaveTimerId[senderId][msgId] = setTimeout(
-        clearAckTimer.bind(this),
-        config.ackSaveTimeout,
-        { senderId, msgId },
-      );
-    }
-
-  }.bind(this));
-};
-
-util.inherits(MQRecv, EventEmitter);
+    }.bind(this));
+  }
+}
 
 export default MQRecv;

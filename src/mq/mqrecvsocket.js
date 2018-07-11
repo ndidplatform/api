@@ -21,36 +21,36 @@
  */
 
 import zmq from 'zeromq';
-import * as util from 'util';
 import EventEmitter from 'events';
 
-let MQRecvSocket = function(config) {
+class MQRecvSocket extends EventEmitter {
 
-  this.receivingSocket = zmq.socket('rep');
-  this.receivingSocket.setsockopt(zmq.ZMQ_MAXMSGSIZE, config.maxMsgSize || -1);  // maximum receiver size ( -1 receive all )
-  this.receivingSocket.setsockopt(zmq.ZMQ_LINGER, 0);  // no lingering time after socket close. we want to control send by business logic
-  //  this.receivingSocket.setsockopt(zmq.ZMQ_IDENTITY,{}) ; // no socket identity ( every time the app restart, we don't resume)
+  constructor(config) {
+    super();
+    this.receivingSocket = zmq.socket('rep');
+    this.receivingSocket.setsockopt(zmq.ZMQ_MAXMSGSIZE, config.maxMsgSize || -1);  // maximum receiver size ( -1 receive all )
+    this.receivingSocket.setsockopt(zmq.ZMQ_LINGER, 0);  // no lingering time after socket close. we want to control send by business logic
+    //  this.receivingSocket.setsockopt(zmq.ZMQ_IDENTITY,{}) ; // no socket identity ( every time the app restart, we don't resume)
 
-  this.receivingSocket.bindSync('tcp://*:' + config.port);
+    this.receivingSocket.bindSync('tcp://*:' + config.port);
 
-  this.receivingSocket.on('message', function(jsonMessageStr) {
-    this.emit('message', jsonMessageStr);
-  }.bind(this));
+    this.receivingSocket.on('message', function(jsonMessageStr) {
+      this.emit('message', jsonMessageStr);
+    }.bind(this));
 
-  this.receivingSocket.on('error', function(error) {
-    this.emit('error', error);
-  }.bind(this));
+    this.receivingSocket.on('error', function(error) {
+      this.emit('error', error);
+    }.bind(this));
 
-};
+  }
 
-MQRecvSocket.prototype.send = function(payload){
-  this.receivingSocket.send(payload);
-};
+  send(payload){
+    this.receivingSocket.send(payload);
+  }
 
-MQRecvSocket.prototype.close = function() {
-  this.receivingSocket.close();
-};
-
-util.inherits(MQRecvSocket, EventEmitter);
+  close() {
+    this.receivingSocket.close();
+  }
+}
 
 export default MQRecvSocket;

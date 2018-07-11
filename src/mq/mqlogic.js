@@ -20,96 +20,97 @@
  *
  */
 
-import * as util from 'util';
 import EventEmitter from 'events';
 
-let MQLogic = function(config) {
-  const totalTimeout = config.totalTimeout || 120000;
-  this.timeout = config.timeout || 30000;
-  this.maxRetries = totalTimeout / this.timeout;
-  this.maxSeqId = 0;
-  this.maxMsgId = 0;
-  this.id = config.id || '';
-  this.seqMap = new Map();
-};
+class MQLogic extends EventEmitter {
+  constructor(config) {
+    super();
+    const totalTimeout = config.totalTimeout || 120000;
+    this.timeout = config.timeout || 30000;
+    this.maxRetries = totalTimeout / this.timeout;
+    this.maxSeqId = 0;
+    this.maxMsgId = 0;
+    this.id = config.id || '';
+    this.seqMap = new Map();
+  }
 
-MQLogic.prototype._cleanUp = function(msgId){
+  _cleanUp(msgId) {
 
-  let itemToDelete = [];
-  for (var [key, value] of this.seqMap) {
-    if(value.msgId == msgId) {
-      clearTimeout(value.timerId);
-      this.emit('PerformCleanUp', value.seqId);
-      itemToDelete.push(key);
+    let itemToDelete = [];
+    for (var [key, value] of this.seqMap) {
+      if(value.msgId == msgId) {
+        clearTimeout(value.timerId);
+        this.emit('PerformCleanUp', value.seqId);
+        itemToDelete.push(key);
+      }
+    }
+
+    for (let i = 0; i < itemToDelete.length; i++) {
+      this.seqMap.delete(itemToDelete[i]);
     }
   }
 
-  for (let i = 0; i < itemToDelete.length; i++) {
-    this.seqMap.delete(itemToDelete[i]);
+  _performSend(
+    dest, 
+    payload, 
+    msgId, 
+    retryCount = 0
+  ) {
+    this.maxSeqId++;
+    const seqId = this.maxSeqId;
+
+    let timerId = setTimeout(
+      this._retry.bind(this), 
+      this.timeout,
+      dest, 
+      payload, 
+      msgId, 
+      seqId, 
+      ++retryCount
+    );
+    this.seqMap.set(seqId, { 
+      seqId: seqId, 
+      msgId: msgId, 
+      timerId: timerId 
+    });
+    this.emit('PerformSend', {
+      id: this.id, 
+      dest: dest, 
+      payload: payload, 
+      msgId: msgId, 
+      seqId: seqId
+    });
   }
-};
 
-MQLogic.prototype._performSend = function (
-  dest, 
-  payload, 
-  msgId, 
-  retryCount = 0
-) {
-  this.maxSeqId++;
-  const seqId = this.maxSeqId;
+  AckReceived( msgId ) {
+    this._cleanUp(msgId);
+  }
 
-  let timerId = setTimeout(
-    this._retry.bind(this), 
-    this.timeout,
+  _retry( 
     dest, 
     payload, 
     msgId, 
     seqId, 
-    ++retryCount
-  );
-  this.seqMap.set(seqId, { 
-    seqId: seqId, 
-    msgId: msgId, 
-    timerId: timerId 
-  });
-  this.emit('PerformSend', {
-    id: this.id, 
-    dest: dest, 
-    payload: payload, 
-    msgId: msgId, 
-    seqId: seqId
-  });
-};
-
-MQLogic.prototype.AckReceived = function ( msgId ) {
-  this._cleanUp(msgId);
-};
-
-MQLogic.prototype._retry = function ( 
-  dest, 
-  payload, 
-  msgId, 
-  seqId, 
-  retryCount 
-) {
-  if (this.seqMap.has(seqId)) {
-    if (retryCount >= this.maxRetries) {
-      this._cleanUp(msgId);
-      this.emit('PerformTotalTimeout', {
-        id: this.id, 
-        msgId: msgId
-      });
-    }
-    else {
-      this._performSend( dest, payload, msgId, retryCount );
+    retryCount 
+  ) {
+    if (this.seqMap.has(seqId)) {
+      if (retryCount >= this.maxRetries) {
+        this._cleanUp(msgId);
+        this.emit('PerformTotalTimeout', {
+          id: this.id, 
+          msgId: msgId
+        });
+      }
+      else {
+        this._performSend( dest, payload, msgId, retryCount );
+      }
     }
   }
-};
 
-MQLogic.prototype.Send = function (dest, payload) {
-  this.maxMsgId++;
-  this._performSend(dest, payload, this.maxMsgId);
-};
+  Send(dest, payload) {
+    this.maxMsgId++;
+    this._performSend(dest, payload, this.maxMsgId);
+  }
+}
 
-util.inherits(MQLogic, EventEmitter);
 export default MQLogic;
