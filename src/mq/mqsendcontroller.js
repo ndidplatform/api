@@ -29,9 +29,6 @@ import CustomError from '../error/customError';
 
 let protocol = new MQProtocol();
 
-
-
-
 let MQSend = function(config) {
   this.totalTimeout = config.totalTimeout || 120000;
   this.timeout = config.timeout || 30000;

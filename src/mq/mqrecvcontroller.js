@@ -23,8 +23,7 @@
 let EventEmitter = require('events').EventEmitter;
 let util = require ('util');
 import MQProtocol from './mqprotocol.js';
-import CustomError from '../error/customError';
-import MQRecvSocket from './mqrecvsocket.js'
+import MQRecvSocket from './mqrecvsocket.js';
 
 let protocol = new MQProtocol();
 
@@ -37,13 +36,21 @@ let MQRecv = function(config) {
       const ackMSG = protocol.GenerateAckMsg({msgId:jsonMessage.retryspec.msgId, seqId:jsonMessage.retryspec.seqId});
 
       this.recvSocket.send(ackMSG);
-      this.emit('message', jsonMessage.message);
+      this.emit('message', {
+        message: jsonMessage.message,
+        msgId: jsonMessage.retryspec.msgId,
+        senderId: jsonMessage.senderId,
+      });
   }.bind(this));
 
   this.recvSocket.on('error',  function(error) {
       this.emit('error', error);
   }.bind(this));
 };
+
+MQRecv.prototype.close = function() {
+  this.recvSocket.close();
+}
 
 util.inherits(MQRecv, EventEmitter);
 

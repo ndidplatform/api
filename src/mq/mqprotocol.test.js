@@ -12,7 +12,7 @@ describe('MQ Protocol Unit Test', function () {
 
     let result = protocol.GenerateSendMsg(payload, retryspec)
 
-    expect(result).to.equal('{"msgId":1,"seqId":22,"message":"test"}')
+    expect(result).to.equal('{"msgId":1,"seqId":22,"message":"test","senderId":"unit-test"}')
   });
 
   it('should perform ExtractMsg properly', function(){
@@ -32,6 +32,6 @@ describe('MQ Protocol Unit Test', function () {
 
     let result = protocol.GenerateAckMsg(retryspec)
 
-    expect(result).to.equal('{"msgId":1,"seqId":22,"message":""}')
+    expect(result).to.equal('{"msgId":1,"seqId":22,"message":"","senderId":"unit-test"}')
   });
 });

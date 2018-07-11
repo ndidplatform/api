@@ -569,6 +569,37 @@ export function removeTimeoutScheduler(requestId) {
   });
 }
 
+export function getAllDuplicateMessageTimeout() {
+  return db.getAll({ name: 'duplicateMessageTimeout' });
+}
+
+export function getDuplicateMessageTimeout(id) {
+  return db.get({ 
+    name: 'duplicateMessageTimeout',
+    keyName: 'id',
+    key: id,
+    valueName: 'unixTimeout',
+  });
+}
+
+export function addDuplicateMessageTimeout(id, unixTimeout) {
+  return db.set({
+    name: 'duplicateMessageTimeout',
+    keyName: 'id',
+    key: id,
+    valueName: 'unixTimeout',
+    value: unixTimeout,
+  });
+}
+
+export function removeDuplicateMessageTimeout(id) {
+  return db.remove({
+    name: 'duplicateMessageTimeout',
+    keyName: 'id',
+    key: id,
+  });
+}
+
 export function getIdpResponseValidList(requestId) {
   return db.getList({
     name: 'idpResponseValid',

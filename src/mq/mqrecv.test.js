@@ -31,7 +31,7 @@ describe('Functional Test for MQ receiver with real socket', function () {
     let expectedResults = [1111111,222222,333333];
 
     mqNodeRecv.on("message", function(msg){
-      expect(parseInt(msg)).to.be.oneOf(expectedResults);
+      expect(parseInt(msg.message)).to.be.oneOf(expectedResults);
 
       count++;
       if (count==3) done();

@@ -29,7 +29,7 @@ let MQLogic = function(config) {
   this.timeout = config.timeout || 30000;
   this.maxRetries = totalTimeout / this.timeout;
   this.maxSeqId = 0;
-  this.maxMsgId = 0;
+  this.maxMsgId = Date.now();
   this.id = config.id || '';
   this.seqMap = new Map();
 };

@@ -25,8 +25,8 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     let sendNode = new MQSend({});
     let recvNode= new MQRecv({port: ports[0]});
 
-    recvNode.on('message', function(msg){
-       expect(String(msg)).to.equal('test message 1');
+    recvNode.on('message', function({message}){
+       expect(String(message)).to.equal('test message 1');
        done();
     });
 
@@ -39,8 +39,8 @@ describe('Functional Test for MQ Sender with real sockets', function () {
   it('should send data in Thai successfully',function(done) {
     let ports = getPort(1);
     let recvNode = new MQRecv({port: ports[0]});
-    recvNode.on("message", function(msg){
-      expect(String(msg)).to.equal('นี่คือเทสแมสเซจ');
+    recvNode.on("message", function({message}){
+      expect(String(message)).to.equal('นี่คือเทสแมสเซจ');
       done();
     });
 
@@ -55,10 +55,10 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     let recvNode = new MQRecv({port: ports[0]});
     let alreadyRecv = [];
 
-    recvNode.on("message", function(msg){
-      expect(msg).to.be.a('String')
-      expect(parseInt(msg)).to.be.oneOf([111111,222222,333333]).and.to.not.be.oneOf(alreadyRecv);
-      alreadyRecv.push(parseInt(msg));
+    recvNode.on("message", function({message}){
+      expect(message).to.be.a('String')
+      expect(parseInt(message)).to.be.oneOf([111111,222222,333333]).and.to.not.be.oneOf(alreadyRecv);
+      alreadyRecv.push(parseInt(message));
       if (alreadyRecv.length == 3) done();
     });
 
@@ -78,22 +78,22 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     let mqNode2 = new MQRecv({port: ports[1]});
     let mqNode3 = new MQRecv({port: ports[2]});
 
-    mqNode1.on("message", function(msg){
-      expect(msg).to.be.a('String')
-      expect(parseInt(msg)).to.equal(111111).and.to.not.be.oneOf(alreadyRecv);
-      alreadyRecv.push(parseInt(msg));
+    mqNode1.on("message", function({message}){
+      expect(message).to.be.a('String')
+      expect(parseInt(message)).to.equal(111111).and.to.not.be.oneOf(alreadyRecv);
+      alreadyRecv.push(parseInt(message));
       if (alreadyRecv.length == 3) done();
     });
-    mqNode2.on("message", function(msg){
-       expect(msg).to.be.a('String');
-       expect(parseInt(msg)).to.equal(222222).and.to.not.be.oneOf(alreadyRecv);
-       alreadyRecv.push(parseInt(msg));
+    mqNode2.on("message", function({message}){
+       expect(message).to.be.a('String');
+       expect(parseInt(message)).to.equal(222222).and.to.not.be.oneOf(alreadyRecv);
+       alreadyRecv.push(parseInt(message));
        if (alreadyRecv.length == 3) done();
      });
-    mqNode3.on("message", function(msg){
-        expect(msg).to.be.a('String');
-        expect(parseInt(msg)).to.equal(333333).and.to.not.be.oneOf(alreadyRecv);
-        alreadyRecv.push(parseInt(msg));
+    mqNode3.on("message", function({message}){
+        expect(message).to.be.a('String');
+        expect(parseInt(message)).to.equal(333333).and.to.not.be.oneOf(alreadyRecv);
+        alreadyRecv.push(parseInt(message));
         if (alreadyRecv.length == 3) done();
     });
 
@@ -119,8 +119,8 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     let id = setTimeout(function () {
       let mqNode2 = new MQRecv({port: ports[0]});
 
-        mqNode2.on("message", function(msg){
-        expect(msg).to.be.a('String').and.equal('test');
+        mqNode2.on("message", function({message}){
+        expect(message).to.be.a('String').and.equal('test');
         if (notDone == true) {
           done();
           notDone=false;
@@ -151,7 +151,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     // first timenode will die;
     let nodetoDie = new MQRecvDieFirst({port:ports[0]});
     let mqNode = new MQSend({timeout:2000, totalTimeout:16000});
-    mqNode.on("error", function(msg){
+    mqNode.on("error", function({message}){
       assert.fail('this one should not fire error');
     });
     mqNode.send({ip:"127.0.0.1", port:ports[0]}, "test" );
@@ -159,11 +159,11 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     // create proper one later
     let id = setTimeout(function () {
       let mqNode2 = new MQRecv({port:ports[0]});
-        mqNode2.on("message", function(msg){
-        expect(msg).to.be.a('String').and.equal('test');
+        mqNode2.on("message", function({message}){
+        expect(message).to.be.a('String').and.equal('test');
         done();
       });
-      mqNode2.on("error", function(msg){
+      mqNode2.on("error", function({message}){
         assert.fail('this one should not fire error');
       });
     }
@@ -245,10 +245,10 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     // create proper one later
     let id = setTimeout(function () {
       let mqNode2 = new MQRecv({port:ports[0]});
-      mqNode2.on("message", function(msg){
+      mqNode2.on("message", function({message}){
         assert.fail('this one should not receive no more');
       });
-      mqNode2.on("error", function(msg){
+      mqNode2.on("error", function({message}){
         assert.fail('this one should not fire error');
       });
     }
@@ -270,7 +270,7 @@ describe.skip ('mq extreme case. Keep it there but dont run by default', functio
 
     let count = 0;
     let recvNode= new MQRecv({port: ports[0]});
-    recvNode.on('message', function(msg){
+    recvNode.on('message', function({message}){
            ++count;
            if (count == 900)
               done();
@@ -294,7 +294,7 @@ describe.skip ('mq extreme case. Keep it there but dont run by default', functio
     });
 
     let recvNode= new MQRecv({port: ports[0]});
-    recvNode.on('message', function(msg){
+    recvNode.on('message', function({message}){
         // do nothing.
         });
 
@@ -326,7 +326,7 @@ it('should not die if it sends out 900 messages, wait until they are all done, t
       fn2();
       let count = 0;
       let recvNode= new MQRecv({port: ports[0]});
-      recvNode.on('message', function(msg){
+      recvNode.on('message', function({message}){
              ++count;
              if (count == 900){
                let id = setTimeout(function () {
@@ -355,11 +355,11 @@ it('should not die if it sends out 900 messages, wait until they are all done, t
       let sendNode = new MQSend({});
       let recvNode= new MQRecv({port: port[0]});
 
-      recvNode.on('message', function(msg){
-         expect(String(msg)).to.equal(str);
+      recvNode.on('message', function({message}){
+         expect(String(message)).to.equal(str);
          done();
       });
-      sendNode.on('state', function(msg){
+      sendNode.on('state', function({message}){
      });
 
       sendNode.send({ip:'127.0.0.1',
@@ -369,7 +369,7 @@ it('should not die if it sends out 900 messages, wait until they are all done, t
       // create proper one later
       let id = setTimeout(function () {
         let mqNode2 = new MQRecv({port:ports[0]});
-        mqNode2.on("message", function(msg){
+        mqNode2.on("message", function({message}){
           assert.fail('this one should not receive no more');
         });
    });

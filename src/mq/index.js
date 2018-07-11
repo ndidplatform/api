@@ -28,14 +28,51 @@ import * as utils from '../utils';
 import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 import * as tendermintNdid from '../tendermint/ndid';
+import * as db from '../db';
 
 import MQSend from './mqsendcontroller.js';
 import MQRecv from './mqrecvcontroller.js';
 
-const mqSend = new MQSend({timeout:60000, totalTimeout:500000});
-const mqRecv = new MQRecv({port: config.mqRegister.port, maxMsgSize:2000000});
+let mqSend;
+let mqRecv;
+const timer = {};
 
 export const eventEmitter = new EventEmitter();
+init();
+
+async function init() {
+  let timeoutList = await db.getAllDuplicateMessageTimeout();
+  let promiseArray = [];
+  for(let id in timeoutList) {
+    let unixTimeout = timeoutList[id];
+    if(unixTimeout >= Date.now()) {
+      promiseArray.push(db.removeDuplicateMessageTimeout(id));
+    }
+    else {
+      timer[id] = setTimeout(() => {
+        db.removeDuplicateMessageTimeout(id);
+        delete timer[id];
+      }, Date.now() - unixTimeout);
+    }
+  }
+  await Promise.all(promiseArray);
+  mqSend = new MQSend({timeout:60000, totalTimeout:500000});
+  mqRecv = new MQRecv({port: config.mqRegister.port, maxMsgSize:2000000});
+
+  mqRecv.on('message', async ({ message, msgId, senderId }) => {
+    let id = senderId + ':' + msgId;
+    let unixTimeout = await db.getDuplicateMessageTimeout(id);
+    if(unixTimeout != null) return;
+    
+    unixTimeout = Date.now() + 120000;
+    db.addDuplicateMessageTimeout(id, unixTimeout);
+    timer[id] = setTimeout(() => {
+      db.removeDuplicateMessageTimeout(id);
+      delete timer[id];
+    },120000);
+    onMessage(message);
+  });
+}
 
 async function onMessage(jsonMessageStr) {
   try {
@@ -111,8 +148,6 @@ async function onMessage(jsonMessageStr) {
   }
 }
 
-mqRecv.on('message', onMessage);
-
 export async function send(receivers, message) {
   const msqSignature = await utils.createSignature(message);
   const realPayload =
@@ -142,6 +177,9 @@ export async function send(receivers, message) {
 
 export function close() {
   mqRecv.close();
+  for(let id in timer) {
+    clearTimeout(timer[id]);
+  }
   logger.info({
     message: 'Message queue socket closed',
   });
