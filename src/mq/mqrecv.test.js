@@ -1,13 +1,12 @@
-const chai = require('chai');
+import chai from 'chai';
+import chaiHttp from 'chai-http';
+import assert from 'assert';
+
+import MQRecv from '../mq/mqrecvcontroller.js';
+import MQSend from '../mq/mqsendcontroller.js';
+
 const expect = chai.expect;
-const chaiHttp = require('chai-http');
-let assert = require('assert');
-const http = require('http')
 chai.use(chaiHttp);
-
-let MQRecv = require('../mq/mqrecvcontroller.js');
-let MQSend = require('../mq/mqsendcontroller.js');
-
 
 describe('Functional Test for MQ receiver with real socket', function () {
   let portIdx = 5655;
@@ -34,7 +33,10 @@ describe('Functional Test for MQ receiver with real socket', function () {
       expect(parseInt(msg.message)).to.be.oneOf(expectedResults);
 
       count++;
-      if (count==3) done();
+      if (count==3) {
+        mqNodeRecv.close();
+        done();
+      }
     });
 
     mqNode1.send({ip:"127.0.0.1",

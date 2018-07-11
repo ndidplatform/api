@@ -1,12 +1,13 @@
-const chai = require('chai');
-const expect = chai.expect;
-const chaiHttp = require('chai-http');
-chai.use(chaiHttp);
-let assert = require('assert');
-let zmq = require("zeromq")
-let MQSend = require('./mqsendcontroller.js');
-let MQRecv = require('./mqrecvcontroller.js');
+import chai from 'chai';
+import chaiHttp from 'chai-http';
+import assert from 'assert';
+import zmq from 'zeromq';
 
+import MQSend from './mqsendcontroller.js';
+import MQRecv from './mqrecvcontroller.js';
+
+const expect = chai.expect;
+chai.use(chaiHttp);
 
 describe('Functional Test for MQ Sender with real sockets', function () {
   let portIdx = 5555;
@@ -17,22 +18,23 @@ describe('Functional Test for MQ Sender with real sockets', function () {
        ret.push(portIdx);
      }
      return ret;
-  }
+  };
 
-
-  it('should send data to destination succesffully', function(done) {
+  it('should send data to destination successfully', function(done) {
     let ports = getPort(1);
     let sendNode = new MQSend({});
     let recvNode= new MQRecv({port: ports[0]});
 
     recvNode.on('message', function({message}){
-       expect(String(message)).to.equal('test message 1');
-       done();
+      expect(String(message)).to.equal('test message 1');
+      recvNode.close();
+      done();
     });
 
-    sendNode.send({ip:'127.0.0.1',
-              port:ports[0]
-              }, 'test message 1');
+    sendNode.send({
+      ip:'127.0.0.1',
+      port:ports[0]
+    }, 'test message 1');
 
   });
 
@@ -41,13 +43,15 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     let recvNode = new MQRecv({port: ports[0]});
     recvNode.on("message", function({message}){
       expect(String(message)).to.equal('นี่คือเทสแมสเซจ');
+      recvNode.close();
       done();
     });
 
     let sendNode = new MQSend({});
-    sendNode.send({ip:"127.0.0.1",
-              port:ports[0]
-            }, 'นี่คือเทสแมสเซจ');
+    sendNode.send({
+      ip:"127.0.0.1",
+      port:ports[0]
+    }, 'นี่คือเทสแมสเซจ');
   });
 
   it('should send data to 1 source, 3 times, once after another properly', function(done) {
@@ -82,19 +86,34 @@ describe('Functional Test for MQ Sender with real sockets', function () {
       expect(message).to.be.a('String')
       expect(parseInt(message)).to.equal(111111).and.to.not.be.oneOf(alreadyRecv);
       alreadyRecv.push(parseInt(message));
-      if (alreadyRecv.length == 3) done();
+      if (alreadyRecv.length == 3) {
+        mqNode1.close();
+        mqNode2.close();
+        mqNode3.close();
+        done();
+      }
     });
     mqNode2.on("message", function({message}){
        expect(message).to.be.a('String');
        expect(parseInt(message)).to.equal(222222).and.to.not.be.oneOf(alreadyRecv);
        alreadyRecv.push(parseInt(message));
-       if (alreadyRecv.length == 3) done();
+       if (alreadyRecv.length == 3) {
+        mqNode1.close();
+        mqNode2.close();
+        mqNode3.close();
+        done();
+       }
      });
     mqNode3.on("message", function({message}){
         expect(message).to.be.a('String');
         expect(parseInt(message)).to.equal(333333).and.to.not.be.oneOf(alreadyRecv);
         alreadyRecv.push(parseInt(message));
-        if (alreadyRecv.length == 3) done();
+        if (alreadyRecv.length == 3) {
+          mqNode1.close();
+          mqNode2.close();
+          mqNode3.close();
+          done();
+         }
     });
 
     let mqNode = new MQSend({});
