@@ -147,3 +147,16 @@ export function parseKey(buffer) {
       throw new Error('unknown key type ' + type);
   }
 }
+
+export function parseSignature(decryptedSignature) {
+  return structure.Signature.decode(decryptedSignature, 'der');
+}
+
+export function encodeSignature(algorithm, digest) {
+  return structure.Signature.encode({
+    algorithm: {
+      algorithm,
+    },
+    digest,
+  }, 'der');
+}

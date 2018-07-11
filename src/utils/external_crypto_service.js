@@ -34,7 +34,7 @@ import {
   randomBase64Bytes,
 } from './crypto';
 import * as tendermintNdid from '../tendermint/ndid';
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 import logger from '../logger';
 

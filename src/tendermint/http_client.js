@@ -22,7 +22,7 @@
 
 import fetch from 'node-fetch';
 
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 
 import { tendermintAddress } from '../config';

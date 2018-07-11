@@ -26,10 +26,19 @@ import crypto from 'crypto';
 import * as cryptoUtils from './crypto';
 import * as config from '../config';
 import bignum from 'bignum';
-import { parseKey } from './asn1parser';
+import { parseKey, parseSignature, encodeSignature } from './asn1parser';
 import logger from '../logger';
 import constants from 'constants';
-import * as externalCryptoService from './externalCryptoService';
+import * as externalCryptoService from './external_crypto_service';
+import CustomError from '../error/custom_error';
+import errorType from '../error/type';
+
+let privateKey;
+let masterPrivateKey;
+if (!config.useExternalCryptoService) {
+  privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
+  masterPrivateKey = fs.readFileSync(config.masterPrivateKeyPath, 'utf8');
+}
 
 //let nonce = Date.now() % 10000;
 const saltByteLength = 8;
@@ -81,7 +90,6 @@ export async function decryptAsymetricKey(cipher) {
       encryptedSymKey
     );
   } else {
-    const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
     const passphrase = config.privateKeyPassphrase;
     symKeyBuffer = cryptoUtils.privateDecrypt(
       {
@@ -98,10 +106,13 @@ export async function decryptAsymetricKey(cipher) {
 
 export function encryptAsymetricKey(publicKey, message) {
   const symKeyBuffer = crypto.randomBytes(32);
-  const encryptedSymKey = cryptoUtils.publicEncrypt({
-    key: publicKey,
-    padding: crypto.constants.RSA_PKCS1_PADDING,
-  }, symKeyBuffer);
+  const encryptedSymKey = cryptoUtils.publicEncrypt(
+    {
+      key: publicKey,
+      padding: crypto.constants.RSA_PKCS1_PADDING,
+    },
+    symKeyBuffer
+  );
   const encryptedMessage = cryptoUtils.encryptAES256GCM(
     symKeyBuffer,
     message,
@@ -123,8 +134,13 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
   if (
     rawMessageBuffer[0] !== 0 ||
     (rawMessageBuffer[1] !== 0 && rawMessageBuffer[1] !== 1)
-  )
-    throw 'Invalid cipher';
+  ) {
+    throw new CustomError({
+      message: errorType.INVALID_CIPHER.message,
+      code: errorType.INVALID_CIPHER.code,
+      clientError: true,
+    });
+  }
   let padLength = 2;
   while (rawMessageBuffer[padLength] !== 0) padLength++;
 
@@ -157,6 +173,13 @@ export function generateIdentityProof(data) {
   });
 
   let [padding, signedHash] = data.secret.split('|');
+  if (padding == null || signedHash == null) {
+    throw new CustomError({
+      message: errorType.MALFORMED_SECRET_FORMAT.message,
+      code: errorType.MALFORMED_SECRET_FORMAT.code,
+      clientError: true,
+    });
+  }
   let { n, e } = extractParameterFromPublicKey(data.publicKey);
   // -1 to garantee k < n
   let k = data.k; //randomBase64Bytes(n.toBuffer().length - 1);
@@ -300,9 +323,14 @@ function verifyZKProofSingle(
   let { n, e } = extractParameterFromPublicKey(publicKey);
   let hashedSid = hash(sid.namespace + ':' + sid.identifier);
 
+  const sha256SignatureEncoded = encodeSignature(
+    [2, 16, 840, 1, 101, 3, 4, 2, 1],
+    Buffer.from(hashedSid, 'base64')
+  );
+
   let paddedHashedSid = Buffer.concat([
     Buffer.from(padding, 'base64'),
-    Buffer.from(hashedSid, 'base64'),
+    sha256SignatureEncoded,
   ]).toString('base64');
 
   let inverseHashSid = moduloMultiplicativeInverse(
@@ -347,21 +375,24 @@ export async function createSignature(data, nonce = '', useMasterKey) {
     );
   }
 
-  const privateKey = useMasterKey
-    ? fs.readFileSync(config.masterPrivateKeyPath, 'utf8')
-    : fs.readFileSync(config.privateKeyPath, 'utf8');
+  const key = useMasterKey ? masterPrivateKey : privateKey;
   const passphrase = useMasterKey
     ? config.masterPrivateKeyPassphrase
     : config.privateKeyPassphrase;
 
   return cryptoUtils.createSignature(messageToSign, {
-    key: privateKey,
+    key,
     passphrase,
   });
 }
 
 export function verifySignature(signatureInBase64, publicKey, plainText) {
   return cryptoUtils.verifySignature(signatureInBase64, publicKey, plainText);
+}
+
+export function extractDigestFromSignature(signature, publicKey) {
+  const decryptedSignature = cryptoUtils.publicDecrypt(publicKey, signature);
+  return parseSignature(decryptedSignature).digest.toString('base64');
 }
 
 export function createRequestId() {
@@ -449,10 +480,10 @@ export function getDetailedRequestStatus(requestDetail) {
   if (requestDetail.data_request_list.length === 0) {
     // No data request
     if (requestDetail.response_list.length === requestDetail.min_idp) {
-      if( responseCount.reject === 0 &&
-          (responseCount.accept > 0 || 
-            (responseCount.accept === 0 && requestDetail.special) 
-          )
+      if (
+        responseCount.reject === 0 &&
+        (responseCount.accept > 0 ||
+          (responseCount.accept === 0 && requestDetail.special))
       ) {
         status = 'completed';
       }

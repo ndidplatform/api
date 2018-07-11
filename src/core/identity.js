@@ -22,7 +22,7 @@
 
 import logger from '../logger';
 
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 import { getErrorObjectForClient } from '../error/helpers';
 
@@ -40,7 +40,7 @@ import {
 import {
   getRequestMessageForCreatingIdentity,
   getRequestMessageForAddingAccessor,
-} from '../utils/requestMessage';
+} from '../utils/request_message';
 
 export async function checkAssociated({ namespace, identifier }) {
   let idpList = await tendermintNdid.getIdpNodes({
@@ -190,6 +190,27 @@ export async function isIdentityExist({ namespace, identifier, ial }) {
   return exist;
 }
 
+async function createSecret({
+  sid,
+  hash_id,
+  accessor_id,
+  reference_id,
+  accessor_public_key,
+}) {
+  const signature = await accessorSign({
+    sid,
+    hash_id,
+    accessor_id,
+    accessor_public_key,
+    reference_id
+  });
+  const padding = utils.extractPaddingFromPrivateEncrypt(
+    signature,
+    accessor_public_key
+  );
+  return padding + '|' + signature;
+}
+
 // FIXME: error handling in many cases
 // when there is an error when transacting to blockchain
 // it should not create a request, e.g.
@@ -275,12 +296,22 @@ export async function createNewIdentity(
     const request_id = utils.createRequestId();
 
     if (synchronous) {
+      const sid = namespace + ':' + identifier;
+      const hash_id = utils.hash(sid);
+      const secret = await createSecret({
+        sid,
+        hash_id,
+        accessor_id,
+        reference_id,
+        accessor_public_key,
+      });
       const exist = await isIdentityExist({ namespace, identifier, ial });
       createNewIdentityInternalAsync(...arguments, {
         request_id,
         associated,
         generated_accessor_id: accessor_id,
         exist,
+        secret,
       });
       return { request_id, exist, accessor_id };
     } else {
@@ -316,9 +347,22 @@ async function createNewIdentityInternalAsync(
     addAccessor,
   },
   { synchronous = false, apiVersion } = {},
-  { request_id, associated, generated_accessor_id, exist }
+  { request_id, associated, generated_accessor_id, exist, secret }
 ) {
   try {
+    const sid = namespace + ':' + identifier;
+    const hash_id = utils.hash(sid);
+
+    if (secret == null) {
+      secret = await createSecret({
+        sid,
+        hash_id,
+        accessor_id,
+        reference_id,
+        accessor_public_key,
+      });
+    }
+
     if (exist == null) {
       exist = await isIdentityExist({ namespace, identifier, ial });
     }
@@ -327,23 +371,7 @@ async function createNewIdentityInternalAsync(
       accessor_id = generated_accessor_id;
     }
 
-    const sid = namespace + ':' + identifier;
-    const hash_id = utils.hash(sid);
-
-    const encryptedHash = await accessorSign(
-      sid,
-      hash_id,
-      accessor_id,
-      reference_id
-    );
-    const padding = utils.extractPaddingFromPrivateEncrypt(
-      encryptedHash,
-      accessor_public_key
-    );
-    const secret = padding + '|' + encryptedHash;
-
     // TODO: Check for duplicate accessor
-    // TODO: Check for "ial" must be less than or equal than node's (IdP's) max_ial
 
     await common.createRequest(
       {
@@ -352,7 +380,7 @@ async function createNewIdentityInternalAsync(
         identifier,
         reference_id,
         idp_id_list: [],
-        callback_url: null,
+        callback_url: 'none_system_generated',
         data_request_list: [],
         request_message: ial
           ? getRequestMessageForCreatingIdentity({
@@ -465,6 +493,7 @@ async function createNewIdentityInternalAsync(
           },
           true
         );
+        db.removeCallbackUrlByReferenceId(reference_id);
         await common.closeRequest(
           {
             request_id,

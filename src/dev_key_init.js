@@ -38,12 +38,12 @@ mkdirp.sync(config.logDirectoryPath);
 async function addKeyAndSetToken(role, index) {
   const node_id = role + index.toString();
   const node_name = ''; //all anonymous
-  const filePath = path.join(__dirname, '..', 'devKey', role, node_id + '.pub');
+  const filePath = path.join(__dirname, '..', 'dev_key', role, node_id + '.pub');
   const public_key = fs.readFileSync(filePath, 'utf8').toString();
   const masterFilePath = path.join(
     __dirname,
     '..',
-    'devKey',
+    'dev_key',
     role,
     node_id + '_master.pub'
   );
@@ -71,7 +71,7 @@ async function addKeyAndSetToken(role, index) {
 export async function init() {
   console.log('========= Initializing keys for development =========');
 
-  const filePath = path.join(__dirname, '..', 'devKey', 'ndid', 'ndid1.pub');
+  const filePath = path.join(__dirname, '..', 'dev_key', 'ndid', 'ndid1.pub');
   const public_key = fs.readFileSync(filePath, 'utf8').toString();
 
   // Wait for blockchain ready

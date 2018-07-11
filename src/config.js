@@ -35,11 +35,11 @@ export const https = process.env.HTTPS === 'true';
 export const httpsKeyPath =
   process.env.HTTPS_KEY_PATH != null
     ? process.env.HTTPS_KEY_PATH
-    : path.join(__dirname, '..', 'devHttpsKey', 'key.pem');
+    : path.join(__dirname, '..', 'dev_https_key', 'key.pem');
 export const httpsCertPath =
   process.env.HTTPS_CERT_PATH != null
     ? process.env.HTTPS_CERT_PATH
-    : path.join(__dirname, '..', 'devHttpsKey', 'cert.pem');
+    : path.join(__dirname, '..', 'dev_https_key', 'cert.pem');
 
 export const clientHttpErrorCode = process.env.CLIENT_HTTP_ERROR_CODE || 400;
 export const serverHttpErrorCode = process.env.SERVER_HTTP_ERROR_CODE || 500;
@@ -113,7 +113,7 @@ export const useExternalCryptoService =
 export const privateKeyPath = useExternalCryptoService
   ? null
   : process.env.PRIVATE_KEY_PATH == null
-    ? path.join(__dirname, '..', 'devKey', role, nodeId)
+    ? path.join(__dirname, '..', 'dev_key', role, nodeId)
     : process.env.PRIVATE_KEY_PATH;
 export const privateKeyPassphrase = useExternalCryptoService
   ? null
@@ -122,7 +122,7 @@ export const privateKeyPassphrase = useExternalCryptoService
 export const masterPrivateKeyPath = useExternalCryptoService
   ? null
   : process.env.MASTER_PRIVATE_KEY_PATH == null
-    ? path.join(__dirname, '..', 'devKey', role, nodeId + '_master')
+    ? path.join(__dirname, '..', 'dev_key', role, nodeId + '_master')
     : process.env.MASTER_PRIVATE_KEY_PATH;
 export const masterPrivateKeyPassphrase = useExternalCryptoService
   ? null

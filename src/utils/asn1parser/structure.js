@@ -125,9 +125,12 @@ export const ECParameters = asn1.define('ECParameters', function () {
   });
 });
 
-export const signature = asn1.define('signature', function () {
+export const Signature = asn1.define('Signature', function() {
   this.seq().obj(
-    this.key('r').int(),
-    this.key('s').int()
+    this.key('algorithm').seq().obj(
+      this.key('algorithm').objid(),
+      this.null_()
+    ),
+    this.key('digest').octstr()
   );
 });

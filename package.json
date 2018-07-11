@@ -3,11 +3,11 @@
   "version": "0.3.0",
   "description": "",
   "scripts": {
-    "build": "npx babel src -d ./build/ --source-maps inline && cp -r ./devKey ./build",
+    "build": "npx babel src -d ./build/ --source-maps inline && cp -r ./dev_key ./build",
     "start": "npm run build && node build/server.js",
     "test": "npm run build && npx mocha build/**/*.test.js",
     "test:es6": "mocha src/**/*.test.js --watch --compilers js:babel-register",
-    "initDevKey": "npm run build && ROLE=ndid node build/devKeyInit.js && npm run delete-local-data-cache",
+    "initDevKey": "npm run build && ROLE=ndid node build/dev_key_init.js && npm run delete-local-data-cache",
     "delete-local-data-cache": "rm -rf data",
     "docker-build": "./docker/build.sh",
     "docker-up": "docker-compose -f docker/docker-compose.yml up",
@@ -16,7 +16,7 @@
   "dependencies": {
     "ajv": "^6.4.0",
     "asn1.js": "^5.0.1",
-    "bignum": "git+https://github.com/ndidplatform/node-bignum.git",
+    "bignum": "^0.13.0",
     "body-parser": "^1.18.2",
     "express": "^4.16.3",
     "mkdirp": "^0.5.1",

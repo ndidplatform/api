@@ -23,7 +23,7 @@
 import validate from '../validator';
 import errorType from '../../error/type';
 
-import CustomError from '../../error/customError';
+import CustomError from '../../error/custom_error';
 
 // Path params validation (no rules = not needed according to specs)
 // export function validatePath(req, res, next) {

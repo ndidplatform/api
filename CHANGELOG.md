@@ -2,9 +2,19 @@
 
 ## TBD
 
+IMPROVEMENTS:
+
+- Verify signature from signing with accessor key before making any transaction to the blockchain.
+- Update `bignum` dependency to support Node.js 10.
+- Send `block_height` along with request status when calling a callback to RP to let the client app knows which event comes first.
+
 BUG FIXES:
 
+- Fix accessor sign check to expect signature according to RFC standard (Encrypt signature in ASN1).
 - Fix requests in mode 1 imply `valid_proof` and `valid_ial` as true.
+- Fix create identity request related cached data do not get cleaned up after closed.
+- Fix unnecessary cache data.
+- Change some error throwing to throw CustomError instead of string.
 
 ## 0.3.0 (July 7, 2018)
 

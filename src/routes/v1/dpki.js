@@ -25,7 +25,7 @@ import express from 'express';
 import { validateBody } from '../middleware/validation';
 import * as ndid from '../../core/ndid';
 import * as dpki from '../../core/dpki';
-import * as externalCryptoService from '../../utils/externalCryptoService';
+import * as externalCryptoService from '../../utils/external_crypto_service';
 
 const router = express.Router();
 

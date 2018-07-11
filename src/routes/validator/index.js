@@ -22,8 +22,8 @@
 
 import Ajv from 'ajv';
 
-import schemasV1 from './jsonSchema/v1';
-import schemasV2 from './jsonSchema/v2';
+import schemasV1 from './json_schema/v1';
+import schemasV2 from './json_schema/v2';
 
 const ajvOptions = {
   allErrors: true,

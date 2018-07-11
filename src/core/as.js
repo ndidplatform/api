@@ -24,7 +24,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { callbackToClient } from '../utils/callback';
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint';
@@ -89,16 +89,16 @@ export const getCallbackUrls = () => {
 async function sendDataToRP(rpId, data) {
   let receivers = [];
   let nodeId = rpId;
-  // TODO: try catch / error handling
-  let mqAddress = await tendermintNdid.getMsqAddress(nodeId);
-  if (!mqAddress) {
-    callbackToClient(callbackUrls.error_url, {
-      type: 'error',
-      action: 'sendDataToRP',
-      request_id: data.request_id,
-      error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+
+  const mqAddress = await tendermintNdid.getMsqAddress(nodeId);
+  if (mqAddress == null) {
+    throw new CustomError({
+      message: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.message,
+      code: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.code,
+      details: {
+        request_id: data.request_id,
+      },
     });
-    return;
   }
   let { ip, port } = mqAddress;
   receivers.push({
@@ -107,6 +107,7 @@ async function sendDataToRP(rpId, data) {
     ...(await tendermintNdid.getNodePubKey(nodeId)), // TODO: try catch / error handling
   });
   mq.send(receivers, {
+    type: 'as_data_response',
     request_id: data.request_id,
     as_id: data.as_id,
     service_id: data.service_id,
@@ -162,7 +163,7 @@ async function processDataForRPInternalAsync(
       rpId = await db.getRPIdFromRequestId(requestId);
     }
 
-    sendDataToRP(rpId, {
+    await sendDataToRP(rpId, {
       request_id: requestId,
       as_id,
       signature,
@@ -341,34 +342,52 @@ export async function handleMessageFromQueue(messageStr) {
     message: 'Message from MQ',
     messageStr,
   });
-  const message = JSON.parse(messageStr);
+  let requestId;
+  try {
+    const message = JSON.parse(messageStr);
+    requestId = message.request_id;
 
-  const latestBlockHeight = tendermint.latestBlockHeight;
-  if (latestBlockHeight <= message.height) {
-    logger.debug({
-      message: 'Saving message from MQ',
-      tendermintLatestBlockHeight: latestBlockHeight,
-      messageBlockHeight: message.height,
-    });
-    await db.setRequestReceivedFromMQ(message.request_id, message);
-    await db.addRequestIdExpectedInBlock(message.height, message.request_id);
-    return;
-  }
-
-  logger.debug({
-    message: 'Processing request',
-    requestId: message.request_id,
-  });
-  const valid = await common.checkRequestIntegrity(message.request_id, message);
-  if (valid) {
-    // TODO try catch / error handling
-    const responseDetails = await getResponseDetails(message.request_id);
-    //loop and check zk proof for all response
-    if (!(await verifyZKProof(message.request_id, message))) {
-      //TODO, do not answer? or send data to rp and tell them proof is invalid?
+    const latestBlockHeight = tendermint.latestBlockHeight;
+    if (latestBlockHeight <= message.height) {
+      logger.debug({
+        message: 'Saving message from MQ',
+        tendermintLatestBlockHeight: latestBlockHeight,
+        messageBlockHeight: message.height,
+      });
+      await db.setRequestReceivedFromMQ(message.request_id, message);
+      await db.addRequestIdExpectedInBlock(message.height, message.request_id);
       return;
     }
-    getDataAndSendBackToRP(message, responseDetails);
+
+    logger.debug({
+      message: 'Processing request',
+      requestId: message.request_id,
+    });
+    const valid = await common.checkRequestIntegrity(
+      message.request_id,
+      message
+    );
+    if (valid) {
+      const responseDetails = await getResponseDetails(message.request_id);
+      //loop and check zk proof for all response
+      if (!(await verifyZKProof(message.request_id, message))) {
+        //TODO, do not answer? or send data to rp and tell them proof is invalid?
+        return;
+      }
+      getDataAndSendBackToRP(message, responseDetails);
+    }
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error handling message from message queue',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    await common.notifyError({
+      callbackUrl: callbackUrls.error_url,
+      action: 'handleMessageFromQueue',
+      error: err,
+      requestId,
+    });
   }
 }
 
@@ -377,51 +396,64 @@ export async function handleTendermintNewBlockHeaderEvent(
   result,
   missingBlockCount
 ) {
-  const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
-  //console.log('received',height);
-  // messages that arrived before 'NewBlock' event
-  // including messages between the start of missing block's height
-  // and the block before latest block height
-  // (not only just (current height - 1) in case 'NewBlock' events are missing)
-  // NOTE: tendermint always create a pair of block. A block with transactions and
-  // a block that signs the previous block which indicates that the previous block is valid
-  const fromHeight =
-    missingBlockCount == null
-      ? 1
-      : missingBlockCount === 0
-        ? height - 1
-        : height - missingBlockCount;
-  const toHeight = height - 1;
+  try {
+    const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
+    //console.log('received',height);
+    // messages that arrived before 'NewBlock' event
+    // including messages between the start of missing block's height
+    // and the block before latest block height
+    // (not only just (current height - 1) in case 'NewBlock' events are missing)
+    // NOTE: tendermint always create a pair of block. A block with transactions and
+    // a block that signs the previous block which indicates that the previous block is valid
+    const fromHeight =
+      missingBlockCount == null
+        ? 1
+        : missingBlockCount === 0
+          ? height - 1
+          : height - missingBlockCount;
+    const toHeight = height - 1;
 
-  const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
-    fromHeight,
-    toHeight
-  );
+    const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
+      fromHeight,
+      toHeight
+    );
 
-  logger.debug({
-    message: 'Getting request IDs to process',
-    fromHeight,
-    toHeight,
-    requestIdsInTendermintBlock,
-  });
+    logger.debug({
+      message: 'Getting request IDs to process',
+      fromHeight,
+      toHeight,
+      requestIdsInTendermintBlock,
+    });
 
-  await Promise.all(
-    requestIdsInTendermintBlock.map(async (requestId) => {
-      logger.debug({
-        message: 'Processing request',
-        requestId,
-      });
-      const request = await db.getRequestReceivedFromMQ(requestId);
-      const valid = await common.checkRequestIntegrity(requestId, request);
-      if (valid && (await verifyZKProof(requestId))) {
-        const responseDetails = await getResponseDetails(requestId);
-        getDataAndSendBackToRP(request, responseDetails);
-      }
-      db.removeRequestReceivedFromMQ(requestId);
-    })
-  );
+    await Promise.all(
+      requestIdsInTendermintBlock.map(async (requestId) => {
+        logger.debug({
+          message: 'Processing request',
+          requestId,
+        });
+        const request = await db.getRequestReceivedFromMQ(requestId);
+        const valid = await common.checkRequestIntegrity(requestId, request);
+        if (valid && (await verifyZKProof(requestId))) {
+          const responseDetails = await getResponseDetails(requestId);
+          getDataAndSendBackToRP(request, responseDetails);
+        }
+        db.removeRequestReceivedFromMQ(requestId);
+      })
+    );
 
-  db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
+    db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error handling Tendermint NewBlock event',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    await common.notifyError({
+      callbackUrl: callbackUrls.error_url,
+      action: 'handleTendermintNewBlockHeaderEvent',
+      error: err,
+    });
+  }
 }
 
 export async function registerOrUpdateASService(

@@ -24,8 +24,9 @@ import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
+import { verifySignature } from '../utils';
 import { callbackToClient } from '../utils/callback';
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 import { getErrorObjectForClient } from '../error/helpers';
 import logger from '../logger';
@@ -38,6 +39,9 @@ import * as config from '../config';
 import * as db from '../db';
 import * as mq from '../mq';
 import * as identity from './identity';
+
+const successBase64 = Buffer.from('success').toString('base64');
+const trueBase64 = Buffer.from('true').toString('base64');
 
 const callbackUrls = {};
 
@@ -114,7 +118,13 @@ export function isAccessorSignUrlSet() {
   return callbackUrls.accessor_sign_url != null;
 }
 
-export async function accessorSign(sid, hash_id, accessor_id, reference_id) {
+export async function accessorSign({
+  sid,
+  hash_id,
+  accessor_id,
+  accessor_public_key,
+  reference_id,
+}) {
   const data = {
     sid_hash: hash_id,
     sid,
@@ -137,7 +147,9 @@ export async function accessorSign(sid, hash_id, accessor_id, reference_id) {
   logger.debug({
     message: 'Callback to accessor sign',
     url: callbackUrls.accessor_sign_url,
+    reference_id,
     accessor_id,
+    accessor_public_key,
     hash_id,
   });
 
@@ -160,7 +172,15 @@ export async function accessorSign(sid, hash_id, accessor_id, reference_id) {
       body: responseBody,
     });
     const signatureObj = JSON.parse(responseBody);
-    return signatureObj.signature;
+    const signature = signatureObj.signature;
+    if (!verifySignature(signature, accessor_public_key, sid)) {
+      throw new CustomError({
+        message: errorType.INVALID_ACCESSOR_SIGNATURE.message,
+        code: errorType.INVALID_ACCESSOR_SIGNATURE.code,
+        clientError: true,
+      });
+    }
+    return signature;
   } catch (error) {
     throw new CustomError({
       message: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED.message,
@@ -196,15 +216,16 @@ async function requestChallenge(request_id, accessor_id) {
     identity_proof: JSON.stringify([publicProof1, publicProof2]),
   });
   //send message queue with public proof
-  let mqAddress = await tendermintNdid.getMsqAddress(request.rp_id);
-  if (!mqAddress) {
-    callbackToClient(callbackUrls.error_url, {
-      type: 'error',
-      action: 'requestChallenge',
-      request_id,
-      error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+  const mqAddress = await tendermintNdid.getMsqAddress(request.rp_id);
+  if (mqAddress == null) {
+    throw new CustomError({
+      message: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.message,
+      code: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.code,
+      details: {
+        request_id,
+        accessor_id,
+      },
     });
-    return;
   }
   let { ip, port } = mqAddress;
   let receiver = [
@@ -218,7 +239,7 @@ async function requestChallenge(request_id, accessor_id) {
     public_proof: [publicProof1, publicProof2],
     request_id: request_id,
     idp_id: config.nodeId,
-    type: 'request_challenge',
+    type: 'challenge_request',
     height,
   });
 }
@@ -413,9 +434,9 @@ async function createIdpResponse(data) {
     ]);
 
     const { height } = await tendermintNdid.createIdpResponse(dataToBlockchain);
-    sendPrivateProofToRP(request_id, privateProofObject, height);
+    await sendPrivateProofToRP(request_id, privateProofObject, height);
 
-    callbackToClient(
+    await callbackToClient(
       callback_url,
       {
         type: 'response_result',
@@ -511,15 +532,17 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
     rp_id,
   });
 
-  let mqAddress = await tendermintNdid.getMsqAddress(rp_id);
-  if (!mqAddress) {
-    callbackToClient(callbackUrls.error_url, {
-      type: 'error',
-      action: 'sendPrivateProofToRP',
-      request_id,
-      error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+  const mqAddress = await tendermintNdid.getMsqAddress(rp_id);
+  if (mqAddress == null) {
+    throw new CustomError({
+      message: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.message,
+      code: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.code,
+      details: {
+        request_id,
+        privateProofObject,
+        height,
+      },
     });
-    return;
   }
   let { ip, port } = mqAddress;
   let rpMq = {
@@ -529,6 +552,7 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   };
 
   mq.send([rpMq], {
+    type: 'idp_response',
     request_id,
     ...privateProofObject,
     height,
@@ -538,116 +562,15 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   db.removeRPIdFromRequestId(request_id);
 }
 
-export async function handleMessageFromQueue(messageStr) {
-  logger.info({
-    message: 'Received message from MQ',
-  });
+async function processMessage(message) {
   logger.debug({
-    message: 'Message from MQ',
-    messageStr,
+    message: 'Processing message',
+    messagePayload: message,
   });
-  const message = JSON.parse(messageStr);
-  //if message is challenge for response, no need to wait for blockchain
-  if (message.challenge) {
-    //store challenge
-    const data = await db.getResponseFromRequestId(message.request_id);
-    try {
-      let request = await db.getRequestReceivedFromMQ(message.request_id);
-      request.challenge = message.challenge;
-      logger.debug({
-        message: 'Save challenge to request',
-        request,
-        challenge: message.challenge,
-      });
-      await db.setRequestReceivedFromMQ(message.request_id, request);
-      //query reponse data
-      logger.debug({
-        message: 'Data to response',
-        data,
-      });
-      await createIdpResponse(data);
-    } catch (error) {
-      callbackToClient(
-        data.callback_url,
-        {
-          type: 'response_result',
-          success: false,
-          reference_id: data.reference_id,
-          request_id: data.request_id,
-          error: getErrorObjectForClient(error),
-        },
-        true
-      );
-      db.removeResponseFromRequestId(data.request_id);
-    }
-    return;
-  }
-
-  //when idp add new accessor, they may request challenge from themself
-  //this is to prevent overwrite data (k, public)
-  if (message.type !== 'request_challenge') {
-    await db.setRequestReceivedFromMQ(message.request_id, message);
-    await db.setRPIdFromRequestId(message.request_id, message.rp_id);
-  }
-  await db.setRequestToProcessReceivedFromMQ(message.request_id, message);
-
-  const latestBlockHeight = tendermint.latestBlockHeight;
-  if (latestBlockHeight <= message.height) {
-    logger.debug({
-      message: 'Saving message from MQ',
-      tendermintLatestBlockHeight: latestBlockHeight,
-      messageBlockHeight: message.height,
-    });
-    await db.addRequestIdExpectedInBlock(message.height, message.request_id);
-
-    if (message.type === 'request_challenge') {
-      const responseId = message.request_id + ':' + message.idp_id;
-      await db.setPublicProofReceivedFromMQ(responseId, message.public_proof);
-    }
-
-    if (message.accessor_id) {
-      //====================== COPY-PASTE from RP, need refactoring =====================
-      //store private parameter from EACH idp to request, to pass along to as
-      let request = await db.getRequestData(message.request_id);
-      //AS involve
-      if (request) {
-        if (request.privateProofObjectList) {
-          request.privateProofObjectList.push({
-            idp_id: message.idp_id,
-            privateProofObject: {
-              privateProofValue: message.privateProofValue,
-              accessor_id: message.accessor_id,
-              padding: message.padding,
-            },
-          });
-        } else {
-          request.privateProofObjectList = [
-            {
-              idp_id: message.idp_id,
-              privateProofObject: {
-                privateProofValue: message.privateProofValue,
-                accessor_id: message.accessor_id,
-                padding: message.padding,
-              },
-            },
-          ];
-        }
-        await db.setRequestData(message.request_id, request);
-      }
-      //====================================================================================
-    }
-    return;
-  }
-  await db.removeRequestToProcessReceivedFromMQ(message.request_id, message);
-
-  logger.debug({
-    message: 'Processing request',
-    requestId: message.request_id,
-  });
-  //onboard response
-  if (message.accessor_id) {
+  if (message.type === 'idp_response') {
+    //reponse for onboard
     if (await checkCreateIdentityResponse(message)) {
-      let { secret, associated } = await identity.addAccessorAfterConsent(
+      const { secret, associated } = await identity.addAccessorAfterConsent(
         message.request_id,
         message.accessor_id
       );
@@ -700,12 +623,10 @@ export async function handleMessageFromQueue(messageStr) {
         { synchronous: true }
       );
     }
-  } else if (message.type === 'request_challenge') {
+  } else if (message.type === 'challenge_request') {
     const responseId = message.request_id + ':' + message.idp_id;
-    common.handleChallengeRequest(responseId);
-  }
-  //consent request
-  else {
+    await common.handleChallengeRequest(responseId);
+  } else if (message.type === 'consent_request') {
     const valid = await common.checkRequestIntegrity(
       message.request_id,
       message
@@ -727,130 +648,269 @@ export async function handleMessageFromQueue(messageStr) {
   }
 }
 
+export async function handleMessageFromQueue(messageStr) {
+  logger.info({
+    message: 'Received message from MQ',
+  });
+  logger.debug({
+    message: 'Message from MQ',
+    messageStr,
+  });
+  let requestId;
+  try {
+    const message = JSON.parse(messageStr);
+    requestId = message.request_id;
+
+    const latestBlockHeight = tendermint.latestBlockHeight;
+
+    //if message is challenge for response, no need to wait for blockchain
+    if (message.type === 'challenge_response') {
+      //store challenge
+      const data = await db.getResponseFromRequestId(message.request_id);
+      try {
+        let request = await db.getRequestReceivedFromMQ(message.request_id);
+        request.challenge = message.challenge;
+        logger.debug({
+          message: 'Save challenge to request',
+          request,
+          challenge: message.challenge,
+        });
+        await db.setRequestReceivedFromMQ(message.request_id, request);
+        //query reponse data
+        logger.debug({
+          message: 'Data to response',
+          data,
+        });
+        await createIdpResponse(data);
+      } catch (error) {
+        callbackToClient(
+          data.callback_url,
+          {
+            type: 'response_result',
+            success: false,
+            reference_id: data.reference_id,
+            request_id: data.request_id,
+            error: getErrorObjectForClient(error),
+          },
+          true
+        );
+        db.removeResponseFromRequestId(data.request_id);
+      }
+      return;
+    } else {
+      if (message.type === 'challenge_request') {
+        if (latestBlockHeight <= message.height) {
+          logger.debug({
+            message: 'Saving challege request message from MQ',
+            tendermintLatestBlockHeight: latestBlockHeight,
+            messageBlockHeight: message.height,
+          });
+          await db.setRequestToProcessReceivedFromMQ(
+            message.request_id,
+            message
+          );
+          await db.addRequestIdExpectedInBlock(
+            message.height,
+            message.request_id
+          );
+
+          const responseId = message.request_id + ':' + message.idp_id;
+          await db.setPublicProofReceivedFromMQ(
+            responseId,
+            message.public_proof
+          );
+          return;
+        }
+      } else if (message.type === 'consent_request') {
+        await db.setRequestReceivedFromMQ(message.request_id, message);
+        await db.setRPIdFromRequestId(message.request_id, message.rp_id);
+
+        if (latestBlockHeight <= message.height) {
+          logger.debug({
+            message: 'Saving consent request message from MQ',
+            tendermintLatestBlockHeight: latestBlockHeight,
+            messageBlockHeight: message.height,
+          });
+          await db.setRequestToProcessReceivedFromMQ(
+            message.request_id,
+            message
+          );
+          await db.addRequestIdExpectedInBlock(
+            message.height,
+            message.request_id
+          );
+          return;
+        }
+      } else if (message.type === 'idp_response') {
+        if (latestBlockHeight <= message.height) {
+          logger.debug({
+            message: 'Saving IdP response message from MQ',
+            tendermintLatestBlockHeight: latestBlockHeight,
+            messageBlockHeight: message.height,
+          });
+          await db.setRequestToProcessReceivedFromMQ(
+            message.request_id,
+            message
+          );
+          await db.addRequestIdExpectedInBlock(
+            message.height,
+            message.request_id
+          );
+
+          //====================== COPY-PASTE from RP, need refactoring =====================
+          //store private parameter from EACH idp to request, to pass along to as
+          let request = await db.getRequestData(message.request_id);
+          //AS involve
+          if (request) {
+            if (request.privateProofObjectList) {
+              request.privateProofObjectList.push({
+                idp_id: message.idp_id,
+                privateProofObject: {
+                  privateProofValue: message.privateProofValue,
+                  accessor_id: message.accessor_id,
+                  padding: message.padding,
+                },
+              });
+            } else {
+              request.privateProofObjectList = [
+                {
+                  idp_id: message.idp_id,
+                  privateProofObject: {
+                    privateProofValue: message.privateProofValue,
+                    accessor_id: message.accessor_id,
+                    padding: message.padding,
+                  },
+                },
+              ];
+            }
+            await db.setRequestData(message.request_id, request);
+          }
+          //====================================================================================
+          return;
+        }
+      }
+    }
+
+    await processMessage(message);
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error handling message from message queue',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    await common.notifyError({
+      callbackUrl: callbackUrls.error_url,
+      action: 'handleMessageFromQueue',
+      error: err,
+      requestId,
+    });
+  }
+}
+
 export async function handleTendermintNewBlockHeaderEvent(
   error,
   result,
   missingBlockCount
 ) {
-  const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
+  try {
+    const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
 
-  // messages that arrived before 'NewBlock' event
-  // including messages between the start of missing block's height
-  // and the block before latest block height
-  // (not only just (current height - 1) in case 'NewBlock' events are missing)
-  // NOTE: tendermint always create a pair of block. A block with transactions and
-  // a block that signs the previous block which indicates that the previous block is valid
-  const fromHeight =
-    missingBlockCount == null
-      ? 1
-      : missingBlockCount === 0
-        ? height - 1
-        : height - missingBlockCount;
-  const toHeight = height - 1;
+    // messages that arrived before 'NewBlock' event
+    // including messages between the start of missing block's height
+    // and the block before latest block height
+    // (not only just (current height - 1) in case 'NewBlock' events are missing)
+    // NOTE: tendermint always create a pair of block. A block with transactions and
+    // a block that signs the previous block which indicates that the previous block is valid
+    const fromHeight =
+      missingBlockCount == null
+        ? 1
+        : missingBlockCount === 0
+          ? height - 1
+          : height - missingBlockCount;
+    const toHeight = height - 1;
 
-  logger.debug({
-    message: 'Getting request IDs to process',
-    fromHeight,
-    toHeight,
-  });
+    logger.debug({
+      message: 'Getting request IDs to process',
+      fromHeight,
+      toHeight,
+    });
 
-  const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
-    fromHeight,
-    toHeight
-  );
-  await Promise.all(
-    requestIdsInTendermintBlock.map(async (requestId) => {
-      logger.debug({
-        message: 'Processing request',
-        requestId,
-      });
-      const message = await db.getRequestToProcessReceivedFromMQ(requestId);
-      await db.removeRequestToProcessReceivedFromMQ(requestId);
-      //reponse for onboard
-      if (message.accessor_id) {
-        if (await checkCreateIdentityResponse(message)) {
-          let { secret, associated } = await identity.addAccessorAfterConsent(
-            message.request_id,
-            message.accessor_id
+    const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
+      fromHeight,
+      toHeight
+    );
+    await Promise.all(
+      requestIdsInTendermintBlock.map(async (requestId) => {
+        const message = await db.getRequestToProcessReceivedFromMQ(requestId);
+        await processMessage(message);
+        await db.removeRequestToProcessReceivedFromMQ(requestId);
+      })
+    );
+
+    db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
+
+    // Clean up closed or timed out create identity requests
+    const [blocks, blockResults] = await Promise.all([
+      tendermint.getBlocks(fromHeight, toHeight),
+      tendermint.getBlockResults(fromHeight, toHeight),
+    ]);
+
+    await Promise.all(
+      blocks.map(async (block, blockIndex) => {
+        let transactions = tendermint.getTransactionListFromBlockQuery(block);
+        transactions = transactions.filter((transaction, index) => {
+          const deliverTxResult =
+            blockResults[blockIndex].results.DeliverTx[index];
+          const successTag = deliverTxResult.tags.find(
+            (tag) => tag.key === successBase64
           );
-          const reference_id = await db.getReferenceIdByRequestId(
-            message.request_id
-          );
-          const callbackUrl = await db.getCallbackUrlByReferenceId(
-            reference_id
-          );
-          const notifyData = {
-            success: true,
-            reference_id,
-            request_id: message.request_id,
-            secret,
-          };
-          if (associated) {
-            if (callbackUrl == null) {
-              // Implies API v1
-              notifyAddAccessorResultByCallback(notifyData);
-            } else {
-              await callbackToClient(
-                callbackUrl,
-                {
-                  type: 'add_accessor_result',
-                  ...notifyData,
-                },
-                true
-              );
-              db.removeCallbackUrlByReferenceId(reference_id);
-            }
-          } else {
-            if (callbackUrl == null) {
-              // Implies API v1
-              notifyCreateIdentityResultByCallback(notifyData);
-            } else {
-              await callbackToClient(
-                callbackUrl,
-                {
-                  type: 'create_identity_result',
-                  ...notifyData,
-                },
-                true
-              );
-              db.removeCallbackUrlByReferenceId(reference_id);
-            }
+          if (successTag) {
+            return successTag.value === trueBase64;
           }
-          db.removeReferenceIdByRequestId(message.request_id);
-          await common.closeRequest(
-            {
-              request_id: message.request_id,
-            },
-            { synchronous: true }
-          );
-        }
-      } else if (message.type === 'request_challenge') {
-        const responseId = message.request_id + ':' + message.idp_id;
-        common.handleChallengeRequest(responseId);
-      } else {
-        const valid = await common.checkRequestIntegrity(
-          message.request_id,
-          message
-        );
-        if (valid) {
-          notifyIncomingRequestByCallback({
-            mode: message.mode,
-            request_id: message.request_id,
-            namespace: message.namespace,
-            identifier: message.identifier,
-            request_message: message.request_message,
-            request_message_hash: utils.hash(message.request_message),
-            requester_node_id: message.rp_id,
-            min_ial: message.min_ial,
-            min_aal: message.min_aal,
-            data_request_list: message.data_request_list,
-          });
-        }
-      }
-    })
-  );
+          return false;
+        });
+        // const height = parseInt(block.block.header.height);
+        let requestIdsToCleanUp = [];
 
-  db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
+        transactions.forEach((transaction) => {
+          // TODO: clear key with smart-contract, eg. request_id or requestId
+          const requestId =
+            transaction.args.request_id || transaction.args.requestId;
+          if (requestId == null) return;
+          if (
+            transaction.fnName === 'CloseRequest' ||
+            transaction.fnName === 'TimeOutRequest'
+          ) {
+            requestIdsToCleanUp.push(requestId);
+          }
+        });
+        requestIdsToCleanUp = [...new Set(requestIdsToCleanUp)];
+
+        await Promise.all(
+          requestIdsToCleanUp.map(async (requestId) => {
+            const callbackUrl = await db.getRequestCallbackUrl(requestId);
+            if (!callbackUrl) return;
+            db.removeRequestCallbackUrl(requestId);
+            db.removeRequestIdReferenceIdMappingByRequestId(requestId);
+            db.removeRequestData(requestId);
+            db.removeIdpResponseValidList(requestId);
+            db.removeTimeoutScheduler(requestId);
+          })
+        );
+      })
+    );
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error handling Tendermint NewBlock event',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    await common.notifyError({
+      callbackUrl: callbackUrls.error_url,
+      action: 'handleTendermintNewBlockHeaderEvent',
+      error: err,
+    });
+  }
 }
 
 async function checkCreateIdentityResponse(message) {

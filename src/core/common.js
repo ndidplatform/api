@@ -20,7 +20,7 @@
  *
  */
 
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 import logger from '../logger';
 
 import * as tendermint from '../tendermint';
@@ -36,7 +36,7 @@ import errorType from '../error/type';
 import { getErrorObjectForClient } from '../error/helpers';
 import * as mq from '../mq';
 import * as db from '../db';
-import * as externalCryptoService from '../utils/externalCryptoService';
+import * as externalCryptoService from '../utils/external_crypto_service';
 
 const role = config.role;
 
@@ -527,6 +527,7 @@ async function createRequestInternalAsync(
     // send request data to IDPs via message queue
     if (min_idp > 0) {
       mq.send(receivers, {
+        type: 'consent_request',
         ...requestData,
         height,
       });
@@ -654,7 +655,16 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
         accessor_group_id,
         accessorId: privateProofObject.accessor_id,
       });
-      throw 'Conflicted response';
+
+      throw new CustomError({
+        message: errorType.DIFFERENT_ACCESSOR_GROUP_ID.message,
+        code: errorType.DIFFERENT_ACCESSOR_GROUP_ID.code,
+        details: {
+          accessorId: privateProofObject.accessor_id,
+          accessor_group_id,
+          otherGroupId,
+        },
+      });
     }
   }
 
@@ -759,19 +769,15 @@ export async function handleChallengeRequest(responseId) {
   //challenge deleted, request is done
   if (challenge == null) return false;
 
-  let mqAddress = await tendermintNdid.getMsqAddress(idp_id);
-  if (!mqAddress) {
-    let error_url =
-      config.role === 'rp'
-        ? rp.getCallbackUrls.error_url
-        : idp.getCallbackUrls.error_url;
-    callbackToClient(error_url, {
-      type: 'error',
-      action: 'handleChallengeRequest',
-      request_id,
-      error: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+  const mqAddress = await tendermintNdid.getMsqAddress(idp_id);
+  if (mqAddress == null) {
+    throw new CustomError({
+      message: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.message,
+      code: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.code,
+      details: {
+        request_id,
+      },
     });
-    return;
   }
   let { ip, port } = mqAddress;
   let receiver = [
@@ -782,6 +788,7 @@ export async function handleChallengeRequest(responseId) {
     },
   ];
   mq.send(receiver, {
+    type: 'challenge_response',
     challenge,
     request_id,
     ...nodeId,
@@ -945,4 +952,26 @@ async function closeRequestInternalAsync(
 
     throw error;
   }
+}
+
+export async function notifyError({ callbackUrl, action, error, requestId }) {
+  logger.debug({
+    message: 'Notifying error through callback',
+  });
+  if (callbackUrl == null) {
+    logger.warn({
+      message: 'Error callback URL has not been set',
+    });
+    return;
+  }
+  await callbackToClient(
+    callbackUrl,
+    {
+      type: 'error',
+      action,
+      request_id: requestId,
+      error: getErrorObjectForClient(error),
+    },
+    false
+  );
 }

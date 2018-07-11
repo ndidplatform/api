@@ -102,12 +102,10 @@ export function createSignature(message, privateKey) {
 }
 
 export function verifySignature(signatureInBase64, publicKey, plainText) {
-  let verifyInstance = crypto.createVerify('RSA-SHA256');
-  verifyInstance.update(plainText);
-  return verifyInstance.verify(
-    publicKey,
-    Buffer.from(signatureInBase64, 'base64')
-  );
+  return crypto
+    .createVerify('SHA256')
+    .update(plainText)
+    .verify(publicKey, Buffer.from(signatureInBase64, 'base64'));
 }
 /**
  *

@@ -20,11 +20,11 @@
  *
  */
 
-import * as tendermint from './index';
+import * as tendermint from '.';
 import * as utils from '../utils';
 import * as config from '../config';
 
-import CustomError from '../error/customError';
+import CustomError from '../error/custom_error';
 
 const nodeId = config.nodeId;
 
