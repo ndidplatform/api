@@ -25,11 +25,31 @@ import errorType from '../../error/type';
 
 import CustomError from '../../error/custom_error';
 
+function getBaseUrlAndApiVersion(req) {
+  let baseUrl = req.baseUrl;
+  const matchedPath = baseUrl.match(/^\/v([0-9]+)/);
+  let apiVersion;
+  if (matchedPath != null) {
+    const splittedBaseUrl = baseUrl.split('/');
+    splittedBaseUrl.splice(1, 1);
+    baseUrl = splittedBaseUrl.join('/');
+    apiVersion = parseInt(matchedPath[1]);
+  } else {
+    apiVersion = 2;
+  }
+  return {
+    baseUrl,
+    apiVersion,
+  };
+}
+
 // Path params validation (no rules = not needed according to specs)
 // export function validatePath(req, res, next) {
+//   const { baseUrl, apiVersion } = getBaseUrlAndApiVersion(req);
 //   const paramsValidationResult = validate({
+//     apiVersion,
 //     method: req.method,
-//     path: `${req.baseUrl}${req.route.path}`,
+//     path: `${baseUrl}${req.route.path}`,
 //     params: req.params,
 //   });
 //   if (!paramsValidationResult.valid) {
@@ -45,9 +65,11 @@ import CustomError from '../../error/custom_error';
 // }
 
 export function validateQuery(req, res, next) {
+  const { baseUrl, apiVersion } = getBaseUrlAndApiVersion(req);
   const queryValidationResult = validate({
+    apiVersion,
     method: req.method,
-    path: `${req.baseUrl}${req.route.path}`,
+    path: `${baseUrl}${req.route.path}`,
     query: req.query,
   });
   if (!queryValidationResult.valid) {
@@ -65,17 +87,7 @@ export function validateQuery(req, res, next) {
 }
 
 export function validateBody(req, res, next) {
-  let baseUrl = req.baseUrl;
-  const matchedPath = baseUrl.match(/^\/v([0-9]+)/);
-  let apiVersion;
-  if (matchedPath != null) {
-    const splittedBaseUrl = baseUrl.split('/');
-    splittedBaseUrl.splice(1, 1);
-    baseUrl = splittedBaseUrl.join('/');
-    apiVersion = parseInt(matchedPath[1]);
-  } else {
-    apiVersion = 2;
-  }
+  const { baseUrl, apiVersion } = getBaseUrlAndApiVersion(req);
   const bodyValidationResult = validate({
     apiVersion,
     method: req.method,
