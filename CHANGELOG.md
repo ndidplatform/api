@@ -5,7 +5,7 @@
 BUG FIXES:
 
 - Fix error when calling some APIs with version path prefix.
-- Add missing callback data property (`accessor_id`) when reporting create identity request result and add accessor requests result.
+- Add missing callback data property (`accessor_id`) when reporting create identity request result and add accessor request result.
 
 ## 0.3.1 (July 11, 2018)
 
