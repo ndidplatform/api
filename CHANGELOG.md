@@ -7,14 +7,16 @@ IMPROVEMENTS:
 - Verify signature from signing with accessor key before making any transaction to the blockchain.
 - Update `bignum` dependency to support Node.js 10.
 - Send `block_height` along with request status when calling a callback to RP to let the client app knows which event comes first.
+- Throw a more meaningful error when there is an error processing received message from message queue.
 
 BUG FIXES:
 
-- Fix accessor sign check to expect signature according to RFC standard (Encrypt signature in ASN1).
+- Fix accessor sign check to expect signature according to the standard ([RFC 3447 section 9.2](https://tools.ietf.org/html/rfc3447#section-9.2)).
+- Change message format sending over message queue to fix error when there is `|` character in a message payload.
 - Fix requests in mode 1 imply `valid_proof` and `valid_ial` as true.
 - Fix create identity request related cached data do not get cleaned up after closed.
 - Fix unnecessary cache data.
-- Change some error throwing to throw CustomError instead of string.
+- Change some error throwing to throw CustomError instead of a string.
 
 ## 0.3.0 (July 7, 2018)
 
