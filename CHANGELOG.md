@@ -5,6 +5,7 @@
 BUG FIXES:
 
 - Fix check `secret` format even in mode 1 when creating IdP response.
+- Fix a request in mode 1 does not automatically close when completed.
 
 ## 0.3.2 (July 11, 2018)
 
