@@ -259,6 +259,11 @@ export default {
     message: 'Invalid accessor signature',
     clientError: true,
   },
+  MALFORMED_SECRET_FORMAT: {
+    code: 20029,
+    message: 'Malformed secret format',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

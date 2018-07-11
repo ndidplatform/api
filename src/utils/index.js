@@ -33,8 +33,12 @@ import * as externalCryptoService from './external_crypto_service';
 import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 
-const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
-const masterPrivateKey = fs.readFileSync(config.masterPrivateKeyPath, 'utf8');
+let privateKey;
+let masterPrivateKey;
+if (!config.useExternalCryptoService) {
+  privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
+  masterPrivateKey = fs.readFileSync(config.masterPrivateKeyPath, 'utf8');
+}
 
 //let nonce = Date.now() % 10000;
 const saltByteLength = 8;
@@ -169,6 +173,13 @@ export function generateIdentityProof(data) {
   });
 
   let [padding, signedHash] = data.secret.split('|');
+  if (padding == null || signedHash == null) {
+    throw new CustomError({
+      message: errorType.MALFORMED_SECRET_FORMAT.message,
+      code: errorType.MALFORMED_SECRET_FORMAT.code,
+      clientError: true,
+    });
+  }
   let { n, e } = extractParameterFromPublicKey(data.publicKey);
   // -1 to garantee k < n
   let k = data.k; //randomBase64Bytes(n.toBuffer().length - 1);

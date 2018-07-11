@@ -251,6 +251,16 @@ async function requestChallenge(request_id, accessor_id) {
 export async function requestChallengeAndCreateResponse(data) {
   //store response data
   try {
+    // Check secret format
+    const [padding, signedHash] = data.secret.split('|');
+    if (padding == null || signedHash == null) {
+      throw new CustomError({
+        message: errorType.MALFORMED_SECRET_FORMAT.message,
+        code: errorType.MALFORMED_SECRET_FORMAT.code,
+        clientError: true,
+      });
+    }
+
     const request = await tendermintNdid.getRequest({
       requestId: data.request_id,
     });
