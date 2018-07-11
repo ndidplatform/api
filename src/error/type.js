@@ -113,6 +113,14 @@ export default {
     code: 10021,
     message: 'Invalid message signature',
   },
+  DECRYPT_MESSAGE_ERROR: {
+    code: 10022,
+    message: 'Error decrypting message received from message queue',
+  },
+  MALFORMED_MESSAGE_FORMAT: {
+    code: 10023,
+    message: 'Malformed message format from message queue',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {

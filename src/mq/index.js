@@ -40,7 +40,16 @@ async function onMessage(jsonMessageStr) {
   try {
     const jsonMessage = JSON.parse(jsonMessageStr);
 
-    const decrypted = await utils.decryptAsymetricKey(jsonMessage);
+    let decrypted;
+    try {
+      decrypted = await utils.decryptAsymetricKey(jsonMessage);
+    } catch (error) {
+      throw new CustomError({
+        message: errorType.DECRYPT_MESSAGE_ERROR.message,
+        code: errorType.DECRYPT_MESSAGE_ERROR.code,
+        cause: error,
+      });
+    }
 
     logger.debug({
       message: 'Raw decrypted message from message queue',
@@ -48,18 +57,26 @@ async function onMessage(jsonMessageStr) {
     });
 
     //verify digital signature
-    const [raw_message, msqSignature] = decrypted.split('|');
+    const [messageBase64, msqSignature] = decrypted.split('|');
+    if (messageBase64 == null || msqSignature == null) {
+      throw new CustomError({
+        message: errorType.MALFORMED_MESSAGE_FORMAT.message,
+        code: errorType.MALFORMED_MESSAGE_FORMAT.code,
+      });
+    }
+
+    const rawMessage = Buffer.from(messageBase64, 'base64').toString();
 
     logger.debug({
       message: 'Split msqSignature',
-      raw_message,
+      rawMessage,
       msqSignature,
     });
 
-    const { idp_id, rp_id, as_id } = JSON.parse(raw_message);
+    const { idp_id, rp_id, as_id } = JSON.parse(rawMessage);
     const nodeId = idp_id || rp_id || as_id;
     const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
-    if (!nodeId) {
+    if (nodeId == null) {
       throw new CustomError({
         message: errorType.MESSAGE_FROM_UNKNOWN_NODE.message,
         code: errorType.MESSAGE_FROM_UNKNOWN_NODE.code,
@@ -69,20 +86,19 @@ async function onMessage(jsonMessageStr) {
     const signatureValid = utils.verifySignature(
       msqSignature,
       public_key,
-      raw_message
+      rawMessage
     );
 
     logger.debug({
       message: 'Verifying signature',
       msqSignature,
       public_key,
-      raw_message,
-      raw_message_object: JSON.parse(raw_message),
+      rawMessage,
       signatureValid,
     });
 
     if (signatureValid) {
-      eventEmitter.emit('message', raw_message);
+      eventEmitter.emit('message', rawMessage);
     } else {
       throw new CustomError({
         message: errorType.INVALID_MESSAGE_SIGNATURE.message,
@@ -97,8 +113,11 @@ async function onMessage(jsonMessageStr) {
 receivingSocket.on('message', onMessage);
 
 export async function send(receivers, message) {
-  let msqSignature = await utils.createSignature(message);
-  let realPayload = JSON.stringify(message) + '|' + msqSignature;
+  const msqSignature = await utils.createSignature(message);
+  const realPayload =
+    Buffer.from(JSON.stringify(message)).toString('base64') +
+    '|' +
+    msqSignature;
 
   logger.debug({
     message: 'Digital signature created',
@@ -113,7 +132,7 @@ export async function send(receivers, message) {
 
     //cannot add signature in object because JSON.stringify may produce different string
     //for two object that is deep equal, hence, verify signature return false
-    let encryptedMessage = utils.encryptAsymetricKey(
+    const encryptedMessage = utils.encryptAsymetricKey(
       receiver.public_key,
       realPayload
     );

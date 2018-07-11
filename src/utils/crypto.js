@@ -125,50 +125,46 @@ export function randomBase64Bytes(length) {
  * @param {(Buffer|string)} masterkey
  * @param {string} plaintext
  * @param {boolean} deriveKey derive masterkey using pbkdf2
- * @returns {(string|null)} encrypted text, base64 encoded or null if error
+ * @returns {string} encrypted text, base64 encoded
  */
 export function encryptAES256GCM(masterkey, plaintext, deriveKey) {
-  try {
-    // random initialization vector
-    const iv = crypto.randomBytes(16);
+  // random initialization vector
+  const iv = crypto.randomBytes(16);
 
-    let salt;
+  let salt;
 
-    // derive key: 32 byte key length - in assumption the masterkey is a cryptographic and NOT a password there is no need for
-    // a large number of iterations. It may can replaced by HKDF
-    let key;
-    if (deriveKey) {
-      // random salt
-      salt = crypto.randomBytes(64);
-      key = crypto.pbkdf2Sync(
-        masterkey,
-        salt,
-        PBKDF2_ITERATIONS,
-        AES_KEY_LENGTH_IN_BYTES,
-        'sha512'
-      );
-    } else {
-      salt = Buffer.alloc(64);
-      key = masterkey;
-    }
-
-    // AES 256 GCM Mode
-    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-
-    // encrypt the given plaintext
-    const encrypted = Buffer.concat([
-      cipher.update(plaintext, 'utf8'),
-      cipher.final(),
-    ]);
-
-    // extract the auth tag
-    const tag = cipher.getAuthTag();
-
-    // generate output
-    return Buffer.concat([salt, iv, tag, encrypted]).toString('base64');
-  } catch (error) {
-    return null;
+  // derive key: 32 byte key length - in assumption the masterkey is a cryptographic and NOT a password there is no need for
+  // a large number of iterations. It may can replaced by HKDF
+  let key;
+  if (deriveKey) {
+    // random salt
+    salt = crypto.randomBytes(64);
+    key = crypto.pbkdf2Sync(
+      masterkey,
+      salt,
+      PBKDF2_ITERATIONS,
+      AES_KEY_LENGTH_IN_BYTES,
+      'sha512'
+    );
+  } else {
+    salt = Buffer.alloc(64);
+    key = masterkey;
   }
+
+  // AES 256 GCM Mode
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+
+  // encrypt the given plaintext
+  const encrypted = Buffer.concat([
+    cipher.update(plaintext, 'utf8'),
+    cipher.final(),
+  ]);
+
+  // extract the auth tag
+  const tag = cipher.getAuthTag();
+
+  // generate output
+  return Buffer.concat([salt, iv, tag, encrypted]).toString('base64');
 }
 
 /**
@@ -176,43 +172,39 @@ export function encryptAES256GCM(masterkey, plaintext, deriveKey) {
  * @param {(Buffer|string)} masterkey
  * @param {string} base64 encoded input data
  * @param {boolean} deriveKey derive masterkey using pbkdf2
- * @returns {(string|null)} decrypted (original) text or null if error
+ * @returns {string} decrypted (original) text
  */
 export function decryptAES256GCM(masterkey, ciphertext, deriveKey) {
-  try {
-    // base64 decoding
-    const bData = Buffer.from(ciphertext, 'base64');
+  // base64 decoding
+  const bData = Buffer.from(ciphertext, 'base64');
 
-    // convert data to buffers
-    const salt = bData.slice(0, 64);
-    const iv = bData.slice(64, 80);
-    const tag = bData.slice(80, 96);
-    const text = bData.slice(96);
+  // convert data to buffers
+  const salt = bData.slice(0, 64);
+  const iv = bData.slice(64, 80);
+  const tag = bData.slice(80, 96);
+  const text = bData.slice(96);
 
-    // derive key: 32 byte key length
-    let key;
-    if (deriveKey) {
-      key = crypto.pbkdf2Sync(
-        masterkey,
-        salt,
-        PBKDF2_ITERATIONS,
-        AES_KEY_LENGTH_IN_BYTES,
-        'sha512'
-      );
-    } else {
-      key = masterkey;
-    }
-
-    // AES 256 GCM Mode
-    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-    decipher.setAuthTag(tag);
-
-    // decrypt the ciphertext
-    const decrypted =
-      decipher.update(text, 'binary', 'utf8') + decipher.final('utf8');
-
-    return decrypted;
-  } catch (error) {
-    return null;
+  // derive key: 32 byte key length
+  let key;
+  if (deriveKey) {
+    key = crypto.pbkdf2Sync(
+      masterkey,
+      salt,
+      PBKDF2_ITERATIONS,
+      AES_KEY_LENGTH_IN_BYTES,
+      'sha512'
+    );
+  } else {
+    key = masterkey;
   }
+
+  // AES 256 GCM Mode
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(tag);
+
+  // decrypt the ciphertext
+  const decrypted =
+    decipher.update(text, 'binary', 'utf8') + decipher.final('utf8');
+
+  return decrypted;
 }
