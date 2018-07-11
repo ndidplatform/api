@@ -57,15 +57,16 @@ describe('Functional Test for MQ receiver with real socket', function () {
         this.timeout(10000);
         let mqRecvSmallSize = new MQRecv({port: ports[0], maxMsgSize:10});
         mqRecvSmallSize.on('message', function(jsonMessageStr) {
-            assert.fail('there should not be message coming through')
+          assert.fail('there should not be message coming through')
          });
         mqRecvSmallSize.on('error', function(jsonMessageStr) {
-            assert.fail('there should be no error at receiving part');
+          assert.fail('there should be no error at receiving part');
         });
 
        let mqNode = new MQSend({timeout:500, totalTimeout:1500});
        mqNode.on('error', function(err) {
-           done();
+          mqRecvSmallSize.close();
+          done();
        });
 
        mqNode.send({ip:"127.0.0.1", port:ports[0]}, "testbigbig12345678901234567890" );

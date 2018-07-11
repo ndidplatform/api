@@ -63,7 +63,10 @@ describe('Functional Test for MQ Sender with real sockets', function () {
       expect(message).to.be.a('String')
       expect(parseInt(message)).to.be.oneOf([111111,222222,333333]).and.to.not.be.oneOf(alreadyRecv);
       alreadyRecv.push(parseInt(message));
-      if (alreadyRecv.length == 3) done();
+      if (alreadyRecv.length == 3) {
+        recvNode.close();
+        done();
+      }
     });
 
     let sendNode = new MQSend({});
@@ -141,6 +144,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
         mqNode2.on("message", function({message}){
         expect(message).to.be.a('String').and.equal('test');
         if (notDone == true) {
+          mqNode2.close();
           done();
           notDone=false;
         }
@@ -180,6 +184,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
       let mqNode2 = new MQRecv({port:ports[0]});
         mqNode2.on("message", function({message}){
         expect(message).to.be.a('String').and.equal('test');
+        mqNode2.close();
         done();
       });
       mqNode2.on("error", function({message}){
@@ -224,6 +229,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
      let mqNode = new MQSend({timeout:500, totalTimeout:1500});
      mqNode.on('error', function(err) {
          expect(err.code).to.equal('MQERR_TIMEOUT');
+         mqRecvSmallSize.close();
          done();
      });
 
@@ -232,8 +238,9 @@ describe('Functional Test for MQ Sender with real sockets', function () {
 
 
   it('should fire timeout event downstream and stop sending if destination dies but come up after time limit and should no longer retry',  function(done)  {
-    this.timeout(10000);
+    this.timeout(20000);
     let ports = getPort(1);
+    let alreadyTimeout = false;
 
     let MQRecvDieFirst = function(config) {
       let receivingSocket = zmq.socket('rep');
@@ -254,9 +261,8 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     let nodetoDie = new MQRecvDieFirst({port:ports[0]});
     let mqNode = new MQSend({id:'test3', timeout:1000, totalTimeout:3000});
     mqNode.on("error", function(err){
-
       expect(err.code).to.equal('MQERR_TIMEOUT');
-      done();
+      alreadyTimeout = true;
     });
 
     mqNode.send({ip:"127.0.0.1", port:ports[0]}, "test" );
@@ -270,8 +276,12 @@ describe('Functional Test for MQ Sender with real sockets', function () {
       mqNode2.on("error", function({message}){
         assert.fail('this one should not fire error');
       });
-    }
-    , 10000);
+      setTimeout(() => { 
+        mqNode2.close(); 
+        expect(alreadyTimeout).to.be.true;
+        done();
+      },2000);
+    }, 10000);
 
   });
 });
