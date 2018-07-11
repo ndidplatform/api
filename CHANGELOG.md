@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.3 (July 12, 2018)
+
+BUG FIXES:
+
+- Fix check `secret` format even in mode 1 when creating IdP response.
+
 ## 0.3.2 (July 11, 2018)
 
 BUG FIXES:
