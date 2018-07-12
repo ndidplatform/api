@@ -536,7 +536,6 @@ async function createNewIdentityInternalAsync(
             ? 'add_accessor_request_result'
             : 'create_identity_request_result',
           success: false,
-          exist,
           reference_id,
           request_id,
           accessor_id:
