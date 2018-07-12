@@ -293,6 +293,18 @@ export async function createNewIdentity(
       });
     }
 
+    let checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(accessor_id);
+    if (checkDuplicateAccessorId != null) {
+      throw new CustomError({
+        message: errorType.DUPLICATE_ACCESSOR_ID.message,
+        code: errorType.DUPLICATE_ACCESSOR_ID.code,
+        clientError: true,
+        details: {
+          accessor_id,
+        }
+      });
+    }
+
     const request_id = utils.createRequestId();
 
     if (synchronous) {

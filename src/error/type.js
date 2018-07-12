@@ -272,6 +272,11 @@ export default {
     message: 'Malformed secret format',
     clientError: true,
   },
+  DUPLICATE_ACCESSOR_ID: {
+    code: 20030,
+    message: 'Duplicate accessor ID',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
