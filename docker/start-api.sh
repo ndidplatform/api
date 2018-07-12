@@ -286,6 +286,9 @@ case ${ROLE} in
       if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]); then
         generate_key
       fi
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${MASTER_KEY_PATH} ] || [ ! -f ${MASTER_PUBLIC_KEY_PATH} ]); then
+        generate_master_key
+      fi
       wait_for_ndid_node_to_be_ready && \
       until init_ndid; do sleep 1; done && \
       until 
