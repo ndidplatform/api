@@ -1,6 +1,20 @@
 # Changelog
 
-## TBD
+## 0.3.3 (July 12, 2018)
+
+BUG FIXES:
+
+- Fix check `secret` format even in mode 1 when creating IdP response.
+- Fix a request in mode 1 does not automatically close when completed.
+
+## 0.3.2 (July 11, 2018)
+
+BUG FIXES:
+
+- Fix error when calling some APIs with version path prefix.
+- Add missing callback data property (`accessor_id`) when reporting create identity request result and add accessor request result.
+
+## 0.3.1 (July 11, 2018)
 
 IMPROVEMENTS:
 

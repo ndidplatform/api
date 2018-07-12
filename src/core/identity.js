@@ -202,7 +202,7 @@ async function createSecret({
     hash_id,
     accessor_id,
     accessor_public_key,
-    reference_id
+    reference_id,
   });
   const padding = utils.extractPaddingFromPrivateEncrypt(
     signature,
@@ -419,12 +419,14 @@ async function createNewIdentityInternalAsync(
                 type: 'add_accessor_request_result',
                 reference_id,
                 request_id,
+                accessor_id,
                 success: true,
               }
             : {
                 type: 'create_identity_request_result',
                 reference_id,
                 request_id,
+                accessor_id,
                 success: true,
                 exist: true,
               },
@@ -452,12 +454,14 @@ async function createNewIdentityInternalAsync(
                 type: 'add_accessor_request_result',
                 reference_id,
                 request_id,
+                accessor_id,
                 success: true,
               }
             : {
                 type: 'create_identity_request_result',
                 reference_id,
                 request_id,
+                accessor_id,
                 success: true,
                 exist: false,
               },
@@ -522,6 +526,8 @@ async function createNewIdentityInternalAsync(
           success: false,
           reference_id,
           request_id,
+          accessor_id:
+            accessor_id != null ? accessor_id : generated_accessor_id,
           error: getErrorObjectForClient(error),
         },
         true

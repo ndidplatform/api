@@ -193,7 +193,8 @@ async function processRequestUpdate(requestId, height) {
     requestStatus.status === 'completed' &&
     !requestStatus.closed &&
     !requestStatus.timed_out &&
-    isAllIdpResponsesValid(responseValidList)
+    (requestStatus.mode === 1 ||
+      (requestStatus.mode === 3 && isAllIdpResponsesValid(responseValidList)))
   ) {
     await common.closeRequest({ request_id: requestId }, { synchronous: true });
   }
