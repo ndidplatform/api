@@ -23,29 +23,37 @@
 import EventEmitter from 'events';
 import zmq from 'zeromq';
 
-class MQRecvSocket extends EventEmitter {
-  
+export default class MQRecvSocket extends EventEmitter {
   constructor(config) {
     super();
     this.receivingSocket = zmq.socket('rep');
     // maximum receiver size ( -1 receive all )
-    this.receivingSocket.setsockopt(zmq.ZMQ_MAXMSGSIZE, config.maxMsgSize || -1);
+    this.receivingSocket.setsockopt(
+      zmq.ZMQ_MAXMSGSIZE,
+      config.maxMsgSize || -1
+    );
     //no lingering time after socket close. we want to control send by business logic
     this.receivingSocket.setsockopt(zmq.ZMQ_LINGER, 0);
     // no socket identity ( every time the app restart, we don't resume)
     //this.receivingSocket.setsockopt(zmq.ZMQ_IDENTITY,{}) ;
     this.receivingSocket.bindSync('tcp://*:' + config.port);
 
-    this.receivingSocket.on('message', function(jsonMessageStr) {
-      this.emit('message', jsonMessageStr);
-    }.bind(this));
+    this.receivingSocket.on(
+      'message',
+      function(jsonMessageStr) {
+        this.emit('message', jsonMessageStr);
+      }.bind(this)
+    );
 
-    this.receivingSocket.on('error', function(error) {
-      this.emit('error', error);
-    }.bind(this));
+    this.receivingSocket.on(
+      'error',
+      function(error) {
+        this.emit('error', error);
+      }.bind(this)
+    );
   }
 
-  send(payload){
+  send(payload) {
     this.receivingSocket.send(payload);
   }
 
@@ -53,5 +61,3 @@ class MQRecvSocket extends EventEmitter {
     this.receivingSocket.close();
   }
 }
-
-export default MQRecvSocket;

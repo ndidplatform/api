@@ -22,14 +22,13 @@
 
 import EventEmitter from 'events';
 import MQProtocol from './mqprotocol.js';
-import MQLogic    from './mqlogic.js';
+import MQLogic from './mqlogic.js';
 import MQSendSocket from './mqsendsocket.js';
 import CustomError from '../error/custom_error';
 
-let protocol = new MQProtocol();
+const protocol = new MQProtocol();
 
-class MQSend extends EventEmitter {
-
+export default class MQSend extends EventEmitter {
   constructor(config) {
     super();
     this.totalTimeout = config.totalTimeout || 120000;
@@ -37,52 +36,76 @@ class MQSend extends EventEmitter {
     this.id = config.id || '';
 
     this.logic = new MQLogic({
-      totalTimeout: this.totalTimeout, 
-      timeout:this.timeout
+      totalTimeout: this.totalTimeout,
+      timeout: this.timeout,
     });
 
-    this.logic.on('PerformSend', function (params) {
-      let message = protocol.GenerateSendMsg(params.payload, {
-        msgId:params.msgId, 
-        seqId:params.seqId
-      });
+    this.logic.on(
+      'PerformSend',
+      function(params) {
+        const message = protocol.GenerateSendMsg(params.payload, {
+          msgId: params.msgId,
+          seqId: params.seqId,
+        });
 
-      this.emit('debug', this.id + ': sending msg' + params.msgId);
-      this.socket.send(params.dest, message, params.seqId);
-    }.bind(this));
+        this.emit('debug', this.id + ': sending msg' + params.msgId);
+        this.socket.send(params.dest, message, params.seqId);
+      }.bind(this)
+    );
 
-    this.logic.on('PerformCleanUp',function (seqId) {
-      this._cleanUp(seqId);
-    }.bind(this));
+    this.logic.on(
+      'PerformCleanUp',
+      function(seqId) {
+        this._cleanUp(seqId);
+      }.bind(this)
+    );
 
-    this.logic.on('PerformTotalTimeout', function (msgId) {
-      this.emit('error', new CustomError({
-        code:'MQERR_TIMEOUT', 
-        message: this.id + ': Too many retries. Giving up.'
-      }));
-    }.bind(this));
+    this.logic.on(
+      'PerformTotalTimeout',
+      function(msgId) {
+        this.emit(
+          'error',
+          new CustomError({
+            code: 'MQERR_TIMEOUT',
+            message: this.id + ': Too many retries. Giving up.',
+          })
+        );
+      }.bind(this)
+    );
 
     this.socket = new MQSendSocket();
 
-    this.socket.on('error', function(err) {
-      this.emit('error', err);
-    }.bind(this));
+    this.socket.on(
+      'error',
+      function(err) {
+        this.emit('error', err);
+      }.bind(this)
+    );
 
-    this.socket.on('message', function(jsonMessageStr) {
-      const msg = protocol.ExtractMsg(jsonMessageStr);
-      this.emit('debug', 'Received ACK for ' + msg.retryspec.msgId + '/' + msg.retryspec.seqId );
-      this.logic.AckReceived(msg.retryspec.msgId);
-    }.bind(this));
+    this.socket.on(
+      'message',
+      function(jsonMessageStr) {
+        const msg = protocol.ExtractMsg(jsonMessageStr);
+        this.emit(
+          'debug',
+          'Received ACK for ' + msg.retryspec.msgId + '/' + msg.retryspec.seqId
+        );
+        this.logic.AckReceived(msg.retryspec.msgId);
+      }.bind(this)
+    );
   }
 
-  _cleanUp(seqId){
+  _cleanUp(seqId) {
     try {
       this.socket.cleanUp(seqId);
     } catch (error) {
-      this.emit('error', new CustomError({
-        code:'MQERR_CLEANUPERR', 
-        message: error
-      }));
+      this.emit(
+        'error',
+        new CustomError({
+          code: 'MQERR_CLEANUPERR',
+          message: error,
+        })
+      );
     }
   }
 
@@ -91,5 +114,3 @@ class MQSend extends EventEmitter {
     this.logic.Send(dest, payload);
   }
 }
-
-export default MQSend;

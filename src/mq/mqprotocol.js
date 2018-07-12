@@ -22,29 +22,28 @@
 
 import { nodeId } from '../config';
 
-class MQProtocol {
-
+export default class MQProtocol {
   constructor() {
     this.id = nodeId;
   }
 
   _applyRetrySpec(message, retryspec) {
-    let ret = JSON.stringify ({
-      msgId:retryspec.msgId, 
-      seqId:retryspec.seqId, 
-      message:message, 
-      senderId: this.id
+    const ret = JSON.stringify({
+      msgId: retryspec.msgId,
+      seqId: retryspec.seqId,
+      message: message,
+      senderId: this.id,
     });
     return ret;
   }
 
   _extractRetrySpec(message) {
     const jsonMsg = JSON.parse(message);
-    return { 
+    return {
       retryspec: {
-        msgId: jsonMsg.msgId, 
-        seqId: jsonMsg.seqId
-      }, 
+        msgId: jsonMsg.msgId,
+        seqId: jsonMsg.seqId,
+      },
       message: jsonMsg.message,
       senderId: jsonMsg.senderId,
     };
@@ -67,5 +66,3 @@ class MQProtocol {
     return ack;
   }
 }
-
-export default MQProtocol;

@@ -38,17 +38,15 @@ let mqRecv;
 const timer = {};
 
 export const eventEmitter = new EventEmitter();
-init();
 
-async function init() {
-  let timeoutList = await db.getAllDuplicateMessageTimeout();
-  let promiseArray = [];
-  for(let id in timeoutList) {
+(async function init() {
+  const timeoutList = await db.getAllDuplicateMessageTimeout();
+  const promiseArray = [];
+  for (let id in timeoutList) {
     let unixTimeout = timeoutList[id];
-    if(unixTimeout >= Date.now()) {
+    if (unixTimeout >= Date.now()) {
       promiseArray.push(db.removeDuplicateMessageTimeout(id));
-    }
-    else {
+    } else {
       timer[id] = setTimeout(() => {
         db.removeDuplicateMessageTimeout(id);
         delete timer[id];
@@ -56,23 +54,23 @@ async function init() {
     }
   }
   await Promise.all(promiseArray);
-  mqSend = new MQSend({timeout:60000, totalTimeout:500000});
-  mqRecv = new MQRecv({port: config.mqRegister.port, maxMsgSize:2000000});
+  mqSend = new MQSend({ timeout: 60000, totalTimeout: 500000 });
+  mqRecv = new MQRecv({ port: config.mqRegister.port, maxMsgSize: 2000000 });
 
   mqRecv.on('message', async ({ message, msgId, senderId }) => {
-    let id = senderId + ':' + msgId;
+    const id = senderId + ':' + msgId;
     let unixTimeout = await db.getDuplicateMessageTimeout(id);
-    if(unixTimeout != null) return;
-    
+    if (unixTimeout != null) return;
+
     unixTimeout = Date.now() + 120000;
     db.addDuplicateMessageTimeout(id, unixTimeout);
     timer[id] = setTimeout(() => {
       db.removeDuplicateMessageTimeout(id);
       delete timer[id];
-    },120000);
+    }, 120000);
     onMessage(message);
   });
-}
+})();
 
 async function onMessage(jsonMessageStr) {
   try {
@@ -163,7 +161,6 @@ export async function send(receivers, message) {
   });
 
   receivers.forEach(async (receiver) => {
-
     //cannot add signature in object because JSON.stringify may produce different string
     //for two object that is deep equal, hence, verify signature return false
     const encryptedMessage = utils.encryptAsymetricKey(
@@ -177,7 +174,7 @@ export async function send(receivers, message) {
 
 export function close() {
   mqRecv.close();
-  for(let id in timer) {
+  for (let id in timer) {
     clearTimeout(timer[id]);
   }
   logger.info({

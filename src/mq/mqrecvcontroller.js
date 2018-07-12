@@ -24,40 +24,43 @@ import EventEmitter from 'events';
 import MQProtocol from './mqprotocol.js';
 import MQRecvSocket from './mqrecvsocket.js';
 
-let protocol = new MQProtocol();
+const protocol = new MQProtocol();
 
-class MQRecv extends EventEmitter { 
-
+export default class MQRecv extends EventEmitter {
   constructor(config) {
     super();
-    this.recvSocket  = new MQRecvSocket({
-      maxMsgSize:config.maxMsgSize, 
-      port:config.port
+    this.recvSocket = new MQRecvSocket({
+      maxMsgSize: config.maxMsgSize,
+      port: config.port,
     });
 
-    this.recvSocket.on('message',  function(jsonMessageStr) {
-      const jsonMessage = protocol.ExtractMsg(jsonMessageStr);
-      const ackMSG = protocol.GenerateAckMsg({
-        msgId:jsonMessage.retryspec.msgId, 
-        seqId:jsonMessage.retryspec.seqId
-      });
+    this.recvSocket.on(
+      'message',
+      function(jsonMessageStr) {
+        const jsonMessage = protocol.ExtractMsg(jsonMessageStr);
+        const ackMSG = protocol.GenerateAckMsg({
+          msgId: jsonMessage.retryspec.msgId,
+          seqId: jsonMessage.retryspec.seqId,
+        });
 
-      this.recvSocket.send(ackMSG);
-      this.emit('message', {
-        message: jsonMessage.message,
-        msgId: jsonMessage.retryspec.msgId,
-        senderId: jsonMessage.senderId,
-      });
-    }.bind(this));
+        this.recvSocket.send(ackMSG);
+        this.emit('message', {
+          message: jsonMessage.message,
+          msgId: jsonMessage.retryspec.msgId,
+          senderId: jsonMessage.senderId,
+        });
+      }.bind(this)
+    );
 
-    this.recvSocket.on('error',  function(error) {
-      this.emit('error', error);
-    }.bind(this));
+    this.recvSocket.on(
+      'error',
+      function(error) {
+        this.emit('error', error);
+      }.bind(this)
+    );
   }
 
   close() {
     this.recvSocket.close();
   }
 }
-
-export default MQRecv;

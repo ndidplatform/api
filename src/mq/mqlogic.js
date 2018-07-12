@@ -22,8 +22,7 @@
 
 import EventEmitter from 'events';
 
-class MQLogic extends EventEmitter {
-
+export default class MQLogic extends EventEmitter {
   constructor(config) {
     super();
     const totalTimeout = config.totalTimeout || 120000;
@@ -36,9 +35,9 @@ class MQLogic extends EventEmitter {
   }
 
   _cleanUp(msgId) {
-    let itemToDelete = [];
-    for(let [key, value] of this.seqMap) {
-      if(value.msgId == msgId) {
+    const itemToDelete = [];
+    for (let [key, value] of this.seqMap) {
+      if (value.msgId == msgId) {
         clearTimeout(value.timerId);
         this.emit('PerformCleanUp', value.seqId);
         itemToDelete.push(key);
@@ -52,40 +51,43 @@ class MQLogic extends EventEmitter {
   _performSend(dest, payload, msgId, retryCount = 0) {
     this.maxSeqId++;
     const seqId = this.maxSeqId;
-    let timerId = setTimeout(
+    const timerId = setTimeout(
       this._retry.bind(this),
       this.timeout,
-      dest, payload, msgId, seqId, ++retryCount
+      dest,
+      payload,
+      msgId,
+      seqId,
+      ++retryCount
     );
-    this.seqMap.set(seqId, { 
-      seqId: seqId, 
-      msgId: msgId, 
-      timerId: timerId 
+    this.seqMap.set(seqId, {
+      seqId: seqId,
+      msgId: msgId,
+      timerId: timerId,
     });
     this.emit('PerformSend', {
-      id: this.id, 
-      dest: dest, 
-      payload: payload, 
-      msgId: msgId, 
-      seqId: seqId
+      id: this.id,
+      dest: dest,
+      payload: payload,
+      msgId: msgId,
+      seqId: seqId,
     });
   }
 
-  AckReceived(msgId){
+  AckReceived(msgId) {
     this._cleanUp(msgId);
   }
 
-  _retry( dest, payload, msgId, seqId, retryCount ) {
+  _retry(dest, payload, msgId, seqId, retryCount) {
     if (this.seqMap.has(seqId)) {
       if (retryCount >= this.maxRetries) {
         this._cleanUp(msgId);
         this.emit('PerformTotalTimeout', {
-          id: this.id, 
-          msgId:msgId
+          id: this.id,
+          msgId: msgId,
         });
-      }
-      else {
-        this._performSend( dest, payload, msgId, retryCount );
+      } else {
+        this._performSend(dest, payload, msgId, retryCount);
       }
     }
   }
@@ -95,5 +97,3 @@ class MQLogic extends EventEmitter {
     this._performSend(dest, payload, this.maxMsgId);
   }
 }
-
-export default MQLogic;
