@@ -154,10 +154,11 @@ export async function send(receivers, message) {
     msqSignature;
 
   logger.debug({
-    message: 'Digital signature created',
+    message: 'Sending message over message queue',
     raw_message_object: message,
     msqSignature,
     realPayload,
+    receivers,
   });
 
   receivers.forEach(async (receiver) => {
