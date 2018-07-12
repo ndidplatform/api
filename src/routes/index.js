@@ -32,6 +32,7 @@ import ndidRouter from './ndid';
 import apiV1Router from './v1';
 import apiV2Router from './v2';
 import getInfo from './info';
+import debugRouter from './debug';
 
 import * as config from '../config';
 
@@ -87,6 +88,7 @@ router.use('/v1', apiV1Router);
 router.use('/v2', apiV2Router);
 
 router.get('/info', getInfo);
+if(config.allowDebugAPI) router.use('/debug', debugRouter);
 
 router.use(errorHandler);
 

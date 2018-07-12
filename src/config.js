@@ -155,3 +155,6 @@ export const callbackRetryTimeout =
   process.env.CALLBACK_RETRY_TIMEOUT == null
     ? 600
     : parseInt(process.env.CALLBACK_RETRY_TIMEOUT);
+
+export const allowDebugAPI = 
+  process.env.ALLOW_DEBUG_API === 'true';
