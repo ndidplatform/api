@@ -21,8 +21,6 @@
  */
 
 import EventEmitter from 'events';
-import zmq from 'zeromq';
-
 import logger from '../logger';
 
 import * as config from '../config';
@@ -30,11 +28,51 @@ import * as utils from '../utils';
 import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 import * as tendermintNdid from '../tendermint/ndid';
+import * as db from '../db';
 
-const receivingSocket = zmq.socket('pull');
-receivingSocket.bindSync('tcp://*:' + config.mqRegister.port);
+import MQSend from './mqsendcontroller.js';
+import MQRecv from './mqrecvcontroller.js';
+
+let mqSend;
+let mqRecv;
+const timer = {};
 
 export const eventEmitter = new EventEmitter();
+init();
+
+async function init() {
+  let timeoutList = await db.getAllDuplicateMessageTimeout();
+  let promiseArray = [];
+  for(let id in timeoutList) {
+    let unixTimeout = timeoutList[id];
+    if(unixTimeout >= Date.now()) {
+      promiseArray.push(db.removeDuplicateMessageTimeout(id));
+    }
+    else {
+      timer[id] = setTimeout(() => {
+        db.removeDuplicateMessageTimeout(id);
+        delete timer[id];
+      }, Date.now() - unixTimeout);
+    }
+  }
+  await Promise.all(promiseArray);
+  mqSend = new MQSend({timeout:60000, totalTimeout:500000});
+  mqRecv = new MQRecv({port: config.mqRegister.port, maxMsgSize:2000000});
+
+  mqRecv.on('message', async ({ message, msgId, senderId }) => {
+    let id = senderId + ':' + msgId;
+    let unixTimeout = await db.getDuplicateMessageTimeout(id);
+    if(unixTimeout != null) return;
+    
+    unixTimeout = Date.now() + 120000;
+    db.addDuplicateMessageTimeout(id, unixTimeout);
+    timer[id] = setTimeout(() => {
+      db.removeDuplicateMessageTimeout(id);
+      delete timer[id];
+    },120000);
+    onMessage(message);
+  });
+}
 
 async function onMessage(jsonMessageStr) {
   try {
@@ -110,8 +148,6 @@ async function onMessage(jsonMessageStr) {
   }
 }
 
-receivingSocket.on('message', onMessage);
-
 export async function send(receivers, message) {
   const msqSignature = await utils.createSignature(message);
   const realPayload =
@@ -127,8 +163,6 @@ export async function send(receivers, message) {
   });
 
   receivers.forEach(async (receiver) => {
-    const sendingSocket = zmq.socket('push');
-    sendingSocket.connect(`tcp://${receiver.ip}:${receiver.port}`);
 
     //cannot add signature in object because JSON.stringify may produce different string
     //for two object that is deep equal, hence, verify signature return false
@@ -136,18 +170,16 @@ export async function send(receivers, message) {
       receiver.public_key,
       realPayload
     );
-    sendingSocket.send(JSON.stringify(encryptedMessage));
 
-    // TO BE REVISED
-    // When should we disconnect the socket?
-    // If the socket is disconnected, all the messages in queue will be lost.
-    // Hence, the receiver may not get the messages.
-    sendingSocket.disconnect(`tcp://${receiver.ip}:${receiver.port}`);
+    mqSend.send(receiver, JSON.stringify(encryptedMessage));
   });
 }
 
 export function close() {
-  receivingSocket.close();
+  mqRecv.close();
+  for(let id in timer) {
+    clearTimeout(timer[id]);
+  }
   logger.info({
     message: 'Message queue socket closed',
   });

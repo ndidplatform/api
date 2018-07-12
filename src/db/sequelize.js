@@ -129,6 +129,10 @@ const Entities = {
     expectedBlockHeight: Sequelize.INTEGER,
     metadata: Sequelize.JSON,
   }),
+  duplicateMessageTimeout: sequelize.define('duplicateMessageTimeout', {
+    id: { type: Sequelize.STRING, primaryKey: true },
+    unixTimeout: Sequelize.INTEGER,
+  }),
 };
 
 const initDb = sequelize.sync();
