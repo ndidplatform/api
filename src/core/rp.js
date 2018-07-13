@@ -97,11 +97,6 @@ export function getErrorCallbackUrl() {
  * @param {integer} height
  */
 async function processRequestUpdate(requestId, height) {
-  // logger.debug({
-  //   message: 'RP check zk proof and notify',
-  //   requestId,
-  // });
-
   const callbackUrl = await db.getRequestCallbackUrl(requestId);
   if (!callbackUrl) return; // This RP does not concern this request
 

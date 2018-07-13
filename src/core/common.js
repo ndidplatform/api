@@ -746,6 +746,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
 export async function handleChallengeRequest(responseId) {
   logger.debug({
     message: 'Handle challenge request',
+    responseId,
   });
 
   let [request_id, idp_id] = responseId.split(':');
