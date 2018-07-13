@@ -9,6 +9,7 @@ BREAKING CHANGES:
 BUG FIXES:
 
 - Fix `accessor_id` is missing from accessor sign callback body when using API v2.
+- Fix saving data to cache DB flow in handleMessageFromQueue() to prevent event racing condition.
 
 ## 0.3.3 (July 12, 2018)
 
