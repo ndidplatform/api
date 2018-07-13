@@ -293,7 +293,9 @@ export async function createNewIdentity(
       });
     }
 
-    let checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(accessor_id);
+    let checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(
+      accessor_id
+    );
     if (checkDuplicateAccessorId != null) {
       throw new CustomError({
         message: errorType.DUPLICATE_ACCESSOR_ID.message,
@@ -301,7 +303,7 @@ export async function createNewIdentity(
         clientError: true,
         details: {
           accessor_id,
-        }
+        },
       });
     }
 
@@ -362,6 +364,10 @@ async function createNewIdentityInternalAsync(
   { request_id, associated, generated_accessor_id, exist, secret }
 ) {
   try {
+    if (accessor_id == null) {
+      accessor_id = generated_accessor_id;
+    }
+
     const sid = namespace + ':' + identifier;
     const hash_id = utils.hash(sid);
 
@@ -377,10 +383,6 @@ async function createNewIdentityInternalAsync(
 
     if (exist == null) {
       exist = await isIdentityExist({ namespace, identifier, ial });
-    }
-
-    if (accessor_id == null) {
-      accessor_id = generated_accessor_id;
     }
 
     // TODO: Check for duplicate accessor
