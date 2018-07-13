@@ -115,15 +115,15 @@ export default class TendermintWsClient extends EventEmitter {
       const rpcId = parseInt(message.id);
       if (this.queue[rpcId]) {
         if (message.error) {
-          this.queue[rpcId].promise[1](
-            new CustomError({
-              message: 'JSON-RPC ERROR',
-              details: {
-                error: message.error,
-                rpcId,
-              },
-            })
-          );
+          const error = new CustomError({
+            message: 'JSON-RPC ERROR',
+            details: {
+              error: message.error,
+              rpcId,
+            },
+          });
+          logger.error(error.getInfoForLog());
+          this.queue[rpcId].promise[1](error);
         } else {
           this.queue[rpcId].promise[0](message.result);
         }
@@ -154,11 +154,11 @@ export default class TendermintWsClient extends EventEmitter {
    * @returns {Promise<Object>}
    */
   getBlock(height) {
-    return this._call('block', [`${height}`]);
+    return this._call('block', [height]);
   }
 
   getBlockResults(height) {
-    return this._call('block_results', [`${height}`]);
+    return this._call('block_results', [height]);
   }
 
   // NOT WORKING - Can't figure out params format. No docs on tendermint.
