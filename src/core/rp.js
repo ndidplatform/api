@@ -105,6 +105,12 @@ async function processRequestUpdate(requestId, height) {
   const callbackUrl = await db.getRequestCallbackUrl(requestId);
   if (!callbackUrl) return; // This RP does not concern this request
 
+  logger.debug({
+    message: 'Processing request update',
+    requestId,
+    height,
+  });
+
   const requestDetail = await tendermintNdid.getRequestDetail({
     requestId: requestId,
     height,

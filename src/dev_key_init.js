@@ -38,7 +38,13 @@ mkdirp.sync(config.logDirectoryPath);
 async function addKeyAndSetToken(role, index) {
   const node_id = role + index.toString();
   const node_name = ''; //all anonymous
-  const filePath = path.join(__dirname, '..', 'dev_key', role, node_id + '.pub');
+  const filePath = path.join(
+    __dirname,
+    '..',
+    'dev_key',
+    role,
+    node_id + '.pub'
+  );
   const public_key = fs.readFileSync(filePath, 'utf8').toString();
   const masterFilePath = path.join(
     __dirname,
@@ -71,14 +77,33 @@ async function addKeyAndSetToken(role, index) {
 export async function init() {
   console.log('========= Initializing keys for development =========');
 
-  const filePath = path.join(__dirname, '..', 'dev_key', 'ndid', 'ndid1.pub');
-  const public_key = fs.readFileSync(filePath, 'utf8').toString();
+  const publicKeyFilePath = path.join(
+    __dirname,
+    '..',
+    'dev_key',
+    'ndid',
+    'ndid1.pub'
+  );
+  const masterPublicKeyFilePath = path.join(
+    __dirname,
+    '..',
+    'dev_key',
+    'ndid',
+    'ndid1_master.pub'
+  );
+  const public_key = fs.readFileSync(publicKeyFilePath, 'utf8').toString();
+  const master_public_key = fs
+    .readFileSync(masterPublicKeyFilePath, 'utf8')
+    .toString();
 
   // Wait for blockchain ready
   await tendermint.ready;
 
   try {
-    await ndid.initNDID(public_key);
+    await ndid.initNDID({
+      public_key,
+      master_public_key,
+    });
     let promiseArr = [];
     ['rp', 'idp', 'as'].forEach(async (role) => {
       promiseArr.push(addKeyAndSetToken(role, 1));

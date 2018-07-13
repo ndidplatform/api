@@ -2,6 +2,10 @@
 
 ## TBD
 
+BREAKING CHANGES:
+
+- POST `/ndid/initNDID` requires both `public_key` and `master_public_key` as arguments.
+
 BUG FIXES:
 
 - Fix `accessor_id` is missing from accessor sign callback body when using API v2.

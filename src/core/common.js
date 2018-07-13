@@ -222,11 +222,7 @@ export function clearAllScheduler() {
 
 export async function timeoutRequest(requestId) {
   try {
-    const request = await tendermintNdid.getRequest({ requestId });
-    let responseValidList;
-    if (request.mode === 3) {
-      responseValidList = await db.getIdpResponseValidList(requestId);
-    }
+    const responseValidList = await db.getIdpResponseValidList(requestId);
 
     await tendermintNdid.timeoutRequest({ requestId, responseValidList });
   } catch (error) {
@@ -923,11 +919,7 @@ async function closeRequestInternalAsync(
   { synchronous = false } = {}
 ) {
   try {
-    const request = await tendermintNdid.getRequest({ requestId: request_id });
-    let responseValidList;
-    if (request.mode === 3) {
-      responseValidList = await db.getIdpResponseValidList(request_id);
-    }
+    const responseValidList = await db.getIdpResponseValidList(request_id);
 
     await tendermintNdid.closeRequest({
       requestId: request_id,

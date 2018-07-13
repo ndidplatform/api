@@ -29,7 +29,12 @@ const router = express.Router();
 
 router.post('/initNDID', async (req, res, next) => {
   try {
-    await ndid.initNDID(req.body.public_key);
+    const { public_key, master_public_key } = req.body;
+
+    await ndid.initNDID({
+      public_key,
+      master_public_key,
+    });
     res.status(204).end();
   } catch (error) {
     next(error);
@@ -125,7 +130,8 @@ router.post('/namespaces', async (req, res, next) => {
 
     if (namespace === 'requests' || namespace === 'housekeeping') {
       res.status(400).json({
-        message: 'Input namespace cannot be reserved words ("requests" and "housekeeping")'
+        message:
+          'Input namespace cannot be reserved words ("requests" and "housekeeping")',
       });
       return;
     }

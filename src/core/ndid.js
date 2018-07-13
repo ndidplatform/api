@@ -30,7 +30,7 @@ import { getErrorObjectForClient } from '../error/helpers';
 
 let init = false;
 
-export async function initNDID(public_key) {
+export async function initNDID({ public_key, master_public_key }) {
   if (init) {
     logger.error({
       message: 'NDID is already exist',
@@ -40,7 +40,7 @@ export async function initNDID(public_key) {
   try {
     await tendermint.transact(
       'InitNDID',
-      { public_key, node_id: 'ndid1' },
+      { node_id: 'ndid1', public_key, master_public_key },
       utils.getNonce()
     );
   } catch (error) {
@@ -52,10 +52,7 @@ export async function initNDID(public_key) {
   }
 }
 
-export async function approveService({
-  node_id,
-  service_id,
-}) {
+export async function approveService({ node_id, service_id }) {
   try {
     await tendermint.transact(
       'RegisterServiceDestinationByNDID',
