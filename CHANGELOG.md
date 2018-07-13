@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix `accessor_id` is missing from accessor sign callback body when using API v2.
+
 ## 0.3.3 (July 12, 2018)
 
 BUG FIXES:
