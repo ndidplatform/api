@@ -718,25 +718,19 @@ export async function handleMessageFromQueue(messageStr) {
             tendermintLatestBlockHeight: latestBlockHeight,
             messageBlockHeight: message.height,
           });
-          await db.setRequestToProcessReceivedFromMQ(
-            message.request_id,
-            message
-          );
-          await db.addRequestIdExpectedInBlock(
-            message.height,
-            message.request_id
-          );
-
           const responseId = message.request_id + ':' + message.idp_id;
-          await db.setPublicProofReceivedFromMQ(
-            responseId,
-            message.public_proof
-          );
+          await Promise.all([
+            db.setRequestToProcessReceivedFromMQ(message.request_id, message),
+            db.addRequestIdExpectedInBlock(message.height, message.request_id),
+            db.setPublicProofReceivedFromMQ(responseId, message.public_proof),
+          ]);
           return;
         }
       } else if (message.type === 'consent_request') {
-        await db.setRequestReceivedFromMQ(message.request_id, message);
-        await db.setRPIdFromRequestId(message.request_id, message.rp_id);
+        await Promise.all([
+          db.setRequestReceivedFromMQ(message.request_id, message),
+          db.setRPIdFromRequestId(message.request_id, message.rp_id),
+        ]);
 
         if (latestBlockHeight <= message.height) {
           logger.debug({
@@ -744,14 +738,10 @@ export async function handleMessageFromQueue(messageStr) {
             tendermintLatestBlockHeight: latestBlockHeight,
             messageBlockHeight: message.height,
           });
-          await db.setRequestToProcessReceivedFromMQ(
-            message.request_id,
-            message
-          );
-          await db.addRequestIdExpectedInBlock(
-            message.height,
-            message.request_id
-          );
+          await Promise.all([
+            db.setRequestToProcessReceivedFromMQ(message.request_id, message),
+            db.addRequestIdExpectedInBlock(message.height, message.request_id),
+          ]);
           return;
         }
       } else if (message.type === 'idp_response') {
@@ -761,18 +751,14 @@ export async function handleMessageFromQueue(messageStr) {
             tendermintLatestBlockHeight: latestBlockHeight,
             messageBlockHeight: message.height,
           });
-          await db.setRequestToProcessReceivedFromMQ(
-            message.request_id,
-            message
-          );
-          await db.addRequestIdExpectedInBlock(
-            message.height,
-            message.request_id
-          );
+          await Promise.all([
+            db.setRequestToProcessReceivedFromMQ(message.request_id, message),
+            db.addRequestIdExpectedInBlock(message.height, message.request_id),
+          ]);
 
           //====================== COPY-PASTE from RP, need refactoring =====================
           //store private parameter from EACH idp to request, to pass along to as
-          let request = await db.getRequestData(message.request_id);
+          const request = await db.getRequestData(message.request_id);
           //AS involve
           if (request) {
             if (request.privateProofObjectList) {

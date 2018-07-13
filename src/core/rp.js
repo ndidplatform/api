@@ -477,7 +477,7 @@ export async function handleMessageFromQueue(messageStr) {
       //check accessor_id, undefined means mode 1
       if (message.accessor_id) {
         //store private parameter from EACH idp to request, to pass along to as
-        let request = await db.getRequestData(message.request_id);
+        const request = await db.getRequestData(message.request_id);
         //AS involve
         if (request) {
           if (request.privateProofObjectList) {
@@ -514,11 +514,13 @@ export async function handleMessageFromQueue(messageStr) {
           tendermintLatestBlockHeight: latestBlockHeight,
           messageBlockHeight: message.height,
         });
-        db.setPrivateProofReceivedFromMQ(responseId, message);
-        db.addExpectedIdpResponseNodeIdInBlock(message.height, {
-          requestId: message.request_id,
-          idpId: message.idp_id,
-        });
+        await Promise.all([
+          db.setPrivateProofReceivedFromMQ(responseId, message),
+          db.addExpectedIdpResponseNodeIdInBlock(message.height, {
+            requestId: message.request_id,
+            idpId: message.idp_id,
+          }),
+        ]);
         return;
       }
 
@@ -570,7 +572,7 @@ export async function handleMessageFromQueue(messageStr) {
         responseId,
         public_proof: message.public_proof,
       });
-      db.setPublicProofReceivedFromMQ(responseId, message.public_proof);
+      await db.setPublicProofReceivedFromMQ(responseId, message.public_proof);
 
       if (latestBlockHeight > message.height) {
         await common.handleChallengeRequest(
