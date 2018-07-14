@@ -208,6 +208,15 @@ async function requestChallenge(request_id, accessor_id) {
 
   //save k to request
   let request = await db.getRequestReceivedFromMQ(request_id);
+  if(!request) {
+    throw new CustomError({
+      message: errorType.NO_INCOMING_REQUEST.message,
+      code: errorType.NO_INCOMING_REQUEST.code,
+      details: {
+        request_id
+      },
+    });
+  }
   request.k = [k1, k2];
   logger.debug({
     message: 'Save K to request',
