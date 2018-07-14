@@ -7,6 +7,10 @@ BREAKING CHANGES:
 - POST `/ndid/initNDID` requires both `public_key` and `master_public_key` as arguments.
 - Revert to support Tendermint 0.21 (RPC spec changes).
 
+IMPROVEMENTS:
+
+- Print a detailed error for the whole stack when logging to console.
+
 BUG FIXES:
 
 - Fix `accessor_id` is missing from accessor sign callback body when using API v2.
