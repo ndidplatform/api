@@ -279,7 +279,8 @@ export default {
   },
   NO_INCOMING_REQUEST: {
     code: 20031,
-    message: 'This request is not exist in your message queue',
+    message:
+      'Request could not be found / This node has not received the request from message queue',
     clientError: true,
   },
 
