@@ -50,15 +50,13 @@ async function httpUriCall(method, params) {
     const responseJson = await response.json();
 
     if (responseJson.error) {
-      const error = new CustomError({
+      throw new CustomError({
         message: 'JSON-RPC ERROR',
         details: {
           uri,
           error: responseJson.error,
         },
       });
-      logger.error(error.getInfoForLog());
-      throw error;
     }
 
     return responseJson.result;

@@ -122,7 +122,6 @@ export default class TendermintWsClient extends EventEmitter {
               rpcId,
             },
           });
-          logger.error(error.getInfoForLog());
           this.queue[rpcId].promise[1](error);
         } else {
           this.queue[rpcId].promise[0](message.result);
