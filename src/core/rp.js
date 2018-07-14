@@ -38,8 +38,8 @@ import * as utils from '../utils';
 const successBase64 = Buffer.from('success').toString('base64');
 const trueBase64 = Buffer.from('true').toString('base64');
 
-const requestIdLocks = {};
 const responseIdLocks = {};
+const asResponseIdLocks = {};
 
 const callbackUrls = {};
 
@@ -190,10 +190,8 @@ async function processRequestUpdate(requestId, height) {
     requestStatus.min_idp === requestStatus.answered_idp_count &&
     requestStatus.service_list.length > 0
   ) {
-    if (!requestIdLocks[requestId]) {
-      const metadataList = await db.getExpectedDataSignInBlockList(height);
-      await checkAsDataSignaturesAndSetReceived(requestId, metadataList);
-    }
+    const metadataList = await db.getExpectedDataSignInBlockList(height);
+    await checkAsDataSignaturesAndSetReceived(requestId, metadataList);
   }
 
   if (
@@ -594,13 +592,14 @@ export async function handleMessageFromQueue(messageStr) {
           tendermintLatestBlockHeight: latestBlockHeight,
           messageBlockHeight: message.height,
         });
-        requestIdLocks[message.request_id] = true;
+        const asResponseId = message.request_id + ':' + message.service_id + ':' + message.as_id;
+        asResponseIdLocks[asResponseId] = true;
         await db.addExpectedDataSignInBlock(message.height, {
           requestId: message.request_id,
           serviceId: message.service_id,
           asId: message.as_id,
         });
-        delete requestIdLocks[message.request_id];
+        delete asResponseIdLocks[asResponseId];
         if (latestBlockHeight <= message.height) return;
       }
       await processAsData({
@@ -667,11 +666,12 @@ async function checkAsDataSignaturesAndSetReceived(requestId, metadataList) {
 
   await Promise.all(
     metadataList.map(async ({ requestId, serviceId, asId }) => {
+      const asResponseId = requestId + ':' + serviceId + ':' + asId;
+      if (asResponseIdLocks[asResponseId]) return;
       const data = dataFromAS.find(
         (data) => data.service_id === serviceId && data.source_node_id === asId
       );
       if (data == null) return; // Have not received data from AS through message queue yet
-
       await processAsData({
         requestId,
         serviceId,
