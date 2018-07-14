@@ -43,6 +43,8 @@ import * as identity from './identity';
 const successBase64 = Buffer.from('success').toString('base64');
 const trueBase64 = Buffer.from('true').toString('base64');
 
+const requestIdLocks = {};
+
 const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
@@ -727,12 +729,14 @@ export async function handleMessageFromQueue(messageStr) {
             messageBlockHeight: message.height,
           });
           const responseId = message.request_id + ':' + message.idp_id;
+          requestIdLocks[message.request_id] = true;
           await Promise.all([
             db.setRequestToProcessReceivedFromMQ(message.request_id, message),
             db.addRequestIdExpectedInBlock(message.height, message.request_id),
             db.setPublicProofReceivedFromMQ(responseId, message.public_proof),
           ]);
-          return;
+          delete requestIdLocks[message.request_id];
+          if (latestBlockHeight <= message.height) return;
         }
       } else if (message.type === 'consent_request') {
         await Promise.all([
@@ -747,11 +751,13 @@ export async function handleMessageFromQueue(messageStr) {
             tendermintLatestBlockHeight: latestBlockHeight,
             messageBlockHeight: message.height,
           });
+          requestIdLocks[message.request_id] = true;
           await Promise.all([
             db.setRequestToProcessReceivedFromMQ(message.request_id, message),
             db.addRequestIdExpectedInBlock(message.height, message.request_id),
           ]);
-          return;
+          delete requestIdLocks[message.request_id];
+          if (latestBlockHeight <= message.height) return;
         }
       } else if (message.type === 'idp_response') {
         const latestBlockHeight = tendermint.latestBlockHeight;
@@ -761,6 +767,7 @@ export async function handleMessageFromQueue(messageStr) {
             tendermintLatestBlockHeight: latestBlockHeight,
             messageBlockHeight: message.height,
           });
+          requestIdLocks[message.request_id] = true;
           await Promise.all([
             db.setRequestToProcessReceivedFromMQ(message.request_id, message),
             db.addRequestIdExpectedInBlock(message.height, message.request_id),
@@ -795,7 +802,8 @@ export async function handleMessageFromQueue(messageStr) {
             await db.setRequestData(message.request_id, request);
           }
           //====================================================================================
-          return;
+          delete requestIdLocks[message.request_id];
+          if (latestBlockHeight <= message.height) return;
         }
       }
     }
@@ -850,6 +858,7 @@ export async function handleTendermintNewBlockHeaderEvent(
     );
     await Promise.all(
       requestIdsInTendermintBlock.map(async (requestId) => {
+        if (requestIdLocks[requestId]) return;
         const message = await db.getRequestToProcessReceivedFromMQ(requestId);
         await processMessage(message);
         await db.removeRequestToProcessReceivedFromMQ(requestId);

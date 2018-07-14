@@ -37,6 +37,8 @@ import * as db from '../db';
 import errorType from '../error/type';
 import { getErrorObjectForClient } from '../error/helpers';
 
+const requestIdLocks = {};
+
 const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
@@ -338,6 +340,24 @@ async function getResponseDetails(requestId) {
   };
 }
 
+async function processRequest(request) {
+  logger.debug({
+    message: 'Processing request',
+    requestId: request.request_id,
+  });
+  const valid = await common.checkRequestIntegrity(
+    request.request_id,
+    request
+  );
+  if (valid) {
+    const validProof = await verifyZKProof(request.request_id, request);
+    if (validProof) {
+      const responseDetails = await getResponseDetails(request.request_id);
+      getDataAndSendBackToRP(request, responseDetails);
+    }
+  }
+}
+
 export async function handleMessageFromQueue(messageStr) {
   logger.info({
     message: 'Received message from MQ',
@@ -358,28 +378,16 @@ export async function handleMessageFromQueue(messageStr) {
         tendermintLatestBlockHeight: latestBlockHeight,
         messageBlockHeight: message.height,
       });
-      await db.setRequestReceivedFromMQ(message.request_id, message);
-      await db.addRequestIdExpectedInBlock(message.height, message.request_id);
-      return;
+      requestIdLocks[message.request_id] = true;
+      await Promise.all([
+        db.setRequestReceivedFromMQ(message.request_id, message),
+        db.addRequestIdExpectedInBlock(message.height, message.request_id),
+      ]);
+      delete requestIdLocks[message.request_id];
+      if (latestBlockHeight <= message.height) return;
     }
 
-    logger.debug({
-      message: 'Processing request',
-      requestId: message.request_id,
-    });
-    const valid = await common.checkRequestIntegrity(
-      message.request_id,
-      message
-    );
-    if (valid) {
-      const responseDetails = await getResponseDetails(message.request_id);
-      //loop and check zk proof for all response
-      if (!(await verifyZKProof(message.request_id, message))) {
-        //TODO, do not answer? or send data to rp and tell them proof is invalid?
-        return;
-      }
-      getDataAndSendBackToRP(message, responseDetails);
-    }
+    await processRequest(message);
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling message from message queue',
@@ -417,31 +425,22 @@ export async function handleTendermintNewBlockHeaderEvent(
           : height - missingBlockCount;
     const toHeight = height - 1;
 
-    const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
-      fromHeight,
-      toHeight
-    );
-
     logger.debug({
       message: 'Getting request IDs to process',
       fromHeight,
       toHeight,
-      requestIdsInTendermintBlock,
     });
-
+    
+    const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
+      fromHeight,
+      toHeight
+    );
     await Promise.all(
       requestIdsInTendermintBlock.map(async (requestId) => {
-        logger.debug({
-          message: 'Processing request',
-          requestId,
-        });
+        if (requestIdLocks[requestId]) return;
         const request = await db.getRequestReceivedFromMQ(requestId);
-        const valid = await common.checkRequestIntegrity(requestId, request);
-        if (valid && (await verifyZKProof(requestId))) {
-          const responseDetails = await getResponseDetails(requestId);
-          getDataAndSendBackToRP(request, responseDetails);
-        }
-        db.removeRequestReceivedFromMQ(requestId);
+        await processRequest(request);
+        await db.removeRequestReceivedFromMQ(requestId);
       })
     );
 

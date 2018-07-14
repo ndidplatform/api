@@ -38,6 +38,9 @@ import * as utils from '../utils';
 const successBase64 = Buffer.from('success').toString('base64');
 const trueBase64 = Buffer.from('true').toString('base64');
 
+const requestIdLocks = {};
+const responseIdLocks = {};
+
 const callbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
@@ -145,19 +148,20 @@ async function processRequestUpdate(requestId, height) {
       .filter(({ requestId: reqId }) => requestId === reqId)
       .map((metadata) => metadata.idpId);
 
-    if (idpNodeIds.length === 0) return;
-
-    const responseValids = await Promise.all(
-      idpNodeIds.map((idpNodeId) =>
-        common.checkIdpResponse({
+    let responseValids = await Promise.all(
+      idpNodeIds.map((idpNodeId) => {
+        const responseId = requestId + ':' + idpNodeId;
+        if (responseIdLocks[responseId]) return;
+        return common.checkIdpResponse({
           requestStatus,
           idpId: idpNodeId,
           responseIal: requestDetail.response_list.find(
             (response) => response.idp_id === idpNodeId
           ).ial,
-        })
-      )
+        });
+      })
     );
+    responseValids = responseValids.filter((valid) => valid != null);
 
     responseValidList = savedResponseValidList.concat(responseValids);
   } else {
@@ -186,8 +190,10 @@ async function processRequestUpdate(requestId, height) {
     requestStatus.min_idp === requestStatus.answered_idp_count &&
     requestStatus.service_list.length > 0
   ) {
-    const metadataList = await db.getExpectedDataSignInBlockList(height);
-    await checkAsDataSignaturesAndSetReceived(requestId, metadataList);
+    if (!requestIdLocks[requestId]) {
+      const metadataList = await db.getExpectedDataSignInBlockList(height);
+      await checkAsDataSignaturesAndSetReceived(requestId, metadataList);
+    }
   }
 
   if (
@@ -260,7 +266,7 @@ export async function handleTendermintNewBlockHeaderEvent(
 
     //loop through all those block before, and verify all proof
     logger.debug({
-      message: 'Getting request IDs to process responses',
+      message: 'Getting request IDs to process',
       fromHeight,
       toHeight,
     });
@@ -494,8 +500,6 @@ export async function handleMessageFromQueue(messageStr) {
       }
 
       //must wait for height
-      const responseId = message.request_id + ':' + message.idp_id;
-
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (latestBlockHeight <= message.height) {
         logger.debug({
@@ -503,6 +507,8 @@ export async function handleMessageFromQueue(messageStr) {
           tendermintLatestBlockHeight: latestBlockHeight,
           messageBlockHeight: message.height,
         });
+        const responseId = message.request_id + ':' + message.idp_id;
+        responseIdLocks[responseId] = true;
         await Promise.all([
           db.setPrivateProofReceivedFromMQ(responseId, message),
           db.addExpectedIdpResponseNodeIdInBlock(message.height, {
@@ -510,7 +516,8 @@ export async function handleMessageFromQueue(messageStr) {
             idpId: message.idp_id,
           }),
         ]);
-        return;
+        delete responseIdLocks[responseId];
+        if (latestBlockHeight <= message.height) return;
       }
 
       const callbackUrl = await db.getRequestCallbackUrl(message.request_id);
@@ -581,37 +588,27 @@ export async function handleMessageFromQueue(messageStr) {
 
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (latestBlockHeight <= message.height) {
+        logger.debug({
+          message: 'Saving expected data signature',
+          tendermintLatestBlockHeight: latestBlockHeight,
+          messageBlockHeight: message.height,
+        });
+        requestIdLocks[message.request_id] = true;
         await db.addExpectedDataSignInBlock(message.height, {
           requestId: message.request_id,
           serviceId: message.service_id,
           asId: message.as_id,
         });
-      } else {
-        const signatureFromBlockchain = await tendermintNdid.getDataSignature({
-          request_id: message.request_id,
-          service_id: message.service_id,
-          node_id: message.as_id,
-        });
-
-        if (signatureFromBlockchain == null) return;
-        // TODO: if signature is invalid or mismatch then delete data from cache
-        if (message.signature !== signatureFromBlockchain) return;
-        if (
-          !(await isDataSignatureValid(
-            message.as_id,
-            signatureFromBlockchain,
-            message.data
-          ))
-        ) {
-          return;
-        }
-
-        await tendermintNdid.setDataReceived({
-          requestId: message.request_id,
-          service_id: message.service_id,
-          as_id: message.as_id,
-        });
+        delete requestIdLocks[message.request_id];
+        if (latestBlockHeight <= message.height) return;
       }
+      await processAsData({
+        requestId: message.request_id,
+        serviceId: message.service_id,
+        nodeId: message.as_id,
+        signature: message.signature,
+        data: message.data,
+      });
     }
   } catch (error) {
     const err = new CustomError({
@@ -674,24 +671,49 @@ async function checkAsDataSignaturesAndSetReceived(requestId, metadataList) {
       );
       if (data == null) return; // Have not received data from AS through message queue yet
 
-      const signatureFromBlockchain = await tendermintNdid.getDataSignature({
-        request_id: requestId,
-        service_id: serviceId,
-        node_id: asId,
-      });
-      if (signatureFromBlockchain == null) return;
-      // TODO: if signature is invalid or mismatch then delete data from cache
-      if (data.source_signature !== signatureFromBlockchain) return;
-      if (
-        !(await isDataSignatureValid(asId, signatureFromBlockchain, data.data))
-      ) {
-        return;
-      }
-      await tendermintNdid.setDataReceived({
+      await processAsData({
         requestId,
-        service_id: serviceId,
-        as_id: asId,
+        serviceId,
+        nodeId: asId,
+        signature: data.source_signature,
+        data: data.data,
       });
     })
   );
+}
+
+async function processAsData({
+  requestId,
+  serviceId,
+  nodeId,
+  signature,
+  data,
+}) {
+  logger.debug({
+    message: 'Processing AS data response',
+    requestId,
+    serviceId,
+    nodeId,
+    signature,
+    data,
+  });
+
+  const signatureFromBlockchain = await tendermintNdid.getDataSignature({
+    request_id: requestId,
+    service_id: serviceId,
+    node_id: nodeId,
+  });
+
+  if (signatureFromBlockchain == null) return;
+  // TODO: if signature is invalid or mismatch then delete data from cache
+  if (signature !== signatureFromBlockchain) return;
+  if (!(await isDataSignatureValid(nodeId, signatureFromBlockchain, data))) {
+    return;
+  }
+
+  await tendermintNdid.setDataReceived({
+    requestId,
+    service_id: serviceId,
+    as_id: nodeId,
+  });
 }
