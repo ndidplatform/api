@@ -46,11 +46,19 @@ import { stopAllCallbackRetries } from './utils/callback';
 import * as config from './config';
 
 process.on('unhandledRejection', function(reason, p) {
-  logger.error({
-    message: 'Unhandled Rejection',
-    p,
-    reason: reason.stack || reason,
-  });
+  if (reason && reason.name === 'CustomError') {
+    logger.error({
+      message: 'Unhandled Rejection',
+      p,
+    });
+    logger.error(reason.getInfoForLog());
+  } else {
+    logger.error({
+      message: 'Unhandled Rejection',
+      p,
+      reason: reason.stack || reason,
+    });
+  }
 });
 
 const {
