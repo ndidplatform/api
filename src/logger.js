@@ -27,7 +27,16 @@ import 'winston-daily-rotate-file';
 
 import * as config from './config';
 
+const removePrintErrStackProp = winston.format((info) => {
+  if (info._printErrStack != null) {
+    const { _printErrStack, ...rest } = info; // eslint-disable-line no-unused-vars
+    return rest;
+  }
+  return info;
+});
+
 const logFormatForFile = winston.format.combine(
+  removePrintErrStackProp(),
   winston.format.timestamp(),
   winston.format.json()
 );
@@ -37,9 +46,9 @@ const customFormat = winston.format.printf((info) => {
     // timestamp,
     level,
     message,
-    [Symbol.for('level')]: _level,
-    [Symbol.for('message')]: _message,
-    [Symbol.for('splat')]: _splat,
+    [Symbol.for('level')]: _level, // eslint-disable-line no-unused-vars
+    [Symbol.for('message')]: _message, // eslint-disable-line no-unused-vars
+    [Symbol.for('splat')]: _splat, // eslint-disable-line no-unused-vars
     ...rest
   } = info;
   const messageToDisplay =
@@ -53,7 +62,7 @@ const customFormat = winston.format.printf((info) => {
     return `${level}: ${messageToDisplay}`;
   } else {
     if (rest._printErrStack) {
-      const { _printErrStack, stack, ...restWithoutStack } = rest;
+      const { _printErrStack, stack, ...restWithoutStack } = rest; // eslint-disable-line no-unused-vars
       return `${level}: ${messageToDisplay} ${util.inspect(restWithoutStack, {
         depth: null,
         colors: true,
