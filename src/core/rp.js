@@ -461,13 +461,6 @@ export async function handleMessageFromQueue(messageStr) {
     const message = JSON.parse(messageStr);
     requestId = message.request_id;
 
-    const latestBlockHeight = tendermint.latestBlockHeight;
-
-    logger.debug({
-      message: 'Check height',
-      wait: latestBlockHeight <= message.height,
-    });
-
     if (message.type === 'idp_response') {
       //check accessor_id, undefined means mode 1
       if (message.accessor_id) {
@@ -503,6 +496,7 @@ export async function handleMessageFromQueue(messageStr) {
       //must wait for height
       const responseId = message.request_id + ':' + message.idp_id;
 
+      const latestBlockHeight = tendermint.latestBlockHeight;
       if (latestBlockHeight <= message.height) {
         logger.debug({
           message: 'Saving message from MQ',
@@ -569,6 +563,7 @@ export async function handleMessageFromQueue(messageStr) {
       });
       await db.setPublicProofReceivedFromMQ(responseId, message.public_proof);
 
+      const latestBlockHeight = tendermint.latestBlockHeight;
       if (latestBlockHeight > message.height) {
         await common.handleChallengeRequest(
           message.request_id + ':' + message.idp_id

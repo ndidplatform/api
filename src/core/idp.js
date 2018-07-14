@@ -683,8 +683,6 @@ export async function handleMessageFromQueue(messageStr) {
     const message = JSON.parse(messageStr);
     requestId = message.request_id;
 
-    const latestBlockHeight = tendermint.latestBlockHeight;
-
     //if message is challenge for response, no need to wait for blockchain
     if (message.type === 'challenge_response') {
       //store challenge
@@ -721,6 +719,7 @@ export async function handleMessageFromQueue(messageStr) {
       return;
     } else {
       if (message.type === 'challenge_request') {
+        const latestBlockHeight = tendermint.latestBlockHeight;
         if (latestBlockHeight <= message.height) {
           logger.debug({
             message: 'Saving challege request message from MQ',
@@ -741,6 +740,7 @@ export async function handleMessageFromQueue(messageStr) {
           db.setRPIdFromRequestId(message.request_id, message.rp_id),
         ]);
 
+        const latestBlockHeight = tendermint.latestBlockHeight;
         if (latestBlockHeight <= message.height) {
           logger.debug({
             message: 'Saving consent request message from MQ',
@@ -754,6 +754,7 @@ export async function handleMessageFromQueue(messageStr) {
           return;
         }
       } else if (message.type === 'idp_response') {
+        const latestBlockHeight = tendermint.latestBlockHeight;
         if (latestBlockHeight <= message.height) {
           logger.debug({
             message: 'Saving IdP response message from MQ',
