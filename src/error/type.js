@@ -277,6 +277,11 @@ export default {
     message: 'Duplicate accessor ID',
     clientError: true,
   },
+  NO_INCOMING_REQUEST: {
+    code: 20031,
+    message: 'This request is not exist in your message queue',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
