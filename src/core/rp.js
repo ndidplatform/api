@@ -568,6 +568,7 @@ export async function handleMessageFromQueue(messageStr) {
         responseId,
         public_proof: message.public_proof,
       });
+      // TODO: prevent event race condition
       await db.setPublicProofReceivedFromMQ(responseId, message.public_proof);
 
       const latestBlockHeight = tendermint.latestBlockHeight;
