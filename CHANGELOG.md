@@ -9,7 +9,9 @@ BREAKING CHANGES:
 
 IMPROVEMENTS:
 
+- More robust message queue (wait for acknowledge from receivers, retry if fail to receive ACK)
 - Print a detailed error for the whole stack with easy to read stack trace when logging to console.
+- Add POST `/debug/tmQuery/:fnName` and POST `/debug/tmTransact/:fnName` APIs for debugging.
 
 BUG FIXES:
 
