@@ -39,6 +39,7 @@ const customFormat = winston.format.printf((info) => {
     message,
     [Symbol.for('level')]: _level,
     [Symbol.for('message')]: _message,
+    [Symbol.for('splat')]: _splat,
     ...rest
   } = info;
   const messageToDisplay =
@@ -51,10 +52,18 @@ const customFormat = winston.format.printf((info) => {
   if (Object.keys(rest).length === 0) {
     return `${level}: ${messageToDisplay}`;
   } else {
-    return `${level}: ${messageToDisplay} ${util.inspect(rest, {
-      depth: null,
-      colors: config.logColor,
-    })}`;
+    if (rest._printStack) {
+      const { _printStack, stack, ...restWithoutStack } = rest;
+      return `${level}: ${messageToDisplay} ${util.inspect(restWithoutStack, {
+        depth: null,
+        colors: true,
+      })}\n${stack}`;
+    } else {
+      return `${level}: ${messageToDisplay} ${util.inspect(rest, {
+        depth: null,
+        colors: true,
+      })}`;
+    }
   }
 });
 

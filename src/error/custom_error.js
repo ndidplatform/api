@@ -97,21 +97,33 @@ export default class CustomError extends Error {
    * Get error info
    * @returns {Object} Error info
    */
-  getInfoForLog() {
+  getInfoForLog(withStack = true) {
+    const retval = {
+      message: this.message,
+      code: this.getCode(),
+    };
     if (this.details != null) {
-      return {
-        message: this.message,
-        code: this.getCode(),
-        details: this.details,
-        stack: this.stack,
-      };
-    } else {
-      return {
-        message: this.message,
-        code: this.getCode(),
-        stack: this.stack,
-      };
+      retval.details = this.details;
     }
+    if (this.cause != null) {
+      if (this.cause.name === 'CustomError') {
+        retval.cause = this.cause.getInfoForLog(false);
+      } else {
+        const cause = {
+          name: this.cause.name,
+          message: this.cause.message,
+        };
+        if (this.cause.code != null) {
+          cause.code = this.cause.code;
+        }
+        retval.cause = cause;
+      }
+    }
+    if (withStack) {
+      retval.stack = this.stack;
+      retval._printStack = true;
+    }
+    return retval;
   }
 }
 
