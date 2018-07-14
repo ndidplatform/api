@@ -9,7 +9,7 @@ BREAKING CHANGES:
 
 IMPROVEMENTS:
 
-- Print a detailed error for the whole stack when logging to console.
+- Print a detailed error for the whole stack with easy to read stack trace when logging to console.
 
 BUG FIXES:
 
