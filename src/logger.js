@@ -52,8 +52,8 @@ const customFormat = winston.format.printf((info) => {
   if (Object.keys(rest).length === 0) {
     return `${level}: ${messageToDisplay}`;
   } else {
-    if (rest._printStack) {
-      const { _printStack, stack, ...restWithoutStack } = rest;
+    if (rest._printErrStack) {
+      const { _printErrStack, stack, ...restWithoutStack } = rest;
       return `${level}: ${messageToDisplay} ${util.inspect(restWithoutStack, {
         depth: null,
         colors: true,

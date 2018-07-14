@@ -121,7 +121,7 @@ export default class CustomError extends Error {
     }
     if (withStack) {
       retval.stack = this.stack;
-      retval._printStack = true;
+      retval._printErrStack = true;
     }
     return retval;
   }
