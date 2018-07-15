@@ -359,6 +359,10 @@ export default {
     message:
       'Cannot register message queue destination for identity as the first IdP',
   },
+  ABCI_INCOMPLETE_RESPONSE_VALID_LIST: {
+    code: 15019,
+    message: 'Incomplete IdP response valid list',
+  },
 
   // Client errors
   ABCI_REQUEST_ID_NOT_FOUND: {
@@ -486,6 +490,21 @@ export default {
     message: 'Data request is already completed',
     clientError: true,
   }, // AS could not sign data in time
+  ABCI_ACCESSOR_ID_NOT_FOUND: {
+    code: 25026,
+    message: 'Accessor ID could not be found',
+    clientError: true,
+  },
+  ABCI_NOT_OWNER_OF_ACCESSOR: {
+    code: 25027,
+    message: 'This node is not an owner of this accessor',
+    clientError: true,
+  },
+  ABCI_REGISTER_SERVICE_UNAUTHORIZED: {
+    code: 25028,
+    message: 'Unauthorized to register a service (NDID may have not granted you the right to register this service)',
+    clientError: true,
+  },
 
   ABCI_UNAUTHORIZED: {
     code: 35001,

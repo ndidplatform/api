@@ -68,6 +68,10 @@ import errorType from '../error/type';
 // ServiceDestinationNotFound      uint32 = 42
 // DataRequestIsCompleted          uint32 = 43
 // NotFirstIdP                     uint32 = 44
+// AccessorIDNotFound                        uint32 = 45
+// NotOwnerOfAccessor                        uint32 = 46
+// NoPermissionForRegisterServiceDestination uint32 = 47
+// IncompleteValidList                       uint32 = 48
 
 const codeMapping = {
   1: errorType.ABCI_ENCODING_ERROR, // Not used in API (calls from API won't generate this error)
@@ -114,6 +118,10 @@ const codeMapping = {
   42: errorType.ABCI_SERVICE_DESTINATION_NOT_FOUND,
   43: errorType.ABCI_DATA_REQUEST_IS_COMPLETED,
   44: errorType.ABCI_NOT_FIRST_IDP,
+  45: errorType.ABCI_ACCESSOR_ID_NOT_FOUND,
+  46: errorType.ABCI_NOT_OWNER_OF_ACCESSOR,
+  47: errorType.ABCI_REGISTER_SERVICE_UNAUTHORIZED,
+  48: errorType.ABCI_INCOMPLETE_RESPONSE_VALID_LIST,
 };
 
 export function convertAbciAppCodeToErrorType(abciAppCode) {
