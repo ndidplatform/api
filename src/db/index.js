@@ -654,6 +654,33 @@ export function removeExpectedDataSignInBlockList(height) {
   });
 }
 
+export function getExpectedIdpPublicProofInBlockList(height) {
+  return db.getList({
+    name: 'expectedIdpPublicProofInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'responseMetadata',
+  });
+}
+
+export function addExpectedIdpPublicProofInBlock(height, responseMetadata) {
+  return db.pushToList({
+    name: 'expectedIdpPublicProofInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'responseMetadata',
+    value: responseMetadata,
+  });
+}
+
+export function removeExpectedIdpPublicProofInBlockList(height) {
+  return db.removeList({
+    name: 'expectedIdpPublicProofInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+  });
+}
+
 //
 // Used by IdP
 //

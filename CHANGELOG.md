@@ -1,5 +1,13 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix event race condition in many cases when receiving new block event while processing message from message queue.
+- Fix request without data request does not automatically close when block height is met while processing IdP response from message queue.
+- Various fixes on handling/processing message from message queue.
+
 ## 0.4.0 (July 14, 2018)
 
 BREAKING CHANGES:
@@ -16,7 +24,7 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - Fix `accessor_id` is missing from accessor sign callback body when using API v2.
-- Fix saving data to cache DB flow in handleMessageFromQueue() to prevent event racing condition.
+- Fix saving data to cache DB flow in handleMessageFromQueue() to prevent event race condition.
 
 ## 0.3.3 (July 12, 2018)
 

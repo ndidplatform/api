@@ -210,12 +210,12 @@ async function requestChallenge(request_id, accessor_id) {
 
   //save k to request
   let request = await db.getRequestReceivedFromMQ(request_id);
-  if(!request) {
+  if (!request) {
     throw new CustomError({
       message: errorType.NO_INCOMING_REQUEST.message,
       code: errorType.NO_INCOMING_REQUEST.code,
       details: {
-        request_id
+        request_id,
       },
     });
   }
@@ -649,7 +649,7 @@ async function processMessage(message) {
     }
   } else if (message.type === 'challenge_request') {
     const responseId = message.request_id + ':' + message.idp_id;
-    await common.handleChallengeRequest(responseId);
+    await common.handleChallengeRequest(responseId, message.public_proof);
   } else if (message.type === 'consent_request') {
     const valid = await common.checkRequestIntegrity(
       message.request_id,
@@ -760,6 +760,32 @@ export async function handleMessageFromQueue(messageStr) {
           if (latestBlockHeight <= message.height) return;
         }
       } else if (message.type === 'idp_response') {
+        const request = await db.getRequestData(message.request_id);
+        if (request) {
+          if (request.privateProofObjectList) {
+            request.privateProofObjectList.push({
+              idp_id: message.idp_id,
+              privateProofObject: {
+                privateProofValue: message.privateProofValue,
+                accessor_id: message.accessor_id,
+                padding: message.padding,
+              },
+            });
+          } else {
+            request.privateProofObjectList = [
+              {
+                idp_id: message.idp_id,
+                privateProofObject: {
+                  privateProofValue: message.privateProofValue,
+                  accessor_id: message.accessor_id,
+                  padding: message.padding,
+                },
+              },
+            ];
+          }
+          await db.setRequestData(message.request_id, request);
+        }
+
         const latestBlockHeight = tendermint.latestBlockHeight;
         if (latestBlockHeight <= message.height) {
           logger.debug({
@@ -772,36 +798,6 @@ export async function handleMessageFromQueue(messageStr) {
             db.setRequestToProcessReceivedFromMQ(message.request_id, message),
             db.addRequestIdExpectedInBlock(message.height, message.request_id),
           ]);
-
-          //====================== COPY-PASTE from RP, need refactoring =====================
-          //store private parameter from EACH idp to request, to pass along to as
-          const request = await db.getRequestData(message.request_id);
-          //AS involve
-          if (request) {
-            if (request.privateProofObjectList) {
-              request.privateProofObjectList.push({
-                idp_id: message.idp_id,
-                privateProofObject: {
-                  privateProofValue: message.privateProofValue,
-                  accessor_id: message.accessor_id,
-                  padding: message.padding,
-                },
-              });
-            } else {
-              request.privateProofObjectList = [
-                {
-                  idp_id: message.idp_id,
-                  privateProofObject: {
-                    privateProofValue: message.privateProofValue,
-                    accessor_id: message.accessor_id,
-                    padding: message.padding,
-                  },
-                },
-              ];
-            }
-            await db.setRequestData(message.request_id, request);
-          }
-          //====================================================================================
           delete requestIdLocks[message.request_id];
           if (latestBlockHeight <= message.height) return;
         }

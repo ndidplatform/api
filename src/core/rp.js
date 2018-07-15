@@ -39,6 +39,7 @@ const successBase64 = Buffer.from('success').toString('base64');
 const trueBase64 = Buffer.from('true').toString('base64');
 
 const responseIdLocks = {};
+const publicProofResponseIdLocks = {};
 const asResponseIdLocks = {};
 
 const callbackUrls = {};
@@ -163,6 +164,8 @@ async function processRequestUpdate(requestId, height) {
     );
     responseValids = responseValids.filter((valid) => valid != null);
 
+    if (responseValids.length === 0) return;
+
     responseValidList = savedResponseValidList.concat(responseValids);
   } else {
     responseValidList = savedResponseValidList;
@@ -201,6 +204,10 @@ async function processRequestUpdate(requestId, height) {
     (requestStatus.mode === 1 ||
       (requestStatus.mode === 3 && isAllIdpResponsesValid(responseValidList)))
   ) {
+    logger.debug({
+      message: 'Automatically closing request',
+      requestId,
+    });
     await common.closeRequest({ request_id: requestId }, { synchronous: true });
   }
 
@@ -269,6 +276,19 @@ export async function handleTendermintNewBlockHeaderEvent(
       toHeight,
     });
 
+    const responseMetadataList = await db.getExpectedIdpPublicProofInBlockList(
+      height
+    );
+    await Promise.all(
+      responseMetadataList.map(async ({ requestId, idpId }) => {
+        const responseId = requestId + ':' + idpId;
+        if (publicProofResponseIdLocks[responseId]) return;
+        const publicProof = await db.getPublicProofReceivedFromMQ(responseId);
+        await common.handleChallengeRequest(responseId, publicProof);
+      })
+    );
+    db.removeExpectedIdpPublicProofInBlockList(height);
+
     const [blocks, blockResults] = await Promise.all([
       tendermint.getBlocks(fromHeight, toHeight),
       tendermint.getBlockResults(fromHeight, toHeight),
@@ -288,7 +308,6 @@ export async function handleTendermintNewBlockHeaderEvent(
           return false;
         });
         const height = parseInt(block.block.header.height);
-        let requestsToHandleChallenge = [];
         let requestIdsToProcessUpdate = [];
 
         transactions.forEach((transaction) => {
@@ -296,27 +315,18 @@ export async function handleTendermintNewBlockHeaderEvent(
           const requestId =
             transaction.args.request_id || transaction.args.requestId;
           if (requestId == null) return;
-          if (transaction.fnName === 'DeclareIdentityProof') {
-            requestsToHandleChallenge.push({
-              requestId,
-              idpId: transaction.args.idp_id,
-            });
-          } else {
-            requestIdsToProcessUpdate.push(requestId);
-          }
+          if (transaction.fnName === 'DeclareIdentityProof') return;
+          requestIdsToProcessUpdate.push(requestId);
         });
         requestIdsToProcessUpdate = [...new Set(requestIdsToProcessUpdate)];
 
-        await Promise.all([
-          ...requestsToHandleChallenge.map(({ requestId, idpId }) =>
-            common.handleChallengeRequest(requestId + ':' + idpId)
-          ),
-          ...requestIdsToProcessUpdate.map(async (requestId) => {
+        await Promise.all(
+          requestIdsToProcessUpdate.map(async (requestId) => {
             await processRequestUpdate(requestId, height);
             db.removeExpectedIdpResponseNodeIdInBlockList(height);
             db.removeExpectedDataSignInBlockList(height);
-          }),
-        ]);
+          })
+        );
       })
     );
   } catch (error) {
@@ -466,6 +476,9 @@ export async function handleMessageFromQueue(messageStr) {
     requestId = message.request_id;
 
     if (message.type === 'idp_response') {
+      const callbackUrl = await db.getRequestCallbackUrl(message.request_id);
+      if (!callbackUrl) return;
+
       //check accessor_id, undefined means mode 1
       if (message.accessor_id) {
         //store private parameter from EACH idp to request, to pass along to as
@@ -518,9 +531,6 @@ export async function handleMessageFromQueue(messageStr) {
         if (latestBlockHeight <= message.height) return;
       }
 
-      const callbackUrl = await db.getRequestCallbackUrl(message.request_id);
-      // if (!callbackUrl) return;
-
       const requestDetail = await tendermintNdid.getRequestDetail({
         requestId: message.request_id,
         height: message.height,
@@ -559,6 +569,24 @@ export async function handleMessageFromQueue(messageStr) {
         }
         db.removeChallengeFromRequestId(message.request_id);
       }
+
+      if (
+        requestStatus.status === 'completed' &&
+        !requestStatus.closed &&
+        !requestStatus.timed_out &&
+        (requestStatus.mode === 1 ||
+          (requestStatus.mode === 3 &&
+            isAllIdpResponsesValid(responseValidList)))
+      ) {
+        logger.debug({
+          message: 'Automatically closing request',
+          requestId: message.request_id,
+        });
+        await common.closeRequest(
+          { request_id: message.request_id },
+          { synchronous: true }
+        );
+      }
     } else if (message.type === 'challenge_request') {
       const responseId = message.request_id + ':' + message.idp_id;
       logger.debug({
@@ -566,16 +594,20 @@ export async function handleMessageFromQueue(messageStr) {
         responseId,
         public_proof: message.public_proof,
       });
-      // TODO: prevent event race condition
-      await db.setPublicProofReceivedFromMQ(responseId, message.public_proof);
-
       const latestBlockHeight = tendermint.latestBlockHeight;
-      if (latestBlockHeight > message.height) {
-        await common.handleChallengeRequest(
-          message.request_id + ':' + message.idp_id
-        );
-        return;
+      if (latestBlockHeight <= message.height) {
+        publicProofResponseIdLocks[responseId] = true;
+        await Promise.all([
+          db.setPublicProofReceivedFromMQ(responseId, message.public_proof),
+          db.addExpectedIdpPublicProofInBlock(message.height, {
+            requestId: message.request_id,
+            idpId: message.idp_id,
+          }),
+        ]);
+        delete publicProofResponseIdLocks[responseId];
+        if (latestBlockHeight <= message.height) return;
       }
+      await common.handleChallengeRequest(responseId, message.public_proof);
     } else if (message.type === 'as_data_response') {
       // Receive data from AS
       await db.addDataFromAS(message.request_id, {
@@ -592,7 +624,8 @@ export async function handleMessageFromQueue(messageStr) {
           tendermintLatestBlockHeight: latestBlockHeight,
           messageBlockHeight: message.height,
         });
-        const asResponseId = message.request_id + ':' + message.service_id + ':' + message.as_id;
+        const asResponseId =
+          message.request_id + ':' + message.service_id + ':' + message.as_id;
         asResponseIdLocks[asResponseId] = true;
         await db.addExpectedDataSignInBlock(message.height, {
           requestId: message.request_id,

@@ -743,43 +743,31 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
 
 //===== zkp and request related =====
 
-export async function handleChallengeRequest(responseId) {
+export async function handleChallengeRequest(responseId, publicProof) {
   logger.debug({
     message: 'Handle challenge request',
     responseId,
+    publicProof,
   });
 
-  let [request_id, idp_id] = responseId.split(':');
-
-  //get public proof from mq
-  let public_proof_mq = await db.getPublicProofReceivedFromMQ(responseId);
-
-  logger.debug({
-    message: 'Public proof from MQ',
-    public_proof_mq,
-    responseId,
-  });
-
-  //message queue not arrived yet
-  if (!public_proof_mq) return false;
+  const [request_id, idp_id] = responseId.split(':');
 
   //get public proof in blockchain
-  let public_proof_blockchain = JSON.parse(
+  const public_proof_blockchain = JSON.parse(
     await tendermintNdid.getIdentityProof(request_id, idp_id)
   );
-  if (!public_proof_blockchain) return false;
 
   //check public proof in blockchain and in message queue
-  if (public_proof_blockchain.length !== public_proof_mq.length) return false;
-  for (let i = 0; i < public_proof_mq.length; i++) {
-    if (public_proof_blockchain[i] !== public_proof_mq[i]) return false;
+  if (public_proof_blockchain.length !== publicProof.length) return false;
+  for (let i = 0; i < publicProof.length; i++) {
+    if (public_proof_blockchain[i] !== publicProof[i]) return false;
   }
 
   //if match, send challenge and return
-  let nodeId = {};
+  const nodeId = {};
   if (config.role === 'idp') nodeId.idp_id = config.nodeId;
   else if (config.role === 'rp') nodeId.rp_id = config.nodeId;
-  let challenge = await db.getChallengeFromRequestId(request_id);
+  const challenge = await db.getChallengeFromRequestId(request_id);
   logger.debug({
     message: 'Get challenge',
     challenge,
@@ -797,8 +785,8 @@ export async function handleChallengeRequest(responseId) {
       },
     });
   }
-  let { ip, port } = mqAddress;
-  let receiver = [
+  const { ip, port } = mqAddress;
+  const receiver = [
     {
       ip,
       port,

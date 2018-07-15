@@ -133,6 +133,13 @@ const Entities = {
     id: { type: Sequelize.STRING, primaryKey: true },
     unixTimeout: Sequelize.INTEGER,
   }),
+  expectedIdpPublicProofInBlock: sequelize.define(
+    'expectedIdpPublicProofInBlock',
+    {
+      responseMetadata: Sequelize.JSON,
+      expectedBlockHeight: Sequelize.INTEGER,
+    }
+  ),
 };
 
 const initDb = sequelize.sync();
