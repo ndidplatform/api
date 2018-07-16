@@ -5,7 +5,7 @@
 BREAKING CHANGES:
 
 - POST `/ndid/initNDID` requires both `public_key` and `master_public_key` as arguments.
-- Revert to support Tendermint 0.21 (RPC spec).
+- Revert to support Tendermint 0.21 (RPC spec changes).
 
 BUG FIXES:
 
