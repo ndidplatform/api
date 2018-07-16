@@ -97,7 +97,7 @@ async function pollStatusUntilSynced() {
   if (syncing == null || syncing === true) {
     for (;;) {
       const status = await tendermintWsClient.getStatus();
-      syncing = status.sync_info.syncing;
+      syncing = status.sync_info.catching_up;
       if (syncing === false) {
         logger.info({
           message: 'Tendermint blockchain synced',

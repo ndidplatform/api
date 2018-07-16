@@ -26,7 +26,6 @@ import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 
 import { tendermintAddress } from '../config';
-import logger from '../logger';
 
 async function httpUriCall(method, params) {
   const queryString = params.reduce((paramsString, param) => {
@@ -35,9 +34,9 @@ async function httpUriCall(method, params) {
     }
     const uriEncodedParamValue = encodeURIComponent(param.value);
     if (paramsString !== '') {
-      return paramsString + `&${param.key}=${uriEncodedParamValue}`;
+      return paramsString + `&${param.key}="${uriEncodedParamValue}"`;
     }
-    return paramsString + `${param.key}=${uriEncodedParamValue}`;
+    return paramsString + `${param.key}="${uriEncodedParamValue}"`;
   }, '');
 
   let uri = `http://${tendermintAddress}/${method}`;
@@ -76,7 +75,7 @@ export function abciQuery(data, height) {
   return httpUriCall('abci_query', [
     {
       key: 'data',
-      value: `"${data}"`,
+      value: data,
     },
     {
       key: 'height',
@@ -89,7 +88,7 @@ export function broadcastTxCommit(tx) {
   return httpUriCall('broadcast_tx_commit', [
     {
       key: 'tx',
-      value: `"${tx}"`,
+      value: tx,
     },
   ]);
 }
@@ -98,7 +97,7 @@ export function broadcastTxSync(tx) {
   return httpUriCall('broadcast_tx_sync', [
     {
       key: 'tx',
-      value: `"${tx}"`,
+      value: tx,
     },
   ]);
 }
