@@ -27,11 +27,8 @@ import { callbackToClient } from '../utils/callback';
 
 export async function tmQuery({ fnName, jsonParameter }) {
   try {
-    return await tendermint.query(
-      fnName,
-      jsonParameter,
-    );
-  } catch(error) {
+    return await tendermint.query(fnName, jsonParameter);
+  } catch (error) {
     logger.error({
       message: 'Cannot query',
       error,
@@ -48,32 +45,32 @@ export async function tmTransact({
   sync,
 }) {
   try {
-    if(sync || !callbackUrl) {
+    if (sync || !callbackUrl) {
       return JSON.stringify(
         await tendermint.transact(
           fnName,
           jsonParameter,
           utils.getNonce(),
-          useMasterKey,
+          useMasterKey
         )
       );
     }
-    tendermint.transact(
-      fnName,
-      jsonParameter,
-      utils.getNonce(),
-      useMasterKey,
-    ).then((result) => {
-      callbackToClient(callbackUrl, {
-        success: true, result
+    tendermint
+      .transact(fnName, jsonParameter, utils.getNonce(), useMasterKey)
+      .then((result) => {
+        callbackToClient(callbackUrl, {
+          success: true,
+          result,
+        });
+      })
+      .catch((error) => {
+        callbackToClient(callbackUrl, {
+          success: false,
+          error,
+        });
       });
-    }).catch((error) => {
-      callbackToClient(callbackUrl, {
-        success: false, error
-      });
-    });
     return 'Accept';
-  } catch(error) {
+  } catch (error) {
     logger.error({
       message: 'Cannot create transaction',
       error,

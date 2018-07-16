@@ -64,6 +64,9 @@ if (config.env === 'development') {
     next();
   });
 }
+if (config.allowDebugAPI) {
+  router.use('/debug', debugRouter);
+}
 
 router.get('/license', (req, res) => {
   const licenseText = fs.readFileSync(
@@ -88,7 +91,6 @@ router.use('/v1', apiV1Router);
 router.use('/v2', apiV2Router);
 
 router.get('/info', getInfo);
-if(config.allowDebugAPI) router.use('/debug', debugRouter);
 
 router.use(errorHandler);
 

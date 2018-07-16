@@ -25,20 +25,22 @@ import * as debug from '../core/debug';
 
 const router = express.Router();
 
-router.post('/tmQuery/:fnName', async(req, res) => {
+router.post('/tmQuery/:fnName', async (req, res) => {
   try {
-    res.status(200).json(await debug.tmQuery({
-      fnName: req.params.fnName,
-      jsonParameter: req.body,
-    }));
-  } catch(error) {
+    res.status(200).json(
+      await debug.tmQuery({
+        fnName: req.params.fnName,
+        jsonParameter: req.body,
+      })
+    );
+  } catch (error) {
     res.status(500).send(error);
   }
 });
 
 router.post('/tmTransact/:fnName', async (req, res) => {
-  let { 
-    debug_callbackUrl, 
+  let {
+    debug_callbackUrl,
     debug_useMasterKey,
     debug_sync,
     ...jsonParameter
@@ -53,7 +55,7 @@ router.post('/tmTransact/:fnName', async (req, res) => {
       sync: debug_sync,
     });
     res.status(sync ? 200 : 204).json(result);
-  } catch(error) {
+  } catch (error) {
     res.status(500).send(error);
   }
 });

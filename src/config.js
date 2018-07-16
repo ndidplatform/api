@@ -54,8 +54,6 @@ export const logTarget =
 export const logColor =
   process.env.LOG_COLOR == null
     ? logTarget === 'console'
-      ? true
-      : false
     : process.env.LOG_COLOR === 'true';
 export const logDirectoryPath =
   process.env.LOG_DIRECTORY_PATH || path.join(__dirname, '..', 'log');
@@ -156,5 +154,4 @@ export const callbackRetryTimeout =
     ? 600
     : parseInt(process.env.CALLBACK_RETRY_TIMEOUT);
 
-export const allowDebugAPI = 
-  process.env.ALLOW_DEBUG_API === 'true';
+export const allowDebugAPI = process.env.ALLOW_DEBUG_API === 'true';
