@@ -41,26 +41,45 @@ const router = express.Router();
 // FOR DEBUG
 if (config.env === 'development') {
   router.use((req, res, next) => {
-    if (req.method === 'POST') {
-      const { method, originalUrl, params, body } = req;
+    const { method, originalUrl, params, query, body } = req;
+    logger.debug({
+      message: 'Incoming HTTP request',
+      method,
+      originalUrl,
+      params,
+      query,
+      body,
+    });
+
+    const end = res.end;
+    res.end = function(chunk, encoding) {
+      res.end = end;
+      res.end(chunk, encoding);
+
+      const isJSON =
+        res._headers &&
+        res._headers['content-type'] &&
+        res._headers['content-type'].indexOf('json') >= 0;
+
+      const responseBodyString = chunk && chunk.toString();
+      let responseBody;
+      if (isJSON) {
+        try {
+          responseBody = JSON.parse(responseBodyString);
+        } catch (error) {
+          responseBody = responseBodyString;
+        }
+      }
+
       logger.debug({
-        message: 'Incoming HTTP',
+        message: 'Outgoing HTTP response',
         method,
         originalUrl,
-        params,
-        body,
+        status: res.statusCode,
+        body: responseBody,
       });
-    }
-    if (req.method === 'GET') {
-      const { method, originalUrl, params, query } = req;
-      logger.debug({
-        message: 'Incoming HTTP',
-        method,
-        originalUrl,
-        params,
-        query,
-      });
-    }
+    };
+
     next();
   });
 }
