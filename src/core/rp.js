@@ -277,7 +277,8 @@ export async function handleTendermintNewBlockHeaderEvent(
     });
 
     const responseMetadataList = await db.getExpectedIdpPublicProofInBlockList(
-      height
+      fromHeight,
+      toHeight
     );
     await Promise.all(
       responseMetadataList.map(async ({ requestId, idpId }) => {
@@ -287,7 +288,7 @@ export async function handleTendermintNewBlockHeaderEvent(
         await common.handleChallengeRequest(responseId, publicProof);
       })
     );
-    db.removeExpectedIdpPublicProofInBlockList(height);
+    db.removeExpectedIdpPublicProofInBlockList(fromHeight, toHeight);
 
     const [blocks, blockResults] = await Promise.all([
       tendermint.getBlocks(fromHeight, toHeight),
@@ -528,7 +529,7 @@ export async function handleMessageFromQueue(messageStr) {
           }),
         ]);
         delete responseIdLocks[responseId];
-        if (latestBlockHeight <= message.height) return;
+        if (tendermint.latestBlockHeight <= message.height) return;
       }
 
       const requestDetail = await tendermintNdid.getRequestDetail({
@@ -589,13 +590,13 @@ export async function handleMessageFromQueue(messageStr) {
       }
     } else if (message.type === 'challenge_request') {
       const responseId = message.request_id + ':' + message.idp_id;
-      logger.debug({
-        message: 'Save public proof from MQ',
-        responseId,
-        public_proof: message.public_proof,
-      });
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (latestBlockHeight <= message.height) {
+        logger.debug({
+          message: 'Saving expected public proof from MQ',
+          responseId,
+          public_proof: message.public_proof,
+        });
         publicProofResponseIdLocks[responseId] = true;
         await Promise.all([
           db.setPublicProofReceivedFromMQ(responseId, message.public_proof),
@@ -605,7 +606,7 @@ export async function handleMessageFromQueue(messageStr) {
           }),
         ]);
         delete publicProofResponseIdLocks[responseId];
-        if (latestBlockHeight <= message.height) return;
+        if (tendermint.latestBlockHeight <= message.height) return;
       }
       await common.handleChallengeRequest(responseId, message.public_proof);
     } else if (message.type === 'as_data_response') {
@@ -633,7 +634,7 @@ export async function handleMessageFromQueue(messageStr) {
           asId: message.as_id,
         });
         delete asResponseIdLocks[asResponseId];
-        if (latestBlockHeight <= message.height) return;
+        if (tendermint.latestBlockHeight <= message.height) return;
       }
       await processAsData({
         requestId: message.request_id,

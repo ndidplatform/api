@@ -384,7 +384,7 @@ export async function handleMessageFromQueue(messageStr) {
         db.addRequestIdExpectedInBlock(message.height, message.request_id),
       ]);
       delete requestIdLocks[message.request_id];
-      if (latestBlockHeight <= message.height) return;
+      if (tendermint.latestBlockHeight <= message.height) return;
     }
 
     await processRequest(message);

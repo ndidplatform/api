@@ -654,11 +654,14 @@ export function removeExpectedDataSignInBlockList(height) {
   });
 }
 
-export function getExpectedIdpPublicProofInBlockList(height) {
-  return db.getList({
+export function getExpectedIdpPublicProofInBlockList(fromHeight, toHeight) {
+  return db.getListRange({
     name: 'expectedIdpPublicProofInBlock',
     keyName: 'expectedBlockHeight',
-    key: height,
+    keyRange: {
+      gte: fromHeight, // greaterThanOrEqual
+      lte: toHeight, // lessThanOrEqual
+    },
     valueName: 'responseMetadata',
   });
 }
@@ -673,11 +676,14 @@ export function addExpectedIdpPublicProofInBlock(height, responseMetadata) {
   });
 }
 
-export function removeExpectedIdpPublicProofInBlockList(height) {
-  return db.removeList({
+export function removeExpectedIdpPublicProofInBlockList(fromHeight, toHeight) {
+  return db.removeListRange({
     name: 'expectedIdpPublicProofInBlock',
     keyName: 'expectedBlockHeight',
-    key: height,
+    keyRange: {
+      gte: fromHeight, // greaterThanOrEqual
+      lte: toHeight, // lessThanOrEqual
+    },
   });
 }
 

@@ -736,7 +736,7 @@ export async function handleMessageFromQueue(messageStr) {
             db.setPublicProofReceivedFromMQ(responseId, message.public_proof),
           ]);
           delete requestIdLocks[message.request_id];
-          if (latestBlockHeight <= message.height) return;
+          if (tendermint.latestBlockHeight <= message.height) return;
         }
       } else if (message.type === 'consent_request') {
         await Promise.all([
@@ -757,7 +757,7 @@ export async function handleMessageFromQueue(messageStr) {
             db.addRequestIdExpectedInBlock(message.height, message.request_id),
           ]);
           delete requestIdLocks[message.request_id];
-          if (latestBlockHeight <= message.height) return;
+          if (tendermint.latestBlockHeight <= message.height) return;
         }
       } else if (message.type === 'idp_response') {
         const request = await db.getRequestData(message.request_id);
@@ -799,7 +799,7 @@ export async function handleMessageFromQueue(messageStr) {
             db.addRequestIdExpectedInBlock(message.height, message.request_id),
           ]);
           delete requestIdLocks[message.request_id];
-          if (latestBlockHeight <= message.height) return;
+          if (tendermint.latestBlockHeight <= message.height) return;
         }
       }
     }
