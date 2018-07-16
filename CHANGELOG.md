@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 (July 16, 2018)
+
+IMPROVEMENTS:
+
+- Log HTTP response status and body as a debug log in development environment.
+
 ## 0.5.0 (July 16, 2018)
 
 BREAKING CHANGES:
