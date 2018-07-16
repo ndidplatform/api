@@ -1,5 +1,16 @@
 # Changelog
 
+## TBD
+
+BREAKING CHANGES:
+
+- Revert to support Tendermint 0.22 (RPC spec changes).
+
+BUG FIXES:
+
+- Fix latest block height seen check after asynchronously save data to cache DB.
+- Fix cache data removing logic for expected IdP public proof.
+
 ## 0.4.1 (July 15, 2018)
 
 BUG FIXES:
