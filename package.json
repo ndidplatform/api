@@ -1,6 +1,6 @@
 {
   "name": "ndid-api",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "",
   "scripts": {
     "build": "npx babel src -d ./build/ --source-maps inline && cp -r ./dev_key ./build",
