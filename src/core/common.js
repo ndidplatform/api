@@ -201,6 +201,7 @@ export async function getIdpsMsqDestination({
         return null;
       }
       return {
+        idp_id: nodeId,
         ip: mqAddress.ip,
         port: mqAddress.port,
         ...(await tendermintNdid.getNodePubKey(nodeId)),

@@ -268,45 +268,49 @@ async function getDataAndSendBackToRP(request, responseDetails) {
     responseDetails,
   });
 
-  const callbackUrl = await db.getServiceCallbackUrl(request.service_id);
+  request.service_data_request_list.forEach(async (serviceData) => {
+    let { service_id, request_params } = serviceData;
+    const callbackUrl = await db.getServiceCallbackUrl(service_id);
 
-  if (!callbackUrl) {
-    logger.error({
-      message: 'Callback URL for AS has not been set',
-    });
-    return;
-  }
-
-  logger.info({
-    message: 'Sending callback to AS',
-  });
-  logger.debug({
-    message: 'Callback to AS',
-    request,
-  });
-
-  callbackToClient(
-    callbackUrl,
-    {
-      type: 'data_request',
-      request_id: request.request_id,
-      mode: request.mode,
-      namespace: request.namespace,
-      identifier: request.identifier,
-      service_id: request.service_id,
-      request_params: request.request_params,
-      ...responseDetails,
-    },
-    true,
-    common.shouldRetryCallback,
-    [request.request_id],
-    afterGotDataFromCallback,
-    {
-      rpId: request.rp_id,
-      requestId: request.request_id,
-      serviceId: request.service_id,
+    if (!callbackUrl) {
+      logger.error({
+        message: 'Callback URL for AS has not been set',
+      });
+      return;
     }
-  );
+
+    logger.info({
+      message: 'Sending callback to AS',
+    });
+    logger.debug({
+      message: 'Callback to AS',
+      service_id,
+      request_params,
+    });
+
+    callbackToClient(
+      callbackUrl,
+      {
+        type: 'data_request',
+        request_id: request.request_id,
+        mode: request.mode,
+        namespace: request.namespace,
+        identifier: request.identifier,
+        service_id,
+        request_params,
+        ...responseDetails,
+      },
+      true,
+      common.shouldRetryCallback,
+      [request.request_id],
+      afterGotDataFromCallback,
+      {
+        rpId: request.rp_id,
+        requestId: request.request_id,
+        serviceId: service_id,
+      }
+    );
+  });
 }
 
 async function getResponseDetails(requestId) {
