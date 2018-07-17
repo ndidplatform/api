@@ -147,9 +147,9 @@ async function onMessage(jsonMessageStr) {
 }
 
 export async function send(receivers, message) {
-  if(receivers.length === 0) {
+  if (receivers.length === 0) {
     logger.debug({
-      message: 'No receivers for msq to send to, return',
+      message: 'No receivers for message queue to send to',
       receivers,
       payload: message,
     });
