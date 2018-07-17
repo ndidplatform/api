@@ -147,6 +147,7 @@ async function onMessage(jsonMessageStr) {
 }
 
 export async function send(receivers, message) {
+  if(receivers.length === 0) return;
   const msqSignature = await utils.createSignature(message);
   const realPayload =
     Buffer.from(JSON.stringify(message)).toString('base64') +
