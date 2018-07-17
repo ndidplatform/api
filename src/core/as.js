@@ -383,11 +383,14 @@ export async function handleMessageFromQueue(messageStr) {
         db.setRequestReceivedFromMQ(message.request_id, message),
         db.addRequestIdExpectedInBlock(message.height, message.request_id),
       ]);
-      delete requestIdLocks[message.request_id];
-      if (tendermint.latestBlockHeight <= message.height) return;
+      if (tendermint.latestBlockHeight <= message.height) {
+        delete requestIdLocks[message.request_id];
+        return;
+      }
     }
 
     await processRequest(message);
+    delete requestIdLocks[message.request_id];
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling message from message queue',

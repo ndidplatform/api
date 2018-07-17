@@ -720,25 +720,7 @@ export async function handleMessageFromQueue(messageStr) {
       }
       return;
     } else {
-      if (message.type === 'challenge_request') {
-        const latestBlockHeight = tendermint.latestBlockHeight;
-        if (latestBlockHeight <= message.height) {
-          logger.debug({
-            message: 'Saving challege request message from MQ',
-            tendermintLatestBlockHeight: latestBlockHeight,
-            messageBlockHeight: message.height,
-          });
-          const responseId = message.request_id + ':' + message.idp_id;
-          requestIdLocks[message.request_id] = true;
-          await Promise.all([
-            db.setRequestToProcessReceivedFromMQ(message.request_id, message),
-            db.addRequestIdExpectedInBlock(message.height, message.request_id),
-            db.setPublicProofReceivedFromMQ(responseId, message.public_proof),
-          ]);
-          delete requestIdLocks[message.request_id];
-          if (tendermint.latestBlockHeight <= message.height) return;
-        }
-      } else if (message.type === 'consent_request') {
+      if (message.type === 'consent_request') {
         await Promise.all([
           db.setRequestReceivedFromMQ(message.request_id, message),
           db.setRPIdFromRequestId(message.request_id, message.rp_id),
@@ -756,8 +738,30 @@ export async function handleMessageFromQueue(messageStr) {
             db.setRequestToProcessReceivedFromMQ(message.request_id, message),
             db.addRequestIdExpectedInBlock(message.height, message.request_id),
           ]);
-          delete requestIdLocks[message.request_id];
-          if (tendermint.latestBlockHeight <= message.height) return;
+          if (tendermint.latestBlockHeight <= message.height) {
+            delete requestIdLocks[message.request_id];
+            return;
+          }
+        }
+      } else if (message.type === 'challenge_request') {
+        const latestBlockHeight = tendermint.latestBlockHeight;
+        if (latestBlockHeight <= message.height) {
+          logger.debug({
+            message: 'Saving challege request message from MQ',
+            tendermintLatestBlockHeight: latestBlockHeight,
+            messageBlockHeight: message.height,
+          });
+          const responseId = message.request_id + ':' + message.idp_id;
+          requestIdLocks[message.request_id] = true;
+          await Promise.all([
+            db.setRequestToProcessReceivedFromMQ(message.request_id, message),
+            db.addRequestIdExpectedInBlock(message.height, message.request_id),
+            db.setPublicProofReceivedFromMQ(responseId, message.public_proof),
+          ]);
+          if (tendermint.latestBlockHeight <= message.height) {
+            delete requestIdLocks[message.request_id];
+            return;
+          }
         }
       } else if (message.type === 'idp_response') {
         const request = await db.getRequestData(message.request_id);
@@ -798,13 +802,16 @@ export async function handleMessageFromQueue(messageStr) {
             db.setRequestToProcessReceivedFromMQ(message.request_id, message),
             db.addRequestIdExpectedInBlock(message.height, message.request_id),
           ]);
-          delete requestIdLocks[message.request_id];
-          if (tendermint.latestBlockHeight <= message.height) return;
+          if (tendermint.latestBlockHeight <= message.height) {
+            delete requestIdLocks[message.request_id];
+            return;
+          }
         }
       }
     }
 
     await processMessage(message);
+    delete requestIdLocks[message.request_id];
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling message from message queue',
