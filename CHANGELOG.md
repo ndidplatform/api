@@ -4,8 +4,10 @@
 
 BUG FIXES:
 
-- Fix AS unable to correctly receive/process more than one service data requests in the same request.
-- Fix sign message even when there are no receivers to send a message to over message queue.
+- Fix incorrect async event process locks.
+- Fix sendRequestToAS() on RP side to send a request to AS only once with all services' data request.
+- Fix data request processing on AS side to accept multiple services' data request in one message/request.
+- Fix unnecessary message signing when there is no destination to send.
 
 ## 0.5.1 (July 16, 2018)
 
