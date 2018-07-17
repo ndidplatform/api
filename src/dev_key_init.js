@@ -119,7 +119,11 @@ export async function init() {
     });
     await ndid.addService({
       service_id: 'bank_statement',
-      service_name: 'All transactions in the pass 3 month',
+      service_name: 'All transactions in the past 3 months',
+    });
+    await ndid.addService({
+      service_id: 'customer_info',
+      service_name: 'Customer infomation',
     });
     await Promise.all([
       ndid.approveService({
@@ -127,12 +131,24 @@ export async function init() {
         service_id: 'bank_statement',
       }),
       ndid.approveService({
+        node_id: 'as1',
+        service_id: 'customer_info',
+      }),
+      ndid.approveService({
         node_id: 'as2',
         service_id: 'bank_statement',
       }),
       ndid.approveService({
+        node_id: 'as2',
+        service_id: 'customer_info',
+      }),
+      ndid.approveService({
         node_id: 'as3',
         service_id: 'bank_statement',
+      }),
+      ndid.approveService({
+        node_id: 'as3',
+        service_id: 'customer_info',
       }),
     ]);
     console.log('========= Done =========');
