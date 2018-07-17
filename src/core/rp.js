@@ -387,33 +387,35 @@ async function sendRequestToAS(requestData, height) {
   if (requestData.data_request_list.length === 0) return;
 
   const dataToSendByNodeId = {};
-  requestData.data_request_list.forEach(async (data_request) => {
-    const receivers = await getASReceiverList(data_request);
-    if (receivers.length === 0) {
-      logger.error({
-        message: 'No AS found',
-        data_request,
-      });
-      return;
-    }
-
-    const serviceDataRequest = {
-      service_id: data_request.service_id,
-      request_params: data_request.request_params,
-    };
-    receivers.forEach((receiver) => {
-      if (dataToSendByNodeId[receiver.node_id]) {
-        dataToSendByNodeId[receiver.node_id].service_data_request_list.push(
-          serviceDataRequest
-        );
-      } else {
-        dataToSendByNodeId[receiver.node_id] = {
-          receiver,
-          service_data_request_list: [serviceDataRequest],
-        };
+  await Promise.all(
+    requestData.data_request_list.map(async (data_request) => {
+      const receivers = await getASReceiverList(data_request);
+      if (receivers.length === 0) {
+        logger.error({
+          message: 'No AS found',
+          data_request,
+        });
+        return;
       }
-    });
-  });
+
+      const serviceDataRequest = {
+        service_id: data_request.service_id,
+        request_params: data_request.request_params,
+      };
+      receivers.forEach((receiver) => {
+        if (dataToSendByNodeId[receiver.node_id]) {
+          dataToSendByNodeId[receiver.node_id].service_data_request_list.push(
+            serviceDataRequest
+          );
+        } else {
+          dataToSendByNodeId[receiver.node_id] = {
+            receiver,
+            service_data_request_list: [serviceDataRequest],
+          };
+        }
+      });
+    })
+  );
 
   const challenge = await db.getChallengeFromRequestId(requestData.request_id);
   await Promise.all(
