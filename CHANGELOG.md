@@ -4,7 +4,8 @@
 
 BUG FIXES:
 
-- 
+- Fix AS unable to correctly receive/process more than one service data requests in the same request.
+- Fix sign message even when there are no receivers to send a message to over message queue.
 
 ## 0.5.1 (July 16, 2018)
 
