@@ -118,6 +118,22 @@ export async function createIdentity({
   }
 }
 
+export async function clearMsqDestinationTimeout(hash_id) {
+  try {
+    const result = await tendermint.transact(
+      'ClearMsqDestinationTimeout',
+      hash_id,
+      utils.getNonce()
+    );
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot mark message queue destination as success to blockchain',
+      cause: error,
+    });
+  }
+}
+
 export async function registerMqDestination({ users }) {
   try {
     const result = await tendermint.transact(
