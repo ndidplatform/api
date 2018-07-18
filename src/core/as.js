@@ -229,6 +229,14 @@ export async function afterGotDataFromCallback(
     );
     return;
   }
+  if(response.status !== 200) {
+    logger.info({
+      message: 'Invalid response status for AS data',
+      status: response.status,
+      body,
+    });
+    return;
+  }
   let data, synchronous;
   try {
     const result = JSON.parse(body);
