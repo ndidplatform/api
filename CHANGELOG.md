@@ -1,5 +1,16 @@
 # Changelog
 
+## TBD
+
+IMPROVEMENTS:
+
+- Remove unnecessary block results query call to Tendermint.
+
+BUG FIXES:
+
+- Change block and block results query calls to Tendermint to use HTTP instead of WebSocket.
+- Fix duplicate message processing by removing cache when message is going to be process from handle message from message queue function.
+
 ## 0.5.2 (July 17, 2018)
 
 BUG FIXES:

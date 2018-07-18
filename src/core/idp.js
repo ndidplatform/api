@@ -741,6 +741,8 @@ export async function handleMessageFromQueue(messageStr) {
           if (tendermint.latestBlockHeight <= message.height) {
             delete requestIdLocks[message.request_id];
             return;
+          } else {
+            await db.removeRequestToProcessReceivedFromMQ(message.request_id);
           }
         }
       } else if (message.type === 'challenge_request') {
@@ -761,6 +763,11 @@ export async function handleMessageFromQueue(messageStr) {
           if (tendermint.latestBlockHeight <= message.height) {
             delete requestIdLocks[message.request_id];
             return;
+          } else {
+            await Promise.all([
+              db.removeRequestToProcessReceivedFromMQ(message.request_id),
+              db.removePublicProofReceivedFromMQ(responseId),
+            ]);
           }
         }
       } else if (message.type === 'idp_response') {
@@ -805,6 +812,8 @@ export async function handleMessageFromQueue(messageStr) {
           if (tendermint.latestBlockHeight <= message.height) {
             delete requestIdLocks[message.request_id];
             return;
+          } else {
+            await db.removeRequestToProcessReceivedFromMQ(message.request_id);
           }
         }
       }
@@ -863,23 +872,44 @@ export async function handleTendermintNewBlockHeaderEvent(
       requestIdsInTendermintBlock.map(async (requestId) => {
         if (requestIdLocks[requestId]) return;
         const message = await db.getRequestToProcessReceivedFromMQ(requestId);
+        if (message == null) return;
         await processMessage(message);
         await db.removeRequestToProcessReceivedFromMQ(requestId);
       })
     );
-
     db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 
     // Clean up closed or timed out create identity requests
-    const [blocks, blockResults] = await Promise.all([
-      tendermint.getBlocks(fromHeight, toHeight),
-      tendermint.getBlockResults(fromHeight, toHeight),
-    ]);
-
+    const blocks = await tendermint.getBlocks(fromHeight, toHeight);
     await Promise.all(
       blocks.map(async (block, blockIndex) => {
         let transactions = tendermint.getTransactionListFromBlockQuery(block);
-        transactions = transactions.filter((transaction, index) => {
+        if (transactions.length === 0) return;
+
+        let requestIdsToCleanUp = await Promise.all(
+          transactions.map(async (transaction) => {
+            // TODO: clear key with smart-contract, eg. request_id or requestId
+            const requestId =
+              transaction.args.request_id || transaction.args.requestId;
+            if (requestId == null) return;
+            if (
+              transaction.fnName === 'CloseRequest' ||
+              transaction.fnName === 'TimeOutRequest'
+            ) {
+              const callbackUrl = await db.getRequestCallbackUrl(requestId);
+              if (!callbackUrl) return;
+              return requestId;
+            }
+          })
+        );
+        const requestIdsToCleanUpWithValue = requestIdsToCleanUp.filter(
+          (requestId) => requestId != null
+        );
+        if (requestIdsToCleanUpWithValue.length === 0) return;
+
+        const height = parseInt(block.block.header.height);
+        const blockResults = await tendermint.getBlockResults(height, height);
+        requestIdsToCleanUp.filter((requestId, index) => {
           const deliverTxResult =
             blockResults[blockIndex].results.DeliverTx[index];
           const successTag = deliverTxResult.tags.find(
@@ -890,27 +920,11 @@ export async function handleTendermintNewBlockHeaderEvent(
           }
           return false;
         });
-        // const height = parseInt(block.block.header.height);
-        let requestIdsToCleanUp = [];
 
-        transactions.forEach((transaction) => {
-          // TODO: clear key with smart-contract, eg. request_id or requestId
-          const requestId =
-            transaction.args.request_id || transaction.args.requestId;
-          if (requestId == null) return;
-          if (
-            transaction.fnName === 'CloseRequest' ||
-            transaction.fnName === 'TimeOutRequest'
-          ) {
-            requestIdsToCleanUp.push(requestId);
-          }
-        });
         requestIdsToCleanUp = [...new Set(requestIdsToCleanUp)];
 
         await Promise.all(
           requestIdsToCleanUp.map(async (requestId) => {
-            const callbackUrl = await db.getRequestCallbackUrl(requestId);
-            if (!callbackUrl) return;
             db.removeRequestCallbackUrl(requestId);
             db.removeRequestIdReferenceIdMappingByRequestId(requestId);
             db.removeRequestData(requestId);

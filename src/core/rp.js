@@ -290,44 +290,56 @@ export async function handleTendermintNewBlockHeaderEvent(
     );
     db.removeExpectedIdpPublicProofInBlockList(fromHeight, toHeight);
 
-    const [blocks, blockResults] = await Promise.all([
-      tendermint.getBlocks(fromHeight, toHeight),
-      tendermint.getBlockResults(fromHeight, toHeight),
-    ]);
+    const blocks = await tendermint.getBlocks(fromHeight, toHeight);
     await Promise.all(
       blocks.map(async (block, blockIndex) => {
         let transactions = tendermint.getTransactionListFromBlockQuery(block);
-        transactions = transactions.filter((transaction, index) => {
-          const deliverTxResult =
-            blockResults[blockIndex].results.DeliverTx[index];
-          const successTag = deliverTxResult.tags.find(
-            (tag) => tag.key === successBase64
-          );
-          if (successTag) {
-            return successTag.value === trueBase64;
-          }
-          return false;
-        });
-        const height = parseInt(block.block.header.height);
-        let requestIdsToProcessUpdate = [];
+        if (transactions.length === 0) return;
 
-        transactions.forEach((transaction) => {
-          // TODO: clear key with smart-contract, eg. request_id or requestId
-          const requestId =
-            transaction.args.request_id || transaction.args.requestId;
-          if (requestId == null) return;
-          if (transaction.fnName === 'DeclareIdentityProof') return;
-          requestIdsToProcessUpdate.push(requestId);
-        });
+        let requestIdsToProcessUpdate = await Promise.all(
+          transactions.map(async (transaction) => {
+            // TODO: clear key with smart-contract, eg. request_id or requestId
+            const requestId =
+              transaction.args.request_id || transaction.args.requestId;
+            if (requestId == null) return;
+            if (transaction.fnName === 'DeclareIdentityProof') return;
+
+            const callbackUrl = await db.getRequestCallbackUrl(requestId);
+            if (!callbackUrl) return; // This request does not concern this RP
+
+            return requestId;
+          })
+        );
+        const requestIdsToProcessUpdateWithValue = requestIdsToProcessUpdate.filter(
+          (requestId) => requestId != null
+        );
+        if (requestIdsToProcessUpdateWithValue.length === 0) return;
+
+        const height = parseInt(block.block.header.height);
+        const blockResults = await tendermint.getBlockResults(height, height);
+        requestIdsToProcessUpdate = requestIdsToProcessUpdate.filter(
+          (requestId, index) => {
+            const deliverTxResult =
+              blockResults[blockIndex].results.DeliverTx[index];
+            const successTag = deliverTxResult.tags.find(
+              (tag) => tag.key === successBase64
+            );
+            if (successTag) {
+              return successTag.value === trueBase64;
+            }
+            return false;
+          }
+        );
+
         requestIdsToProcessUpdate = [...new Set(requestIdsToProcessUpdate)];
 
         await Promise.all(
-          requestIdsToProcessUpdate.map(async (requestId) => {
-            await processRequestUpdate(requestId, height);
-            db.removeExpectedIdpResponseNodeIdInBlockList(height);
-            db.removeExpectedDataSignInBlockList(height);
-          })
+          requestIdsToProcessUpdate.map((requestId) =>
+            processRequestUpdate(requestId, height)
+          )
         );
+        db.removeExpectedIdpResponseNodeIdInBlockList(height);
+        db.removeExpectedDataSignInBlockList(height);
       })
     );
   } catch (error) {
@@ -522,6 +534,8 @@ export async function handleMessageFromQueue(messageStr) {
         if (tendermint.latestBlockHeight <= message.height) {
           delete challengeRequestProcessLocks[responseId];
           return;
+        } else {
+          await db.removePublicProofReceivedFromMQ(responseId);
         }
       }
       await common.handleChallengeRequest(responseId, message.public_proof);
@@ -581,6 +595,8 @@ export async function handleMessageFromQueue(messageStr) {
         if (tendermint.latestBlockHeight <= message.height) {
           delete idpResponseProcessLocks[responseId];
           return;
+        } else {
+          await db.removePrivateProofReceivedFromMQ(responseId);
         }
       }
 

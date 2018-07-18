@@ -159,12 +159,17 @@ tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
  * @returns {Promise<Object[]>}
  */
 export async function getBlocks(fromHeight, toHeight) {
+  logger.debug({
+    message: 'Get blocks from Tendermint',
+    fromHeight,
+    toHeight,
+  });
   const heights = Array.from(
     { length: toHeight - fromHeight + 1 },
     (v, i) => i + fromHeight
   );
   const blocks = await Promise.all(
-    heights.map((height) => tendermintWsClient.getBlock(height))
+    heights.map((height) => tendermintHttpClient.block(height))
   );
   return blocks;
 }
@@ -176,12 +181,17 @@ export async function getBlocks(fromHeight, toHeight) {
  * @returns {Promise<Object[]>}
  */
 export async function getBlockResults(fromHeight, toHeight) {
+  logger.debug({
+    message: 'Get block results from Tendermint',
+    fromHeight,
+    toHeight,
+  });
   const heights = Array.from(
     { length: toHeight - fromHeight + 1 },
     (v, i) => i + fromHeight
   );
   const results = await Promise.all(
-    heights.map((height) => tendermintWsClient.getBlockResults(height))
+    heights.map((height) => tendermintHttpClient.blockResults(height))
   );
   return results;
 }

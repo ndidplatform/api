@@ -862,7 +862,7 @@ export async function checkIdpResponse({
 
   await db.addIdpResponseValidList(requestId, responseValid);
 
-  db.removeProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
+  db.removePrivateProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
 
   return responseValid;
 }

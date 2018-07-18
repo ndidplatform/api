@@ -397,11 +397,12 @@ export async function handleMessageFromQueue(messageStr) {
       if (tendermint.latestBlockHeight <= message.height) {
         delete requestIdLocks[message.request_id];
         return;
+      } else {
+        await db.removeRequestReceivedFromMQ(requestId);
       }
     }
 
     await processRequest(message);
-    await db.removeRequestReceivedFromMQ(requestId);
     delete requestIdLocks[message.request_id];
   } catch (error) {
     const err = new CustomError({
@@ -454,6 +455,7 @@ export async function handleTendermintNewBlockHeaderEvent(
       requestIdsInTendermintBlock.map(async (requestId) => {
         if (requestIdLocks[requestId]) return;
         const request = await db.getRequestReceivedFromMQ(requestId);
+        if (request == null) return;
         await processRequest(request);
         await db.removeRequestReceivedFromMQ(requestId);
       })
