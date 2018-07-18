@@ -87,22 +87,22 @@ if (role === 'rp' || role === 'idp' || role === 'as') {
 
 if (role === 'rp') {
   handleMessageFromQueue = rp.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockHeaderEventHandler(
-    rp.handleTendermintNewBlockHeaderEvent
+  tendermint.setTendermintNewBlockEventHandler(
+    rp.handleTendermintNewBlockEvent
   );
   resumeTimeoutScheduler();
   resumeCallbackToClient();
 } else if (role === 'idp') {
   handleMessageFromQueue = idp.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockHeaderEventHandler(
-    idp.handleTendermintNewBlockHeaderEvent
+  tendermint.setTendermintNewBlockEventHandler(
+    idp.handleTendermintNewBlockEvent
   );
   resumeTimeoutScheduler();
   resumeCallbackToClient(shouldRetryCallback);
 } else if (role === 'as') {
   handleMessageFromQueue = as.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockHeaderEventHandler(
-    as.handleTendermintNewBlockHeaderEvent
+  tendermint.setTendermintNewBlockEventHandler(
+    as.handleTendermintNewBlockEvent
   );
   resumeCallbackToClient(shouldRetryCallback, as.afterGotDataFromCallback);
 }

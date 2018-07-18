@@ -257,14 +257,14 @@ function isAllIdpRespondedAndValid({ requestStatus, responseValidList }) {
   return false;
 }
 
-export async function handleTendermintNewBlockHeaderEvent(
+export async function handleTendermintNewBlockEvent(
   error,
   result,
   missingBlockCount
 ) {
   if (missingBlockCount == null) return;
   try {
-    const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
+    const height = tendermint.getBlockHeightFromNewBlockEvent(result);
     const fromHeight =
       missingBlockCount === 0 ? height - 1 : height - missingBlockCount;
     const toHeight = height - 1;
@@ -293,7 +293,7 @@ export async function handleTendermintNewBlockHeaderEvent(
     const blocks = await tendermint.getBlocks(fromHeight, toHeight);
     await Promise.all(
       blocks.map(async (block, blockIndex) => {
-        let transactions = tendermint.getTransactionListFromBlockQuery(block);
+        let transactions = tendermint.getTransactionListFromBlock(block);
         if (transactions.length === 0) return;
 
         let requestIdsToProcessUpdate = await Promise.all(
@@ -315,7 +315,7 @@ export async function handleTendermintNewBlockHeaderEvent(
         );
         if (requestIdsToProcessUpdateWithValue.length === 0) return;
 
-        const height = parseInt(block.block.header.height);
+        const height = parseInt(block.header.height);
         const blockResults = await tendermint.getBlockResults(height, height);
         requestIdsToProcessUpdate = requestIdsToProcessUpdate.filter(
           (requestId, index) => {
@@ -350,7 +350,7 @@ export async function handleTendermintNewBlockHeaderEvent(
     logger.error(err.getInfoForLog());
     await common.notifyError({
       callbackUrl: callbackUrls.error_url,
-      action: 'handleTendermintNewBlockHeaderEvent',
+      action: 'handleTendermintNewBlockEvent',
       error: err,
     });
   }

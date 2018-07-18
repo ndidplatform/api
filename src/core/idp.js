@@ -836,13 +836,13 @@ export async function handleMessageFromQueue(messageStr) {
   }
 }
 
-export async function handleTendermintNewBlockHeaderEvent(
+export async function handleTendermintNewBlockEvent(
   error,
   result,
   missingBlockCount
 ) {
   try {
-    const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
+    const height = tendermint.getBlockHeightFromNewBlockEvent(result);
 
     // messages that arrived before 'NewBlock' event
     // including messages between the start of missing block's height
@@ -883,7 +883,7 @@ export async function handleTendermintNewBlockHeaderEvent(
     const blocks = await tendermint.getBlocks(fromHeight, toHeight);
     await Promise.all(
       blocks.map(async (block, blockIndex) => {
-        let transactions = tendermint.getTransactionListFromBlockQuery(block);
+        let transactions = tendermint.getTransactionListFromBlock(block);
         if (transactions.length === 0) return;
 
         let requestIdsToCleanUp = await Promise.all(
@@ -907,7 +907,7 @@ export async function handleTendermintNewBlockHeaderEvent(
         );
         if (requestIdsToCleanUpWithValue.length === 0) return;
 
-        const height = parseInt(block.block.header.height);
+        const height = parseInt(block.header.height);
         const blockResults = await tendermint.getBlockResults(height, height);
         requestIdsToCleanUp.filter((requestId, index) => {
           const deliverTxResult =
@@ -942,7 +942,7 @@ export async function handleTendermintNewBlockHeaderEvent(
     logger.error(err.getInfoForLog());
     await common.notifyError({
       callbackUrl: callbackUrls.error_url,
-      action: 'handleTendermintNewBlockHeaderEvent',
+      action: 'handleTendermintNewBlockEvent',
       error: err,
     });
   }

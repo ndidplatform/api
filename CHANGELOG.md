@@ -5,6 +5,7 @@
 IMPROVEMENTS:
 
 - Remove unnecessary block results query call to Tendermint.
+- Cache block information for the latest height block and the one before that in memory to decrease HTTP call to Tendermint.
 
 BUG FIXES:
 

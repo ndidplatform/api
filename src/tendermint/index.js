@@ -34,7 +34,9 @@ import { convertAbciAppCodeToErrorType } from './abci_app_code';
 import * as utils from '../utils';
 import * as config from '../config';
 
-let handleTendermintNewBlockHeaderEvent;
+let handleTendermintNewBlockEvent;
+
+const cacheBlocks = {};
 
 export let syncing = null;
 export let connected = false;
@@ -83,8 +85,8 @@ function saveLatestBlockHeight(height) {
   }
 }
 
-export function setTendermintNewBlockHeaderEventHandler(handler) {
-  handleTendermintNewBlockHeaderEvent = handler;
+export function setTendermintNewBlockEventHandler(handler) {
+  handleTendermintNewBlockEvent = handler;
 }
 
 /**
@@ -96,7 +98,7 @@ async function pollStatusUntilSynced() {
   });
   if (syncing == null || syncing === true) {
     for (;;) {
-      const status = await tendermintWsClient.getStatus();
+      const status = await tendermintHttpClient.status();
       syncing = status.sync_info.catching_up;
       if (syncing === false) {
         logger.info({
@@ -122,14 +124,15 @@ tendermintWsClient.on('disconnected', () => {
   syncing = null;
 });
 
-tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
+tendermintWsClient.on('newBlock#event', async (error, result) => {
   if (syncing !== false) {
     return;
   }
-  const blockHeight = parseInt(result.data.value.header.height);
+  const blockHeight = getBlockHeightFromNewBlockEvent(result);
+  cacheBlocks[blockHeight] = result.data.value.block;
 
   logger.debug({
-    message: 'Tendermint NewBlockHeader event received',
+    message: 'Tendermint NewBlock event received',
     blockHeight,
   });
 
@@ -141,12 +144,13 @@ tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
       lastKnownBlockHeight == null
         ? null
         : blockHeight - lastKnownBlockHeight - 1;
-    if (handleTendermintNewBlockHeaderEvent) {
-      await handleTendermintNewBlockHeaderEvent(
+    if (handleTendermintNewBlockEvent) {
+      await handleTendermintNewBlockEvent(
         error,
         result,
         missingBlockCount
       );
+      delete cacheBlocks[blockHeight - 1];
     }
     saveLatestBlockHeight(blockHeight);
   }
@@ -169,7 +173,14 @@ export async function getBlocks(fromHeight, toHeight) {
     (v, i) => i + fromHeight
   );
   const blocks = await Promise.all(
-    heights.map((height) => tendermintHttpClient.block(height))
+    heights.map(async (height) => {
+      if (cacheBlocks[height]) {
+        return cacheBlocks[height];
+      } else {
+        const result = await tendermintHttpClient.block(height);
+        return result.block;
+      }
+    })
   );
   return blocks;
 }
@@ -361,9 +372,9 @@ export async function transact(fnName, data, nonce, useMasterKey) {
   }
 }
 
-export function getTransactionListFromBlockQuery(result) {
-  const txs = result.block.data.txs; // array of transactions in the block base64 encoded
-  //const height = result.data.data.block.header.height;
+export function getTransactionListFromBlock(block) {
+  const txs = block.data.txs; // array of transactions in the block base64 encoded
+  // const height = parseInt(block.header.height);
 
   if (txs == null) {
     return [];
@@ -384,4 +395,8 @@ export function getTransactionListFromBlockQuery(result) {
 
 export function getBlockHeightFromNewBlockHeaderEvent(result) {
   return parseInt(result.data.value.header.height);
+}
+
+export function getBlockHeightFromNewBlockEvent(result) {
+  return parseInt(result.data.value.block.header.height);
 }

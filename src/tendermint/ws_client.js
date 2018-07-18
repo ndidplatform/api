@@ -63,7 +63,8 @@ export default class TendermintWsClient extends EventEmitter {
         this.ws.ping();
       }, PING_INTERVAL);
 
-      this.subscribeToNewBlockHeaderEvent();
+      // this.subscribeToNewBlockHeaderEvent();
+      this.subscribeToNewBlockEvent();
     });
 
     this.ws.on('close', (code, reason) => {
@@ -190,6 +191,19 @@ export default class TendermintWsClient extends EventEmitter {
           method: 'subscribe',
           params: ["tm.event = 'NewBlockHeader'"],
           id: 'newBlockHeader',
+        })
+      );
+    }
+  }
+
+  subscribeToNewBlockEvent() {
+    if (this.wsConnected) {
+      this.ws.send(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'subscribe',
+          params: ["tm.event = 'NewBlock'"],
+          id: 'newBlock',
         })
       );
     }
