@@ -744,14 +744,19 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
 
 //===== zkp and request related =====
 
-export async function handleChallengeRequest(responseId, publicProof) {
+export async function handleChallengeRequest({
+  request_id,
+  idp_id, 
+  publicProof
+}) {
   logger.debug({
     message: 'Handle challenge request',
-    responseId,
+    request_id,
+    idp_id,
     publicProof,
   });
 
-  const [request_id, idp_id] = responseId.split(':');
+  //const [request_id, idp_id] = responseId.split(':');
 
   //get public proof in blockchain
   const public_proof_blockchain = JSON.parse(
