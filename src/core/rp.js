@@ -265,8 +265,7 @@ export async function handleTendermintNewBlockEvent(
   if (missingBlockCount == null) return;
   try {
     const height = tendermint.getBlockHeightFromNewBlockEvent(result);
-    const fromHeight =
-      missingBlockCount === 0 ? height - 1 : height - missingBlockCount;
+    const fromHeight = height - 1 - missingBlockCount;
     const toHeight = height - 1;
 
     //loop through all those block before, and verify all proof

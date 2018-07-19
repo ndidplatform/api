@@ -37,6 +37,7 @@ import * as config from '../config';
 let handleTendermintNewBlockEvent;
 
 const cacheBlocks = {};
+let lastKnownAppHash;
 
 export let syncing = null;
 export let connected = false;
@@ -136,6 +137,8 @@ tendermintWsClient.on('newBlock#event', async (error, result) => {
     blockHeight,
   });
 
+  const appHash = getAppHashFromNewBlockEvent(result);
+
   if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
     const lastKnownBlockHeight = latestBlockHeight;
     latestBlockHeight = blockHeight;
@@ -144,14 +147,20 @@ tendermintWsClient.on('newBlock#event', async (error, result) => {
       lastKnownBlockHeight == null
         ? null
         : blockHeight - lastKnownBlockHeight - 1;
-    if (handleTendermintNewBlockEvent) {
-      await handleTendermintNewBlockEvent(
-        error,
-        result,
-        missingBlockCount
-      );
-      delete cacheBlocks[blockHeight - 1];
+    if (missingBlockCount > 0) {
+      logger.debug({
+        message: 'Tendermint NewBlock event missed',
+        missingBlockCount,
+      });
     }
+
+    if (lastKnownAppHash !== appHash) {
+      if (handleTendermintNewBlockEvent) {
+        await handleTendermintNewBlockEvent(error, result, missingBlockCount);
+        delete cacheBlocks[blockHeight - 1];
+      }
+    }
+    lastKnownAppHash = appHash;
     saveLatestBlockHeight(blockHeight);
   }
 });
@@ -399,4 +408,8 @@ export function getBlockHeightFromNewBlockHeaderEvent(result) {
 
 export function getBlockHeightFromNewBlockEvent(result) {
   return parseInt(result.data.value.block.header.height);
+}
+
+export function getAppHashFromNewBlockEvent(result) {
+  return result.data.value.block.header.app_hash;
 }

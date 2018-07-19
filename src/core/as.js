@@ -424,21 +424,17 @@ export async function handleTendermintNewBlockEvent(
   result,
   missingBlockCount
 ) {
+  if (missingBlockCount == null) return;
   try {
     const height = tendermint.getBlockHeightFromNewBlockEvent(result);
-    //console.log('received',height);
+
     // messages that arrived before 'NewBlock' event
     // including messages between the start of missing block's height
     // and the block before latest block height
     // (not only just (current height - 1) in case 'NewBlock' events are missing)
     // NOTE: tendermint always create a pair of block. A block with transactions and
     // a block that signs the previous block which indicates that the previous block is valid
-    const fromHeight =
-      missingBlockCount == null
-        ? 1
-        : missingBlockCount === 0
-          ? height - 1
-          : height - missingBlockCount;
+    const fromHeight = height - 1 - missingBlockCount;
     const toHeight = height - 1;
 
     logger.debug({

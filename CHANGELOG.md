@@ -6,9 +6,11 @@ IMPROVEMENTS:
 
 - Remove unnecessary block results query call to Tendermint.
 - Cache block information for the latest height block and the one before that in memory to decrease HTTP call to Tendermint.
+- Check for app hash when receiving new block event to decrease unnecessary processing (in case Tendermint consensus config for `create_empty_block` is set to true).
 
 BUG FIXES:
 
+- Fix block height range to handle message when there are missing new block events.
 - Change block and block results query calls to Tendermint to use HTTP instead of WebSocket.
 - Fix duplicate message processing by removing cache when message is going to be process from handle message from message queue function.
 
