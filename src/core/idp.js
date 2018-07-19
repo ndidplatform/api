@@ -648,8 +648,12 @@ async function processMessage(message) {
       );
     }
   } else if (message.type === 'challenge_request') {
-    const responseId = message.request_id + ':' + message.idp_id;
-    await common.handleChallengeRequest(responseId, message.public_proof);
+    //const responseId = message.request_id + ':' + message.idp_id;
+    await common.handleChallengeRequest({
+      request_id: message.request_id,
+      idp_id: message.idp_id, 
+      public_proof: message.public_proof
+    });
   } else if (message.type === 'consent_request') {
     const valid = await common.checkRequestIntegrity(
       message.request_id,

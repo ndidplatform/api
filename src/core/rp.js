@@ -286,7 +286,11 @@ export async function handleTendermintNewBlockEvent(
         if (challengeRequestProcessLocks[responseId]) return;
         const publicProof = await db.getPublicProofReceivedFromMQ(responseId);
         if (publicProof == null) return;
-        await common.handleChallengeRequest(responseId, publicProof);
+        await common.handleChallengeRequest({
+          request_id: requestId,
+          idp_id: idpId,
+          public_proof: publicProof
+        });
         await db.removePublicProofReceivedFromMQ(responseId);
       })
     );
@@ -540,7 +544,11 @@ export async function handleMessageFromQueue(messageStr) {
           await db.removePublicProofReceivedFromMQ(responseId);
         }
       }
-      await common.handleChallengeRequest(responseId, message.public_proof);
+      await common.handleChallengeRequest({ 
+        request_id: message.request_id,
+        idp_id: message.idp_id,
+        public_proof: message.public_proof
+      });
       delete challengeRequestProcessLocks[responseId];
     } else if (message.type === 'idp_response') {
       const callbackUrl = await db.getRequestCallbackUrl(message.request_id);
