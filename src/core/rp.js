@@ -285,7 +285,9 @@ export async function handleTendermintNewBlockEvent(
         const responseId = requestId + ':' + idpId;
         if (challengeRequestProcessLocks[responseId]) return;
         const publicProof = await db.getPublicProofReceivedFromMQ(responseId);
+        if (publicProof == null) return;
         await common.handleChallengeRequest(responseId, publicProof);
+        await db.removePublicProofReceivedFromMQ(responseId);
       })
     );
     db.removeExpectedIdpPublicProofInBlockList(fromHeight, toHeight);
