@@ -225,6 +225,21 @@ export async function timeoutRequest(requestId) {
   try {
     const responseValidList = await db.getIdpResponseValidList(requestId);
 
+    // FOR DEBUG
+    const nodeIds = {};
+    for (let i = 0; i < responseValidList.length; i++) {
+      if (nodeIds[responseValidList[i].idp_id]) {
+        logger.error({
+          message: 'Duplicate IdP ID in response valid list',
+          requestId,
+          responseValidList,
+          action: 'timeoutRequest',
+        });
+        break;
+      }
+      nodeIds[responseValidList[i].idp_id] = true;
+    }
+
     await tendermintNdid.timeoutRequest({ requestId, responseValidList });
   } catch (error) {
     logger.error({
@@ -746,8 +761,8 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
 
 export async function handleChallengeRequest({
   request_id,
-  idp_id, 
-  public_proof
+  idp_id,
+  public_proof,
 }) {
   logger.debug({
     message: 'Handle challenge request',
@@ -915,6 +930,21 @@ async function closeRequestInternalAsync(
 ) {
   try {
     const responseValidList = await db.getIdpResponseValidList(request_id);
+
+    // FOR DEBUG
+    const nodeIds = {};
+    for (let i = 0; i < responseValidList.length; i++) {
+      if (nodeIds[responseValidList[i].idp_id]) {
+        logger.error({
+          message: 'Duplicate IdP ID in response valid list',
+          requestId: request_id,
+          responseValidList,
+          action: 'closeRequest',
+        });
+        break;
+      }
+      nodeIds[responseValidList[i].idp_id] = true;
+    }
 
     await tendermintNdid.closeRequest({
       requestId: request_id,
