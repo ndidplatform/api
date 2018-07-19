@@ -747,13 +747,13 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
 export async function handleChallengeRequest({
   request_id,
   idp_id, 
-  publicProof
+  public_proof
 }) {
   logger.debug({
     message: 'Handle challenge request',
     request_id,
     idp_id,
-    publicProof,
+    public_proof,
   });
 
   //const [request_id, idp_id] = responseId.split(':');
@@ -764,9 +764,9 @@ export async function handleChallengeRequest({
   );
 
   //check public proof in blockchain and in message queue
-  if (public_proof_blockchain.length !== publicProof.length) return false;
-  for (let i = 0; i < publicProof.length; i++) {
-    if (public_proof_blockchain[i] !== publicProof[i]) return false;
+  if (public_proof_blockchain.length !== public_proof.length) return false;
+  for (let i = 0; i < public_proof.length; i++) {
+    if (public_proof_blockchain[i] !== public_proof[i]) return false;
   }
 
   //if match, send challenge and return
