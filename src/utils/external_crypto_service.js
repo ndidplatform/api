@@ -309,9 +309,21 @@ async function callbackWithRetry(url, body, logPrefix) {
         cbId,
         httpStatusCode: response.status,
       });
+      if (response.status !== 200) {
+        throw new CustomError({
+          message: `[${logPrefix}] Got response status other than 200`,
+          details: {
+            url,
+            cbId,
+            httpStatusCode: response.status,
+          },
+        });
+      }
       const responseBody = await response.text();
       return responseBody;
     } catch (error) {
+      if (error && error.name === 'CustomError') throw error;
+
       const nextRetry = backoff.next();
 
       logger.error({
@@ -378,7 +390,10 @@ export async function decryptAsymetricKey(encryptedMessage) {
         message: 'External decrypt with node key response body',
         body: responseBody,
       });
-      throw error;
+      throw new CustomError({
+        message: 'External decrypt with node key: Cannot parse JSON',
+        cause: error,
+      });
     }
 
     const decryptedMessageBase64 = result.decrypted_message;
@@ -446,7 +461,10 @@ export async function createSignature(message, messageHash, useMasterKey) {
         message: 'External sign with node key response body',
         body: responseBody,
       });
-      throw error;
+      throw new CustomError({
+        message: 'External sign with node key: Cannot parse JSON',
+        cause: error,
+      });
     }
 
     const signatureBase64 = result.signature;
