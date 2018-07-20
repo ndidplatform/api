@@ -24,6 +24,8 @@ import path from 'path';
 import fs from 'fs';
 import { EventEmitter } from 'events';
 
+import { ExponentialBackoff } from 'simple-backoff';
+
 import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 import logger from '../logger';
@@ -98,6 +100,13 @@ async function pollStatusUntilSynced() {
     message: 'Waiting for Tendermint to finish syncing blockchain',
   });
   if (syncing == null || syncing === true) {
+    const backoff = new ExponentialBackoff({
+      min: 1000,
+      max: config.maxIntervalTendermintSyncCheck,
+      factor: 2,
+      jitter: 0,
+    });
+
     for (;;) {
       const status = await tendermintHttpClient.status();
       syncing = status.sync_info.catching_up;
@@ -108,7 +117,7 @@ async function pollStatusUntilSynced() {
         eventEmitter.emit('ready');
         break;
       }
-      await utils.wait(1000);
+      await utils.wait(backoff.next());
     }
   }
 }
