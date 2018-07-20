@@ -114,12 +114,12 @@ async function callbackWithRetry(
       cbId,
     });
     try {
-      const response = await httpPost(cbId, callbackUrl, body);
+      const responseObj = await httpPost(cbId, callbackUrl, body);
 
       db.removeCallbackWithRetryData(cbId);
       if (responseCallbackFnName) {
         getResponseCallbackFn(responseCallbackFnName)(
-          response,
+          responseObj,
           dataForResponseCallback
         );
       }
@@ -223,10 +223,10 @@ export async function callbackToClient(
       cbId,
     });
     try {
-      const response = await httpPost(cbId, callbackUrl, body);
+      const responseObj = await httpPost(cbId, callbackUrl, body);
       if (responseCallbackFnName) {
         getResponseCallbackFn(responseCallbackFnName)(
-          response,
+          responseObj,
           dataForResponseCallback
         );
       }
