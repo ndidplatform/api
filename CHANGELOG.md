@@ -7,6 +7,7 @@ IMPROVEMENTS:
 - Remove unnecessary block results query call to Tendermint.
 - Cache block information for the latest height block and the one before that in memory to decrease HTTP call to Tendermint.
 - Check for app hash when receiving new block event to decrease unnecessary processing (in case Tendermint consensus config for `create_empty_block` is set to true).
+- External crypto service callback retry.
 
 BUG FIXES:
 
