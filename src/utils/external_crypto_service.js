@@ -26,6 +26,7 @@ import crypto from 'crypto';
 import { EventEmitter } from 'events';
 
 import fetch from 'node-fetch';
+import { ExponentialBackoff } from 'simple-backoff';
 
 import {
   hash,
@@ -34,6 +35,7 @@ import {
   randomBase64Bytes,
 } from './crypto';
 import * as tendermintNdid from '../tendermint/ndid';
+import { wait } from '.';
 import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 import logger from '../logger';
@@ -49,6 +51,9 @@ const callbackUrlFilesPrefix = path.join(
   config.dataDirectoryPath,
   'dpki-callback-url-' + config.nodeId
 );
+
+const waitStopFunction = [];
+let stopCallbackRetry = false;
 
 export const eventEmitter = new EventEmitter();
 
@@ -269,6 +274,78 @@ export async function setDpkiCallback({
   checkAndEmitAllCallbacksSet();
 }
 
+async function callbackWithRetry(url, body, logPrefix) {
+  const cbId = randomBase64Bytes(10);
+  logger.info({
+    message: `[${logPrefix}] Calling callback`,
+    url,
+    cbId,
+  });
+  logger.debug({
+    message: `[${logPrefix}] Callback data in body`,
+    body,
+  });
+
+  const backoff = new ExponentialBackoff({
+    min: 5000,
+    max: 180000,
+    factor: 2,
+    jitter: 0.2,
+  });
+  const startTime = Date.now();
+
+  for (;;) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      logger.info({
+        message: `[${logPrefix}] response`,
+        cbId,
+        httpStatusCode: response.status,
+      });
+      const responseBody = await response.text();
+      return responseBody;
+    } catch (error) {
+      const nextRetry = backoff.next();
+
+      logger.error({
+        message: `[${logPrefix}] Cannot send callback`,
+        error,
+        cbId,
+      });
+
+      if (
+        Date.now() - startTime + nextRetry >
+        config.callbackRetryTimeout * 1000
+      ) {
+        throw new CustomError({
+          message: `[${logPrefix}] callback retry timed out`,
+          details: {
+            url,
+            cbId,
+          },
+        });
+      }
+
+      logger.info({
+        message: `[${logPrefix}] Retrying callback in ${nextRetry} milliseconds`,
+        cbId,
+      });
+
+      const { promise: waitPromise, stopWaiting } = wait(nextRetry, true);
+      waitStopFunction.push(stopWaiting);
+      await waitPromise;
+      waitStopFunction.splice(waitStopFunction.indexOf(stopWaiting), 1);
+    }
+  }
+}
+
 export async function decryptAsymetricKey(encryptedMessage) {
   const url = callbackUrls.decrypt_url;
   if (url == null) {
@@ -282,51 +359,41 @@ export async function decryptAsymetricKey(encryptedMessage) {
     encrypted_message: encryptedMessage,
     key_type: 'RSA',
   };
-  const cbId = randomBase64Bytes(10);
-  logger.info({
-    message: 'Calling external decrypt with node key',
-    url,
-    cbId,
-  });
-  logger.debug({
-    message: 'Calling external decrypt with node key data in body',
-    body,
-  });
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-    logger.info({
-      message: 'External decrypt with node key response',
-      cbId,
-      httpStatusCode: response.status,
-    });
-    const responseBody = await response.text();
+    const responseBody = await callbackWithRetry(
+      url,
+      body,
+      'External decrypt with node key'
+    );
+
     let result;
     try {
       result = JSON.parse(responseBody);
       logger.debug({
         message: 'External decrypt with node key response body',
-        cbId,
         bodyJSON: result,
       });
     } catch (error) {
       logger.debug({
         message: 'External decrypt with node key response body',
-        cbId,
         body: responseBody,
       });
       throw error;
     }
+
     const decryptedMessageBase64 = result.decrypted_message;
+    if (typeof decryptedMessageBase64 !== 'string') {
+      throw new CustomError({
+        message: 'Unexpected decrypted message value type: Expected string',
+        details: {
+          decryptedMessage: decryptedMessageBase64,
+        },
+      });
+    }
+    // TODO: check if string is base64
+
     return Buffer.from(decryptedMessageBase64, 'base64');
   } catch (error) {
-    // TODO: retry
     logger.error({
       message: 'Error calling external crypto service: decrypt',
       callbackUrl: url,
@@ -360,50 +427,41 @@ export async function createSignature(message, messageHash, useMasterKey) {
     key_type: 'RSA',
     sign_method: 'RSA-SHA256',
   };
-  const cbId = randomBase64Bytes(10);
-  logger.info({
-    message: 'Calling external sign with node key',
-    url,
-    cbId,
-  });
-  logger.debug({
-    message: 'Calling external sign with node key data in body',
-    body,
-  });
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-    logger.info({
-      message: 'External sign with node key response',
-      cbId,
-      httpStatusCode: response.status,
-    });
-    const responseBody = await response.text();
+    const responseBody = await callbackWithRetry(
+      url,
+      body,
+      'External sign with node key'
+    );
+
     let result;
     try {
       result = JSON.parse(responseBody);
       logger.debug({
         message: 'External sign with node key response body',
-        cbId,
         bodyJSON: result,
       });
     } catch (error) {
       logger.debug({
         message: 'External sign with node key response body',
-        cbId,
         body: responseBody,
       });
       throw error;
     }
-    return result.signature;
+
+    const signatureBase64 = result.signature;
+    if (typeof signatureBase64 !== 'string') {
+      throw new CustomError({
+        message: 'Unexpected signature value type: Expected string',
+        details: {
+          signature: signatureBase64,
+        },
+      });
+    }
+    // TODO: check if string is base64
+
+    return signatureBase64;
   } catch (error) {
-    // TODO: retry
     logger.error({
       message: 'Error calling external crypto service: sign',
       useMasterKey,
