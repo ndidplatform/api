@@ -399,15 +399,30 @@ export async function decryptAsymetricKey(encryptedMessage) {
     const decryptedMessageBase64 = result.decrypted_message;
     if (typeof decryptedMessageBase64 !== 'string') {
       throw new CustomError({
-        message: 'Unexpected decrypted message value type: Expected string',
+        message: `Unexpected decrypted message value type: expected string, got ${typeof decryptedMessageBase64}`,
         details: {
           decryptedMessage: decryptedMessageBase64,
         },
       });
     }
-    // TODO: check if string is base64
 
-    return Buffer.from(decryptedMessageBase64, 'base64');
+    const decryptedMessageBuffer = Buffer.from(
+      decryptedMessageBase64,
+      'base64'
+    );
+
+    // Check if string is base64 string
+    if (decryptedMessageBuffer.toString('base64') !== decryptedMessageBase64) {
+      throw new CustomError({
+        message:
+          'Unexpected decrypted message value type: expected base64 string',
+        details: {
+          decryptedMessage: decryptedMessageBase64,
+        },
+      });
+    }
+
+    return decryptedMessageBuffer;
   } catch (error) {
     logger.error({
       message: 'Error calling external crypto service: decrypt',
@@ -470,13 +485,24 @@ export async function createSignature(message, messageHash, useMasterKey) {
     const signatureBase64 = result.signature;
     if (typeof signatureBase64 !== 'string') {
       throw new CustomError({
-        message: 'Unexpected signature value type: Expected string',
+        message: `Unexpected signature value type: expected string, got ${typeof signatureBase64}`,
         details: {
           signature: signatureBase64,
         },
       });
     }
-    // TODO: check if string is base64
+    // Check if string is base64 string
+    if (
+      Buffer.from(signatureBase64, 'base64').toString('base64') !==
+      signatureBase64
+    ) {
+      throw new CustomError({
+        message: 'Unexpected signature value type: expected base64 string',
+        details: {
+          signature: signatureBase64,
+        },
+      });
+    }
 
     return signatureBase64;
   } catch (error) {
