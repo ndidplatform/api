@@ -92,6 +92,24 @@ export function getErrorCallbackUrl() {
   return callbackUrls.error_url;
 }
 
+export function getShouldRetryFn(fnName) {
+  switch (fnName) {
+    case 'common.isRequestClosedOrTimedOut':
+      return common.isRequestClosedOrTimedOut;
+    default:
+      return function noop() {};
+  }
+}
+
+export function getResponseCallbackFn(fnName) {
+  switch (fnName) {
+    case 'afterGotDataFromCallback':
+      return afterGotDataFromCallback;
+    default:
+      return function noop() {};
+  }
+}
+
 async function sendDataToRP(rpId, data) {
   let receivers = [];
   let nodeId = rpId;
@@ -229,7 +247,7 @@ export async function afterGotDataFromCallback(
     );
     return;
   }
-  if(response.status !== 200) {
+  if (response.status !== 200) {
     logger.info({
       message: 'Invalid response status for AS data',
       status: response.status,
@@ -310,9 +328,9 @@ async function getDataAndSendBackToRP(request, responseDetails) {
           ...responseDetails,
         },
         true,
-        common.shouldRetryCallback,
+        'common.isRequestClosedOrTimedOut',
         [request.request_id],
-        afterGotDataFromCallback,
+        'afterGotDataFromCallback',
         {
           rpId: request.rp_id,
           requestId: request.request_id,

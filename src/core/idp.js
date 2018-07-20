@@ -120,6 +120,22 @@ export function getErrorCallbackUrl() {
   return callbackUrls.error_url;
 }
 
+export function getShouldRetryFn(fnName) {
+  switch (fnName) {
+    case 'common.isRequestClosedOrTimedOut':
+      return common.isRequestClosedOrTimedOut;
+    default:
+      return function noop() {};
+  }
+}
+
+export function getResponseCallbackFn(fnName) {
+  switch (fnName) {
+    default:
+      return function noop() {};
+  }
+}
+
 export function isAccessorSignUrlSet() {
   return callbackUrls.accessor_sign_url != null;
 }
@@ -514,7 +530,7 @@ export function notifyIncomingRequestByCallback(eventDataForCallback) {
       ...eventDataForCallback,
     },
     true,
-    common.shouldRetryCallback,
+    'common.isRequestClosedOrTimedOut',
     [eventDataForCallback.request_id]
   );
 }
@@ -651,8 +667,8 @@ async function processMessage(message) {
     //const responseId = message.request_id + ':' + message.idp_id;
     await common.handleChallengeRequest({
       request_id: message.request_id,
-      idp_id: message.idp_id, 
-      public_proof: message.public_proof
+      idp_id: message.idp_id,
+      public_proof: message.public_proof,
     });
   } else if (message.type === 'consent_request') {
     const valid = await common.checkRequestIntegrity(
@@ -709,7 +725,7 @@ export async function handleMessageFromQueue(messageStr) {
         });
         await createIdpResponse(data);
       } catch (error) {
-        callbackToClient(
+        await callbackToClient(
           data.callback_url,
           {
             type: 'response_result',

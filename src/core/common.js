@@ -29,7 +29,12 @@ import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';
 import * as mq from '../mq';
-import { resumeCallbackToClient, callbackToClient } from '../utils/callback';
+import {
+  setShouldRetryFnGetter,
+  setResponseCallbackFnGetter,
+  resumeCallbackToClient,
+  callbackToClient,
+} from '../utils/callback';
 import * as utils from '../utils';
 import * as config from '../config';
 import errorType from '../error/type';
@@ -90,6 +95,8 @@ if (role === 'rp') {
   tendermint.setTendermintNewBlockEventHandler(
     rp.handleTendermintNewBlockEvent
   );
+  setShouldRetryFnGetter(rp.getShouldRetryFn);
+  setResponseCallbackFnGetter(rp.getResponseCallbackFn);
   resumeTimeoutScheduler();
   resumeCallbackToClient();
 } else if (role === 'idp') {
@@ -97,14 +104,18 @@ if (role === 'rp') {
   tendermint.setTendermintNewBlockEventHandler(
     idp.handleTendermintNewBlockEvent
   );
+  setShouldRetryFnGetter(idp.getShouldRetryFn);
+  setResponseCallbackFnGetter(idp.getResponseCallbackFn);
   resumeTimeoutScheduler();
-  resumeCallbackToClient(shouldRetryCallback);
+  resumeCallbackToClient();
 } else if (role === 'as') {
   handleMessageFromQueue = as.handleMessageFromQueue;
   tendermint.setTendermintNewBlockEventHandler(
     as.handleTendermintNewBlockEvent
   );
-  resumeCallbackToClient(shouldRetryCallback, as.afterGotDataFromCallback);
+  setShouldRetryFnGetter(as.getShouldRetryFn);
+  setResponseCallbackFnGetter(as.getResponseCallbackFn);
+  resumeCallbackToClient();
 }
 
 async function resumeTimeoutScheduler() {
@@ -892,7 +903,7 @@ export async function checkIdpResponse({
  * @param {string} requestId
  * @returns {boolean}
  */
-export async function shouldRetryCallback(requestId) {
+export async function isRequestClosedOrTimedOut(requestId) {
   if (requestId) {
     const requestDetail = await tendermintNdid.getRequestDetail({ requestId });
     if (requestDetail.closed || requestDetail.timed_out) {
