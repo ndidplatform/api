@@ -96,6 +96,7 @@ router.post('/updateNode', async (req, res, next) => {
     await ndid.updateNode(
       {
         node_id,
+        node_name,
         public_key,
         master_public_key,
         // role,
