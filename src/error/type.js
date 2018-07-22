@@ -298,6 +298,11 @@ export default {
     message: 'Missing data in AS data response',
     clientError: true,
   },
+  INVALID_DATA_TYPE_IN_AS_DATA_RESPONSE: {
+    code: 20035,
+    message: 'Invalid data type in AS data response. Expected string.',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

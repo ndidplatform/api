@@ -285,6 +285,15 @@ export async function afterGotDataFromCallback(
         },
       });
     }
+    if (typeof result.data !== 'string') {
+      throw new CustomError({
+        message: errorType.INVALID_DATA_TYPE_IN_AS_DATA_RESPONSE.message,
+        code: errorType.INVALID_DATA_TYPE_IN_AS_DATA_RESPONSE.code,
+        details: {
+          dataType: typeof result.data,
+        },
+      });
+    }
     additionalData.reference_id = result.reference_id;
     additionalData.callback_url = result.callback_url;
     const synchronous =
