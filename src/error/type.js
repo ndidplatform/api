@@ -283,6 +283,21 @@ export default {
       'Request could not be found / This node has not received the request from message queue',
     clientError: true,
   },
+  INVALID_HTTP_RESPONSE_STATUS_CODE: {
+    code: 20032,
+    message: 'Invalid HTTP response status code',
+    clientError: true,
+  },
+  CANNOT_PARSE_JSON: {
+    code: 20033,
+    message: 'Cannot parse string to JSON',
+    clientError: true,
+  },
+  MISSING_DATA_IN_AS_DATA_RESPONSE: {
+    code: 20034,
+    message: 'Missing data in AS data response',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
@@ -502,7 +517,8 @@ export default {
   },
   ABCI_REGISTER_SERVICE_UNAUTHORIZED: {
     code: 25028,
-    message: 'Unauthorized to register a service (NDID may have not granted you the right to register this service)',
+    message:
+      'Unauthorized to register a service (NDID may have not granted you the right to register this service)',
     clientError: true,
   },
 

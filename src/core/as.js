@@ -240,49 +240,69 @@ export async function afterGotDataFromCallback(
   { response, body },
   additionalData
 ) {
-  if (response.status === 204) {
-    await db.setRPIdFromRequestId(
-      additionalData.requestId,
-      additionalData.rpId
-    );
-    return;
-  }
-  if (response.status !== 200) {
-    logger.info({
-      message: 'Invalid response status for AS data',
-      status: response.status,
-      body,
-    });
-    return;
-  }
-  let data, synchronous;
   try {
-    const result = JSON.parse(body);
+    if (response.status === 204) {
+      await db.setRPIdFromRequestId(
+        additionalData.requestId,
+        additionalData.rpId
+      );
+      return;
+    }
+    if (response.status !== 200) {
+      throw new CustomError({
+        message: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE.message,
+        code: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE.code,
+        details: {
+          status: response.status,
+          body,
+        },
+      });
+    }
+    let result;
+    try {
+      result = JSON.parse(body);
 
-    logger.info({
-      message: 'Received data from AS',
-    });
-    logger.debug({
-      message: 'Data from AS',
-      result,
-    });
-
-    data = result.data;
+      logger.info({
+        message: 'Received data from AS',
+      });
+      logger.debug({
+        message: 'Data from AS',
+        result,
+      });
+    } catch (error) {
+      throw new CustomError({
+        message: errorType.CANNOT_PARSE_JSON.message,
+        code: errorType.CANNOT_PARSE_JSON.code,
+        cause: error,
+      });
+    }
+    if (result.data == null) {
+      throw new CustomError({
+        message: errorType.MISSING_DATA_IN_AS_DATA_RESPONSE.message,
+        code: errorType.MISSING_DATA_IN_AS_DATA_RESPONSE.code,
+        details: {
+          result,
+        },
+      });
+    }
     additionalData.reference_id = result.reference_id;
     additionalData.callback_url = result.callback_url;
-    synchronous = !additionalData.reference_id || !additionalData.callback_url;
+    const synchronous =
+      !additionalData.reference_id || !additionalData.callback_url;
+    await processDataForRP(result.data, additionalData, { synchronous });
   } catch (error) {
-    logger.error({
-      message: 'Cannot parse data from AS',
-      error,
-    });
-
-    throw new CustomError({
-      message: 'Cannot parse data from AS',
+    const err = new CustomError({
+      message: 'Error processing data response from AS',
       cause: error,
     });
+    logger.error(err.getInfoForLog());
+    await common.notifyError({
+      callbackUrl: callbackUrls.error_url,
+      action: 'afterGotDataFromCallback',
+      error: err,
+      requestId: additionalData.requestId,
+    });
   }
-  processDataForRP(data, additionalData, { synchronous });
 }
 
 async function getDataAndSendBackToRP(request, responseDetails) {
