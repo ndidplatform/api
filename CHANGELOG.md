@@ -17,6 +17,7 @@ BUG FIXES:
 - Change block and block results query calls to Tendermint to use HTTP instead of WebSocket.
 - Fix duplicate message processing by removing cache when message is going to be process from handle message from message queue function.
 - Fix accessor ID and public key check when creating IdP response in mode 3.
+- Fix message queue socket is open when role is set to `ndid`. (It should not open a MQ socket).
 
 ## 0.5.2 (July 17, 2018)
 
