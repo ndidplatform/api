@@ -40,6 +40,7 @@ const timer = {};
 export const eventEmitter = new EventEmitter();
 
 (async function init() {
+  if (config.role === 'ndid') return;
   const timeoutList = await db.getAllDuplicateMessageTimeout();
   const promiseArray = [];
   for (let id in timeoutList) {
@@ -182,7 +183,9 @@ export async function send(receivers, message) {
 }
 
 export function close() {
-  mqRecv.close();
+  if (mqRecv) {
+    mqRecv.close();
+  }
   for (let id in timer) {
     clearTimeout(timer[id]);
   }
