@@ -54,6 +54,7 @@ router.post('/registerNode', async (req, res, next) => {
   try {
     const {
       node_id,
+      node_name,
       public_key,
       master_public_key,
       role,
@@ -64,6 +65,7 @@ router.post('/registerNode', async (req, res, next) => {
     await ndid.registerNode(
       {
         node_id,
+        node_name,
         public_key,
         master_public_key,
         role,
@@ -74,6 +76,36 @@ router.post('/registerNode', async (req, res, next) => {
     );
 
     res.status(201).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/updateNode', async (req, res, next) => {
+  try {
+    const {
+      node_id,
+      node_name,
+      public_key,
+      master_public_key,
+      // role,
+      max_aal,
+      max_ial,
+    } = req.body;
+
+    await ndid.updateNode(
+      {
+        node_id,
+        public_key,
+        master_public_key,
+        // role,
+        max_aal,
+        max_ial,
+      },
+      { synchronous: true }
+    );
+
+    res.status(200).end();
   } catch (error) {
     next(error);
   }

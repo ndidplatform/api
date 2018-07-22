@@ -132,12 +132,12 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
     reference_id,
     callback_url,
     node_id,
+    node_name,
     public_key,
+    master_public_key,
     role,
     max_ial,
     max_aal,
-    node_name,
-    master_public_key,
   } = data;
 
   data.role = data.role.toUpperCase();
@@ -159,7 +159,7 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
     }
   } catch (error) {
     logger.error({
-      message: 'Update node internal async error',
+      message: 'Register node internal async error',
       originalArgs: arguments[0],
       options: arguments[1],
       additionalArgs: arguments[2],
@@ -171,6 +171,76 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
         callback_url,
         {
           type: 'create_node_result',
+          reference_id,
+          success: false,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+    }
+
+    throw error;
+  }
+}
+
+export async function updateNode(data, { synchronous = false } = {}) {
+  try {
+    if (synchronous) {
+      await updateNodeInternalAsync(...arguments);
+    } else {
+      updateNodeInternalAsync(...arguments);
+    }
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Cannot update node',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    throw err;
+  }
+}
+
+async function updateNodeInternalAsync(data, { synchronous = false } = {}) {
+  const {
+    reference_id,
+    callback_url,
+    node_id,
+    node_name,
+    // role,
+    max_ial,
+    max_aal,
+    public_key,
+    master_public_key,
+  } = data;
+
+  try {
+    await tendermint.transact('UpdateNodeByNDID', data, utils.getNonce());
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'update_node_result',
+          reference_id,
+          success: true,
+        },
+        true
+      );
+    }
+  } catch (error) {
+    logger.error({
+      message: 'Update node internal async error',
+      originalArgs: arguments[0],
+      options: arguments[1],
+      additionalArgs: arguments[2],
+      error,
+    });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'update_node_result',
           reference_id,
           success: false,
           error: getErrorObjectForClient(error),
