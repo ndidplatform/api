@@ -528,6 +528,8 @@ export async function handleMessageFromQueue(messageStr) {
     message: 'Message from MQ',
     messageStr,
   });
+  // TODO: validate message schema
+  
   let requestId;
   try {
     const message = JSON.parse(messageStr);
