@@ -129,9 +129,7 @@ function shutDown() {
     });
 
     stopAllCallbackRetries();
-    if (config.role !== 'ndid') {
-      closeMQ();
-    }
+    closeMQ();
     tendermintWsClient.close();
     // TODO: wait for async operations which going to use DB to finish before closing
     // a connection to DB

@@ -183,6 +183,7 @@ export async function send(receivers, message) {
 }
 
 export function close() {
+  if (config.role === 'ndid') return;
   if (mqRecv) {
     mqRecv.close();
   }
