@@ -8,12 +8,15 @@ IMPROVEMENTS:
 - Cache block information for the latest height block and the one before that in memory to decrease HTTP call to Tendermint.
 - Check for app hash when receiving new block event to decrease unnecessary processing (in case Tendermint consensus config for `create_empty_block` is set to true).
 - External crypto service callback retry.
+- Check for response status and errors when receiving data response from calling callback to AS.
+- Add new API for NDID POST `/updateNode` for updating node's `node_name`, `max_ial`, and `max_aal`.
 
 BUG FIXES:
 
 - Fix block height range to handle message when there are missing new block events.
 - Change block and block results query calls to Tendermint to use HTTP instead of WebSocket.
 - Fix duplicate message processing by removing cache when message is going to be process from handle message from message queue function.
+- Fix accessor ID and public key check when creating IdP response in mode 3.
 
 ## 0.5.2 (July 17, 2018)
 
