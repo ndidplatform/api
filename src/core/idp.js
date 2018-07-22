@@ -311,7 +311,37 @@ export async function requestChallengeAndCreateResponse(data) {
         },
       });
     }
+
     if (request.mode === 3) {
+      if (data.accessor_id == null) {
+        throw new CustomError({
+          message: errorType.ACCESSOR_ID_NEEDED.message,
+          code: errorType.ACCESSOR_ID_NEEDED.code,
+          clientError: true,
+        });
+      }
+
+      const accessorPublicKey = await tendermintNdid.getAccessorKey(
+        data.accessor_id
+      );
+      if (accessorPublicKey == null) {
+        throw new CustomError({
+          message: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.message,
+          code: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.code,
+          clientError: true,
+          details: {
+            accessor_id: data.accessor_id,
+          },
+        });
+      }
+
+      if (data.secret == null) {
+        throw new CustomError({
+          message: errorType.SECRET_NEEDED.message,
+          code: errorType.SECRET_NEEDED.code,
+          clientError: true,
+        });
+      }
       // Check secret format
       const [padding, signedHash] = data.secret.split('|');
       if (padding == null || signedHash == null) {
@@ -372,54 +402,15 @@ async function createIdpResponse(data) {
     } = data;
 
     const request = await tendermintNdid.getRequest({ requestId: request_id });
-    if (request == null) {
-      throw new CustomError({
-        message: errorType.REQUEST_NOT_FOUND.message,
-        code: errorType.REQUEST_NOT_FOUND.code,
-        clientError: true,
-        details: {
-          request_id,
-        },
-      });
-    }
-
     const mode = request.mode;
+
     let dataToBlockchain, privateProofObject;
 
     if (mode === 3) {
-      if (accessor_id == null) {
-        throw new CustomError({
-          message: errorType.ACCESSOR_ID_NEEDED.message,
-          code: errorType.ACCESSOR_ID_NEEDED.code,
-          clientError: true,
-        });
-      }
-      if (secret == null) {
-        throw new CustomError({
-          message: errorType.SECRET_NEEDED.message,
-          code: errorType.SECRET_NEEDED.code,
-          clientError: true,
-        });
-      }
-
-      const accessorPublicKey = await tendermintNdid.getAccessorKey(
-        accessor_id
-      );
-      if (accessorPublicKey == null) {
-        throw new CustomError({
-          message: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.message,
-          code: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.code,
-          clientError: true,
-          details: {
-            accessor_id,
-          },
-        });
-      }
-
       let blockchainProofArray = [],
         privateProofValueArray = [],
         samePadding;
-      let requestFromMq = await db.getRequestReceivedFromMQ(request_id);
+      const requestFromMq = await db.getRequestReceivedFromMQ(request_id);
 
       logger.debug({
         message: 'To generate proof',
