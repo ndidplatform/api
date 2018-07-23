@@ -462,7 +462,7 @@ export async function createRequest(
     ];
     db.setChallengeFromRequestId(request_id, challenge);
 
-    let request_message_salt = utils.randomBase64Bytes(16);
+    const request_message_salt = utils.randomBase64Bytes(16);
 
     const requestData = {
       mode,

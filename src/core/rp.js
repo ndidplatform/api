@@ -688,6 +688,8 @@ export async function handleMessageFromQueue(messageStr) {
         source_node_id: message.as_id,
         service_id: message.service_id,
         source_signature: message.signature,
+        signature_sign_method: 'RSA-SHA256',
+        data_salt: message.data_salt,
         data: message.data,
       });
 
@@ -716,6 +718,7 @@ export async function handleMessageFromQueue(messageStr) {
         serviceId: message.service_id,
         nodeId: message.as_id,
         signature: message.signature,
+        dataSalt: message.data_salt,
         data: message.data,
       });
       delete asDataResponseProcessLocks[asResponseId];
@@ -735,7 +738,7 @@ export async function handleMessageFromQueue(messageStr) {
   }
 }
 
-async function isDataSignatureValid(asNodeId, signature, data) {
+async function isDataSignatureValid(asNodeId, signature, salt, data) {
   const publicKeyObj = await tendermintNdid.getNodePubKey(asNodeId);
   if (publicKeyObj == null) return;
   if (publicKeyObj.public_key == null) return;
@@ -745,15 +748,10 @@ async function isDataSignatureValid(asNodeId, signature, data) {
     asNodeId,
     asNodePublicKey: publicKeyObj.public_key,
     signature,
+    salt,
     data,
   });
-  if (
-    !utils.verifySignature(
-      signature,
-      publicKeyObj.public_key,
-      JSON.stringify(data)
-    )
-  ) {
+  if (!utils.verifySignature(signature, publicKeyObj.public_key, data + salt)) {
     logger.warn({
       message: 'Data signature from AS is not valid',
       signature,
@@ -787,6 +785,7 @@ async function checkAsDataSignaturesAndSetReceived(requestId, metadataList) {
         serviceId,
         nodeId: asId,
         signature: data.source_signature,
+        dataSalt: data.data_salt,
         data: data.data,
       });
     })
@@ -798,6 +797,7 @@ async function processAsData({
   serviceId,
   nodeId,
   signature,
+  dataSalt,
   data,
 }) {
   logger.debug({
@@ -806,6 +806,7 @@ async function processAsData({
     serviceId,
     nodeId,
     signature,
+    dataSalt,
     data,
   });
 
@@ -818,7 +819,14 @@ async function processAsData({
   if (signatureFromBlockchain == null) return;
   // TODO: if signature is invalid or mismatch then delete data from cache
   if (signature !== signatureFromBlockchain) return;
-  if (!(await isDataSignatureValid(nodeId, signatureFromBlockchain, data))) {
+  if (
+    !(await isDataSignatureValid(
+      nodeId,
+      signatureFromBlockchain,
+      dataSalt,
+      data
+    ))
+  ) {
     return;
   }
 

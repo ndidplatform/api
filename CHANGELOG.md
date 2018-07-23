@@ -6,6 +6,8 @@ BUG FIXES:
 
 - Fix IdP response signature verification to include request message salt.
 - Fix missing `request_message_salt` property in object when calling callback to IdP with type `incoming_request`.
+- Fix AS data response signature is not salted.
+- Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side.
 
 ## 0.5.3 (July 22, 2018)
 

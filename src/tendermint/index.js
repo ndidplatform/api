@@ -370,7 +370,7 @@ export async function transact(fnName, data, nonce, useMasterKey) {
     '|' +
     nonce +
     '|' +
-    (await utils.createSignature(data, nonce, useMasterKey)) +
+    (await utils.createSignature(dataStr + nonce, useMasterKey)) +
     '|' +
     Buffer.from(config.nodeId).toString('base64');
 

@@ -136,6 +136,7 @@ async function sendDataToRP(rpId, data) {
     as_id: data.as_id,
     service_id: data.service_id,
     signature: data.signature,
+    data_salt: data.data_salt,
     data: data.data,
     height: data.height,
   });
@@ -173,7 +174,8 @@ async function processDataForRPInternalAsync(
 ) {
   try {
     const as_id = config.nodeId;
-    const signature = await utils.createSignature(data);
+    const data_salt = utils.randomBase64Bytes(16);
+    const signature = await utils.createSignature(data + data_salt);
 
     // AS node adds transaction to blockchain
     const { height } = await tendermintNdid.signASData({
@@ -191,6 +193,7 @@ async function processDataForRPInternalAsync(
       request_id: requestId,
       as_id,
       signature,
+      data_salt,
       service_id: serviceId,
       data,
       height,

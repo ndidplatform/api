@@ -363,8 +363,12 @@ function verifyZKProofSingle(
   return stringToBigInt(publicProof).eq(tmp3);
 }
 
-export async function createSignature(data, nonce = '', useMasterKey) {
-  const messageToSign = JSON.stringify(data) + nonce;
+export async function createSignature(messageToSign, useMasterKey) {
+  if (typeof messageToSign !== 'string') {
+    throw new CustomError({
+      message: 'Expected message to sign to be a string',
+    });
+  }
   const messageToSignHash = hash(messageToSign);
 
   if (config.useExternalCryptoService) {
