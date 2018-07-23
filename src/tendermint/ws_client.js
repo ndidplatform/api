@@ -21,7 +21,9 @@
  */
 
 import EventEmitter from 'events';
+
 import WebSocket from 'ws';
+import { ExponentialBackoff } from 'simple-backoff';
 
 import logger from '../logger';
 
@@ -38,6 +40,12 @@ export default class TendermintWsClient extends EventEmitter {
     this.reconnect = true;
     this.rpcId = 0;
     this.queue = [];
+    this.backoff = new ExponentialBackoff({
+      min: 1000,
+      max: 15000,
+      factor: 2,
+      jitter: 0,
+    });
     this.connect();
   }
 
@@ -50,6 +58,9 @@ export default class TendermintWsClient extends EventEmitter {
       logger.info({
         message: 'Tendermint WS connected',
       });
+      // Reset backoff interval
+      this.backoff.reset();
+      this.reconnectTimeoutFn = null;
 
       this.wsConnected = true;
       this.isAlive = true;
@@ -62,9 +73,6 @@ export default class TendermintWsClient extends EventEmitter {
         this.isAlive = false;
         this.ws.ping();
       }, PING_INTERVAL);
-
-      // this.subscribeToNewBlockHeaderEvent();
-      this.subscribeToNewBlockEvent();
     });
 
     this.ws.on('close', (code, reason) => {
@@ -85,7 +93,11 @@ export default class TendermintWsClient extends EventEmitter {
 
       if (this.reconnect) {
         // Try reconnect
-        setTimeout(() => this.connect(), 1000);
+        const backoffTime = this.backoff.next();
+        logger.debug({
+          message: `Tendermint WS try reconnect in ${backoffTime} ms`,
+        });
+        this.reconnectTimeoutFn = setTimeout(() => this.connect(), backoffTime);
       }
     });
 
@@ -209,9 +221,24 @@ export default class TendermintWsClient extends EventEmitter {
     }
   }
 
+  subscribeToTxEvent() {
+    if (this.wsConnected) {
+      this.ws.send(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'subscribe',
+          params: ["tm.event = 'Tx'"],
+          id: 'tx',
+        })
+      );
+    }
+  }
+
   close() {
     if (!this.ws) return;
     this.reconnect = false;
+    clearTimeout(this.reconnectTimeoutFn);
+    this.reconnectTimeoutFn = null;
     this.ws.close();
   }
 

@@ -127,6 +127,7 @@ export const tendermintWsClient = new TendermintWsClient();
 tendermintWsClient.on('connected', () => {
   connected = true;
   pollStatusUntilSynced();
+  tendermintWsClient.subscribeToNewBlockEvent();
 });
 
 tendermintWsClient.on('disconnected', () => {
