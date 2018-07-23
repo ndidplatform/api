@@ -125,15 +125,22 @@ async function resumeTimeoutScheduler() {
   );
 }
 
-export async function checkRequestIntegrity(requestId, request) {
-  const msgBlockchain = await tendermintNdid.getRequest({ requestId });
+export async function checkRequestMessageIntegrity(
+  requestId,
+  request,
+  requestDetail
+) {
+  if (!requestDetail) {
+    requestDetail = await tendermintNdid.getRequestDetail({ requestId });
+  }
 
   const requestMessageHash = utils.hash(
     request.request_message + request.request_message_salt
   );
 
-  const valid = requestMessageHash === msgBlockchain.request_message_hash;
-  if (!valid) {
+  const requestMessageValid =
+    requestMessageHash === requestDetail.request_message_hash;
+  if (!requestMessageValid) {
     logger.warn({
       message: 'Request message hash mismatched',
       requestId,
@@ -143,11 +150,64 @@ export async function checkRequestIntegrity(requestId, request) {
       requestId,
       givenRequestMessage: request.request_message,
       givenRequestMessageHashWithSalt: requestMessageHash,
-      requestMessageHashFromBlockchain: msgBlockchain.request_message_hash,
+      requestMessageHashFromBlockchain: requestDetail.request_message_hash,
     });
+    return false;
+  }
+  return true;
+}
+
+export async function checkDataRequestParamsIntegrity(
+  requestId,
+  request,
+  requestDetail
+) {
+  if (!requestDetail) {
+    requestDetail = await tendermintNdid.getRequestDetail({ requestId });
   }
 
-  return valid;
+  for (let i = 0; i < requestDetail.data_request_list.length; i++) {
+    const dataRequest = requestDetail.data_request_list[i];
+    const dataRequestParamsHash = utils.hash(
+      request.data_request_list[i].request_params +
+        request.data_request_params_salt_list[i]
+    );
+    const dataRequestParamsValid =
+      dataRequest.request_params_hash === dataRequestParamsHash;
+    if (!dataRequestParamsValid) {
+      logger.warn({
+        message: 'Request data request params hash mismatched',
+        requestId,
+      });
+      logger.debug({
+        message: 'Request data request params hash mismatched',
+        requestId,
+        givenRequestParams: dataRequest.request_params,
+        givenRequestParamsHashWithSalt: dataRequestParamsHash,
+        requestParamsHashFromBlockchain: dataRequest.request_params_hash,
+      });
+      return false;
+    }
+  }
+  return true;
+}
+
+export async function checkRequestIntegrity(requestId, request) {
+  const requestDetail = await tendermintNdid.getRequestDetail({ requestId });
+
+  const requestMessageValid = checkRequestMessageIntegrity(
+    requestId,
+    request,
+    requestDetail
+  );
+
+  const dataRequestParamsValid = checkDataRequestParamsIntegrity(
+    requestId,
+    request,
+    requestDetail
+  );
+
+  return requestMessageValid && dataRequestParamsValid;
 }
 
 async function handleMessageQueueError(error) {
@@ -464,6 +524,10 @@ export async function createRequest(
 
     const request_message_salt = utils.randomBase64Bytes(16);
 
+    const data_request_params_salt_list = data_request_list.map(() => {
+      return utils.randomBase64Bytes(16);
+    });
+
     const requestData = {
       mode,
       namespace,
@@ -473,7 +537,8 @@ export async function createRequest(
       min_aal,
       min_ial,
       request_timeout,
-      data_request_list: data_request_list,
+      data_request_list,
+      data_request_params_salt_list,
       request_message,
       // for zk proof
       //challenge,
@@ -495,6 +560,7 @@ export async function createRequest(
       await createRequestInternalAsync(...arguments, {
         request_id,
         request_message_salt,
+        data_request_params_salt_list,
         receivers,
         requestData,
       });
@@ -502,6 +568,7 @@ export async function createRequest(
       createRequestInternalAsync(...arguments, {
         request_id,
         request_message_salt,
+        data_request_params_salt_list,
         receivers,
         requestData,
       });
@@ -534,20 +601,27 @@ async function createRequestInternalAsync(
     request_timeout,
   },
   { synchronous = false } = {},
-  { request_id, request_message_salt, receivers, requestData }
+  {
+    request_id,
+    request_message_salt,
+    data_request_params_salt_list,
+    receivers,
+    requestData,
+  }
 ) {
   try {
-    const dataRequestListToBlockchain = [];
-    for (let i in data_request_list) {
-      dataRequestListToBlockchain.push({
-        service_id: data_request_list[i].service_id,
-        as_id_list: data_request_list[i].as_id_list,
-        min_as: data_request_list[i].min_as,
-        request_params_hash: utils.hashWithRandomSalt(
-          data_request_list[i].request_params
-        ),
-      });
-    }
+    const dataRequestListToBlockchain = data_request_list.map(
+      (dataRequest, index) => {
+        return {
+          service_id: dataRequest.service_id,
+          as_id_list: dataRequest.as_id_list,
+          min_as: dataRequest.min_as,
+          request_params_hash: utils.hash(
+            dataRequest.request_params + data_request_params_salt_list[index]
+          ),
+        };
+      }
+    );
 
     const requestDataToBlockchain = {
       mode,
@@ -688,7 +762,6 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
       otherPrivateProofObject.accessor_id
     );
     if (otherGroupId !== accessor_group_id) {
-      //TODO handle this, manually close?
       logger.debug({
         message: 'Conflict response',
         otherGroupId,

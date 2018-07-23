@@ -419,7 +419,7 @@ async function sendRequestToAS(requestData, height) {
 
   const dataToSendByNodeId = {};
   await Promise.all(
-    requestData.data_request_list.map(async (data_request) => {
+    requestData.data_request_list.map(async (data_request, index) => {
       const receivers = await getASReceiverList(data_request);
       if (receivers.length === 0) {
         logger.error({
@@ -432,6 +432,7 @@ async function sendRequestToAS(requestData, height) {
       const serviceDataRequest = {
         service_id: data_request.service_id,
         request_params: data_request.request_params,
+        request_params_salt: requestData.data_request_params_salt_list[index],
       };
       receivers.forEach((receiver) => {
         if (dataToSendByNodeId[receiver.node_id]) {
@@ -459,11 +460,11 @@ async function sendRequestToAS(requestData, height) {
           namespace: requestData.namespace,
           identifier: requestData.identifier,
           service_data_request_list,
-          rp_id: requestData.rp_id,
           request_message: requestData.request_message,
-          challenge,
           request_message_salt: requestData.request_message_salt,
+          challenge,
           privateProofObjectList: requestData.privateProofObjectList,
+          rp_id: requestData.rp_id,
           height,
         })
     )

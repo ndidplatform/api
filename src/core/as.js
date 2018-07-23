@@ -128,7 +128,7 @@ async function sendDataToRP(rpId, data) {
   receivers.push({
     ip,
     port,
-    ...(await tendermintNdid.getNodePubKey(nodeId)), // TODO: try catch / error handling
+    ...(await tendermintNdid.getNodePubKey(nodeId)),
   });
   mq.send(receivers, {
     type: 'as_data_response',
@@ -404,19 +404,89 @@ async function getResponseDetails(requestId) {
   };
 }
 
+export async function checkServiceRequestParamsIntegrity(
+  requestId,
+  request,
+  requestDetail
+) {
+  if (!requestDetail) {
+    requestDetail = await tendermintNdid.getRequestDetail({ requestId });
+  }
+
+  for (let i = 0; i < request.service_data_request_list.length; i++) {
+    const {
+      service_id,
+      request_params,
+      request_params_salt,
+    } = request.service_data_request_list[i];
+
+    const dataRequest = requestDetail.data_request_list.find(
+      (dataRequest) => dataRequest.service_id === service_id
+    );
+
+    const requestParamsHash = utils.hash(request_params + request_params_salt);
+    const dataRequestParamsValid =
+      dataRequest.request_params_hash === requestParamsHash;
+    if (!dataRequestParamsValid) {
+      logger.warn({
+        message: 'Request data request params hash mismatched',
+        requestId,
+      });
+      logger.debug({
+        message: 'Request data request params hash mismatched',
+        requestId,
+        givenRequestParams: request_params,
+        givenRequestParamsHashWithSalt: requestParamsHash,
+        requestParamsHashFromBlockchain: dataRequest.request_params_hash,
+      });
+      return false;
+    }
+  }
+  return true;
+}
+
 async function processRequest(request) {
   logger.debug({
     message: 'Processing request',
     requestId: request.request_id,
   });
-  const valid = await common.checkRequestIntegrity(request.request_id, request);
-  if (valid) {
-    const validProof = await verifyZKProof(request.request_id, request);
-    if (validProof) {
-      const responseDetails = await getResponseDetails(request.request_id);
-      await getDataAndSendBackToRP(request, responseDetails);
-    }
+  const requestDetail = await tendermintNdid.getRequestDetail({
+    requestId: request.request_id,
+  });
+  const requestMessageValid = await common.checkRequestMessageIntegrity(
+    request.request_id,
+    request,
+    requestDetail
+  );
+  const serviceDataRequestParamsValid = await checkServiceRequestParamsIntegrity(
+    request.request_id,
+    request,
+    requestDetail
+  );
+  if (!requestMessageValid || !serviceDataRequestParamsValid) {
+    throw new CustomError({
+      message: errorType.REQUEST_INTEGRITY_CHECK_FAILED.message,
+      code: errorType.REQUEST_INTEGRITY_CHECK_FAILED.code,
+      details: {
+        requestId: request.request_id,
+      },
+    });
   }
+  const idpResponsesValid = await isIdpResponsesValid(
+    request.request_id,
+    request
+  );
+  if (!idpResponsesValid) {
+    throw new CustomError({
+      message: errorType.INVALID_RESPONSES.message,
+      code: errorType.INVALID_RESPONSES.code,
+      details: {
+        requestId: request.request_id,
+      },
+    });
+  }
+  const responseDetails = await getResponseDetails(request.request_id);
+  await getDataAndSendBackToRP(request, responseDetails);
 }
 
 export async function handleMessageFromQueue(messageStr) {
@@ -664,8 +734,7 @@ export async function getServiceDetail(service_id) {
   }
 }
 
-// TODO: should be renamed to "verifyIdpResponses"
-async function verifyZKProof(request_id, dataFromMq) {
+async function isIdpResponsesValid(request_id, dataFromMq) {
   if (!dataFromMq) {
     dataFromMq = await db.getRequestReceivedFromMQ(request_id);
   }
@@ -681,15 +750,9 @@ async function verifyZKProof(request_id, dataFromMq) {
   const requestDetail = await tendermintNdid.getRequestDetail({
     requestId: request_id,
   });
-  //mode 1 bypass zkp
-  //but still need to check signature of node
+
+  // mode 1 bypass zkp
   if (requestDetail.mode === 1) {
-    /*let response_list = requestDetail.response_list;
-    for(let i = 0 ; i < response_list.length ; i++) {
-      let { signature, idp_id } = response_list[i];
-      let { public_key } = await common.getNodePubKey(idp_id);
-      if(!utils.verifySignature(signature, public_key, JSON.stringify(request_message))) return false; 
-    }*/
     return true;
   }
 
@@ -702,8 +765,6 @@ async function verifyZKProof(request_id, dataFromMq) {
       privateProofObjectList[i].privateProofObject.accessor_id
     );
     if (otherGroupId !== accessor_group_id) {
-      //TODO handle this?
-      //throw 'Conflicted response';
       return false;
     }
   }

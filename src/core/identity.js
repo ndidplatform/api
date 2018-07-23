@@ -385,8 +385,6 @@ async function createNewIdentityInternalAsync(
       exist = await isIdentityExist({ namespace, identifier, ial });
     }
 
-    // TODO: Check for duplicate accessor
-
     await common.createRequest(
       {
         request_id,

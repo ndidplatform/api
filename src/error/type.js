@@ -121,6 +121,14 @@ export default {
     code: 10023,
     message: 'Malformed message format from message queue',
   },
+  INVALID_RESPONSES: {
+    code: 10024,
+    message: 'One or more responses from IdP are invalid (Invalid signature or ZK proof)',
+  },
+  REQUEST_INTEGRITY_CHECK_FAILED: {
+    code: 10025,
+    message: 'Request integrity check failed'
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
