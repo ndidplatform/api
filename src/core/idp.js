@@ -674,7 +674,7 @@ async function processMessage(message) {
         identifier: message.identifier,
         request_message: message.request_message,
         request_message_hash: utils.hash(
-          message.request_message_salt + message.request_message
+          message.request_message + message.request_message_salt
         ),
         request_message_salt: message.request_message_salt,
         requester_node_id: message.rp_id,

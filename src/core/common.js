@@ -129,7 +129,7 @@ export async function checkRequestIntegrity(requestId, request) {
   const msgBlockchain = await tendermintNdid.getRequest({ requestId });
 
   const requestMessageHash = utils.hash(
-    request.request_message_salt + request.request_message
+    request.request_message + request.request_message_salt
   );
 
   const valid = requestMessageHash === msgBlockchain.request_message_hash;
@@ -557,7 +557,7 @@ async function createRequestInternalAsync(
       min_ial,
       request_timeout,
       data_request_list: dataRequestListToBlockchain,
-      request_message_hash: utils.hash(request_message_salt + request_message),
+      request_message_hash: utils.hash(request_message + request_message_salt),
     };
 
     const { height } = await tendermintNdid.createRequest(
@@ -733,7 +733,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   const signatureValid = utils.verifySignature(
     signature,
     public_key,
-    request_message_salt + request_message
+    request_message + request_message_salt
   );
 
   logger.debug({
