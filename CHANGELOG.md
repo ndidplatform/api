@@ -2,6 +2,10 @@
 
 ## TBD
 
+IMPROVEMENTS:
+
+- Support request timeout of more than 2147483647 (or 32-bit integer) milliseconds (>24.8 days).
+
 BUG FIXES:
 
 - Append salt to request message before hash instead of prepend.
