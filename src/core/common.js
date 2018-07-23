@@ -698,36 +698,8 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
     request_message_salt,
   } = await db.getRequestData(request_id);
 
-  //check only signature of idp_id
   if (mode === 1) {
-    return null; // Cannot check in mode 1
-
-    /*let response_list = (await getRequestDetail({
-      requestId: request_id,
-    })).response_list;
-    for(let i = 0 ; i < response_list.length ; i++) {
-      if(response_list[i].idp_id !== idp_id) continue;
-
-      let { signature } = response_list[i];
-      let { public_key } = await getNodePubKey(idp_id);
-
-      logger.debug({
-        message: 'Verify signature, mode 1',
-        signature,
-        public_key,
-        request_message,
-        idp_id,
-      });
-
-      if(!utils.verifySignature(signature, public_key, JSON.stringify(request_message))) return false;
-      else return true;
-    }
-    //should not reach (idp_id not found)
-    logger.debug({
-      message: 'Code should never reach here (in common.verifyZKProof)',
-      request_id, idp_id, dataFromMq, mode,
-    });
-    return false;*/
+    return null;
   }
 
   const challenge = await db.getChallengeFromRequestId(request_id);

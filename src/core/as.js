@@ -378,16 +378,8 @@ async function getResponseDetails(requestId) {
     requestId,
   });
 
-  // TODO
-  // Verify that (number of consent ≥ min_idp in request).
-  // For each consent with matching request ID:
-  // Verify the identity proof.
-  // Verify the signature.
-  // Verify that the message_hash is matching with the request.
-  // Verify data_request_params with its hash
-
   // Get all signatures
-  // and calculate max ial && max aal
+  // Calculate max IAL and max AAL
   let response_signature_list = [];
   let max_ial = 0;
   let max_aal = 0;
@@ -750,6 +742,10 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
   const requestDetail = await tendermintNdid.getRequestDetail({
     requestId: request_id,
   });
+
+  if (requestDetail.min_idp !== requestDetail.response_list.length) {
+    return false;
+  }
 
   // mode 1 bypass zkp
   if (requestDetail.mode === 1) {
