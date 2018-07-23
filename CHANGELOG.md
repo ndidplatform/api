@@ -1,5 +1,12 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix IdP response signature verification to include request message salt.
+- Fix missing `request_message_salt` property in object when calling callback to IdP with type `incoming_request`.
+
 ## 0.5.3 (July 22, 2018)
 
 IMPROVEMENTS:

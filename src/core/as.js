@@ -661,17 +661,21 @@ export async function getServiceDetail(service_id) {
   }
 }
 
+// TODO: should be renamed to "verifyIdpResponses"
 async function verifyZKProof(request_id, dataFromMq) {
-  if (!dataFromMq) dataFromMq = await db.getRequestReceivedFromMQ(request_id);
+  if (!dataFromMq) {
+    dataFromMq = await db.getRequestReceivedFromMQ(request_id);
+  }
 
-  let {
+  const {
     privateProofObjectList,
     namespace,
     identifier,
     request_message,
+    request_message_salt,
   } = dataFromMq;
 
-  let requestDetail = await tendermintNdid.getRequestDetail({
+  const requestDetail = await tendermintNdid.getRequestDetail({
     requestId: request_id,
   });
   //mode 1 bypass zkp
@@ -687,7 +691,7 @@ async function verifyZKProof(request_id, dataFromMq) {
   }
 
   //query and verify zk, also check conflict with each others
-  let accessor_group_id = await tendermintNdid.getAccessorGroupId(
+  const accessor_group_id = await tendermintNdid.getAccessorGroupId(
     privateProofObjectList[0].privateProofObject.accessor_id
   );
   for (let i = 1; i < privateProofObjectList.length; i++) {
@@ -701,41 +705,40 @@ async function verifyZKProof(request_id, dataFromMq) {
     }
   }
 
-  let response_list = (await tendermintNdid.getRequestDetail({
+  const response_list = (await tendermintNdid.getRequestDetail({
     requestId: request_id,
   })).response_list;
   let valid = true;
   for (let i = 0; i < privateProofObjectList.length; i++) {
     //query accessor_public_key from privateProof.accessor_id
-    let public_key = await tendermintNdid.getAccessorKey(
+    const public_key = await tendermintNdid.getAccessorKey(
       privateProofObjectList[i].privateProofObject.accessor_id
     );
     //query publicProof from response of idp_id in request
-    let publicProof, signature, privateProofValueHash;
-    response_list.forEach((response) => {
-      if (response.idp_id === privateProofObjectList[i].idp_id) {
-        publicProof = JSON.parse(response.identity_proof);
-        signature = response.signature;
-        privateProofValueHash = response.private_proof_hash;
-      }
-    });
+    const response = response_list.find(
+      (response) => response.idp_id === privateProofObjectList[i].idp_id
+    );
+    const publicProof = JSON.parse(response.identity_proof);
+    const signature = response.signature;
+    const privateProofValueHash = response.private_proof_hash;
 
-    let signatureValid = utils.verifySignature(
+    const signatureValid = utils.verifySignature(
       signature,
       public_key,
-      request_message
+      request_message_salt + request_message
     );
 
     logger.debug({
       message: 'Verify signature',
       signatureValid,
       request_message,
+      request_message_salt,
       public_key,
       signature,
       privateProofObjectList,
     });
 
-    let zkProofValid = utils.verifyZKProof(
+    const zkProofValid = utils.verifyZKProof(
       public_key,
       dataFromMq.challenge,
       privateProofObjectList[i].privateProofObject.privateProofValue,

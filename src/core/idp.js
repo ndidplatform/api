@@ -673,7 +673,10 @@ async function processMessage(message) {
         namespace: message.namespace,
         identifier: message.identifier,
         request_message: message.request_message,
-        request_message_hash: utils.hash(message.request_message),
+        request_message_hash: utils.hash(
+          message.request_message_salt + message.request_message
+        ),
+        request_message_salt: message.request_message_salt,
         requester_node_id: message.rp_id,
         min_ial: message.min_ial,
         min_aal: message.min_aal,
@@ -692,7 +695,7 @@ export async function handleMessageFromQueue(messageStr) {
     messageStr,
   });
   // TODO: validate message schema
-  
+
   let requestId;
   try {
     const message = JSON.parse(messageStr);

@@ -302,7 +302,7 @@ export async function handleTendermintNewBlockEvent(
         await common.handleChallengeRequest({
           request_id: requestId,
           idp_id: idpId,
-          public_proof: publicProof
+          public_proof: publicProof,
         });
         await db.removePublicProofReceivedFromMQ(responseId);
       })
@@ -462,7 +462,7 @@ async function sendRequestToAS(requestData, height) {
           rp_id: requestData.rp_id,
           request_message: requestData.request_message,
           challenge,
-          secretSalt: requestData.secretSalt,
+          request_message_salt: requestData.request_message_salt,
           privateProofObjectList: requestData.privateProofObjectList,
           height,
         })
@@ -529,7 +529,7 @@ export async function handleMessageFromQueue(messageStr) {
     messageStr,
   });
   // TODO: validate message schema
-  
+
   let requestId;
   try {
     const message = JSON.parse(messageStr);
@@ -559,10 +559,10 @@ export async function handleMessageFromQueue(messageStr) {
           await db.removePublicProofReceivedFromMQ(responseId);
         }
       }
-      await common.handleChallengeRequest({ 
+      await common.handleChallengeRequest({
         request_id: message.request_id,
         idp_id: message.idp_id,
-        public_proof: message.public_proof
+        public_proof: message.public_proof,
       });
       delete challengeRequestProcessLocks[responseId];
     } else if (message.type === 'idp_response') {

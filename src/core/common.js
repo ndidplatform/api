@@ -128,13 +128,11 @@ async function resumeTimeoutScheduler() {
 export async function checkRequestIntegrity(requestId, request) {
   const msgBlockchain = await tendermintNdid.getRequest({ requestId });
 
-  const valid =
-    utils.hash(request.secretSalt + request.request_message) ===
-    msgBlockchain.request_message_hash;
-  /*utils.compareSaltedHash({
-    saltedHash: msgBlockchain.messageHash,
-    plain: request.request_message,
-  });*/
+  const requestMessageHash = utils.hash(
+    request.request_message_salt + request.request_message
+  );
+
+  const valid = requestMessageHash === msgBlockchain.request_message_hash;
   if (!valid) {
     logger.warn({
       message: 'Request message hash mismatched',
@@ -144,9 +142,7 @@ export async function checkRequestIntegrity(requestId, request) {
       message: 'Request message hash mismatched',
       requestId,
       givenRequestMessage: request.request_message,
-      givenRequestMessageHashWithSalt: utils.hash(
-        request.secretSalt + request.request_message
-      ),
+      givenRequestMessageHashWithSalt: requestMessageHash,
       requestMessageHashFromBlockchain: msgBlockchain.request_message_hash,
     });
   }
@@ -466,7 +462,7 @@ export async function createRequest(
     ];
     db.setChallengeFromRequestId(request_id, challenge);
 
-    let secretSalt = utils.randomBase64Bytes(16);
+    let request_message_salt = utils.randomBase64Bytes(16);
 
     const requestData = {
       mode,
@@ -482,7 +478,7 @@ export async function createRequest(
       // for zk proof
       //challenge,
       rp_id: config.nodeId,
-      secretSalt,
+      request_message_salt,
     };
 
     // save request data to DB to send to AS via mq when authen complete
@@ -498,14 +494,14 @@ export async function createRequest(
     if (synchronous) {
       await createRequestInternalAsync(...arguments, {
         request_id,
-        secretSalt,
+        request_message_salt,
         receivers,
         requestData,
       });
     } else {
       createRequestInternalAsync(...arguments, {
         request_id,
-        secretSalt,
+        request_message_salt,
         receivers,
         requestData,
       });
@@ -538,7 +534,7 @@ async function createRequestInternalAsync(
     request_timeout,
   },
   { synchronous = false } = {},
-  { request_id, secretSalt, receivers, requestData }
+  { request_id, request_message_salt, receivers, requestData }
 ) {
   try {
     const dataRequestListToBlockchain = [];
@@ -561,7 +557,7 @@ async function createRequestInternalAsync(
       min_ial,
       request_timeout,
       data_request_list: dataRequestListToBlockchain,
-      request_message_hash: utils.hash(secretSalt + request_message),
+      request_message_hash: utils.hash(request_message_salt + request_message),
     };
 
     const { height } = await tendermintNdid.createRequest(
@@ -620,11 +616,12 @@ async function createRequestInternalAsync(
 }
 
 export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
-  let {
+  const {
     namespace,
     identifier,
     privateProofObjectList,
     request_message,
+    request_message_salt,
   } = await db.getRequestData(request_id);
 
   //check only signature of idp_id
@@ -659,8 +656,8 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
     return false;*/
   }
 
-  let challenge = await db.getChallengeFromRequestId(request_id);
-  let privateProofObject = dataFromMq
+  const challenge = await db.getChallengeFromRequestId(request_id);
+  const privateProofObject = dataFromMq
     ? dataFromMq
     : await db.getPrivateProofReceivedFromMQ(request_id + ':' + idp_id);
 
@@ -675,7 +672,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   });
 
   //query accessor_group_id of this accessor_id
-  let accessor_group_id = await tendermintNdid.getAccessorGroupId(
+  const accessor_group_id = await tendermintNdid.getAccessorGroupId(
     privateProofObject.accessor_id
   );
 
@@ -713,13 +710,12 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   }
 
   //query accessor_public_key from privateProofObject.accessor_id
-  let public_key = await tendermintNdid.getAccessorKey(
+  const public_key = await tendermintNdid.getAccessorKey(
     privateProofObject.accessor_id
   );
 
   //query publicProof from response of idp_id in request
-  let publicProof, signature, privateProofValueHash;
-  let response_list = (await tendermintNdid.getRequestDetail({
+  const response_list = (await tendermintNdid.getRequestDetail({
     requestId: request_id,
   })).response_list;
 
@@ -729,24 +725,22 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
     request_message,
   });
 
-  response_list.forEach((response) => {
-    if (response.idp_id === idp_id) {
-      publicProof = JSON.parse(response.identity_proof);
-      signature = response.signature;
-      privateProofValueHash = response.private_proof_hash;
-    }
-  });
+  const response = response_list.find((response) => response.idp_id === idp_id);
+  const publicProof = JSON.parse(response.identity_proof);
+  const signature = response.signature;
+  const privateProofValueHash = response.private_proof_hash;
 
-  let signatureValid = utils.verifySignature(
+  const signatureValid = utils.verifySignature(
     signature,
     public_key,
-    request_message
+    request_message_salt + request_message
   );
 
   logger.debug({
     message: 'Verify signature',
     signatureValid,
     request_message,
+    request_message_salt,
     public_key,
     signature,
   });
