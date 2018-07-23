@@ -36,6 +36,7 @@ import {
   callbackToClient,
 } from '../utils/callback';
 import * as utils from '../utils';
+import * as lt from '../utils/long_timeout';
 import * as config from '../config';
 import errorType from '../error/type';
 import { getErrorObjectForClient } from '../error/helpers';
@@ -284,7 +285,7 @@ export let timeoutScheduler = {};
 
 export function clearAllScheduler() {
   for (let requestId in timeoutScheduler) {
-    clearTimeout(timeoutScheduler[requestId]);
+    lt.clearTimeout(timeoutScheduler[requestId]);
   }
 }
 
@@ -323,15 +324,15 @@ export async function timeoutRequest(requestId) {
 export function runTimeoutScheduler(requestId, secondsToTimeout) {
   if (secondsToTimeout < 0) timeoutRequest(requestId);
   else {
-    timeoutScheduler[requestId] = setTimeout(() => {
+    timeoutScheduler[requestId] = lt.setTimeout(() => {
       timeoutRequest(requestId);
     }, secondsToTimeout * 1000);
   }
 }
 
-export function addTimeoutScheduler(requestId, secondsToTimeout) {
+export async function addTimeoutScheduler(requestId, secondsToTimeout) {
   let unixTimeout = Date.now() + secondsToTimeout * 1000;
-  db.addTimeoutScheduler(requestId, unixTimeout);
+  await db.addTimeoutScheduler(requestId, unixTimeout);
   runTimeoutScheduler(requestId, secondsToTimeout);
 }
 
@@ -554,7 +555,7 @@ export async function createRequest(
     await db.setRequestIdByReferenceId(reference_id, request_id);
     await db.setRequestCallbackUrl(request_id, callback_url);
 
-    addTimeoutScheduler(request_id, request_timeout);
+    await addTimeoutScheduler(request_id, request_timeout);
 
     if (synchronous) {
       await createRequestInternalAsync(...arguments, {
