@@ -35,6 +35,37 @@ export async function close() {
 // Used by RP, IdP, and AS
 //
 
+export function getAllExpectedTxs() {
+  return db.getAll({ name: 'expectedTx' });
+}
+
+export function getExpectedTxMetadata(txHash) {
+  return db.get({
+    name: 'expectedTx',
+    keyName: 'tx',
+    key: txHash,
+    valueName: 'metadata',
+  });
+}
+
+export function setExpectedTxMetadata(txHash, metadata) {
+  return db.set({
+    name: 'expectedTx',
+    keyName: 'tx',
+    key: txHash,
+    valueName: 'metadata',
+    value: metadata,
+  });
+}
+
+export function removeExpectedTxMetadata(txHash) {
+  return db.remove({
+    name: 'expectedTx',
+    keyName: 'tx',
+    key: txHash,
+  });
+}
+
 export function getCallbackUrlByReferenceId(referenceId) {
   return db.get({
     name: 'callbackUrl',

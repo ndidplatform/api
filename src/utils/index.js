@@ -63,7 +63,8 @@ export function getNonce() {
 }
 
 export function hash(stringToHash) {
-  return cryptoUtils.hash(stringToHash);
+  const hashBuffer = cryptoUtils.sha256(stringToHash);
+  return hashBuffer.toString('base64');
 }
 
 export async function decryptAsymetricKey(cipher) {

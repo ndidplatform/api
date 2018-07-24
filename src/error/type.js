@@ -123,11 +123,16 @@ export default {
   },
   INVALID_RESPONSES: {
     code: 10024,
-    message: 'One or more responses from IdP are invalid (Invalid signature or ZK proof)',
+    message:
+      'One or more responses from IdP are invalid (Invalid signature or ZK proof)',
   },
   REQUEST_INTEGRITY_CHECK_FAILED: {
     code: 10025,
-    message: 'Request integrity check failed'
+    message: 'Request integrity check failed',
+  },
+  LOADING_EXPECTED_TXS_CACHE: {
+    code: 10026,
+    message: 'Loading expected transactions from cache DB',
   },
 
   // Client errors

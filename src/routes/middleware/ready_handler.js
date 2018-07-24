@@ -81,5 +81,20 @@ export default function readyHandler(req, res, next) {
     return;
   }
 
+  if (!tendermint.expectedTxsLoaded) {
+    const responseBody = {
+      error: {
+        message: errorType.LOADING_EXPECTED_TXS_CACHE.message,
+        code: errorType.LOADING_EXPECTED_TXS_CACHE.code,
+      },
+    };
+    res.status(503).json(responseBody);
+    logger.error({
+      message: 'Responded Service Unavailable with HTTP code 503',
+      responseBody,
+    });
+    return;
+  }
+
   next();
 }

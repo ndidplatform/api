@@ -28,7 +28,6 @@ import path from 'path';
 import mkdirp from 'mkdirp';
 
 import * as ndid from './core/ndid';
-import * as tendermint from './tendermint/ndid';
 import * as config from './config';
 
 // Make sure data and log directories exist
@@ -95,9 +94,6 @@ export async function init() {
   const master_public_key = fs
     .readFileSync(masterPublicKeyFilePath, 'utf8')
     .toString();
-
-  // Wait for blockchain ready
-  await tendermint.ready;
 
   try {
     await ndid.initNDID({

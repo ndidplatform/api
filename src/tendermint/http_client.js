@@ -37,9 +37,9 @@ async function httpUriCall(method, params) {
       }
       const uriEncodedParamValue = encodeURIComponent(param.value);
       if (paramsString !== '') {
-        return paramsString + `&${param.key}="${uriEncodedParamValue}"`;
+        return paramsString + `&${param.key}=${uriEncodedParamValue}`;
       }
-      return paramsString + `${param.key}="${uriEncodedParamValue}"`;
+      return paramsString + `${param.key}=${uriEncodedParamValue}`;
     }, '');
 
     if (params.length > 0) {
@@ -83,7 +83,7 @@ export function abciQuery(data, height) {
   return httpUriCall('abci_query', [
     {
       key: 'data',
-      value: data,
+      value: `"${data}"`,
     },
     {
       key: 'height',
@@ -96,7 +96,7 @@ export function broadcastTxCommit(tx) {
   return httpUriCall('broadcast_tx_commit', [
     {
       key: 'tx',
-      value: tx,
+      value: `"${tx}"`,
     },
   ]);
 }
@@ -105,7 +105,7 @@ export function broadcastTxSync(tx) {
   return httpUriCall('broadcast_tx_sync', [
     {
       key: 'tx',
-      value: tx,
+      value: `"${tx}"`,
     },
   ]);
 }
@@ -124,6 +124,25 @@ export function blockResults(height) {
     {
       key: 'height',
       value: height,
+    },
+  ]);
+}
+
+/**
+ *
+ * @param {string} hash First 20 bytes of sha256 in hex format
+ * @param {string} prove boolean (true|false)
+ * @returns {Object}
+ */
+export function tx(hash, prove) {
+  return httpUriCall('tx', [
+    {
+      key: 'hash',
+      value: `0x${hash}`,
+    },
+    {
+      key: 'prove',
+      value: prove,
     },
   ]);
 }

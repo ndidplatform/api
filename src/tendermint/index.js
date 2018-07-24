@@ -33,10 +33,17 @@ import logger from '../logger';
 import * as tendermintHttpClient from './http_client';
 import TendermintWsClient from './ws_client';
 import { convertAbciAppCodeToErrorType } from './abci_app_code';
+import * as db from '../db';
 import * as utils from '../utils';
+import { sha256 } from '../utils/crypto';
 import * as config from '../config';
 
 let handleTendermintNewBlockEvent;
+
+const expectedTx = {};
+let getTxResultCallbackFn;
+const txEventEmitter = new EventEmitter();
+export let expectedTxsLoaded = false;
 
 const cacheBlocks = {};
 let lastKnownAppHash;
@@ -92,6 +99,94 @@ export function setTendermintNewBlockEventHandler(handler) {
   handleTendermintNewBlockEvent = handler;
 }
 
+export async function loadExpectedTxFromDB() {
+  const savedExpectedTxs = await db.getAllExpectedTxs();
+  savedExpectedTxs.forEach(({ tx: txHash, metadata }) => {
+    expectedTx[txHash] = metadata;
+  });
+  expectedTxsLoaded = true;
+  checkForMissingExpectedTx();
+}
+
+async function checkForMissingExpectedTx() {
+  const txHashes = Object.keys(expectedTx).map((txHash) => {
+    return {
+      txHash,
+      txHashSum: txHash.substring(0, 40), // Get first 20 bytes of Tx hash
+    };
+  });
+  await Promise.all(
+    txHashes.map(async ({ txHash, txHashSum }) => {
+      try {
+        const result = await tendermintHttpClient.tx(txHashSum);
+        if (expectedTx[txHash] == null) return;
+        await processExpectedTx(txHash, result);
+      } catch (error) {
+        // TODO: log
+        logger.warn({
+          message: 'Error getting Tx for processing missing expected Tx',
+          txHash,
+          error,
+        });
+      }
+    })
+  );
+}
+
+async function processExpectedTx(txHash, result, fromEvent) {
+  logger.debug({
+    message: 'Expected Tx is included in the block. Processing.',
+    txHash,
+  });
+  try {
+    const {
+      waitForCommit,
+      callbackFnName,
+      callbackAdditionalArgs,
+    } = expectedTx[txHash];
+    delete expectedTx[txHash];
+    const retVal = getTransactResultFromTx(result, fromEvent);
+    if (waitForCommit) {
+      txEventEmitter.emit(txHash, retVal);
+    }
+    if (callbackFnName != null) {
+      if (getTxResultCallbackFn != null) {
+        if (callbackAdditionalArgs != null) {
+          getTxResultCallbackFn(callbackFnName)(
+            retVal,
+            ...callbackAdditionalArgs
+          );
+        } else {
+          getTxResultCallbackFn(callbackFnName)(retVal);
+        }
+      } else {
+        logger.error({
+          message:
+            'getTxResultCallbackFn has not been set but there is a callback function to call',
+          callbackFnName,
+        });
+      }
+    }
+    await db.removeExpectedTxMetadata(txHash);
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error processing expected Tx',
+      details: {
+        txHash,
+      },
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+  }
+}
+
+export function setTxResultCallbackFnGetter(fn) {
+  if (typeof fn !== 'function') {
+    throw new Error('Invalid argument type. Must be function.');
+  }
+  getTxResultCallbackFn = fn;
+}
+
 /**
  * Poll tendermint status until syncing === false
  */
@@ -128,6 +223,7 @@ tendermintWsClient.on('connected', () => {
   connected = true;
   pollStatusUntilSynced();
   tendermintWsClient.subscribeToNewBlockEvent();
+  tendermintWsClient.subscribeToTxEvent();
 });
 
 tendermintWsClient.on('disconnected', () => {
@@ -135,7 +231,10 @@ tendermintWsClient.on('disconnected', () => {
   syncing = null;
 });
 
-tendermintWsClient.on('newBlock#event', async (error, result) => {
+tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(
+  error,
+  result
+) {
   if (syncing !== false) {
     return;
   }
@@ -173,6 +272,14 @@ tendermintWsClient.on('newBlock#event', async (error, result) => {
     lastKnownAppHash = appHash;
     saveLatestBlockHeight(blockHeight);
   }
+});
+
+tendermintWsClient.on('tx#event', async function handleTxEvent(error, result) {
+  const txBase64 = result.data.value.TxResult.tx;
+  const txString = Buffer.from(txBase64, 'base64').toString('utf8');
+  const txHash = sha256(txString).toString('hex');
+  if (expectedTx[txHash] == null) return;
+  await processExpectedTx(txHash, result, true);
 });
 
 /**
@@ -232,33 +339,6 @@ function getQueryResult(result) {
     result,
   });
 
-  // const currentHeight = parseInt(response.result.response.height);
-
-  // if (result.check_tx.log !== 'success') {
-  //   if (result.check_tx.code != null) {
-  //     const convertedErrorType = convertAbciAppCodeToErrorType(
-  //       result.check_tx.code
-  //     );
-  //     if (convertedErrorType != null) {
-  //       throw new CustomError({
-  //         message: convertedErrorType.message,
-  //         code: convertedErrorType.code,
-  //         clientError: convertedErrorType.clientError,
-  //         details: {
-  //           abciCode: result.check_tx.code,
-  //         },
-  //       });
-  //     }
-  //   }
-  //   throw new CustomError({
-  //     message: errorType.TENDERMINT_TRANSACT_ERROR.message,
-  //     code: errorType.TENDERMINT_TRANSACT_ERROR.code,
-  //     details: {
-  //       abciCode: result.check_tx.code,
-  //     },
-  //   });
-  // }
-
   if (result.response.log.indexOf('not found') !== -1) {
     return null;
   }
@@ -283,17 +363,90 @@ function getQueryResult(result) {
   }
 }
 
-function getTransactResult(result) {
+function getTransactResultFromTx(result, fromEvent) {
   logger.debug({
-    message: 'Tendermint transact result',
+    message: 'Tendermint transact result from Tx',
+    fromEvent,
+    result,
+  });
+
+  const height = parseInt(
+    fromEvent ? result.data.value.TxResult.height : result.height
+  );
+
+  const deliverTxResult = fromEvent
+    ? result.data.value.TxResult.result
+    : result.tx_result;
+
+  if (deliverTxResult.log !== 'success') {
+    if (deliverTxResult.code != null) {
+      const convertedErrorType = convertAbciAppCodeToErrorType(
+        deliverTxResult.code
+      );
+      if (convertedErrorType != null) {
+        return {
+          error: new CustomError({
+            message: convertedErrorType.message,
+            code: convertedErrorType.code,
+            clientError: convertedErrorType.clientError,
+            details: {
+              abciCode: deliverTxResult.code,
+              height,
+            },
+          }),
+        };
+      }
+    }
+    return {
+      error: new CustomError({
+        message: errorType.TENDERMINT_TRANSACT_ERROR.message,
+        code: errorType.TENDERMINT_TRANSACT_ERROR.code,
+        details: {
+          abciCode: deliverTxResult.code,
+          height,
+        },
+      }),
+    };
+  }
+  return {
+    height,
+  };
+}
+
+function getBroadcastTxSyncResult(result) {
+  logger.debug({
+    message: 'Tendermint broadcast Tx sync result',
+    result,
+  });
+
+  if (result.code !== 0) {
+    const convertedErrorType = convertAbciAppCodeToErrorType(
+      result.deliver_tx.code
+    );
+    if (convertedErrorType != null) {
+      throw new CustomError({
+        message: convertedErrorType.message,
+        code: convertedErrorType.code,
+        clientError: convertedErrorType.clientError,
+        details: {
+          abciCode: result.code,
+        },
+      });
+    }
+  }
+
+  const hash = result.hash;
+
+  return { hash };
+}
+
+function getBroadcastTxCommitResult(result) {
+  logger.debug({
+    message: 'Tendermint broadcast Tx commit result',
     result,
   });
 
   const height = parseInt(result.height);
-
-  // if (result.check_tx.code !== 0) {
-  //   throw '';
-  // }
 
   if (result.deliver_tx.log !== 'success') {
     if (result.deliver_tx.code != null) {
@@ -316,7 +469,7 @@ function getTransactResult(result) {
       message: errorType.TENDERMINT_TRANSACT_ERROR.message,
       code: errorType.TENDERMINT_TRANSACT_ERROR.code,
       details: {
-        abciCode: result.deliver_tx.code,
+        abciCode: result.code,
         height,
       },
     });
@@ -355,12 +508,24 @@ export async function query(fnName, data, height) {
   }
 }
 
-export async function transact(fnName, data, nonce, useMasterKey) {
+export async function transact(
+  fnName,
+  data,
+  nonce,
+  callbackFnName,
+  callbackAdditionalArgs,
+  useMasterKey = false
+) {
+  const waitForCommit = !callbackFnName;
   logger.debug({
     message: 'Tendermint transact',
     fnName,
     data,
     nonce,
+    waitForCommit,
+    useMasterKey,
+    callbackFnName,
+    callbackAdditionalArgs,
   });
 
   const dataStr = JSON.stringify(data);
@@ -375,10 +540,38 @@ export async function transact(fnName, data, nonce, useMasterKey) {
     '|' +
     Buffer.from(config.nodeId).toString('base64');
 
+  const txHash = sha256(tx).toString('hex');
+  const callbackData = {
+    waitForCommit,
+    callbackFnName,
+    callbackAdditionalArgs,
+  };
+  expectedTx[txHash] = callbackData;
+  await db.setExpectedTxMetadata(txHash, callbackData);
+
   try {
-    const result = await tendermintHttpClient.broadcastTxCommit(tx);
-    return getTransactResult(result);
+    let promise;
+    if (waitForCommit) {
+      promise = new Promise((resolve, reject) =>
+        txEventEmitter.once(txHash, ({ error, ...rest }) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve(rest);
+        })
+      );
+    }
+    const responseResult = await tendermintHttpClient.broadcastTxSync(tx);
+    const broadcastTxSyncResult = getBroadcastTxSyncResult(responseResult);
+    if (waitForCommit) {
+      const result = await promise;
+      return result;
+    }
+    return broadcastTxSyncResult;
   } catch (error) {
+    delete expectedTx[txHash];
+    await db.removeExpectedTxMetadata(txHash);
     if (error.type === 'JSON-RPC ERROR') {
       throw new CustomError({
         message: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR.message,

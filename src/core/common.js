@@ -60,11 +60,9 @@ async function registerMessageQueueAddress() {
       const { ip, port } = selfMqAddress;
       //if not same
       if (ip !== config.mqRegister.ip || port !== config.mqRegister.port) {
-        //work only for broadcast tx commit
         await tendermintNdid.registerMsqAddress(config.mqRegister);
       }
     } else {
-      //work only for broadcast tx commit
       await tendermintNdid.registerMsqAddress(config.mqRegister);
     }
     messageQueueAddressRegistered = true;
@@ -72,24 +70,35 @@ async function registerMessageQueueAddress() {
 }
 
 if (role === 'rp' || role === 'idp' || role === 'as') {
-  tendermint.eventEmitter.on('ready', () => {
+  tendermint.eventEmitter.on('ready', async () => {
     if (
       !config.useExternalCryptoService ||
       (config.useExternalCryptoService &&
         externalCryptoService.isCallbackUrlsSet())
     ) {
-      registerMessageQueueAddress();
+      await registerMessageQueueAddress();
+      await tendermint.loadExpectedTxFromDB();
     }
   });
 
   if (config.useExternalCryptoService) {
-    externalCryptoService.eventEmitter.on('allCallbacksSet', () => {
+    externalCryptoService.eventEmitter.on('allCallbacksSet', async () => {
       if (tendermint.syncing === false) {
-        registerMessageQueueAddress();
+        await registerMessageQueueAddress();
+        await tendermint.loadExpectedTxFromDB();
       }
     });
   }
 }
+
+function getFunction(fnName) {
+  switch (fnName) {
+    default:
+      return function noop() {};
+  }
+}
+
+tendermint.setTxResultCallbackFnGetter(getFunction);
 
 if (role === 'rp') {
   handleMessageFromQueue = rp.handleMessageFromQueue;

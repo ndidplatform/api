@@ -38,12 +38,18 @@ const nodeId = config.nodeId;
  * @param {string} data.node_id
  * @param {string} data.public_key
  */
-export async function addNodePubKey(data) {
+export async function addNodePubKey(
+  data,
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
     const result = await tendermint.transact(
       'AddNodePublicKey',
       data,
-      utils.getNonce()
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
     );
     return result;
   } catch (error) {
@@ -54,7 +60,11 @@ export async function addNodePubKey(data) {
   }
 }
 
-export async function registerMsqAddress({ ip, port }) {
+export async function registerMsqAddress(
+  { ip, port },
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
     return await tendermint.transact(
       'RegisterMsqAddress',
@@ -63,7 +73,9 @@ export async function registerMsqAddress({ ip, port }) {
         port,
         node_id: nodeId,
       },
-      utils.getNonce()
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
     );
   } catch (error) {
     throw new CustomError({
@@ -73,7 +85,11 @@ export async function registerMsqAddress({ ip, port }) {
   }
 }
 
-export async function updateNode({ public_key, master_public_key }) {
+export async function updateNode(
+  { public_key, master_public_key },
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
     const { success } = await tendermint.transact(
       'UpdateNode',
@@ -82,6 +98,8 @@ export async function updateNode({ public_key, master_public_key }) {
         master_public_key,
       },
       utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs,
       true
     );
     return success;
@@ -93,12 +111,11 @@ export async function updateNode({ public_key, master_public_key }) {
   }
 }
 
-export async function createIdentity({
-  accessor_type,
-  accessor_public_key,
-  accessor_id,
-  accessor_group_id,
-}) {
+export async function createIdentity(
+  { accessor_type, accessor_public_key, accessor_id, accessor_group_id },
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
     return await tendermint.transact(
       'CreateIdentity',
@@ -108,7 +125,9 @@ export async function createIdentity({
         accessor_id,
         accessor_group_id,
       },
-      utils.getNonce()
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
     );
   } catch (error) {
     throw new CustomError({
@@ -118,7 +137,11 @@ export async function createIdentity({
   }
 }
 
-export async function registerMqDestination({ users }) {
+export async function registerMqDestination(
+  { users },
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
     const result = await tendermint.transact(
       'RegisterMsqDestination',
@@ -126,7 +149,9 @@ export async function registerMqDestination({ users }) {
         users,
         node_id: nodeId,
       },
-      utils.getNonce()
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
     );
     return result;
   } catch (error) {
@@ -137,13 +162,17 @@ export async function registerMqDestination({ users }) {
   }
 }
 
-export async function addAccessorMethod({
-  request_id,
-  accessor_group_id,
-  accessor_type,
-  accessor_id,
-  accessor_public_key,
-}) {
+export async function addAccessorMethod(
+  {
+    request_id,
+    accessor_group_id,
+    accessor_type,
+    accessor_id,
+    accessor_public_key,
+  },
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
     return await tendermint.transact(
       'AddAccessorMethod',
@@ -154,7 +183,9 @@ export async function addAccessorMethod({
         accessor_id,
         accessor_public_key,
       },
-      utils.getNonce()
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
     );
   } catch (error) {
     throw new CustomError({
@@ -164,12 +195,18 @@ export async function addAccessorMethod({
   }
 }
 
-export async function createRequest(requestDataToBlockchain) {
+export async function createRequest(
+  requestDataToBlockchain,
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
     return await tendermint.transact(
       'CreateRequest',
       requestDataToBlockchain,
-      utils.getNonce()
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
     );
   } catch (error) {
     throw new CustomError({
@@ -179,12 +216,18 @@ export async function createRequest(requestDataToBlockchain) {
   }
 }
 
-export async function closeRequest({ requestId, responseValidList }) {
+export async function closeRequest(
+  { requestId, responseValidList },
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
     const result = await tendermint.transact(
       'CloseRequest',
       { requestId, response_valid_list: responseValidList },
-      utils.getNonce()
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
     );
     return result;
   } catch (error) {
@@ -196,14 +239,20 @@ export async function closeRequest({ requestId, responseValidList }) {
   }
 }
 
-export async function timeoutRequest({ requestId, responseValidList }) {
+export async function timeoutRequest(
+  { requestId, responseValidList },
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
     const request = await getRequest({ requestId });
     if (request.closed === false) {
       await tendermint.transact(
         'TimeOutRequest',
         { requestId, response_valid_list: responseValidList },
-        utils.getNonce()
+        utils.getNonce(),
+        callbackFnName,
+        callbackAdditionalArgs
       );
     }
   } catch (error) {
@@ -214,7 +263,11 @@ export async function timeoutRequest({ requestId, responseValidList }) {
   }
 }
 
-export async function setDataReceived({ requestId, service_id, as_id }) {
+export async function setDataReceived(
+  { requestId, service_id, as_id },
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
     const result = await tendermint.transact(
       'SetDataReceived',
@@ -223,7 +276,9 @@ export async function setDataReceived({ requestId, service_id, as_id }) {
         service_id,
         as_id,
       },
-      utils.getNonce()
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
     );
     return result;
   } catch (error) {
@@ -237,7 +292,11 @@ export async function setDataReceived({ requestId, service_id, as_id }) {
   }
 }
 
-export async function updateIal({ hash_id, ial }) {
+export async function updateIal(
+  { hash_id, ial },
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
     await tendermint.transact(
       'UpdateIdentity',
@@ -245,7 +304,9 @@ export async function updateIal({ hash_id, ial }) {
         hash_id,
         ial,
       },
-      utils.getNonce()
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
     );
   } catch (error) {
     throw new CustomError({
@@ -257,7 +318,11 @@ export async function updateIal({ hash_id, ial }) {
   }
 }
 
-export async function declareIdentityProof({ request_id, identity_proof }) {
+export async function declareIdentityProof(
+  { request_id, identity_proof },
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
     return await tendermint.transact(
       'DeclareIdentityProof',
@@ -266,7 +331,9 @@ export async function declareIdentityProof({ request_id, identity_proof }) {
         identity_proof,
         idp_id: nodeId,
       },
-      utils.getNonce()
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
     );
   } catch (error) {
     throw new CustomError({
@@ -276,12 +343,18 @@ export async function declareIdentityProof({ request_id, identity_proof }) {
   }
 }
 
-export async function createIdpResponse(responseDataToBlockchain) {
+export async function createIdpResponse(
+  responseDataToBlockchain,
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
     return await tendermint.transact(
       'CreateIdpResponse',
       responseDataToBlockchain,
-      utils.getNonce()
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
     );
   } catch (error) {
     throw new CustomError({
@@ -291,15 +364,20 @@ export async function createIdpResponse(responseDataToBlockchain) {
   }
 }
 
-export async function signASData(data) {
-  const nonce = utils.getNonce();
+export async function signASData(data, callbackFnName, callbackAdditionalArgs) {
   const dataToBlockchain = {
     request_id: data.request_id,
     signature: data.signature,
     service_id: data.service_id,
   };
   try {
-    return await tendermint.transact('SignData', dataToBlockchain, nonce);
+    return await tendermint.transact(
+      'SignData',
+      dataToBlockchain,
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
+    );
   } catch (error) {
     throw new CustomError({
       message: 'Cannot sign AS data',
@@ -308,10 +386,19 @@ export async function signASData(data) {
   }
 }
 
-export async function registerServiceDestination(data) {
+export async function registerServiceDestination(
+  data,
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
-    let nonce = utils.getNonce();
-    await tendermint.transact('RegisterServiceDestination', data, nonce);
+    await tendermint.transact(
+      'RegisterServiceDestination',
+      data,
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
+    );
   } catch (error) {
     throw new CustomError({
       message: 'Cannot register service destination',
@@ -320,10 +407,19 @@ export async function registerServiceDestination(data) {
   }
 }
 
-export async function updateServiceDestination(data) {
+export async function updateServiceDestination(
+  data,
+  callbackFnName,
+  callbackAdditionalArgs
+) {
   try {
-    let nonce = utils.getNonce();
-    await tendermint.transact('UpdateServiceDestination', data, nonce);
+    await tendermint.transact(
+      'UpdateServiceDestination',
+      data,
+      utils.getNonce(),
+      callbackFnName,
+      callbackAdditionalArgs
+    );
   } catch (error) {
     throw new CustomError({
       message: 'Cannot update service destination',
@@ -452,7 +548,11 @@ export async function getServicesByAsID({ as_id }) {
     const result = await tendermint.query('GetServicesByAsID', {
       as_id,
     });
-    return result != null ? (result.services != null ? result.services : []) : [];
+    return result != null
+      ? result.services != null
+        ? result.services
+        : []
+      : [];
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get servies by AS ID from blockchain',
