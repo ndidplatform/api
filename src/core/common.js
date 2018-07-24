@@ -322,8 +322,9 @@ export async function timeoutRequest(requestId) {
 }
 
 export function runTimeoutScheduler(requestId, secondsToTimeout) {
-  if (secondsToTimeout < 0) timeoutRequest(requestId);
-  else {
+  if (secondsToTimeout < 0) {
+    timeoutRequest(requestId);
+  } else {
     timeoutScheduler[requestId] = lt.setTimeout(() => {
       timeoutRequest(requestId);
     }, secondsToTimeout * 1000);
@@ -334,6 +335,11 @@ export async function addTimeoutScheduler(requestId, secondsToTimeout) {
   let unixTimeout = Date.now() + secondsToTimeout * 1000;
   await db.addTimeoutScheduler(requestId, unixTimeout);
   runTimeoutScheduler(requestId, secondsToTimeout);
+}
+
+async function removeTimeoutScheduler(requestId) {
+  lt.clearTimeout(timeoutScheduler[requestId]);
+  await db.removeTimeoutScheduler(requestId);
 }
 
 /**
@@ -661,8 +667,10 @@ async function createRequestInternalAsync(
       );
     }
   } catch (error) {
+    await db.removeRequestData(request_id);
     await db.removeRequestIdByReferenceId(reference_id);
     await db.removeRequestCallbackUrl(request_id);
+    await removeTimeoutScheduler(request_id);
 
     logger.error({
       message: 'Create request internal async error',
