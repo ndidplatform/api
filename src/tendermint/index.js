@@ -44,6 +44,7 @@ const expectedTx = {};
 let getTxResultCallbackFn;
 const txEventEmitter = new EventEmitter();
 export let expectedTxsLoaded = false;
+let shouldCheckForMissingExpectedTxs = false; // Use when reconnect WS
 
 const cacheBlocks = {};
 let lastKnownAppHash;
@@ -119,12 +120,11 @@ async function checkForMissingExpectedTx() {
     txHashes.map(async ({ txHash, txHashSum }) => {
       try {
         const result = await tendermintHttpClient.tx(txHashSum);
-        if (expectedTx[txHash] == null) return;
         await processExpectedTx(txHash, result);
       } catch (error) {
-        // TODO: log
         logger.warn({
-          message: 'Error getting Tx for processing missing expected Tx',
+          message:
+            'Error getting Tx for processing missing expected Tx (Tx may still be in mempool or does not exist)',
           txHash,
           error,
         });
@@ -134,6 +134,8 @@ async function checkForMissingExpectedTx() {
 }
 
 async function processExpectedTx(txHash, result, fromEvent) {
+  // Check for undefined again to prevent duplicate processing
+  if (expectedTx[txHash] == null) return;
   logger.debug({
     message: 'Expected Tx is included in the block. Processing.',
     txHash,
@@ -224,11 +226,17 @@ tendermintWsClient.on('connected', () => {
   pollStatusUntilSynced();
   tendermintWsClient.subscribeToNewBlockEvent();
   tendermintWsClient.subscribeToTxEvent();
+  if (shouldCheckForMissingExpectedTxs) {
+    // Check for expected transactions in case there are missing Tx events after reconnect
+    checkForMissingExpectedTx();
+    shouldCheckForMissingExpectedTxs = false;
+  }
 });
 
 tendermintWsClient.on('disconnected', () => {
   connected = false;
   syncing = null;
+  shouldCheckForMissingExpectedTxs = true;
 });
 
 tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(
