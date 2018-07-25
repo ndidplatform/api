@@ -2,6 +2,11 @@
 
 ## TBD
 
+BREAKING CHANGES:
+
+- Signature in IdP response must sign `request_message` concatenate with provided `request_message_salt`.
+- Include request message salt when verifying IdP response signature.
+
 IMPROVEMENTS:
 
 - Use `/broadcast_tx_sync` when making a transaction to Tendermint to allow more than 2 minutes (Tendermint's default `/broadcast_tx_commit` timeout) commit time.
@@ -10,10 +15,11 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - Append salt to request message before hash instead of prepend.
-- Fix IdP response signature verification to include request message salt.
 - Fix missing `request_message_salt` property in object when calling callback to IdP with type `incoming_request`.
 - Fix AS data response signature is not salted.
 - Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side.
+- Fix error in `getMessageWithCode()` in CustomError when error cause is undefined.
+- Clean up data in cache DB when create request and create identity fails.
 
 ## 0.5.3 (July 22, 2018)
 

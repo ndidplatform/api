@@ -546,6 +546,13 @@ async function createNewIdentityInternalAsync(
       );
     }
 
+    await Promise.all([
+      db.removeCallbackUrlByReferenceId(reference_id),
+      db.removeReferenceIdByRequestId(request_id),
+      db.removeOnboardDataByReferenceId(request_id),
+      db.removeIdentityFromRequestId(request_id),
+    ]);
+
     throw error;
   }
 }

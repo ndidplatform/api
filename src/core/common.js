@@ -292,7 +292,7 @@ export async function getIdpsMsqDestination({
 
 export let timeoutScheduler = {};
 
-export function clearAllScheduler() {
+export function stopAllTimeoutScheduler() {
   for (let requestId in timeoutScheduler) {
     lt.clearTimeout(timeoutScheduler[requestId]);
   }
@@ -331,8 +331,9 @@ export async function timeoutRequest(requestId) {
 }
 
 export function runTimeoutScheduler(requestId, secondsToTimeout) {
-  if (secondsToTimeout < 0) timeoutRequest(requestId);
-  else {
+  if (secondsToTimeout < 0) {
+    timeoutRequest(requestId);
+  } else {
     timeoutScheduler[requestId] = lt.setTimeout(() => {
       timeoutRequest(requestId);
     }, secondsToTimeout * 1000);
@@ -343,6 +344,12 @@ export async function addTimeoutScheduler(requestId, secondsToTimeout) {
   let unixTimeout = Date.now() + secondsToTimeout * 1000;
   await db.addTimeoutScheduler(requestId, unixTimeout);
   runTimeoutScheduler(requestId, secondsToTimeout);
+}
+
+export async function removeTimeoutScheduler(requestId) {
+  lt.clearTimeout(timeoutScheduler[requestId]);
+  await db.removeTimeoutScheduler(requestId);
+  delete timeoutScheduler[requestId];
 }
 
 /**
@@ -530,7 +537,7 @@ export async function createRequest(
       utils.randomBase64Bytes(config.challengeLength),
       utils.randomBase64Bytes(config.challengeLength),
     ];
-    db.setChallengeFromRequestId(request_id, challenge);
+    await db.setChallengeFromRequestId(request_id, challenge);
 
     const request_message_salt = utils.randomBase64Bytes(16);
 
@@ -558,13 +565,12 @@ export async function createRequest(
 
     // save request data to DB to send to AS via mq when authen complete
     // and for zk proof
-    await db.setRequestData(request_id, requestData);
-
-    // maintain mapping
-    await db.setRequestIdByReferenceId(reference_id, request_id);
-    await db.setRequestCallbackUrl(request_id, callback_url);
-
-    await addTimeoutScheduler(request_id, request_timeout);
+    await Promise.all([
+      db.setRequestData(request_id, requestData),
+      db.setRequestIdByReferenceId(reference_id, request_id),
+      db.setRequestCallbackUrl(request_id, callback_url),
+      addTimeoutScheduler(request_id, request_timeout),
+    ]);
 
     if (synchronous) {
       await createRequestInternalAsync(...arguments, {
@@ -670,9 +676,6 @@ async function createRequestInternalAsync(
       );
     }
   } catch (error) {
-    await db.removeRequestIdByReferenceId(reference_id);
-    await db.removeRequestCallbackUrl(request_id);
-
     logger.error({
       message: 'Create request internal async error',
       originalArgs: arguments[0],
@@ -694,6 +697,14 @@ async function createRequestInternalAsync(
         true
       );
     }
+
+    await Promise.all([
+      db.removeChallengeFromRequestId(request_id),
+      db.removeRequestData(request_id),
+      db.removeRequestIdByReferenceId(reference_id),
+      db.removeRequestCallbackUrl(request_id),
+      removeTimeoutScheduler(request_id),
+    ]);
 
     throw error;
   }
@@ -1012,6 +1023,7 @@ async function closeRequestInternalAsync(
     });
 
     db.removeChallengeFromRequestId(request_id);
+    removeTimeoutScheduler(request_id);
 
     if (!synchronous) {
       await callbackToClient(

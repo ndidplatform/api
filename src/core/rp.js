@@ -230,13 +230,13 @@ async function processRequestUpdate(requestId, height) {
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
     // since the request is no longer going to have further events
     // (the request has reached its end state)
-    db.removeRequestCallbackUrl(requestId);
-    db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-    db.removeRequestData(requestId);
-    db.removeIdpResponseValidList(requestId);
-    db.removeTimeoutScheduler(requestId);
-    clearTimeout(common.timeoutScheduler[requestId]);
-    delete common.timeoutScheduler[requestId];
+    await Promise.all([
+      db.removeRequestCallbackUrl(requestId),
+      db.removeRequestIdReferenceIdMappingByRequestId(requestId),
+      db.removeRequestData(requestId),
+      db.removeIdpResponseValidList(requestId),
+      common.removeTimeoutScheduler(requestId),
+    ]);
   }
 }
 

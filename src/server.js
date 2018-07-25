@@ -36,7 +36,7 @@ import logger from './logger';
 
 import routes from './routes';
 import { bodyParserErrorHandler } from './routes/middleware/error_handler';
-import { clearAllScheduler } from './core/common';
+import { stopAllTimeoutScheduler } from './core/common';
 
 import { close as closeDB } from './db';
 import { tendermintWsClient } from './tendermint';
@@ -137,7 +137,7 @@ function shutDown() {
     // remove after finish using DB
     // => Wait here until a queue to use DB is empty
     await closeDB();
-    clearAllScheduler();
+    stopAllTimeoutScheduler();
   });
 }
 
