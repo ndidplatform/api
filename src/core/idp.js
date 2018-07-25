@@ -383,7 +383,7 @@ async function requestChallengeAndCreateResponseInternalAsync(data, request) {
       },
       true
     );
-    db.removeResponseFromRequestId(data.request_id);
+    await db.removeResponseFromRequestId(data.request_id);
   }
 }
 
