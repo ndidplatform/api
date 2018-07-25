@@ -856,7 +856,6 @@ export async function handleChallengeRequest({
   //challenge deleted, request is done
   if (challengeObject == null) return false;
 
-  challengeObject = JSON.parse(challengeObject);
   if(challengeObject[idp_id]) challenge = challengeObject[idp_id];
   else {
     //generate new challenge
@@ -866,7 +865,7 @@ export async function handleChallengeRequest({
     ];
 
     challengeObject[idp_id] = challenge;
-    await db.setChallengeFromRequestId(request_id, challenge);
+    await db.setChallengeFromRequestId(request_id, challengeObject);
   }
 
   logger.debug({
