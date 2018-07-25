@@ -18,6 +18,7 @@ BUG FIXES:
 - Fix AS data response signature is not salted.
 - Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side.
 - Fix error in `getMessageWithCode()` in CustomError when error cause is undefined.
+- Clean up data in cache DB when create request and create identity fails.
 
 ## 0.5.3 (July 22, 2018)
 
