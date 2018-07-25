@@ -44,7 +44,7 @@ router.post('/', validateBody, async (req, res, next) => {
       ial,
     } = req.body;
 
-    const result = await identity.createNewIdentity(
+    const result = await identity.createIdentity(
       {
         reference_id,
         callback_url,

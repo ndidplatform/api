@@ -536,6 +536,14 @@ export async function transact(
     callbackAdditionalArgs,
   });
 
+  if (callbackAdditionalArgs != null) {
+    if (!Array.isArray(callbackAdditionalArgs)) {
+      throw new CustomError({
+        message: 'callbackAdditionalArgs must be an array',
+      });
+    }
+  }
+
   const dataStr = JSON.stringify(data);
   const tx =
     fnName +

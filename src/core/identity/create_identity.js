@@ -20,202 +20,35 @@
  *
  */
 
-import logger from '../logger';
+import { checkAssociated, isIdentityExist } from '.';
 
-import CustomError from '../error/custom_error';
-import errorType from '../error/type';
-import { getErrorObjectForClient } from '../error/helpers';
+import logger from '../../logger';
 
-import * as tendermintNdid from '../tendermint/ndid';
-import * as utils from '../utils';
-import { callbackToClient } from '../utils/callback';
-import * as common from './common';
-import * as config from '../config';
-import * as db from '../db';
+import CustomError from '../../error/custom_error';
+import errorType from '../../error/type';
+import { getErrorObjectForClient } from '../../error/helpers';
+
+import * as tendermintNdid from '../../tendermint/ndid';
+import * as utils from '../../utils';
+import { callbackToClient } from '../../utils/callback';
+import * as common from '../common';
+import * as config from '../../config';
+import * as db from '../../db';
 import {
-  accessorSign,
   isAccessorSignUrlSet,
   notifyCreateIdentityResultByCallback,
-} from './idp';
+  accessorSign,
+} from '../idp';
 import {
   getRequestMessageForCreatingIdentity,
   getRequestMessageForAddingAccessor,
-} from '../utils/request_message';
-
-export async function checkAssociated({ namespace, identifier }) {
-  let idpList = await tendermintNdid.getIdpNodes({
-    namespace,
-    identifier,
-    min_aal: 1,
-    min_ial: 1.1,
-  });
-  for (let i = 0; i < idpList.length; i++) {
-    if (idpList[i].node_id === config.nodeId) return true;
-  }
-  return false;
-}
-
-export async function addAccessorMethodForAssociatedIdp(
-  {
-    reference_id,
-    callback_url,
-    namespace,
-    identifier,
-    accessor_type,
-    accessor_public_key,
-    accessor_id,
-  },
-  { synchronous = false, apiVersion } = {}
-) {
-  const associated = await checkAssociated({
-    namespace,
-    identifier,
-  });
-
-  if (!associated) {
-    throw new CustomError({
-      message: errorType.IDENTITY_NOT_FOUND.message,
-      code: errorType.IDENTITY_NOT_FOUND.code,
-      clientError: true,
-      details: {
-        namespace,
-        identifier,
-      },
-    });
-  }
-
-  const result = await createNewIdentity(
-    {
-      reference_id,
-      callback_url,
-      namespace,
-      identifier,
-      accessor_type,
-      accessor_public_key,
-      accessor_id,
-      addAccessor: true,
-    },
-    { synchronous, apiVersion }
-  );
-  return result;
-}
-
-export async function addAccessorAfterConsent(request_id, old_accessor_id) {
-  //NOTE: zero knowledge proof cannot be verify by blockchain, hence,
-  //if this idp call to add their accessor it's imply that zk proof is verified by the
-  logger.debug({
-    message: 'Get consent, adding accessor...',
-    request_id,
-    old_accessor_id,
-  });
-
-  let accessor_group_id = await tendermintNdid.getAccessorGroupId(
-    old_accessor_id
-  );
-  let {
-    hash_id,
-    ial,
-    accessor_type,
-    accessor_public_key,
-    accessor_id,
-    sid,
-    associated,
-    secret,
-  } = await db.getIdentityFromRequestId(request_id);
-
-  let promiseArray = [
-    tendermintNdid.addAccessorMethod({
-      request_id,
-      accessor_group_id,
-      accessor_type,
-      accessor_id,
-      accessor_public_key,
-    }),
-  ];
-
-  //no ial means old idp add new accessor
-  if (ial)
-    promiseArray.push(
-      tendermintNdid.registerMqDestination({
-        users: [
-          {
-            hash_id,
-            ial,
-          },
-        ],
-      })
-    );
-
-  await Promise.all(promiseArray);
-  db.removeIdentityFromRequestId(request_id);
-
-  return {
-    secret,
-    associated,
-  };
-}
-
-export async function isIdentityExist({ namespace, identifier, ial }) {
-  const sid = namespace + ':' + identifier;
-  const hash_id = utils.hash(sid);
-
-  let exist = await tendermintNdid.checkExistingIdentity(hash_id);
-  if (!exist) {
-    try {
-      await tendermintNdid.registerMqDestination({
-        users: [
-          {
-            hash_id,
-            ial,
-            first: true,
-          },
-        ],
-      });
-    } catch (error) {
-      if (
-        error.getCode &&
-        error.getCode() === errorType.ABCI_NOT_FIRST_IDP.code
-      ) {
-        logger.debug({
-          message:
-            'Unable to register message queue destination for an identity as the first IdP. Switching to ask for consent mode.',
-          hash_id,
-        });
-        exist = true;
-      } else {
-        throw error;
-      }
-    }
-  }
-  return exist;
-}
-
-async function createSecret({
-  sid,
-  hash_id,
-  accessor_id,
-  reference_id,
-  accessor_public_key,
-}) {
-  const signature = await accessorSign({
-    sid,
-    hash_id,
-    accessor_id,
-    accessor_public_key,
-    reference_id,
-  });
-  const padding = utils.extractPaddingFromPrivateEncrypt(
-    signature,
-    accessor_public_key
-  );
-  return padding + '|' + signature;
-}
+} from '../../utils/request_message';
 
 // FIXME: error handling in many cases
 // when there is an error when transacting to blockchain
 // it should not create a request, e.g.
 // - duplicate accessor ID
-export async function createNewIdentity(
+export async function createIdentity(
   {
     reference_id,
     callback_url,
@@ -320,7 +153,7 @@ export async function createNewIdentity(
         accessor_public_key,
       });
       const exist = await isIdentityExist({ namespace, identifier, ial });
-      createNewIdentityInternalAsync(...arguments, {
+      createIdentityInternalAsync(...arguments, {
         request_id,
         associated,
         generated_accessor_id: accessor_id,
@@ -331,7 +164,7 @@ export async function createNewIdentity(
     } else {
       await db.setCallbackUrlByReferenceId(reference_id, callback_url);
 
-      createNewIdentityInternalAsync(...arguments, {
+      createIdentityInternalAsync(...arguments, {
         request_id,
         associated,
         generated_accessor_id: accessor_id,
@@ -348,7 +181,7 @@ export async function createNewIdentity(
   }
 }
 
-async function createNewIdentityInternalAsync(
+async function createIdentityInternalAsync(
   {
     reference_id,
     callback_url,
@@ -557,95 +390,23 @@ async function createNewIdentityInternalAsync(
   }
 }
 
-export async function updateIal(
-  { reference_id, callback_url, namespace, identifier, ial },
-  { synchronous = false } = {}
-) {
-  try {
-    //check onboard
-    if (!checkAssociated({ namespace, identifier })) {
-      throw new CustomError({
-        message: errorType.IDENTITY_NOT_FOUND.message,
-        code: errorType.IDENTITY_NOT_FOUND.code,
-        clientError: true,
-        details: {
-          namespace,
-          identifier,
-        },
-      });
-    }
-
-    //check max_ial
-    ial = parseFloat(ial);
-    let { max_ial } = await tendermintNdid.getNodeInfo(config.nodeId);
-    if (ial > max_ial) {
-      throw new CustomError({
-        message: errorType.MAXIMUM_IAL_EXCEED.message,
-        code: errorType.MAXIMUM_IAL_EXCEED.code,
-        clientError: true,
-        details: {
-          namespace,
-          identifier,
-        },
-      });
-    }
-
-    if (synchronous) {
-      await updateIalInternalAsync(...arguments);
-    } else {
-      updateIalInternalAsync(...arguments);
-    }
-  } catch (error) {
-    const err = new CustomError({
-      message: "Cannot update identity's IAL",
-      cause: error,
-    });
-    logger.error(err.getInfoForLog());
-    throw err;
-  }
-}
-
-async function updateIalInternalAsync(
-  { reference_id, callback_url, namespace, identifier, ial },
-  { synchronous = false } = {}
-) {
-  try {
-    const hash_id = utils.hash(namespace + ':' + identifier);
-    await tendermintNdid.updateIal({ hash_id, ial });
-
-    if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
-          type: 'update_ial_result',
-          success: true,
-          reference_id,
-        },
-        true
-      );
-    }
-  } catch (error) {
-    logger.error({
-      message: "Update identity's IAL internal async error",
-      originalArgs: arguments[0],
-      options: arguments[1],
-      additionalArgs: arguments[2],
-      error,
-    });
-
-    if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
-          type: 'update_ial_result',
-          success: false,
-          reference_id,
-          error: getErrorObjectForClient(error),
-        },
-        true
-      );
-    }
-
-    throw error;
-  }
+async function createSecret({
+  sid,
+  hash_id,
+  accessor_id,
+  reference_id,
+  accessor_public_key,
+}) {
+  const signature = await accessorSign({
+    sid,
+    hash_id,
+    accessor_id,
+    accessor_public_key,
+    reference_id,
+  });
+  const padding = utils.extractPaddingFromPrivateEncrypt(
+    signature,
+    accessor_public_key
+  );
+  return padding + '|' + signature;
 }

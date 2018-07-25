@@ -1,0 +1,472 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
+import {
+  getIdpsMsqDestination,
+  addTimeoutScheduler,
+  removeTimeoutScheduler,
+} from '.';
+
+import CustomError from '../../error/custom_error';
+import logger from '../../logger';
+
+import * as tendermintNdid from '../../tendermint/ndid';
+import * as mq from '../../mq';
+import { callbackToClient } from '../../utils/callback';
+import * as utils from '../../utils';
+import * as config from '../../config';
+import errorType from '../../error/type';
+import { getErrorObjectForClient } from '../../error/helpers';
+import * as db from '../../db';
+
+/**
+ * Create a new request
+ * @param {Object} request
+ * @param {number} request.mode
+ * @param {string} request.namespace
+ * @param {string} request.reference_id
+ * @param {Array.<string>} request.idp_id_list
+ * @param {string} request.callback_url
+ * @param {Array.<Object>} request.data_request_list
+ * @param {string} request.request_message
+ * @param {number} request.min_ial
+ * @param {number} request.min_aal
+ * @param {number} request.min_idp
+ * @param {number} request.request_timeout
+ * @returns {Promise<string>} Request ID
+ */
+export async function createRequest(
+  {
+    request_id, // Pre-generated request ID. Used by create identity function.
+    mode,
+    namespace,
+    identifier,
+    reference_id,
+    idp_id_list,
+    callback_url,
+    data_request_list,
+    request_message,
+    min_ial,
+    min_aal,
+    min_idp,
+    request_timeout,
+  },
+  { synchronous = false } = {}
+) {
+  try {
+    // existing reference_id, return request ID
+    const requestId = await db.getRequestIdByReferenceId(reference_id);
+    if (requestId) {
+      return requestId;
+    }
+
+    if (
+      idp_id_list != null &&
+      idp_id_list.length > 0 &&
+      idp_id_list.length < min_idp
+    ) {
+      throw new CustomError({
+        message: errorType.IDP_LIST_LESS_THAN_MIN_IDP.message,
+        code: errorType.IDP_LIST_LESS_THAN_MIN_IDP.code,
+        clientError: true,
+        details: {
+          namespace,
+          identifier,
+          idp_id_list,
+          min_idp,
+        },
+      });
+    }
+
+    if (mode === 1 && (idp_id_list == null || idp_id_list.length === 0)) {
+      throw new CustomError({
+        message: errorType.IDP_ID_LIST_NEEDED.message,
+        code: errorType.IDP_ID_LIST_NEEDED.code,
+        clientError: true,
+      });
+    }
+
+    if (data_request_list != null && data_request_list.length > 0) {
+      const serviceIds = [];
+      for (let i = 0; i < data_request_list.length; i++) {
+        const { service_id, as_id_list, min_as } = data_request_list[i];
+
+        if (serviceIds.includes(service_id)) {
+          throw new CustomError({
+            message: errorType.DUPLICATE_SERVICE_ID.message,
+            code: errorType.DUPLICATE_SERVICE_ID.code,
+            clientError: true,
+            details: {
+              index: i,
+              service_id,
+            },
+          });
+        }
+        serviceIds.push(service_id);
+
+        //all as_list offer the service
+        let potential_as_list = await tendermintNdid.getAsNodesByServiceId({
+          service_id,
+        });
+        if (as_id_list != null && as_id_list.length > 0) {
+          if (as_id_list.length < min_as) {
+            throw new CustomError({
+              message: errorType.AS_LIST_LESS_THAN_MIN_AS.message,
+              code: errorType.AS_LIST_LESS_THAN_MIN_AS.code,
+              clientError: true,
+              details: {
+                service_id,
+                as_id_list,
+                min_as,
+              },
+            });
+          }
+
+          if (potential_as_list.length < min_as) {
+            throw new CustomError({
+              message: errorType.NOT_ENOUGH_AS.message,
+              code: errorType.NOT_ENOUGH_AS.code,
+              clientError: true,
+              details: {
+                service_id,
+                potential_as_list,
+                min_as,
+              },
+            });
+          }
+
+          //filter potential AS to be only in as_id_list
+          potential_as_list = potential_as_list.filter((as_node) => {
+            return as_id_list.indexOf(as_node.node_id) !== -1;
+          });
+        }
+        //filter min_ial, min_aal
+        potential_as_list = potential_as_list.filter((as_node) => {
+          return as_node.min_ial <= min_ial && as_node.min_aal <= min_aal;
+        });
+
+        if (potential_as_list.length < min_as) {
+          throw new CustomError({
+            message: errorType.CONDITION_TOO_LOW.message,
+            code: errorType.CONDITION_TOO_LOW.code,
+            clientError: true,
+            details: {
+              service_id,
+              min_ial,
+              min_aal,
+              min_as,
+            },
+          });
+        }
+      }
+    }
+
+    let receivers = await getIdpsMsqDestination({
+      namespace,
+      identifier,
+      min_ial,
+      min_aal,
+      idp_id_list,
+      mode,
+    });
+
+    if (receivers.length === 0 && min_idp !== 0) {
+      throw new CustomError({
+        message: errorType.NO_IDP_FOUND.message,
+        code: errorType.NO_IDP_FOUND.code,
+        clientError: true,
+        details: {
+          namespace,
+          identifier,
+          idp_id_list,
+        },
+      });
+    }
+
+    if (receivers.length < min_idp) {
+      throw new CustomError({
+        message: errorType.NOT_ENOUGH_IDP.message,
+        code: errorType.NOT_ENOUGH_IDP.code,
+        clientError: true,
+        details: {
+          namespace,
+          identifier,
+          idp_id_list,
+        },
+      });
+    }
+
+    if (request_id == null) {
+      request_id = utils.createRequestId();
+    }
+
+    const challenge = [
+      utils.randomBase64Bytes(config.challengeLength),
+      utils.randomBase64Bytes(config.challengeLength),
+    ];
+    await db.setChallengeFromRequestId(request_id, challenge);
+
+    const request_message_salt = utils.randomBase64Bytes(16);
+
+    const data_request_params_salt_list = data_request_list.map(() => {
+      return utils.randomBase64Bytes(16);
+    });
+
+    const requestData = {
+      mode,
+      namespace,
+      identifier,
+      request_id,
+      min_idp,
+      min_aal,
+      min_ial,
+      request_timeout,
+      data_request_list,
+      data_request_params_salt_list,
+      request_message,
+      // for zk proof
+      //challenge,
+      rp_id: config.nodeId,
+      request_message_salt,
+    };
+
+    // save request data to DB to send to AS via mq when authen complete
+    // and for zk proof
+    await Promise.all([
+      db.setRequestData(request_id, requestData),
+      db.setRequestIdByReferenceId(reference_id, request_id),
+      db.setRequestCallbackUrl(request_id, callback_url),
+      addTimeoutScheduler(request_id, request_timeout),
+    ]);
+
+    if (synchronous) {
+      await createRequestInternalAsync(...arguments, {
+        request_id,
+        request_message_salt,
+        data_request_params_salt_list,
+        receivers,
+        requestData,
+      });
+    } else {
+      createRequestInternalAsync(...arguments, {
+        request_id,
+        request_message_salt,
+        data_request_params_salt_list,
+        receivers,
+        requestData,
+      });
+    }
+
+    return request_id;
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Cannot create request',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    throw err;
+  }
+}
+
+async function createRequestInternalAsync(
+  {
+    mode,
+    namespace,
+    identifier,
+    reference_id,
+    idp_id_list,
+    callback_url,
+    data_request_list,
+    request_message,
+    min_ial,
+    min_aal,
+    min_idp,
+    request_timeout,
+  },
+  { synchronous = false } = {},
+  {
+    request_id,
+    request_message_salt,
+    data_request_params_salt_list,
+    receivers,
+    requestData,
+  }
+) {
+  try {
+    const dataRequestListToBlockchain = data_request_list.map(
+      (dataRequest, index) => {
+        return {
+          service_id: dataRequest.service_id,
+          as_id_list: dataRequest.as_id_list,
+          min_as: dataRequest.min_as,
+          request_params_hash: utils.hash(
+            dataRequest.request_params + data_request_params_salt_list[index]
+          ),
+        };
+      }
+    );
+
+    const requestDataToBlockchain = {
+      mode,
+      request_id,
+      min_idp,
+      min_aal,
+      min_ial,
+      request_timeout,
+      data_request_list: dataRequestListToBlockchain,
+      request_message_hash: utils.hash(request_message + request_message_salt),
+    };
+
+    if (!synchronous) {
+      await tendermintNdid.createRequest(
+        requestDataToBlockchain,
+        'common.createRequestInternalAsyncAfterBlockchain',
+        [
+          {
+            reference_id,
+            callback_url,
+            request_id,
+            min_idp,
+            receivers,
+            requestData,
+          },
+          { synchronous },
+        ]
+      );
+    } else {
+      const { height } = await tendermintNdid.createRequest(
+        requestDataToBlockchain
+      );
+      await createRequestInternalAsyncAfterBlockchain(
+        { height },
+        {
+          reference_id,
+          callback_url,
+          request_id,
+          min_idp,
+          receivers,
+          requestData,
+        },
+        { synchronous }
+      );
+    }
+  } catch (error) {
+    logger.error({
+      message: 'Create request internal async error',
+      originalArgs: arguments[0],
+      options: arguments[1],
+      additionalArgs: arguments[2],
+      error,
+    });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'create_request_result',
+          success: false,
+          reference_id,
+          request_id,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+    }
+
+    await createRequestCleanUpOnError({
+      requestId: request_id,
+      referenceId: reference_id,
+    });
+
+    throw error;
+  }
+}
+
+export async function createRequestInternalAsyncAfterBlockchain(
+  { height, error },
+  { reference_id, callback_url, request_id, min_idp, receivers, requestData },
+  { synchronous = false }
+) {
+  try {
+    if (error) throw error;
+    // send request data to IDPs via message queue
+    if (min_idp > 0) {
+      mq.send(receivers, {
+        type: 'consent_request',
+        ...requestData,
+        height,
+      });
+    }
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'create_request_result',
+          success: true,
+          reference_id,
+          request_id,
+        },
+        true
+      );
+    }
+  } catch (error) {
+    logger.error({
+      message: 'Create request internal async after blockchain error',
+      originalArgs: arguments[0],
+      options: arguments[1],
+      additionalArgs: arguments[2],
+      error,
+    });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'create_request_result',
+          success: false,
+          reference_id,
+          request_id,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+
+      await createRequestCleanUpOnError({
+        requestId: request_id,
+        referenceId: reference_id,
+      });
+    }
+
+    throw error;
+  }
+}
+
+async function createRequestCleanUpOnError({ requestId, referenceId }) {
+  await Promise.all([
+    db.removeChallengeFromRequestId(requestId),
+    db.removeRequestData(requestId),
+    db.removeRequestIdByReferenceId(referenceId),
+    db.removeRequestCallbackUrl(requestId),
+    removeTimeoutScheduler(requestId),
+  ]);
+}
