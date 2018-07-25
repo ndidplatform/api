@@ -524,11 +524,11 @@ export async function createRequest(
       request_id = utils.createRequestId();
     }
 
-    const challenge = [
+    /*const challenge = [
       utils.randomBase64Bytes(config.challengeLength),
       utils.randomBase64Bytes(config.challengeLength),
-    ];
-    await db.setChallengeFromRequestId(request_id, challenge);
+    ];*/
+    await db.setChallengeFromRequestId(request_id, {});
 
     const request_message_salt = utils.randomBase64Bytes(16);
 
@@ -714,7 +714,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
     return null;
   }
 
-  const challenge = await db.getChallengeFromRequestId(request_id);
+  const challenge = (await db.getChallengeFromRequestId(request_id))[idp_id];
   const privateProofObject = dataFromMq
     ? dataFromMq
     : await db.getPrivateProofReceivedFromMQ(request_id + ':' + idp_id);
@@ -850,13 +850,29 @@ export async function handleChallengeRequest({
   const nodeId = {};
   if (config.role === 'idp') nodeId.idp_id = config.nodeId;
   else if (config.role === 'rp') nodeId.rp_id = config.nodeId;
-  const challenge = await db.getChallengeFromRequestId(request_id);
+
+  let challenge;
+  let challengeObject = await db.getChallengeFromRequestId(request_id);
+  //challenge deleted, request is done
+  if (challengeObject == null) return false;
+
+  challengeObject = JSON.parse(challengeObject);
+  if(challengeObject[idp_id]) challenge = challengeObject[idp_id];
+  else {
+    //generate new challenge
+    challenge = [
+      utils.randomBase64Bytes(config.challengeLength),
+      utils.randomBase64Bytes(config.challengeLength),
+    ];
+
+    challengeObject[idp_id] = challenge;
+    await db.setChallengeFromRequestId(request_id, challenge);
+  }
+
   logger.debug({
     message: 'Get challenge',
     challenge,
   });
-  //challenge deleted, request is done
-  if (challenge == null) return false;
 
   const mqAddress = await tendermintNdid.getMsqAddress(idp_id);
   if (mqAddress == null) {

@@ -800,7 +800,7 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
 
     const zkProofValid = utils.verifyZKProof(
       public_key,
-      dataFromMq.challenge,
+      dataFromMq.challenge[privateProofObjectList[i].idp_id],
       privateProofObjectList[i].privateProofObject.privateProofValue,
       publicProof,
       {
