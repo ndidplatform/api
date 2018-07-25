@@ -482,6 +482,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
 
 //===== zkp and request related =====
 
+// FIXME: should not return false but throw an error instead?
 export async function handleChallengeRequest({
   request_id,
   idp_id,
