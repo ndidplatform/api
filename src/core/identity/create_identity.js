@@ -44,10 +44,6 @@ import {
   getRequestMessageForAddingAccessor,
 } from '../../utils/request_message';
 
-// FIXME: error handling in many cases
-// when there is an error when transacting to blockchain
-// it should not create a request, e.g.
-// - duplicate accessor ID
 export async function createIdentity(
   {
     reference_id,
