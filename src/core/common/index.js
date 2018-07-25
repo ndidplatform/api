@@ -99,6 +99,10 @@ function getFunction(fnName) {
   switch (fnName) {
     case 'common.createRequestInternalAsyncAfterBlockchain':
       return createRequestInternalAsyncAfterBlockchain;
+    case 'common.isRequestClosedOrTimedOut':
+      return isRequestClosedOrTimedOut;
+    case 'as.afterGotDataFromCallback':
+      return as.afterGotDataFromCallback;
     default:
       return function noop() {};
   }
@@ -111,8 +115,8 @@ if (role === 'rp') {
   tendermint.setTendermintNewBlockEventHandler(
     rp.handleTendermintNewBlockEvent
   );
-  setShouldRetryFnGetter(rp.getShouldRetryFn);
-  setResponseCallbackFnGetter(rp.getResponseCallbackFn);
+  setShouldRetryFnGetter(getFunction);
+  setResponseCallbackFnGetter(getFunction);
   resumeTimeoutScheduler();
   resumeCallbackToClient();
 } else if (role === 'idp') {
@@ -120,8 +124,8 @@ if (role === 'rp') {
   tendermint.setTendermintNewBlockEventHandler(
     idp.handleTendermintNewBlockEvent
   );
-  setShouldRetryFnGetter(idp.getShouldRetryFn);
-  setResponseCallbackFnGetter(idp.getResponseCallbackFn);
+  setShouldRetryFnGetter(getFunction);
+  setResponseCallbackFnGetter(getFunction);
   resumeTimeoutScheduler();
   resumeCallbackToClient();
 } else if (role === 'as') {
@@ -129,8 +133,8 @@ if (role === 'rp') {
   tendermint.setTendermintNewBlockEventHandler(
     as.handleTendermintNewBlockEvent
   );
-  setShouldRetryFnGetter(as.getShouldRetryFn);
-  setResponseCallbackFnGetter(as.getResponseCallbackFn);
+  setShouldRetryFnGetter(getFunction);
+  setResponseCallbackFnGetter(getFunction);
   resumeCallbackToClient();
 }
 

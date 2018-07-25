@@ -116,22 +116,6 @@ export function getErrorCallbackUrl() {
   return callbackUrls.error_url;
 }
 
-export function getShouldRetryFn(fnName) {
-  switch (fnName) {
-    case 'common.isRequestClosedOrTimedOut':
-      return common.isRequestClosedOrTimedOut;
-    default:
-      return function noop() {};
-  }
-}
-
-export function getResponseCallbackFn(fnName) {
-  switch (fnName) {
-    default:
-      return function noop() {};
-  }
-}
-
 export function isAccessorSignUrlSet() {
   return callbackUrls.accessor_sign_url != null;
 }

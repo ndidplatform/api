@@ -86,20 +86,6 @@ export function getErrorCallbackUrl() {
   return callbackUrls.error_url;
 }
 
-export function getShouldRetryFn(fnName) {
-  switch (fnName) {
-    default:
-      return function noop() {};
-  }
-}
-
-export function getResponseCallbackFn(fnName) {
-  switch (fnName) {
-    default:
-      return function noop() {};
-  }
-}
-
 export function isAllIdpResponsesValid(responseValidList) {
   for (let i = 0; i < responseValidList.length; i++) {
     const { valid_proof, valid_ial } = responseValidList[i];

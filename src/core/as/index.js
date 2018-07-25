@@ -93,24 +93,6 @@ export function getErrorCallbackUrl() {
   return callbackUrls.error_url;
 }
 
-export function getShouldRetryFn(fnName) {
-  switch (fnName) {
-    case 'common.isRequestClosedOrTimedOut':
-      return common.isRequestClosedOrTimedOut;
-    default:
-      return function noop() {};
-  }
-}
-
-export function getResponseCallbackFn(fnName) {
-  switch (fnName) {
-    case 'afterGotDataFromCallback':
-      return afterGotDataFromCallback;
-    default:
-      return function noop() {};
-  }
-}
-
 export async function processRequest(request) {
   logger.debug({
     message: 'Processing request',
@@ -278,7 +260,7 @@ async function getDataAndSendBackToRP(request, responseDetails) {
         true,
         'common.isRequestClosedOrTimedOut',
         [request.request_id],
-        'afterGotDataFromCallback',
+        'as.afterGotDataFromCallback',
         {
           rpId: request.rp_id,
           requestId: request.request_id,
