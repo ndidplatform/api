@@ -219,11 +219,11 @@ export async function createRequest(
       request_id = utils.createRequestId();
     }
 
-    const challenge = [
-      utils.randomBase64Bytes(config.challengeLength),
-      utils.randomBase64Bytes(config.challengeLength),
-    ];
-    await db.setChallengeFromRequestId(request_id, challenge);
+    // const challenge = [
+    //   utils.randomBase64Bytes(config.challengeLength),
+    //   utils.randomBase64Bytes(config.challengeLength),
+    // ];
+    await db.setChallengeFromRequestId(request_id, {});
 
     const request_message_salt = utils.randomBase64Bytes(16);
 
