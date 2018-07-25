@@ -67,13 +67,98 @@ async function processDataForRPInternalAsync(
     const data_salt = utils.randomBase64Bytes(16);
     const signature = await utils.createSignature(data + data_salt);
 
-    // AS node adds transaction to blockchain
-    const { height } = await tendermintNdid.signASData({
-      as_id,
-      request_id: requestId,
-      signature,
-      service_id: serviceId,
+    if (!synchronous) {
+      await tendermintNdid.signASData(
+        {
+          as_id,
+          request_id: requestId,
+          signature,
+          service_id: serviceId,
+        },
+        'as.processDataForRPInternalAsyncAfterBlockchain',
+        [
+          {
+            reference_id,
+            callback_url,
+            data,
+            requestId,
+            serviceId,
+            as_id,
+            signature,
+            data_salt,
+            rpId,
+          },
+          { synchronous },
+        ]
+      );
+    } else {
+      const { height } = await tendermintNdid.signASData({
+        as_id,
+        request_id: requestId,
+        signature,
+        service_id: serviceId,
+      });
+      await processDataForRPInternalAsyncAfterBlockchain(
+        { height },
+        {
+          reference_id,
+          callback_url,
+          data,
+          requestId,
+          serviceId,
+          as_id,
+          signature,
+          data_salt,
+          rpId,
+        },
+        { synchronous }
+      );
+    }
+  } catch (error) {
+    logger.error({
+      message: 'Send data to RP internal async error',
+      data,
+      originalArgs: arguments[1],
+      options: arguments[2],
+      additionalArgs: arguments[3],
+      error,
     });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'send_data_result',
+          success: false,
+          reference_id,
+          request_id: requestId,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+    }
+
+    throw error;
+  }
+}
+
+export async function processDataForRPInternalAsyncAfterBlockchain(
+  { height, error },
+  {
+    reference_id,
+    callback_url,
+    data,
+    requestId,
+    serviceId,
+    as_id,
+    signature,
+    data_salt,
+    rpId,
+  },
+  { synchronous = false } = {}
+) {
+  try {
+    if (error) throw error;
 
     if (!rpId) {
       rpId = await db.getRPIdFromRequestId(requestId);
@@ -103,11 +188,10 @@ async function processDataForRPInternalAsync(
     }
   } catch (error) {
     logger.error({
-      message: 'Send data to RP internal async error',
-      data,
-      originalArgs: arguments[1],
+      message: 'Send data to RP internal async after blockchain error',
+      tendermintResult: arguments[0],
+      additionalArgs: arguments[1],
       options: arguments[2],
-      additionalArgs: arguments[3],
       error,
     });
 
@@ -123,9 +207,9 @@ async function processDataForRPInternalAsync(
         },
         true
       );
+    } else {
+      throw error;
     }
-
-    throw error;
   }
 }
 

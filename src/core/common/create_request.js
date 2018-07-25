@@ -404,7 +404,7 @@ async function createRequestInternalAsync(
 export async function createRequestInternalAsyncAfterBlockchain(
   { height, error },
   { reference_id, callback_url, request_id, min_idp, receivers, requestData },
-  { synchronous = false }
+  { synchronous = false } = {}
 ) {
   try {
     if (error) throw error;
@@ -432,9 +432,9 @@ export async function createRequestInternalAsyncAfterBlockchain(
   } catch (error) {
     logger.error({
       message: 'Create request internal async after blockchain error',
-      originalArgs: arguments[0],
-      options: arguments[1],
-      additionalArgs: arguments[2],
+      tendermintResult: arguments[0],
+      additionalArgs: arguments[1],
+      options: arguments[2],
       error,
     });
 
@@ -455,9 +455,9 @@ export async function createRequestInternalAsyncAfterBlockchain(
         requestId: request_id,
         referenceId: reference_id,
       });
+    } else {
+      throw error;
     }
-
-    throw error;
   }
 }
 

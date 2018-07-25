@@ -21,6 +21,7 @@
  */
 
 import { createRequestInternalAsyncAfterBlockchain } from './create_request';
+import { closeRequestInternalAsyncAfterBlockchain } from './close_request';
 
 import CustomError from '../../error/custom_error';
 import logger from '../../logger';
@@ -30,6 +31,7 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import * as rp from '../rp';
 import * as idp from '../idp';
 import * as as from '../as';
+import * as identity from '../identity';
 import * as mq from '../../mq';
 import {
   setShouldRetryFnGetter,
@@ -46,6 +48,7 @@ import * as db from '../../db';
 import * as externalCryptoService from '../../utils/external_crypto_service';
 
 export * from './create_request';
+export * from './close_request';
 
 const role = config.role;
 
@@ -99,10 +102,22 @@ function getFunction(fnName) {
   switch (fnName) {
     case 'common.createRequestInternalAsyncAfterBlockchain':
       return createRequestInternalAsyncAfterBlockchain;
+    case 'common.closeRequestInternalAsyncAfterBlockchain':
+      return closeRequestInternalAsyncAfterBlockchain;
     case 'common.isRequestClosedOrTimedOut':
       return isRequestClosedOrTimedOut;
+    case 'idp.requestChallengeAfterBlockchain':
+      return idp.requestChallengeAfterBlockchain;
+    case 'idp.createResponseAfterBlockchain':
+      return idp.createResponseAfterBlockchain;
     case 'as.afterGotDataFromCallback':
       return as.afterGotDataFromCallback;
+    case 'as.registerOrUpdateASServiceInternalAsyncAfterBlockchain':
+      return as.registerOrUpdateASServiceInternalAsyncAfterBlockchain;
+    case 'as.processDataForRPInternalAsyncAfterBlockchain':
+      return as.processDataForRPInternalAsyncAfterBlockchain;
+    case 'identity.updateIalInternalAsyncAfterBlockchain':
+      return identity.updateIalInternalAsyncAfterBlockchain;
     default:
       return function noop() {};
   }
@@ -518,7 +533,7 @@ export async function handleChallengeRequest({
   //challenge deleted, request is done
   if (challengeObject == null) return false;
 
-  if(challengeObject[idp_id]) challenge = challengeObject[idp_id];
+  if (challengeObject[idp_id]) challenge = challengeObject[idp_id];
   else {
     //generate new challenge
     challenge = [
@@ -639,97 +654,6 @@ export async function isRequestClosedOrTimedOut(requestId) {
     }
   }
   return true;
-}
-
-export async function closeRequest(
-  { reference_id, callback_url, request_id },
-  { synchronous = false } = {}
-) {
-  try {
-    if (synchronous) {
-      await closeRequestInternalAsync(...arguments);
-    } else {
-      closeRequestInternalAsync(...arguments);
-    }
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot close a request',
-      reference_id,
-      callback_url,
-      request_id,
-      synchronous,
-      cause: error,
-    });
-  }
-}
-
-async function closeRequestInternalAsync(
-  { reference_id, callback_url, request_id },
-  { synchronous = false } = {}
-) {
-  try {
-    const responseValidList = await db.getIdpResponseValidList(request_id);
-
-    // FOR DEBUG
-    const nodeIds = {};
-    for (let i = 0; i < responseValidList.length; i++) {
-      if (nodeIds[responseValidList[i].idp_id]) {
-        logger.error({
-          message: 'Duplicate IdP ID in response valid list',
-          requestId: request_id,
-          responseValidList,
-          action: 'closeRequest',
-        });
-        break;
-      }
-      nodeIds[responseValidList[i].idp_id] = true;
-    }
-
-    await tendermintNdid.closeRequest({
-      requestId: request_id,
-      responseValidList,
-    });
-
-    db.removeChallengeFromRequestId(request_id);
-    removeTimeoutScheduler(request_id);
-
-    if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
-          type: 'close_request_result',
-          success: true,
-          reference_id,
-          request_id,
-        },
-        true
-      );
-    }
-  } catch (error) {
-    logger.error({
-      message: 'Close request internal async error',
-      originalArgs: arguments[0],
-      options: arguments[1],
-      additionalArgs: arguments[2],
-      error,
-    });
-
-    if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
-          type: 'close_request_result',
-          success: false,
-          reference_id,
-          request_id,
-          error: getErrorObjectForClient(error),
-        },
-        true
-      );
-    }
-
-    throw error;
-  }
 }
 
 export async function notifyError({ callbackUrl, action, error, requestId }) {

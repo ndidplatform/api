@@ -177,6 +177,7 @@ export async function createIdentity(
   }
 }
 
+// FIXME: Refactor for broadcast_tx_sync with callback
 async function createIdentityInternalAsync(
   {
     reference_id,
@@ -385,6 +386,10 @@ async function createIdentityInternalAsync(
     throw error;
   }
 }
+
+// export async function createIdentityInternalAsyncAfterCreateRequestBlockchain() {
+
+// }
 
 async function createSecret({
   sid,

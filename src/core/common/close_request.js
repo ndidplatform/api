@@ -20,85 +20,83 @@
  *
  */
 
-import { checkAssociated } from '.';
-
-import logger from '../../logger';
+import { removeTimeoutScheduler } from '.';
 
 import CustomError from '../../error/custom_error';
-import errorType from '../../error/type';
-import { getErrorObjectForClient } from '../../error/helpers';
+import logger from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
-import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
-import * as config from '../../config';
+import { getErrorObjectForClient } from '../../error/helpers';
+import * as db from '../../db';
 
-export async function updateIal(
-  { reference_id, callback_url, namespace, identifier, ial },
+export async function closeRequest(
+  { reference_id, callback_url, request_id },
   { synchronous = false } = {}
 ) {
   try {
-    //check onboard
-    if (!checkAssociated({ namespace, identifier })) {
-      throw new CustomError({
-        message: errorType.IDENTITY_NOT_FOUND.message,
-        code: errorType.IDENTITY_NOT_FOUND.code,
-        clientError: true,
-        details: {
-          namespace,
-          identifier,
-        },
-      });
-    }
-
-    //check max_ial
-    ial = parseFloat(ial);
-    let { max_ial } = await tendermintNdid.getNodeInfo(config.nodeId);
-    if (ial > max_ial) {
-      throw new CustomError({
-        message: errorType.MAXIMUM_IAL_EXCEED.message,
-        code: errorType.MAXIMUM_IAL_EXCEED.code,
-        clientError: true,
-        details: {
-          namespace,
-          identifier,
-        },
-      });
-    }
-
     if (synchronous) {
-      await updateIalInternalAsync(...arguments);
+      await closeRequestInternalAsync(...arguments);
     } else {
-      updateIalInternalAsync(...arguments);
+      closeRequestInternalAsync(...arguments);
     }
   } catch (error) {
-    const err = new CustomError({
-      message: "Cannot update identity's IAL",
+    throw new CustomError({
+      message: 'Cannot close a request',
+      reference_id,
+      callback_url,
+      request_id,
+      synchronous,
       cause: error,
     });
-    logger.error(err.getInfoForLog());
-    throw err;
   }
 }
 
-async function updateIalInternalAsync(
-  { reference_id, callback_url, namespace, identifier, ial },
+async function closeRequestInternalAsync(
+  { reference_id, callback_url, request_id },
   { synchronous = false } = {}
 ) {
   try {
-    const hash_id = utils.hash(namespace + ':' + identifier);
+    const responseValidList = await db.getIdpResponseValidList(request_id);
+
+    // FOR DEBUG
+    const nodeIds = {};
+    for (let i = 0; i < responseValidList.length; i++) {
+      if (nodeIds[responseValidList[i].idp_id]) {
+        logger.error({
+          message: 'Duplicate IdP ID in response valid list',
+          requestId: request_id,
+          responseValidList,
+          action: 'closeRequest',
+        });
+        break;
+      }
+      nodeIds[responseValidList[i].idp_id] = true;
+    }
+
     if (!synchronous) {
-      await tendermintNdid.updateIal(
-        { hash_id, ial },
-        'identity.updateIalInternalAsyncAfterBlockchain',
-        [{ reference_id, callback_url }, { synchronous }]
+      await tendermintNdid.closeRequest(
+        {
+          requestId: request_id,
+          responseValidList,
+        },
+        'common.closeRequestInternalAsyncAfterBlockchain',
+        [{ reference_id, callback_url, request_id }, { synchronous }]
       );
     } else {
-      await tendermintNdid.updateIal({ hash_id, ial });
+      await tendermintNdid.closeRequest({
+        requestId: request_id,
+        responseValidList,
+      });
+      await closeRequestInternalAsyncAfterBlockchain(
+        {},
+        { reference_id, callback_url, request_id },
+        { synchronous }
+      );
     }
   } catch (error) {
     logger.error({
-      message: "Update identity's IAL internal async error",
+      message: 'Close request internal async error',
       originalArgs: arguments[0],
       options: arguments[1],
       additionalArgs: arguments[2],
@@ -109,9 +107,10 @@ async function updateIalInternalAsync(
       await callbackToClient(
         callback_url,
         {
-          type: 'update_ial_result',
+          type: 'close_request_result',
           success: false,
           reference_id,
+          request_id,
           error: getErrorObjectForClient(error),
         },
         true
@@ -122,28 +121,32 @@ async function updateIalInternalAsync(
   }
 }
 
-export async function updateIalInternalAsyncAfterBlockchain(
+export async function closeRequestInternalAsyncAfterBlockchain(
   { error },
-  { reference_id, callback_url },
+  { reference_id, callback_url, request_id },
   { synchronous = false } = {}
 ) {
   try {
     if (error) throw error;
 
+    db.removeChallengeFromRequestId(request_id);
+    removeTimeoutScheduler(request_id);
+
     if (!synchronous) {
       await callbackToClient(
         callback_url,
         {
-          type: 'update_ial_result',
+          type: 'close_request_result',
           success: true,
           reference_id,
+          request_id,
         },
         true
       );
     }
   } catch (error) {
     logger.error({
-      message: "Update identity's IAL internal async after blockchain error",
+      message: 'Close request internal async after blockchain error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
@@ -154,9 +157,10 @@ export async function updateIalInternalAsyncAfterBlockchain(
       await callbackToClient(
         callback_url,
         {
-          type: 'update_ial_result',
+          type: 'close_request_result',
           success: false,
           reference_id,
+          request_id,
           error: getErrorObjectForClient(error),
         },
         true

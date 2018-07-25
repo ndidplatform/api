@@ -124,12 +124,17 @@ export async function requestChallengeAndCreateResponse(data) {
 async function requestChallengeAndCreateResponseInternalAsync(data, request) {
   try {
     if (request.mode === 3) {
-      await requestChallenge(data.request_id, data.accessor_id);
+      await requestChallenge({
+        reference_id: data.reference_id,
+        callback_url: data.callback_url,
+        request_id: data.request_id,
+        accessor_id: data.accessor_id,
+      });
     } else if (request.mode === 1) {
       await createResponse(data);
     }
   } catch (error) {
-    callbackToClient(
+    await callbackToClient(
       data.callback_url,
       {
         type: 'response_result',
@@ -221,7 +226,28 @@ export async function createResponse(data) {
       db.removeResponseFromRequestId(request_id),
     ]);
 
-    const { height } = await tendermintNdid.createIdpResponse(dataToBlockchain);
+    await tendermintNdid.createIdpResponse(
+      dataToBlockchain,
+      'idp.createResponseAfterBlockchain',
+      [{ reference_id, callback_url, request_id, privateProofObject }]
+    );
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Cannot create IdP response',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    throw err;
+  }
+}
+
+export async function createResponseAfterBlockchain(
+  { height, error },
+  { reference_id, callback_url, request_id, privateProofObject }
+) {
+  try {
+    if (error) throw error;
+
     await sendPrivateProofToRP(request_id, privateProofObject, height);
 
     await callbackToClient(
@@ -236,24 +262,41 @@ export async function createResponse(data) {
     );
     db.removeResponseFromRequestId(request_id);
   } catch (error) {
-    const err = new CustomError({
-      message: 'Cannot create IdP response',
-      cause: error,
+    logger.error({
+      message: 'Create IdP response after blockchain error',
+      tendermintResult: arguments[0],
+      additionalArgs: arguments[1],
+      error,
     });
-    logger.error(err.getInfoForLog());
-    throw err;
+
+    await callbackToClient(
+      callback_url,
+      {
+        type: 'response_result',
+        success: false,
+        reference_id: reference_id,
+        request_id: request_id,
+        error: getErrorObjectForClient(error),
+      },
+      true
+    );
   }
 }
 
-async function requestChallenge(request_id, accessor_id) {
+async function requestChallenge({
+  reference_id,
+  callback_url,
+  request_id,
+  accessor_id,
+}) {
   //query public key from accessor_id
-  let public_key = await tendermintNdid.getAccessorKey(accessor_id);
+  const public_key = await tendermintNdid.getAccessorKey(accessor_id);
   //gen public proof
-  let [k1, publicProof1] = utils.generatePublicProof(public_key);
-  let [k2, publicProof2] = utils.generatePublicProof(public_key);
+  const [k1, publicProof1] = utils.generatePublicProof(public_key);
+  const [k2, publicProof2] = utils.generatePublicProof(public_key);
 
   //save k to request
-  let request = await db.getRequestReceivedFromMQ(request_id);
+  const request = await db.getRequestReceivedFromMQ(request_id);
   if (!request) {
     throw new CustomError({
       message: errorType.NO_INCOMING_REQUEST.message,
@@ -270,43 +313,93 @@ async function requestChallenge(request_id, accessor_id) {
   });
   await db.setRequestReceivedFromMQ(request_id, request);
   //declare public proof to blockchain
-  let { height } = await tendermintNdid.declareIdentityProof({
-    request_id,
-    identity_proof: JSON.stringify([publicProof1, publicProof2]),
-  });
-  //send message queue with public proof
-  const mqAddress = await tendermintNdid.getMsqAddress(request.rp_id);
-  if (mqAddress == null) {
-    throw new CustomError({
-      message: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.message,
-      code: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.code,
-      details: {
+  await tendermintNdid.declareIdentityProof(
+    {
+      request_id,
+      identity_proof: JSON.stringify([publicProof1, publicProof2]),
+    },
+    'idp.requestChallengeAfterBlockchain',
+    [
+      {
+        reference_id,
+        callback_url,
         request_id,
         accessor_id,
+        publicProof1,
+        publicProof2,
+        rp_id: request.rp_id,
       },
-    });
+    ]
+  );
+}
+export async function requestChallengeAfterBlockchain(
+  { height, error },
+  {
+    reference_id,
+    callback_url,
+    request_id,
+    accessor_id,
+    publicProof1,
+    publicProof2,
+    rp_id,
   }
-  let { ip, port } = mqAddress;
-  let receiver = [
-    {
-      ip,
-      port,
-      ...(await tendermintNdid.getNodePubKey(request.rp_id)),
-    },
-  ];
-  mq.send(receiver, {
-    public_proof: [publicProof1, publicProof2],
-    request_id: request_id,
-    idp_id: config.nodeId,
-    type: 'challenge_request',
-    height,
-  });
+) {
+  try {
+    if (error) throw error;
+    //send message queue with public proof
+    const mqAddress = await tendermintNdid.getMsqAddress(rp_id);
+    if (mqAddress == null) {
+      throw new CustomError({
+        message: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.message,
+        code: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.code,
+        details: {
+          request_id,
+          accessor_id,
+        },
+      });
+    }
+    const { ip, port } = mqAddress;
+    const receiver = [
+      {
+        ip,
+        port,
+        ...(await tendermintNdid.getNodePubKey(rp_id)),
+      },
+    ];
+    mq.send(receiver, {
+      public_proof: [publicProof1, publicProof2],
+      request_id: request_id,
+      idp_id: config.nodeId,
+      type: 'challenge_request',
+      height,
+    });
+  } catch (error) {
+    logger.error({
+      message: 'Request challenge after blockchain error',
+      tendermintResult: arguments[0],
+      additionalArgs: arguments[1],
+      error,
+    });
+
+    await callbackToClient(
+      callback_url,
+      {
+        type: 'response_result',
+        success: false,
+        reference_id: reference_id,
+        request_id: request_id,
+        error: getErrorObjectForClient(error),
+      },
+      true
+    );
+    await db.removeResponseFromRequestId(request_id);
+  }
 }
 
 async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   //mode 1
   if (!privateProofObject) privateProofObject = {};
-  let rp_id = await db.getRPIdFromRequestId(request_id);
+  const rp_id = await db.getRPIdFromRequestId(request_id);
 
   logger.info({
     message: 'Query MQ destination for RP',
@@ -328,8 +421,8 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
       },
     });
   }
-  let { ip, port } = mqAddress;
-  let rpMq = {
+  const { ip, port } = mqAddress;
+  const rpMq = {
     ip,
     port,
     ...(await tendermintNdid.getNodePubKey(rp_id)),
@@ -343,5 +436,5 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
     idp_id: config.nodeId,
   });
 
-  db.removeRPIdFromRequestId(request_id);
+  await db.removeRPIdFromRequestId(request_id);
 }

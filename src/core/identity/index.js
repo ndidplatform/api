@@ -93,6 +93,7 @@ export async function addAccessorMethodForAssociatedIdp(
   return result;
 }
 
+// FIXME: Refactor for broadcast_tx_sync with callback
 export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   //NOTE: zero knowledge proof cannot be verify by blockchain, hence,
   //if this idp call to add their accessor it's imply that zk proof is verified by the
@@ -148,7 +149,7 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   };
 }
 
-// FIXME: Refactor for broadcast_tx_sync
+// FIXME: Refactor for broadcast_tx_sync with callback
 export async function isIdentityExist({ namespace, identifier, ial }) {
   const sid = namespace + ':' + identifier;
   const hash_id = utils.hash(sid);

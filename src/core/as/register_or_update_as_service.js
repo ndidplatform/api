@@ -84,41 +84,54 @@ async function registerOrUpdateASServiceInternalAsync(
   { isRegisterd }
 ) {
   try {
-    const promises = [];
     if (!isRegisterd) {
-      promises.push(
-        tendermintNdid.registerServiceDestination({
+      if (!synchronous) {
+        await tendermintNdid.registerServiceDestination(
+          {
+            service_id,
+            min_aal,
+            min_ial,
+            node_id: config.nodeId,
+          },
+          'as.registerOrUpdateASServiceInternalAsyncAfterBlockchain',
+          [{ reference_id, callback_url, service_id, url }, { synchronous }]
+        );
+      } else {
+        await tendermintNdid.registerServiceDestination({
           service_id,
           min_aal,
           min_ial,
           node_id: config.nodeId,
-        })
-      );
+        });
+        await registerOrUpdateASServiceInternalAsyncAfterBlockchain(
+          {},
+          { reference_id, callback_url, service_id, url },
+          { synchronous }
+        );
+      }
     } else {
-      promises.push(
-        tendermintNdid.updateServiceDestination({
+      if (!synchronous) {
+        await tendermintNdid.updateServiceDestination(
+          {
+            service_id,
+            min_aal,
+            min_ial,
+          },
+          'as.registerOrUpdateASServiceInternalAsyncAfterBlockchain',
+          [{ reference_id, callback_url, service_id, url }, { synchronous }]
+        );
+      } else {
+        await tendermintNdid.updateServiceDestination({
           service_id,
           min_aal,
           min_ial,
-        })
-      );
-    }
-    if (url) {
-      promises.push(db.setServiceCallbackUrl(service_id, url));
-    }
-
-    await Promise.all(promises);
-
-    if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
-          type: 'add_or_update_service_result',
-          success: true,
-          reference_id,
-        },
-        true
-      );
+        });
+        await registerOrUpdateASServiceInternalAsyncAfterBlockchain(
+          {},
+          { reference_id, callback_url, service_id, url },
+          { synchronous }
+        );
+      }
     }
   } catch (error) {
     logger.error({
@@ -143,5 +156,39 @@ async function registerOrUpdateASServiceInternalAsync(
     }
 
     throw error;
+  }
+}
+
+export async function registerOrUpdateASServiceInternalAsyncAfterBlockchain(
+  { error },
+  { reference_id, callback_url, service_id, url },
+  { synchronous = false } = {}
+) {
+  try {
+    if (error) throw error;
+
+    if (url) {
+      await db.setServiceCallbackUrl(service_id, url);
+    }
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'add_or_update_service_result',
+          success: true,
+          reference_id,
+        },
+        true
+      );
+    }
+  } catch (error) {
+    logger.error({
+      message: 'Upsert AS service internal async after blockchain error',
+      tendermintResult: arguments[0],
+      additionalArgs: arguments[1],
+      options: arguments[2],
+      error,
+    });
   }
 }
