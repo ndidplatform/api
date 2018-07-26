@@ -40,6 +40,7 @@ const timer = {};
 export const eventEmitter = new EventEmitter();
 
 (async function init() {
+  if (config.role === 'ndid') return;
   const timeoutList = await db.getAllDuplicateMessageTimeout();
   const promiseArray = [];
   for (let id in timeoutList) {
@@ -93,8 +94,8 @@ async function onMessage(jsonMessageStr) {
     });
 
     //verify digital signature
-    const [messageBase64, msqSignature] = decrypted.split('|');
-    if (messageBase64 == null || msqSignature == null) {
+    const [messageBase64, messageSignature] = decrypted.split('|');
+    if (messageBase64 == null || messageSignature == null) {
       throw new CustomError({
         message: errorType.MALFORMED_MESSAGE_FORMAT.message,
         code: errorType.MALFORMED_MESSAGE_FORMAT.code,
@@ -104,9 +105,9 @@ async function onMessage(jsonMessageStr) {
     const rawMessage = Buffer.from(messageBase64, 'base64').toString();
 
     logger.debug({
-      message: 'Split msqSignature',
+      message: 'Split message and signature',
       rawMessage,
-      msqSignature,
+      messageSignature,
     });
 
     const { idp_id, rp_id, as_id } = JSON.parse(rawMessage);
@@ -120,14 +121,14 @@ async function onMessage(jsonMessageStr) {
     }
 
     const signatureValid = utils.verifySignature(
-      msqSignature,
+      messageSignature,
       public_key,
       rawMessage
     );
 
     logger.debug({
       message: 'Verifying signature',
-      msqSignature,
+      messageSignature,
       public_key,
       rawMessage,
       signatureValid,
@@ -155,16 +156,15 @@ export async function send(receivers, message) {
     });
     return;
   }
-  const msqSignature = await utils.createSignature(message);
+  const messageStr = JSON.stringify(message);
+  const messageSignature = await utils.createSignature(messageStr);
   const realPayload =
-    Buffer.from(JSON.stringify(message)).toString('base64') +
-    '|' +
-    msqSignature;
+    Buffer.from(messageStr).toString('base64') + '|' + messageSignature;
 
   logger.debug({
     message: 'Sending message over message queue',
     raw_message_object: message,
-    msqSignature,
+    messageSignature,
     realPayload,
     receivers,
   });
@@ -182,7 +182,10 @@ export async function send(receivers, message) {
 }
 
 export function close() {
-  mqRecv.close();
+  if (config.role === 'ndid') return;
+  if (mqRecv) {
+    mqRecv.close();
+  }
   for (let id in timer) {
     clearTimeout(timer[id]);
   }

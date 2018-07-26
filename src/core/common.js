@@ -29,8 +29,14 @@ import * as rp from './rp';
 import * as idp from './idp';
 import * as as from './as';
 import * as mq from '../mq';
-import { resumeCallbackToClient, callbackToClient } from '../utils/callback';
+import {
+  setShouldRetryFnGetter,
+  setResponseCallbackFnGetter,
+  resumeCallbackToClient,
+  callbackToClient,
+} from '../utils/callback';
 import * as utils from '../utils';
+import * as lt from '../utils/long_timeout';
 import * as config from '../config';
 import errorType from '../error/type';
 import { getErrorObjectForClient } from '../error/helpers';
@@ -87,24 +93,30 @@ if (role === 'rp' || role === 'idp' || role === 'as') {
 
 if (role === 'rp') {
   handleMessageFromQueue = rp.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockHeaderEventHandler(
-    rp.handleTendermintNewBlockHeaderEvent
+  tendermint.setTendermintNewBlockEventHandler(
+    rp.handleTendermintNewBlockEvent
   );
+  setShouldRetryFnGetter(rp.getShouldRetryFn);
+  setResponseCallbackFnGetter(rp.getResponseCallbackFn);
   resumeTimeoutScheduler();
   resumeCallbackToClient();
 } else if (role === 'idp') {
   handleMessageFromQueue = idp.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockHeaderEventHandler(
-    idp.handleTendermintNewBlockHeaderEvent
+  tendermint.setTendermintNewBlockEventHandler(
+    idp.handleTendermintNewBlockEvent
   );
+  setShouldRetryFnGetter(idp.getShouldRetryFn);
+  setResponseCallbackFnGetter(idp.getResponseCallbackFn);
   resumeTimeoutScheduler();
-  resumeCallbackToClient(shouldRetryCallback);
+  resumeCallbackToClient();
 } else if (role === 'as') {
   handleMessageFromQueue = as.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockHeaderEventHandler(
-    as.handleTendermintNewBlockHeaderEvent
+  tendermint.setTendermintNewBlockEventHandler(
+    as.handleTendermintNewBlockEvent
   );
-  resumeCallbackToClient(shouldRetryCallback, as.afterGotDataFromCallback);
+  setShouldRetryFnGetter(as.getShouldRetryFn);
+  setResponseCallbackFnGetter(as.getResponseCallbackFn);
+  resumeCallbackToClient();
 }
 
 async function resumeTimeoutScheduler() {
@@ -114,17 +126,22 @@ async function resumeTimeoutScheduler() {
   );
 }
 
-export async function checkRequestIntegrity(requestId, request) {
-  const msgBlockchain = await tendermintNdid.getRequest({ requestId });
+export async function checkRequestMessageIntegrity(
+  requestId,
+  request,
+  requestDetail
+) {
+  if (!requestDetail) {
+    requestDetail = await tendermintNdid.getRequestDetail({ requestId });
+  }
 
-  const valid =
-    utils.hash(request.secretSalt + request.request_message) ===
-    msgBlockchain.request_message_hash;
-  /*utils.compareSaltedHash({
-    saltedHash: msgBlockchain.messageHash,
-    plain: request.request_message,
-  });*/
-  if (!valid) {
+  const requestMessageHash = utils.hash(
+    request.request_message + request.request_message_salt
+  );
+
+  const requestMessageValid =
+    requestMessageHash === requestDetail.request_message_hash;
+  if (!requestMessageValid) {
     logger.warn({
       message: 'Request message hash mismatched',
       requestId,
@@ -133,14 +150,65 @@ export async function checkRequestIntegrity(requestId, request) {
       message: 'Request message hash mismatched',
       requestId,
       givenRequestMessage: request.request_message,
-      givenRequestMessageHashWithSalt: utils.hash(
-        request.secretSalt + request.request_message
-      ),
-      requestMessageHashFromBlockchain: msgBlockchain.request_message_hash,
+      givenRequestMessageHashWithSalt: requestMessageHash,
+      requestMessageHashFromBlockchain: requestDetail.request_message_hash,
     });
+    return false;
+  }
+  return true;
+}
+
+export async function checkDataRequestParamsIntegrity(
+  requestId,
+  request,
+  requestDetail
+) {
+  if (!requestDetail) {
+    requestDetail = await tendermintNdid.getRequestDetail({ requestId });
   }
 
-  return valid;
+  for (let i = 0; i < requestDetail.data_request_list.length; i++) {
+    const dataRequest = requestDetail.data_request_list[i];
+    const dataRequestParamsHash = utils.hash(
+      request.data_request_list[i].request_params +
+        request.data_request_params_salt_list[i]
+    );
+    const dataRequestParamsValid =
+      dataRequest.request_params_hash === dataRequestParamsHash;
+    if (!dataRequestParamsValid) {
+      logger.warn({
+        message: 'Request data request params hash mismatched',
+        requestId,
+      });
+      logger.debug({
+        message: 'Request data request params hash mismatched',
+        requestId,
+        givenRequestParams: dataRequest.request_params,
+        givenRequestParamsHashWithSalt: dataRequestParamsHash,
+        requestParamsHashFromBlockchain: dataRequest.request_params_hash,
+      });
+      return false;
+    }
+  }
+  return true;
+}
+
+export async function checkRequestIntegrity(requestId, request) {
+  const requestDetail = await tendermintNdid.getRequestDetail({ requestId });
+
+  const requestMessageValid = checkRequestMessageIntegrity(
+    requestId,
+    request,
+    requestDetail
+  );
+
+  const dataRequestParamsValid = checkDataRequestParamsIntegrity(
+    requestId,
+    request,
+    requestDetail
+  );
+
+  return requestMessageValid && dataRequestParamsValid;
 }
 
 async function handleMessageQueueError(error) {
@@ -215,15 +283,30 @@ export async function getIdpsMsqDestination({
 
 export let timeoutScheduler = {};
 
-export function clearAllScheduler() {
+export function stopAllTimeoutScheduler() {
   for (let requestId in timeoutScheduler) {
-    clearTimeout(timeoutScheduler[requestId]);
+    lt.clearTimeout(timeoutScheduler[requestId]);
   }
 }
 
 export async function timeoutRequest(requestId) {
   try {
     const responseValidList = await db.getIdpResponseValidList(requestId);
+
+    // FOR DEBUG
+    const nodeIds = {};
+    for (let i = 0; i < responseValidList.length; i++) {
+      if (nodeIds[responseValidList[i].idp_id]) {
+        logger.error({
+          message: 'Duplicate IdP ID in response valid list',
+          requestId,
+          responseValidList,
+          action: 'timeoutRequest',
+        });
+        break;
+      }
+      nodeIds[responseValidList[i].idp_id] = true;
+    }
 
     await tendermintNdid.timeoutRequest({ requestId, responseValidList });
   } catch (error) {
@@ -239,18 +322,25 @@ export async function timeoutRequest(requestId) {
 }
 
 export function runTimeoutScheduler(requestId, secondsToTimeout) {
-  if (secondsToTimeout < 0) timeoutRequest(requestId);
-  else {
-    timeoutScheduler[requestId] = setTimeout(() => {
+  if (secondsToTimeout < 0) {
+    timeoutRequest(requestId);
+  } else {
+    timeoutScheduler[requestId] = lt.setTimeout(() => {
       timeoutRequest(requestId);
     }, secondsToTimeout * 1000);
   }
 }
 
-export function addTimeoutScheduler(requestId, secondsToTimeout) {
+export async function addTimeoutScheduler(requestId, secondsToTimeout) {
   let unixTimeout = Date.now() + secondsToTimeout * 1000;
-  db.addTimeoutScheduler(requestId, unixTimeout);
+  await db.addTimeoutScheduler(requestId, unixTimeout);
   runTimeoutScheduler(requestId, secondsToTimeout);
+}
+
+export async function removeTimeoutScheduler(requestId) {
+  lt.clearTimeout(timeoutScheduler[requestId]);
+  await db.removeTimeoutScheduler(requestId);
+  delete timeoutScheduler[requestId];
 }
 
 /**
@@ -434,13 +524,17 @@ export async function createRequest(
       request_id = utils.createRequestId();
     }
 
-    const challenge = [
+    /*const challenge = [
       utils.randomBase64Bytes(config.challengeLength),
       utils.randomBase64Bytes(config.challengeLength),
-    ];
-    db.setChallengeFromRequestId(request_id, challenge);
+    ];*/
+    await db.setChallengeFromRequestId(request_id, {});
 
-    let secretSalt = utils.randomBase64Bytes(16);
+    const request_message_salt = utils.randomBase64Bytes(16);
+
+    const data_request_params_salt_list = data_request_list.map(() => {
+      return utils.randomBase64Bytes(16);
+    });
 
     const requestData = {
       mode,
@@ -451,35 +545,37 @@ export async function createRequest(
       min_aal,
       min_ial,
       request_timeout,
-      data_request_list: data_request_list,
+      data_request_list,
+      data_request_params_salt_list,
       request_message,
       // for zk proof
       //challenge,
       rp_id: config.nodeId,
-      secretSalt,
+      request_message_salt,
     };
 
     // save request data to DB to send to AS via mq when authen complete
     // and for zk proof
-    await db.setRequestData(request_id, requestData);
-
-    // maintain mapping
-    await db.setRequestIdByReferenceId(reference_id, request_id);
-    await db.setRequestCallbackUrl(request_id, callback_url);
-
-    addTimeoutScheduler(request_id, request_timeout);
+    await Promise.all([
+      db.setRequestData(request_id, requestData),
+      db.setRequestIdByReferenceId(reference_id, request_id),
+      db.setRequestCallbackUrl(request_id, callback_url),
+      addTimeoutScheduler(request_id, request_timeout),
+    ]);
 
     if (synchronous) {
       await createRequestInternalAsync(...arguments, {
         request_id,
-        secretSalt,
+        request_message_salt,
+        data_request_params_salt_list,
         receivers,
         requestData,
       });
     } else {
       createRequestInternalAsync(...arguments, {
         request_id,
-        secretSalt,
+        request_message_salt,
+        data_request_params_salt_list,
         receivers,
         requestData,
       });
@@ -512,20 +608,27 @@ async function createRequestInternalAsync(
     request_timeout,
   },
   { synchronous = false } = {},
-  { request_id, secretSalt, receivers, requestData }
+  {
+    request_id,
+    request_message_salt,
+    data_request_params_salt_list,
+    receivers,
+    requestData,
+  }
 ) {
   try {
-    const dataRequestListToBlockchain = [];
-    for (let i in data_request_list) {
-      dataRequestListToBlockchain.push({
-        service_id: data_request_list[i].service_id,
-        as_id_list: data_request_list[i].as_id_list,
-        min_as: data_request_list[i].min_as,
-        request_params_hash: utils.hashWithRandomSalt(
-          data_request_list[i].request_params
-        ),
-      });
-    }
+    const dataRequestListToBlockchain = data_request_list.map(
+      (dataRequest, index) => {
+        return {
+          service_id: dataRequest.service_id,
+          as_id_list: dataRequest.as_id_list,
+          min_as: dataRequest.min_as,
+          request_params_hash: utils.hash(
+            dataRequest.request_params + data_request_params_salt_list[index]
+          ),
+        };
+      }
+    );
 
     const requestDataToBlockchain = {
       mode,
@@ -535,7 +638,7 @@ async function createRequestInternalAsync(
       min_ial,
       request_timeout,
       data_request_list: dataRequestListToBlockchain,
-      request_message_hash: utils.hash(secretSalt + request_message),
+      request_message_hash: utils.hash(request_message + request_message_salt),
     };
 
     const { height } = await tendermintNdid.createRequest(
@@ -564,9 +667,6 @@ async function createRequestInternalAsync(
       );
     }
   } catch (error) {
-    await db.removeRequestIdByReferenceId(reference_id);
-    await db.removeRequestCallbackUrl(request_id);
-
     logger.error({
       message: 'Create request internal async error',
       originalArgs: arguments[0],
@@ -589,52 +689,33 @@ async function createRequestInternalAsync(
       );
     }
 
+    await Promise.all([
+      db.removeChallengeFromRequestId(request_id),
+      db.removeRequestData(request_id),
+      db.removeRequestIdByReferenceId(reference_id),
+      db.removeRequestCallbackUrl(request_id),
+      removeTimeoutScheduler(request_id),
+    ]);
+
     throw error;
   }
 }
 
 export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
-  let {
+  const {
     namespace,
     identifier,
     privateProofObjectList,
     request_message,
+    request_message_salt,
   } = await db.getRequestData(request_id);
 
-  //check only signature of idp_id
   if (mode === 1) {
-    return null; // Cannot check in mode 1
-
-    /*let response_list = (await getRequestDetail({
-      requestId: request_id,
-    })).response_list;
-    for(let i = 0 ; i < response_list.length ; i++) {
-      if(response_list[i].idp_id !== idp_id) continue;
-
-      let { signature } = response_list[i];
-      let { public_key } = await getNodePubKey(idp_id);
-
-      logger.debug({
-        message: 'Verify signature, mode 1',
-        signature,
-        public_key,
-        request_message,
-        idp_id,
-      });
-
-      if(!utils.verifySignature(signature, public_key, JSON.stringify(request_message))) return false;
-      else return true;
-    }
-    //should not reach (idp_id not found)
-    logger.debug({
-      message: 'Code should never reach here (in common.verifyZKProof)',
-      request_id, idp_id, dataFromMq, mode,
-    });
-    return false;*/
+    return null;
   }
 
-  let challenge = await db.getChallengeFromRequestId(request_id);
-  let privateProofObject = dataFromMq
+  const challenge = (await db.getChallengeFromRequestId(request_id))[idp_id];
+  const privateProofObject = dataFromMq
     ? dataFromMq
     : await db.getPrivateProofReceivedFromMQ(request_id + ':' + idp_id);
 
@@ -649,7 +730,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   });
 
   //query accessor_group_id of this accessor_id
-  let accessor_group_id = await tendermintNdid.getAccessorGroupId(
+  const accessor_group_id = await tendermintNdid.getAccessorGroupId(
     privateProofObject.accessor_id
   );
 
@@ -665,7 +746,6 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
       otherPrivateProofObject.accessor_id
     );
     if (otherGroupId !== accessor_group_id) {
-      //TODO handle this, manually close?
       logger.debug({
         message: 'Conflict response',
         otherGroupId,
@@ -687,13 +767,12 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   }
 
   //query accessor_public_key from privateProofObject.accessor_id
-  let public_key = await tendermintNdid.getAccessorKey(
+  const public_key = await tendermintNdid.getAccessorKey(
     privateProofObject.accessor_id
   );
 
   //query publicProof from response of idp_id in request
-  let publicProof, signature, privateProofValueHash;
-  let response_list = (await tendermintNdid.getRequestDetail({
+  const response_list = (await tendermintNdid.getRequestDetail({
     requestId: request_id,
   })).response_list;
 
@@ -703,24 +782,22 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
     request_message,
   });
 
-  response_list.forEach((response) => {
-    if (response.idp_id === idp_id) {
-      publicProof = JSON.parse(response.identity_proof);
-      signature = response.signature;
-      privateProofValueHash = response.private_proof_hash;
-    }
-  });
+  const response = response_list.find((response) => response.idp_id === idp_id);
+  const publicProof = JSON.parse(response.identity_proof);
+  const signature = response.signature;
+  const privateProofValueHash = response.private_proof_hash;
 
-  let signatureValid = utils.verifySignature(
+  const signatureValid = utils.verifySignature(
     signature,
     public_key,
-    request_message
+    request_message + request_message_salt
   );
 
   logger.debug({
     message: 'Verify signature',
     signatureValid,
     request_message,
+    request_message_salt,
     public_key,
     signature,
   });
@@ -744,14 +821,19 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
 
 //===== zkp and request related =====
 
-export async function handleChallengeRequest(responseId, publicProof) {
+export async function handleChallengeRequest({
+  request_id,
+  idp_id,
+  public_proof,
+}) {
   logger.debug({
     message: 'Handle challenge request',
-    responseId,
-    publicProof,
+    request_id,
+    idp_id,
+    public_proof,
   });
 
-  const [request_id, idp_id] = responseId.split(':');
+  //const [request_id, idp_id] = responseId.split(':');
 
   //get public proof in blockchain
   const public_proof_blockchain = JSON.parse(
@@ -759,22 +841,37 @@ export async function handleChallengeRequest(responseId, publicProof) {
   );
 
   //check public proof in blockchain and in message queue
-  if (public_proof_blockchain.length !== publicProof.length) return false;
-  for (let i = 0; i < publicProof.length; i++) {
-    if (public_proof_blockchain[i] !== publicProof[i]) return false;
+  if (public_proof_blockchain.length !== public_proof.length) return false;
+  for (let i = 0; i < public_proof.length; i++) {
+    if (public_proof_blockchain[i] !== public_proof[i]) return false;
   }
 
   //if match, send challenge and return
   const nodeId = {};
   if (config.role === 'idp') nodeId.idp_id = config.nodeId;
   else if (config.role === 'rp') nodeId.rp_id = config.nodeId;
-  const challenge = await db.getChallengeFromRequestId(request_id);
+
+  let challenge;
+  let challengeObject = await db.getChallengeFromRequestId(request_id);
+  //challenge deleted, request is done
+  if (challengeObject == null) return false;
+
+  if(challengeObject[idp_id]) challenge = challengeObject[idp_id];
+  else {
+    //generate new challenge
+    challenge = [
+      utils.randomBase64Bytes(config.challengeLength),
+      utils.randomBase64Bytes(config.challengeLength),
+    ];
+
+    challengeObject[idp_id] = challenge;
+    await db.setChallengeFromRequestId(request_id, challengeObject);
+  }
+
   logger.debug({
     message: 'Get challenge',
     challenge,
   });
-  //challenge deleted, request is done
-  if (challenge == null) return false;
 
   const mqAddress = await tendermintNdid.getMsqAddress(idp_id);
   if (mqAddress == null) {
@@ -862,7 +959,7 @@ export async function checkIdpResponse({
 
   await db.addIdpResponseValidList(requestId, responseValid);
 
-  db.removeProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
+  db.removePrivateProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
 
   return responseValid;
 }
@@ -872,7 +969,7 @@ export async function checkIdpResponse({
  * @param {string} requestId
  * @returns {boolean}
  */
-export async function shouldRetryCallback(requestId) {
+export async function isRequestClosedOrTimedOut(requestId) {
   if (requestId) {
     const requestDetail = await tendermintNdid.getRequestDetail({ requestId });
     if (requestDetail.closed || requestDetail.timed_out) {
@@ -911,12 +1008,28 @@ async function closeRequestInternalAsync(
   try {
     const responseValidList = await db.getIdpResponseValidList(request_id);
 
+    // FOR DEBUG
+    const nodeIds = {};
+    for (let i = 0; i < responseValidList.length; i++) {
+      if (nodeIds[responseValidList[i].idp_id]) {
+        logger.error({
+          message: 'Duplicate IdP ID in response valid list',
+          requestId: request_id,
+          responseValidList,
+          action: 'closeRequest',
+        });
+        break;
+      }
+      nodeIds[responseValidList[i].idp_id] = true;
+    }
+
     await tendermintNdid.closeRequest({
       requestId: request_id,
       responseValidList,
     });
 
     db.removeChallengeFromRequestId(request_id);
+    removeTimeoutScheduler(request_id);
 
     if (!synchronous) {
       await callbackToClient(

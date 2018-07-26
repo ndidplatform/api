@@ -40,10 +40,6 @@ if (!config.useExternalCryptoService) {
   masterPrivateKey = fs.readFileSync(config.masterPrivateKeyPath, 'utf8');
 }
 
-//let nonce = Date.now() % 10000;
-const saltByteLength = 8;
-const saltStringLength = saltByteLength * 2;
-
 export function wait(ms, stoppable) {
   let setTimeoutFn;
   const promise = new Promise(
@@ -68,17 +64,6 @@ export function getNonce() {
 
 export function hash(stringToHash) {
   return cryptoUtils.hash(stringToHash);
-}
-
-export function hashWithRandomSalt(stringToHash) {
-  let saltByte = crypto.randomBytes(saltByteLength);
-  let saltString = saltByte.toString('base64');
-  return saltString + hash(saltString + stringToHash);
-}
-
-export function compareSaltedHash({ saltedHash, plain }) {
-  let saltString = saltedHash.substring(0, saltStringLength);
-  return saltedHash === saltString + hash(saltString + plain);
 }
 
 export async function decryptAsymetricKey(cipher) {
@@ -363,8 +348,12 @@ function verifyZKProofSingle(
   return stringToBigInt(publicProof).eq(tmp3);
 }
 
-export async function createSignature(data, nonce = '', useMasterKey) {
-  const messageToSign = JSON.stringify(data) + nonce;
+export async function createSignature(messageToSign, useMasterKey) {
+  if (typeof messageToSign !== 'string') {
+    throw new CustomError({
+      message: 'Expected message to sign to be a string',
+    });
+  }
   const messageToSignHash = hash(messageToSign);
 
   if (config.useExternalCryptoService) {

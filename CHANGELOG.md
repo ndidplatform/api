@@ -1,5 +1,44 @@
 # Changelog
 
+## TBD
+
+BREAKING CHANGES:
+
+- Signature in IdP response must sign `request_message` concatenate with provided `request_message_salt`.
+- Include request message salt when verifying IdP response signature.
+
+IMPROVEMENTS:
+
+- Support request timeout of more than 2147483647 (or 32-bit integer) milliseconds (>24.8 days).
+
+BUG FIXES:
+
+- Append salt to request message before hash instead of prepend.
+- Fix missing `request_message_salt` property in object when calling callback to IdP with type `incoming_request`.
+- Fix AS data response signature is not salted.
+- Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side.
+- Fix error in `getMessageWithCode()` in CustomError when error cause is undefined.
+- Clean up data in cache DB when create request and create identity fails.
+
+## 0.5.3 (July 22, 2018)
+
+IMPROVEMENTS:
+
+- Remove unnecessary block results query call to Tendermint.
+- Cache block information for the latest height block and the one before that in memory to decrease HTTP call to Tendermint.
+- Check for app hash when receiving new block event to decrease unnecessary processing (in case Tendermint consensus config for `create_empty_block` is set to true).
+- External crypto service callback retry.
+- Check for response status and errors when receiving data response from calling callback to AS.
+- Add new API for NDID POST `/updateNode` for updating node's `node_name`, `max_ial`, and `max_aal`.
+
+BUG FIXES:
+
+- Fix block height range to handle message when there are missing new block events.
+- Change block and block results query calls to Tendermint to use HTTP instead of WebSocket.
+- Fix duplicate message processing by removing cache when message is going to be process from handle message from message queue function.
+- Fix accessor ID and public key check when creating IdP response in mode 3.
+- Fix message queue socket is open when role is set to `ndid`. (It should not open a MQ socket).
+
 ## 0.5.2 (July 17, 2018)
 
 BUG FIXES:

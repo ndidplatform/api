@@ -1,12 +1,12 @@
 {
   "name": "ndid-api",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "",
   "scripts": {
     "build": "npx babel src -d ./build/ --source-maps inline && cp -r ./dev_key ./build",
     "start": "npm run build && node build/server.js",
     "test": "npm run build && npx mocha build/**/*.test.js",
-    "test:es6": "mocha src/**/*.test.js --watch --compilers js:babel-register",
+    "test:es6": "mocha src/**/*.test.js --watch --require babel-core/register",
     "initDevKey": "npm run build && ROLE=ndid node build/dev_key_init.js && npm run delete-local-data-cache",
     "delete-local-data-cache": "rm -rf data",
     "docker-build": "./docker/build.sh",

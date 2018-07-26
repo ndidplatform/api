@@ -33,6 +33,23 @@ import * as config from '../config';
 const waitStopFunction = [];
 let stopCallbackRetry = false;
 
+let getShouldRetryFn;
+let getResponseCallbackFn;
+
+export function setShouldRetryFnGetter(fn) {
+  if (typeof fn !== 'function') {
+    throw new Error('Invalid argument type. Must be function.');
+  }
+  getShouldRetryFn = fn;
+}
+
+export function setResponseCallbackFnGetter(fn) {
+  if (typeof fn !== 'function') {
+    throw new Error('Invalid argument type. Must be function.');
+  }
+  getResponseCallbackFn = fn;
+}
+
 /**
  * Make a HTTP POST to callback url with body
  * @param {string} callbackUrl
@@ -70,9 +87,9 @@ async function callbackWithRetry(
   callbackUrl,
   body,
   cbId,
-  shouldRetry,
+  shouldRetryFnName,
   shouldRetryArguments = [],
-  responseCallback,
+  responseCallbackFnName,
   dataForResponseCallback
 ) {
   const backoff = new ExponentialBackoff({
@@ -97,11 +114,14 @@ async function callbackWithRetry(
       cbId,
     });
     try {
-      const response = await httpPost(cbId, callbackUrl, body);
+      const responseObj = await httpPost(cbId, callbackUrl, body);
 
       db.removeCallbackWithRetryData(cbId);
-      if (responseCallback) {
-        responseCallback(response, dataForResponseCallback);
+      if (responseCallbackFnName) {
+        getResponseCallbackFn(responseCallbackFnName)(
+          responseObj,
+          dataForResponseCallback
+        );
       }
       return;
     } catch (error) {
@@ -113,8 +133,10 @@ async function callbackWithRetry(
         cbId,
       });
 
-      if (shouldRetry) {
-        if (!(await shouldRetry(...shouldRetryArguments))) {
+      if (shouldRetryFnName) {
+        if (
+          !(await getShouldRetryFn(shouldRetryFnName)(...shouldRetryArguments))
+        ) {
           db.removeCallbackWithRetryData(cbId);
           return;
         }
@@ -160,9 +182,9 @@ export async function callbackToClient(
   callbackUrl,
   body,
   retry,
-  shouldRetry,
+  shouldRetryFnName,
   shouldRetryArguments,
-  responseCallback,
+  responseCallbackFnName,
   dataForResponseCallback
 ) {
   const cbId = randomBase64Bytes(10);
@@ -175,18 +197,18 @@ export async function callbackToClient(
     await db.addCallbackWithRetryData(cbId, {
       callbackUrl,
       body,
-      shouldRetryFnExist: shouldRetry != null,
+      shouldRetryFnName,
       shouldRetryArguments,
-      responseCallbackFnExist: responseCallback != null,
+      responseCallbackFnName,
       dataForResponseCallback,
     });
     callbackWithRetry(
       callbackUrl,
       body,
       cbId,
-      shouldRetry,
+      shouldRetryFnName,
       shouldRetryArguments,
-      responseCallback,
+      responseCallbackFnName,
       dataForResponseCallback
     );
   } else {
@@ -201,9 +223,12 @@ export async function callbackToClient(
       cbId,
     });
     try {
-      const response = await httpPost(cbId, callbackUrl, body);
-      if (responseCallback) {
-        responseCallback(response, dataForResponseCallback);
+      const responseObj = await httpPost(cbId, callbackUrl, body);
+      if (responseCallbackFnName) {
+        getResponseCallbackFn(responseCallbackFnName)(
+          responseObj,
+          dataForResponseCallback
+        );
       }
     } catch (error) {
       logger.error({
@@ -219,16 +244,16 @@ export async function callbackToClient(
  * This function should be called only when server starts
  * @param {function} responseCallback
  */
-export async function resumeCallbackToClient(shouldRetry, responseCallback) {
+export async function resumeCallbackToClient() {
   const callbackDatum = await db.getAllCallbackWithRetryData();
   callbackDatum.forEach((callback) =>
     callbackWithRetry(
       callback.data.callbackUrl,
       callback.data.body,
       callback.cbId,
-      callback.data.shouldRetryFnExist ? shouldRetry : null,
+      callback.data.shouldRetryFnName,
       callback.data.shouldRetryArguments,
-      callback.data.responseCallbackFnExist ? responseCallback : null,
+      callback.data.responseCallbackFnName,
       callback.data.dataForResponseCallback
     )
   );

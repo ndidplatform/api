@@ -71,10 +71,13 @@ export default class CustomError extends Error {
     if (this.code != null) {
       return this.message;
     }
-    if (this.cause != null && this.cause.name === 'CustomError') {
-      return this.cause.getMessageWithCode();
+    if (this.cause != null) {
+      if (this.cause.name === 'CustomError') {
+        return this.cause.getMessageWithCode();
+      }
+      return this.cause.message;
     }
-    return this.cause.message;
+    return this.message; // this.cause is undefined
   }
 
   getMessageWithRootCause() {

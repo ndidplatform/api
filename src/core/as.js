@@ -92,6 +92,24 @@ export function getErrorCallbackUrl() {
   return callbackUrls.error_url;
 }
 
+export function getShouldRetryFn(fnName) {
+  switch (fnName) {
+    case 'common.isRequestClosedOrTimedOut':
+      return common.isRequestClosedOrTimedOut;
+    default:
+      return function noop() {};
+  }
+}
+
+export function getResponseCallbackFn(fnName) {
+  switch (fnName) {
+    case 'afterGotDataFromCallback':
+      return afterGotDataFromCallback;
+    default:
+      return function noop() {};
+  }
+}
+
 async function sendDataToRP(rpId, data) {
   let receivers = [];
   let nodeId = rpId;
@@ -110,7 +128,7 @@ async function sendDataToRP(rpId, data) {
   receivers.push({
     ip,
     port,
-    ...(await tendermintNdid.getNodePubKey(nodeId)), // TODO: try catch / error handling
+    ...(await tendermintNdid.getNodePubKey(nodeId)),
   });
   mq.send(receivers, {
     type: 'as_data_response',
@@ -118,6 +136,7 @@ async function sendDataToRP(rpId, data) {
     as_id: data.as_id,
     service_id: data.service_id,
     signature: data.signature,
+    data_salt: data.data_salt,
     data: data.data,
     height: data.height,
   });
@@ -155,7 +174,8 @@ async function processDataForRPInternalAsync(
 ) {
   try {
     const as_id = config.nodeId;
-    const signature = await utils.createSignature(data);
+    const data_salt = utils.randomBase64Bytes(16);
+    const signature = await utils.createSignature(data + data_salt);
 
     // AS node adds transaction to blockchain
     const { height } = await tendermintNdid.signASData({
@@ -173,6 +193,7 @@ async function processDataForRPInternalAsync(
       request_id: requestId,
       as_id,
       signature,
+      data_salt,
       service_id: serviceId,
       data,
       height,
@@ -222,49 +243,78 @@ export async function afterGotDataFromCallback(
   { response, body },
   additionalData
 ) {
-  if (response.status === 204) {
-    await db.setRPIdFromRequestId(
-      additionalData.requestId,
-      additionalData.rpId
-    );
-    return;
-  }
-  if(response.status !== 200) {
-    logger.info({
-      message: 'Invalid response status for AS data',
-      status: response.status,
-      body,
-    });
-    return;
-  }
-  let data, synchronous;
   try {
-    const result = JSON.parse(body);
+    if (response.status === 204) {
+      await db.setRPIdFromRequestId(
+        additionalData.requestId,
+        additionalData.rpId
+      );
+      return;
+    }
+    if (response.status !== 200) {
+      throw new CustomError({
+        message: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE.message,
+        code: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE.code,
+        details: {
+          status: response.status,
+          body,
+        },
+      });
+    }
+    let result;
+    try {
+      result = JSON.parse(body);
 
-    logger.info({
-      message: 'Received data from AS',
-    });
-    logger.debug({
-      message: 'Data from AS',
-      result,
-    });
-
-    data = result.data;
+      logger.info({
+        message: 'Received data from AS',
+      });
+      logger.debug({
+        message: 'Data from AS',
+        result,
+      });
+    } catch (error) {
+      throw new CustomError({
+        message: errorType.CANNOT_PARSE_JSON.message,
+        code: errorType.CANNOT_PARSE_JSON.code,
+        cause: error,
+      });
+    }
+    if (result.data == null) {
+      throw new CustomError({
+        message: errorType.MISSING_DATA_IN_AS_DATA_RESPONSE.message,
+        code: errorType.MISSING_DATA_IN_AS_DATA_RESPONSE.code,
+        details: {
+          result,
+        },
+      });
+    }
+    if (typeof result.data !== 'string') {
+      throw new CustomError({
+        message: errorType.INVALID_DATA_TYPE_IN_AS_DATA_RESPONSE.message,
+        code: errorType.INVALID_DATA_TYPE_IN_AS_DATA_RESPONSE.code,
+        details: {
+          dataType: typeof result.data,
+        },
+      });
+    }
     additionalData.reference_id = result.reference_id;
     additionalData.callback_url = result.callback_url;
-    synchronous = !additionalData.reference_id || !additionalData.callback_url;
+    const synchronous =
+      !additionalData.reference_id || !additionalData.callback_url;
+    await processDataForRP(result.data, additionalData, { synchronous });
   } catch (error) {
-    logger.error({
-      message: 'Cannot parse data from AS',
-      error,
-    });
-
-    throw new CustomError({
-      message: 'Cannot parse data from AS',
+    const err = new CustomError({
+      message: 'Error processing data response from AS',
       cause: error,
     });
+    logger.error(err.getInfoForLog());
+    await common.notifyError({
+      callbackUrl: callbackUrls.error_url,
+      action: 'afterGotDataFromCallback',
+      error: err,
+      requestId: additionalData.requestId,
+    });
   }
-  processDataForRP(data, additionalData, { synchronous });
 }
 
 async function getDataAndSendBackToRP(request, responseDetails) {
@@ -310,9 +360,9 @@ async function getDataAndSendBackToRP(request, responseDetails) {
           ...responseDetails,
         },
         true,
-        common.shouldRetryCallback,
+        'common.isRequestClosedOrTimedOut',
         [request.request_id],
-        afterGotDataFromCallback,
+        'afterGotDataFromCallback',
         {
           rpId: request.rp_id,
           requestId: request.request_id,
@@ -328,16 +378,8 @@ async function getResponseDetails(requestId) {
     requestId,
   });
 
-  // TODO
-  // Verify that (number of consent ≥ min_idp in request).
-  // For each consent with matching request ID:
-  // Verify the identity proof.
-  // Verify the signature.
-  // Verify that the message_hash is matching with the request.
-  // Verify data_request_params with its hash
-
   // Get all signatures
-  // and calculate max ial && max aal
+  // Calculate max IAL and max AAL
   let response_signature_list = [];
   let max_ial = 0;
   let max_aal = 0;
@@ -354,19 +396,89 @@ async function getResponseDetails(requestId) {
   };
 }
 
+export async function checkServiceRequestParamsIntegrity(
+  requestId,
+  request,
+  requestDetail
+) {
+  if (!requestDetail) {
+    requestDetail = await tendermintNdid.getRequestDetail({ requestId });
+  }
+
+  for (let i = 0; i < request.service_data_request_list.length; i++) {
+    const {
+      service_id,
+      request_params,
+      request_params_salt,
+    } = request.service_data_request_list[i];
+
+    const dataRequest = requestDetail.data_request_list.find(
+      (dataRequest) => dataRequest.service_id === service_id
+    );
+
+    const requestParamsHash = utils.hash(request_params + request_params_salt);
+    const dataRequestParamsValid =
+      dataRequest.request_params_hash === requestParamsHash;
+    if (!dataRequestParamsValid) {
+      logger.warn({
+        message: 'Request data request params hash mismatched',
+        requestId,
+      });
+      logger.debug({
+        message: 'Request data request params hash mismatched',
+        requestId,
+        givenRequestParams: request_params,
+        givenRequestParamsHashWithSalt: requestParamsHash,
+        requestParamsHashFromBlockchain: dataRequest.request_params_hash,
+      });
+      return false;
+    }
+  }
+  return true;
+}
+
 async function processRequest(request) {
   logger.debug({
     message: 'Processing request',
     requestId: request.request_id,
   });
-  const valid = await common.checkRequestIntegrity(request.request_id, request);
-  if (valid) {
-    const validProof = await verifyZKProof(request.request_id, request);
-    if (validProof) {
-      const responseDetails = await getResponseDetails(request.request_id);
-      await getDataAndSendBackToRP(request, responseDetails);
-    }
+  const requestDetail = await tendermintNdid.getRequestDetail({
+    requestId: request.request_id,
+  });
+  const requestMessageValid = await common.checkRequestMessageIntegrity(
+    request.request_id,
+    request,
+    requestDetail
+  );
+  const serviceDataRequestParamsValid = await checkServiceRequestParamsIntegrity(
+    request.request_id,
+    request,
+    requestDetail
+  );
+  if (!requestMessageValid || !serviceDataRequestParamsValid) {
+    throw new CustomError({
+      message: errorType.REQUEST_INTEGRITY_CHECK_FAILED.message,
+      code: errorType.REQUEST_INTEGRITY_CHECK_FAILED.code,
+      details: {
+        requestId: request.request_id,
+      },
+    });
   }
+  const idpResponsesValid = await isIdpResponsesValid(
+    request.request_id,
+    request
+  );
+  if (!idpResponsesValid) {
+    throw new CustomError({
+      message: errorType.INVALID_RESPONSES.message,
+      code: errorType.INVALID_RESPONSES.code,
+      details: {
+        requestId: request.request_id,
+      },
+    });
+  }
+  const responseDetails = await getResponseDetails(request.request_id);
+  await getDataAndSendBackToRP(request, responseDetails);
 }
 
 export async function handleMessageFromQueue(messageStr) {
@@ -377,6 +489,8 @@ export async function handleMessageFromQueue(messageStr) {
     message: 'Message from MQ',
     messageStr,
   });
+  // TODO: validate message schema
+
   let requestId;
   try {
     const message = JSON.parse(messageStr);
@@ -397,11 +511,12 @@ export async function handleMessageFromQueue(messageStr) {
       if (tendermint.latestBlockHeight <= message.height) {
         delete requestIdLocks[message.request_id];
         return;
+      } else {
+        await db.removeRequestReceivedFromMQ(requestId);
       }
     }
 
     await processRequest(message);
-    await db.removeRequestReceivedFromMQ(requestId);
     delete requestIdLocks[message.request_id];
   } catch (error) {
     const err = new CustomError({
@@ -418,26 +533,22 @@ export async function handleMessageFromQueue(messageStr) {
   }
 }
 
-export async function handleTendermintNewBlockHeaderEvent(
+export async function handleTendermintNewBlockEvent(
   error,
   result,
   missingBlockCount
 ) {
+  if (missingBlockCount == null) return;
   try {
-    const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
-    //console.log('received',height);
+    const height = tendermint.getBlockHeightFromNewBlockEvent(result);
+
     // messages that arrived before 'NewBlock' event
     // including messages between the start of missing block's height
     // and the block before latest block height
     // (not only just (current height - 1) in case 'NewBlock' events are missing)
     // NOTE: tendermint always create a pair of block. A block with transactions and
     // a block that signs the previous block which indicates that the previous block is valid
-    const fromHeight =
-      missingBlockCount == null
-        ? 1
-        : missingBlockCount === 0
-          ? height - 1
-          : height - missingBlockCount;
+    const fromHeight = height - 1 - missingBlockCount;
     const toHeight = height - 1;
 
     logger.debug({
@@ -454,6 +565,7 @@ export async function handleTendermintNewBlockHeaderEvent(
       requestIdsInTendermintBlock.map(async (requestId) => {
         if (requestIdLocks[requestId]) return;
         const request = await db.getRequestReceivedFromMQ(requestId);
+        if (request == null) return;
         await processRequest(request);
         await db.removeRequestReceivedFromMQ(requestId);
       })
@@ -468,7 +580,7 @@ export async function handleTendermintNewBlockHeaderEvent(
     logger.error(err.getInfoForLog());
     await common.notifyError({
       callbackUrl: callbackUrls.error_url,
-      action: 'handleTendermintNewBlockHeaderEvent',
+      action: 'handleTendermintNewBlockEvent',
       error: err,
     });
   }
@@ -614,33 +726,34 @@ export async function getServiceDetail(service_id) {
   }
 }
 
-async function verifyZKProof(request_id, dataFromMq) {
-  if (!dataFromMq) dataFromMq = await db.getRequestReceivedFromMQ(request_id);
+async function isIdpResponsesValid(request_id, dataFromMq) {
+  if (!dataFromMq) {
+    dataFromMq = await db.getRequestReceivedFromMQ(request_id);
+  }
 
-  let {
+  const {
     privateProofObjectList,
     namespace,
     identifier,
     request_message,
+    request_message_salt,
   } = dataFromMq;
 
-  let requestDetail = await tendermintNdid.getRequestDetail({
+  const requestDetail = await tendermintNdid.getRequestDetail({
     requestId: request_id,
   });
-  //mode 1 bypass zkp
-  //but still need to check signature of node
+
+  if (requestDetail.min_idp !== requestDetail.response_list.length) {
+    return false;
+  }
+
+  // mode 1 bypass zkp
   if (requestDetail.mode === 1) {
-    /*let response_list = requestDetail.response_list;
-    for(let i = 0 ; i < response_list.length ; i++) {
-      let { signature, idp_id } = response_list[i];
-      let { public_key } = await common.getNodePubKey(idp_id);
-      if(!utils.verifySignature(signature, public_key, JSON.stringify(request_message))) return false; 
-    }*/
     return true;
   }
 
   //query and verify zk, also check conflict with each others
-  let accessor_group_id = await tendermintNdid.getAccessorGroupId(
+  const accessor_group_id = await tendermintNdid.getAccessorGroupId(
     privateProofObjectList[0].privateProofObject.accessor_id
   );
   for (let i = 1; i < privateProofObjectList.length; i++) {
@@ -648,49 +761,46 @@ async function verifyZKProof(request_id, dataFromMq) {
       privateProofObjectList[i].privateProofObject.accessor_id
     );
     if (otherGroupId !== accessor_group_id) {
-      //TODO handle this?
-      //throw 'Conflicted response';
       return false;
     }
   }
 
-  let response_list = (await tendermintNdid.getRequestDetail({
+  const response_list = (await tendermintNdid.getRequestDetail({
     requestId: request_id,
   })).response_list;
   let valid = true;
   for (let i = 0; i < privateProofObjectList.length; i++) {
     //query accessor_public_key from privateProof.accessor_id
-    let public_key = await tendermintNdid.getAccessorKey(
+    const public_key = await tendermintNdid.getAccessorKey(
       privateProofObjectList[i].privateProofObject.accessor_id
     );
     //query publicProof from response of idp_id in request
-    let publicProof, signature, privateProofValueHash;
-    response_list.forEach((response) => {
-      if (response.idp_id === privateProofObjectList[i].idp_id) {
-        publicProof = JSON.parse(response.identity_proof);
-        signature = response.signature;
-        privateProofValueHash = response.private_proof_hash;
-      }
-    });
+    const response = response_list.find(
+      (response) => response.idp_id === privateProofObjectList[i].idp_id
+    );
+    const publicProof = JSON.parse(response.identity_proof);
+    const signature = response.signature;
+    const privateProofValueHash = response.private_proof_hash;
 
-    let signatureValid = utils.verifySignature(
+    const signatureValid = utils.verifySignature(
       signature,
       public_key,
-      request_message
+      request_message + request_message_salt
     );
 
     logger.debug({
       message: 'Verify signature',
       signatureValid,
       request_message,
+      request_message_salt,
       public_key,
       signature,
       privateProofObjectList,
     });
 
-    let zkProofValid = utils.verifyZKProof(
+    const zkProofValid = utils.verifyZKProof(
       public_key,
-      dataFromMq.challenge,
+      dataFromMq.challenge[privateProofObjectList[i].idp_id],
       privateProofObjectList[i].privateProofObject.privateProofValue,
       publicProof,
       {

@@ -120,6 +120,22 @@ export function getErrorCallbackUrl() {
   return callbackUrls.error_url;
 }
 
+export function getShouldRetryFn(fnName) {
+  switch (fnName) {
+    case 'common.isRequestClosedOrTimedOut':
+      return common.isRequestClosedOrTimedOut;
+    default:
+      return function noop() {};
+  }
+}
+
+export function getResponseCallbackFn(fnName) {
+  switch (fnName) {
+    default:
+      return function noop() {};
+  }
+}
+
 export function isAccessorSignUrlSet() {
   return callbackUrls.accessor_sign_url != null;
 }
@@ -295,7 +311,37 @@ export async function requestChallengeAndCreateResponse(data) {
         },
       });
     }
+
     if (request.mode === 3) {
+      if (data.accessor_id == null) {
+        throw new CustomError({
+          message: errorType.ACCESSOR_ID_NEEDED.message,
+          code: errorType.ACCESSOR_ID_NEEDED.code,
+          clientError: true,
+        });
+      }
+
+      const accessorPublicKey = await tendermintNdid.getAccessorKey(
+        data.accessor_id
+      );
+      if (accessorPublicKey == null) {
+        throw new CustomError({
+          message: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.message,
+          code: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.code,
+          clientError: true,
+          details: {
+            accessor_id: data.accessor_id,
+          },
+        });
+      }
+
+      if (data.secret == null) {
+        throw new CustomError({
+          message: errorType.SECRET_NEEDED.message,
+          code: errorType.SECRET_NEEDED.code,
+          clientError: true,
+        });
+      }
       // Check secret format
       const [padding, signedHash] = data.secret.split('|');
       if (padding == null || signedHash == null) {
@@ -337,7 +383,7 @@ async function requestChallengeAndCreateResponseInternalAsync(data, request) {
       },
       true
     );
-    db.removeResponseFromRequestId(data.request_id);
+    await db.removeResponseFromRequestId(data.request_id);
   }
 }
 
@@ -356,54 +402,15 @@ async function createIdpResponse(data) {
     } = data;
 
     const request = await tendermintNdid.getRequest({ requestId: request_id });
-    if (request == null) {
-      throw new CustomError({
-        message: errorType.REQUEST_NOT_FOUND.message,
-        code: errorType.REQUEST_NOT_FOUND.code,
-        clientError: true,
-        details: {
-          request_id,
-        },
-      });
-    }
-
     const mode = request.mode;
+
     let dataToBlockchain, privateProofObject;
 
     if (mode === 3) {
-      if (accessor_id == null) {
-        throw new CustomError({
-          message: errorType.ACCESSOR_ID_NEEDED.message,
-          code: errorType.ACCESSOR_ID_NEEDED.code,
-          clientError: true,
-        });
-      }
-      if (secret == null) {
-        throw new CustomError({
-          message: errorType.SECRET_NEEDED.message,
-          code: errorType.SECRET_NEEDED.code,
-          clientError: true,
-        });
-      }
-
-      const accessorPublicKey = await tendermintNdid.getAccessorKey(
-        accessor_id
-      );
-      if (accessorPublicKey == null) {
-        throw new CustomError({
-          message: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.message,
-          code: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.code,
-          clientError: true,
-          details: {
-            accessor_id,
-          },
-        });
-      }
-
       let blockchainProofArray = [],
         privateProofValueArray = [],
         samePadding;
-      let requestFromMq = await db.getRequestReceivedFromMQ(request_id);
+      const requestFromMq = await db.getRequestReceivedFromMQ(request_id);
 
       logger.debug({
         message: 'To generate proof',
@@ -514,7 +521,7 @@ export function notifyIncomingRequestByCallback(eventDataForCallback) {
       ...eventDataForCallback,
     },
     true,
-    common.shouldRetryCallback,
+    'common.isRequestClosedOrTimedOut',
     [eventDataForCallback.request_id]
   );
 }
@@ -648,27 +655,41 @@ async function processMessage(message) {
       );
     }
   } else if (message.type === 'challenge_request') {
-    const responseId = message.request_id + ':' + message.idp_id;
-    await common.handleChallengeRequest(responseId, message.public_proof);
+    //const responseId = message.request_id + ':' + message.idp_id;
+    await common.handleChallengeRequest({
+      request_id: message.request_id,
+      idp_id: message.idp_id,
+      public_proof: message.public_proof,
+    });
   } else if (message.type === 'consent_request') {
     const valid = await common.checkRequestIntegrity(
       message.request_id,
       message
     );
-    if (valid) {
-      notifyIncomingRequestByCallback({
-        mode: message.mode,
-        request_id: message.request_id,
-        namespace: message.namespace,
-        identifier: message.identifier,
-        request_message: message.request_message,
-        request_message_hash: utils.hash(message.request_message),
-        requester_node_id: message.rp_id,
-        min_ial: message.min_ial,
-        min_aal: message.min_aal,
-        data_request_list: message.data_request_list,
+    if (!valid) {
+      throw new CustomError({
+        message: errorType.REQUEST_INTEGRITY_CHECK_FAILED.message,
+        code: errorType.REQUEST_INTEGRITY_CHECK_FAILED.code,
+        details: {
+          requestId: message.request_id,
+        },
       });
     }
+    notifyIncomingRequestByCallback({
+      mode: message.mode,
+      request_id: message.request_id,
+      namespace: message.namespace,
+      identifier: message.identifier,
+      request_message: message.request_message,
+      request_message_hash: utils.hash(
+        message.request_message + message.request_message_salt
+      ),
+      request_message_salt: message.request_message_salt,
+      requester_node_id: message.rp_id,
+      min_ial: message.min_ial,
+      min_aal: message.min_aal,
+      data_request_list: message.data_request_list,
+    });
   }
 }
 
@@ -680,6 +701,8 @@ export async function handleMessageFromQueue(messageStr) {
     message: 'Message from MQ',
     messageStr,
   });
+  // TODO: validate message schema
+
   let requestId;
   try {
     const message = JSON.parse(messageStr);
@@ -705,7 +728,7 @@ export async function handleMessageFromQueue(messageStr) {
         });
         await createIdpResponse(data);
       } catch (error) {
-        callbackToClient(
+        await callbackToClient(
           data.callback_url,
           {
             type: 'response_result',
@@ -741,6 +764,8 @@ export async function handleMessageFromQueue(messageStr) {
           if (tendermint.latestBlockHeight <= message.height) {
             delete requestIdLocks[message.request_id];
             return;
+          } else {
+            await db.removeRequestToProcessReceivedFromMQ(message.request_id);
           }
         }
       } else if (message.type === 'challenge_request') {
@@ -761,6 +786,11 @@ export async function handleMessageFromQueue(messageStr) {
           if (tendermint.latestBlockHeight <= message.height) {
             delete requestIdLocks[message.request_id];
             return;
+          } else {
+            await Promise.all([
+              db.removeRequestToProcessReceivedFromMQ(message.request_id),
+              db.removePublicProofReceivedFromMQ(responseId),
+            ]);
           }
         }
       } else if (message.type === 'idp_response') {
@@ -805,6 +835,8 @@ export async function handleMessageFromQueue(messageStr) {
           if (tendermint.latestBlockHeight <= message.height) {
             delete requestIdLocks[message.request_id];
             return;
+          } else {
+            await db.removeRequestToProcessReceivedFromMQ(message.request_id);
           }
         }
       }
@@ -827,13 +859,14 @@ export async function handleMessageFromQueue(messageStr) {
   }
 }
 
-export async function handleTendermintNewBlockHeaderEvent(
+export async function handleTendermintNewBlockEvent(
   error,
   result,
   missingBlockCount
 ) {
+  if (missingBlockCount == null) return;
   try {
-    const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
+    const height = tendermint.getBlockHeightFromNewBlockEvent(result);
 
     // messages that arrived before 'NewBlock' event
     // including messages between the start of missing block's height
@@ -841,12 +874,7 @@ export async function handleTendermintNewBlockHeaderEvent(
     // (not only just (current height - 1) in case 'NewBlock' events are missing)
     // NOTE: tendermint always create a pair of block. A block with transactions and
     // a block that signs the previous block which indicates that the previous block is valid
-    const fromHeight =
-      missingBlockCount == null
-        ? 1
-        : missingBlockCount === 0
-          ? height - 1
-          : height - missingBlockCount;
+    const fromHeight = height - 1 - missingBlockCount;
     const toHeight = height - 1;
 
     logger.debug({
@@ -863,23 +891,44 @@ export async function handleTendermintNewBlockHeaderEvent(
       requestIdsInTendermintBlock.map(async (requestId) => {
         if (requestIdLocks[requestId]) return;
         const message = await db.getRequestToProcessReceivedFromMQ(requestId);
+        if (message == null) return;
         await processMessage(message);
         await db.removeRequestToProcessReceivedFromMQ(requestId);
       })
     );
-
     db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
 
     // Clean up closed or timed out create identity requests
-    const [blocks, blockResults] = await Promise.all([
-      tendermint.getBlocks(fromHeight, toHeight),
-      tendermint.getBlockResults(fromHeight, toHeight),
-    ]);
-
+    const blocks = await tendermint.getBlocks(fromHeight, toHeight);
     await Promise.all(
       blocks.map(async (block, blockIndex) => {
-        let transactions = tendermint.getTransactionListFromBlockQuery(block);
-        transactions = transactions.filter((transaction, index) => {
+        let transactions = tendermint.getTransactionListFromBlock(block);
+        if (transactions.length === 0) return;
+
+        let requestIdsToCleanUp = await Promise.all(
+          transactions.map(async (transaction) => {
+            // TODO: clear key with smart-contract, eg. request_id or requestId
+            const requestId =
+              transaction.args.request_id || transaction.args.requestId;
+            if (requestId == null) return;
+            if (
+              transaction.fnName === 'CloseRequest' ||
+              transaction.fnName === 'TimeOutRequest'
+            ) {
+              const callbackUrl = await db.getRequestCallbackUrl(requestId);
+              if (!callbackUrl) return;
+              return requestId;
+            }
+          })
+        );
+        const requestIdsToCleanUpWithValue = requestIdsToCleanUp.filter(
+          (requestId) => requestId != null
+        );
+        if (requestIdsToCleanUpWithValue.length === 0) return;
+
+        const height = parseInt(block.header.height);
+        const blockResults = await tendermint.getBlockResults(height, height);
+        requestIdsToCleanUp.filter((requestId, index) => {
           const deliverTxResult =
             blockResults[blockIndex].results.DeliverTx[index];
           const successTag = deliverTxResult.tags.find(
@@ -890,27 +939,11 @@ export async function handleTendermintNewBlockHeaderEvent(
           }
           return false;
         });
-        // const height = parseInt(block.block.header.height);
-        let requestIdsToCleanUp = [];
 
-        transactions.forEach((transaction) => {
-          // TODO: clear key with smart-contract, eg. request_id or requestId
-          const requestId =
-            transaction.args.request_id || transaction.args.requestId;
-          if (requestId == null) return;
-          if (
-            transaction.fnName === 'CloseRequest' ||
-            transaction.fnName === 'TimeOutRequest'
-          ) {
-            requestIdsToCleanUp.push(requestId);
-          }
-        });
         requestIdsToCleanUp = [...new Set(requestIdsToCleanUp)];
 
         await Promise.all(
           requestIdsToCleanUp.map(async (requestId) => {
-            const callbackUrl = await db.getRequestCallbackUrl(requestId);
-            if (!callbackUrl) return;
             db.removeRequestCallbackUrl(requestId);
             db.removeRequestIdReferenceIdMappingByRequestId(requestId);
             db.removeRequestData(requestId);
@@ -928,7 +961,7 @@ export async function handleTendermintNewBlockHeaderEvent(
     logger.error(err.getInfoForLog());
     await common.notifyError({
       callbackUrl: callbackUrls.error_url,
-      action: 'handleTendermintNewBlockHeaderEvent',
+      action: 'handleTendermintNewBlockEvent',
       error: err,
     });
   }

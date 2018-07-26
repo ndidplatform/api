@@ -95,6 +95,20 @@ export function getErrorCallbackUrl() {
   return callbackUrls.error_url;
 }
 
+export function getShouldRetryFn(fnName) {
+  switch (fnName) {
+    default:
+      return function noop() {};
+  }
+}
+
+export function getResponseCallbackFn(fnName) {
+  switch (fnName) {
+    default:
+      return function noop() {};
+  }
+}
+
 /**
  *
  * @param {string} requestId
@@ -216,13 +230,13 @@ async function processRequestUpdate(requestId, height) {
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
     // since the request is no longer going to have further events
     // (the request has reached its end state)
-    db.removeRequestCallbackUrl(requestId);
-    db.removeRequestIdReferenceIdMappingByRequestId(requestId);
-    db.removeRequestData(requestId);
-    db.removeIdpResponseValidList(requestId);
-    db.removeTimeoutScheduler(requestId);
-    clearTimeout(common.timeoutScheduler[requestId]);
-    delete common.timeoutScheduler[requestId];
+    await Promise.all([
+      db.removeRequestCallbackUrl(requestId),
+      db.removeRequestIdReferenceIdMappingByRequestId(requestId),
+      db.removeRequestData(requestId),
+      db.removeIdpResponseValidList(requestId),
+      common.removeTimeoutScheduler(requestId),
+    ]);
   }
 }
 
@@ -257,16 +271,15 @@ function isAllIdpRespondedAndValid({ requestStatus, responseValidList }) {
   return false;
 }
 
-export async function handleTendermintNewBlockHeaderEvent(
+export async function handleTendermintNewBlockEvent(
   error,
   result,
   missingBlockCount
 ) {
   if (missingBlockCount == null) return;
   try {
-    const height = tendermint.getBlockHeightFromNewBlockHeaderEvent(result);
-    const fromHeight =
-      missingBlockCount === 0 ? height - 1 : height - missingBlockCount;
+    const height = tendermint.getBlockHeightFromNewBlockEvent(result);
+    const fromHeight = height - 1 - missingBlockCount;
     const toHeight = height - 1;
 
     //loop through all those block before, and verify all proof
@@ -285,49 +298,67 @@ export async function handleTendermintNewBlockHeaderEvent(
         const responseId = requestId + ':' + idpId;
         if (challengeRequestProcessLocks[responseId]) return;
         const publicProof = await db.getPublicProofReceivedFromMQ(responseId);
-        await common.handleChallengeRequest(responseId, publicProof);
+        if (publicProof == null) return;
+        await common.handleChallengeRequest({
+          request_id: requestId,
+          idp_id: idpId,
+          public_proof: publicProof,
+        });
+        await db.removePublicProofReceivedFromMQ(responseId);
       })
     );
     db.removeExpectedIdpPublicProofInBlockList(fromHeight, toHeight);
 
-    const [blocks, blockResults] = await Promise.all([
-      tendermint.getBlocks(fromHeight, toHeight),
-      tendermint.getBlockResults(fromHeight, toHeight),
-    ]);
+    const blocks = await tendermint.getBlocks(fromHeight, toHeight);
     await Promise.all(
       blocks.map(async (block, blockIndex) => {
-        let transactions = tendermint.getTransactionListFromBlockQuery(block);
-        transactions = transactions.filter((transaction, index) => {
-          const deliverTxResult =
-            blockResults[blockIndex].results.DeliverTx[index];
-          const successTag = deliverTxResult.tags.find(
-            (tag) => tag.key === successBase64
-          );
-          if (successTag) {
-            return successTag.value === trueBase64;
-          }
-          return false;
-        });
-        const height = parseInt(block.block.header.height);
-        let requestIdsToProcessUpdate = [];
+        let transactions = tendermint.getTransactionListFromBlock(block);
+        if (transactions.length === 0) return;
 
-        transactions.forEach((transaction) => {
-          // TODO: clear key with smart-contract, eg. request_id or requestId
-          const requestId =
-            transaction.args.request_id || transaction.args.requestId;
-          if (requestId == null) return;
-          if (transaction.fnName === 'DeclareIdentityProof') return;
-          requestIdsToProcessUpdate.push(requestId);
-        });
+        let requestIdsToProcessUpdate = await Promise.all(
+          transactions.map(async (transaction) => {
+            // TODO: clear key with smart-contract, eg. request_id or requestId
+            const requestId =
+              transaction.args.request_id || transaction.args.requestId;
+            if (requestId == null) return;
+            if (transaction.fnName === 'DeclareIdentityProof') return;
+
+            const callbackUrl = await db.getRequestCallbackUrl(requestId);
+            if (!callbackUrl) return; // This request does not concern this RP
+
+            return requestId;
+          })
+        );
+        const requestIdsToProcessUpdateWithValue = requestIdsToProcessUpdate.filter(
+          (requestId) => requestId != null
+        );
+        if (requestIdsToProcessUpdateWithValue.length === 0) return;
+
+        const height = parseInt(block.header.height);
+        const blockResults = await tendermint.getBlockResults(height, height);
+        requestIdsToProcessUpdate = requestIdsToProcessUpdate.filter(
+          (requestId, index) => {
+            const deliverTxResult =
+              blockResults[blockIndex].results.DeliverTx[index];
+            const successTag = deliverTxResult.tags.find(
+              (tag) => tag.key === successBase64
+            );
+            if (successTag) {
+              return successTag.value === trueBase64;
+            }
+            return false;
+          }
+        );
+
         requestIdsToProcessUpdate = [...new Set(requestIdsToProcessUpdate)];
 
         await Promise.all(
-          requestIdsToProcessUpdate.map(async (requestId) => {
-            await processRequestUpdate(requestId, height);
-            db.removeExpectedIdpResponseNodeIdInBlockList(height);
-            db.removeExpectedDataSignInBlockList(height);
-          })
+          requestIdsToProcessUpdate.map((requestId) =>
+            processRequestUpdate(requestId, height)
+          )
         );
+        db.removeExpectedIdpResponseNodeIdInBlockList(height);
+        db.removeExpectedDataSignInBlockList(height);
       })
     );
   } catch (error) {
@@ -338,7 +369,7 @@ export async function handleTendermintNewBlockHeaderEvent(
     logger.error(err.getInfoForLog());
     await common.notifyError({
       callbackUrl: callbackUrls.error_url,
-      action: 'handleTendermintNewBlockHeaderEvent',
+      action: 'handleTendermintNewBlockEvent',
       error: err,
     });
   }
@@ -388,7 +419,7 @@ async function sendRequestToAS(requestData, height) {
 
   const dataToSendByNodeId = {};
   await Promise.all(
-    requestData.data_request_list.map(async (data_request) => {
+    requestData.data_request_list.map(async (data_request, index) => {
       const receivers = await getASReceiverList(data_request);
       if (receivers.length === 0) {
         logger.error({
@@ -401,6 +432,7 @@ async function sendRequestToAS(requestData, height) {
       const serviceDataRequest = {
         service_id: data_request.service_id,
         request_params: data_request.request_params,
+        request_params_salt: requestData.data_request_params_salt_list[index],
       };
       receivers.forEach((receiver) => {
         if (dataToSendByNodeId[receiver.node_id]) {
@@ -428,11 +460,11 @@ async function sendRequestToAS(requestData, height) {
           namespace: requestData.namespace,
           identifier: requestData.identifier,
           service_data_request_list,
-          rp_id: requestData.rp_id,
           request_message: requestData.request_message,
+          request_message_salt: requestData.request_message_salt,
           challenge,
-          secretSalt: requestData.secretSalt,
           privateProofObjectList: requestData.privateProofObjectList,
+          rp_id: requestData.rp_id,
           height,
         })
     )
@@ -497,6 +529,8 @@ export async function handleMessageFromQueue(messageStr) {
     message: 'Message from MQ',
     messageStr,
   });
+  // TODO: validate message schema
+
   let requestId;
   try {
     const message = JSON.parse(messageStr);
@@ -522,9 +556,15 @@ export async function handleMessageFromQueue(messageStr) {
         if (tendermint.latestBlockHeight <= message.height) {
           delete challengeRequestProcessLocks[responseId];
           return;
+        } else {
+          await db.removePublicProofReceivedFromMQ(responseId);
         }
       }
-      await common.handleChallengeRequest(responseId, message.public_proof);
+      await common.handleChallengeRequest({
+        request_id: message.request_id,
+        idp_id: message.idp_id,
+        public_proof: message.public_proof,
+      });
       delete challengeRequestProcessLocks[responseId];
     } else if (message.type === 'idp_response') {
       const callbackUrl = await db.getRequestCallbackUrl(message.request_id);
@@ -581,6 +621,8 @@ export async function handleMessageFromQueue(messageStr) {
         if (tendermint.latestBlockHeight <= message.height) {
           delete idpResponseProcessLocks[responseId];
           return;
+        } else {
+          await db.removePrivateProofReceivedFromMQ(responseId);
         }
       }
 
@@ -647,6 +689,8 @@ export async function handleMessageFromQueue(messageStr) {
         source_node_id: message.as_id,
         service_id: message.service_id,
         source_signature: message.signature,
+        signature_sign_method: 'RSA-SHA256',
+        data_salt: message.data_salt,
         data: message.data,
       });
 
@@ -675,6 +719,7 @@ export async function handleMessageFromQueue(messageStr) {
         serviceId: message.service_id,
         nodeId: message.as_id,
         signature: message.signature,
+        dataSalt: message.data_salt,
         data: message.data,
       });
       delete asDataResponseProcessLocks[asResponseId];
@@ -694,7 +739,7 @@ export async function handleMessageFromQueue(messageStr) {
   }
 }
 
-async function isDataSignatureValid(asNodeId, signature, data) {
+async function isDataSignatureValid(asNodeId, signature, salt, data) {
   const publicKeyObj = await tendermintNdid.getNodePubKey(asNodeId);
   if (publicKeyObj == null) return;
   if (publicKeyObj.public_key == null) return;
@@ -704,15 +749,10 @@ async function isDataSignatureValid(asNodeId, signature, data) {
     asNodeId,
     asNodePublicKey: publicKeyObj.public_key,
     signature,
+    salt,
     data,
   });
-  if (
-    !utils.verifySignature(
-      signature,
-      publicKeyObj.public_key,
-      JSON.stringify(data)
-    )
-  ) {
+  if (!utils.verifySignature(signature, publicKeyObj.public_key, data + salt)) {
     logger.warn({
       message: 'Data signature from AS is not valid',
       signature,
@@ -746,6 +786,7 @@ async function checkAsDataSignaturesAndSetReceived(requestId, metadataList) {
         serviceId,
         nodeId: asId,
         signature: data.source_signature,
+        dataSalt: data.data_salt,
         data: data.data,
       });
     })
@@ -757,6 +798,7 @@ async function processAsData({
   serviceId,
   nodeId,
   signature,
+  dataSalt,
   data,
 }) {
   logger.debug({
@@ -765,6 +807,7 @@ async function processAsData({
     serviceId,
     nodeId,
     signature,
+    dataSalt,
     data,
   });
 
@@ -777,7 +820,14 @@ async function processAsData({
   if (signatureFromBlockchain == null) return;
   // TODO: if signature is invalid or mismatch then delete data from cache
   if (signature !== signatureFromBlockchain) return;
-  if (!(await isDataSignatureValid(nodeId, signatureFromBlockchain, data))) {
+  if (
+    !(await isDataSignatureValid(
+      nodeId,
+      signatureFromBlockchain,
+      dataSalt,
+      data
+    ))
+  ) {
     return;
   }
 

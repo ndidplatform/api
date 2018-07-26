@@ -121,6 +121,14 @@ export default {
     code: 10023,
     message: 'Malformed message format from message queue',
   },
+  INVALID_RESPONSES: {
+    code: 10024,
+    message: 'One or more responses from IdP are invalid (Invalid signature or ZK proof)',
+  },
+  REQUEST_INTEGRITY_CHECK_FAILED: {
+    code: 10025,
+    message: 'Request integrity check failed'
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
@@ -281,6 +289,26 @@ export default {
     code: 20031,
     message:
       'Request could not be found / This node has not received the request from message queue',
+    clientError: true,
+  },
+  INVALID_HTTP_RESPONSE_STATUS_CODE: {
+    code: 20032,
+    message: 'Invalid HTTP response status code',
+    clientError: true,
+  },
+  CANNOT_PARSE_JSON: {
+    code: 20033,
+    message: 'Cannot parse string to JSON',
+    clientError: true,
+  },
+  MISSING_DATA_IN_AS_DATA_RESPONSE: {
+    code: 20034,
+    message: 'Missing data in AS data response',
+    clientError: true,
+  },
+  INVALID_DATA_TYPE_IN_AS_DATA_RESPONSE: {
+    code: 20035,
+    message: 'Invalid data type in AS data response. Expected string.',
     clientError: true,
   },
 
@@ -502,7 +530,8 @@ export default {
   },
   ABCI_REGISTER_SERVICE_UNAUTHORIZED: {
     code: 25028,
-    message: 'Unauthorized to register a service (NDID may have not granted you the right to register this service)',
+    message:
+      'Unauthorized to register a service (NDID may have not granted you the right to register this service)',
     clientError: true,
   },
 

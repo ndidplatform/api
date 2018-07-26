@@ -25,24 +25,32 @@ import fetch from 'node-fetch';
 import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 
+import logger from '../logger';
 import { tendermintAddress } from '../config';
 
 async function httpUriCall(method, params) {
-  const queryString = params.reduce((paramsString, param) => {
-    if (param.key == null || param.value == null) {
-      return paramsString;
-    }
-    const uriEncodedParamValue = encodeURIComponent(param.value);
-    if (paramsString !== '') {
-      return paramsString + `&${param.key}="${uriEncodedParamValue}"`;
-    }
-    return paramsString + `${param.key}="${uriEncodedParamValue}"`;
-  }, '');
-
   let uri = `http://${tendermintAddress}/${method}`;
-  if (params.length > 0) {
-    uri = uri + `?${queryString}`;
+  if (params != null) {
+    const queryString = params.reduce((paramsString, param) => {
+      if (param.key == null || param.value == null) {
+        return paramsString;
+      }
+      const uriEncodedParamValue = encodeURIComponent(param.value);
+      if (paramsString !== '') {
+        return paramsString + `&${param.key}="${uriEncodedParamValue}"`;
+      }
+      return paramsString + `${param.key}="${uriEncodedParamValue}"`;
+    }, '');
+
+    if (params.length > 0) {
+      uri = uri + `?${queryString}`;
+    }
   }
+
+  logger.debug({
+    message: 'HTTP call to Tendermint',
+    uri,
+  });
 
   try {
     const response = await fetch(uri);

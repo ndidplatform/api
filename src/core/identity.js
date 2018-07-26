@@ -385,8 +385,6 @@ async function createNewIdentityInternalAsync(
       exist = await isIdentityExist({ namespace, identifier, ial });
     }
 
-    // TODO: Check for duplicate accessor
-
     await common.createRequest(
       {
         request_id,
@@ -551,6 +549,13 @@ async function createNewIdentityInternalAsync(
         true
       );
     }
+
+    await Promise.all([
+      db.removeCallbackUrlByReferenceId(reference_id),
+      db.removeReferenceIdByRequestId(request_id),
+      db.removeOnboardDataByReferenceId(request_id),
+      db.removeIdentityFromRequestId(request_id),
+    ]);
 
     throw error;
   }

@@ -27,5 +27,6 @@ ENV TERM=xterm-256color
 WORKDIR /api
 
 RUN npm run build
+RUN npm prune --production
 
 ENTRYPOINT [ "/api/docker/start-api.sh" ]

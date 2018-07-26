@@ -24,6 +24,8 @@ import path from 'path';
 import fs from 'fs';
 import { EventEmitter } from 'events';
 
+import { ExponentialBackoff } from 'simple-backoff';
+
 import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 import logger from '../logger';
@@ -34,7 +36,10 @@ import { convertAbciAppCodeToErrorType } from './abci_app_code';
 import * as utils from '../utils';
 import * as config from '../config';
 
-let handleTendermintNewBlockHeaderEvent;
+let handleTendermintNewBlockEvent;
+
+const cacheBlocks = {};
+let lastKnownAppHash;
 
 export let syncing = null;
 export let connected = false;
@@ -83,8 +88,8 @@ function saveLatestBlockHeight(height) {
   }
 }
 
-export function setTendermintNewBlockHeaderEventHandler(handler) {
-  handleTendermintNewBlockHeaderEvent = handler;
+export function setTendermintNewBlockEventHandler(handler) {
+  handleTendermintNewBlockEvent = handler;
 }
 
 /**
@@ -95,8 +100,15 @@ async function pollStatusUntilSynced() {
     message: 'Waiting for Tendermint to finish syncing blockchain',
   });
   if (syncing == null || syncing === true) {
+    const backoff = new ExponentialBackoff({
+      min: 1000,
+      max: config.maxIntervalTendermintSyncCheck,
+      factor: 2,
+      jitter: 0,
+    });
+
     for (;;) {
-      const status = await tendermintWsClient.getStatus();
+      const status = await tendermintHttpClient.status();
       syncing = status.sync_info.catching_up;
       if (syncing === false) {
         logger.info({
@@ -105,7 +117,7 @@ async function pollStatusUntilSynced() {
         eventEmitter.emit('ready');
         break;
       }
-      await utils.wait(1000);
+      await utils.wait(backoff.next());
     }
   }
 }
@@ -115,6 +127,7 @@ export const tendermintWsClient = new TendermintWsClient();
 tendermintWsClient.on('connected', () => {
   connected = true;
   pollStatusUntilSynced();
+  tendermintWsClient.subscribeToNewBlockEvent();
 });
 
 tendermintWsClient.on('disconnected', () => {
@@ -122,16 +135,19 @@ tendermintWsClient.on('disconnected', () => {
   syncing = null;
 });
 
-tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
+tendermintWsClient.on('newBlock#event', async (error, result) => {
   if (syncing !== false) {
     return;
   }
-  const blockHeight = parseInt(result.data.value.header.height);
+  const blockHeight = getBlockHeightFromNewBlockEvent(result);
+  cacheBlocks[blockHeight] = result.data.value.block;
 
   logger.debug({
-    message: 'Tendermint NewBlockHeader event received',
+    message: 'Tendermint NewBlock event received',
     blockHeight,
   });
+
+  const appHash = getAppHashFromNewBlockEvent(result);
 
   if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
     const lastKnownBlockHeight = latestBlockHeight;
@@ -141,13 +157,20 @@ tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
       lastKnownBlockHeight == null
         ? null
         : blockHeight - lastKnownBlockHeight - 1;
-    if (handleTendermintNewBlockHeaderEvent) {
-      await handleTendermintNewBlockHeaderEvent(
-        error,
-        result,
-        missingBlockCount
-      );
+    if (missingBlockCount > 0) {
+      logger.debug({
+        message: 'Tendermint NewBlock event missed',
+        missingBlockCount,
+      });
     }
+
+    if (lastKnownAppHash !== appHash) {
+      if (handleTendermintNewBlockEvent) {
+        await handleTendermintNewBlockEvent(error, result, missingBlockCount);
+        delete cacheBlocks[blockHeight - 1];
+      }
+    }
+    lastKnownAppHash = appHash;
     saveLatestBlockHeight(blockHeight);
   }
 });
@@ -159,12 +182,24 @@ tendermintWsClient.on('newBlockHeader#event', async (error, result) => {
  * @returns {Promise<Object[]>}
  */
 export async function getBlocks(fromHeight, toHeight) {
+  logger.debug({
+    message: 'Get blocks from Tendermint',
+    fromHeight,
+    toHeight,
+  });
   const heights = Array.from(
     { length: toHeight - fromHeight + 1 },
     (v, i) => i + fromHeight
   );
   const blocks = await Promise.all(
-    heights.map((height) => tendermintWsClient.getBlock(height))
+    heights.map(async (height) => {
+      if (cacheBlocks[height]) {
+        return cacheBlocks[height];
+      } else {
+        const result = await tendermintHttpClient.block(height);
+        return result.block;
+      }
+    })
   );
   return blocks;
 }
@@ -176,12 +211,17 @@ export async function getBlocks(fromHeight, toHeight) {
  * @returns {Promise<Object[]>}
  */
 export async function getBlockResults(fromHeight, toHeight) {
+  logger.debug({
+    message: 'Get block results from Tendermint',
+    fromHeight,
+    toHeight,
+  });
   const heights = Array.from(
     { length: toHeight - fromHeight + 1 },
     (v, i) => i + fromHeight
   );
   const results = await Promise.all(
-    heights.map((height) => tendermintWsClient.getBlockResults(height))
+    heights.map((height) => tendermintHttpClient.blockResults(height))
   );
   return results;
 }
@@ -331,7 +371,7 @@ export async function transact(fnName, data, nonce, useMasterKey) {
     '|' +
     nonce +
     '|' +
-    (await utils.createSignature(data, nonce, useMasterKey)) +
+    (await utils.createSignature(dataStr + nonce, useMasterKey)) +
     '|' +
     Buffer.from(config.nodeId).toString('base64');
 
@@ -351,9 +391,9 @@ export async function transact(fnName, data, nonce, useMasterKey) {
   }
 }
 
-export function getTransactionListFromBlockQuery(result) {
-  const txs = result.block.data.txs; // array of transactions in the block base64 encoded
-  //const height = result.data.data.block.header.height;
+export function getTransactionListFromBlock(block) {
+  const txs = block.data.txs; // array of transactions in the block base64 encoded
+  // const height = parseInt(block.header.height);
 
   if (txs == null) {
     return [];
@@ -374,4 +414,12 @@ export function getTransactionListFromBlockQuery(result) {
 
 export function getBlockHeightFromNewBlockHeaderEvent(result) {
   return parseInt(result.data.value.header.height);
+}
+
+export function getBlockHeightFromNewBlockEvent(result) {
+  return parseInt(result.data.value.block.header.height);
+}
+
+export function getAppHashFromNewBlockEvent(result) {
+  return result.data.value.block.header.app_hash;
 }

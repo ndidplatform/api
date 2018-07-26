@@ -350,7 +350,7 @@ export function removeChallengeFromRequestId(requestId) {
 
 export function getPrivateProofReceivedFromMQ(responseId) {
   return db.get({
-    name: 'proofReceivedFromMQ',
+    name: 'privateProofReceivedFromMQ',
     keyName: 'responseId',
     key: responseId,
     valueName: 'privateProofObject',
@@ -359,7 +359,7 @@ export function getPrivateProofReceivedFromMQ(responseId) {
 
 export function setPrivateProofReceivedFromMQ(responseId, privateProofObject) {
   return db.set({
-    name: 'proofReceivedFromMQ',
+    name: 'privateProofReceivedFromMQ',
     keyName: 'responseId',
     key: responseId,
     valueName: 'privateProofObject',
@@ -367,9 +367,9 @@ export function setPrivateProofReceivedFromMQ(responseId, privateProofObject) {
   });
 }
 
-export function removeProofReceivedFromMQ(responseId) {
+export function removePrivateProofReceivedFromMQ(responseId) {
   return db.remove({
-    name: 'proofReceivedFromMQ',
+    name: 'privateProofReceivedFromMQ',
     keyName: 'responseId',
     key: responseId,
   });
@@ -377,7 +377,7 @@ export function removeProofReceivedFromMQ(responseId) {
 
 export function getPublicProofReceivedFromMQ(responseId) {
   return db.get({
-    name: 'proofReceivedFromMQ',
+    name: 'publicProofReceivedFromMQ',
     keyName: 'responseId',
     key: responseId,
     valueName: 'publicProofArray',
@@ -386,11 +386,19 @@ export function getPublicProofReceivedFromMQ(responseId) {
 
 export function setPublicProofReceivedFromMQ(responseId, publicProofArray) {
   return db.set({
-    name: 'proofReceivedFromMQ',
+    name: 'publicProofReceivedFromMQ',
     keyName: 'responseId',
     key: responseId,
     valueName: 'publicProofArray',
     value: publicProofArray,
+  });
+}
+
+export function removePublicProofReceivedFromMQ(responseId) {
+  return db.remove({
+    name: 'publicProofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
   });
 }
 
@@ -574,7 +582,7 @@ export function getAllDuplicateMessageTimeout() {
 }
 
 export function getDuplicateMessageTimeout(id) {
-  return db.get({ 
+  return db.get({
     name: 'duplicateMessageTimeout',
     keyName: 'id',
     key: id,
