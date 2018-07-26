@@ -76,26 +76,29 @@ async function registerMessageQueueAddress() {
   }
 }
 
-if (role === 'rp' || role === 'idp' || role === 'as') {
-  tendermint.eventEmitter.on('ready', async () => {
-    if (
-      !config.useExternalCryptoService ||
-      (config.useExternalCryptoService &&
-        externalCryptoService.isCallbackUrlsSet())
-    ) {
-      await registerMessageQueueAddress();
-      await tendermint.loadExpectedTxFromDB();
+async function initialize() {
+  if (role === 'rp' || role === 'idp' || role === 'as') {
+    await registerMessageQueueAddress();
+  }
+  await tendermint.loadExpectedTxFromDB();
+}
+
+tendermint.eventEmitter.on('ready', async () => {
+  if (
+    !config.useExternalCryptoService ||
+    (config.useExternalCryptoService &&
+      externalCryptoService.isCallbackUrlsSet())
+  ) {
+    await initialize();
+  }
+});
+
+if (config.useExternalCryptoService) {
+  externalCryptoService.eventEmitter.on('allCallbacksSet', async () => {
+    if (tendermint.syncing === false) {
+      await initialize();
     }
   });
-
-  if (config.useExternalCryptoService) {
-    externalCryptoService.eventEmitter.on('allCallbacksSet', async () => {
-      if (tendermint.syncing === false) {
-        await registerMessageQueueAddress();
-        await tendermint.loadExpectedTxFromDB();
-      }
-    });
-  }
 }
 
 function getFunction(fnName) {
