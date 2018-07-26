@@ -154,8 +154,6 @@ export const callbackRetryTimeout =
     ? 600
     : parseInt(process.env.CALLBACK_RETRY_TIMEOUT);
 
-export const allowDebugAPI = process.env.ALLOW_DEBUG_API === 'true';
-
 export const maxIntervalTendermintSyncCheck = process.env
   .MAX_INTERVAL_TENDERMINT_SYNC_CHECK
   ? parseInt(process.env.MAX_INTERVAL_TENDERMINT_SYNC_CHECK)

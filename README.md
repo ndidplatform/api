@@ -63,12 +63,14 @@
 - `CALLBACK_RETRY_TIMEOUT`: Callback retry timeout in seconds. Only applies to some callbacks (that do not have shouldRetry function check e.g. request status update callback to RP client) [Default: `600`]
 - `REGISTER_MQ_AT_STARTUP`: Flag to tell API node whether to register message queue address when start (will override previously registered address) [Default: `true` for RP, IdP, and AS roles, `false` for NDID role]
 - `MAX_INTERVAL_TENDERMINT_SYNC_CHECK`: Maximum time interval in milliseconds for polling Tendermint syncing status on server start [Default: `15000`]
-- `ALLOW_DEBUG_API`: Flag to toggle debug API
-  - POST `/debug/tmQuery/:ABCI_FunctionName` with BODY to pass to ABCI app
-  - POST `/debug/tmTransact/:ABCI_FunctionName` with BODY to pass to ABCI app with extra 3 parameter (not pass to ABCI)
-    - `debug_callbackUrl`: Callback url to receive result (MUST SET `debug_sync` to true)
-    - `debug_useMasterKey`: Use master key to sign tx or not (boolean)
-    - `debug_sync`: Wait for tx commit, or will callback (boolean)
+
+Debug APIs (Only in development mode)
+
+- POST `/debug/tmQuery/:ABCI_FunctionName` with BODY to pass to ABCI app
+- POST `/debug/tmTransact/:ABCI_FunctionName` with BODY to pass to ABCI app with extra 3 parameter (not pass to ABCI)
+  - `debug_callbackUrl`: Callback url to receive result (MUST SET `debug_sync` to true)
+  - `debug_useMasterKey`: Use master key to sign tx or not (boolean)
+  - `debug_sync`: Wait for tx commit, or will callback (boolean)
 
 **_Examples_**
 

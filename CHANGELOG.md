@@ -6,6 +6,7 @@ BREAKING CHANGES:
 
 - Signature in IdP response must sign `request_message` concatenate with provided `request_message_salt`.
 - Include request message salt when verifying IdP response signature.
+- Remove `ALLOW_DEBUG_API` environment variable option. Debug APIs are available in development mode and inaccessible in production environment.
 
 IMPROVEMENTS:
 

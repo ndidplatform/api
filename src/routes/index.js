@@ -82,8 +82,6 @@ if (config.env === 'development') {
 
     next();
   });
-}
-if (config.allowDebugAPI) {
   router.use('/debug', debugRouter);
 }
 
