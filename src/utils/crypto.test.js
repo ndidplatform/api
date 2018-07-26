@@ -29,12 +29,15 @@ const expect = chai.expect;
 describe('Test crypto functions', () => {
   it('should SHA-256 hash correctly', () => {
     // action
-    const hashed = cryptoUtils.hash('test');
-    // expect
-    // return type is string
-    expect(hashed).to.be.a('string');
-    // return value is base64
-    expect(hashed).to.match(/[A-Za-z0-9+/=]/);
+    const hashedBuffer = cryptoUtils.sha256('test');
+    // return type is Buffer
+    expect(hashedBuffer).to.be.instanceof(Buffer);
+    expect(hashedBuffer.length).to.equal(32);
+
+    const hashedBuffer2 = cryptoUtils.sha256('test2');
+    expect(hashedBuffer2.length).to.equal(32);
+
+    expect(hashedBuffer.equals(hashedBuffer2)).to.equal(false);
   });
 
   it('should encrypt with public key and decrypt with private key correctly', () => {
