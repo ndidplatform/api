@@ -190,5 +190,20 @@ export async function registerOrUpdateASServiceInternalAsyncAfterBlockchain(
       options: arguments[2],
       error,
     });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'add_or_update_service_result',
+          success: false,
+          reference_id,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+    } else {
+      throw error;
+    }
   }
 }
