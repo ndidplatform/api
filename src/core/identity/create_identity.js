@@ -547,6 +547,8 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
               reference_id,
               callback_url,
               request_id,
+              namespace,
+              identifier,
               secret,
               addAccessor,
               accessor_id,
@@ -568,6 +570,8 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
             reference_id,
             callback_url,
             request_id,
+            namespace,
+            identifier,
             secret,
             addAccessor,
             accessor_id,
@@ -618,6 +622,8 @@ export async function createIdentityInternalAsyncAfterBlockchain(
     reference_id,
     callback_url,
     request_id,
+    namespace,
+    identifier,
     secret,
     addAccessor,
     accessor_id,
@@ -627,6 +633,11 @@ export async function createIdentityInternalAsyncAfterBlockchain(
 ) {
   try {
     if (error) throw error;
+
+    // FIXME: callback for making Tx to blockchain
+    await tendermintNdid.clearRegisterMsqDestinationTimeout(
+      utils.hash(namespace + ':' + identifier)
+    );
 
     if (apiVersion === 1) {
       notifyCreateIdentityResultByCallback({
