@@ -409,6 +409,30 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
         },
         { synchronous: true }
       );
+      await createIdentityInternalAsyncAfterCreateRequestBlockchain(
+        {},
+        {
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          accessor_type,
+          accessor_public_key,
+          accessor_id,
+          ial,
+          addAccessor,
+        },
+        { synchronous, apiVersion },
+        {
+          exist,
+          request_id,
+          sid,
+          hash_id,
+          generated_accessor_id,
+          associated,
+          secret,
+        }
+      );
     }
   } catch (error) {
     logger.error({
@@ -613,6 +637,8 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       requestId: request_id,
       referenceId: reference_id,
     });
+
+    throw error;
   }
 }
 
@@ -634,39 +660,44 @@ export async function createIdentityInternalAsyncAfterBlockchain(
   try {
     if (error) throw error;
 
-    // FIXME: callback for making Tx to blockchain
-    await tendermintNdid.clearRegisterMsqDestinationTimeout(
-      utils.hash(namespace + ':' + identifier)
-    );
-
-    if (apiVersion === 1) {
-      notifyCreateIdentityResultByCallback({
-        reference_id,
-        request_id,
-        success: true,
-        secret,
-      });
-    } else {
-      await callbackToClient(
-        callback_url,
-        {
-          type: 'create_identity_result',
-          success: true,
-          reference_id,
-          request_id,
-          secret,
-        },
-        true
+    const hash_id = utils.hash(namespace + ':' + identifier);
+    if (!synchronous) {
+      await tendermintNdid.clearRegisterMsqDestinationTimeout(
+        hash_id,
+        'identity.createIdentityInternalAsyncAfterClearMqDestTimeout',
+        [
+          {
+            reference_id,
+            callback_url,
+            request_id,
+            namespace,
+            identifier,
+            secret,
+            addAccessor,
+            accessor_id,
+            generated_accessor_id,
+          },
+          { synchronous, apiVersion },
+        ]
       );
-      db.removeCallbackUrlByReferenceId(reference_id);
-      await common.closeRequest(
+    } else {
+      await tendermintNdid.clearRegisterMsqDestinationTimeout(hash_id);
+      await createIdentityInternalAsyncAfterClearMqDestTimeout(
+        {},
         {
+          reference_id,
+          callback_url,
           request_id,
+          namespace,
+          identifier,
+          secret,
+          addAccessor,
+          accessor_id,
+          generated_accessor_id,
         },
-        { synchronous: true }
+        { synchronous, apiVersion }
       );
     }
-    db.removeOnboardDataByReferenceId(reference_id);
   } catch (error) {
     logger.error({
       message: 'Create identity internal async after blockchain error',
@@ -698,6 +729,91 @@ export async function createIdentityInternalAsyncAfterBlockchain(
       requestId: request_id,
       referenceId: reference_id,
     });
+
+    throw error;
+  }
+}
+
+export async function createIdentityInternalAsyncAfterClearMqDestTimeout(
+  { error },
+  {
+    reference_id,
+    callback_url,
+    request_id,
+    namespace,
+    identifier,
+    secret,
+    addAccessor,
+    accessor_id,
+    generated_accessor_id,
+  },
+  { synchronous = true, apiVersion } = {}
+) {
+  try {
+    if (error) throw error;
+
+    if (apiVersion === 1) {
+      notifyCreateIdentityResultByCallback({
+        reference_id,
+        request_id,
+        success: true,
+        secret,
+      });
+    } else {
+      await callbackToClient(
+        callback_url,
+        {
+          type: 'create_identity_result',
+          success: true,
+          reference_id,
+          request_id,
+          secret,
+        },
+        true
+      );
+      db.removeCallbackUrlByReferenceId(reference_id);
+      await common.closeRequest(
+        {
+          request_id,
+        },
+        { synchronous: true }
+      );
+    }
+    db.removeOnboardDataByReferenceId(reference_id);
+  } catch (error) {
+    logger.error({
+      message:
+        'Create identity internal async after clear MQ dest. timeout error',
+      tendermintResult: arguments[0],
+      additionalArgs: arguments[1],
+      options: arguments[2],
+      error,
+    });
+
+    if (!synchronous) {
+      await callbackToClient(
+        callback_url,
+        {
+          type: addAccessor
+            ? 'add_accessor_request_result'
+            : 'create_identity_request_result',
+          success: false,
+          reference_id,
+          request_id,
+          accessor_id:
+            accessor_id != null ? accessor_id : generated_accessor_id,
+          error: getErrorObjectForClient(error),
+        },
+        true
+      );
+    }
+
+    await createIdentityCleanUpOnError({
+      requestId: request_id,
+      referenceId: reference_id,
+    });
+
+    throw error;
   }
 }
 

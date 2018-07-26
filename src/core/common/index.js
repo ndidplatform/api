@@ -129,6 +129,8 @@ export function getFunction(fnName) {
       return identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain;
     case 'identity.checkForExistedIdentityAfterBlockchain':
       return identity.checkForExistedIdentityAfterBlockchain;
+    case 'identity.createIdentityInternalAsyncAfterClearMqDestTimeout':
+      return identity.createIdentityInternalAsyncAfterClearMqDestTimeout;
     default:
       return function noop() {};
   }
