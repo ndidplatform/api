@@ -28,6 +28,7 @@ import CustomError from '../../error/custom_error';
 import errorType from '../../error/type';
 
 import * as tendermintNdid from '../../tendermint/ndid';
+import { getFunction } from '../common';
 import * as utils from '../../utils';
 import * as config from '../../config';
 import * as db from '../../db';
@@ -149,38 +150,108 @@ export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   };
 }
 
-// FIXME: Refactor for broadcast_tx_sync with callback
-export async function isIdentityExist({ namespace, identifier, ial }) {
+export async function checkForExistedIdentity(
+  { namespace, identifier, ial },
+  { callbackFnName, callbackAdditionalArgs } = {}
+) {
   const sid = namespace + ':' + identifier;
   const hash_id = utils.hash(sid);
 
   let exist = await tendermintNdid.checkExistingIdentity(hash_id);
   if (!exist) {
-    try {
-      await tendermintNdid.registerMqDestination({
-        users: [
+    if (callbackFnName != null) {
+      await tendermintNdid.registerMqDestination(
+        {
+          users: [
+            {
+              hash_id,
+              ial,
+              first: true,
+            },
+          ],
+        },
+        'identity.checkForExistedIdentityAfterBlockchain',
+        [
           {
             hash_id,
-            ial,
-            first: true,
+            exist,
           },
-        ],
-      });
-    } catch (error) {
-      if (
-        error.getCode &&
-        error.getCode() === errorType.ABCI_NOT_FIRST_IDP.code
-      ) {
-        logger.debug({
-          message:
-            'Unable to register message queue destination for an identity as the first IdP. Switching to ask for consent mode.',
-          hash_id,
+          {
+            callbackFnName,
+            callbackAdditionalArgs,
+          },
+        ]
+      );
+    } else {
+      try {
+        await tendermintNdid.registerMqDestination({
+          users: [
+            {
+              hash_id,
+              ial,
+              first: true,
+            },
+          ],
         });
-        exist = true;
-      } else {
-        throw error;
+      } catch (error) {
+        if (
+          error.getCode &&
+          error.getCode() === errorType.ABCI_NOT_FIRST_IDP.code
+        ) {
+          logger.debug({
+            message:
+              'Unable to register message queue destination for an identity as the first IdP. Switching to ask for consent mode.',
+            hash_id,
+          });
+          exist = true;
+        } else {
+          throw error;
+        }
       }
+      return exist;
+    }
+  } else {
+    if (callbackFnName != null) {
+      checkForExistedIdentityAfterBlockchain(
+        {},
+        { hash_id, exist },
+        { callbackFnName, callbackAdditionalArgs }
+      );
+    } else {
+      return exist;
     }
   }
-  return exist;
+}
+
+export function checkForExistedIdentityAfterBlockchain(
+  { error },
+  { hash_id, exist },
+  { callbackFnName, callbackAdditionalArgs } = {}
+) {
+  let errorToReturn;
+  if (error) {
+    if (
+      error.getCode &&
+      error.getCode() === errorType.ABCI_NOT_FIRST_IDP.code
+    ) {
+      logger.debug({
+        message:
+          'Unable to register message queue destination for an identity as the first IdP. Switching to ask for consent mode.',
+        hash_id,
+      });
+      exist = true;
+    } else {
+      errorToReturn = error;
+    }
+  }
+  if (callbackFnName != null) {
+    if (callbackAdditionalArgs != null) {
+      getFunction(callbackFnName)(
+        { exist, error: errorToReturn },
+        ...callbackAdditionalArgs
+      );
+    } else {
+      getFunction(callbackFnName)({ exist, error: errorToReturn });
+    }
+  }
 }

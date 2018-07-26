@@ -101,7 +101,7 @@ if (config.useExternalCryptoService) {
   });
 }
 
-function getFunction(fnName) {
+export function getFunction(fnName) {
   switch (fnName) {
     case 'common.createRequestInternalAsyncAfterBlockchain':
       return createRequestInternalAsyncAfterBlockchain;
@@ -121,6 +121,14 @@ function getFunction(fnName) {
       return as.processDataForRPInternalAsyncAfterBlockchain;
     case 'identity.updateIalInternalAsyncAfterBlockchain':
       return identity.updateIalInternalAsyncAfterBlockchain;
+    case 'identity.createIdentityInternalAsyncAfterCreateRequestBlockchain':
+      return identity.createIdentityInternalAsyncAfterCreateRequestBlockchain;
+    case 'identity.createIdentityInternalAsyncAfterBlockchain':
+      return identity.createIdentityInternalAsyncAfterBlockchain;
+    case 'identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain':
+      return identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain;
+    case 'identity.checkForExistedIdentityAfterBlockchain':
+      return identity.checkForExistedIdentityAfterBlockchain;
     default:
       return function noop() {};
   }

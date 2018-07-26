@@ -24,6 +24,7 @@ import {
   getIdpsMsqDestination,
   addTimeoutScheduler,
   removeTimeoutScheduler,
+  getFunction,
 } from '.';
 
 import CustomError from '../../error/custom_error';
@@ -70,7 +71,12 @@ export async function createRequest(
     min_idp,
     request_timeout,
   },
-  { synchronous = false } = {}
+  {
+    synchronous = false,
+    sendCallbackToClient = true,
+    callbackFnName,
+    callbackAdditionalArgs,
+  } = {}
 ) {
   try {
     // existing reference_id, return request ID
@@ -302,7 +308,12 @@ async function createRequestInternalAsync(
     min_idp,
     request_timeout,
   },
-  { synchronous = false } = {},
+  {
+    synchronous = false,
+    sendCallbackToClient = true,
+    callbackFnName,
+    callbackAdditionalArgs,
+  } = {},
   {
     request_id,
     request_message_salt,
@@ -349,7 +360,12 @@ async function createRequestInternalAsync(
             receivers,
             requestData,
           },
-          { synchronous },
+          {
+            synchronous,
+            sendCallbackToClient,
+            callbackFnName,
+            callbackAdditionalArgs,
+          },
         ]
       );
     } else {
@@ -366,7 +382,12 @@ async function createRequestInternalAsync(
           receivers,
           requestData,
         },
-        { synchronous }
+        {
+          synchronous,
+          sendCallbackToClient,
+          callbackFnName,
+          callbackAdditionalArgs,
+        }
       );
     }
   } catch (error) {
@@ -379,17 +400,26 @@ async function createRequestInternalAsync(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
-          type: 'create_request_result',
-          success: false,
-          reference_id,
-          request_id,
-          error: getErrorObjectForClient(error),
-        },
-        true
-      );
+      if (sendCallbackToClient) {
+        await callbackToClient(
+          callback_url,
+          {
+            type: 'create_request_result',
+            success: false,
+            reference_id,
+            request_id,
+            error: getErrorObjectForClient(error),
+          },
+          true
+        );
+      }
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        } else {
+          getFunction(callbackFnName)({ error });
+        }
+      }
     }
 
     await createRequestCleanUpOnError({
@@ -404,7 +434,12 @@ async function createRequestInternalAsync(
 export async function createRequestInternalAsyncAfterBlockchain(
   { height, error },
   { reference_id, callback_url, request_id, min_idp, receivers, requestData },
-  { synchronous = false } = {}
+  {
+    synchronous = false,
+    sendCallbackToClient = true,
+    callbackFnName,
+    callbackAdditionalArgs,
+  } = {}
 ) {
   try {
     if (error) throw error;
@@ -418,16 +453,25 @@ export async function createRequestInternalAsyncAfterBlockchain(
     }
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
-          type: 'create_request_result',
-          success: true,
-          reference_id,
-          request_id,
-        },
-        true
-      );
+      if (sendCallbackToClient) {
+        await callbackToClient(
+          callback_url,
+          {
+            type: 'create_request_result',
+            success: true,
+            reference_id,
+            request_id,
+          },
+          true
+        );
+      }
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)({ height }, ...callbackAdditionalArgs);
+        } else {
+          getFunction(callbackFnName)({ height });
+        }
+      }
     }
   } catch (error) {
     logger.error({
@@ -439,17 +483,26 @@ export async function createRequestInternalAsyncAfterBlockchain(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
-          type: 'create_request_result',
-          success: false,
-          reference_id,
-          request_id,
-          error: getErrorObjectForClient(error),
-        },
-        true
-      );
+      if (sendCallbackToClient) {
+        await callbackToClient(
+          callback_url,
+          {
+            type: 'create_request_result',
+            success: false,
+            reference_id,
+            request_id,
+            error: getErrorObjectForClient(error),
+          },
+          true
+        );
+      }
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        } else {
+          getFunction(callbackFnName)({ error });
+        }
+      }
 
       await createRequestCleanUpOnError({
         requestId: request_id,
