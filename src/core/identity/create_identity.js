@@ -320,6 +320,10 @@ async function createIdentityInternalAsync(
         accessor_group_id,
       });
 
+      await tendermintNdid.clearRegisterMsqDestinationTimeout(
+        utils.hash( namespace + ':' + identifier )
+      );
+
       if (apiVersion === 1) {
         notifyCreateIdentityResultByCallback({
           reference_id,
