@@ -428,14 +428,20 @@ function getBroadcastTxSyncResult(result) {
   });
 
   if (result.code !== 0) {
-    const convertedErrorType = convertAbciAppCodeToErrorType(
-      result.deliver_tx.code
-    );
+    const convertedErrorType = convertAbciAppCodeToErrorType(result.code);
     if (convertedErrorType != null) {
       throw new CustomError({
         message: convertedErrorType.message,
         code: convertedErrorType.code,
         clientError: convertedErrorType.clientError,
+        details: {
+          abciCode: result.code,
+        },
+      });
+    } else {
+      throw new CustomError({
+        message: errorType.TENDERMINT_TRANSACT_ERROR.message,
+        code: errorType.TENDERMINT_TRANSACT_ERROR.code,
         details: {
           abciCode: result.code,
         },
