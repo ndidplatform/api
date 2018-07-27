@@ -318,7 +318,7 @@ export default {
   },
   INVALID_KEY_FORMAT: {
     code: 20036,
-    message: 'Invalid key format',
+    message: 'Invalid or malformed key format',
     clientError: true,
   },
   UNSUPPORTED_KEY_TYPE: {
