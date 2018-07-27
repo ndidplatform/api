@@ -6,7 +6,7 @@ IMPROVEMENTS:
 
 - Separate body too large error into another error type.
 - Increase API body size limit to 3MB.
-- Increase message queue receiving size limit to 5MB.
+- Increase message queue receiving size limit to 5.25MB.
 
 ## 0.5.3 (July 22, 2018)
 
