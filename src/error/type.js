@@ -303,6 +303,11 @@ export default {
     message: 'Invalid data type in AS data response. Expected string.',
     clientError: true,
   },
+  BODY_TOO_LARGE: {
+    code: 20036,
+    message: 'Body size is too large (greater than limit)',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
