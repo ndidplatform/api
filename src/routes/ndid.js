@@ -29,11 +29,18 @@ const router = express.Router();
 
 router.post('/initNDID', async (req, res, next) => {
   try {
-    const { public_key, master_public_key } = req.body;
+    const {
+      public_key,
+      public_key_type,
+      master_public_key,
+      master_public_key_type,
+    } = req.body;
 
     await ndid.initNDID({
       public_key,
+      public_key_type,
       master_public_key,
+      master_public_key_type,
     });
     res.status(204).end();
   } catch (error) {
@@ -56,7 +63,9 @@ router.post('/registerNode', async (req, res, next) => {
       node_id,
       node_name,
       public_key,
+      public_key_type,
       master_public_key,
+      master_public_key_type,
       role,
       max_aal,
       max_ial,
@@ -67,7 +76,9 @@ router.post('/registerNode', async (req, res, next) => {
         node_id,
         node_name,
         public_key,
+        public_key_type,
         master_public_key,
+        master_public_key_type,
         role,
         max_aal,
         max_ial,
@@ -86,8 +97,6 @@ router.post('/updateNode', async (req, res, next) => {
     const {
       node_id,
       node_name,
-      public_key,
-      master_public_key,
       // role,
       max_aal,
       max_ial,
@@ -97,8 +106,6 @@ router.post('/updateNode', async (req, res, next) => {
       {
         node_id,
         node_name,
-        public_key,
-        master_public_key,
         // role,
         max_aal,
         max_ial,

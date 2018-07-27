@@ -12,6 +12,7 @@ IMPROVEMENTS:
 
 - Use `/broadcast_tx_sync` when making a transaction to Tendermint to allow more than 2 minutes (Tendermint's default `/broadcast_tx_commit` timeout) commit time.
 - Support request timeout of more than 2147483647 (or 32-bit integer) milliseconds (>24.8 days).
+- Validate public key format and type (PEM format, RSA type is allowed).
 
 BUG FIXES:
 

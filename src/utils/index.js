@@ -206,8 +206,8 @@ export function generateIdentityProof(data) {
 function extractParameterFromPublicKey(publicKey) {
   const parsedKey = parseKey(publicKey);
   return {
-    n: stringToBigInt(parsedKey.modulus.toBuffer().toString('base64')),
-    e: bignum(parsedKey.publicExponent.toString(10)),
+    n: stringToBigInt(parsedKey.data.modulus.toBuffer().toString('base64')),
+    e: bignum(parsedKey.data.publicExponent.toString(10)),
   };
 }
 

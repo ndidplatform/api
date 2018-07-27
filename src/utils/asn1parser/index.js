@@ -55,6 +55,9 @@ function fixProc(okey, password) {
 }
 
 export function parseKey(buffer) {
+  if (buffer == null) {
+    throw new Error('Invalid param');
+  }
   var password;
   if (typeof buffer === 'object' && !Buffer.isBuffer(buffer)) {
     password = buffer.passphrase;
@@ -77,10 +80,13 @@ export function parseKey(buffer) {
       subtype = ndata.algorithm.algorithm.join('.');
       switch (subtype) {
         case '1.2.840.113549.1.1.1':
-          return structure.RSAPublicKey.decode(
-            ndata.subjectPublicKey.data,
-            'der'
-          );
+          return {
+            type: 'rsa',
+            data: structure.RSAPublicKey.decode(
+              ndata.subjectPublicKey.data,
+              'der'
+            ),
+          };
         case '1.2.840.10045.2.1':
           ndata.subjectPrivateKey = ndata.subjectPublicKey;
           return {
@@ -97,7 +103,7 @@ export function parseKey(buffer) {
             data: ndata.algorithm.params,
           };
         default:
-          throw new Error('unknown key id ' + subtype);
+          throw new Error('Unknown OID: ' + subtype);
       }
     // case 'ENCRYPTED PRIVATE KEY':
     //   data = structure.EncryptedPrivateKey.decode(data, 'der');
@@ -107,9 +113,16 @@ export function parseKey(buffer) {
       subtype = ndata.algorithm.algorithm.join('.');
       switch (subtype) {
         case '1.2.840.113549.1.1.1':
-          return structure.RSAPrivateKey.decode(ndata.subjectPrivateKey, 'der');
+          return {
+            type: 'rsa',
+            privateKey: structure.RSAPrivateKey.decode(
+              ndata.subjectPrivateKey,
+              'der'
+            ),
+          };
         case '1.2.840.10045.2.1':
           return {
+            type: 'ec',
             curve: ndata.algorithm.curve,
             privateKey: structure.ECPrivateKey.decode(
               ndata.subjectPrivateKey,
@@ -126,12 +139,18 @@ export function parseKey(buffer) {
             params: ndata.algorithm.params,
           };
         default:
-          throw new Error('unknown key id ' + subtype);
+          throw new Error('Unknown OID: ' + subtype);
       }
     case 'RSA PUBLIC KEY':
-      return structure.RSAPublicKey.decode(data, 'der');
+      return {
+        type: 'rsa',
+        data: structure.RSAPublicKey.decode(data, 'der'),
+      };
     case 'RSA PRIVATE KEY':
-      return structure.RSAPrivateKey.decode(data, 'der');
+      return {
+        type: 'rsa',
+        privateKey: structure.RSAPrivateKey.decode(data, 'der'),
+      };
     case 'DSA PRIVATE KEY':
       return {
         type: 'dsa',
@@ -140,11 +159,12 @@ export function parseKey(buffer) {
     case 'EC PRIVATE KEY':
       data = structure.ECPrivateKey.decode(data, 'der');
       return {
+        type: 'ec',
         curve: data.parameters.value,
         privateKey: data.privateKey,
       };
     default:
-      throw new Error('unknown key type ' + type);
+      throw new Error('Unknown key type: ' + type);
   }
 }
 
@@ -153,10 +173,13 @@ export function parseSignature(decryptedSignature) {
 }
 
 export function encodeSignature(algorithm, digest) {
-  return structure.Signature.encode({
-    algorithm: {
-      algorithm,
+  return structure.Signature.encode(
+    {
+      algorithm: {
+        algorithm,
+      },
+      digest,
     },
-    digest,
-  }, 'der');
+    'der'
+  );
 }

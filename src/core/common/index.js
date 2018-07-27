@@ -39,6 +39,7 @@ import {
   resumeCallbackToClient,
   callbackToClient,
 } from '../../utils/callback';
+import { parseKey } from '../../utils/asn1parser';
 import * as utils from '../../utils';
 import * as lt from '../../utils/long_timeout';
 import * as config from '../../config';
@@ -667,6 +668,39 @@ export async function isRequestClosedOrTimedOut(requestId) {
     }
   }
   return true;
+}
+
+export function validateKeyType(publicKey, publicKeyType) {
+  let parsedPubKey;
+  try {
+    parsedPubKey = parseKey(publicKey);
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.INVALID_KEY_FORMAT.message,
+      code: errorType.INVALID_KEY_FORMAT.code,
+      clientError: true,
+    });
+  }
+  if (publicKeyType != null) {
+    if (publicKeyType === 'RSA') {
+      if (parsedPubKey.type !== 'rsa') {
+        throw new CustomError({
+          message: errorType.MISMATCHED_KEY_TYPE.message,
+          code: errorType.MISMATCHED_KEY_TYPE.code,
+          clientError: true,
+        });
+      }
+    }
+  } else {
+    // Default to RSA type
+    if (parsedPubKey.type !== 'rsa') {
+      throw new CustomError({
+        message: errorType.UNSUPPORTED_KEY_TYPE.message,
+        code: errorType.UNSUPPORTED_KEY_TYPE.code,
+        clientError: true,
+      });
+    }
+  }
 }
 
 export async function notifyError({ callbackUrl, action, error, requestId }) {

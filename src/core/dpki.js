@@ -21,14 +21,31 @@
  */
 
 import * as tendermintNdid from '../tendermint/ndid';
+import { validateKeyType } from './common';
 import logger from '../logger';
 import { callbackToClient } from '../utils/callback';
 import { getErrorObjectForClient } from '../error/helpers';
 
 export async function updateNode(
-  { reference_id, callback_url, public_key, master_public_key },
+  {
+    reference_id,
+    callback_url,
+    public_key,
+    public_key_type,
+    master_public_key,
+    master_public_key_type,
+  },
   { synchronous = false } = {}
 ) {
+  // Validate public keys
+  if (public_key != null) {
+    validateKeyType(public_key, public_key_type);
+  }
+
+  if (master_public_key != null) {
+    validateKeyType(master_public_key, master_public_key_type);
+  }
+
   if (synchronous) {
     await updateNodeInternalAsync(...arguments);
   } else {

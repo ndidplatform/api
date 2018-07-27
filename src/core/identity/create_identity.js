@@ -59,6 +59,8 @@ export async function createIdentity(
   { synchronous = false, apiVersion } = {}
 ) {
   try {
+    common.validateKeyType(accessor_public_key, accessor_type);
+
     let onboardData = await db.getOnboardDataByReferenceId(reference_id);
     if (onboardData) {
       let { request_id, accessor_id } = onboardData;

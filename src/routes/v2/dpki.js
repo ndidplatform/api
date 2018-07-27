@@ -37,11 +37,11 @@ router.post('/node/create', validateBody, async (req, res, next) => {
       node_id,
       node_name,
       node_key,
-      //node_key_type,
-      //node_key_method,
+      node_key_type,
+      // node_sign_method,
       node_master_key,
-      //node_master_key_type,
-      //node_master_key_method,
+      node_master_key_type,
+      // node_master_sign_method,
       role,
       max_aal,
       max_ial,
@@ -54,7 +54,9 @@ router.post('/node/create', validateBody, async (req, res, next) => {
         node_id,
         node_name,
         public_key: node_key,
+        public_key_type: node_key_type,
         master_public_key: node_master_key,
+        master_public_key_type: node_master_key_type,
         role,
         max_ial,
         max_aal,
@@ -73,13 +75,12 @@ router.post('/node/update', validateBody, async (req, res, next) => {
     const {
       reference_id,
       callback_url,
-      //node_name,
       node_key,
-      //node_key_type,
-      //node_key_method,
+      node_key_type,
+      // node_sign_method,
       node_master_key,
-      //node_master_key_type,
-      //node_master_key_method,
+      node_master_key_type,
+      // node_master_sign_method,
     } = req.body;
 
     //should we allow organization to update their node's name?
@@ -88,7 +89,9 @@ router.post('/node/update', validateBody, async (req, res, next) => {
         reference_id,
         callback_url,
         public_key: node_key,
+        public_key_type: node_key_type,
         master_public_key: node_master_key,
+        master_public_key_type: node_master_key_type,
       },
       { synchronous: false }
     );
