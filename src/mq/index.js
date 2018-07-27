@@ -56,7 +56,7 @@ export const eventEmitter = new EventEmitter();
   }
   await Promise.all(promiseArray);
   mqSend = new MQSend({ timeout: 60000, totalTimeout: 500000 });
-  mqRecv = new MQRecv({ port: config.mqRegister.port, maxMsgSize: 2000000 });
+  mqRecv = new MQRecv({ port: config.mqRegister.port, maxMsgSize: 5000000 });
 
   mqRecv.on('message', async ({ message, msgId, senderId }) => {
     const id = senderId + ':' + msgId;

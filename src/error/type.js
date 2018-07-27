@@ -316,20 +316,24 @@ export default {
     message: 'Invalid data type in AS data response. Expected string.',
     clientError: true,
   },
-  INVALID_KEY_FORMAT: {
+  BODY_TOO_LARGE: {
     code: 20036,
+    message: 'Body size is too large (greater than limit)',
+    clientError: true,
+  },
+  INVALID_KEY_FORMAT: {
+    code: 20037,
     message: 'Invalid or malformed key format',
     clientError: true,
   },
   UNSUPPORTED_KEY_TYPE: {
-    code: 20037,
+    code: 20038,
     message: 'Unsupported key type. Only RSA is allowed.',
     clientError: true,
   },
   MISMATCHED_KEY_TYPE: {
-    code: 20038,
+    code: 20039,
     message: 'Key type mismatched. Provided key type does not match with given key.',
-    clientError: true,
   },
 
   // Errors return from ABCI app

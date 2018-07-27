@@ -77,16 +77,22 @@ export function bodyParserErrorHandler(err, req, res, next) {
 
   let errorCode;
   let errorMessage;
+  let clientError;
   if (err) {
     if (err.type == 'entity.parse.failed') {
       errorCode = errorType.BODY_PARSE_FAILED.code;
-      errorMessage = `${errorType.BODY_PARSE_FAILED.message}: ${err.message}`;
+      errorMessage = errorType.BODY_PARSE_FAILED.message;
+      clientError = true;
+    } else if (err.type == 'entity.too.large') {
+      errorCode = errorType.BODY_TOO_LARGE.code;
+      errorMessage = errorType.BODY_TOO_LARGE.message;
+      clientError = true;
     } else {
       errorCode = errorType.BODY_PARSER_ERROR.code;
       errorMessage = `${errorType.BODY_PARSER_ERROR.message}: ${err.message}`;
     }
 
-    if (err.status === 400) {
+    if (clientError) {
       const responseBody = {
         error: {
           code: errorCode,

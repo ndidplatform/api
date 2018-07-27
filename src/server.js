@@ -84,7 +84,7 @@ app.use(
   })
 );
 
-app.use(bodyParser.json({ limit: '2mb' }));
+app.use(bodyParser.json({ limit: '3mb' }));
 app.use(bodyParserErrorHandler);
 
 app.use(routes);
