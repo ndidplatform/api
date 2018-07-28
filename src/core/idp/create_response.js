@@ -92,6 +92,8 @@ export async function requestChallengeAndCreateResponse(data) {
         });
       }
 
+      // TODO: verify signature signed by accessor key
+
       if (data.secret == null) {
         throw new CustomError({
           message: errorType.SECRET_NEEDED.message,
