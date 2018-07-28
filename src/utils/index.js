@@ -26,7 +26,7 @@ import crypto from 'crypto';
 import * as cryptoUtils from './crypto';
 import * as config from '../config';
 import bignum from 'bignum';
-import { parseKey, parseSignature, encodeSignature } from './asn1parser';
+import { parseKey, encodeSignature } from './asn1parser';
 import logger from '../logger';
 import constants from 'constants';
 import * as externalCryptoService from './external_crypto_service';
