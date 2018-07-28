@@ -1,5 +1,12 @@
 # Changelog
 
+## TBD
+
+IMPROVEMENTS:
+
+- Decrease message payload size when sending over message queue by changing the message format.
+- Decrease message queue receiving size limit to 4.5MB.
+
 ## 0.5.4 (July 27, 2018)
 
 IMPROVEMENTS:

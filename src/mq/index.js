@@ -56,7 +56,7 @@ export const eventEmitter = new EventEmitter();
   }
   await Promise.all(promiseArray);
   mqSend = new MQSend({ timeout: 60000, totalTimeout: 500000 });
-  mqRecv = new MQRecv({ port: config.mqRegister.port, maxMsgSize: 5250000 });
+  mqRecv = new MQRecv({ port: config.mqRegister.port, maxMsgSize: 4500000 });
 
   mqRecv.on('message', async ({ message, msgId, senderId }) => {
     const id = senderId + ':' + msgId;
@@ -73,13 +73,15 @@ export const eventEmitter = new EventEmitter();
   });
 })();
 
-async function onMessage(jsonMessageStr) {
+async function onMessage(message) {
+  logger.info({
+    message: 'Received message from message queue',
+    messageLength: message.length,
+  });
   try {
-    const jsonMessage = JSON.parse(jsonMessageStr);
-
     let decrypted;
     try {
-      decrypted = await utils.decryptAsymetricKey(jsonMessage);
+      decrypted = await utils.decryptAsymetricKey(message);
     } catch (error) {
       throw new CustomError({
         message: errorType.DECRYPT_MESSAGE_ERROR.message,
@@ -94,23 +96,22 @@ async function onMessage(jsonMessageStr) {
     });
 
     //verify digital signature
-    const [messageBase64, msqSignature] = decrypted.split('|');
-    if (messageBase64 == null || msqSignature == null) {
+    const messageStr = decrypted.substring(0, decrypted.lastIndexOf('|'));
+    const messageSignature = decrypted.substring(decrypted.lastIndexOf('|') + 1);
+    if (messageStr == null || messageSignature == null) {
       throw new CustomError({
         message: errorType.MALFORMED_MESSAGE_FORMAT.message,
         code: errorType.MALFORMED_MESSAGE_FORMAT.code,
       });
     }
 
-    const rawMessage = Buffer.from(messageBase64, 'base64').toString();
-
     logger.debug({
-      message: 'Split msqSignature',
-      rawMessage,
-      msqSignature,
+      message: 'Split message and signature',
+      messageStr,
+      messageSignature,
     });
 
-    const { idp_id, rp_id, as_id } = JSON.parse(rawMessage);
+    const { idp_id, rp_id, as_id } = JSON.parse(messageStr);
     const nodeId = idp_id || rp_id || as_id;
     const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
     if (nodeId == null) {
@@ -121,21 +122,21 @@ async function onMessage(jsonMessageStr) {
     }
 
     const signatureValid = utils.verifySignature(
-      msqSignature,
+      messageSignature,
       public_key,
-      rawMessage
+      messageStr
     );
 
     logger.debug({
       message: 'Verifying signature',
-      msqSignature,
+      messageSignature,
       public_key,
-      rawMessage,
+      messageStr,
       signatureValid,
     });
 
     if (signatureValid) {
-      eventEmitter.emit('message', rawMessage);
+      eventEmitter.emit('message', messageStr);
     } else {
       throw new CustomError({
         message: errorType.INVALID_MESSAGE_SIGNATURE.message,
@@ -156,16 +157,19 @@ export async function send(receivers, message) {
     });
     return;
   }
-  const msqSignature = await utils.createSignature(message);
-  const realPayload =
-    Buffer.from(JSON.stringify(message)).toString('base64') +
-    '|' +
-    msqSignature;
+  const messageStr = JSON.stringify(message);
+  const messageSignature = await utils.createSignature(messageStr);
+  const realPayload = messageStr + '|' + messageSignature;
 
-  logger.debug({
+  logger.info({
     message: 'Sending message over message queue',
-    raw_message_object: message,
-    msqSignature,
+    messageLength: realPayload.length,
+    receivers,
+  });
+  logger.debug({
+    message: 'Sending message over message queue details',
+    messageObject: message,
+    messageSignature,
     realPayload,
     receivers,
   });
@@ -178,7 +182,7 @@ export async function send(receivers, message) {
       realPayload
     );
 
-    mqSend.send(receiver, JSON.stringify(encryptedMessage));
+    mqSend.send(receiver, encryptedMessage);
   });
 }
 
