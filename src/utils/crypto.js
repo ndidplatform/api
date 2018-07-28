@@ -28,7 +28,7 @@ const AES_KEY_LENGTH_IN_BYTES = 32;
 /**
  * Hash given string with SHA-256
  * @param {string} stringToHash
- * @returns {string} hash in Buffer
+ * @returns {Buffer} hash in Buffer
  */
 export function sha256(stringToHash) {
   const hash = crypto.createHash('sha256');
@@ -41,24 +41,26 @@ export function sha256(stringToHash) {
  *
  * @param {({key: string, passphrase: string}|string)} privateKey
  * @param {(Buffer|string)} plaintext
- * @returns {string} encrypted text, base64 encoded
+ * @returns {Buffer} encrypted text
  */
 export function privateEncrypt(privateKey, plaintext) {
   const buffer = Buffer.isBuffer(plaintext)
     ? plaintext
     : Buffer.from(plaintext, 'utf8');
   const encrypted = crypto.privateEncrypt(privateKey, buffer);
-  return encrypted.toString('base64');
+  return encrypted;
 }
 
 /**
  *
  * @param {({key: string, passphrase: string}|string)} privateKey
- * @param {string} ciphertext base64 encoded ciphertext
+ * @param {(Buffer|string)} ciphertext
  * @returns {Buffer} decrypted text
  */
 export function privateDecrypt(privateKey, ciphertext) {
-  const buffer = Buffer.from(ciphertext, 'base64');
+  const buffer = Buffer.isBuffer(ciphertext)
+    ? ciphertext
+    : Buffer.from(ciphertext, 'utf8');
   const decrypted = crypto.privateDecrypt(privateKey, buffer);
   return decrypted;
 }
@@ -67,24 +69,26 @@ export function privateDecrypt(privateKey, ciphertext) {
  *
  * @param {(Object|string)} publicKey
  * @param {(Buffer|string)} plaintext
- * @returns {string} encrypted text, base64 encoded
+ * @returns {Buffer} ciphertext
  */
 export function publicEncrypt(publicKey, plaintext) {
   const buffer = Buffer.isBuffer(plaintext)
     ? plaintext
     : Buffer.from(plaintext, 'utf8');
   const encrypted = crypto.publicEncrypt(publicKey, buffer);
-  return encrypted.toString('base64');
+  return encrypted;
 }
 
 /**
  *
  * @param {(Object|string)} publicKey
- * @param {string} ciphertext base64 encoded ciphertext
+ * @param {(Buffer|string)} ciphertext base64 encoded ciphertext
  * @returns {Buffer} decrypted text
  */
 export function publicDecrypt(publicKey, ciphertext) {
-  const buffer = Buffer.from(ciphertext, 'base64');
+  const buffer = Buffer.isBuffer(ciphertext)
+    ? ciphertext
+    : Buffer.from(ciphertext, 'utf8');
   const decrypted = crypto.publicDecrypt(publicKey, buffer);
   return decrypted;
 }
@@ -93,20 +97,28 @@ export function publicDecrypt(publicKey, ciphertext) {
  *
  * @param {string} message
  * @param {({key: string, passphrase: string}|string)} privateKey
+ * @returns {Buffer} signature
  */
 export function createSignature(message, privateKey) {
   return crypto
     .createSign('SHA256')
     .update(message)
-    .sign(privateKey, 'base64');
+    .sign(privateKey);
 }
 
-export function verifySignature(signatureInBase64, publicKey, plainText) {
+/**
+ * 
+ * @param {Buffer} signature
+ * @param {(string|Object)} publicKey 
+ * @param {string} plainText 
+ */
+export function verifySignature(signature, publicKey, plainText) {
   return crypto
     .createVerify('SHA256')
     .update(plainText)
-    .verify(publicKey, Buffer.from(signatureInBase64, 'base64'));
+    .verify(publicKey, signature);
 }
+
 /**
  *
  * @param {number} length random bytes length
@@ -116,6 +128,11 @@ export function randomHexBytes(length) {
   return crypto.randomBytes(length).toString('hex');
 }
 
+/**
+ * 
+ * @param {number} length random bytes length
+ * @returns {string} base64 encoded string of random bytes
+ */
 export function randomBase64Bytes(length) {
   return crypto.randomBytes(length).toString('base64');
 }
@@ -123,9 +140,9 @@ export function randomBase64Bytes(length) {
 /**
  * Encrypt plaintext using given key with AES-256-GCM
  * @param {(Buffer|string)} masterkey
- * @param {string} plaintext
+ * @param {Buffer} plaintext
  * @param {boolean} deriveKey derive masterkey using pbkdf2
- * @returns {string} encrypted text, base64 encoded
+ * @returns {Buffer} encrypted text
  */
 export function encryptAES256GCM(masterkey, plaintext, deriveKey) {
   // random initialization vector
@@ -155,34 +172,28 @@ export function encryptAES256GCM(masterkey, plaintext, deriveKey) {
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
 
   // encrypt the given plaintext
-  const encrypted = Buffer.concat([
-    cipher.update(plaintext, 'utf8'),
-    cipher.final(),
-  ]);
+  const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
 
   // extract the auth tag
   const tag = cipher.getAuthTag();
 
   // generate output
-  return Buffer.concat([salt, iv, tag, encrypted]).toString('base64');
+  return Buffer.concat([salt, iv, tag, encrypted]);
 }
 
 /**
  * Decrypt ciphertext using given key with AES-256-GCM
  * @param {(Buffer|string)} masterkey
- * @param {string} base64 encoded input data
+ * @param {Buffer} ciphertext input data
  * @param {boolean} deriveKey derive masterkey using pbkdf2
- * @returns {string} decrypted (original) text
+ * @returns {Buffer} decrypted (original) text
  */
 export function decryptAES256GCM(masterkey, ciphertext, deriveKey) {
-  // base64 decoding
-  const bData = Buffer.from(ciphertext, 'base64');
-
   // convert data to buffers
-  const salt = bData.slice(0, 64);
-  const iv = bData.slice(64, 80);
-  const tag = bData.slice(80, 96);
-  const text = bData.slice(96);
+  const salt = ciphertext.slice(0, 64);
+  const iv = ciphertext.slice(64, 80);
+  const tag = ciphertext.slice(80, 96);
+  const text = ciphertext.slice(96);
 
   // derive key: 32 byte key length
   let key;
@@ -203,8 +214,7 @@ export function decryptAES256GCM(masterkey, ciphertext, deriveKey) {
   decipher.setAuthTag(tag);
 
   // decrypt the ciphertext
-  const decrypted =
-    decipher.update(text, 'binary', 'utf8') + decipher.final('utf8');
+  const decrypted = Buffer.concat([decipher.update(text), decipher.final()]);
 
   return decrypted;
 }

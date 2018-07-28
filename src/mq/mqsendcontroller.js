@@ -84,8 +84,8 @@ export default class MQSend extends EventEmitter {
 
     this.socket.on(
       'message',
-      function(jsonMessageStr) {
-        const msg = protocol.ExtractMsg(jsonMessageStr);
+      function(messageBuffer) {
+        const msg = protocol.ExtractMsg(messageBuffer);
         this.emit(
           'debug',
           'Received ACK for ' + msg.retryspec.msgId + '/' + msg.retryspec.seqId

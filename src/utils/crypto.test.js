@@ -81,7 +81,7 @@ NQIDAQAB
 
     const encryptedMessage = cryptoUtils.publicEncrypt(publicKey, 'test');
 
-    expect(encryptedMessage).to.be.a('string');
+    expect(encryptedMessage).to.be.instanceof(Buffer);
 
     const decryptedMessage = cryptoUtils.privateDecrypt(
       privateKey,
@@ -94,11 +94,11 @@ NQIDAQAB
   });
 
   it('should encrypt and decrypt AES256-GCM correctly', () => {
-    const message = 'test';
+    const messageBuffer = Buffer.from('test');
     const symKeyBuffer = crypto.randomBytes(32);
     const encryptedMessage = cryptoUtils.encryptAES256GCM(
       symKeyBuffer,
-      message,
+      messageBuffer,
       false
     );
     const decryptedMessage = cryptoUtils.decryptAES256GCM(
@@ -106,7 +106,7 @@ NQIDAQAB
       encryptedMessage,
       false
     );
-    expect(decryptedMessage).to.be.a('string');
-    expect(decryptedMessage).to.equal('test');
+    expect(decryptedMessage).to.be.instanceof(Buffer);
+    expect(decryptedMessage).to.deep.equal(messageBuffer);
   });
 });

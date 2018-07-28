@@ -64,8 +64,8 @@ export default class MQSendSocket extends EventEmitter {
 
     sendingSocket.on(
       'message',
-      function(jsonMessageStr) {
-        this.emit('message', jsonMessageStr);
+      function(messageBuffer) {
+        this.emit('message', messageBuffer);
       }.bind(this)
     );
 

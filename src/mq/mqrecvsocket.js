@@ -40,8 +40,8 @@ export default class MQRecvSocket extends EventEmitter {
 
     this.receivingSocket.on(
       'message',
-      function(jsonMessageStr) {
-        this.emit('message', jsonMessageStr);
+      function(messageBuffer) {
+        this.emit('message', messageBuffer);
       }.bind(this)
     );
 

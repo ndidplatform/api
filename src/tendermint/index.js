@@ -558,7 +558,9 @@ export async function transact(
     '|' +
     nonce +
     '|' +
-    (await utils.createSignature(dataStr + nonce, useMasterKey)) +
+    (await utils.createSignature(dataStr + nonce, useMasterKey)).toString(
+      'base64'
+    ) +
     '|' +
     Buffer.from(config.nodeId).toString('base64');
 

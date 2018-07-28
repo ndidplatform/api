@@ -81,7 +81,11 @@ export default function readyHandler(req, res, next) {
     return;
   }
 
-  if (!tendermint.expectedTxsLoaded) {
+  if (
+    !tendermint.expectedTxsLoaded &&
+    req.method === 'POST' &&
+    !req.url.endsWith('/dpki/node/callback')
+  ) {
     const responseBody = {
       error: {
         message: errorType.LOADING_EXPECTED_TXS_CACHE.message,

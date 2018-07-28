@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+message MqMessage {
+  string message = 1;
+  bytes signature = 2;
+}
+
+message EncryptedMqMessage {
+  bytes encryptedSymmetricKey = 1;
+  bytes encryptedMqMessage = 2;
+}

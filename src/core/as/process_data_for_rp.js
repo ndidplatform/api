@@ -65,7 +65,8 @@ async function processDataForRPInternalAsync(
   try {
     const as_id = config.nodeId;
     const data_salt = utils.randomBase64Bytes(16);
-    const signature = await utils.createSignature(data + data_salt);
+    const signatureBuffer = await utils.createSignature(data + data_salt);
+    const signature = signatureBuffer.toString('base64');
 
     if (!synchronous) {
       await tendermintNdid.signASData(

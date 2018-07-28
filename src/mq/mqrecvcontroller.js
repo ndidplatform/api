@@ -36,8 +36,8 @@ export default class MQRecv extends EventEmitter {
 
     this.recvSocket.on(
       'message',
-      function(jsonMessageStr) {
-        const jsonMessage = protocol.ExtractMsg(jsonMessageStr);
+      function(messageBuffer) {
+        const jsonMessage = protocol.ExtractMsg(messageBuffer);
         const ackMSG = protocol.GenerateAckMsg({
           msgId: jsonMessage.retryspec.msgId,
           seqId: jsonMessage.retryspec.seqId,

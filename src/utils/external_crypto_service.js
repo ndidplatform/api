@@ -28,12 +28,8 @@ import { EventEmitter } from 'events';
 import fetch from 'node-fetch';
 import { ExponentialBackoff } from 'simple-backoff';
 
-import {
-  hash,
-  publicEncrypt,
-  verifySignature,
-  randomBase64Bytes,
-} from './crypto';
+import { publicEncrypt, randomBase64Bytes } from './crypto';
+import { hash, verifySignature } from '.';
 import * as tendermintNdid from '../tendermint/ndid';
 import { wait } from '.';
 import CustomError from '../error/custom_error';
@@ -119,13 +115,14 @@ async function testSignCallback(url, publicKey) {
 }
 
 async function testDecryptCallback(url, publicKey) {
-  const encryptedMessage = publicEncrypt(
+  const encryptedMessageBuffer = publicEncrypt(
     {
       key: publicKey,
       padding: crypto.constants.RSA_PKCS1_PADDING,
     },
     TEST_MESSAGE
   );
+  const encryptedMessage = encryptedMessageBuffer.toString('base64');
   const body = {
     node_id: config.nodeId,
     encrypted_message: encryptedMessage,
@@ -491,11 +488,11 @@ export async function createSignature(message, messageHash, useMasterKey) {
         },
       });
     }
+
+    const signatureBuffer = Buffer.from(signatureBase64, 'base64');
+
     // Check if string is base64 string
-    if (
-      Buffer.from(signatureBase64, 'base64').toString('base64') !==
-      signatureBase64
-    ) {
+    if (signatureBuffer.toString('base64') !== signatureBase64) {
       throw new CustomError({
         message: 'Unexpected signature value type: expected base64 string',
         details: {
@@ -504,7 +501,7 @@ export async function createSignature(message, messageHash, useMasterKey) {
       });
     }
 
-    return signatureBase64;
+    return signatureBuffer;
   } catch (error) {
     logger.error({
       message: 'Error calling external crypto service: sign',

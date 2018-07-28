@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+message MqProtocolMessage {
+  int64 msgId = 1;
+  int32 seqId = 2;
+  bytes message = 3;
+  string senderId = 4;
+}

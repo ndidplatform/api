@@ -67,13 +67,11 @@ export function hash(stringToHash) {
   return hashBuffer.toString('base64');
 }
 
-export async function decryptAsymetricKey(cipher) {
-  const [encryptedSymKey, encryptedMessage] = cipher.split('|');
+export async function decryptAsymetricKey(encryptedSymKey, encryptedMessage) {
   let symKeyBuffer;
-
   if (config.useExternalCryptoService) {
     symKeyBuffer = await externalCryptoService.decryptAsymetricKey(
-      encryptedSymKey
+      encryptedSymKey.toString('base64')
     );
   } else {
     const passphrase = config.privateKeyPassphrase;
@@ -90,7 +88,7 @@ export async function decryptAsymetricKey(cipher) {
   return cryptoUtils.decryptAES256GCM(symKeyBuffer, encryptedMessage, false);
 }
 
-export function encryptAsymetricKey(publicKey, message) {
+export function encryptAsymetricKey(publicKey, messageBuffer) {
   const symKeyBuffer = crypto.randomBytes(32);
   const encryptedSymKey = cryptoUtils.publicEncrypt(
     {
@@ -101,10 +99,13 @@ export function encryptAsymetricKey(publicKey, message) {
   );
   const encryptedMessage = cryptoUtils.encryptAES256GCM(
     symKeyBuffer,
-    message,
+    messageBuffer,
     false // Key derivation is not needed since key is cryptographically random generated and use only once
   );
-  return encryptedSymKey + '|' + encryptedMessage;
+  return {
+    encryptedSymKey,
+    encryptedMessage,
+  };
 }
 
 export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
@@ -376,13 +377,11 @@ export async function createSignature(messageToSign, useMasterKey) {
   });
 }
 
-export function verifySignature(signatureInBase64, publicKey, plainText) {
-  return cryptoUtils.verifySignature(signatureInBase64, publicKey, plainText);
-}
-
-export function extractDigestFromSignature(signature, publicKey) {
-  const decryptedSignature = cryptoUtils.publicDecrypt(publicKey, signature);
-  return parseSignature(decryptedSignature).digest.toString('base64');
+export function verifySignature(signature, publicKey, plainText) {
+  if (!Buffer.isBuffer(signature)) {
+    signature = Buffer.from(signature, 'base64');
+  }
+  return cryptoUtils.verifySignature(signature, publicKey, plainText);
 }
 
 export function createRequestId() {

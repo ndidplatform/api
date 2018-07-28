@@ -20,7 +20,15 @@
  *
  */
 
+import path from 'path';
+
+import protobuf from 'protobufjs';
 import { nodeId } from '../config';
+
+const protobufRoot = protobuf.loadSync(
+  path.join(__dirname, '..', '..', 'protos', 'mq_protocol_message.proto')
+);
+const MqProtocolMessage = protobufRoot.lookup('MqProtocolMessage');
 
 export default class MQProtocol {
   constructor() {
@@ -28,24 +36,30 @@ export default class MQProtocol {
   }
 
   _applyRetrySpec(message, retryspec) {
-    const ret = JSON.stringify({
+    const payload = {
       msgId: retryspec.msgId,
       seqId: retryspec.seqId,
       message: message,
       senderId: this.id,
-    });
-    return ret;
+    };
+    const errMsg = MqProtocolMessage.verify(payload);
+    if (errMsg) {
+      throw new Error(errMsg);
+    }
+    const protoMessage = MqProtocolMessage.create(payload);
+    const protoBuffer = MqProtocolMessage.encode(protoMessage).finish();
+    return protoBuffer;
   }
 
   _extractRetrySpec(message) {
-    const jsonMsg = JSON.parse(message);
+    const decodedMessage = MqProtocolMessage.decode(message);
     return {
       retryspec: {
-        msgId: jsonMsg.msgId,
-        seqId: jsonMsg.seqId,
+        msgId: decodedMessage.msgId.toNumber(),
+        seqId: decodedMessage.seqId,
       },
-      message: jsonMsg.message,
-      senderId: jsonMsg.senderId,
+      message: decodedMessage.message,
+      senderId: decodedMessage.senderId,
     };
   }
 
@@ -61,7 +75,7 @@ export default class MQProtocol {
   }
 
   GenerateAckMsg(retryspec) {
-    let ack = '';
+    let ack = Buffer.from('');
     ack = this._applyRetrySpec(ack, retryspec);
     return ack;
   }

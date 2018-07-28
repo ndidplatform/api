@@ -20,9 +20,12 @@
  *
  */
 
+import path from 'path';
 import EventEmitter from 'events';
-import logger from '../logger';
 
+import protobuf from 'protobufjs';
+
+import logger from '../logger';
 import * as config from '../config';
 import * as utils from '../utils';
 import CustomError from '../error/custom_error';
@@ -32,6 +35,12 @@ import * as db from '../db';
 
 import MQSend from './mqsendcontroller.js';
 import MQRecv from './mqrecvcontroller.js';
+
+const protobufRoot = protobuf.loadSync(
+  path.join(__dirname, '..', '..', 'protos', 'mq_message.proto')
+);
+const MqMessage = protobufRoot.lookup('MqMessage');
+const EncryptedMqMessage = protobufRoot.lookup('EncryptedMqMessage');
 
 let mqSend;
 let mqRecv;
@@ -56,7 +65,7 @@ export const eventEmitter = new EventEmitter();
   }
   await Promise.all(promiseArray);
   mqSend = new MQSend({ timeout: 60000, totalTimeout: 500000 });
-  mqRecv = new MQRecv({ port: config.mqRegister.port, maxMsgSize: 4500000 });
+  mqRecv = new MQRecv({ port: config.mqRegister.port, maxMsgSize: 3250000 });
 
   mqRecv.on('message', async ({ message, msgId, senderId }) => {
     const id = senderId + ':' + msgId;
@@ -73,15 +82,20 @@ export const eventEmitter = new EventEmitter();
   });
 })();
 
-async function onMessage(message) {
+async function onMessage(messageBuffer) {
   logger.info({
     message: 'Received message from message queue',
-    messageLength: message.length,
+    messageLength: messageBuffer.length,
   });
   try {
-    let decrypted;
+    const decodedMessage = EncryptedMqMessage.decode(messageBuffer);
+    const { encryptedSymmetricKey, encryptedMqMessage } = decodedMessage;
+    let decryptedBuffer;
     try {
-      decrypted = await utils.decryptAsymetricKey(message);
+      decryptedBuffer = await utils.decryptAsymetricKey(
+        encryptedSymmetricKey,
+        encryptedMqMessage
+      );
     } catch (error) {
       throw new CustomError({
         message: errorType.DECRYPT_MESSAGE_ERROR.message,
@@ -92,12 +106,12 @@ async function onMessage(message) {
 
     logger.debug({
       message: 'Raw decrypted message from message queue',
-      decrypted,
+      decryptedBuffer,
     });
 
-    //verify digital signature
-    const messageStr = decrypted.substring(0, decrypted.lastIndexOf('|'));
-    const messageSignature = decrypted.substring(decrypted.lastIndexOf('|') + 1);
+    const decodedDecryptedMessage = MqMessage.decode(decryptedBuffer);
+    const messageStr = decodedDecryptedMessage.message;
+    const messageSignature = decodedDecryptedMessage.signature;
     if (messageStr == null || messageSignature == null) {
       throw new CustomError({
         message: errorType.MALFORMED_MESSAGE_FORMAT.message,
@@ -158,31 +172,41 @@ export async function send(receivers, message) {
     return;
   }
   const messageStr = JSON.stringify(message);
-  const messageSignature = await utils.createSignature(messageStr);
-  const realPayload = messageStr + '|' + messageSignature;
+  const messageSignatureBuffer = await utils.createSignature(messageStr);
+  const payload = {
+    message: messageStr,
+    signature: messageSignatureBuffer,
+  };
+  const protoMessage = MqMessage.create(payload);
+  const protoBuffer = MqMessage.encode(protoMessage).finish();
 
   logger.info({
     message: 'Sending message over message queue',
-    messageLength: realPayload.length,
+    payloadLength: protoBuffer.length,
     receivers,
   });
   logger.debug({
     message: 'Sending message over message queue details',
     messageObject: message,
-    messageSignature,
-    realPayload,
-    receivers,
+    messageSignatureBuffer,
+    protoBuffer,
   });
 
   receivers.forEach(async (receiver) => {
-    //cannot add signature in object because JSON.stringify may produce different string
-    //for two object that is deep equal, hence, verify signature return false
-    const encryptedMessage = utils.encryptAsymetricKey(
-      receiver.public_key,
-      realPayload
-    );
+    const {
+      encryptedSymKey: encryptedSymmetricKey,
+      encryptedMessage: encryptedMqMessage,
+    } = utils.encryptAsymetricKey(receiver.public_key, protoBuffer);
 
-    mqSend.send(receiver, encryptedMessage);
+    const encryptedPayload = {
+      encryptedSymmetricKey,
+      encryptedMqMessage,
+    };
+    const protoEncryptedMessage = EncryptedMqMessage.create(encryptedPayload);
+    const protoEncryptedBuffer = EncryptedMqMessage.encode(
+      protoEncryptedMessage
+    ).finish();
+    mqSend.send(receiver, protoEncryptedBuffer);
   });
 }
 
