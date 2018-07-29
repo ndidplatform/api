@@ -33,6 +33,9 @@ import * as db from '../../db';
 import * as mq from '../../mq';
 
 export async function requestChallengeAndCreateResponse(data) {
+  // TODO: check if this IdP should be able to response
+  // check for saved RP ID for this request in cache DB
+
   //store response data
   try {
     const request = await tendermintNdid.getRequest({

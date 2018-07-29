@@ -37,6 +37,9 @@ export async function processDataForRP(
   { reference_id, callback_url, requestId, serviceId, rpId },
   { synchronous = false } = {}
 ) {
+  // TODO: check for request ID and service ID existance when receiving
+  // data response from client (called from API)
+
   try {
     const dataRequestId = requestId + ':' + serviceId;
     const savedRpId = await db.getRpIdFromDataRequestId(dataRequestId);
