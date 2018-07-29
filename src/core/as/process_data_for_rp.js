@@ -50,9 +50,9 @@ export async function processDataForRP(
     }
 
     if (synchronous) {
-      await processDataForRPInternalAsync(...arguments);
+      await processDataForRPInternalAsync(...arguments, { savedRpId });
     } else {
-      processDataForRPInternalAsync(...arguments);
+      processDataForRPInternalAsync(...arguments, { savedRpId });
     }
   } catch (error) {
     const err = new CustomError({
