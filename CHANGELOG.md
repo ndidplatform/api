@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix AS can send data response with any request ID and service ID without having to receive the request first.
+
 ## 0.5.4 (July 27, 2018)
 
 IMPROVEMENTS:

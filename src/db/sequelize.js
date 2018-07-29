@@ -143,6 +143,10 @@ const Entities = {
       expectedBlockHeight: Sequelize.INTEGER,
     }
   ),
+  rpIdFromDataRequestId: sequelize.define('rpIdFromDataRequestId', {
+    dataRequestId: { type: Sequelize.STRING, primaryKey: true },
+    rpId: Sequelize.STRING,
+  }),
 };
 
 const initDb = sequelize.sync();

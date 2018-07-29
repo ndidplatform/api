@@ -308,6 +308,12 @@ export default {
     message: 'Body size is too large (greater than limit)',
     clientError: true,
   },
+  UNKNOWN_DATA_REQUEST: {
+    code: 20037,
+    message:
+      'Unknown data request (This node may has not yet received data request from RP or the request does not exist)',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

@@ -147,29 +147,45 @@ export async function processDataForRP(
   { synchronous = false } = {}
 ) {
   try {
+    const dataRequestId = requestId + ':' + serviceId;
+    const savedRpId = await db.getRpIdFromDataRequestId(dataRequestId);
+
+    if (!savedRpId) {
+      throw new CustomError({
+        message: errorType.UNKNOWN_DATA_REQUEST.message,
+        code: errorType.UNKNOWN_DATA_REQUEST.code,
+        clientError: true,
+      });
+    }
+
     if (synchronous) {
       await processDataForRPInternalAsync(...arguments);
     } else {
       processDataForRPInternalAsync(...arguments);
     }
   } catch (error) {
-    throw new CustomError({
+    const err = new CustomError({
       message: 'Cannot send data to RP',
-      reference_id,
-      callback_url,
-      requestId,
-      serviceId,
-      rpId,
-      synchronous,
       cause: error,
+      details: {
+        reference_id,
+        callback_url,
+        requestId,
+        serviceId,
+        rpId,
+        synchronous,
+      },
     });
+    logger.error(err.getInfoForLog());
+    throw err;
   }
 }
 
 async function processDataForRPInternalAsync(
   data,
   { reference_id, callback_url, requestId, serviceId, rpId },
-  { synchronous = false } = {}
+  { synchronous = false } = {},
+  { savedRpId }
 ) {
   try {
     const as_id = config.nodeId;
@@ -184,7 +200,7 @@ async function processDataForRPInternalAsync(
     });
 
     if (!rpId) {
-      rpId = await db.getRPIdFromRequestId(requestId);
+      rpId = savedRpId;
     }
 
     await sendDataToRP(rpId, {
@@ -208,6 +224,9 @@ async function processDataForRPInternalAsync(
         true
       );
     }
+
+    const dataRequestId = requestId + ':' + serviceId;
+    db.removeRpIdFromDataRequestId(dataRequestId);
   } catch (error) {
     logger.error({
       message: 'Send data to RP internal async error',
@@ -242,13 +261,12 @@ export async function afterGotDataFromCallback(
 ) {
   try {
     if (response.status === 204) {
-      await db.setRPIdFromRequestId(
-        additionalData.requestId,
-        additionalData.rpId
-      );
       return;
     }
     if (response.status !== 200) {
+      const dataRequestId =
+        additionalData.requestId + ':' + additionalData.serviceId;
+      db.removeRpIdFromDataRequestId(dataRequestId);
       throw new CustomError({
         message: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE.message,
         code: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE.code,
@@ -331,9 +349,13 @@ async function getDataAndSendBackToRP(request, responseDetails) {
       if (!callbackUrl) {
         logger.error({
           message: 'Callback URL for AS has not been set',
+          service_id,
         });
         return;
       }
+
+      const dataRequestId = request.request_id + ':' + service_id;
+      await db.setRpIdFromDataRequestId(dataRequestId, request.rp_id);
 
       logger.info({
         message: 'Sending callback to AS',

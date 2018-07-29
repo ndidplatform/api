@@ -725,3 +725,34 @@ export function removeReferenceIdByRequestId(requestId) {
     key: requestId,
   });
 }
+
+//
+// Used by AS
+//
+
+export function getRpIdFromDataRequestId(dataRequestId) {
+  return db.get({
+    name: 'rpIdFromDataRequestId',
+    keyName: 'dataRequestId',
+    key: dataRequestId,
+    valueName: 'rp_id',
+  });
+}
+
+export function setRpIdFromDataRequestId(dataRequestId, rp_id) {
+  return db.set({
+    name: 'rpIdFromDataRequestId',
+    keyName: 'dataRequestId',
+    key: dataRequestId,
+    valueName: 'rp_id',
+    value: rp_id,
+  });
+}
+
+export function removeRpIdFromDataRequestId(dataRequestId) {
+  return db.remove({
+    name: 'rpIdFromDataRequestId',
+    keyName: 'dataRequestId',
+    key: dataRequestId,
+  });
+}
