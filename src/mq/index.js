@@ -36,11 +36,16 @@ import * as db from '../db';
 import MQSend from './mqsendcontroller.js';
 import MQRecv from './mqrecvcontroller.js';
 
-const protobufRoot = protobuf.loadSync(
+const mqMessageProtobufRoot = protobuf.loadSync(
   path.join(__dirname, '..', '..', 'protos', 'mq_message.proto')
 );
-const MqMessage = protobufRoot.lookup('MqMessage');
-const EncryptedMqMessage = protobufRoot.lookup('EncryptedMqMessage');
+const encryptedMqMessageProtobufRoot = protobuf.loadSync(
+  path.join(__dirname, '..', '..', 'protos', 'encrypted_mq_message.proto')
+);
+const MqMessage = mqMessageProtobufRoot.lookup('MqMessage');
+const EncryptedMqMessage = encryptedMqMessageProtobufRoot.lookup(
+  'EncryptedMqMessage'
+);
 
 let mqSend;
 let mqRecv;
