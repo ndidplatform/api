@@ -321,18 +321,24 @@ export default {
     message: 'Body size is too large (greater than limit)',
     clientError: true,
   },
-  INVALID_KEY_FORMAT: {
+  UNKNOWN_DATA_REQUEST: {
     code: 20037,
+    message:
+      'Unknown data request (This node may has not yet received data request from RP or the request does not exist)',
+    clientError: true,
+  },
+  INVALID_KEY_FORMAT: {
+    code: 20038,
     message: 'Invalid or malformed key format',
     clientError: true,
   },
   UNSUPPORTED_KEY_TYPE: {
-    code: 20038,
+    code: 20039,
     message: 'Unsupported key type. Only RSA is allowed.',
     clientError: true,
   },
   MISMATCHED_KEY_TYPE: {
-    code: 20039,
+    code: 20040,
     message: 'Key type mismatched. Provided key type does not match with given key.',
   },
 

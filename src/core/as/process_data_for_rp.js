@@ -38,29 +38,45 @@ export async function processDataForRP(
   { synchronous = false } = {}
 ) {
   try {
+    const dataRequestId = requestId + ':' + serviceId;
+    const savedRpId = await db.getRpIdFromDataRequestId(dataRequestId);
+
+    if (!savedRpId) {
+      throw new CustomError({
+        message: errorType.UNKNOWN_DATA_REQUEST.message,
+        code: errorType.UNKNOWN_DATA_REQUEST.code,
+        clientError: true,
+      });
+    }
+
     if (synchronous) {
       await processDataForRPInternalAsync(...arguments);
     } else {
       processDataForRPInternalAsync(...arguments);
     }
   } catch (error) {
-    throw new CustomError({
+    const err = new CustomError({
       message: 'Cannot send data to RP',
-      reference_id,
-      callback_url,
-      requestId,
-      serviceId,
-      rpId,
-      synchronous,
       cause: error,
+      details: {
+        reference_id,
+        callback_url,
+        requestId,
+        serviceId,
+        rpId,
+        synchronous,
+      },
     });
+    logger.error(err.getInfoForLog());
+    throw err;
   }
 }
 
 async function processDataForRPInternalAsync(
   data,
   { reference_id, callback_url, requestId, serviceId, rpId },
-  { synchronous = false } = {}
+  { synchronous = false } = {},
+  { savedRpId }
 ) {
   try {
     const as_id = config.nodeId;
@@ -90,6 +106,7 @@ async function processDataForRPInternalAsync(
             rpId,
           },
           { synchronous },
+          { savedRpId },
         ]
       );
     } else {
@@ -112,7 +129,8 @@ async function processDataForRPInternalAsync(
           data_salt,
           rpId,
         },
-        { synchronous }
+        { synchronous },
+        { savedRpId }
       );
     }
   } catch (error) {
@@ -156,13 +174,14 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     data_salt,
     rpId,
   },
-  { synchronous = false } = {}
+  { synchronous = false } = {},
+  { savedRpId }
 ) {
   try {
     if (error) throw error;
 
     if (!rpId) {
-      rpId = await db.getRPIdFromRequestId(requestId);
+      rpId = savedRpId;
     }
 
     await sendDataToRP(rpId, {
@@ -187,6 +206,9 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
         true
       );
     }
+
+    const dataRequestId = requestId + ':' + serviceId;
+    db.removeRpIdFromDataRequestId(dataRequestId);
   } catch (error) {
     logger.error({
       message: 'Send data to RP internal async after blockchain error',

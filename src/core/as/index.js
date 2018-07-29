@@ -143,13 +143,12 @@ export async function afterGotDataFromCallback(
 ) {
   try {
     if (response.status === 204) {
-      await db.setRPIdFromRequestId(
-        additionalData.requestId,
-        additionalData.rpId
-      );
       return;
     }
     if (response.status !== 200) {
+      const dataRequestId =
+        additionalData.requestId + ':' + additionalData.serviceId;
+      db.removeRpIdFromDataRequestId(dataRequestId);
       throw new CustomError({
         message: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE.message,
         code: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE.code,
@@ -232,9 +231,13 @@ async function getDataAndSendBackToRP(request, responseDetails) {
       if (!callbackUrl) {
         logger.error({
           message: 'Callback URL for AS has not been set',
+          service_id,
         });
         return;
       }
+
+      const dataRequestId = request.request_id + ':' + service_id;
+      await db.setRpIdFromDataRequestId(dataRequestId, request.rp_id);
 
       logger.info({
         message: 'Sending callback to AS',
