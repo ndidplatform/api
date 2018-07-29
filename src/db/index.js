@@ -735,17 +735,17 @@ export function getRpIdFromDataRequestId(dataRequestId) {
     name: 'rpIdFromDataRequestId',
     keyName: 'dataRequestId',
     key: dataRequestId,
-    valueName: 'rp_id',
+    valueName: 'rpId',
   });
 }
 
-export function setRpIdFromDataRequestId(dataRequestId, rp_id) {
+export function setRpIdFromDataRequestId(dataRequestId, rpId) {
   return db.set({
     name: 'rpIdFromDataRequestId',
     keyName: 'dataRequestId',
     key: dataRequestId,
-    valueName: 'rp_id',
-    value: rp_id,
+    valueName: 'rpId',
+    value: rpId,
   });
 }
 
