@@ -21,9 +21,11 @@
  */
 
 import EventEmitter from 'events';
-import MQProtocol from './mqprotocol.js';
-import MQLogic from './mqlogic.js';
-import MQSendSocket from './mqsendsocket.js';
+
+import MQProtocol from './mqprotocol';
+import MQLogic from './mqlogic';
+import MQSendSocket from './mqsendsocket';
+
 import CustomError from '../error/custom_error';
 
 const protocol = new MQProtocol();
@@ -67,7 +69,9 @@ export default class MQSend extends EventEmitter {
           'error',
           new CustomError({
             code: 'MQERR_TIMEOUT',
-            message: this.id + ': Too many retries. Giving up.',
+            message: `MQSend ID: ${
+              this.id
+            }, Message ID: ${msgId}, Too many retries. Giving up.`,
           })
         );
       }.bind(this)
@@ -77,8 +81,15 @@ export default class MQSend extends EventEmitter {
 
     this.socket.on(
       'error',
-      function(err) {
-        this.emit('error', err);
+      function(error) {
+        this.emit(
+          'error',
+          new CustomError({
+            code: 'MQERR_SENDER',
+            message: 'Message queue (sender) error',
+            cause: error,
+          })
+        );
       }.bind(this)
     );
 
@@ -103,7 +114,8 @@ export default class MQSend extends EventEmitter {
         'error',
         new CustomError({
           code: 'MQERR_CLEANUPERR',
-          message: error,
+          message: 'Message queue clean up error',
+          cause: error,
         })
       );
     }

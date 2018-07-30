@@ -21,6 +21,7 @@
  */
 
 import EventEmitter from 'events';
+
 import zmq from 'zeromq';
 
 export default class MQRecvSocket extends EventEmitter {

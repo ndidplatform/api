@@ -23,6 +23,7 @@
 import path from 'path';
 
 import protobuf from 'protobufjs';
+
 import { nodeId } from '../config';
 
 const protobufRoot = protobuf.loadSync(

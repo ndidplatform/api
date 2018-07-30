@@ -21,8 +21,10 @@
  */
 
 import EventEmitter from 'events';
-import MQProtocol from './mqprotocol.js';
-import MQRecvSocket from './mqrecvsocket.js';
+import MQProtocol from './mqprotocol';
+import MQRecvSocket from './mqrecvsocket';
+
+import CustomError from '../error/custom_error';
 
 const protocol = new MQProtocol();
 
@@ -55,7 +57,14 @@ export default class MQRecv extends EventEmitter {
     this.recvSocket.on(
       'error',
       function(error) {
-        this.emit('error', error);
+        this.emit(
+          'error',
+          new CustomError({
+            code: 'MQERR_RECEIVER',
+            message: 'Message queue (receiver) error',
+            cause: error,
+          })
+        );
       }.bind(this)
     );
   }

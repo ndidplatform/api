@@ -85,6 +85,9 @@ export const eventEmitter = new EventEmitter();
     }, 120000);
     onMessage(message);
   });
+
+  mqSend.on('error', (error) => logger.error(error.getInfoForLog()));
+  mqRecv.on('error', (error) => logger.error(error.getInfoForLog()));
 })();
 
 async function onMessage(messageBuffer) {
