@@ -25,6 +25,7 @@ BUG FIXES:
 - Fix error in `getMessageWithCode()` in CustomError when error cause is undefined.
 - Clean up data in cache DB when create request and create identity fails.
 - Fix AS can send data response with any request ID and service ID without having to receive the request first.
+- Fix process exits on MQ error by handling error events emitted from MQSend and MQRecv.
 
 ## 0.5.4 (July 27, 2018)
 
