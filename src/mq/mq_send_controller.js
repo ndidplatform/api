@@ -22,9 +22,9 @@
 
 import EventEmitter from 'events';
 
-import * as MQProtocol from './mqprotocol';
-import MQLogic from './mqlogic';
-import MQSendSocket from './mqsendsocket';
+import * as MQProtocol from './mq_protocol';
+import MQLogic from './mq_logic';
+import MQSendSocket from './mq_send_socket';
 
 import CustomError from '../error/custom_error';
 

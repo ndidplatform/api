@@ -2,7 +2,7 @@ import path from 'path';
 
 import chai from 'chai';
 import protobuf from 'protobufjs';
-import * as MQProtocol from './mqprotocol.js';
+import * as MQProtocol from './mq_protocol';
 const expect = chai.expect;
 
 const protobufRoot = protobuf.loadSync(

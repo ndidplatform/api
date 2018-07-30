@@ -1,5 +1,5 @@
 import chai from 'chai';
-import MQLogic from './mqlogic.js';
+import MQLogic from './mq_logic';
 const expect = chai.expect;
 
 describe('MQ Retry Logic Unit Test', function() {

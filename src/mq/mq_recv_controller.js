@@ -21,8 +21,8 @@
  */
 
 import EventEmitter from 'events';
-import * as MQProtocol from './mqprotocol';
-import MQRecvSocket from './mqrecvsocket';
+import * as MQProtocol from './mq_protocol';
+import MQRecvSocket from './mq_recv_socket';
 
 import CustomError from '../error/custom_error';
 

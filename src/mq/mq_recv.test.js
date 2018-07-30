@@ -2,8 +2,8 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import assert from 'assert';
 
-import MQRecv from '../mq/mqrecvcontroller.js';
-import MQSend from '../mq/mqsendcontroller.js';
+import MQRecv from '../mq/mq_recv_controller';
+import MQSend from '../mq/mq_send_controller';
 
 const expect = chai.expect;
 chai.use(chaiHttp);

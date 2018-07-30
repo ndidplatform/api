@@ -3,8 +3,8 @@ import chaiHttp from 'chai-http';
 import assert from 'assert';
 import zmq from 'zeromq';
 
-import MQSend from './mqsendcontroller.js';
-import MQRecv from './mqrecvcontroller.js';
+import MQSend from './mq_send_controller';
+import MQRecv from './mq_recv_controller';
 
 const expect = chai.expect;
 chai.use(chaiHttp);

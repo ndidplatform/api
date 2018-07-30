@@ -25,16 +25,15 @@ import EventEmitter from 'events';
 
 import protobuf from 'protobufjs';
 
-import logger from '../logger';
-import * as config from '../config';
-import * as utils from '../utils';
-import CustomError from '../error/custom_error';
-import errorType from '../error/type';
+import MQSend from './mq_send_controller';
+import MQRecv from './mq_recv_controller';
 import * as tendermintNdid from '../tendermint/ndid';
 import * as db from '../db';
-
-import MQSend from './mqsendcontroller.js';
-import MQRecv from './mqrecvcontroller.js';
+import * as utils from '../utils';
+import logger from '../logger';
+import CustomError from '../error/custom_error';
+import errorType from '../error/type';
+import * as config from '../config';
 
 const mqMessageProtobufRoot = protobuf.loadSync(
   path.join(__dirname, '..', '..', 'protos', 'mq_message.proto')
