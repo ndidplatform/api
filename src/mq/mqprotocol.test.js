@@ -2,7 +2,7 @@ import path from 'path';
 
 import chai from 'chai';
 import protobuf from 'protobufjs';
-import MQProtocol from './mqprotocol.js';
+import * as MQProtocol from './mqprotocol.js';
 const expect = chai.expect;
 
 const protobufRoot = protobuf.loadSync(
@@ -12,11 +12,10 @@ const MqProtocolMessage = protobufRoot.lookup('MqProtocolMessage');
 
 describe('MQ Protocol Unit Test', function() {
   it('should perform GenerateSendMsg properly', function() {
-    let protocol = new MQProtocol();
     const payload = Buffer.from('test');
     const retryspec = { msgId: 1, seqId: 22 };
 
-    let result = protocol.GenerateSendMsg(payload, retryspec);
+    let result = MQProtocol.generateSendMsg(payload, retryspec);
 
     expect(result).to.be.instanceof(Buffer);
 
@@ -29,7 +28,6 @@ describe('MQ Protocol Unit Test', function() {
   });
 
   it('should perform ExtractMsg properly', function() {
-    let protocol = new MQProtocol();
     const payload = {
       msgId: 1,
       seqId: 22,
@@ -38,7 +36,7 @@ describe('MQ Protocol Unit Test', function() {
     const protoMessage = MqProtocolMessage.create(payload);
     const protoBuffer = MqProtocolMessage.encode(protoMessage).finish();
 
-    let result = protocol.ExtractMsg(protoBuffer);
+    let result = MQProtocol.extractMsg(protoBuffer);
 
     expect(result.retryspec.msgId).to.equal(1);
     expect(result.retryspec.seqId).to.equal(22);
@@ -47,10 +45,9 @@ describe('MQ Protocol Unit Test', function() {
   });
 
   it('should perform GenerateAckMsg properly', function() {
-    let protocol = new MQProtocol();
     const retryspec = { msgId: 1, seqId: 22 };
 
-    let result = protocol.GenerateAckMsg(retryspec);
+    let result = MQProtocol.generateAckMsg(retryspec);
 
     const decodedResult = MqProtocolMessage.decode(result);
     expect(decodedResult.msgId.toNumber()).to.equal(1);

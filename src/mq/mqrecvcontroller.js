@@ -21,12 +21,10 @@
  */
 
 import EventEmitter from 'events';
-import MQProtocol from './mqprotocol';
+import * as MQProtocol from './mqprotocol';
 import MQRecvSocket from './mqrecvsocket';
 
 import CustomError from '../error/custom_error';
-
-const protocol = new MQProtocol();
 
 export default class MQRecv extends EventEmitter {
   constructor(config) {
@@ -39,8 +37,8 @@ export default class MQRecv extends EventEmitter {
     this.recvSocket.on(
       'message',
       function(messageBuffer) {
-        const jsonMessage = protocol.ExtractMsg(messageBuffer);
-        const ackMSG = protocol.GenerateAckMsg({
+        const jsonMessage = MQProtocol.extractMsg(messageBuffer);
+        const ackMSG = MQProtocol.generateAckMsg({
           msgId: jsonMessage.retryspec.msgId,
           seqId: jsonMessage.retryspec.seqId,
         });

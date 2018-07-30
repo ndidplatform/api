@@ -22,13 +22,11 @@
 
 import EventEmitter from 'events';
 
-import MQProtocol from './mqprotocol';
+import * as MQProtocol from './mqprotocol';
 import MQLogic from './mqlogic';
 import MQSendSocket from './mqsendsocket';
 
 import CustomError from '../error/custom_error';
-
-const protocol = new MQProtocol();
 
 export default class MQSend extends EventEmitter {
   constructor(config) {
@@ -45,7 +43,7 @@ export default class MQSend extends EventEmitter {
     this.logic.on(
       'PerformSend',
       function(params) {
-        const message = protocol.GenerateSendMsg(params.payload, {
+        const message = MQProtocol.generateSendMsg(params.payload, {
           msgId: params.msgId,
           seqId: params.seqId,
         });
@@ -96,12 +94,12 @@ export default class MQSend extends EventEmitter {
     this.socket.on(
       'message',
       function(messageBuffer) {
-        const msg = protocol.ExtractMsg(messageBuffer);
+        const msg = MQProtocol.extractMsg(messageBuffer);
         this.emit(
           'debug',
           'Received ACK for ' + msg.retryspec.msgId + '/' + msg.retryspec.seqId
         );
-        this.logic.AckReceived(msg.retryspec.msgId);
+        this.logic.ackReceived(msg.retryspec.msgId);
       }.bind(this)
     );
   }
@@ -123,6 +121,6 @@ export default class MQSend extends EventEmitter {
 
   send(dest, payload) {
     // let the logic to dictate when\where it should send
-    this.logic.Send(dest, payload);
+    this.logic.send(dest, payload);
   }
 }

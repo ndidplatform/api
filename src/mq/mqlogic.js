@@ -74,10 +74,6 @@ export default class MQLogic extends EventEmitter {
     });
   }
 
-  AckReceived(msgId) {
-    this._cleanUp(msgId);
-  }
-
   _retry(dest, payload, msgId, seqId, retryCount) {
     if (this.seqMap.has(seqId)) {
       if (retryCount >= this.maxRetries) {
@@ -92,7 +88,11 @@ export default class MQLogic extends EventEmitter {
     }
   }
 
-  Send(dest, payload) {
+  ackReceived(msgId) {
+    this._cleanUp(msgId);
+  }
+
+  send(dest, payload) {
     if (!Buffer.isBuffer(payload)) {
       throw new Error('Expect payload to be Buffer');
     }

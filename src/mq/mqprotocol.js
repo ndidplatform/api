@@ -31,53 +31,46 @@ const protobufRoot = protobuf.loadSync(
 );
 const MqProtocolMessage = protobufRoot.lookup('MqProtocolMessage');
 
-export default class MQProtocol {
-  constructor() {
-    this.id = nodeId;
+function applyRetrySpec(message, retryspec) {
+  const payload = {
+    msgId: retryspec.msgId,
+    seqId: retryspec.seqId,
+    message: message,
+    senderId: nodeId,
+  };
+  const errMsg = MqProtocolMessage.verify(payload);
+  if (errMsg) {
+    throw new Error(errMsg);
   }
+  const protoMessage = MqProtocolMessage.create(payload);
+  const protoBuffer = MqProtocolMessage.encode(protoMessage).finish();
+  return protoBuffer;
+}
 
-  _applyRetrySpec(message, retryspec) {
-    const payload = {
-      msgId: retryspec.msgId,
-      seqId: retryspec.seqId,
-      message: message,
-      senderId: this.id,
-    };
-    const errMsg = MqProtocolMessage.verify(payload);
-    if (errMsg) {
-      throw new Error(errMsg);
-    }
-    const protoMessage = MqProtocolMessage.create(payload);
-    const protoBuffer = MqProtocolMessage.encode(protoMessage).finish();
-    return protoBuffer;
-  }
+function extractRetrySpec(message) {
+  const decodedMessage = MqProtocolMessage.decode(message);
+  return {
+    retryspec: {
+      msgId: decodedMessage.msgId.toNumber(),
+      seqId: decodedMessage.seqId,
+    },
+    message: decodedMessage.message,
+    senderId: decodedMessage.senderId,
+  };
+}
 
-  _extractRetrySpec(message) {
-    const decodedMessage = MqProtocolMessage.decode(message);
-    return {
-      retryspec: {
-        msgId: decodedMessage.msgId.toNumber(),
-        seqId: decodedMessage.seqId,
-      },
-      message: decodedMessage.message,
-      senderId: decodedMessage.senderId,
-    };
-  }
+export function generateSendMsg(payload, retryspec) {
+  let msg = payload;
+  msg = applyRetrySpec(msg, retryspec);
+  return msg;
+}
 
-  GenerateSendMsg(payload, retryspec) {
-    let msg = payload;
-    msg = this._applyRetrySpec(msg, retryspec);
-    return msg;
-  }
+export function extractMsg(payload) {
+  const msg = payload;
+  return extractRetrySpec(msg);
+}
 
-  ExtractMsg(payload) {
-    let msg = payload;
-    return this._extractRetrySpec(msg);
-  }
-
-  GenerateAckMsg(retryspec) {
-    let ack = Buffer.from('');
-    ack = this._applyRetrySpec(ack, retryspec);
-    return ack;
-  }
+export function generateAckMsg(retryspec) {
+  const ack = applyRetrySpec(Buffer.from(''), retryspec);
+  return ack;
 }

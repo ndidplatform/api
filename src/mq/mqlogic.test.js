@@ -23,7 +23,7 @@ describe('MQ Retry Logic Unit Test', function() {
         done();
       }
     });
-    logic.Send('testDest-1', Buffer.from('testPayload-1'));
+    logic.send('testDest-1', Buffer.from('testPayload-1'));
   });
 
   it('should do clean up properly', function(done) {
@@ -41,8 +41,8 @@ describe('MQ Retry Logic Unit Test', function() {
       //expect(seqId).to.equal(1, 'check cleanup');
       done();
     });
-    logic.Send('testDest-2', Buffer.from('testPayload-2'));
-    logic.AckReceived(msgId);
+    logic.send('testDest-2', Buffer.from('testPayload-2'));
+    logic.ackReceived(msgId);
   });
 
   it('should handle retry command properly', function(done) {
@@ -58,6 +58,6 @@ describe('MQ Retry Logic Unit Test', function() {
       //expect(params.msgId).to.equal(1, 'timeout for id 1');
       done();
     });
-    logic2.Send('testDest-3', Buffer.from('testPayload-3'));
+    logic2.send('testDest-3', Buffer.from('testPayload-3'));
   });
 });
