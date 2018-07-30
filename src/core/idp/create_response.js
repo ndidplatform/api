@@ -95,7 +95,22 @@ export async function requestChallengeAndCreateResponse(data) {
         });
       }
 
-      // TODO: verify signature signed by accessor key
+      const {
+        request_message,
+        request_message_salt,
+      } = await db.getRequestMessage(data.request_id);
+      const signatureValid = utils.verifySignature(
+        data.signature,
+        accessorPublicKey,
+        request_message + request_message_salt
+      );
+      if (!signatureValid) {
+        throw new CustomError({
+          message: errorType.INVALID_ACCESSOR_SIGNATURE.message,
+          code: errorType.INVALID_ACCESSOR_SIGNATURE.code,
+          clientError: true,
+        });
+      }
 
       if (data.secret == null) {
         throw new CustomError({
@@ -135,6 +150,7 @@ async function requestChallengeAndCreateResponseInternalAsync(data, request) {
         request_id: data.request_id,
         accessor_id: data.accessor_id,
       });
+      db.removeRequestMessage(data.request_id);
     } else if (request.mode === 1) {
       await createResponse(data);
     }
@@ -337,6 +353,7 @@ async function requestChallenge({
     ]
   );
 }
+
 export async function requestChallengeAfterBlockchain(
   { height, error },
   {

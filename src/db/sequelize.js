@@ -151,6 +151,10 @@ const Entities = {
     dataRequestId: { type: Sequelize.STRING, primaryKey: true },
     rpId: Sequelize.STRING,
   }),
+  requestMessage: sequelize.define('requestMessage', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    requestMessageAndSalt: Sequelize.JSON,
+  })
 };
 
 const initDb = sequelize.sync();

@@ -757,6 +757,33 @@ export function removeReferenceIdByRequestId(requestId) {
   });
 }
 
+export function getRequestMessage(requestId) {
+  return db.get({
+    name: 'requestMessage',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'requestMessageAndSalt',
+  });
+}
+
+export function setRequestMessage(requestId, requestMessageAndSalt) {
+  return db.set({
+    name: 'requestMessage',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'requestMessageAndSalt',
+    value: requestMessageAndSalt,
+  });
+}
+
+export function removeRequestMessage(requestId) {
+  return db.remove({
+    name: 'requestMessage',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 //
 // Used by AS
 //

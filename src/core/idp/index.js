@@ -341,6 +341,10 @@ export async function processMessage(message) {
         },
       });
     }
+    await db.setRequestMessage(message.request_id, {
+      request_message: message.request_message,
+      request_message_salt: message.request_message_salt,
+    });
     notifyIncomingRequestByCallback({
       mode: message.mode,
       request_id: message.request_id,
