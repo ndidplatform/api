@@ -164,6 +164,14 @@ export async function createRequest(
           potential_as_list = potential_as_list.filter((as_node) => {
             return as_id_list.indexOf(as_node.node_id) !== -1;
           });
+
+          if (potential_as_list.length !== as_id_list.length) {
+            throw new CustomError({
+              message: errorType.SOME_AS_DO_NOT_PROVIDE_SERVICE.message,
+              code: errorType.SOME_AS_DO_NOT_PROVIDE_SERVICE.code,
+              clientError: true,
+            });
+          }
         }
         //filter min_ial, min_aal
         potential_as_list = potential_as_list.filter((as_node) => {

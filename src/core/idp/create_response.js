@@ -33,10 +33,6 @@ import * as db from '../../db';
 import * as mq from '../../mq';
 
 export async function requestChallengeAndCreateResponse(data) {
-  // TODO: check if this IdP should be able to response
-  // check for saved RP ID for this request in cache DB
-
-  //store response data
   try {
     const request = await tendermintNdid.getRequest({
       requestId: data.request_id,
@@ -72,6 +68,15 @@ export async function requestChallengeAndCreateResponse(data) {
       });
     }
 
+    const savedRpId = await db.getRPIdFromRequestId(data.request_id);
+    if (!savedRpId) {
+      throw new CustomError({
+        message: errorType.UNKNOWN_CONSENT_REQUEST.message,
+        code: errorType.UNKNOWN_CONSENT_REQUEST.code,
+        clientError: true,
+      });
+    }
+
     if (request.mode === 3) {
       if (data.accessor_id == null) {
         throw new CustomError({
@@ -95,6 +100,7 @@ export async function requestChallengeAndCreateResponse(data) {
         });
       }
 
+      // Verify accessor signature
       const {
         request_message,
         request_message_salt,

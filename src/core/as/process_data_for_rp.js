@@ -37,10 +37,53 @@ export async function processDataForRP(
   { reference_id, callback_url, requestId, serviceId, rpId },
   { synchronous = false } = {}
 ) {
-  // TODO: check for request ID and service ID existance when receiving
-  // data response from client (called from API)
-
   try {
+    const requestDetail = await tendermintNdid.getRequestDetail({
+      requestId,
+    });
+    if (requestDetail == null) {
+      throw new CustomError({
+        message: errorType.REQUEST_NOT_FOUND.message,
+        code: errorType.REQUEST_NOT_FOUND.code,
+        clientError: true,
+        details: {
+          requestId,
+        },
+      });
+    }
+    if (requestDetail.closed) {
+      throw new CustomError({
+        message: errorType.REQUEST_IS_CLOSED.message,
+        code: errorType.REQUEST_IS_CLOSED.code,
+        clientError: true,
+        details: {
+          requestId,
+        },
+      });
+    }
+    if (requestDetail.timed_out) {
+      throw new CustomError({
+        message: errorType.REQUEST_IS_TIMED_OUT.message,
+        code: errorType.REQUEST_IS_TIMED_OUT.code,
+        clientError: true,
+        details: {
+          requestId,
+        },
+      });
+    }
+
+    // Check if there is an input service ID in the request
+    const serviceIdInRequest = requestDetail.data_request_list.find(
+      (dataRequest) => dataRequest.service_id === serviceId
+    );
+    if (serviceIdInRequest == null) {
+      throw new CustomError({
+        message: errorType.SERVICE_ID_NOT_FOUND_IN_REQUEST.message,
+        code: errorType.SERVICE_ID_NOT_FOUND_IN_REQUEST.code,
+        clientError: true,
+      });
+    }
+
     const dataRequestId = requestId + ':' + serviceId;
     const savedRpId = await db.getRpIdFromDataRequestId(dataRequestId);
 
