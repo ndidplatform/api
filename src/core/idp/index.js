@@ -265,7 +265,7 @@ export async function processMessage(message) {
     messagePayload: message,
   });
   if (message.type === 'idp_response') {
-    //reponse for onboard
+    //reponse for create identity
     if (await checkCreateIdentityResponse(message)) {
       const { secret, associated } = await identity.addAccessorAfterConsent(
         message.request_id,
@@ -451,7 +451,7 @@ async function checkCreateIdentityResponse(message) {
         db.removeCallbackUrlByReferenceId(reference_id);
       }
     }
-    db.removeOnboardDataByReferenceId(reference_id);
+    db.removeCreateIdentityDataByReferenceId(reference_id);
     await common.closeRequest(
       {
         request_id: message.request_id,

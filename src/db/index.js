@@ -464,28 +464,28 @@ export function removeRequestIdByReferenceId(referenceId) {
   });
 }
 
-export function getOnboardDataByReferenceId(referenceId) {
+export function getCreateIdentityDataByReferenceId(referenceId) {
   return db.get({
-    name: 'onboardDataReferenceIdMapping',
+    name: 'createIdentityDataReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
-    valueName: 'onboardData',
+    valueName: 'createIdentityData',
   });
 }
 
-export function setOnboardDataByReferenceId(referenceId, onboardData) {
+export function setCreateIdentityDataByReferenceId(referenceId, createIdentityData) {
   return db.set({
-    name: 'requestIdReferenceIdMapping',
+    name: 'createIdentityDataReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
-    valueName: 'onboardData',
-    value: onboardData,
+    valueName: 'createIdentityData',
+    value: createIdentityData,
   });
 }
 
-export function removeOnboardDataByReferenceId(referenceId) {
+export function removeCreateIdentityDataByReferenceId(referenceId) {
   return db.remove({
-    name: 'onboardDataReferenceIdMapping',
+    name: 'createIdentityDataReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
   });

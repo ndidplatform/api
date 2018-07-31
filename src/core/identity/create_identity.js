@@ -61,9 +61,9 @@ export async function createIdentity(
   try {
     common.validateKeyType(accessor_public_key, accessor_type);
 
-    let onboardData = await db.getOnboardDataByReferenceId(reference_id);
-    if (onboardData) {
-      let { request_id, accessor_id } = onboardData;
+    const createIdentityData = await db.getCreateIdentityDataByReferenceId(reference_id);
+    if (createIdentityData) {
+      const { request_id, accessor_id } = createIdentityData;
       return { request_id, accessor_id };
     }
 
@@ -88,7 +88,7 @@ export async function createIdentity(
       namespace,
       identifier,
     });
-    //already onboard this user
+    //already created identity for this user
     if (!addAccessor && associated) {
       throw new CustomError({
         message: errorType.IDENTITY_ALREADY_CREATED.message,
@@ -492,7 +492,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
   try {
     if (error) throw error;
 
-    await db.setOnboardDataByReferenceId(reference_id, {
+    await db.setCreateIdentityDataByReferenceId(reference_id, {
       request_id,
       accessor_id,
     });
@@ -781,7 +781,7 @@ export async function createIdentityInternalAsyncAfterClearMqDestTimeout(
         { synchronous: true }
       );
     }
-    db.removeOnboardDataByReferenceId(reference_id);
+    db.removeCreateIdentityDataByReferenceId(reference_id);
   } catch (error) {
     logger.error({
       message:
@@ -823,7 +823,7 @@ async function createIdentityCleanUpOnError({ requestId, referenceId }) {
   await Promise.all([
     db.removeCallbackUrlByReferenceId(referenceId),
     db.removeReferenceIdByRequestId(requestId),
-    db.removeOnboardDataByReferenceId(requestId),
+    db.removeCreateIdentityDataByReferenceId(requestId),
     db.removeIdentityFromRequestId(requestId),
   ]);
 }

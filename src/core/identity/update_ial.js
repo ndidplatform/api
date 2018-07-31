@@ -38,7 +38,7 @@ export async function updateIal(
   { synchronous = false } = {}
 ) {
   try {
-    //check onboard
+    // check for created identity
     if (!checkAssociated({ namespace, identifier })) {
       throw new CustomError({
         message: errorType.IDENTITY_NOT_FOUND.message,

@@ -93,11 +93,11 @@ const Entities = {
     referenceId: { type: Sequelize.TEXT, primaryKey: true },
     requestId: { type: Sequelize.STRING, primaryKey: true },
   }),
-  onboardDataReferenceIdMapping: sequelize.define(
-    'onboardDataReferenceIdMapping',
+  createIdentityDataReferenceIdMapping: sequelize.define(
+    'createIdentityDataReferenceIdMapping',
     {
       referenceId: { type: Sequelize.TEXT, primaryKey: true },
-      onboardData: { type: Sequelize.JSON },
+      createIdentityData: { type: Sequelize.JSON },
     }
   ),
   requestData: sequelize.define('requestData', {

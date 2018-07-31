@@ -406,8 +406,8 @@ export default {
   }, // Try to add accessor when request for consent id not yet completed
   ABCI_REQUEST_IS_NOT_SPECIAL: {
     code: 15011,
-    message: 'Request id not an onboard (special) type',
-  }, // Try to add accessor with request that is not an onboard request type
+    message: 'Request id not a create identity (special) type',
+  }, // Try to add accessor with request that is not a create identity request type
   ABCI_NODE_ID_DOES_NOT_EXIST_IN_AS_LIST: {
     code: 15012,
     message: 'Node ID does not exist in AS ID list',
