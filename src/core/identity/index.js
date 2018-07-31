@@ -99,7 +99,7 @@ export async function addAccessorMethodForAssociatedIdp(
 // FIXME: Refactor for broadcast_tx_sync with callback
 export async function addAccessorAfterConsent(request_id, old_accessor_id) {
   //NOTE: zero knowledge proof cannot be verify by blockchain, hence,
-  //if this idp call to add their accessor it's imply that zk proof is verified by the
+  //if this idp call to add their accessor it's imply that zk proof is verified by them
   logger.debug({
     message: 'Get consent, adding accessor...',
     request_id,
