@@ -324,22 +324,42 @@ export default {
   UNKNOWN_DATA_REQUEST: {
     code: 20037,
     message:
-      'Unknown data request (This node may has not yet received data request from RP or the request does not exist)',
+      'Unknown data request (This node may has not yet received data request from RP or the request does not concern this node)',
+    clientError: true,
+  },
+  UNKNOWN_CONSENT_REQUEST: {
+    code: 20038,
+    message:
+      'Unknown consent request (This node may has not yet received consent request from RP or the request does not concern this node)',
+    clientError: true,
+  },
+  SERVICE_ID_NOT_FOUND_IN_REQUEST: {
+    code: 20039,
+    message:
+      'Service ID cound not be found in data request list of the request',
     clientError: true,
   },
   INVALID_KEY_FORMAT: {
-    code: 20038,
+    code: 20040,
     message: 'Invalid or malformed key format',
     clientError: true,
   },
   UNSUPPORTED_KEY_TYPE: {
-    code: 20039,
+    code: 20041,
     message: 'Unsupported key type. Only RSA is allowed.',
     clientError: true,
   },
   MISMATCHED_KEY_TYPE: {
-    code: 20040,
-    message: 'Key type mismatched. Provided key type does not match with given key.',
+    code: 20042,
+    message:
+      'Key type mismatched. Provided key type does not match with given key.',
+    clientError: true,
+  },
+  SOME_AS_DO_NOT_PROVIDE_SERVICE: {
+    code: 20043,
+    message:
+      'Some AS IDs in some services in data request list do not provide the requested service',
+    clientError: true,
   },
 
   // Errors return from ABCI app
