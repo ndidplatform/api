@@ -95,7 +95,7 @@ init_ndid() {
   echo "Initializing NDID node..."
 
   local PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
-
+  local MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${MASTER_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
   local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/initNDID \
     -H "Content-Type: application/json" \
     -d "{\"public_key\":\"${PUBLIC_KEY}\",\"master_public_key\":\"${MASTER_PUBLIC_KEY}\"}" \
@@ -298,7 +298,8 @@ case ${ROLE} in
         register_namespace "reject_1" "Wait 1s then Reject" && \
         register_namespace "reject_10" "Wait 10s then Reject" && \
         register_service "bank_statement" "All transactions in the pass 3 month" && \
-        register_service "customer_info" "Customer Information"
+        register_service "customer_info" "Customer Information" && \
+        register_service "disapprove_service" "Disapprove service"
       do 
         sleep 1; 
       done &
