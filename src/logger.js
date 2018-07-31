@@ -35,12 +35,6 @@ const removePrintErrStackProp = winston.format((info) => {
   return info;
 });
 
-const logFormatForFile = winston.format.combine(
-  removePrintErrStackProp(),
-  winston.format.timestamp(),
-  winston.format.json()
-);
-
 const customFormat = winston.format.printf((info) => {
   const {
     // timestamp,
@@ -76,12 +70,34 @@ const customFormat = winston.format.printf((info) => {
   }
 });
 
+function getLogFormat() {
+  if (config.logFormat === 'json') {
+    return jsonLogFormat;
+  } else {
+    return defaultLogFormat;
+  }
+}
+
+const defaultLogFormat = config.logColor
+  ? winston.format.combine(
+      winston.format.colorize(),
+      // winston.format.timestamp(),
+      customFormat
+    )
+  : winston.format.combine(customFormat);
+
+const jsonLogFormat = winston.format.combine(
+  removePrintErrStackProp(),
+  winston.format.timestamp(),
+  winston.format.json()
+);
+
 const logger = winston.createLogger();
 
 if (config.logTarget === 'file') {
   logger.configure({
     level: config.logLevel,
-    format: logFormatForFile,
+    format: getLogFormat(),
     transports: [
       // new winston.transports.File({
       //   filename: 'error.log',
@@ -107,13 +123,7 @@ if (config.logTarget === 'file') {
 } else {
   logger.configure({
     level: config.logLevel,
-    format: config.logColor
-      ? winston.format.combine(
-          winston.format.colorize(),
-          // winston.format.timestamp(),
-          customFormat
-        )
-      : winston.format.combine(customFormat),
+    format: getLogFormat(),
     transports: [new winston.transports.Console()],
     exitOnError: false,
   });

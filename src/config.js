@@ -49,8 +49,8 @@ export const dataDirectoryPath =
 
 export const logLevel =
   process.env.LOG_LEVEL || (env === 'development' ? 'debug' : 'info');
-export const logTarget =
-  process.env.LOG_TARGET || (env === 'development' ? 'console' : 'file');
+export const logFormat = process.env.LOG_FORMAT || 'default';
+export const logTarget = process.env.LOG_TARGET || 'console';
 export const logColor =
   process.env.LOG_COLOR == null
     ? logTarget === 'console'
