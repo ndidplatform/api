@@ -23,55 +23,71 @@
 import errorType from '../error/type';
 
 // Response codes from ABCI app
-// OK                     uint32 = 0
-// EncodingError          uint32 = 1
-// DecodingError          uint32 = 2
-// BadNonce               uint32 = 3
-// Unauthorized           uint32 = 4
-// UnmarshalError         uint32 = 5
-// MarshalError           uint32 = 6
-// RequestIDNotFound      uint32 = 7
-// RequestIsClosed        uint32 = 8
-// RequestIsTimedOut      uint32 = 9
-// RequestIsCompleted     uint32 = 10
-// DuplicateServiceID     uint32 = 11
-// TokenAccountNotFound   uint32 = 12
-// TokenNotEnough         uint32 = 13
-// WrongTransactionFormat uint32 = 14
-// MethodCanNotBeEmpty    uint32 = 15
-// DuplicateResponse      uint32 = 16
-// AALError               uint32 = 17
-// IALError               uint32 = 18
-// DuplicateNodeID        uint32 = 19
-// WrongRole              uint32 = 20
-// DuplicateNamespace     uint32 = 21
-// NamespaceNotFound      uint32 = 22
-// DuplicateRequestID     uint32 = 23
-// NodeIDNotFound         uint32 = 24
-// DuplicatePublicKey     uint32 = 25
-// DuplicateAccessorID      uint32 = 26
-// DuplicateAccessorGroupID uint32 = 27
-// AccessorGroupIDNotFound  uint32 = 28
-// RequestIsNotCompleted    uint32 = 29
-// RequestIsNotSpecial      uint32 = 30
-// InvalidMinIdp            uint32 = 31
-// NodeIDIsNotExistInASList uint32 = 32
-// AsIDIsNotExistInASList   uint32 = 33
-// ServiceIDNotFound        uint32 = 34
-// InvalidMode              uint32 = 35
-// HashIDNotFound                  uint32 = 36
-// DuplicateIdentityProof          uint32 = 37
-// WrongIdentityProof              uint32 = 38
-// DuplicateASInDataRequest        uint32 = 39
-// DuplicateAnsweredAsIDList       uint32 = 40
-// DuplicateServiceIDInDataRequest uint32 = 41
-// ServiceDestinationNotFound      uint32 = 42
-// DataRequestIsCompleted          uint32 = 43
-// NotFirstIdP                     uint32 = 44
+// OK                                        uint32 = 0
+// EncodingError                             uint32 = 1
+// DecodingError                             uint32 = 2
+// BadNonce                                  uint32 = 3
+// Unauthorized                              uint32 = 4
+// UnmarshalError                            uint32 = 5
+// MarshalError                              uint32 = 6
+// RequestIDNotFound                         uint32 = 7
+// RequestIsClosed                           uint32 = 8
+// RequestIsTimedOut                         uint32 = 9
+// RequestIsCompleted                        uint32 = 10
+// DuplicateServiceID                        uint32 = 11
+// TokenAccountNotFound                      uint32 = 12
+// TokenNotEnough                            uint32 = 13
+// InvalidTransactionFormat                  uint32 = 14
+// MethodCanNotBeEmpty                       uint32 = 15
+// DuplicateResponse                         uint32 = 16
+// AALError                                  uint32 = 17
+// IALError                                  uint32 = 18
+// DuplicateNodeID                           uint32 = 19
+// WrongRole                                 uint32 = 20
+// DuplicateNamespace                        uint32 = 21
+// NamespaceNotFound                         uint32 = 22
+// DuplicateRequestID                        uint32 = 23
+// NodeIDNotFound                            uint32 = 24
+// DuplicatePublicKey                        uint32 = 25
+// DuplicateAccessorID                       uint32 = 26
+// DuplicateAccessorGroupID                  uint32 = 27
+// AccessorGroupIDNotFound                   uint32 = 28
+// RequestIsNotCompleted                     uint32 = 29
+// RequestIsNotSpecial                       uint32 = 30
+// InvalidMinIdp                             uint32 = 31
+// NodeIDIsNotExistInASList                  uint32 = 32
+// AsIDIsNotExistInASList                    uint32 = 33
+// ServiceIDNotFound                         uint32 = 34
+// InvalidMode                               uint32 = 35
+// HashIDNotFound                            uint32 = 36
+// DuplicateIdentityProof                    uint32 = 37
+// WrongIdentityProof                        uint32 = 38
+// DuplicateASInDataRequest                  uint32 = 39
+// DuplicateAnsweredAsIDList                 uint32 = 40
+// DuplicateServiceIDInDataRequest           uint32 = 41
+// ServiceDestinationNotFound                uint32 = 42
+// DataRequestIsCompleted                    uint32 = 43
+// NotFirstIdP                               uint32 = 44
 // AccessorIDNotFound                        uint32 = 45
 // NotOwnerOfAccessor                        uint32 = 46
 // NoPermissionForRegisterServiceDestination uint32 = 47
 // IncompleteValidList                       uint32 = 48
+// UnknownMethod                             uint32 = 49
+// InvalidKeyFormat                          uint32 = 50
+// UnsupportedKeyType                        uint32 = 51
+// UnknownKeyType                            uint32 = 52
+// NDIDisAlreadyExisted                      uint32 = 53
+// NoPermissionForRegisterMsqAddress         uint32 = 54
+// NoPermissionForCallNDIDMethod             uint32 = 55
+// NoPermissionForCallIdPMethod              uint32 = 56
+// NoPermissionForCallASMethod               uint32 = 57
+// NoPermissionForCallRPorASMethod           uint32 = 58
+// VerifySignatureError                      uint32 = 59
+// NotOwnerOfRequest                         uint32 = 60
+// CannotGetPublicKeyFromParam               uint32 = 61
+// CannotGetMasterPublicKeyFromNodeID        uint32 = 62
+// CannotGetPublicKeyFromNodeID              uint32 = 63
+// UnknownError                              uint32 = 999
 
 const codeMapping = {
   1: errorType.ABCI_ENCODING_ERROR, // Not used in API (calls from API won't generate this error)
@@ -122,6 +138,22 @@ const codeMapping = {
   46: errorType.ABCI_NOT_OWNER_OF_ACCESSOR,
   47: errorType.ABCI_REGISTER_SERVICE_UNAUTHORIZED,
   48: errorType.ABCI_INCOMPLETE_RESPONSE_VALID_LIST,
+  49: errorType.ABCI_UNKNOWN_METHOD,
+  50: errorType.ABCI_INVALID_KEY_FORMAT,
+  51: errorType.ABCI_UNSUPPORTED_KEY_TYPE,
+  52: errorType.ABCI_UNKNOWN_KEY_TYPE,
+  53: errorType.ABCI_NDID_ALREADY_EXIST,
+  54: errorType.ABCI_NO_PERMISSION_TO_REGISTER_MESSAGE_QUEUE_ADDRESS,
+  55: errorType.ABCI_NO_PERMISSION_TO_CALL_NDID_METHOD,
+  56: errorType.ABCI_NO_PERMISSION_TO_CALL_IDP_METHOD,
+  57: errorType.ABCI_NO_PERMISSION_TO_CALL_AS_METHOD,
+  58: errorType.ABCI_NO_PERMISSION_TO_CALL_RP_AND_IDP_METHOD,
+  59: errorType.ABCI_SIGNATURE_VERIFICATION_FAILED,
+  60: errorType.ABCI_NOT_REQUEST_OWNER,
+  61: errorType.ABCI_CANNOT_GET_PUBLIC_KEY_FROM_PARAMS,
+  62: errorType.ABCI_CANNOT_GET_MASTER_PUBLIC_KEY_BY_NODE_ID,
+  63: errorType.ABCI_CANNOT_GET_PUBLIC_KEY_BY_NODE_ID,
+  999: errorType.UNKNOWN_ERROR,
 };
 
 export function convertAbciAppCodeToErrorType(abciAppCode) {

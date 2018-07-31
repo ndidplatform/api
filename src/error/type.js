@@ -364,6 +364,10 @@ export default {
 
   // Errors return from ABCI app
   // Server errors
+  ABCI_UNKNOWN_ERROR: {
+    code: 15000,
+    message: 'Unknown Error',
+  },
   ABCI_ENCODING_ERROR: {
     code: 15001,
     message: 'Error encoding',
@@ -440,6 +444,10 @@ export default {
   ABCI_INCOMPLETE_RESPONSE_VALID_LIST: {
     code: 15019,
     message: 'Incomplete IdP response valid list',
+  },
+  ABCI_UNKNOWN_METHOD: {
+    code: 15020,
+    message: 'Unknown method',
   },
 
   // Client errors
@@ -582,6 +590,76 @@ export default {
     code: 25028,
     message:
       'Unauthorized to register a service (NDID may have not granted you the right to register this service)',
+    clientError: true,
+  },
+  ABCI_INVALID_KEY_FORMAT: {
+    code: 25029,
+    message: 'Invalid key format',
+    clientError: true,
+  },
+  ABCI_UNSUPPORTED_KEY_TYPE: {
+    code: 25030,
+    message: 'Unsupported key type. Only RSA and EC are allowed.',
+    clientError: true,
+  },
+  ABCI_UNKNOWN_KEY_TYPE: {
+    code: 25031,
+    message: 'Unknown key type',
+    clientError: true,
+  },
+  ABCI_NDID_ALREADY_EXIST: {
+    code: 25032,
+    message: 'NDID node is already existed',
+    clientError: true,
+  },
+  ABCI_NO_PERMISSION_TO_REGISTER_MESSAGE_QUEUE_ADDRESS: {
+    code: 25033,
+    message: 'No permission to register message queue address',
+    clientError: true,
+  },
+  ABCI_NO_PERMISSION_TO_CALL_NDID_METHOD: {
+    code: 25034,
+    message: 'No permission to call NDID method',
+    clientError: true,
+  },
+  ABCI_NO_PERMISSION_TO_CALL_IDP_METHOD: {
+    code: 25035,
+    message: 'No permission to call IdP method',
+    clientError: true,
+  },
+  ABCI_NO_PERMISSION_TO_CALL_AS_METHOD: {
+    code: 25036,
+    message: 'No permission to call AS method',
+    clientError: true,
+  },
+  ABCI_NO_PERMISSION_TO_CALL_RP_AND_IDP_METHOD: {
+    code: 25037,
+    message: 'No permission to call RP and IdP method',
+    clientError: true,
+  },
+  ABCI_SIGNATURE_VERIFICATION_FAILED: {
+    code: 25038,
+    message: "Node's signature verification failed",
+    clientError: true,
+  },
+  ABCI_NOT_REQUEST_OWNER: {
+    code: 25039,
+    message: 'Not a request owner',
+    clientError: true,
+  },
+  ABCI_CANNOT_GET_PUBLIC_KEY_FROM_PARAMS: {
+    code: 25040,
+    message: 'Cannot get public key from parameters',
+    clientError: true,
+  },
+  ABCI_CANNOT_GET_MASTER_PUBLIC_KEY_BY_NODE_ID: {
+    code: 25041,
+    message: 'Cannot get master public key by node ID',
+    clientError: true,
+  },
+  ABCI_CANNOT_GET_PUBLIC_KEY_BY_NODE_ID: {
+    code: 25042,
+    message: 'Cannot get public key by node ID',
     clientError: true,
   },
 
