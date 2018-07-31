@@ -267,57 +267,15 @@ export async function processMessage(message) {
   if (message.type === 'idp_response') {
     //reponse for create identity
     if (await checkCreateIdentityResponse(message)) {
-      const { secret, associated } = await identity.addAccessorAfterConsent(
-        message.request_id,
-        message.accessor_id
-      );
-      const reference_id = await db.getReferenceIdByRequestId(
-        message.request_id
-      );
-      const callbackUrl = await db.getCallbackUrlByReferenceId(reference_id);
-      const notifyData = {
-        success: true,
-        reference_id,
-        request_id: message.request_id,
-        secret,
-      };
-      if (associated) {
-        if (callbackUrl == null) {
-          // Implies API v1
-          notifyAddAccessorResultByCallback(notifyData);
-        } else {
-          await callbackToClient(
-            callbackUrl,
-            {
-              type: 'add_accessor_result',
-              ...notifyData,
-            },
-            true
-          );
-          db.removeCallbackUrlByReferenceId(reference_id);
-        }
-      } else {
-        if (callbackUrl == null) {
-          // Implies API v1
-          notifyCreateIdentityResultByCallback(notifyData);
-        } else {
-          await callbackToClient(
-            callbackUrl,
-            {
-              type: 'create_identity_result',
-              ...notifyData,
-            },
-            true
-          );
-          db.removeCallbackUrlByReferenceId(reference_id);
-        }
-      }
-      db.removeReferenceIdByRequestId(message.request_id);
-      await common.closeRequest(
+      await identity.addAccessorAfterConsent(
         {
           request_id: message.request_id,
+          old_accessor_id: message.accessor_id,
         },
-        { synchronous: true }
+        {
+          callbackFnName: 'idp.processIdpResponseAfterAddAccessor',
+          callbackAdditionalArgs: [{ message }],
+        }
       );
     }
   } else if (message.type === 'challenge_request') {
@@ -359,6 +317,74 @@ export async function processMessage(message) {
       min_ial: message.min_ial,
       min_aal: message.min_aal,
       data_request_list: message.data_request_list,
+    });
+  }
+}
+
+export async function processIdpResponseAfterAddAccessor(
+  { error, secret, associated },
+  { message }
+) {
+  try {
+    if (error) throw error;
+
+    const reference_id = await db.getReferenceIdByRequestId(message.request_id);
+    const callbackUrl = await db.getCallbackUrlByReferenceId(reference_id);
+    const notifyData = {
+      success: true,
+      reference_id,
+      request_id: message.request_id,
+      secret,
+    };
+    if (associated) {
+      if (callbackUrl == null) {
+        // Implies API v1
+        notifyAddAccessorResultByCallback(notifyData);
+      } else {
+        await callbackToClient(
+          callbackUrl,
+          {
+            type: 'add_accessor_result',
+            ...notifyData,
+          },
+          true
+        );
+        db.removeCallbackUrlByReferenceId(reference_id);
+      }
+    } else {
+      if (callbackUrl == null) {
+        // Implies API v1
+        notifyCreateIdentityResultByCallback(notifyData);
+      } else {
+        await callbackToClient(
+          callbackUrl,
+          {
+            type: 'create_identity_result',
+            ...notifyData,
+          },
+          true
+        );
+        db.removeCallbackUrlByReferenceId(reference_id);
+      }
+    }
+    db.removeReferenceIdByRequestId(message.request_id);
+    await common.closeRequest(
+      {
+        request_id: message.request_id,
+      },
+      { synchronous: true }
+    );
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error processing IdP response for creating identity',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    await common.notifyError({
+      callbackUrl: callbackUrls.error_url,
+      action: 'processIdpResponseAfterAddAccessor',
+      error: err,
+      requestId: message.request_id,
     });
   }
 }

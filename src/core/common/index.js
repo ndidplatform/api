@@ -114,6 +114,8 @@ export function getFunction(fnName) {
       return idp.requestChallengeAfterBlockchain;
     case 'idp.createResponseAfterBlockchain':
       return idp.createResponseAfterBlockchain;
+    case 'idp.processIdpResponseAfterAddAccessor':
+      return idp.processIdpResponseAfterAddAccessor;
     case 'as.afterGotDataFromCallback':
       return as.afterGotDataFromCallback;
     case 'as.registerOrUpdateASServiceInternalAsyncAfterBlockchain':
@@ -132,6 +134,10 @@ export function getFunction(fnName) {
       return identity.checkForExistedIdentityAfterBlockchain;
     case 'identity.createIdentityInternalAsyncAfterClearMqDestTimeout':
       return identity.createIdentityInternalAsyncAfterClearMqDestTimeout;
+    case 'identity.addAccessorAfterConsentAfterAddAccessorMethod':
+      return identity.addAccessorAfterConsentAfterAddAccessorMethod;
+    case 'identity.addAccessorAfterConsentAfterRegisterMqDest':
+      return identity.addAccessorAfterConsentAfterRegisterMqDest;
     default:
       return function noop() {};
   }

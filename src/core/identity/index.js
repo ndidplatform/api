@@ -31,10 +31,10 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import { getFunction, validateKeyType } from '../common';
 import * as utils from '../../utils';
 import * as config from '../../config';
-import * as db from '../../db';
 
 export * from './create_identity';
 export * from './update_ial';
+export * from './add_accessor_after_consent';
 
 export async function checkAssociated({ namespace, identifier }) {
   let idpList = await tendermintNdid.getIdpNodes({
@@ -94,62 +94,6 @@ export async function addAccessorMethodForAssociatedIdp(
     { synchronous, apiVersion }
   );
   return result;
-}
-
-// FIXME: Refactor for broadcast_tx_sync with callback
-export async function addAccessorAfterConsent(request_id, old_accessor_id) {
-  //NOTE: zero knowledge proof cannot be verify by blockchain, hence,
-  //if this idp call to add their accessor it's imply that zk proof is verified by them
-  logger.debug({
-    message: 'Get consent, adding accessor...',
-    request_id,
-    old_accessor_id,
-  });
-
-  let accessor_group_id = await tendermintNdid.getAccessorGroupId(
-    old_accessor_id
-  );
-  let {
-    hash_id,
-    ial,
-    accessor_type,
-    accessor_public_key,
-    accessor_id,
-    sid,
-    associated,
-    secret,
-  } = await db.getIdentityFromRequestId(request_id);
-
-  let promiseArray = [
-    tendermintNdid.addAccessorMethod({
-      request_id,
-      accessor_group_id,
-      accessor_type,
-      accessor_id,
-      accessor_public_key,
-    }),
-  ];
-
-  //no ial means old idp add new accessor
-  if (ial)
-    promiseArray.push(
-      tendermintNdid.registerMqDestination({
-        users: [
-          {
-            hash_id,
-            ial,
-          },
-        ],
-      })
-    );
-
-  await Promise.all(promiseArray);
-  db.removeIdentityFromRequestId(request_id);
-
-  return {
-    secret,
-    associated,
-  };
 }
 
 export async function checkForExistedIdentity(
