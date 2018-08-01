@@ -403,6 +403,15 @@ function generateCustomPadding(initialSalt, blockLength = 2048) {
   return paddingBuffer;
 }
 
+export function hashRequestMessage(request_message, request_message_salt) {
+  let paddingBuffer = generateCustomPadding(request_message_salt);
+  let normalHashBuffer = Buffer.from(hash(request_message + request_message_salt),'base64');
+  return Buffer.concat([
+    paddingBuffer,
+    normalHashBuffer
+  ]).toString('base64');
+}
+
 export function verifyResponseSignature(signature, publicKey, plainText, salt) {
   //should find block length if use another sign method
   let paddingBuffer = generateCustomPadding(salt);
