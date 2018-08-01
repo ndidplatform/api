@@ -398,29 +398,29 @@ export async function removeTimeoutScheduler(requestId) {
   delete timeoutScheduler[requestId];
 }
 
-export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
-  const {
-    namespace,
-    identifier,
-    privateProofObjectList,
-    request_message,
-    request_message_salt,
-  } = await cacheDb.getRequestData(request_id);
+async function verifyZKProof({
+  request_id,
+  idp_id,
+  requestData,
+  response,
+  accessor_public_key,
+  privateProofObject,
+  mode,
+}) {
+  const { namespace, identifier, privateProofObjectList } = requestData;
 
   if (mode === 1) {
     return null;
   }
 
-  const challenge = (await cacheDb.getChallengeFromRequestId(request_id))[idp_id];
-  const privateProofObject = dataFromMq
-    ? dataFromMq
-    : await cacheDb.getPrivateProofReceivedFromMQ(request_id + ':' + idp_id);
+  const challenge = (await cacheDb.getChallengeFromRequestId(request_id))[
+    idp_id
+  ];
 
   logger.debug({
     message: 'Verifying zk proof',
     request_id,
     idp_id,
-    dataFromMq,
     challenge,
     privateProofObject,
     mode,
@@ -463,57 +463,20 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
     }
   }
 
-  //query accessor_public_key from privateProofObject.accessor_id
-  const public_key = await tendermintNdid.getAccessorKey(
-    privateProofObject.accessor_id
-  );
-
-  //query publicProof from response of idp_id in request
-  const response_list = (await tendermintNdid.getRequestDetail({
-    requestId: request_id,
-  })).response_list;
-
-  logger.debug({
-    message: 'Request detail',
-    response_list,
-    request_message,
-  });
-
-  const response = response_list.find((response) => response.idp_id === idp_id);
   const publicProof = JSON.parse(response.identity_proof);
-  const signature = response.signature;
   const privateProofValueHash = response.private_proof_hash;
 
-  const signatureValid = utils.verifyResponseSignature(
-    signature,
-    public_key,
-    request_message,
-    request_message_salt,
-  );
-
-  logger.debug({
-    message: 'Verify signature',
-    signatureValid,
-    request_message,
-    request_message_salt,
-    public_key,
-    signature,
-  });
-
-  return (
-    signatureValid &&
-    utils.verifyZKProof(
-      public_key,
-      challenge,
-      privateProofObject.privateProofValueArray,
-      publicProof,
-      {
-        namespace,
-        identifier,
-      },
-      privateProofValueHash,
-      privateProofObject.padding
-    )
+  return utils.verifyZKProof(
+    accessor_public_key,
+    challenge,
+    privateProofObject.privateProofValueArray,
+    publicProof,
+    {
+      namespace,
+      identifier,
+    },
+    privateProofValueHash,
+    privateProofObject.padding
   );
 }
 
@@ -634,13 +597,31 @@ export async function checkIdpResponse({
     }
   }
 
-  // Check ZK Proof
-  const validProof = await verifyZKProof(
-    requestStatus.request_id,
-    idpId,
-    requestDataFromMq,
-    requestStatus.mode
+  const privateProofObject = requestDataFromMq
+    ? requestDataFromMq
+    : await cacheDb.getPrivateProofReceivedFromMQ(
+        requestStatus.request_id + ':' + idpId
+      );
+
+  const accessor_public_key = await tendermintNdid.getAccessorKey(
+    privateProofObject.accessor_id
   );
+
+  const response_list = (await tendermintNdid.getRequestDetail({
+    requestId: requestStatus.request_id,
+  })).response_list;
+  const response = response_list.find((response) => response.idp_id === idpId);
+
+  // Check ZK Proof
+  const validProof = await verifyZKProof({
+    request_id: requestStatus.request_id,
+    idp_id: idpId,
+    requestData,
+    response,
+    accessor_public_key,
+    privateProofObject,
+    mode: requestStatus.mode,
+  });
 
   logger.debug({
     message: 'Checked ZK proof and IAL',
@@ -650,15 +631,42 @@ export async function checkIdpResponse({
     validIal,
   });
 
+  // Check signature
+  let signatureValid;
+  if (requestStatus.mode === 1) {
+    signatureValid = null; // Cannot check in mode 1
+  } else if (requestStatus.mode === 3) {
+    const { request_message, request_message_salt } = requestData;
+    const signature = response.signature;
+
+    logger.debug({
+      message: 'Verifying signature',
+      request_message,
+      request_message_salt,
+      accessor_public_key,
+      signature,
+    });
+
+    signatureValid = utils.verifyResponseSignature(
+      signature,
+      accessor_public_key,
+      request_message,
+      request_message_salt
+    );
+  }
+
   const responseValid = {
     idp_id: idpId,
+    valid_signature: signatureValid,
     valid_proof: validProof,
     valid_ial: validIal,
   };
 
   await cacheDb.addIdpResponseValidList(requestId, responseValid);
 
-  cacheDb.removePrivateProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
+  cacheDb.removePrivateProofReceivedFromMQ(
+    `${requestStatus.request_id}:${idpId}`
+  );
 
   return responseValid;
 }
