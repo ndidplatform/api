@@ -421,7 +421,7 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
     const signatureValid = utils.verifySignature(
       signature,
       public_key,
-      request_message + request_message_salt
+      request_message
     );
 
     logger.debug({

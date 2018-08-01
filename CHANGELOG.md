@@ -4,8 +4,6 @@
 
 BREAKING CHANGES:
 
-- Signature in IdP response must sign `request_message` concatenate with provided `request_message_salt`.
-- Include request message salt when verifying IdP response signature.
 - Remove `ALLOW_DEBUG_API` environment variable option. Debug APIs are available in development mode and inaccessible in production environment.
 
 IMPROVEMENTS:
@@ -20,9 +18,9 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - Append salt to request message before hash instead of prepend.
-- Fix missing `request_message_salt` property in object when calling callback to IdP with type `incoming_request`.
+<!-- - Fix missing `request_message_salt` property in object when calling callback to IdP with type `incoming_request`. -->
 - Fix AS data response signature is not salted.
-- Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side.
+<!-- - Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side. -->
 - Fix error in `getMessageWithCode()` in CustomError when error cause is undefined.
 - Clean up data in cache DB when create request and create identity fails.
 - Fix AS can send data response with any request ID and service ID without having to receive the request first.

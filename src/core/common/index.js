@@ -486,7 +486,7 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   const signatureValid = utils.verifySignature(
     signature,
     public_key,
-    request_message + request_message_salt
+    request_message
   );
 
   logger.debug({

@@ -108,7 +108,7 @@ export async function requestChallengeAndCreateResponse(data) {
       const signatureValid = utils.verifySignature(
         data.signature,
         accessorPublicKey,
-        request_message + request_message_salt
+        request_message
       );
       if (!signatureValid) {
         throw new CustomError({

@@ -312,7 +312,7 @@ export async function processMessage(message) {
       request_message_hash: utils.hash(
         message.request_message + message.request_message_salt
       ),
-      request_message_salt: message.request_message_salt,
+      // request_message_salt: message.request_message_salt,
       requester_node_id: message.rp_id,
       min_ial: message.min_ial,
       min_aal: message.min_aal,
