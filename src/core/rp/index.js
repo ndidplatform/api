@@ -29,7 +29,7 @@ import logger from '../../logger';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
 import * as config from '../../config';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
 
 export * from './event_handlers';
 
@@ -194,7 +194,7 @@ export async function sendRequestToAS(requestData, height) {
     })
   );
 
-  const challenge = await db.getChallengeFromRequestId(requestData.request_id);
+  const challenge = await cacheDb.getChallengeFromRequestId(requestData.request_id);
   await Promise.all(
     Object.values(dataToSendByNodeId).map(
       ({ receiver, service_data_request_list }) =>
@@ -218,7 +218,7 @@ export async function sendRequestToAS(requestData, height) {
 
 export async function getRequestIdByReferenceId(referenceId) {
   try {
-    return await db.getRequestIdByReferenceId(referenceId);
+    return await cacheDb.getRequestIdByReferenceId(referenceId);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get data received from AS',
@@ -235,7 +235,7 @@ export async function getDataFromAS(requestId) {
       return null;
     }
 
-    return await db.getDatafromAS(requestId);
+    return await cacheDb.getDatafromAS(requestId);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get data received from AS',
@@ -246,7 +246,7 @@ export async function getDataFromAS(requestId) {
 
 export async function removeDataFromAS(requestId) {
   try {
-    return await db.removeDataFromAS(requestId);
+    return await cacheDb.removeDataFromAS(requestId);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot remove data received from AS',
@@ -257,7 +257,7 @@ export async function removeDataFromAS(requestId) {
 
 export async function removeAllDataFromAS() {
   try {
-    return await db.removeAllDataFromAS();
+    return await cacheDb.removeAllDataFromAS();
   } catch (error) {
     throw new CustomError({
       message: 'Cannot remove all data received from AS',

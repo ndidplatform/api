@@ -28,7 +28,7 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
 import * as utils from '../../utils';
 import * as config from '../../config';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
 
@@ -85,7 +85,7 @@ export async function processDataForRP(
     }
 
     const dataRequestId = requestId + ':' + serviceId;
-    const savedRpId = await db.getRpIdFromDataRequestId(dataRequestId);
+    const savedRpId = await cacheDb.getRpIdFromDataRequestId(dataRequestId);
 
     if (!savedRpId) {
       throw new CustomError({
@@ -254,7 +254,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     }
 
     const dataRequestId = requestId + ':' + serviceId;
-    db.removeRpIdFromDataRequestId(dataRequestId);
+    cacheDb.removeRpIdFromDataRequestId(dataRequestId);
   } catch (error) {
     logger.error({
       message: 'Send data to RP internal async after blockchain error',

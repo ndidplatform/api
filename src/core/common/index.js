@@ -45,7 +45,7 @@ import * as lt from '../../utils/long_timeout';
 import * as config from '../../config';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
 import * as externalCryptoService from '../../utils/external_crypto_service';
 
 export * from './create_request';
@@ -174,7 +174,7 @@ if (role === 'rp') {
 }
 
 async function resumeTimeoutScheduler() {
-  let scheduler = await db.getAllTimeoutScheduler();
+  let scheduler = await cacheDb.getAllTimeoutScheduler();
   scheduler.forEach(({ requestId, unixTimeout }) =>
     runTimeoutScheduler(requestId, (unixTimeout - Date.now()) / 1000)
   );
@@ -345,7 +345,7 @@ export function stopAllTimeoutScheduler() {
 
 export async function timeoutRequest(requestId) {
   try {
-    const responseValidList = await db.getIdpResponseValidList(requestId);
+    const responseValidList = await cacheDb.getIdpResponseValidList(requestId);
 
     // FOR DEBUG
     const nodeIds = {};
@@ -371,8 +371,8 @@ export async function timeoutRequest(requestId) {
     });
     throw error;
   }
-  db.removeTimeoutScheduler(requestId);
-  db.removeChallengeFromRequestId(requestId);
+  cacheDb.removeTimeoutScheduler(requestId);
+  cacheDb.removeChallengeFromRequestId(requestId);
 }
 
 export function runTimeoutScheduler(requestId, secondsToTimeout) {
@@ -387,13 +387,13 @@ export function runTimeoutScheduler(requestId, secondsToTimeout) {
 
 export async function addTimeoutScheduler(requestId, secondsToTimeout) {
   let unixTimeout = Date.now() + secondsToTimeout * 1000;
-  await db.addTimeoutScheduler(requestId, unixTimeout);
+  await cacheDb.addTimeoutScheduler(requestId, unixTimeout);
   runTimeoutScheduler(requestId, secondsToTimeout);
 }
 
 export async function removeTimeoutScheduler(requestId) {
   lt.clearTimeout(timeoutScheduler[requestId]);
-  await db.removeTimeoutScheduler(requestId);
+  await cacheDb.removeTimeoutScheduler(requestId);
   delete timeoutScheduler[requestId];
 }
 
@@ -404,16 +404,16 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
     privateProofObjectList,
     request_message,
     request_message_salt,
-  } = await db.getRequestData(request_id);
+  } = await cacheDb.getRequestData(request_id);
 
   if (mode === 1) {
     return null;
   }
 
-  const challenge = (await db.getChallengeFromRequestId(request_id))[idp_id];
+  const challenge = (await cacheDb.getChallengeFromRequestId(request_id))[idp_id];
   const privateProofObject = dataFromMq
     ? dataFromMq
-    : await db.getPrivateProofReceivedFromMQ(request_id + ':' + idp_id);
+    : await cacheDb.getPrivateProofReceivedFromMQ(request_id + ':' + idp_id);
 
   logger.debug({
     message: 'Verifying zk proof',
@@ -550,7 +550,7 @@ export async function handleChallengeRequest({
   else if (config.role === 'rp') nodeId.rp_id = config.nodeId;
 
   let challenge;
-  let challengeObject = await db.getChallengeFromRequestId(request_id);
+  let challengeObject = await cacheDb.getChallengeFromRequestId(request_id);
   //challenge deleted, request is done
   if (challengeObject == null) return false;
 
@@ -563,7 +563,7 @@ export async function handleChallengeRequest({
     ];
 
     challengeObject[idp_id] = challenge;
-    await db.setChallengeFromRequestId(request_id, challengeObject);
+    await cacheDb.setChallengeFromRequestId(request_id, challengeObject);
   }
 
   logger.debug({
@@ -616,7 +616,7 @@ export async function checkIdpResponse({
   const requestId = requestStatus.request_id;
 
   // Check IAL
-  const requestData = await db.getRequestData(requestId);
+  const requestData = await cacheDb.getRequestData(requestId);
   const identityInfo = await tendermintNdid.getIdentityInfo(
     requestData.namespace,
     requestData.identifier,
@@ -655,9 +655,9 @@ export async function checkIdpResponse({
     valid_ial: validIal,
   };
 
-  await db.addIdpResponseValidList(requestId, responseValid);
+  await cacheDb.addIdpResponseValidList(requestId, responseValid);
 
-  db.removePrivateProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
+  cacheDb.removePrivateProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
 
   return responseValid;
 }

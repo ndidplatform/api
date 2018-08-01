@@ -33,7 +33,7 @@ import logger from '../logger';
 import * as tendermintHttpClient from './http_client';
 import TendermintWsClient from './ws_client';
 import { convertAbciAppCodeToErrorType } from './abci_app_code';
-import * as db from '../db';
+import * as cacheDb from '../db/cache';
 import * as utils from '../utils';
 import { sha256 } from '../utils/crypto';
 import * as config from '../config';
@@ -101,7 +101,7 @@ export function setTendermintNewBlockEventHandler(handler) {
 }
 
 export async function loadExpectedTxFromDB() {
-  const savedExpectedTxs = await db.getAllExpectedTxs();
+  const savedExpectedTxs = await cacheDb.getAllExpectedTxs();
   savedExpectedTxs.forEach(({ tx: txHash, metadata }) => {
     expectedTx[txHash] = metadata;
   });
@@ -169,7 +169,7 @@ async function processExpectedTx(txHash, result, fromEvent) {
         });
       }
     }
-    await db.removeExpectedTxMetadata(txHash);
+    await cacheDb.removeExpectedTxMetadata(txHash);
   } catch (error) {
     const err = new CustomError({
       message: 'Error processing expected Tx',
@@ -571,7 +571,7 @@ export async function transact(
     callbackAdditionalArgs,
   };
   expectedTx[txHash] = callbackData;
-  await db.setExpectedTxMetadata(txHash, callbackData);
+  await cacheDb.setExpectedTxMetadata(txHash, callbackData);
 
   try {
     let promise;
@@ -595,7 +595,7 @@ export async function transact(
     return broadcastTxSyncResult;
   } catch (error) {
     delete expectedTx[txHash];
-    await db.removeExpectedTxMetadata(txHash);
+    await cacheDb.removeExpectedTxMetadata(txHash);
     if (error.type === 'JSON-RPC ERROR') {
       throw new CustomError({
         message: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR.message,

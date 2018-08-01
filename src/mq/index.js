@@ -28,7 +28,7 @@ import protobuf from 'protobufjs';
 import MQSend from './mq_send_controller';
 import MQRecv from './mq_recv_controller';
 import * as tendermintNdid from '../tendermint/ndid';
-import * as db from '../db';
+import * as cacheDb from '../db/cache';
 import * as utils from '../utils';
 import logger from '../logger';
 import CustomError from '../error/custom_error';
@@ -54,15 +54,15 @@ export const eventEmitter = new EventEmitter();
 
 (async function init() {
   if (config.role === 'ndid') return;
-  const timeoutList = await db.getAllDuplicateMessageTimeout();
+  const timeoutList = await cacheDb.getAllDuplicateMessageTimeout();
   const promiseArray = [];
   for (let id in timeoutList) {
     let unixTimeout = timeoutList[id];
     if (unixTimeout >= Date.now()) {
-      promiseArray.push(db.removeDuplicateMessageTimeout(id));
+      promiseArray.push(cacheDb.removeDuplicateMessageTimeout(id));
     } else {
       timer[id] = setTimeout(() => {
-        db.removeDuplicateMessageTimeout(id);
+        cacheDb.removeDuplicateMessageTimeout(id);
         delete timer[id];
       }, Date.now() - unixTimeout);
     }
@@ -73,13 +73,13 @@ export const eventEmitter = new EventEmitter();
 
   mqRecv.on('message', async ({ message, msgId, senderId }) => {
     const id = senderId + ':' + msgId;
-    let unixTimeout = await db.getDuplicateMessageTimeout(id);
+    let unixTimeout = await cacheDb.getDuplicateMessageTimeout(id);
     if (unixTimeout != null) return;
 
     unixTimeout = Date.now() + 120000;
-    db.addDuplicateMessageTimeout(id, unixTimeout);
+    cacheDb.addDuplicateMessageTimeout(id, unixTimeout);
     timer[id] = setTimeout(() => {
-      db.removeDuplicateMessageTimeout(id);
+      cacheDb.removeDuplicateMessageTimeout(id);
       delete timer[id];
     }, 120000);
     onMessage(message);

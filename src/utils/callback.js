@@ -26,7 +26,7 @@ import { ExponentialBackoff } from 'simple-backoff';
 import { randomBase64Bytes } from './crypto';
 
 import { wait } from '.';
-import * as db from '../db';
+import * as cacheDb from '../db/cache';
 import logger from '../logger';
 import * as config from '../config';
 
@@ -116,7 +116,7 @@ async function callbackWithRetry(
     try {
       const responseObj = await httpPost(cbId, callbackUrl, body);
 
-      db.removeCallbackWithRetryData(cbId);
+      cacheDb.removeCallbackWithRetryData(cbId);
       if (responseCallbackFnName) {
         getResponseCallbackFn(responseCallbackFnName)(
           responseObj,
@@ -137,7 +137,7 @@ async function callbackWithRetry(
         if (
           !(await getShouldRetryFn(shouldRetryFnName)(...shouldRetryArguments))
         ) {
-          db.removeCallbackWithRetryData(cbId);
+          cacheDb.removeCallbackWithRetryData(cbId);
           return;
         }
       } else {
@@ -150,7 +150,7 @@ async function callbackWithRetry(
             url: callbackUrl,
             cbId,
           });
-          db.removeCallbackWithRetryData(cbId);
+          cacheDb.removeCallbackWithRetryData(cbId);
           return;
         }
       }
@@ -194,7 +194,7 @@ export async function callbackToClient(
       url: callbackUrl,
       cbId,
     });
-    await db.addCallbackWithRetryData(cbId, {
+    await cacheDb.addCallbackWithRetryData(cbId, {
       callbackUrl,
       body,
       shouldRetryFnName,
@@ -245,7 +245,7 @@ export async function callbackToClient(
  * @param {function} responseCallback
  */
 export async function resumeCallbackToClient() {
-  const callbackDatum = await db.getAllCallbackWithRetryData();
+  const callbackDatum = await cacheDb.getAllCallbackWithRetryData();
   callbackDatum.forEach((callback) =>
     callbackWithRetry(
       callback.data.callbackUrl,

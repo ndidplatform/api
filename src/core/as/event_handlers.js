@@ -27,7 +27,8 @@ import logger from '../../logger';
 
 import * as tendermint from '../../tendermint';
 import * as common from '../common';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
+import * as longTermDb from '../../db/long_term';
 
 const requestIdLocks = {};
 
@@ -46,6 +47,8 @@ export async function handleMessageFromQueue(messageStr) {
     const message = JSON.parse(messageStr);
     requestId = message.request_id;
 
+    await longTermDb.addMessage(message.type, requestId, messageStr);
+
     const latestBlockHeight = tendermint.latestBlockHeight;
     if (latestBlockHeight <= message.height) {
       logger.debug({
@@ -55,14 +58,14 @@ export async function handleMessageFromQueue(messageStr) {
       });
       requestIdLocks[message.request_id] = true;
       await Promise.all([
-        db.setRequestReceivedFromMQ(message.request_id, message),
-        db.addRequestIdExpectedInBlock(message.height, message.request_id),
+        cacheDb.setRequestReceivedFromMQ(message.request_id, message),
+        cacheDb.addRequestIdExpectedInBlock(message.height, message.request_id),
       ]);
       if (tendermint.latestBlockHeight <= message.height) {
         delete requestIdLocks[message.request_id];
         return;
       } else {
-        await db.removeRequestReceivedFromMQ(requestId);
+        await cacheDb.removeRequestReceivedFromMQ(requestId);
       }
     }
 
@@ -107,21 +110,21 @@ export async function handleTendermintNewBlockEvent(
       toHeight,
     });
 
-    const requestIdsInTendermintBlock = await db.getRequestIdsExpectedInBlock(
+    const requestIdsInTendermintBlock = await cacheDb.getRequestIdsExpectedInBlock(
       fromHeight,
       toHeight
     );
     await Promise.all(
       requestIdsInTendermintBlock.map(async (requestId) => {
         if (requestIdLocks[requestId]) return;
-        const request = await db.getRequestReceivedFromMQ(requestId);
+        const request = await cacheDb.getRequestReceivedFromMQ(requestId);
         if (request == null) return;
         await processRequest(request);
-        await db.removeRequestReceivedFromMQ(requestId);
+        await cacheDb.removeRequestReceivedFromMQ(requestId);
       })
     );
 
-    db.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
+    cacheDb.removeRequestIdsExpectedInBlock(fromHeight, toHeight);
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling Tendermint NewBlock event',
