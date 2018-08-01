@@ -36,29 +36,28 @@ const removePrintErrStackProp = winston.format((info) => {
 });
 
 function filterTooLongMessage(rest, depth = 0) {
-  if(typeof rest !== 'object') {
+  if (typeof rest !== 'object') {
     return rest.toString().length > config.thresholdLogLength
       ? config.replaceForTooLongLog
       : rest;
   }
 
-  let clone = JSON.parse(JSON.stringify(rest));
-  let display = util.inspect(clone, {
+  const display = util.inspect(rest, {
     depth: null,
     colors: true,
   });
-  if(display.length <= config.thresholdLogLength) {
-    return depth === 0 
-      ? display
-      : clone ;
+  if (display.length <= config.thresholdLogLength) {
+    return depth === 0 ? display : rest;
   }
-  for(let key in clone) {
+  const clone = JSON.parse(JSON.stringify(rest));
+  for (let key in clone) {
     clone[key] = filterTooLongMessage(clone[key], depth + 1);
   }
-  if(depth === 0) return util.inspect(clone, {
-    depth: null,
-    colors: true,
-  });
+  if (depth === 0)
+    return util.inspect(clone, {
+      depth: null,
+      colors: true,
+    });
   return clone;
 }
 

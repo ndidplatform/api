@@ -130,7 +130,7 @@ export const masterPrivateKeyPassphrase = useExternalCryptoService
 export const challengeLength = 2;
 export const zkRandomLengthForIdp = 128;
 export const saltLength = 16;
-export const thresholdLogLength = Infinity;
+export const thresholdLogLength = Infinity; // 2000
 export const replaceForTooLongLog = '<--- Too long, omitted --->';
 
 export const createIdentityRequestMessageTemplateFilepath =
