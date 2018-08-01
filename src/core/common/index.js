@@ -483,10 +483,11 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
   const signature = response.signature;
   const privateProofValueHash = response.private_proof_hash;
 
-  const signatureValid = utils.verifySignature(
+  const signatureValid = utils.verifyResponseSignature(
     signature,
     public_key,
-    request_message
+    request_message,
+    request_message_salt,
   );
 
   logger.debug({

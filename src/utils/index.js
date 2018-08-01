@@ -384,6 +384,42 @@ export function verifySignature(signature, publicKey, plainText) {
   return cryptoUtils.verifySignature(signature, publicKey, plainText);
 }
 
+function generateCustomPadding(initialSalt, blockLength = 2048) {
+  let hashLength = 256;
+  let padLengthInbyte = parseInt(Math.floor((blockLength - hashLength)/8));
+  let paddingBuffer = Buffer.from([]);
+  
+  for(let i = 1 ; paddingBuffer.length + config.saltLength <= padLengthInbyte ; i++) {
+    paddingBuffer = Buffer.concat([
+      paddingBuffer,
+      Buffer.from(
+        hash(initialSalt + i.toString()),
+        'base64'
+      ).slice(0,config.saltLength)
+    ]);
+  }
+  //set most significant bit to 0
+  paddingBuffer[0] = paddingBuffer[0] & 0x7f;
+  return paddingBuffer;
+}
+
+export function verifyResponseSignature(signature, publicKey, plainText, salt) {
+  //should find block length if use another sign method
+  let paddingBuffer = generateCustomPadding(salt);
+
+  let decryptedSignature = cryptoUtils.publicDecrypt({
+    key: publicKey,
+    padding: constants.RSA_NO_PADDING,
+  }, signature);
+
+  let paddedBase64 = Buffer.concat([
+    paddingBuffer,
+    Buffer.from(decryptedSignature,'base64')
+  ]).toString('base64');
+
+  return paddedBase64 === decryptedSignature;
+}
+
 export function createRequestId() {
   return cryptoUtils.randomHexBytes(32);
 }
