@@ -299,7 +299,7 @@ case ${ROLE} in
         register_namespace "reject_1" "Wait 1s then Reject" && \
         register_namespace "reject_10" "Wait 10s then Reject" && \
         register_service "bank_statement" "All transactions in the pass 3 month" && \
-        register_service "customer_info" "Customer Information" && \
+        register_service "customer_info" "Customer Information"
       do
         sleep 1; 
       done &
