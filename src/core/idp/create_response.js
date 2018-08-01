@@ -31,6 +31,7 @@ import * as utils from '../../utils';
 import * as config from '../../config';
 import * as cacheDb from '../../db/cache';
 import * as mq from '../../mq';
+import privateMessageType from '../private_message_type';
 
 export async function requestChallengeAndCreateResponse(data) {
   try {
@@ -109,7 +110,7 @@ export async function requestChallengeAndCreateResponse(data) {
         data.signature,
         accessorPublicKey,
         request_message,
-        request_message_salt,
+        request_message_salt
       );
       if (!signatureValid) {
         throw new CustomError({
@@ -396,10 +397,10 @@ export async function requestChallengeAfterBlockchain(
       },
     ];
     mq.send(receiver, {
-      public_proof: [publicProof1, publicProof2],
+      type: privateMessageType.CHALLENGE_REQUEST,
       request_id: request_id,
       idp_id: config.nodeId,
-      type: 'challenge_request',
+      public_proof: [publicProof1, publicProof2],
       height,
     });
   } catch (error) {
@@ -458,7 +459,7 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   };
 
   mq.send([rpMq], {
-    type: 'idp_response',
+    type: privateMessageType.IDP_RESPONSE,
     request_id,
     ...privateProofObject,
     height,

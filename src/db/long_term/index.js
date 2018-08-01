@@ -22,6 +22,7 @@
 
 import * as db from '../sequelize_common';
 import * as longTermDb from './sequelize';
+import privateMessageType from '../../core/private_message_type';
 
 import logger from '../../logger';
 import CustomError from '../../error/custom_error';
@@ -30,17 +31,17 @@ const dbName = 'long-term';
 
 function getName(messageType) {
   switch (messageType) {
-    case 'challenge_request':
+    case privateMessageType.CHALLENGE_REQUEST:
       return 'challengeRequestMessage';
-    case 'idp_response':
+    case privateMessageType.IDP_RESPONSE:
       return 'idpResponseMessage';
-    case 'as_data_response':
+    case privateMessageType.AS_DATA_RESPONSE:
       return 'asDataResponseMessage';
-    case 'challenge_response':
+    case privateMessageType.CHALLENGE_RESPONSE:
       return 'challengeResponseMessage';
-    case 'consent_request':
+    case privateMessageType.CONSENT_REQUEST:
       return 'consentRequestMessage';
-    case 'data_request':
+    case privateMessageType.DATA_REQUEST:
       return 'dataRequestMessage';
     default:
       throw new CustomError({
@@ -55,6 +56,10 @@ export async function close() {
     message: 'DB connection closed',
     dbName,
   });
+}
+
+export function getAllMessages(messageType) {
+  return db.getAll({ dbName, name: getName(messageType) });
 }
 
 export function getMessages(messageType, requestId) {

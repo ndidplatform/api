@@ -31,6 +31,7 @@ import * as config from '../../config';
 import * as cacheDb from '../../db/cache';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
+import privateMessageType from '../private_message_type';
 
 export async function processDataForRP(
   data,
@@ -303,7 +304,7 @@ async function sendDataToRP(rpId, data) {
     ...(await tendermintNdid.getNodePubKey(nodeId)),
   });
   mq.send(receivers, {
-    type: 'as_data_response',
+    type: privateMessageType.AS_DATA_RESPONSE,
     request_id: data.request_id,
     as_id: data.as_id,
     service_id: data.service_id,

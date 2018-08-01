@@ -38,6 +38,7 @@ import * as config from '../../config';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
 import * as cacheDb from '../../db/cache';
+import privateMessageType from '../private_message_type';
 
 /**
  * Create a new request
@@ -454,7 +455,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
     // send request data to IDPs via message queue
     if (min_idp > 0) {
       mq.send(receivers, {
-        type: 'consent_request',
+        type: privateMessageType.CONSENT_REQUEST,
         ...requestData,
         height,
       });
