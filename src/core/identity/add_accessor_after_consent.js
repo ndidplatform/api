@@ -27,7 +27,7 @@ import CustomError from '../../error/custom_error';
 import errorType from '../../error/type';
 
 import * as tendermintNdid from '../../tendermint/ndid';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
 
 // FIXME: Refactor for broadcast_tx_sync with callback
 export async function addAccessorAfterConsent(
@@ -54,7 +54,7 @@ export async function addAccessorAfterConsent(
     sid,
     associated,
     secret,
-  } = await db.getIdentityFromRequestId(request_id);
+  } = await cacheDb.getIdentityFromRequestId(request_id);
 
   await tendermintNdid.addAccessorMethod(
     {
@@ -139,7 +139,7 @@ export async function addAccessorAfterConsentAfterRegisterMqDest(
   try {
     if (error) throw error;
 
-    await db.removeIdentityFromRequestId(request_id);
+    await cacheDb.removeIdentityFromRequestId(request_id);
     if (callbackAdditionalArgs != null) {
       getFunction(callbackFnName)(
         {

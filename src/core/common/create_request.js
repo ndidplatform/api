@@ -37,7 +37,7 @@ import * as utils from '../../utils';
 import * as config from '../../config';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
 
 /**
  * Create a new request
@@ -80,7 +80,7 @@ export async function createRequest(
 ) {
   try {
     // existing reference_id, return request ID
-    const requestId = await db.getRequestIdByReferenceId(reference_id);
+    const requestId = await cacheDb.getRequestIdByReferenceId(reference_id);
     if (requestId) {
       return requestId;
     }
@@ -237,7 +237,7 @@ export async function createRequest(
     //   utils.randomBase64Bytes(config.challengeLength),
     //   utils.randomBase64Bytes(config.challengeLength),
     // ];
-    await db.setChallengeFromRequestId(request_id, {});
+    await cacheDb.setChallengeFromRequestId(request_id, {});
 
     const request_message_salt = utils.randomBase64Bytes(16);
 
@@ -266,9 +266,9 @@ export async function createRequest(
     // save request data to DB to send to AS via mq when authen complete
     // and for zk proof
     await Promise.all([
-      db.setRequestData(request_id, requestData),
-      db.setRequestIdByReferenceId(reference_id, request_id),
-      db.setRequestCallbackUrl(request_id, callback_url),
+      cacheDb.setRequestData(request_id, requestData),
+      cacheDb.setRequestIdByReferenceId(reference_id, request_id),
+      cacheDb.setRequestCallbackUrl(request_id, callback_url),
       addTimeoutScheduler(request_id, request_timeout),
     ]);
 
@@ -524,10 +524,10 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
 async function createRequestCleanUpOnError({ requestId, referenceId }) {
   await Promise.all([
-    db.removeChallengeFromRequestId(requestId),
-    db.removeRequestData(requestId),
-    db.removeRequestIdByReferenceId(referenceId),
-    db.removeRequestCallbackUrl(requestId),
+    cacheDb.removeChallengeFromRequestId(requestId),
+    cacheDb.removeRequestData(requestId),
+    cacheDb.removeRequestIdByReferenceId(referenceId),
+    cacheDb.removeRequestCallbackUrl(requestId),
     removeTimeoutScheduler(requestId),
   ]);
 }

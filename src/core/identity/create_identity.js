@@ -33,7 +33,7 @@ import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
 import * as common from '../common';
 import * as config from '../../config';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
 import {
   isAccessorSignUrlSet,
   notifyCreateIdentityResultByCallback,
@@ -61,7 +61,7 @@ export async function createIdentity(
   try {
     common.validateKeyType(accessor_public_key, accessor_type);
 
-    const createIdentityData = await db.getCreateIdentityDataByReferenceId(reference_id);
+    const createIdentityData = await cacheDb.getCreateIdentityDataByReferenceId(reference_id);
     if (createIdentityData) {
       const { request_id, accessor_id } = createIdentityData;
       return { request_id, accessor_id };
@@ -164,7 +164,7 @@ export async function createIdentity(
       });
       return { request_id, exist, accessor_id };
     } else {
-      await db.setCallbackUrlByReferenceId(reference_id, callback_url);
+      await cacheDb.setCallbackUrlByReferenceId(reference_id, callback_url);
 
       createIdentityInternalAsync(...arguments, {
         request_id,
@@ -492,11 +492,11 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
   try {
     if (error) throw error;
 
-    await db.setCreateIdentityDataByReferenceId(reference_id, {
+    await cacheDb.setCreateIdentityDataByReferenceId(reference_id, {
       request_id,
       accessor_id,
     });
-    await db.setReferenceIdByRequestId(request_id, reference_id);
+    await cacheDb.setReferenceIdByRequestId(request_id, reference_id);
 
     if (exist) {
       if (!synchronous) {
@@ -523,7 +523,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       }
 
       //save data for add accessor to persistent
-      await db.setIdentityFromRequestId(request_id, {
+      await cacheDb.setIdentityFromRequestId(request_id, {
         accessor_type,
         accessor_id,
         accessor_public_key,
@@ -773,7 +773,7 @@ export async function createIdentityInternalAsyncAfterClearMqDestTimeout(
         },
         true
       );
-      db.removeCallbackUrlByReferenceId(reference_id);
+      cacheDb.removeCallbackUrlByReferenceId(reference_id);
       await common.closeRequest(
         {
           request_id,
@@ -781,7 +781,7 @@ export async function createIdentityInternalAsyncAfterClearMqDestTimeout(
         { synchronous: true }
       );
     }
-    db.removeCreateIdentityDataByReferenceId(reference_id);
+    cacheDb.removeCreateIdentityDataByReferenceId(reference_id);
   } catch (error) {
     logger.error({
       message:
@@ -821,10 +821,10 @@ export async function createIdentityInternalAsyncAfterClearMqDestTimeout(
 
 async function createIdentityCleanUpOnError({ requestId, referenceId }) {
   await Promise.all([
-    db.removeCallbackUrlByReferenceId(referenceId),
-    db.removeReferenceIdByRequestId(requestId),
-    db.removeCreateIdentityDataByReferenceId(requestId),
-    db.removeIdentityFromRequestId(requestId),
+    cacheDb.removeCallbackUrlByReferenceId(referenceId),
+    cacheDb.removeReferenceIdByRequestId(requestId),
+    cacheDb.removeCreateIdentityDataByReferenceId(requestId),
+    cacheDb.removeIdentityFromRequestId(requestId),
   ]);
 }
 

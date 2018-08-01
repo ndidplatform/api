@@ -29,7 +29,7 @@ import logger from '../../logger';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as utils from '../../utils';
 import * as config from '../../config';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
 import * as mq from '../../mq';
 
 export async function requestChallengeAndCreateResponse(data) {
@@ -68,7 +68,7 @@ export async function requestChallengeAndCreateResponse(data) {
       });
     }
 
-    const savedRpId = await db.getRPIdFromRequestId(data.request_id);
+    const savedRpId = await cacheDb.getRPIdFromRequestId(data.request_id);
     if (!savedRpId) {
       throw new CustomError({
         message: errorType.UNKNOWN_CONSENT_REQUEST.message,
@@ -104,7 +104,7 @@ export async function requestChallengeAndCreateResponse(data) {
       const {
         request_message,
         request_message_salt,
-      } = await db.getRequestMessage(data.request_id);
+      } = await cacheDb.getRequestMessage(data.request_id);
       const signatureValid = utils.verifySignature(
         data.signature,
         accessorPublicKey,
@@ -134,7 +134,7 @@ export async function requestChallengeAndCreateResponse(data) {
           clientError: true,
         });
       }
-      await db.setResponseFromRequestId(data.request_id, data);
+      await cacheDb.setResponseFromRequestId(data.request_id, data);
     }
     requestChallengeAndCreateResponseInternalAsync(data, request);
   } catch (error) {
@@ -156,7 +156,7 @@ async function requestChallengeAndCreateResponseInternalAsync(data, request) {
         request_id: data.request_id,
         accessor_id: data.accessor_id,
       });
-      db.removeRequestMessage(data.request_id);
+      cacheDb.removeRequestMessage(data.request_id);
     } else if (request.mode === 1) {
       await createResponse(data);
     }
@@ -172,7 +172,7 @@ async function requestChallengeAndCreateResponseInternalAsync(data, request) {
       },
       true
     );
-    await db.removeResponseFromRequestId(data.request_id);
+    await cacheDb.removeResponseFromRequestId(data.request_id);
   }
 }
 
@@ -199,7 +199,7 @@ export async function createResponse(data) {
       let blockchainProofArray = [],
         privateProofValueArray = [],
         samePadding;
-      const requestFromMq = await db.getRequestReceivedFromMQ(request_id);
+      const requestFromMq = await cacheDb.getRequestReceivedFromMQ(request_id);
 
       logger.debug({
         message: 'To generate proof',
@@ -249,8 +249,8 @@ export async function createResponse(data) {
     }
 
     await Promise.all([
-      db.removeRequestReceivedFromMQ(request_id),
-      db.removeResponseFromRequestId(request_id),
+      cacheDb.removeRequestReceivedFromMQ(request_id),
+      cacheDb.removeResponseFromRequestId(request_id),
     ]);
 
     await tendermintNdid.createIdpResponse(
@@ -287,7 +287,7 @@ export async function createResponseAfterBlockchain(
       },
       true
     );
-    db.removeResponseFromRequestId(request_id);
+    cacheDb.removeResponseFromRequestId(request_id);
   } catch (error) {
     logger.error({
       message: 'Create IdP response after blockchain error',
@@ -323,7 +323,7 @@ async function requestChallenge({
   const [k2, publicProof2] = utils.generatePublicProof(public_key);
 
   //save k to request
-  const request = await db.getRequestReceivedFromMQ(request_id);
+  const request = await cacheDb.getRequestReceivedFromMQ(request_id);
   if (!request) {
     throw new CustomError({
       message: errorType.NO_INCOMING_REQUEST.message,
@@ -338,7 +338,7 @@ async function requestChallenge({
     message: 'Save K to request',
     request,
   });
-  await db.setRequestReceivedFromMQ(request_id, request);
+  await cacheDb.setRequestReceivedFromMQ(request_id, request);
   //declare public proof to blockchain
   await tendermintNdid.declareIdentityProof(
     {
@@ -420,14 +420,14 @@ export async function requestChallengeAfterBlockchain(
       },
       true
     );
-    await db.removeResponseFromRequestId(request_id);
+    await cacheDb.removeResponseFromRequestId(request_id);
   }
 }
 
 async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   //mode 1
   if (!privateProofObject) privateProofObject = {};
-  const rp_id = await db.getRPIdFromRequestId(request_id);
+  const rp_id = await cacheDb.getRPIdFromRequestId(request_id);
 
   logger.info({
     message: 'Query MQ destination for RP',
@@ -464,5 +464,5 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
     idp_id: config.nodeId,
   });
 
-  await db.removeRPIdFromRequestId(request_id);
+  await cacheDb.removeRPIdFromRequestId(request_id);
 }

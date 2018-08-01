@@ -18,6 +18,7 @@ IMPROVEMENTS:
 - Decrease message payload size when sending over message queue by sending as bytes using Protobuf.
 - Decrease message queue receiving size limit to 3.25MB.
 - Verify accessor signature when IdP sending a response (calling POST `/idp/response`).
+- Save all messages received from message queue to database.
 
 BUG FIXES:
 
