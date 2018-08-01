@@ -105,10 +105,11 @@ export async function requestChallengeAndCreateResponse(data) {
         request_message,
         request_message_salt,
       } = await db.getRequestMessage(data.request_id);
-      const signatureValid = utils.verifySignature(
+      const signatureValid = utils.verifyResponseSignature(
         data.signature,
         accessorPublicKey,
-        request_message
+        request_message,
+        request_message_salt,
       );
       if (!signatureValid) {
         throw new CustomError({
