@@ -15,10 +15,10 @@ BREAKING CHANGES:
 
 IMPROVEMENTS:
 
-- API version 2.1
-  - New API: GET `/utility/private_messages/:request_id` Get messages received from message queue with specified request ID.
-  - New API: POST `/utility/private_messages/housekeeping` Remove all messages received from message queue.
-  - New API: POST `/utility/private_messages/:request_id/housekeeping` Remove messages from MQ with specified request ID.
+- API version 2.1, New APIs:
+  - GET `/utility/private_messages/:request_id` Get messages received from message queue with specified request ID.
+  - POST `/utility/private_messages/housekeeping` Remove all messages received from message queue.
+  - POST `/utility/private_messages/:request_id/housekeeping` Remove messages from MQ with specified request ID.
 - Save all messages received from message queue to database.
 - Use `/broadcast_tx_sync` when making a transaction to Tendermint to allow more than 2 minutes (Tendermint's default `/broadcast_tx_commit` timeout) commit time.
 - Support request timeout of more than 2147483647 (or 32-bit integer) milliseconds (>24.8 days).
