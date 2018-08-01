@@ -30,6 +30,7 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
 import * as config from '../../config';
 import * as cacheDb from '../../db/cache';
+import privateMessageType from '../private_message_type';
 
 export * from './event_handlers';
 
@@ -199,7 +200,7 @@ export async function sendRequestToAS(requestData, height) {
     Object.values(dataToSendByNodeId).map(
       ({ receiver, service_data_request_list }) =>
         mq.send([receiver], {
-          type: 'data_request',
+          type: privateMessageType.DATA_REQUEST,
           request_id: requestData.request_id,
           mode: requestData.mode,
           namespace: requestData.namespace,

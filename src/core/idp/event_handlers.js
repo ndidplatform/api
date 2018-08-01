@@ -32,6 +32,7 @@ import * as tendermint from '../../tendermint';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
 import * as longTermDb from '../../db/long_term';
+import privateMessageType from '../private_message_type';
 
 const successBase64 = Buffer.from('success').toString('base64');
 const trueBase64 = Buffer.from('true').toString('base64');
@@ -56,7 +57,7 @@ export async function handleMessageFromQueue(messageStr) {
     await longTermDb.addMessage(message.type, requestId, messageStr);
 
     //if message is challenge for response, no need to wait for blockchain
-    if (message.type === 'challenge_response') {
+    if (message.type === privateMessageType.CHALLENGE_RESPONSE) {
       //store challenge
       const data = await cacheDb.getResponseFromRequestId(message.request_id);
       try {
@@ -90,7 +91,7 @@ export async function handleMessageFromQueue(messageStr) {
       }
       return;
     } else {
-      if (message.type === 'consent_request') {
+      if (message.type === privateMessageType.CONSENT_REQUEST) {
         await Promise.all([
           cacheDb.setRequestReceivedFromMQ(message.request_id, message),
           cacheDb.setRPIdFromRequestId(message.request_id, message.rp_id),
@@ -115,7 +116,7 @@ export async function handleMessageFromQueue(messageStr) {
             await cacheDb.removeRequestToProcessReceivedFromMQ(message.request_id);
           }
         }
-      } else if (message.type === 'challenge_request') {
+      } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
         const latestBlockHeight = tendermint.latestBlockHeight;
         if (latestBlockHeight <= message.height) {
           logger.debug({
@@ -140,7 +141,7 @@ export async function handleMessageFromQueue(messageStr) {
             ]);
           }
         }
-      } else if (message.type === 'idp_response') {
+      } else if (message.type === privateMessageType.IDP_RESPONSE) {
         const request = await cacheDb.getRequestData(message.request_id);
         if (request) {
           if (request.privateProofObjectList) {

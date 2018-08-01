@@ -29,6 +29,7 @@ import * as tendermint from '../../tendermint';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
 import * as longTermDb from '../../db/long_term';
+import privateMessageType from '../private_message_type';
 
 const requestIdLocks = {};
 
@@ -49,28 +50,30 @@ export async function handleMessageFromQueue(messageStr) {
 
     await longTermDb.addMessage(message.type, requestId, messageStr);
 
-    const latestBlockHeight = tendermint.latestBlockHeight;
-    if (latestBlockHeight <= message.height) {
-      logger.debug({
-        message: 'Saving message from MQ',
-        tendermintLatestBlockHeight: latestBlockHeight,
-        messageBlockHeight: message.height,
-      });
-      requestIdLocks[message.request_id] = true;
-      await Promise.all([
-        cacheDb.setRequestReceivedFromMQ(message.request_id, message),
-        cacheDb.addRequestIdExpectedInBlock(message.height, message.request_id),
-      ]);
-      if (tendermint.latestBlockHeight <= message.height) {
-        delete requestIdLocks[message.request_id];
-        return;
-      } else {
-        await cacheDb.removeRequestReceivedFromMQ(requestId);
+    if (message.type === privateMessageType.DATA_REQUEST) {
+      const latestBlockHeight = tendermint.latestBlockHeight;
+      if (latestBlockHeight <= message.height) {
+        logger.debug({
+          message: 'Saving message from MQ',
+          tendermintLatestBlockHeight: latestBlockHeight,
+          messageBlockHeight: message.height,
+        });
+        requestIdLocks[message.request_id] = true;
+        await Promise.all([
+          cacheDb.setRequestReceivedFromMQ(message.request_id, message),
+          cacheDb.addRequestIdExpectedInBlock(message.height, message.request_id),
+        ]);
+        if (tendermint.latestBlockHeight <= message.height) {
+          delete requestIdLocks[message.request_id];
+          return;
+        } else {
+          await cacheDb.removeRequestReceivedFromMQ(requestId);
+        }
       }
-    }
 
-    await processRequest(message);
-    delete requestIdLocks[message.request_id];
+      await processRequest(message);
+      delete requestIdLocks[message.request_id];
+    }
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling message from message queue',

@@ -47,6 +47,7 @@ import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
 import * as cacheDb from '../../db/cache';
 import * as externalCryptoService from '../../utils/external_crypto_service';
+import privateMessageType from '../private_message_type';
 
 export * from './create_request';
 export * from './close_request';
@@ -590,7 +591,7 @@ export async function handleChallengeRequest({
     },
   ];
   mq.send(receiver, {
-    type: 'challenge_response',
+    type: privateMessageType.CHALLENGE_RESPONSE,
     challenge,
     request_id,
     ...nodeId,

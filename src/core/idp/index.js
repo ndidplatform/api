@@ -37,6 +37,7 @@ import * as utils from '../../utils';
 import * as config from '../../config';
 import * as cacheDb from '../../db/cache';
 import * as identity from '../identity';
+import privateMessageType from '../private_message_type';
 
 export * from './create_response';
 export * from './event_handlers';
@@ -264,7 +265,7 @@ export async function processMessage(message) {
     message: 'Processing message',
     messagePayload: message,
   });
-  if (message.type === 'idp_response') {
+  if (message.type === privateMessageType.IDP_RESPONSE) {
     //reponse for create identity
     if (await checkCreateIdentityResponse(message)) {
       await identity.addAccessorAfterConsent(
@@ -278,14 +279,14 @@ export async function processMessage(message) {
         }
       );
     }
-  } else if (message.type === 'challenge_request') {
+  } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
     //const responseId = message.request_id + ':' + message.idp_id;
     await common.handleChallengeRequest({
       request_id: message.request_id,
       idp_id: message.idp_id,
       public_proof: message.public_proof,
     });
-  } else if (message.type === 'consent_request') {
+  } else if (message.type === privateMessageType.CONSENT_REQUEST) {
     const valid = await common.checkRequestIntegrity(
       message.request_id,
       message

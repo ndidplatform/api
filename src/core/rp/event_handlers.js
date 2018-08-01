@@ -37,6 +37,7 @@ import * as common from '../common';
 import * as cacheDb from '../../db/cache';
 import * as longTermDb from '../../db/long_term';
 import * as utils from '../../utils';
+import privateMessageType from '../private_message_type';
 
 const successBase64 = Buffer.from('success').toString('base64');
 const trueBase64 = Buffer.from('true').toString('base64');
@@ -62,7 +63,7 @@ export async function handleMessageFromQueue(messageStr) {
 
     await longTermDb.addMessage(message.type, requestId, messageStr);
 
-    if (message.type === 'challenge_request') {
+    if (message.type === privateMessageType.CHALLENGE_REQUEST) {
       const responseId = message.request_id + ':' + message.idp_id;
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (latestBlockHeight <= message.height) {
@@ -92,7 +93,7 @@ export async function handleMessageFromQueue(messageStr) {
         public_proof: message.public_proof,
       });
       delete challengeRequestProcessLocks[responseId];
-    } else if (message.type === 'idp_response') {
+    } else if (message.type === privateMessageType.IDP_RESPONSE) {
       const callbackUrl = await cacheDb.getRequestCallbackUrl(message.request_id);
       if (!callbackUrl) return;
 
@@ -209,7 +210,7 @@ export async function handleMessageFromQueue(messageStr) {
         );
       }
       delete idpResponseProcessLocks[responseId];
-    } else if (message.type === 'as_data_response') {
+    } else if (message.type === privateMessageType.AS_DATA_RESPONSE) {
       // Receive data from AS
       await cacheDb.addDataFromAS(message.request_id, {
         source_node_id: message.as_id,
