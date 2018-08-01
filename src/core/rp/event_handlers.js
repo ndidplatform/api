@@ -212,7 +212,7 @@ export async function handleMessageFromQueue(messageStr) {
         source_node_id: message.as_id,
         service_id: message.service_id,
         source_signature: message.signature,
-        // signature_sign_method: 'RSA-SHA256',
+        signature_sign_method: 'RSA-SHA256',
         data_salt: message.data_salt,
         data: message.data,
       });

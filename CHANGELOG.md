@@ -4,6 +4,10 @@
 
 BREAKING CHANGES:
 
+- API version 2.1
+  - Add `request_message_salt` property when responding back to POST `/rp/requests/:namespace/:identifier`. This change also applies to API v1.1.
+  - Add `request_message_salt` property in object when calling callback to IdP with type `incoming_request`. This change also applies to API v1.1.
+  - Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side. (GET `/rp/requests/data/:request_id`) This change also applies to API v1.1.
 - Remove `ALLOW_DEBUG_API` environment variable option. Debug APIs are available in development mode and inaccessible in production environment.
 
 IMPROVEMENTS:
@@ -18,9 +22,7 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - Append salt to request message before hash instead of prepend.
-<!-- - Fix missing `request_message_salt` property in object when calling callback to IdP with type `incoming_request`. -->
 - Fix AS data response signature is not salted.
-<!-- - Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side. -->
 - Fix error in `getMessageWithCode()` in CustomError when error cause is undefined.
 - Clean up data in cache DB when create request and create identity fails.
 - Fix AS can send data response with any request ID and service ID without having to receive the request first.

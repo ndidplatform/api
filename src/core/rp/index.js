@@ -235,12 +235,7 @@ export async function getDataFromAS(requestId) {
       return null;
     }
 
-    const dataList = await db.getDatafromAS(requestId);
-    return dataList.map((data) => {
-      const { data_salt, ...rest } = data;
-      return rest;
-    });
-    // return await db.getDatafromAS(requestId);
+    return await db.getDatafromAS(requestId);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get data received from AS',

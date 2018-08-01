@@ -290,7 +290,7 @@ export async function createRequest(
       });
     }
 
-    return request_id;
+    return { request_id, request_message_salt };
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot create request',
