@@ -8,20 +8,21 @@ BREAKING CHANGES:
   - Add `request_message_salt` property when responding back to POST `/rp/requests/:namespace/:identifier`. This change also applies to API v1.
   - Add `request_message_salt` property in object when calling callback to IdP with type `incoming_request`. This change also applies to API v1.
   - Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side. (GET `/rp/requests/data/:request_id`) This change also applies to API v1.
-  - New API: GET `/utility/private_messages/:request_id` Get messages received from message queue with specified request ID.
-  - New API: POST `/utility/private_messages/housekeeping` Remove all messages received from message queue.
-  - New API: POST `/utility/private_messages/:request_id/housekeeping` Remove messages from MQ with specified request ID.
 - Remove `ALLOW_DEBUG_API` environment variable option. Debug APIs are available in development mode and inaccessible in production environment.
 
 IMPROVEMENTS:
 
+- API version 2.1
+  - New API: GET `/utility/private_messages/:request_id` Get messages received from message queue with specified request ID.
+  - New API: POST `/utility/private_messages/housekeeping` Remove all messages received from message queue.
+  - New API: POST `/utility/private_messages/:request_id/housekeeping` Remove messages from MQ with specified request ID.
+- Save all messages received from message queue to database.
 - Use `/broadcast_tx_sync` when making a transaction to Tendermint to allow more than 2 minutes (Tendermint's default `/broadcast_tx_commit` timeout) commit time.
 - Support request timeout of more than 2147483647 (or 32-bit integer) milliseconds (>24.8 days).
 - Validate public key format and type (PEM format, RSA type is allowed).
 - Decrease message payload size when sending over message queue by sending as bytes using Protobuf.
 - Decrease message queue receiving size limit to 3.25MB.
 - Verify accessor signature when IdP sending a response (calling POST `/idp/response`).
-- Save all messages received from message queue to database.
 
 BUG FIXES:
 
