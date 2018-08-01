@@ -20,7 +20,7 @@
  *
  */
 
-export default {
+const TYPES = {
   CHALLENGE_REQUEST: 'challenge_request',
   IDP_RESPONSE: 'idp_response',
   AS_DATA_RESPONSE: 'as_data_response',
@@ -28,3 +28,20 @@ export default {
   CONSENT_REQUEST: 'consent_request',
   DATA_REQUEST: 'data_request',
 };
+
+export default TYPES;
+
+export const RP_PRIVATE_MESSAGE_TYPES = [
+  TYPES.CHALLENGE_REQUEST,
+  TYPES.IDP_RESPONSE,
+  TYPES.AS_DATA_RESPONSE,
+];
+
+export const IDP_PRIVATE_MESSAGE_TYPES = [
+  TYPES.CHALLENGE_REQUEST,
+  TYPES.IDP_RESPONSE,
+  TYPES.CHALLENGE_RESPONSE,
+  TYPES.CONSENT_REQUEST,
+];
+
+export const AS_PRIVATE_MESSAGE_TYPES = [TYPES.DATA_REQUEST];

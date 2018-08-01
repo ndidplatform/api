@@ -58,6 +58,10 @@ export async function close() {
   });
 }
 
+export function getAllMessages(messageType) {
+  return db.getAll({ dbName, name: getName(messageType) });
+}
+
 export function getMessages(messageType, requestId) {
   return db.getList({
     dbName,

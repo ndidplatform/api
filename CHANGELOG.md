@@ -8,6 +8,9 @@ BREAKING CHANGES:
   - Add `request_message_salt` property when responding back to POST `/rp/requests/:namespace/:identifier`. This change also applies to API v1.
   - Add `request_message_salt` property in object when calling callback to IdP with type `incoming_request`. This change also applies to API v1.
   - Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side. (GET `/rp/requests/data/:request_id`) This change also applies to API v1.
+  - New API: GET `/utility/private_messages/:request_id` Get messages received from message queue with specified request ID.
+  - New API: POST `/utility/private_messages/housekeeping` Remove all messages received from message queue.
+  - New API: POST `/utility/private_messages/:request_id/housekeeping` Remove messages from MQ with specified request ID.
 - Remove `ALLOW_DEBUG_API` environment variable option. Debug APIs are available in development mode and inaccessible in production environment.
 
 IMPROVEMENTS:
