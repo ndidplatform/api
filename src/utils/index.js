@@ -385,17 +385,20 @@ export function verifySignature(signature, publicKey, plainText) {
 }
 
 function generateCustomPadding(initialSalt, blockLength = 2048) {
-  let hashLength = 256;
-  let padLengthInbyte = parseInt(Math.floor((blockLength - hashLength)/8));
-  let paddingBuffer = Buffer.from([]);
-  
-  for(let i = 1 ; paddingBuffer.length + config.saltLength <= padLengthInbyte ; i++) {
+  const hashLength = 256;
+  const padLengthInbyte = parseInt(Math.floor((blockLength - hashLength) / 8));
+  let paddingBuffer = Buffer.alloc(0);
+
+  for (
+    let i = 1;
+    paddingBuffer.length + config.saltLength <= padLengthInbyte;
+    i++
+  ) {
     paddingBuffer = Buffer.concat([
       paddingBuffer,
-      Buffer.from(
-        hash(initialSalt + i.toString()),
-        'base64'
-      ).slice(0,config.saltLength)
+      cryptoUtils
+        .sha256(initialSalt + i.toString())
+        .slice(0, config.saltLength),
     ]);
   }
   //set most significant bit to 0
@@ -404,36 +407,38 @@ function generateCustomPadding(initialSalt, blockLength = 2048) {
 }
 
 export function hashRequestMessage(request_message, request_message_salt) {
-  let paddingBuffer = generateCustomPadding(request_message_salt);
-  let derivedSalt = Buffer.from( 
-    hash(request_message_salt), 'base64'
-  ).slice(0,config.saltLength).toString('base64');
+  const paddingBuffer = generateCustomPadding(request_message_salt);
+  const derivedSalt = cryptoUtils
+    .sha256(request_message_salt)
+    .slice(0, config.saltLength)
+    .toString('base64');
 
-  let normalHashBuffer = Buffer.from(
-    hash(request_message + derivedSalt),
-  'base64');
+  const normalHashBuffer = cryptoUtils.sha256(request_message + derivedSalt);
 
-  return Buffer.concat([
-    paddingBuffer,
-    normalHashBuffer
-  ]).toString('base64');
+  return Buffer.concat([paddingBuffer, normalHashBuffer]).toString('base64');
 }
 
 export function verifyResponseSignature(signature, publicKey, plainText, salt) {
   //should find block length if use another sign method
-  let paddingBuffer = generateCustomPadding(salt);
-  let derivedSalt = Buffer.from( 
-    hash(salt), 'base64'
-  ).slice(0,config.saltLength).toString('base64');
+  const paddingBuffer = generateCustomPadding(salt);
+  const derivedSalt = cryptoUtils
+    .sha256(salt)
+    .slice(0, config.saltLength)
+    .toString('base64');
 
-  let decryptedSignature = cryptoUtils.publicDecrypt({
-    key: publicKey,
-    padding: constants.RSA_NO_PADDING,
-  }, Buffer.from(signature,'base64')).toString('base64');
+  const decryptedSignature = cryptoUtils
+    .publicDecrypt(
+      {
+        key: publicKey,
+        padding: constants.RSA_NO_PADDING,
+      },
+      Buffer.from(signature, 'base64')
+    )
+    .toString('base64');
 
-  let paddedBase64 = Buffer.concat([
+  const paddedBase64 = Buffer.concat([
     paddingBuffer,
-    Buffer.from( hash(plainText + derivedSalt) ,'base64')
+    cryptoUtils.sha256(plainText + derivedSalt),
   ]).toString('base64');
 
   return paddedBase64 === decryptedSignature;
