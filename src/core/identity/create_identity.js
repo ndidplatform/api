@@ -44,6 +44,27 @@ import {
   getRequestMessageForAddingAccessor,
 } from '../../utils/request_message';
 
+/**
+ * Create identity
+ * Use in mode 3
+ *
+ * @param {Object} createIdentityParams
+ * @param {string} createIdentityParams.reference_id
+ * @param {string} createIdentityParams.callback_url
+ * @param {string} createIdentityParams.namespace
+ * @param {string} createIdentityParams.identifier
+ * @param {string} createIdentityParams.accessor_type
+ * @param {string} createIdentityParams.accessor_public_key
+ * @param {string} createIdentityParams.accessor_id
+ * @param {number} createIdentityParams.ial
+ * @param {boolean} createIdentityParams.addAccessor
+ * @param {Object} options
+ * @param {boolean} options.synchronous
+ * @param {number} options.apiVersion
+ *
+ * @returns {{ request_id: string, exist: boolean, accessor_id: string }} 
+ * Remark: "exist" property is present only when using with synchronous mode
+ */
 export async function createIdentity(
   {
     reference_id,
@@ -61,7 +82,9 @@ export async function createIdentity(
   try {
     common.validateKey(accessor_public_key, accessor_type);
 
-    const createIdentityData = await cacheDb.getCreateIdentityDataByReferenceId(reference_id);
+    const createIdentityData = await cacheDb.getCreateIdentityDataByReferenceId(
+      reference_id
+    );
     if (createIdentityData) {
       const { request_id, accessor_id } = createIdentityData;
       return { request_id, accessor_id };
@@ -332,17 +355,17 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
           data_request_list: [],
           request_message: ial
             ? getRequestMessageForCreatingIdentity({
-              namespace,
-              identifier,
-              reference_id,
-              node_id: config.nodeId,
-            })
+                namespace,
+                identifier,
+                reference_id,
+                node_id: config.nodeId,
+              })
             : getRequestMessageForAddingAccessor({
-              namespace,
-              identifier,
-              reference_id,
-              node_id: config.nodeId,
-            }),
+                namespace,
+                identifier,
+                reference_id,
+                node_id: config.nodeId,
+              }),
           min_ial: 1.1,
           min_aal: 1,
           min_idp: exist ? 1 : 0,
@@ -391,17 +414,17 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
           data_request_list: [],
           request_message: ial
             ? getRequestMessageForCreatingIdentity({
-              namespace,
-              identifier,
-              reference_id,
-              node_id: config.nodeId,
-            })
+                namespace,
+                identifier,
+                reference_id,
+                node_id: config.nodeId,
+              })
             : getRequestMessageForAddingAccessor({
-              namespace,
-              identifier,
-              reference_id,
-              node_id: config.nodeId,
-            }),
+                namespace,
+                identifier,
+                reference_id,
+                node_id: config.nodeId,
+              }),
           min_ial: 1.1,
           min_aal: 1,
           min_idp: exist ? 1 : 0,
@@ -504,20 +527,20 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
           callback_url,
           addAccessor
             ? {
-              type: 'add_accessor_request_result',
-              reference_id,
-              request_id,
-              accessor_id,
-              success: true,
-            }
+                type: 'add_accessor_request_result',
+                reference_id,
+                request_id,
+                accessor_id,
+                success: true,
+              }
             : {
-              type: 'create_identity_request_result',
-              reference_id,
-              request_id,
-              accessor_id,
-              success: true,
-              exist: true,
-            },
+                type: 'create_identity_request_result',
+                reference_id,
+                request_id,
+                accessor_id,
+                success: true,
+                exist: true,
+              },
           true
         );
       }
@@ -539,20 +562,20 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
           callback_url,
           addAccessor
             ? {
-              type: 'add_accessor_request_result',
-              reference_id,
-              request_id,
-              accessor_id,
-              success: true,
-            }
+                type: 'add_accessor_request_result',
+                reference_id,
+                request_id,
+                accessor_id,
+                success: true,
+              }
             : {
-              type: 'create_identity_request_result',
-              reference_id,
-              request_id,
-              accessor_id,
-              success: true,
-              exist: false,
-            },
+                type: 'create_identity_request_result',
+                reference_id,
+                request_id,
+                accessor_id,
+                success: true,
+                exist: false,
+              },
           true
         );
       }

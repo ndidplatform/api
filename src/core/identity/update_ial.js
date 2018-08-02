@@ -33,6 +33,18 @@ import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
 import * as config from '../../config';
 
+/**
+ * Update identity's IAL
+ * 
+ * @param {Object} updateIalParams 
+ * @param {string} updateIalParams.reference_id
+ * @param {string} updateIalParams.callback_url
+ * @param {string} updateIalParams.namespace
+ * @param {string} updateIalParams.identifier
+ * @param {number} updateIalParams.ial
+ * @param {Object} options 
+ * @param {boolean} options.synchronous
+ */
 export async function updateIal(
   { reference_id, callback_url, namespace, identifier, ial },
   { synchronous = false } = {}
