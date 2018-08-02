@@ -42,23 +42,33 @@ import privateMessageType from '../private_message_type';
 
 /**
  * Create a new request
- * @param {Object} request
- * @param {number} request.mode
- * @param {string} request.namespace
- * @param {string} request.reference_id
- * @param {Array.<string>} request.idp_id_list
- * @param {string} request.callback_url
- * @param {Array.<Object>} request.data_request_list
- * @param {string} request.request_message
- * @param {number} request.min_ial
- * @param {number} request.min_aal
- * @param {number} request.min_idp
- * @param {number} request.request_timeout
- * @returns {Promise<string>} Request ID
+ * @param {Object} createRequestParams
+ * @param {number} createRequestParams.mode
+ * @param {string} createRequestParams.namespace
+ * @param {string} createRequestParams.reference_id
+ * @param {Array.<string>} createRequestParams.idp_id_list
+ * @param {string} createRequestParams.callback_url
+ * @param {Array.<Object>} createRequestParams.data_request_list
+ * @param {string} createRequestParams.request_message
+ * @param {number} createRequestParams.min_ial
+ * @param {number} createRequestParams.min_aal
+ * @param {number} createRequestParams.min_idp
+ * @param {number} createRequestParams.request_timeout
+ * @param {Object} options
+ * @param {boolean} options.synchronous
+ * @param {boolean} options.sendCallbackToClient
+ * @param {string} options.callbackFnName
+ * @param {Array} options.callbackAdditionalArgs
+ * @param {Object} additionalParams
+ * @param {string} additionalParams.request_id
+ * @returns {Promise<Object>} Request ID and request message salt
  */
 export async function createRequest(
-  {
-    request_id, // Pre-generated request ID. Used by create identity function.
+  createRequestParams,
+  options = {},
+  additionalParams = {}
+) {
+  const {
     mode,
     namespace,
     identifier,
@@ -71,14 +81,11 @@ export async function createRequest(
     min_aal,
     min_idp,
     request_timeout,
-  },
-  {
-    synchronous = false,
-    sendCallbackToClient = true,
-    callbackFnName,
-    callbackAdditionalArgs,
-  } = {}
-) {
+  } = createRequestParams;
+  const { synchronous = false } = options;
+  let {
+    request_id, // Pre-generated request ID. Used by create identity function.
+  } = additionalParams;
   try {
     // existing reference_id, return request ID
     const requestId = await cacheDb.getRequestIdByReferenceId(reference_id);
@@ -281,7 +288,7 @@ export async function createRequest(
     ]);
 
     if (synchronous) {
-      await createRequestInternalAsync(...arguments, {
+      await createRequestInternalAsync(createRequestParams, options, {
         request_id,
         request_message_salt,
         data_request_params_salt_list,
@@ -289,7 +296,7 @@ export async function createRequest(
         requestData,
       });
     } else {
-      createRequestInternalAsync(...arguments, {
+      createRequestInternalAsync(createRequestParams, options, {
         request_id,
         request_message_salt,
         data_request_params_salt_list,
@@ -310,12 +317,13 @@ export async function createRequest(
 }
 
 async function createRequestInternalAsync(
-  {
+  createRequestParams,
+  options = {},
+  additionalParams
+) {
+  const {
     mode,
-    namespace,
-    identifier,
     reference_id,
-    idp_id_list,
     callback_url,
     data_request_list,
     request_message,
@@ -323,21 +331,20 @@ async function createRequestInternalAsync(
     min_aal,
     min_idp,
     request_timeout,
-  },
-  {
+  } = createRequestParams;
+  const {
     synchronous = false,
     sendCallbackToClient = true,
     callbackFnName,
     callbackAdditionalArgs,
-  } = {},
-  {
+  } = options;
+  const {
     request_id,
     request_message_salt,
     data_request_params_salt_list,
     receivers,
     requestData,
-  }
-) {
+  } = additionalParams;
   try {
     const dataRequestListToBlockchain = data_request_list.map(
       (dataRequest, index) => {

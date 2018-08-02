@@ -324,7 +324,6 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
     if (!synchronous) {
       await common.createRequest(
         {
-          request_id,
           namespace,
           identifier,
           reference_id,
@@ -333,17 +332,17 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
           data_request_list: [],
           request_message: ial
             ? getRequestMessageForCreatingIdentity({
-                namespace,
-                identifier,
-                reference_id,
-                node_id: config.nodeId,
-              })
+              namespace,
+              identifier,
+              reference_id,
+              node_id: config.nodeId,
+            })
             : getRequestMessageForAddingAccessor({
-                namespace,
-                identifier,
-                reference_id,
-                node_id: config.nodeId,
-              }),
+              namespace,
+              identifier,
+              reference_id,
+              node_id: config.nodeId,
+            }),
           min_ial: 1.1,
           min_aal: 1,
           min_idp: exist ? 1 : 0,
@@ -378,12 +377,12 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
               secret,
             },
           ],
-        }
+        },
+        { request_id }
       );
     } else {
       await common.createRequest(
         {
-          request_id,
           namespace,
           identifier,
           reference_id,
@@ -392,24 +391,25 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
           data_request_list: [],
           request_message: ial
             ? getRequestMessageForCreatingIdentity({
-                namespace,
-                identifier,
-                reference_id,
-                node_id: config.nodeId,
-              })
+              namespace,
+              identifier,
+              reference_id,
+              node_id: config.nodeId,
+            })
             : getRequestMessageForAddingAccessor({
-                namespace,
-                identifier,
-                reference_id,
-                node_id: config.nodeId,
-              }),
+              namespace,
+              identifier,
+              reference_id,
+              node_id: config.nodeId,
+            }),
           min_ial: 1.1,
           min_aal: 1,
           min_idp: exist ? 1 : 0,
           request_timeout: 86400,
           mode: 3,
         },
-        { synchronous: true }
+        { synchronous: true },
+        { request_id }
       );
       await createIdentityInternalAsyncAfterCreateRequestBlockchain(
         {},
@@ -504,20 +504,20 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
           callback_url,
           addAccessor
             ? {
-                type: 'add_accessor_request_result',
-                reference_id,
-                request_id,
-                accessor_id,
-                success: true,
-              }
+              type: 'add_accessor_request_result',
+              reference_id,
+              request_id,
+              accessor_id,
+              success: true,
+            }
             : {
-                type: 'create_identity_request_result',
-                reference_id,
-                request_id,
-                accessor_id,
-                success: true,
-                exist: true,
-              },
+              type: 'create_identity_request_result',
+              reference_id,
+              request_id,
+              accessor_id,
+              success: true,
+              exist: true,
+            },
           true
         );
       }
@@ -539,20 +539,20 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
           callback_url,
           addAccessor
             ? {
-                type: 'add_accessor_request_result',
-                reference_id,
-                request_id,
-                accessor_id,
-                success: true,
-              }
+              type: 'add_accessor_request_result',
+              reference_id,
+              request_id,
+              accessor_id,
+              success: true,
+            }
             : {
-                type: 'create_identity_request_result',
-                reference_id,
-                request_id,
-                accessor_id,
-                success: true,
-                exist: false,
-              },
+              type: 'create_identity_request_result',
+              reference_id,
+              request_id,
+              accessor_id,
+              success: true,
+              exist: false,
+            },
           true
         );
       }
