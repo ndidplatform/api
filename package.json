@@ -27,11 +27,11 @@
     "protobufjs": "^6.8.8",
     "sequelize": "^4.37.7",
     "simple-backoff": "^1.1.0",
-    "source-map-support": "^0.5.4",
-    "sqlite3": "^4.0.0",
-    "winston": "^3.0.0-rc5",
-    "winston-daily-rotate-file": "^3.1.4",
-    "ws": "^5.1.1",
+    "source-map-support": "^0.5.6",
+    "sqlite3": "^4.0.2",
+    "winston": "^3.0.0",
+    "winston-daily-rotate-file": "^3.3.0",
+    "ws": "^5.2.2",
     "zeromq": "^4.6.0"
   },
   "devDependencies": {

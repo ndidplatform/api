@@ -26,6 +26,12 @@ IMPROVEMENTS:
 - Decrease message payload size when sending over message queue by sending as bytes using Protobuf.
 - Decrease message queue receiving size limit to 3.25MB.
 - Verify accessor signature when IdP sending a response (calling POST `/idp/response`).
+- Update dependencies
+  - `source-map-support@^0.5.6`
+  - `sqlite3@^4.0.2`
+  - `winston@^3.0.0`
+  - `winston-daily-rotate-file@^3.3.0`
+  - `ws@^5.2.2`
 
 BUG FIXES:
 
