@@ -255,4 +255,17 @@ router.post('/validator', async (req, res, next) => {
   }
 });
 
+router.post('/setTimeoutBlockRegisterMqDestination', async (req, res, next) => {
+  try {
+    const { blocks_to_timeout } = req.body;
+
+    await ndid.setTimeoutBlockRegisterMqDestination({
+      blocks_to_timeout
+    });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

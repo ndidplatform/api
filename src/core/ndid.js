@@ -350,3 +350,18 @@ export async function setValidator({ public_key, power }) {
     throw error;
   }
 }
+
+export async function setTimeoutBlockRegisterMqDestination({
+  blocks_to_timeout,
+}) {
+  try {
+    await tendermint.transact(
+      'SetTimeOutBlockRegisterMsqDestination',
+      { time_out_block: blocks_to_timeout },
+      utils.getNonce()
+    );
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
