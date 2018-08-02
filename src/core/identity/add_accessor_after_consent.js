@@ -29,7 +29,6 @@ import errorType from '../../error/type';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 
-// FIXME: Refactor for broadcast_tx_sync with callback
 export async function addAccessorAfterConsent(
   { request_id, old_accessor_id },
   { callbackFnName, callbackAdditionalArgs }
