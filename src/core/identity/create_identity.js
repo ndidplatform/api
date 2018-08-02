@@ -59,7 +59,7 @@ export async function createIdentity(
   { synchronous = false, apiVersion } = {}
 ) {
   try {
-    common.validateKeyType(accessor_public_key, accessor_type);
+    common.validateKey(accessor_public_key, accessor_type);
 
     const createIdentityData = await cacheDb.getCreateIdentityDataByReferenceId(reference_id);
     if (createIdentityData) {

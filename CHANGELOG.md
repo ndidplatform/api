@@ -22,7 +22,7 @@ IMPROVEMENTS:
 - Save all messages received from message queue to database.
 - Use `/broadcast_tx_sync` when making a transaction to Tendermint to allow more than 2 minutes (Tendermint's default `/broadcast_tx_commit` timeout) commit time.
 - Support request timeout of more than 2147483647 (or 32-bit integer) milliseconds (>24.8 days).
-- Validate public key format and type (PEM format, RSA type is allowed).
+- Validate public key (PEM format, RSA type with at least 2048-bit length is allowed).
 - Decrease message payload size when sending over message queue by sending as bytes using Protobuf.
 - Decrease message queue receiving size limit to 3.25MB.
 - Verify accessor signature when IdP sending a response (calling POST `/idp/response`).

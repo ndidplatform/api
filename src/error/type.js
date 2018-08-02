@@ -361,6 +361,11 @@ export default {
       'Some AS IDs in some services in data request list do not provide the requested service',
     clientError: true,
   },
+  RSA_KEY_LENGTH_TOO_SHORT: {
+    code: 20044,
+    message: 'RSA key length is too short. Must be at least 2048-bit.',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

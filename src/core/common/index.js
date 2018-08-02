@@ -685,7 +685,7 @@ export async function isRequestClosedOrTimedOut(requestId) {
   return true;
 }
 
-export function validateKeyType(publicKey, publicKeyType) {
+export function validateKey(publicKey, publicKeyType) {
   let parsedPubKey;
   try {
     parsedPubKey = parseKey(publicKey);
@@ -715,6 +715,17 @@ export function validateKeyType(publicKey, publicKeyType) {
         clientError: true,
       });
     }
+  }
+  // Check RSA key length to be at least 2048-bit
+  if (
+    parsedPubKey.type === 'rsa' &&
+    parsedPubKey.data.modulus.bitLength() < 2048
+  ) {
+    throw new CustomError({
+      message: errorType.RSA_KEY_LENGTH_TOO_SHORT.message,
+      code: errorType.RSA_KEY_LENGTH_TOO_SHORT.code,
+      clientError: true,
+    });
   }
 }
 
