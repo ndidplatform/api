@@ -87,6 +87,7 @@ import errorType from '../error/type';
 // CannotGetPublicKeyFromParam               uint32 = 61
 // CannotGetMasterPublicKeyFromNodeID        uint32 = 62
 // CannotGetPublicKeyFromNodeID              uint32 = 63
+// TimeOutBlockIsMustGreaterThanZero         uint32 = 64
 // UnknownError                              uint32 = 999
 
 const codeMapping = {
@@ -153,6 +154,7 @@ const codeMapping = {
   61: errorType.ABCI_CANNOT_GET_PUBLIC_KEY_FROM_PARAMS,
   62: errorType.ABCI_CANNOT_GET_MASTER_PUBLIC_KEY_BY_NODE_ID,
   63: errorType.ABCI_CANNOT_GET_PUBLIC_KEY_BY_NODE_ID,
+  64: errorType.ABCI_BLOCK_TIMEOUT_MUST_BE_GREATER_THAN_ZERO,
   999: errorType.UNKNOWN_ERROR,
 };
 

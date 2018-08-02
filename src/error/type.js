@@ -662,6 +662,12 @@ export default {
     message: 'Cannot get public key by node ID',
     clientError: true,
   },
+  ABCI_BLOCK_TIMEOUT_MUST_BE_GREATER_THAN_ZERO: {
+    code: 25043,
+    message:
+      'Block timeout for registering message queue destination must be greater than 0',
+    clientError: true,
+  },
 
   ABCI_UNAUTHORIZED: {
     code: 35001,
