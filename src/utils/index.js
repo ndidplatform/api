@@ -448,6 +448,33 @@ export function createRequestId() {
   return cryptoUtils.randomHexBytes(32);
 }
 
+export function generateRequestParamSalt({
+  request_id,
+  service_id,
+  request_message_salt,
+}) {
+  let bufferHash = cryptoUtils.sha256(
+    request_id + 
+    service_id + 
+    request_message_salt
+  );
+  return bufferHash.slice(0, config.saltLength).toString('base64');
+}
+
+export function generateDataSalt({
+  request_id,
+  service_id,
+  request_message_salt,
+}) {
+  let bufferHash = cryptoUtils.sha256(
+    request_id + 
+    service_id + 
+    config.nodeId + 
+    request_message_salt
+  );
+  return bufferHash.slice(0, config.saltLength).toString('base64');
+}
+
 /**
  * @typedef {Object} RequestStatus
  * @property {string} request_id

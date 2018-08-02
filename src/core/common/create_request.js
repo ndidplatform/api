@@ -242,8 +242,13 @@ export async function createRequest(
 
     const request_message_salt = utils.randomBase64Bytes(config.saltLength);
 
-    const data_request_params_salt_list = data_request_list.map(() => {
-      return utils.randomBase64Bytes(16);
+    const data_request_params_salt_list = data_request_list.map((data_request) => {
+      const { service_id } = data_request;
+      return utils.generateRequestParamSalt({
+        request_id,
+        service_id,
+        request_message_salt,
+      });
     });
 
     const requestData = {

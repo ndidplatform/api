@@ -154,6 +154,10 @@ export const Entities = {
   requestMessage: sequelize.define('requestMessage', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     requestMessageAndSalt: Sequelize.JSON,
+  }),
+  requestMessageSalt: sequelize.define('requestMessageSalt', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    requestMessageSalt: Sequelize.STRING,
   })
 };
 
