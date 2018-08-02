@@ -154,12 +154,12 @@ async function processExpectedTx(txHash, result, fromEvent) {
     if (callbackFnName != null) {
       if (getTxResultCallbackFn != null) {
         if (callbackAdditionalArgs != null) {
-          getTxResultCallbackFn(callbackFnName)(
+          await getTxResultCallbackFn(callbackFnName)(
             retVal,
             ...callbackAdditionalArgs
           );
         } else {
-          getTxResultCallbackFn(callbackFnName)(retVal);
+          await getTxResultCallbackFn(callbackFnName)(retVal);
         }
       } else {
         logger.error({
