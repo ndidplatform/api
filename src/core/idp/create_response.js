@@ -33,10 +33,11 @@ import * as cacheDb from '../../db/cache';
 import * as mq from '../../mq';
 import privateMessageType from '../private_message_type';
 
-export async function requestChallengeAndCreateResponse(data) {
+export async function requestChallengeAndCreateResponse(createResponseParams) {
+  const { request_id, signature, secret, accessor_id } = createResponseParams;
   try {
     const request = await tendermintNdid.getRequest({
-      requestId: data.request_id,
+      requestId: request_id,
     });
     if (request == null) {
       throw new CustomError({
@@ -44,7 +45,7 @@ export async function requestChallengeAndCreateResponse(data) {
         code: errorType.REQUEST_NOT_FOUND.code,
         clientError: true,
         details: {
-          requestId: data.request_id,
+          requestId: request_id,
         },
       });
     }
@@ -54,7 +55,7 @@ export async function requestChallengeAndCreateResponse(data) {
         code: errorType.REQUEST_IS_CLOSED.code,
         clientError: true,
         details: {
-          requestId: data.request_id,
+          requestId: request_id,
         },
       });
     }
@@ -64,12 +65,12 @@ export async function requestChallengeAndCreateResponse(data) {
         code: errorType.REQUEST_IS_TIMED_OUT.code,
         clientError: true,
         details: {
-          requestId: data.request_id,
+          requestId: request_id,
         },
       });
     }
 
-    const savedRpId = await cacheDb.getRPIdFromRequestId(data.request_id);
+    const savedRpId = await cacheDb.getRPIdFromRequestId(request_id);
     if (!savedRpId) {
       throw new CustomError({
         message: errorType.UNKNOWN_CONSENT_REQUEST.message,
@@ -79,7 +80,7 @@ export async function requestChallengeAndCreateResponse(data) {
     }
 
     if (request.mode === 3) {
-      if (data.accessor_id == null) {
+      if (accessor_id == null) {
         throw new CustomError({
           message: errorType.ACCESSOR_ID_NEEDED.message,
           code: errorType.ACCESSOR_ID_NEEDED.code,
@@ -88,7 +89,7 @@ export async function requestChallengeAndCreateResponse(data) {
       }
 
       const accessorPublicKey = await tendermintNdid.getAccessorKey(
-        data.accessor_id
+        accessor_id
       );
       if (accessorPublicKey == null) {
         throw new CustomError({
@@ -96,7 +97,7 @@ export async function requestChallengeAndCreateResponse(data) {
           code: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.code,
           clientError: true,
           details: {
-            accessor_id: data.accessor_id,
+            accessor_id,
           },
         });
       }
@@ -105,9 +106,9 @@ export async function requestChallengeAndCreateResponse(data) {
       const {
         request_message,
         request_message_salt,
-      } = await cacheDb.getRequestMessage(data.request_id);
+      } = await cacheDb.getRequestMessage(request_id);
       const signatureValid = utils.verifyResponseSignature(
-        data.signature,
+        signature,
         accessorPublicKey,
         request_message,
         request_message_salt
@@ -120,7 +121,7 @@ export async function requestChallengeAndCreateResponse(data) {
         });
       }
 
-      if (data.secret == null) {
+      if (secret == null) {
         throw new CustomError({
           message: errorType.SECRET_NEEDED.message,
           code: errorType.SECRET_NEEDED.code,
@@ -128,7 +129,7 @@ export async function requestChallengeAndCreateResponse(data) {
         });
       }
       // Check secret format
-      const [padding, signedHash] = data.secret.split('|');
+      const [padding, signedHash] = secret.split('|');
       if (padding == null || signedHash == null) {
         throw new CustomError({
           message: errorType.MALFORMED_SECRET_FORMAT.message,
@@ -136,9 +137,12 @@ export async function requestChallengeAndCreateResponse(data) {
           clientError: true,
         });
       }
-      await cacheDb.setResponseFromRequestId(data.request_id, data);
+      await cacheDb.setResponseFromRequestId(request_id, createResponseParams);
     }
-    requestChallengeAndCreateResponseInternalAsync(data, request);
+    requestChallengeAndCreateResponseInternalAsync(
+      createResponseParams,
+      request
+    );
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot request challenge and create IdP response',
@@ -149,36 +153,68 @@ export async function requestChallengeAndCreateResponse(data) {
   }
 }
 
-async function requestChallengeAndCreateResponseInternalAsync(data, request) {
+/**
+ * 
+ * @param {Object} createResponseParams 
+ * @param {Object} request 
+ * @param {number} request.mode
+ * @param {string} request.request_message_hash
+ * @param {boolean} request.closed
+ * @param {boolean} request.timed_out
+ */
+async function requestChallengeAndCreateResponseInternalAsync(
+  createResponseParams,
+  request
+) {
+  const {
+    reference_id,
+    callback_url,
+    request_id,
+    accessor_id,
+  } = createResponseParams;
   try {
     if (request.mode === 3) {
       await requestChallenge({
-        reference_id: data.reference_id,
-        callback_url: data.callback_url,
-        request_id: data.request_id,
-        accessor_id: data.accessor_id,
+        reference_id,
+        callback_url,
+        request_id,
+        accessor_id,
       });
-      cacheDb.removeRequestMessage(data.request_id);
+      cacheDb.removeRequestMessage(request_id);
     } else if (request.mode === 1) {
-      await createResponse(data);
+      await createResponse(createResponseParams);
     }
   } catch (error) {
     await callbackToClient(
-      data.callback_url,
+      callback_url,
       {
         type: 'response_result',
         success: false,
-        reference_id: data.reference_id,
-        request_id: data.request_id,
+        reference_id,
+        request_id,
         error: getErrorObjectForClient(error),
       },
       true
     );
-    await cacheDb.removeResponseFromRequestId(data.request_id);
+    await cacheDb.removeResponseFromRequestId(request_id);
   }
 }
 
-export async function createResponse(data) {
+/**
+ * Create a (consent) response to a request
+ *
+ * @param {Object} createResponseParams
+ * @param {string} createResponseParams.reference_id
+ * @param {string} createResponseParams.callback_url
+ * @param {string} createResponseParams.request_id
+ * @param {number} createResponseParams.aal
+ * @param {number} createResponseParams.ial
+ * @param {string} createResponseParams.status
+ * @param {string} createResponseParams.signature
+ * @param {string} createResponseParams.accessor_id
+ * @param {string} createResponseParams.secret
+ */
+export async function createResponse(createResponseParams) {
   try {
     const {
       reference_id,
@@ -190,7 +226,7 @@ export async function createResponse(data) {
       signature,
       accessor_id,
       secret,
-    } = data;
+    } = createResponseParams;
 
     const request = await tendermintNdid.getRequest({ requestId: request_id });
     const mode = request.mode;
