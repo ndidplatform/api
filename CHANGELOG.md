@@ -11,6 +11,8 @@ BREAKING CHANGES:
   - Separate `valid_proof` into `valid_signature` (accessor signature) and `valid_proof` (ZK proof). This change also applies to API v1. Affect the following APIs:
     - RP Callback type `request_status` in property `response_valid_list`
     - GET `/utility/requests/:request_id`
+- Change how `request_message_hash` in IdP callback with type `incoming_request` is generated.
+- Change expected `signature` sending with POST `/idp/response`. It should be created by encrypting `request_message_hash` given with `incoming_request` callback without padding.
 - Remove `ALLOW_DEBUG_API` environment variable option. Debug APIs are available in development mode and inaccessible in production environment.
 
 IMPROVEMENTS:
