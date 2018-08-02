@@ -158,7 +158,7 @@ export const Entities = {
   requestMessageSalt: sequelize.define('requestMessageSalt', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     requestMessageSalt: Sequelize.STRING,
-  })
+  }),
 };
 
 export const init = sequelize.sync();

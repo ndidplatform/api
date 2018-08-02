@@ -453,10 +453,8 @@ export function generateRequestParamSalt({
   service_id,
   request_message_salt,
 }) {
-  let bufferHash = cryptoUtils.sha256(
-    request_id + 
-    service_id + 
-    request_message_salt
+  const bufferHash = cryptoUtils.sha256(
+    request_id + service_id + request_message_salt
   );
   return bufferHash.slice(0, config.saltLength).toString('base64');
 }
@@ -466,11 +464,8 @@ export function generateDataSalt({
   service_id,
   request_message_salt,
 }) {
-  let bufferHash = cryptoUtils.sha256(
-    request_id + 
-    service_id + 
-    config.nodeId + 
-    request_message_salt
+  const bufferHash = cryptoUtils.sha256(
+    request_id + service_id + config.nodeId + request_message_salt
   );
   return bufferHash.slice(0, config.saltLength).toString('base64');
 }
