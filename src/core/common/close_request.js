@@ -30,6 +30,16 @@ import { callbackToClient } from '../../utils/callback';
 import { getErrorObjectForClient } from '../../error/helpers';
 import * as cacheDb from '../../db/cache';
 
+/**
+ * Close a request
+ * 
+ * @param {Object} closeRequestParams
+ * @param {string} closeRequestParams.reference_id
+ * @param {string} closeRequestParams.callback_url
+ * @param {string} closeRequestParams.request_id
+ * @param {Object} option
+ * @param {boolean} options.synchronous
+ */
 export async function closeRequest(
   { reference_id, callback_url, request_id },
   { synchronous = false } = {}

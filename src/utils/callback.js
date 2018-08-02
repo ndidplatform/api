@@ -52,6 +52,7 @@ export function setResponseCallbackFnGetter(fn) {
 
 /**
  * Make a HTTP POST to callback url with body
+ * 
  * @param {string} callbackUrl
  * @param {Object} body
  */
@@ -170,6 +171,7 @@ async function callbackWithRetry(
 
 /**
  * Send callback to client application
+ * 
  * @param {string} callbackUrl
  * @param {Object} body
  * @param {boolean} retry
@@ -242,6 +244,7 @@ export async function callbackToClient(
 /**
  * Resume all cached retry callback
  * This function should be called only when server starts
+ * 
  * @param {function} responseCallback
  */
 export async function resumeCallbackToClient() {

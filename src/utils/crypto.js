@@ -27,7 +27,9 @@ const AES_KEY_LENGTH_IN_BYTES = 32;
 
 /**
  * Hash given string with SHA-256
+ * 
  * @param {string} stringToHash
+ * 
  * @returns {Buffer} hash in Buffer
  */
 export function sha256(stringToHash) {
@@ -41,6 +43,7 @@ export function sha256(stringToHash) {
  *
  * @param {({key: string, passphrase: string}|string)} privateKey
  * @param {(Buffer|string)} plaintext
+ * 
  * @returns {Buffer} encrypted text
  */
 export function privateEncrypt(privateKey, plaintext) {
@@ -55,6 +58,7 @@ export function privateEncrypt(privateKey, plaintext) {
  *
  * @param {({key: string, passphrase: string}|string)} privateKey
  * @param {(Buffer|string)} ciphertext
+ * 
  * @returns {Buffer} decrypted text
  */
 export function privateDecrypt(privateKey, ciphertext) {
@@ -69,6 +73,7 @@ export function privateDecrypt(privateKey, ciphertext) {
  *
  * @param {(Object|string)} publicKey
  * @param {(Buffer|string)} plaintext
+ * 
  * @returns {Buffer} ciphertext
  */
 export function publicEncrypt(publicKey, plaintext) {
@@ -83,6 +88,7 @@ export function publicEncrypt(publicKey, plaintext) {
  *
  * @param {(Object|string)} publicKey
  * @param {(Buffer|string)} ciphertext base64 encoded ciphertext
+ * 
  * @returns {Buffer} decrypted text
  */
 export function publicDecrypt(publicKey, ciphertext) {
@@ -97,6 +103,7 @@ export function publicDecrypt(publicKey, ciphertext) {
  *
  * @param {string} message
  * @param {({key: string, passphrase: string}|string)} privateKey
+ * 
  * @returns {Buffer} signature
  */
 export function createSignature(message, privateKey) {
@@ -111,6 +118,8 @@ export function createSignature(message, privateKey) {
  * @param {Buffer} signature
  * @param {(string|Object)} publicKey 
  * @param {string} plainText 
+ * 
+ * @returns {boolean}
  */
 export function verifySignature(signature, publicKey, plainText) {
   return crypto
@@ -122,6 +131,7 @@ export function verifySignature(signature, publicKey, plainText) {
 /**
  *
  * @param {number} length random bytes length
+ * 
  * @returns {string} hex string of random bytes
  */
 export function randomHexBytes(length) {
@@ -131,6 +141,7 @@ export function randomHexBytes(length) {
 /**
  * 
  * @param {number} length random bytes length
+ * 
  * @returns {string} base64 encoded string of random bytes
  */
 export function randomBase64Bytes(length) {
@@ -139,9 +150,11 @@ export function randomBase64Bytes(length) {
 
 /**
  * Encrypt plaintext using given key with AES-256-GCM
+ * 
  * @param {(Buffer|string)} masterkey
  * @param {Buffer} plaintext
  * @param {boolean} deriveKey derive masterkey using pbkdf2
+ * 
  * @returns {Buffer} encrypted text
  */
 export function encryptAES256GCM(masterkey, plaintext, deriveKey) {
@@ -183,9 +196,11 @@ export function encryptAES256GCM(masterkey, plaintext, deriveKey) {
 
 /**
  * Decrypt ciphertext using given key with AES-256-GCM
+ * 
  * @param {(Buffer|string)} masterkey
  * @param {Buffer} ciphertext input data
  * @param {boolean} deriveKey derive masterkey using pbkdf2
+ * 
  * @returns {Buffer} decrypted (original) text
  */
 export function decryptAES256GCM(masterkey, ciphertext, deriveKey) {
