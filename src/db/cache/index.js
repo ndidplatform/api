@@ -871,6 +871,36 @@ export function removeRequestMessage(requestId) {
   });
 }
 
+export function getRequestMessageSalt(requestId) {
+  return db.get({
+    dbName,
+    name: 'requestMessageSalt',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'requestMessageSalt',
+  });
+}
+
+export function setRequestMessageSalt(requestId, requestMessageSalt) {
+  return db.set({
+    dbName,
+    name: 'requestMessageSalt',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'requestMessageSalt',
+    value: requestMessageSalt,
+  });
+}
+
+export function removeRequestMessageSalt(requestId) {
+  return db.remove({
+    dbName,
+    name: 'requestMessageSalt',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 //
 // Used by AS
 //

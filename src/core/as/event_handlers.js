@@ -51,6 +51,7 @@ export async function handleMessageFromQueue(messageStr) {
     await longTermDb.addMessage(message.type, requestId, messageStr);
 
     if (message.type === privateMessageType.DATA_REQUEST) {
+      await cacheDb.setRequestMessageSalt(message.request_id, message.request_message_salt);
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (latestBlockHeight <= message.height) {
         logger.debug({
