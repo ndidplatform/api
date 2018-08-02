@@ -21,9 +21,9 @@ IMPROVEMENTS:
   - POST `/utility/private_messages/:request_id/housekeeping` Remove messages from MQ with specified request ID.
 - Save all messages received from message queue to database.
 - Use `/broadcast_tx_sync` when making a transaction to Tendermint to allow more than 2 minutes (Tendermint's default `/broadcast_tx_commit` timeout) commit time.
-- Support request timeout of more than 2147483647 (or 32-bit integer) milliseconds (>24.8 days).
+- Support request timeout of more than 2147483647 (or 32-bit integer) milliseconds (>24.8 days). ([#36](https://github.com/ndidplatform/api/issues/36))
 - Validate public key (PEM format, RSA type with at least 2048-bit length is allowed).
-- Decrease message payload size when sending over message queue by sending as bytes using Protobuf.
+- Decrease message payload size when sending over message queue by sending as bytes using Protobuf. ([#38](https://github.com/ndidplatform/api/issues/38))
 - Decrease message queue receiving size limit to 3.25MB.
 - Verify accessor signature when IdP sending a response (calling POST `/idp/response`).
 - Update dependencies
