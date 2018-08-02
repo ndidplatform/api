@@ -63,6 +63,7 @@ async function httpPost(cbId, callbackUrl, body) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
+    size: 3000000, // 3MB
   });
 
   const responseBody = await response.text();
