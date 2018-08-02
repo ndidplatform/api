@@ -43,6 +43,7 @@ import { close as closeLongTermDb } from './db/long_term';
 import { tendermintWsClient } from './tendermint';
 import { close as closeMQ } from './mq';
 import { stopAllCallbackRetries } from './utils/callback';
+import { stopAllCallbackRetries as stopAllExternalCryptoServiceCallbackRetries } from './utils/external_crypto_service';
 
 import * as config from './config';
 
@@ -130,6 +131,7 @@ function shutDown() {
     });
 
     stopAllCallbackRetries();
+    stopAllExternalCryptoServiceCallbackRetries();
     closeMQ();
     tendermintWsClient.close();
     // TODO: wait for async operations which going to use DB to finish before closing

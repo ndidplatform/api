@@ -292,6 +292,7 @@ async function callbackWithRetry(url, body, logPrefix) {
   const startTime = Date.now();
 
   for (;;) {
+    if (stopCallbackRetry) return;
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -510,4 +511,12 @@ export async function createSignature(message, messageHash, useMasterKey) {
     });
     throw error;
   }
+}
+
+export function stopAllCallbackRetries() {
+  stopCallbackRetry = true;
+  waitStopFunction.forEach((stopWaiting) => stopWaiting());
+  logger.info({
+    message: 'Stopped all external crypto service callback retries',
+  });
 }
