@@ -482,7 +482,6 @@ async function verifyZKProof({
 
 //===== zkp and request related =====
 
-// FIXME: should not return false but throw an error instead?
 export async function handleChallengeRequest({
   request_id,
   idp_id,
@@ -503,9 +502,9 @@ export async function handleChallengeRequest({
   );
 
   //check public proof in blockchain and in message queue
-  if (public_proof_blockchain.length !== public_proof.length) return false;
+  if (public_proof_blockchain.length !== public_proof.length) return;
   for (let i = 0; i < public_proof.length; i++) {
-    if (public_proof_blockchain[i] !== public_proof[i]) return false;
+    if (public_proof_blockchain[i] !== public_proof[i]) return;
   }
 
   //if match, send challenge and return
@@ -516,7 +515,7 @@ export async function handleChallengeRequest({
   let challenge;
   let challengeObject = await cacheDb.getChallengeFromRequestId(request_id);
   //challenge deleted, request is done
-  if (challengeObject == null) return false;
+  if (challengeObject == null) return;
 
   if (challengeObject[idp_id]) challenge = challengeObject[idp_id];
   else {
