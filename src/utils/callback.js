@@ -140,6 +140,7 @@ async function callbackWithRetry(
       });
 
       if (error.name === 'FetchError' && error.type === 'max-size') {
+        cacheDb.removeCallbackWithRetryData(cbId);
         if (responseCallbackFnName) {
           getResponseCallbackFn(responseCallbackFnName)(
             {
