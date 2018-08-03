@@ -25,7 +25,7 @@ import * as MQProtocol from './mq_protocol';
 import MQRecvSocket from './mq_recv_socket';
 
 import CustomError from '../error/custom_error';
-import * as errorType from '../error/type';
+import errorType from '../error/type';
 
 export default class MQRecv extends EventEmitter {
   constructor(config) {
