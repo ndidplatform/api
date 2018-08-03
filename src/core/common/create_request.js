@@ -263,6 +263,8 @@ export async function createRequest(
       }
     );
 
+    const creation_time = Date.now();
+
     const requestData = {
       mode,
       namespace,
@@ -280,6 +282,7 @@ export async function createRequest(
       rp_id: config.nodeId,
       request_message_salt,
       initial_salt,
+      creation_time,
     };
 
     // save request data to DB to send to AS via mq when authen complete

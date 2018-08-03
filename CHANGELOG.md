@@ -1,5 +1,16 @@
 # Changelog
 
+## TBD
+
+IMPROVEMENTS:
+
+- API version 2.1
+  - Add `creation_time` property in object when calling callback to IdP with type `incoming_request`. The property value is UNIX timestamp of when the request is approximately created. This change also applies to API v1.
+
+BUG FIXES:
+
+- Fix error when emitting an error from MQ module caused by invalid import statement.
+
 ## 0.6.0 (August 3, 2018)
 
 BREAKING CHANGES:

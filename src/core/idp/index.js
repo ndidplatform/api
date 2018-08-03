@@ -322,6 +322,7 @@ export async function processMessage(message) {
       min_aal: message.min_aal,
       data_request_list: message.data_request_list,
       initial_salt: message.initial_salt,
+      creation_time: message.creation_time,
     });
   }
 }
