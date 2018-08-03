@@ -28,8 +28,18 @@ import logger from '../../logger';
 import * as tendermintNdid from '../../tendermint/ndid';
 import { callbackToClient } from '../../utils/callback';
 import { getErrorObjectForClient } from '../../error/helpers';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
 
+/**
+ * Close a request
+ * 
+ * @param {Object} closeRequestParams
+ * @param {string} closeRequestParams.reference_id
+ * @param {string} closeRequestParams.callback_url
+ * @param {string} closeRequestParams.request_id
+ * @param {Object} option
+ * @param {boolean} options.synchronous
+ */
 export async function closeRequest(
   { reference_id, callback_url, request_id },
   { synchronous = false } = {}
@@ -57,7 +67,7 @@ async function closeRequestInternalAsync(
   { synchronous = false } = {}
 ) {
   try {
-    const responseValidList = await db.getIdpResponseValidList(request_id);
+    const responseValidList = await cacheDb.getIdpResponseValidList(request_id);
 
     // FOR DEBUG
     const nodeIds = {};
@@ -129,7 +139,7 @@ export async function closeRequestInternalAsyncAfterBlockchain(
   try {
     if (error) throw error;
 
-    db.removeChallengeFromRequestId(request_id);
+    cacheDb.removeChallengeFromRequestId(request_id);
     removeTimeoutScheduler(request_id);
 
     if (!synchronous) {

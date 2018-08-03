@@ -28,9 +28,10 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
 import * as utils from '../../utils';
 import * as config from '../../config';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
+import privateMessageType from '../private_message_type';
 
 export async function processDataForRP(
   data,
@@ -85,7 +86,7 @@ export async function processDataForRP(
     }
 
     const dataRequestId = requestId + ':' + serviceId;
-    const savedRpId = await db.getRpIdFromDataRequestId(dataRequestId);
+    const savedRpId = await cacheDb.getRpIdFromDataRequestId(dataRequestId);
 
     if (!savedRpId) {
       throw new CustomError({
@@ -126,7 +127,12 @@ async function processDataForRPInternalAsync(
 ) {
   try {
     const as_id = config.nodeId;
-    const data_salt = utils.randomBase64Bytes(16);
+    const initial_salt = await cacheDb.getInitialSalt(requestId);
+    const data_salt = utils.generateDataSalt({
+      request_id: requestId,
+      service_id: serviceId,
+      initial_salt,
+    });
     const signatureBuffer = await utils.createSignature(data + data_salt);
     const signature = signatureBuffer.toString('base64');
 
@@ -254,7 +260,8 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     }
 
     const dataRequestId = requestId + ':' + serviceId;
-    db.removeRpIdFromDataRequestId(dataRequestId);
+    cacheDb.removeRpIdFromDataRequestId(dataRequestId);
+    cacheDb.removeInitialSalt(requestId);
   } catch (error) {
     logger.error({
       message: 'Send data to RP internal async after blockchain error',
@@ -283,8 +290,8 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
 }
 
 async function sendDataToRP(rpId, data) {
-  let receivers = [];
-  let nodeId = rpId;
+  const receivers = [];
+  const nodeId = rpId;
 
   const mqAddress = await tendermintNdid.getMsqAddress(nodeId);
   if (mqAddress == null) {
@@ -296,14 +303,15 @@ async function sendDataToRP(rpId, data) {
       },
     });
   }
-  let { ip, port } = mqAddress;
+  const { ip, port } = mqAddress;
+  const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
   receivers.push({
     ip,
     port,
-    ...(await tendermintNdid.getNodePubKey(nodeId)),
+    public_key,
   });
   mq.send(receivers, {
-    type: 'as_data_response',
+    type: privateMessageType.AS_DATA_RESPONSE,
     request_id: data.request_id,
     as_id: data.as_id,
     service_id: data.service_id,

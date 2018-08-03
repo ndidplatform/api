@@ -361,6 +361,11 @@ export default {
       'Some AS IDs in some services in data request list do not provide the requested service',
     clientError: true,
   },
+  RSA_KEY_LENGTH_TOO_SHORT: {
+    code: 20044,
+    message: 'RSA key length is too short. Must be at least 2048-bit.',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
@@ -660,6 +665,12 @@ export default {
   ABCI_CANNOT_GET_PUBLIC_KEY_BY_NODE_ID: {
     code: 25042,
     message: 'Cannot get public key by node ID',
+    clientError: true,
+  },
+  ABCI_BLOCK_TIMEOUT_MUST_BE_GREATER_THAN_ZERO: {
+    code: 25043,
+    message:
+      'Block timeout for registering message queue destination must be greater than 0',
     clientError: true,
   },
 

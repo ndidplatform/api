@@ -38,10 +38,12 @@ import routes from './routes';
 import { bodyParserErrorHandler } from './routes/middleware/error_handler';
 import { stopAllTimeoutScheduler } from './core/common';
 
-import { close as closeDB } from './db';
+import { close as closeCacheDb } from './db/cache';
+import { close as closeLongTermDb } from './db/long_term';
 import { tendermintWsClient } from './tendermint';
 import { close as closeMQ } from './mq';
 import { stopAllCallbackRetries } from './utils/callback';
+import { stopAllCallbackRetries as stopAllExternalCryptoServiceCallbackRetries } from './utils/external_crypto_service';
 
 import * as config from './config';
 
@@ -129,6 +131,7 @@ function shutDown() {
     });
 
     stopAllCallbackRetries();
+    stopAllExternalCryptoServiceCallbackRetries();
     closeMQ();
     tendermintWsClient.close();
     // TODO: wait for async operations which going to use DB to finish before closing
@@ -136,7 +139,8 @@ function shutDown() {
     // Possible solution: Have those async operations append a queue to use DB and
     // remove after finish using DB
     // => Wait here until a queue to use DB is empty
-    await closeDB();
+    await closeCacheDb();
+    await closeLongTermDb();
     stopAllTimeoutScheduler();
   });
 }

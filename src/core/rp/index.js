@@ -29,7 +29,8 @@ import logger from '../../logger';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
 import * as config from '../../config';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
+import privateMessageType from '../private_message_type';
 
 export * from './event_handlers';
 
@@ -134,17 +135,23 @@ async function getASReceiverList(data_request) {
   const receivers = (await Promise.all(
     nodeIdList.map(async (nodeId) => {
       try {
-        //let nodeId = node.node_id;
-        let mqAddress = await tendermintNdid.getMsqAddress(nodeId);
-        if (!mqAddress) return null;
-        let { ip, port } = mqAddress;
+        const mqAddress = await tendermintNdid.getMsqAddress(nodeId);
+        if (mqAddress == null) {
+          return null;
+        }
+        const { ip, port } = mqAddress;
+        const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
         return {
           node_id: nodeId,
           ip,
           port,
-          ...(await tendermintNdid.getNodePubKey(nodeId)),
+          public_key,
         };
       } catch (error) {
+        logger.error({
+          message: 'Cannot get IP, port, and/or public key of receiver AS',
+          nodeId,
+        });
         return null;
       }
     })
@@ -194,12 +201,14 @@ export async function sendRequestToAS(requestData, height) {
     })
   );
 
-  const challenge = await db.getChallengeFromRequestId(requestData.request_id);
+  const challenge = await cacheDb.getChallengeFromRequestId(
+    requestData.request_id
+  );
   await Promise.all(
     Object.values(dataToSendByNodeId).map(
       ({ receiver, service_data_request_list }) =>
         mq.send([receiver], {
-          type: 'data_request',
+          type: privateMessageType.DATA_REQUEST,
           request_id: requestData.request_id,
           mode: requestData.mode,
           namespace: requestData.namespace,
@@ -211,6 +220,7 @@ export async function sendRequestToAS(requestData, height) {
           privateProofObjectList: requestData.privateProofObjectList,
           rp_id: requestData.rp_id,
           height,
+          initial_salt: requestData.initial_salt,
         })
     )
   );
@@ -218,7 +228,7 @@ export async function sendRequestToAS(requestData, height) {
 
 export async function getRequestIdByReferenceId(referenceId) {
   try {
-    return await db.getRequestIdByReferenceId(referenceId);
+    return await cacheDb.getRequestIdByReferenceId(referenceId);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get data received from AS',
@@ -235,12 +245,7 @@ export async function getDataFromAS(requestId) {
       return null;
     }
 
-    const dataList = await db.getDatafromAS(requestId);
-    return dataList.map((data) => {
-      const { data_salt, ...rest } = data;
-      return rest;
-    });
-    // return await db.getDatafromAS(requestId);
+    return await cacheDb.getDatafromAS(requestId);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get data received from AS',
@@ -251,7 +256,7 @@ export async function getDataFromAS(requestId) {
 
 export async function removeDataFromAS(requestId) {
   try {
-    return await db.removeDataFromAS(requestId);
+    return await cacheDb.removeDataFromAS(requestId);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot remove data received from AS',
@@ -262,7 +267,7 @@ export async function removeDataFromAS(requestId) {
 
 export async function removeAllDataFromAS() {
   try {
-    return await db.removeAllDataFromAS();
+    return await cacheDb.removeAllDataFromAS();
   } catch (error) {
     throw new CustomError({
       message: 'Cannot remove all data received from AS',

@@ -4,29 +4,53 @@
 
 BREAKING CHANGES:
 
+- API version 2.1
+  - Add `request_message_salt` property when responding back to POST `/rp/requests/:namespace/:identifier`. This change also applies to API v1.
+  - Add `request_message_salt` property in object when calling callback to IdP with type `incoming_request`. This change also applies to API v1.
+  - Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side. (GET `/rp/requests/data/:request_id`) This change also applies to API v1.
+  - Separate `valid_proof` into `valid_signature` (accessor signature) and `valid_proof` (ZK proof). This change also applies to API v1. Affect the following APIs:
+    - RP Callback type `request_status` in property `response_valid_list`
+    - GET `/utility/requests/:request_id`
+- Change how `request_message_hash` in IdP callback with type `incoming_request` is generated.
+- Change expected `signature` sending with POST `/idp/response`. It should be created by encrypting `request_message_hash` given with `incoming_request` callback without padding.
 - Remove `ALLOW_DEBUG_API` environment variable option. Debug APIs are available in development mode and inaccessible in production environment.
 
 IMPROVEMENTS:
 
+- API version 2.1, New APIs:
+  - GET `/utility/private_messages/:request_id` Get messages received from message queue with specified request ID.
+  - POST `/utility/private_messages/housekeeping` Remove all messages received from message queue.
+  - POST `/utility/private_messages/:request_id/housekeeping` Remove messages from MQ with specified request ID.
+- Save all messages received from message queue to database.
 - Use `/broadcast_tx_sync` when making a transaction to Tendermint to allow more than 2 minutes (Tendermint's default `/broadcast_tx_commit` timeout) commit time.
-- Support request timeout of more than 2147483647 (or 32-bit integer) milliseconds (>24.8 days).
-- Validate public key format and type (PEM format, RSA type is allowed).
-- Decrease message payload size when sending over message queue by sending as bytes using Protobuf.
+- Support request timeout of more than 2147483647 (or 32-bit integer) milliseconds (>24.8 days). ([#36](https://github.com/ndidplatform/api/issues/36))
+- Validate public key (PEM format, RSA type with at least 2048-bit length is allowed).
+- Decrease message payload size when sending over message queue by sending as bytes using Protobuf. ([#38](https://github.com/ndidplatform/api/issues/38))
 - Decrease message queue receiving size limit to 3.25MB.
 - Verify accessor signature when IdP sending a response (calling POST `/idp/response`).
+- Update dependencies
+  - `source-map-support@^0.5.6`
+  - `sqlite3@^4.0.2`
+  - `winston@^3.0.0`
+  - `winston-daily-rotate-file@^3.3.0`
+  - `ws@^5.2.2`
 
 BUG FIXES:
 
 - Append salt to request message before hash instead of prepend.
-<!-- - Fix missing `request_message_salt` property in object when calling callback to IdP with type `incoming_request`. -->
 - Fix AS data response signature is not salted.
-<!-- - Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side. -->
 - Fix error in `getMessageWithCode()` in CustomError when error cause is undefined.
 - Clean up data in cache DB when create request and create identity fails.
 - Fix AS can send data response with any request ID and service ID without having to receive the request first.
 - Fix IdP can send response with any valid request ID without having to receive the request first.
 - Fix process exits on MQ error by handling error events emitted from MQSend and MQRecv.
 - Fix miscommunicated error response when RP trying to create a request with AS ID that does not provide the requested service.
+
+## 0.5.5 (August 3, 2018)
+
+BUG FIXES:
+
+- Fix no size limit for callback response body. Set to 3MB. Send error to optional `/as/error` callback on AS side.
 
 ## 0.5.4 (July 27, 2018)
 

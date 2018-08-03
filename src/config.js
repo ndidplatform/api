@@ -129,6 +129,9 @@ export const masterPrivateKeyPassphrase = useExternalCryptoService
 //in byte
 export const challengeLength = 2;
 export const zkRandomLengthForIdp = 128;
+export const saltLength = 16;
+export const thresholdLogLength = Infinity; // 2000
+export const replaceForTooLongLog = '<--- Too long, omitted --->';
 
 export const createIdentityRequestMessageTemplateFilepath =
   process.env.CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH ||

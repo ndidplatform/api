@@ -45,8 +45,9 @@ import * as lt from '../../utils/long_timeout';
 import * as config from '../../config';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
 import * as externalCryptoService from '../../utils/external_crypto_service';
+import privateMessageType from '../private_message_type';
 
 export * from './create_request';
 export * from './close_request';
@@ -174,7 +175,7 @@ if (role === 'rp') {
 }
 
 async function resumeTimeoutScheduler() {
-  let scheduler = await db.getAllTimeoutScheduler();
+  let scheduler = await cacheDb.getAllTimeoutScheduler();
   scheduler.forEach(({ requestId, unixTimeout }) =>
     runTimeoutScheduler(requestId, (unixTimeout - Date.now()) / 1000)
   );
@@ -322,11 +323,12 @@ export async function getIdpsMsqDestination({
       if (mqAddress == null) {
         return null;
       }
+      const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
       return {
         idp_id: nodeId,
         ip: mqAddress.ip,
         port: mqAddress.port,
-        ...(await tendermintNdid.getNodePubKey(nodeId)),
+        public_key,
       };
     })
   )).filter((receiver) => receiver != null);
@@ -345,7 +347,7 @@ export function stopAllTimeoutScheduler() {
 
 export async function timeoutRequest(requestId) {
   try {
-    const responseValidList = await db.getIdpResponseValidList(requestId);
+    const responseValidList = await cacheDb.getIdpResponseValidList(requestId);
 
     // FOR DEBUG
     const nodeIds = {};
@@ -371,8 +373,8 @@ export async function timeoutRequest(requestId) {
     });
     throw error;
   }
-  db.removeTimeoutScheduler(requestId);
-  db.removeChallengeFromRequestId(requestId);
+  cacheDb.removeTimeoutScheduler(requestId);
+  cacheDb.removeChallengeFromRequestId(requestId);
 }
 
 export function runTimeoutScheduler(requestId, secondsToTimeout) {
@@ -387,39 +389,39 @@ export function runTimeoutScheduler(requestId, secondsToTimeout) {
 
 export async function addTimeoutScheduler(requestId, secondsToTimeout) {
   let unixTimeout = Date.now() + secondsToTimeout * 1000;
-  await db.addTimeoutScheduler(requestId, unixTimeout);
+  await cacheDb.addTimeoutScheduler(requestId, unixTimeout);
   runTimeoutScheduler(requestId, secondsToTimeout);
 }
 
 export async function removeTimeoutScheduler(requestId) {
   lt.clearTimeout(timeoutScheduler[requestId]);
-  await db.removeTimeoutScheduler(requestId);
+  await cacheDb.removeTimeoutScheduler(requestId);
   delete timeoutScheduler[requestId];
 }
 
-export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
-  const {
-    namespace,
-    identifier,
-    privateProofObjectList,
-    request_message,
-    request_message_salt,
-  } = await db.getRequestData(request_id);
+async function verifyZKProof({
+  request_id,
+  idp_id,
+  requestData,
+  response,
+  accessor_public_key,
+  privateProofObject,
+  mode,
+}) {
+  const { namespace, identifier, privateProofObjectList } = requestData;
 
   if (mode === 1) {
     return null;
   }
 
-  const challenge = (await db.getChallengeFromRequestId(request_id))[idp_id];
-  const privateProofObject = dataFromMq
-    ? dataFromMq
-    : await db.getPrivateProofReceivedFromMQ(request_id + ':' + idp_id);
+  const challenge = (await cacheDb.getChallengeFromRequestId(request_id))[
+    idp_id
+  ];
 
   logger.debug({
     message: 'Verifying zk proof',
     request_id,
     idp_id,
-    dataFromMq,
     challenge,
     privateProofObject,
     mode,
@@ -462,62 +464,25 @@ export async function verifyZKProof(request_id, idp_id, dataFromMq, mode) {
     }
   }
 
-  //query accessor_public_key from privateProofObject.accessor_id
-  const public_key = await tendermintNdid.getAccessorKey(
-    privateProofObject.accessor_id
-  );
-
-  //query publicProof from response of idp_id in request
-  const response_list = (await tendermintNdid.getRequestDetail({
-    requestId: request_id,
-  })).response_list;
-
-  logger.debug({
-    message: 'Request detail',
-    response_list,
-    request_message,
-  });
-
-  const response = response_list.find((response) => response.idp_id === idp_id);
   const publicProof = JSON.parse(response.identity_proof);
-  const signature = response.signature;
   const privateProofValueHash = response.private_proof_hash;
 
-  const signatureValid = utils.verifySignature(
-    signature,
-    public_key,
-    request_message
-  );
-
-  logger.debug({
-    message: 'Verify signature',
-    signatureValid,
-    request_message,
-    request_message_salt,
-    public_key,
-    signature,
-  });
-
-  return (
-    signatureValid &&
-    utils.verifyZKProof(
-      public_key,
-      challenge,
-      privateProofObject.privateProofValueArray,
-      publicProof,
-      {
-        namespace,
-        identifier,
-      },
-      privateProofValueHash,
-      privateProofObject.padding
-    )
+  return utils.verifyZKProof(
+    accessor_public_key,
+    challenge,
+    privateProofObject.privateProofValueArray,
+    publicProof,
+    {
+      namespace,
+      identifier,
+    },
+    privateProofValueHash,
+    privateProofObject.padding
   );
 }
 
 //===== zkp and request related =====
 
-// FIXME: should not return false but throw an error instead?
 export async function handleChallengeRequest({
   request_id,
   idp_id,
@@ -538,9 +503,9 @@ export async function handleChallengeRequest({
   );
 
   //check public proof in blockchain and in message queue
-  if (public_proof_blockchain.length !== public_proof.length) return false;
+  if (public_proof_blockchain.length !== public_proof.length) return;
   for (let i = 0; i < public_proof.length; i++) {
-    if (public_proof_blockchain[i] !== public_proof[i]) return false;
+    if (public_proof_blockchain[i] !== public_proof[i]) return;
   }
 
   //if match, send challenge and return
@@ -549,9 +514,9 @@ export async function handleChallengeRequest({
   else if (config.role === 'rp') nodeId.rp_id = config.nodeId;
 
   let challenge;
-  let challengeObject = await db.getChallengeFromRequestId(request_id);
+  let challengeObject = await cacheDb.getChallengeFromRequestId(request_id);
   //challenge deleted, request is done
-  if (challengeObject == null) return false;
+  if (challengeObject == null) return;
 
   if (challengeObject[idp_id]) challenge = challengeObject[idp_id];
   else {
@@ -562,7 +527,7 @@ export async function handleChallengeRequest({
     ];
 
     challengeObject[idp_id] = challenge;
-    await db.setChallengeFromRequestId(request_id, challengeObject);
+    await cacheDb.setChallengeFromRequestId(request_id, challengeObject);
   }
 
   logger.debug({
@@ -589,7 +554,7 @@ export async function handleChallengeRequest({
     },
   ];
   mq.send(receiver, {
-    type: 'challenge_response',
+    type: privateMessageType.CHALLENGE_RESPONSE,
     challenge,
     request_id,
     ...nodeId,
@@ -615,7 +580,7 @@ export async function checkIdpResponse({
   const requestId = requestStatus.request_id;
 
   // Check IAL
-  const requestData = await db.getRequestData(requestId);
+  const requestData = await cacheDb.getRequestData(requestId);
   const identityInfo = await tendermintNdid.getIdentityInfo(
     requestData.namespace,
     requestData.identifier,
@@ -632,13 +597,31 @@ export async function checkIdpResponse({
     }
   }
 
-  // Check ZK Proof
-  const validProof = await verifyZKProof(
-    requestStatus.request_id,
-    idpId,
-    requestDataFromMq,
-    requestStatus.mode
+  const privateProofObject = requestDataFromMq
+    ? requestDataFromMq
+    : await cacheDb.getPrivateProofReceivedFromMQ(
+        requestStatus.request_id + ':' + idpId
+      );
+
+  const accessor_public_key = await tendermintNdid.getAccessorKey(
+    privateProofObject.accessor_id
   );
+
+  const response_list = (await tendermintNdid.getRequestDetail({
+    requestId: requestStatus.request_id,
+  })).response_list;
+  const response = response_list.find((response) => response.idp_id === idpId);
+
+  // Check ZK Proof
+  const validProof = await verifyZKProof({
+    request_id: requestStatus.request_id,
+    idp_id: idpId,
+    requestData,
+    response,
+    accessor_public_key,
+    privateProofObject,
+    mode: requestStatus.mode,
+  });
 
   logger.debug({
     message: 'Checked ZK proof and IAL',
@@ -648,15 +631,43 @@ export async function checkIdpResponse({
     validIal,
   });
 
+  // Check signature
+  let signatureValid;
+  if (requestStatus.mode === 1) {
+    signatureValid = null; // Cannot check in mode 1
+  } else if (requestStatus.mode === 3) {
+    const { request_message, initial_salt, request_id } = requestData;
+    const signature = response.signature;
+
+    logger.debug({
+      message: 'Verifying signature',
+      request_message,
+      initial_salt,
+      accessor_public_key,
+      signature,
+    });
+
+    signatureValid = utils.verifyResponseSignature(
+      signature,
+      accessor_public_key,
+      request_message,
+      initial_salt,
+      request_id
+    );
+  }
+
   const responseValid = {
     idp_id: idpId,
+    valid_signature: signatureValid,
     valid_proof: validProof,
     valid_ial: validIal,
   };
 
-  await db.addIdpResponseValidList(requestId, responseValid);
+  await cacheDb.addIdpResponseValidList(requestId, responseValid);
 
-  db.removePrivateProofReceivedFromMQ(`${requestStatus.request_id}:${idpId}`);
+  cacheDb.removePrivateProofReceivedFromMQ(
+    `${requestStatus.request_id}:${idpId}`
+  );
 
   return responseValid;
 }
@@ -676,7 +687,7 @@ export async function isRequestClosedOrTimedOut(requestId) {
   return true;
 }
 
-export function validateKeyType(publicKey, publicKeyType) {
+export function validateKey(publicKey, publicKeyType) {
   let parsedPubKey;
   try {
     parsedPubKey = parseKey(publicKey);
@@ -706,6 +717,17 @@ export function validateKeyType(publicKey, publicKeyType) {
         clientError: true,
       });
     }
+  }
+  // Check RSA key length to be at least 2048-bit
+  if (
+    parsedPubKey.type === 'rsa' &&
+    parsedPubKey.data.modulus.bitLength() < 2048
+  ) {
+    throw new CustomError({
+      message: errorType.RSA_KEY_LENGTH_TOO_SHORT.message,
+      code: errorType.RSA_KEY_LENGTH_TOO_SHORT.code,
+      clientError: true,
+    });
   }
 }
 

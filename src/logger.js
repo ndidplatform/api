@@ -35,6 +35,32 @@ const removePrintErrStackProp = winston.format((info) => {
   return info;
 });
 
+function filterTooLongMessage(rest, depth = 0) {
+  if (typeof rest !== 'object') {
+    return rest.toString().length > config.thresholdLogLength
+      ? config.replaceForTooLongLog
+      : rest;
+  }
+
+  const display = util.inspect(rest, {
+    depth: null,
+    colors: true,
+  });
+  if (display.length <= config.thresholdLogLength) {
+    return depth === 0 ? display : rest;
+  }
+  const clone = JSON.parse(JSON.stringify(rest));
+  for (let key in clone) {
+    clone[key] = filterTooLongMessage(clone[key], depth + 1);
+  }
+  if (depth === 0)
+    return util.inspect(clone, {
+      depth: null,
+      colors: true,
+    });
+  return clone;
+}
+
 const customFormat = winston.format.printf((info) => {
   const {
     // timestamp,
@@ -62,10 +88,7 @@ const customFormat = winston.format.printf((info) => {
         colors: true,
       })}\n${stack}`;
     } else {
-      return `${level}: ${messageToDisplay} ${util.inspect(rest, {
-        depth: null,
-        colors: true,
-      })}`;
+      return `${level}: ${messageToDisplay} ${filterTooLongMessage(rest)}`;
     }
   }
 });

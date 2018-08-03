@@ -70,7 +70,7 @@ router.post(
         request_timeout,
       } = req.body;
 
-      const requestId = await common.createRequest(
+      const result = await common.createRequest(
         {
           mode,
           namespace,
@@ -88,7 +88,7 @@ router.post(
         { synchronous: false }
       );
 
-      res.status(202).json({ request_id: requestId });
+      res.status(202).json(result);
     } catch (error) {
       next(error);
     }

@@ -24,6 +24,7 @@ import express from 'express';
 
 import { validateQuery } from '../middleware/validation';
 import * as tendermintNdid from '../../tendermint/ndid';
+import * as privateMessage from '../../core/common/private_message';
 
 const router = express.Router();
 
@@ -152,5 +153,63 @@ router.get('/services', async (req, res, next) => {
     next(error);
   }
 });
+
+// NOTE: Should not be able to get all since it might run into trouble
+// and crash the server if the number of messages are too much to handle
+// (e.g. run out of memory)
+// router.get('/private_messages', async (req, res, next) => {
+//   try {
+//     const { type } = req.query;
+//     const messages = await privateMessage.getPrivateMessages({ type });
+//     res.status(200).json(messages);
+//   } catch (error) {
+//     next(error);
+//   }
+// });
+
+router.get('/private_messages/:request_id', async (req, res, next) => {
+  try {
+    const { request_id } = req.params;
+    const { type } = req.query;
+    const messages = await privateMessage.getPrivateMessages({
+      requestId: request_id,
+      type,
+    });
+    if (messages == null) {
+      res.status(404).end();
+      return;
+    }
+    res.status(200).json(messages);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/private_messages/housekeeping', async (req, res, next) => {
+  try {
+    const { type } = req.query;
+    await privateMessage.removePrivateMessages({ type });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post(
+  '/private_messages/:request_id/housekeeping',
+  async (req, res, next) => {
+    try {
+      const { request_id } = req.params;
+      const { type } = req.query;
+      await privateMessage.removePrivateMessages({
+        requestId: request_id,
+        type,
+      });
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

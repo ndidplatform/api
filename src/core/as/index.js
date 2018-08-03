@@ -33,7 +33,7 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import * as utils from '../../utils';
 import * as config from '../../config';
 import * as common from '../common';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
 import errorType from '../../error/type';
 
 export * from './register_or_update_as_service';
@@ -138,17 +138,18 @@ export async function processRequest(request) {
 }
 
 export async function afterGotDataFromCallback(
-  { response, body },
+  { error, response, body },
   additionalData
 ) {
   try {
+    if (error) throw error;
     if (response.status === 204) {
       return;
     }
     if (response.status !== 200) {
       const dataRequestId =
         additionalData.requestId + ':' + additionalData.serviceId;
-      db.removeRpIdFromDataRequestId(dataRequestId);
+      cacheDb.removeRpIdFromDataRequestId(dataRequestId);
       throw new CustomError({
         message: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE.message,
         code: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE.code,
@@ -226,7 +227,7 @@ async function getDataAndSendBackToRP(request, responseDetails) {
   await Promise.all(
     request.service_data_request_list.map(async (serviceData) => {
       let { service_id, request_params } = serviceData;
-      const callbackUrl = await db.getServiceCallbackUrl(service_id);
+      const callbackUrl = await cacheDb.getServiceCallbackUrl(service_id);
 
       if (!callbackUrl) {
         logger.error({
@@ -237,7 +238,7 @@ async function getDataAndSendBackToRP(request, responseDetails) {
       }
 
       const dataRequestId = request.request_id + ':' + service_id;
-      await db.setRpIdFromDataRequestId(dataRequestId, request.rp_id);
+      await cacheDb.setRpIdFromDataRequestId(dataRequestId, request.rp_id);
 
       logger.info({
         message: 'Sending callback to AS',
@@ -348,7 +349,7 @@ export async function getServiceDetail(service_id) {
     });
     if (service == null) return null;
     return {
-      url: await db.getServiceCallbackUrl(service_id),
+      url: await cacheDb.getServiceCallbackUrl(service_id),
       min_ial: service.min_ial,
       min_aal: service.min_aal,
       active: service.active,
@@ -364,7 +365,7 @@ export async function getServiceDetail(service_id) {
 
 async function isIdpResponsesValid(request_id, dataFromMq) {
   if (!dataFromMq) {
-    dataFromMq = await db.getRequestReceivedFromMQ(request_id);
+    dataFromMq = await cacheDb.getRequestReceivedFromMQ(request_id);
   }
 
   const {
@@ -372,7 +373,7 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
     namespace,
     identifier,
     request_message,
-    request_message_salt,
+    initial_salt,
   } = dataFromMq;
 
   const requestDetail = await tendermintNdid.getRequestDetail({
@@ -418,17 +419,19 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
     const signature = response.signature;
     const privateProofValueHash = response.private_proof_hash;
 
-    const signatureValid = utils.verifySignature(
+    const signatureValid = utils.verifyResponseSignature(
       signature,
       public_key,
-      request_message
+      request_message,
+      initial_salt,
+      request_id,
     );
 
     logger.debug({
       message: 'Verify signature',
       signatureValid,
       request_message,
-      request_message_salt,
+      initial_salt,
       public_key,
       signature,
       privateProofObjectList,

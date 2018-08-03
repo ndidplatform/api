@@ -37,27 +37,40 @@ import * as utils from '../../utils';
 import * as config from '../../config';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
+import privateMessageType from '../private_message_type';
 
 /**
  * Create a new request
- * @param {Object} request
- * @param {number} request.mode
- * @param {string} request.namespace
- * @param {string} request.reference_id
- * @param {Array.<string>} request.idp_id_list
- * @param {string} request.callback_url
- * @param {Array.<Object>} request.data_request_list
- * @param {string} request.request_message
- * @param {number} request.min_ial
- * @param {number} request.min_aal
- * @param {number} request.min_idp
- * @param {number} request.request_timeout
- * @returns {Promise<string>} Request ID
+ * 
+ * @param {Object} createRequestParams
+ * @param {number} createRequestParams.mode
+ * @param {string} createRequestParams.namespace
+ * @param {string} createRequestParams.reference_id
+ * @param {Array.<string>} createRequestParams.idp_id_list
+ * @param {string} createRequestParams.callback_url
+ * @param {Array.<Object>} createRequestParams.data_request_list
+ * @param {string} createRequestParams.request_message
+ * @param {number} createRequestParams.min_ial
+ * @param {number} createRequestParams.min_aal
+ * @param {number} createRequestParams.min_idp
+ * @param {number} createRequestParams.request_timeout
+ * @param {Object} options
+ * @param {boolean} options.synchronous
+ * @param {boolean} options.sendCallbackToClient
+ * @param {string} options.callbackFnName
+ * @param {Array} options.callbackAdditionalArgs
+ * @param {Object} additionalParams
+ * @param {string} additionalParams.request_id
+ * 
+ * @returns {Promise<Object>} Request ID and request message salt
  */
 export async function createRequest(
-  {
-    request_id, // Pre-generated request ID. Used by create identity function.
+  createRequestParams,
+  options = {},
+  additionalParams = {}
+) {
+  const {
     mode,
     namespace,
     identifier,
@@ -70,17 +83,14 @@ export async function createRequest(
     min_aal,
     min_idp,
     request_timeout,
-  },
-  {
-    synchronous = false,
-    sendCallbackToClient = true,
-    callbackFnName,
-    callbackAdditionalArgs,
-  } = {}
-) {
+  } = createRequestParams;
+  const { synchronous = false } = options;
+  let {
+    request_id, // Pre-generated request ID. Used by create identity function.
+  } = additionalParams;
   try {
     // existing reference_id, return request ID
-    const requestId = await db.getRequestIdByReferenceId(reference_id);
+    const requestId = await cacheDb.getRequestIdByReferenceId(reference_id);
     if (requestId) {
       return requestId;
     }
@@ -194,7 +204,7 @@ export async function createRequest(
       }
     }
 
-    let receivers = await getIdpsMsqDestination({
+    const receivers = await getIdpsMsqDestination({
       namespace,
       identifier,
       min_ial,
@@ -237,13 +247,21 @@ export async function createRequest(
     //   utils.randomBase64Bytes(config.challengeLength),
     //   utils.randomBase64Bytes(config.challengeLength),
     // ];
-    await db.setChallengeFromRequestId(request_id, {});
+    await cacheDb.setChallengeFromRequestId(request_id, {});
 
-    const request_message_salt = utils.randomBase64Bytes(16);
+    const initial_salt = utils.randomBase64Bytes(config.saltLength);
+    const request_message_salt = utils.generateRequestMessageSalt(initial_salt);
 
-    const data_request_params_salt_list = data_request_list.map(() => {
-      return utils.randomBase64Bytes(16);
-    });
+    const data_request_params_salt_list = data_request_list.map(
+      (data_request) => {
+        const { service_id } = data_request;
+        return utils.generateRequestParamSalt({
+          request_id,
+          service_id,
+          initial_salt,
+        });
+      }
+    );
 
     const requestData = {
       mode,
@@ -261,19 +279,20 @@ export async function createRequest(
       //challenge,
       rp_id: config.nodeId,
       request_message_salt,
+      initial_salt,
     };
 
     // save request data to DB to send to AS via mq when authen complete
     // and for zk proof
     await Promise.all([
-      db.setRequestData(request_id, requestData),
-      db.setRequestIdByReferenceId(reference_id, request_id),
-      db.setRequestCallbackUrl(request_id, callback_url),
+      cacheDb.setRequestData(request_id, requestData),
+      cacheDb.setRequestIdByReferenceId(reference_id, request_id),
+      cacheDb.setRequestCallbackUrl(request_id, callback_url),
       addTimeoutScheduler(request_id, request_timeout),
     ]);
 
     if (synchronous) {
-      await createRequestInternalAsync(...arguments, {
+      await createRequestInternalAsync(createRequestParams, options, {
         request_id,
         request_message_salt,
         data_request_params_salt_list,
@@ -281,7 +300,7 @@ export async function createRequest(
         requestData,
       });
     } else {
-      createRequestInternalAsync(...arguments, {
+      createRequestInternalAsync(createRequestParams, options, {
         request_id,
         request_message_salt,
         data_request_params_salt_list,
@@ -290,7 +309,7 @@ export async function createRequest(
       });
     }
 
-    return request_id;
+    return { request_id, initial_salt };
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot create request',
@@ -302,12 +321,13 @@ export async function createRequest(
 }
 
 async function createRequestInternalAsync(
-  {
+  createRequestParams,
+  options = {},
+  additionalParams
+) {
+  const {
     mode,
-    namespace,
-    identifier,
     reference_id,
-    idp_id_list,
     callback_url,
     data_request_list,
     request_message,
@@ -315,21 +335,20 @@ async function createRequestInternalAsync(
     min_aal,
     min_idp,
     request_timeout,
-  },
-  {
+  } = createRequestParams;
+  const {
     synchronous = false,
     sendCallbackToClient = true,
     callbackFnName,
     callbackAdditionalArgs,
-  } = {},
-  {
+  } = options;
+  const {
     request_id,
     request_message_salt,
     data_request_params_salt_list,
     receivers,
     requestData,
-  }
-) {
+  } = additionalParams;
   try {
     const dataRequestListToBlockchain = data_request_list.map(
       (dataRequest, index) => {
@@ -454,7 +473,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
     // send request data to IDPs via message queue
     if (min_idp > 0) {
       mq.send(receivers, {
-        type: 'consent_request',
+        type: privateMessageType.CONSENT_REQUEST,
         ...requestData,
         height,
       });
@@ -524,10 +543,10 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
 async function createRequestCleanUpOnError({ requestId, referenceId }) {
   await Promise.all([
-    db.removeChallengeFromRequestId(requestId),
-    db.removeRequestData(requestId),
-    db.removeRequestIdByReferenceId(referenceId),
-    db.removeRequestCallbackUrl(requestId),
+    cacheDb.removeChallengeFromRequestId(requestId),
+    cacheDb.removeRequestData(requestId),
+    cacheDb.removeRequestIdByReferenceId(referenceId),
+    cacheDb.removeRequestCallbackUrl(requestId),
     removeTimeoutScheduler(requestId),
   ]);
 }

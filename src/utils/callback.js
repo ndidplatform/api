@@ -26,9 +26,13 @@ import { ExponentialBackoff } from 'simple-backoff';
 import { randomBase64Bytes } from './crypto';
 
 import { wait } from '.';
-import * as db from '../db';
+import * as cacheDb from '../db/cache';
 import logger from '../logger';
+import CustomError from '../error/custom_error';
+import errorType from '../error/type';
 import * as config from '../config';
+
+const RESPONSE_BODY_SIZE_LIMIT = 3 * 1024 * 1024; // 3MB
 
 const waitStopFunction = [];
 let stopCallbackRetry = false;
@@ -52,6 +56,7 @@ export function setResponseCallbackFnGetter(fn) {
 
 /**
  * Make a HTTP POST to callback url with body
+ *
  * @param {string} callbackUrl
  * @param {Object} body
  */
@@ -62,6 +67,7 @@ async function httpPost(cbId, callbackUrl, body) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
+    size: RESPONSE_BODY_SIZE_LIMIT,
   });
 
   const responseBody = await response.text();
@@ -116,7 +122,7 @@ async function callbackWithRetry(
     try {
       const responseObj = await httpPost(cbId, callbackUrl, body);
 
-      db.removeCallbackWithRetryData(cbId);
+      cacheDb.removeCallbackWithRetryData(cbId);
       if (responseCallbackFnName) {
         getResponseCallbackFn(responseCallbackFnName)(
           responseObj,
@@ -133,11 +139,26 @@ async function callbackWithRetry(
         cbId,
       });
 
+      if (error.name === 'FetchError' && error.type === 'max-size') {
+        if (responseCallbackFnName) {
+          getResponseCallbackFn(responseCallbackFnName)(
+            {
+              error: new CustomError({
+                message: errorType.BODY_TOO_LARGE.message,
+                code: errorType.BODY_TOO_LARGE.code,
+              }),
+            },
+            dataForResponseCallback
+          );
+        }
+        return;
+      }
+
       if (shouldRetryFnName) {
         if (
           !(await getShouldRetryFn(shouldRetryFnName)(...shouldRetryArguments))
         ) {
-          db.removeCallbackWithRetryData(cbId);
+          cacheDb.removeCallbackWithRetryData(cbId);
           return;
         }
       } else {
@@ -150,7 +171,7 @@ async function callbackWithRetry(
             url: callbackUrl,
             cbId,
           });
-          db.removeCallbackWithRetryData(cbId);
+          cacheDb.removeCallbackWithRetryData(cbId);
           return;
         }
       }
@@ -170,6 +191,7 @@ async function callbackWithRetry(
 
 /**
  * Send callback to client application
+ *
  * @param {string} callbackUrl
  * @param {Object} body
  * @param {boolean} retry
@@ -194,7 +216,7 @@ export async function callbackToClient(
       url: callbackUrl,
       cbId,
     });
-    await db.addCallbackWithRetryData(cbId, {
+    await cacheDb.addCallbackWithRetryData(cbId, {
       callbackUrl,
       body,
       shouldRetryFnName,
@@ -235,6 +257,20 @@ export async function callbackToClient(
         message: 'Cannot send callback to client application',
         error,
       });
+
+      if (error.name === 'FetchError' && error.type === 'max-size') {
+        if (responseCallbackFnName) {
+          getResponseCallbackFn(responseCallbackFnName)(
+            {
+              error: new CustomError({
+                message: errorType.BODY_TOO_LARGE.message,
+                code: errorType.BODY_TOO_LARGE.code,
+              }),
+            },
+            dataForResponseCallback
+          );
+        }
+      }
     }
   }
 }
@@ -242,10 +278,11 @@ export async function callbackToClient(
 /**
  * Resume all cached retry callback
  * This function should be called only when server starts
+ *
  * @param {function} responseCallback
  */
 export async function resumeCallbackToClient() {
-  const callbackDatum = await db.getAllCallbackWithRetryData();
+  const callbackDatum = await cacheDb.getAllCallbackWithRetryData();
   callbackDatum.forEach((callback) =>
     callbackWithRetry(
       callback.data.callbackUrl,

@@ -35,8 +35,9 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as utils from '../../utils';
 import * as config from '../../config';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
 import * as identity from '../identity';
+import privateMessageType from '../private_message_type';
 
 export * from './create_response';
 export * from './event_handlers';
@@ -264,7 +265,7 @@ export async function processMessage(message) {
     message: 'Processing message',
     messagePayload: message,
   });
-  if (message.type === 'idp_response') {
+  if (message.type === privateMessageType.IDP_RESPONSE) {
     //reponse for create identity
     if (await checkCreateIdentityResponse(message)) {
       await identity.addAccessorAfterConsent(
@@ -278,14 +279,14 @@ export async function processMessage(message) {
         }
       );
     }
-  } else if (message.type === 'challenge_request') {
+  } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
     //const responseId = message.request_id + ':' + message.idp_id;
     await common.handleChallengeRequest({
       request_id: message.request_id,
       idp_id: message.idp_id,
       public_proof: message.public_proof,
     });
-  } else if (message.type === 'consent_request') {
+  } else if (message.type === privateMessageType.CONSENT_REQUEST) {
     const valid = await common.checkRequestIntegrity(
       message.request_id,
       message
@@ -299,9 +300,10 @@ export async function processMessage(message) {
         },
       });
     }
-    await db.setRequestMessage(message.request_id, {
+    await cacheDb.setRequestMessage(message.request_id, {
       request_message: message.request_message,
       request_message_salt: message.request_message_salt,
+      initial_salt: message.initial_salt,
     });
     notifyIncomingRequestByCallback({
       mode: message.mode,
@@ -309,14 +311,17 @@ export async function processMessage(message) {
       namespace: message.namespace,
       identifier: message.identifier,
       request_message: message.request_message,
-      request_message_hash: utils.hash(
-        message.request_message
+      request_message_hash: utils.hashRequestMessageForConsent(
+        message.request_message,
+        message.initial_salt,
+        message.request_id,
       ),
-      // request_message_salt: message.request_message_salt,
+      request_message_salt: message.request_message_salt,
       requester_node_id: message.rp_id,
       min_ial: message.min_ial,
       min_aal: message.min_aal,
       data_request_list: message.data_request_list,
+      initial_salt: message.initial_salt,
     });
   }
 }
@@ -328,8 +333,10 @@ export async function processIdpResponseAfterAddAccessor(
   try {
     if (error) throw error;
 
-    const reference_id = await db.getReferenceIdByRequestId(message.request_id);
-    const callbackUrl = await db.getCallbackUrlByReferenceId(reference_id);
+    const reference_id = await cacheDb.getReferenceIdByRequestId(
+      message.request_id
+    );
+    const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(reference_id);
     const notifyData = {
       success: true,
       reference_id,
@@ -349,7 +356,7 @@ export async function processIdpResponseAfterAddAccessor(
           },
           true
         );
-        db.removeCallbackUrlByReferenceId(reference_id);
+        cacheDb.removeCallbackUrlByReferenceId(reference_id);
       }
     } else {
       if (callbackUrl == null) {
@@ -364,10 +371,10 @@ export async function processIdpResponseAfterAddAccessor(
           },
           true
         );
-        db.removeCallbackUrlByReferenceId(reference_id);
+        cacheDb.removeCallbackUrlByReferenceId(reference_id);
       }
     }
-    db.removeReferenceIdByRequestId(message.request_id);
+    cacheDb.removeReferenceIdByRequestId(message.request_id);
     await common.closeRequest(
       {
         request_id: message.request_id,
@@ -405,7 +412,11 @@ async function checkCreateIdentityResponse(message) {
       ).ial,
     });
 
-    if (!responseValid.valid_proof || !responseValid.valid_ial) {
+    if (
+      !responseValid.valid_signature ||
+      !responseValid.valid_proof ||
+      !responseValid.valid_ial
+    ) {
       throw new CustomError({
         message: errorType.INVALID_RESPONSE.message,
         code: errorType.INVALID_RESPONSE.code,
@@ -426,12 +437,14 @@ async function checkCreateIdentityResponse(message) {
     });
     return true;
   } catch (error) {
-    const { associated } = await db.getIdentityFromRequestId(
+    const { associated } = await cacheDb.getIdentityFromRequestId(
       message.request_id
     );
 
-    const reference_id = await db.getReferenceIdByRequestId(message.request_id);
-    const callbackUrl = await db.getCallbackUrlByReferenceId(reference_id);
+    const reference_id = await cacheDb.getReferenceIdByRequestId(
+      message.request_id
+    );
+    const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(reference_id);
     if (associated) {
       if (callbackUrl == null) {
         // Implies API v1
@@ -452,7 +465,7 @@ async function checkCreateIdentityResponse(message) {
           },
           true
         );
-        db.removeCallbackUrlByReferenceId(reference_id);
+        cacheDb.removeCallbackUrlByReferenceId(reference_id);
       }
     } else {
       if (callbackUrl == null) {
@@ -474,10 +487,10 @@ async function checkCreateIdentityResponse(message) {
           },
           true
         );
-        db.removeCallbackUrlByReferenceId(reference_id);
+        cacheDb.removeCallbackUrlByReferenceId(reference_id);
       }
     }
-    db.removeCreateIdentityDataByReferenceId(reference_id);
+    cacheDb.removeCreateIdentityDataByReferenceId(reference_id);
     await common.closeRequest(
       {
         request_id: message.request_id,

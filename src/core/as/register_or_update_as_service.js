@@ -26,7 +26,7 @@ import logger from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as config from '../../config';
-import * as db from '../../db';
+import * as cacheDb from '../../db/cache';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
 
@@ -168,7 +168,7 @@ export async function registerOrUpdateASServiceInternalAsyncAfterBlockchain(
     if (error) throw error;
 
     if (url) {
-      await db.setServiceCallbackUrl(service_id, url);
+      await cacheDb.setServiceCallbackUrl(service_id, url);
     }
 
     if (!synchronous) {
