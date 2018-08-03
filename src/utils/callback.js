@@ -32,6 +32,8 @@ import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 import * as config from '../config';
 
+const RESPONSE_BODY_SIZE_LIMIT = 3 * 1024 * 1024; // 3MB
+
 const waitStopFunction = [];
 let stopCallbackRetry = false;
 
@@ -54,7 +56,7 @@ export function setResponseCallbackFnGetter(fn) {
 
 /**
  * Make a HTTP POST to callback url with body
- * 
+ *
  * @param {string} callbackUrl
  * @param {Object} body
  */
@@ -65,7 +67,7 @@ async function httpPost(cbId, callbackUrl, body) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
-    size: 3000000, // 3MB
+    size: RESPONSE_BODY_SIZE_LIMIT,
   });
 
   const responseBody = await response.text();
@@ -189,7 +191,7 @@ async function callbackWithRetry(
 
 /**
  * Send callback to client application
- * 
+ *
  * @param {string} callbackUrl
  * @param {Object} body
  * @param {boolean} retry
@@ -276,7 +278,7 @@ export async function callbackToClient(
 /**
  * Resume all cached retry callback
  * This function should be called only when server starts
- * 
+ *
  * @param {function} responseCallback
  */
 export async function resumeCallbackToClient() {
