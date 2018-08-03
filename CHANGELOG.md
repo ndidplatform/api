@@ -5,7 +5,7 @@
 BREAKING CHANGES:
 
 - API version 2.1
-  - Add `request_message_salt` property when responding back to POST `/rp/requests/:namespace/:identifier`. This change also applies to API v1.
+  - Add `initial_salt` property when responding back to POST `/rp/requests/:namespace/:identifier`. This change also applies to API v1.
   - Add `request_message_salt` property in object when calling callback to IdP with type `incoming_request`. This change also applies to API v1.
   - Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side. (GET `/rp/requests/data/:request_id`) This change also applies to API v1.
   - Separate `valid_proof` into `valid_signature` (accessor signature) and `valid_proof` (ZK proof). This change also applies to API v1. Affect the following APIs:
