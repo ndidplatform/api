@@ -45,7 +45,7 @@ BUG FIXES:
 - Fix IdP can send response with any valid request ID without having to receive the request first.
 - Fix process exits on MQ error by handling error events emitted from MQSend and MQRecv.
 - Fix miscommunicated error response when RP trying to create a request with AS ID that does not provide the requested service.
-- Fix no limit for callback response body. Set to 3MB.
+- Fix no size limit for callback response body. Set to 3MB. Send error to optional `/as/error` callback on AS side.
 
 ## 0.5.4 (July 27, 2018)
 

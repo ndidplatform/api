@@ -135,6 +135,16 @@ async function callbackWithRetry(
         cbId,
       });
 
+      if (error.name === 'FetchError' && error.type === 'max-size') {
+        if (responseCallbackFnName) {
+          getResponseCallbackFn(responseCallbackFnName)(
+            { error },
+            dataForResponseCallback
+          );
+        }
+        return;
+      }
+
       if (shouldRetryFnName) {
         if (
           !(await getShouldRetryFn(shouldRetryFnName)(...shouldRetryArguments))
@@ -238,6 +248,15 @@ export async function callbackToClient(
         message: 'Cannot send callback to client application',
         error,
       });
+
+      if (error.name === 'FetchError' && error.type === 'max-size') {
+        if (responseCallbackFnName) {
+          getResponseCallbackFn(responseCallbackFnName)(
+            { error },
+            dataForResponseCallback
+          );
+        }
+      }
     }
   }
 }

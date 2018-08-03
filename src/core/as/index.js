@@ -138,10 +138,11 @@ export async function processRequest(request) {
 }
 
 export async function afterGotDataFromCallback(
-  { response, body },
+  { error, response, body },
   additionalData
 ) {
   try {
+    if (error) throw error;
     if (response.status === 204) {
       return;
     }
