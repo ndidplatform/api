@@ -134,13 +134,13 @@ async function onMessage(messageBuffer) {
 
     const { idp_id, rp_id, as_id } = JSON.parse(messageStr);
     const nodeId = idp_id || rp_id || as_id;
-    const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
     if (nodeId == null) {
       throw new CustomError({
         message: errorType.MESSAGE_FROM_UNKNOWN_NODE.message,
         code: errorType.MESSAGE_FROM_UNKNOWN_NODE.code,
       });
     }
+    const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
 
     const signatureValid = utils.verifySignature(
       messageSignature,
