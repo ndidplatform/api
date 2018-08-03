@@ -28,6 +28,8 @@ import { randomBase64Bytes } from './crypto';
 import { wait } from '.';
 import * as cacheDb from '../db/cache';
 import logger from '../logger';
+import CustomError from '../error/custom_error';
+import errorType from '../error/type';
 import * as config from '../config';
 
 const waitStopFunction = [];
@@ -138,7 +140,12 @@ async function callbackWithRetry(
       if (error.name === 'FetchError' && error.type === 'max-size') {
         if (responseCallbackFnName) {
           getResponseCallbackFn(responseCallbackFnName)(
-            { error },
+            {
+              error: new CustomError({
+                message: errorType.BODY_TOO_LARGE.message,
+                code: errorType.BODY_TOO_LARGE.code,
+              }),
+            },
             dataForResponseCallback
           );
         }
@@ -252,7 +259,12 @@ export async function callbackToClient(
       if (error.name === 'FetchError' && error.type === 'max-size') {
         if (responseCallbackFnName) {
           getResponseCallbackFn(responseCallbackFnName)(
-            { error },
+            {
+              error: new CustomError({
+                message: errorType.BODY_TOO_LARGE.message,
+                code: errorType.BODY_TOO_LARGE.code,
+              }),
+            },
             dataForResponseCallback
           );
         }
