@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix no callback response body size limit. Set to 3MB. Send error to optional `/as/error` callback on AS side.
+
 ## 0.5.4 (July 27, 2018)
 
 IMPROVEMENTS:

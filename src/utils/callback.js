@@ -62,6 +62,7 @@ async function httpPost(cbId, callbackUrl, body) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
+    size: 3000000, // 3MB
   });
 
   const responseBody = await response.text();
@@ -132,6 +133,16 @@ async function callbackWithRetry(
         error,
         cbId,
       });
+
+      if (error.name === 'FetchError' && error.type === 'max-size') {
+        if (responseCallbackFnName) {
+          getResponseCallbackFn(responseCallbackFnName)(
+            { error },
+            dataForResponseCallback
+          );
+        }
+        return;
+      }
 
       if (shouldRetryFnName) {
         if (
@@ -235,6 +246,15 @@ export async function callbackToClient(
         message: 'Cannot send callback to client application',
         error,
       });
+
+      if (error.name === 'FetchError' && error.type === 'max-size') {
+        if (responseCallbackFnName) {
+          getResponseCallbackFn(responseCallbackFnName)(
+            { error },
+            dataForResponseCallback
+          );
+        }
+      }
     }
   }
 }
