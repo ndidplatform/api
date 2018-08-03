@@ -25,6 +25,7 @@ import * as MQProtocol from './mq_protocol';
 import MQRecvSocket from './mq_recv_socket';
 
 import CustomError from '../error/custom_error';
+import * as errorType from '../error/type';
 
 export default class MQRecv extends EventEmitter {
   constructor(config) {
@@ -37,7 +38,19 @@ export default class MQRecv extends EventEmitter {
     this.recvSocket.on(
       'message',
       function(messageBuffer) {
-        const jsonMessage = MQProtocol.extractMsg(messageBuffer);
+        let jsonMessage;
+        try {
+          jsonMessage = MQProtocol.extractMsg(messageBuffer);
+        } catch(error) {
+          this.emit('error',
+            new CustomError({
+              code: errorType.WRONG_MESSAGE_QUEUE_PROTOCOL.code,
+              message: errorType.WRONG_MESSAGE_QUEUE_PROTOCOL.message,
+              cause: error
+            })
+          );
+          return;
+        }
         const ackMSG = MQProtocol.generateAckMsg({
           msgId: jsonMessage.retryspec.msgId,
           seqId: jsonMessage.retryspec.seqId,

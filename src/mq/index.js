@@ -85,6 +85,7 @@ export const eventEmitter = new EventEmitter();
     onMessage(message);
   });
 
+  //should tell client via error callback?
   mqSend.on('error', (error) => logger.error(error.getInfoForLog()));
   mqRecv.on('error', (error) => logger.error(error.getInfoForLog()));
 })();

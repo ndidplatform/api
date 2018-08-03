@@ -134,6 +134,10 @@ export default {
     code: 10026,
     message: 'Loading expected transactions from cache DB',
   },
+  WRONG_MESSAGE_QUEUE_PROTOCOL: {
+    code: 10027,
+    message: 'Received unrecognized message via message queue',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
