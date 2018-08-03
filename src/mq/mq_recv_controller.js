@@ -68,13 +68,16 @@ export default class MQRecv extends EventEmitter {
     this.recvSocket.on(
       'error',
       function(error) {
+        console.log(error);
         this.emit(
           'error',
-          new CustomError({
-            code: 'MQERR_RECEIVER',
-            message: 'Message queue (receiver) error',
-            cause: error,
-          })
+          error && error.getCode() 
+            ? error
+            : new CustomError({
+              code: 'MQERR_RECEIVER',
+              message: 'Message queue (receiver) error',
+              cause: error,
+            })
         );
       }.bind(this)
     );

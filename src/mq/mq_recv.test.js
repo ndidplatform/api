@@ -4,6 +4,8 @@ import assert from 'assert';
 
 import MQRecv from './mq_recv_controller';
 import MQSend from './mq_send_controller';
+import zmq from 'zeromq';
+import errorType from '../error/type';
 
 const expect = chai.expect;
 chai.use(chaiHttp);
@@ -85,5 +87,29 @@ describe('Functional Test for MQ receiver with real socket', function() {
       { ip: '127.0.0.1', port: ports[0] },
       Buffer.from('testbigbig12345678901234567890')
     );
+  });
+
+  it('should fire error but not die when receive wrong protocol message', function(done) {
+    let ports = getPort(1);
+    let mqNodeRecv = new MQRecv({ port: ports[0] });
+    mqNodeRecv.on('error', function(error) {
+      expect(error.getCode()).to.be.eql(errorType.WRONG_MESSAGE_QUEUE_PROTOCOL.code);
+      sendingSocket.close();
+      mqNodeRecv.close();
+      done();
+    });
+
+    mqNodeRecv.on('message', function() {
+      assert.fail('Should not recieve wrong protocol message');
+    });
+
+    const sendingSocket = zmq.socket('req');
+    sendingSocket.setsockopt(zmq.ZMQ_LINGER, 0);
+    sendingSocket.setsockopt(zmq.ZMQ_RCVTIMEO, 0);
+    sendingSocket.setsockopt(zmq.ZMQ_SNDTIMEO, 0);
+
+    const destUri = `tcp://localhost:${ports[0]}`;
+    sendingSocket.connect(destUri);
+    sendingSocket.send('RANDOM wrong protocol');
   });
 });
