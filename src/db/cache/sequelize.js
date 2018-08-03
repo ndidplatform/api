@@ -112,6 +112,10 @@ export const Entities = {
     serviceId: { type: Sequelize.STRING, primaryKey: true },
     url: Sequelize.TEXT,
   }),
+  dataResponseFromAS: sequelize.define('dataResponseFromAS', {
+    asResponseId: { type: Sequelize.STRING, primaryKey: true },
+    dataResponse: Sequelize.JSON,
+  }),
   dataFromAS: sequelize.define('dataFromAS', {
     requestId: Sequelize.STRING,
     data: Sequelize.JSON,

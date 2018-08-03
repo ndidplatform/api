@@ -212,17 +212,10 @@ export async function handleMessageFromQueue(messageStr) {
       delete idpResponseProcessLocks[responseId];
     } else if (message.type === privateMessageType.AS_DATA_RESPONSE) {
       // Receive data from AS
-      await cacheDb.addDataFromAS(message.request_id, {
-        source_node_id: message.as_id,
-        service_id: message.service_id,
-        source_signature: message.signature,
-        signature_sign_method: 'RSA-SHA256',
-        data_salt: message.data_salt,
-        data: message.data,
-      });
-
       const asResponseId =
         message.request_id + ':' + message.service_id + ':' + message.as_id;
+      await cacheDb.setDataResponseFromAS(asResponseId, message);
+
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (latestBlockHeight <= message.height) {
         logger.debug({
@@ -506,23 +499,19 @@ async function checkAsDataSignaturesAndSetReceived(requestId, metadataList) {
     metadataList,
   });
 
-  const dataFromAS = await cacheDb.getDatafromAS(requestId);
-
   await Promise.all(
     metadataList.map(async ({ requestId, serviceId, asId }) => {
       const asResponseId = requestId + ':' + serviceId + ':' + asId;
       if (asDataResponseProcessLocks[asResponseId]) return;
-      const data = dataFromAS.find(
-        (data) => data.service_id === serviceId && data.source_node_id === asId
-      );
-      if (data == null) return; // Have not received data from AS through message queue yet
+      const dataResponseFromAS = await cacheDb.getDataResponsefromAS(asResponseId);
+      if (dataResponseFromAS == null) return; // Have not received data from AS through message queue yet
       await processAsData({
         requestId,
         serviceId,
         nodeId: asId,
-        signature: data.source_signature,
-        dataSalt: data.data_salt,
-        data: data.data,
+        signature: dataResponseFromAS.signature,
+        dataSalt: dataResponseFromAS.data_salt,
+        data: dataResponseFromAS.data,
       });
     })
   );
@@ -546,15 +535,22 @@ async function processAsData({
     data,
   });
 
+  const asResponseId = requestId + ':' + serviceId + ':' + nodeId;
+
   const signatureFromBlockchain = await tendermintNdid.getDataSignature({
     request_id: requestId,
     service_id: serviceId,
     node_id: nodeId,
   });
 
-  if (signatureFromBlockchain == null) return;
-  // TODO: if signature is invalid or mismatch then delete data from cache
-  if (signature !== signatureFromBlockchain) return;
+  if (signatureFromBlockchain == null) {
+    cleanUpDataResponseFromAS(asResponseId);
+    return;
+  }
+  if (signature !== signatureFromBlockchain) {
+    cleanUpDataResponseFromAS(asResponseId);
+    return;
+  }
   if (
     !(await isDataSignatureValid(
       nodeId,
@@ -563,14 +559,37 @@ async function processAsData({
       data
     ))
   ) {
+    cleanUpDataResponseFromAS(asResponseId);
     return;
   }
+
+  await cacheDb.addDataFromAS(requestId, {
+    source_node_id: nodeId,
+    service_id: serviceId,
+    source_signature: signature,
+    signature_sign_method: 'RSA-SHA256',
+    data_salt: dataSalt,
+    data,
+  });
 
   await tendermintNdid.setDataReceived({
     requestId,
     service_id: serviceId,
     as_id: nodeId,
   });
+
+  cleanUpDataResponseFromAS(asResponseId);
+}
+
+async function cleanUpDataResponseFromAS(asResponseId) {
+  try {
+    await cacheDb.removeDataResponseFromAS(asResponseId);
+  } catch (error) {
+    logger.error({
+      message: 'Cannot remove data response from AS',
+      error,
+    });
+  }
 }
 
 async function isDataSignatureValid(asNodeId, signature, salt, data) {

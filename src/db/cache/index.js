@@ -607,6 +607,35 @@ export function removeRequestCallbackUrl(requestId) {
   });
 }
 
+export function getDataResponsefromAS(asResponseId) {
+  return db.get({
+    dbName,
+    name: 'dataResponseFromAS',
+    keyName: 'asResponseId',
+    key: asResponseId,
+    valueName: 'dataResponse',
+  });
+}
+export function setDataResponseFromAS(asResponseId, data) {
+  return db.set({
+    dbName,
+    name: 'dataResponseFromAS',
+    keyName: 'asResponseId',
+    key: asResponseId,
+    valueName: 'dataResponse',
+    value: data,
+  });
+}
+
+export function removeDataResponseFromAS(asResponseId) {
+  return db.remove({
+    dbName,
+    name: 'dataResponseFromAS',
+    keyName: 'asResponseId',
+    key: asResponseId,
+  });
+}
+
 export function getDatafromAS(requestId) {
   return db.getList({
     dbName,
