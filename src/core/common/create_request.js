@@ -263,8 +263,6 @@ export async function createRequest(
       }
     );
 
-    const creation_time = Date.now();
-
     const requestData = {
       mode,
       namespace,
@@ -282,7 +280,6 @@ export async function createRequest(
       rp_id: config.nodeId,
       request_message_salt,
       initial_salt,
-      creation_time,
     };
 
     // save request data to DB to send to AS via mq when authen complete
@@ -291,7 +288,6 @@ export async function createRequest(
       cacheDb.setRequestData(request_id, requestData),
       cacheDb.setRequestIdByReferenceId(reference_id, request_id),
       cacheDb.setRequestCallbackUrl(request_id, callback_url),
-      addTimeoutScheduler(request_id, request_timeout),
     ]);
 
     if (synchronous) {
@@ -387,6 +383,7 @@ async function createRequestInternalAsync(
             callback_url,
             request_id,
             min_idp,
+            request_timeout,
             receivers,
             requestData,
           },
@@ -409,6 +406,7 @@ async function createRequestInternalAsync(
           callback_url,
           request_id,
           min_idp,
+          request_timeout,
           receivers,
           requestData,
         },
@@ -463,7 +461,15 @@ async function createRequestInternalAsync(
 
 export async function createRequestInternalAsyncAfterBlockchain(
   { height, error },
-  { reference_id, callback_url, request_id, min_idp, receivers, requestData },
+  {
+    reference_id,
+    callback_url,
+    request_id,
+    min_idp,
+    request_timeout,
+    receivers,
+    requestData,
+  },
   {
     synchronous = false,
     sendCallbackToClient = true,
@@ -473,11 +479,17 @@ export async function createRequestInternalAsyncAfterBlockchain(
 ) {
   try {
     if (error) throw error;
+
+    const creation_time = Date.now();
+
+    await addTimeoutScheduler(request_id, request_timeout);
+
     // send request data to IDPs via message queue
     if (min_idp > 0) {
       mq.send(receivers, {
         type: privateMessageType.CONSENT_REQUEST,
         ...requestData,
+        creation_time,
         height,
       });
     }
@@ -538,6 +550,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
         requestId: request_id,
         referenceId: reference_id,
       });
+      await removeTimeoutScheduler(request_id);
     } else {
       throw error;
     }
@@ -550,6 +563,5 @@ async function createRequestCleanUpOnError({ requestId, referenceId }) {
     cacheDb.removeRequestData(requestId),
     cacheDb.removeRequestIdByReferenceId(referenceId),
     cacheDb.removeRequestCallbackUrl(requestId),
-    removeTimeoutScheduler(requestId),
   ]);
 }

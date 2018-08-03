@@ -128,7 +128,7 @@ export default {
           min_ial: { $ref: 'defs#/definitions/ial' },
           min_aal: { $ref: 'defs#/definitions/aal' },
           min_idp: { type: 'integer', minimum: 1 },
-          request_timeout: { type: 'integer', minimum: 0 },
+          request_timeout: { type: 'integer', minimum: 1 },
         },
         required: [
           'reference_id',

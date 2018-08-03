@@ -11,6 +11,8 @@ BUG FIXES:
 
 - Fix error when emitting an error from MQ module caused by invalid import statement.
 - Fix callbacks that have been successfully sent and got too large response body get sending again after server restarts caused by not removing callback metadata from cache DB.
+- Fix cannot set timeout to a request that has short timeout caused by a request has not been created on the blockchain in time.
+- Fix `request_timeout` can be `0`. Minimum now set to `1`.
 
 ## 0.6.0 (August 3, 2018)
 
