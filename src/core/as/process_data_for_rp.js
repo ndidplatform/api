@@ -290,8 +290,8 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
 }
 
 async function sendDataToRP(rpId, data) {
-  let receivers = [];
-  let nodeId = rpId;
+  const receivers = [];
+  const nodeId = rpId;
 
   const mqAddress = await tendermintNdid.getMsqAddress(nodeId);
   if (mqAddress == null) {
@@ -303,11 +303,12 @@ async function sendDataToRP(rpId, data) {
       },
     });
   }
-  let { ip, port } = mqAddress;
+  const { ip, port } = mqAddress;
+  const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
   receivers.push({
     ip,
     port,
-    ...(await tendermintNdid.getNodePubKey(nodeId)),
+    public_key,
   });
   mq.send(receivers, {
     type: privateMessageType.AS_DATA_RESPONSE,

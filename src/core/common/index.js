@@ -323,11 +323,12 @@ export async function getIdpsMsqDestination({
       if (mqAddress == null) {
         return null;
       }
+      const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
       return {
         idp_id: nodeId,
         ip: mqAddress.ip,
         port: mqAddress.port,
-        ...(await tendermintNdid.getNodePubKey(nodeId)),
+        public_key,
       };
     })
   )).filter((receiver) => receiver != null);
@@ -651,7 +652,7 @@ export async function checkIdpResponse({
       accessor_public_key,
       request_message,
       initial_salt,
-      request_id,
+      request_id
     );
   }
 

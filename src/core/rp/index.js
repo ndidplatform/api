@@ -135,17 +135,23 @@ async function getASReceiverList(data_request) {
   const receivers = (await Promise.all(
     nodeIdList.map(async (nodeId) => {
       try {
-        //let nodeId = node.node_id;
-        let mqAddress = await tendermintNdid.getMsqAddress(nodeId);
-        if (!mqAddress) return null;
-        let { ip, port } = mqAddress;
+        const mqAddress = await tendermintNdid.getMsqAddress(nodeId);
+        if (mqAddress == null) {
+          return null;
+        }
+        const { ip, port } = mqAddress;
+        const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
         return {
           node_id: nodeId,
           ip,
           port,
-          ...(await tendermintNdid.getNodePubKey(nodeId)),
+          public_key,
         };
       } catch (error) {
+        logger.error({
+          message: 'Cannot get IP, port, and/or public key of receiver AS',
+          nodeId,
+        });
         return null;
       }
     })
@@ -195,7 +201,9 @@ export async function sendRequestToAS(requestData, height) {
     })
   );
 
-  const challenge = await cacheDb.getChallengeFromRequestId(requestData.request_id);
+  const challenge = await cacheDb.getChallengeFromRequestId(
+    requestData.request_id
+  );
   await Promise.all(
     Object.values(dataToSendByNodeId).map(
       ({ receiver, service_data_request_list }) =>

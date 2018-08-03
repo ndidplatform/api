@@ -204,7 +204,7 @@ export async function createRequest(
       }
     }
 
-    let receivers = await getIdpsMsqDestination({
+    const receivers = await getIdpsMsqDestination({
       namespace,
       identifier,
       min_ial,
