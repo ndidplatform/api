@@ -41,12 +41,13 @@ export default class MQRecv extends EventEmitter {
         let jsonMessage;
         try {
           jsonMessage = MQProtocol.extractMsg(messageBuffer);
-        } catch(error) {
-          this.emit('error',
+        } catch (error) {
+          this.emit(
+            'error',
             new CustomError({
               code: errorType.WRONG_MESSAGE_QUEUE_PROTOCOL.code,
               message: errorType.WRONG_MESSAGE_QUEUE_PROTOCOL.message,
-              cause: error
+              cause: error,
             })
           );
           return;
@@ -71,13 +72,13 @@ export default class MQRecv extends EventEmitter {
         console.log(error);
         this.emit(
           'error',
-          error && error.getCode() 
+          error && error.getCode()
             ? error
             : new CustomError({
-              code: 'MQERR_RECEIVER',
-              message: 'Message queue (receiver) error',
-              cause: error,
-            })
+                code: 'MQERR_RECEIVER',
+                message: 'Message queue (receiver) error',
+                cause: error,
+              })
         );
       }.bind(this)
     );

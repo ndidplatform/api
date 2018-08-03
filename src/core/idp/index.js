@@ -314,7 +314,7 @@ export async function processMessage(message) {
       request_message_hash: utils.hashRequestMessageForConsent(
         message.request_message,
         message.initial_salt,
-        message.request_id,
+        message.request_id
       ),
       request_message_salt: message.request_message_salt,
       requester_node_id: message.rp_id,

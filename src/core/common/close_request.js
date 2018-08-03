@@ -32,7 +32,7 @@ import * as cacheDb from '../../db/cache';
 
 /**
  * Close a request
- * 
+ *
  * @param {Object} closeRequestParams
  * @param {string} closeRequestParams.reference_id
  * @param {string} closeRequestParams.callback_url

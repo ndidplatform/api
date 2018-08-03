@@ -424,7 +424,7 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
       public_key,
       request_message,
       initial_salt,
-      request_id,
+      request_id
     );
 
     logger.debug({

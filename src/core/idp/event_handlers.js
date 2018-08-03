@@ -61,7 +61,9 @@ export async function handleMessageFromQueue(messageStr) {
       //store challenge
       const data = await cacheDb.getResponseFromRequestId(message.request_id);
       try {
-        let request = await cacheDb.getRequestReceivedFromMQ(message.request_id);
+        let request = await cacheDb.getRequestReceivedFromMQ(
+          message.request_id
+        );
         request.challenge = message.challenge;
         logger.debug({
           message: 'Save challenge to request',
@@ -106,14 +108,22 @@ export async function handleMessageFromQueue(messageStr) {
           });
           requestIdLocks[message.request_id] = true;
           await Promise.all([
-            cacheDb.setRequestToProcessReceivedFromMQ(message.request_id, message),
-            cacheDb.addRequestIdExpectedInBlock(message.height, message.request_id),
+            cacheDb.setRequestToProcessReceivedFromMQ(
+              message.request_id,
+              message
+            ),
+            cacheDb.addRequestIdExpectedInBlock(
+              message.height,
+              message.request_id
+            ),
           ]);
           if (tendermint.latestBlockHeight <= message.height) {
             delete requestIdLocks[message.request_id];
             return;
           } else {
-            await cacheDb.removeRequestToProcessReceivedFromMQ(message.request_id);
+            await cacheDb.removeRequestToProcessReceivedFromMQ(
+              message.request_id
+            );
           }
         }
       } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
@@ -127,9 +137,18 @@ export async function handleMessageFromQueue(messageStr) {
           const responseId = message.request_id + ':' + message.idp_id;
           requestIdLocks[message.request_id] = true;
           await Promise.all([
-            cacheDb.setRequestToProcessReceivedFromMQ(message.request_id, message),
-            cacheDb.addRequestIdExpectedInBlock(message.height, message.request_id),
-            cacheDb.setPublicProofReceivedFromMQ(responseId, message.public_proof),
+            cacheDb.setRequestToProcessReceivedFromMQ(
+              message.request_id,
+              message
+            ),
+            cacheDb.addRequestIdExpectedInBlock(
+              message.height,
+              message.request_id
+            ),
+            cacheDb.setPublicProofReceivedFromMQ(
+              responseId,
+              message.public_proof
+            ),
           ]);
           if (tendermint.latestBlockHeight <= message.height) {
             delete requestIdLocks[message.request_id];
@@ -177,14 +196,22 @@ export async function handleMessageFromQueue(messageStr) {
           });
           requestIdLocks[message.request_id] = true;
           await Promise.all([
-            cacheDb.setRequestToProcessReceivedFromMQ(message.request_id, message),
-            cacheDb.addRequestIdExpectedInBlock(message.height, message.request_id),
+            cacheDb.setRequestToProcessReceivedFromMQ(
+              message.request_id,
+              message
+            ),
+            cacheDb.addRequestIdExpectedInBlock(
+              message.height,
+              message.request_id
+            ),
           ]);
           if (tendermint.latestBlockHeight <= message.height) {
             delete requestIdLocks[message.request_id];
             return;
           } else {
-            await cacheDb.removeRequestToProcessReceivedFromMQ(message.request_id);
+            await cacheDb.removeRequestToProcessReceivedFromMQ(
+              message.request_id
+            );
           }
         }
       }
@@ -238,7 +265,9 @@ export async function handleTendermintNewBlockEvent(
     await Promise.all(
       requestIdsInTendermintBlock.map(async (requestId) => {
         if (requestIdLocks[requestId]) return;
-        const message = await cacheDb.getRequestToProcessReceivedFromMQ(requestId);
+        const message = await cacheDb.getRequestToProcessReceivedFromMQ(
+          requestId
+        );
         if (message == null) return;
         await processMessage(message);
         await cacheDb.removeRequestToProcessReceivedFromMQ(requestId);
@@ -261,7 +290,9 @@ export async function handleTendermintNewBlockEvent(
               transaction.fnName === 'CloseRequest' ||
               transaction.fnName === 'TimeOutRequest'
             ) {
-              const callbackUrl = await cacheDb.getRequestCallbackUrl(requestId);
+              const callbackUrl = await cacheDb.getRequestCallbackUrl(
+                requestId
+              );
               if (!callbackUrl) return;
               return requestId;
             }

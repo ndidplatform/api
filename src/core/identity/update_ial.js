@@ -35,14 +35,14 @@ import * as config from '../../config';
 
 /**
  * Update identity's IAL
- * 
- * @param {Object} updateIalParams 
+ *
+ * @param {Object} updateIalParams
  * @param {string} updateIalParams.reference_id
  * @param {string} updateIalParams.callback_url
  * @param {string} updateIalParams.namespace
  * @param {string} updateIalParams.identifier
  * @param {number} updateIalParams.ial
- * @param {Object} options 
+ * @param {Object} options
  * @param {boolean} options.synchronous
  */
 export async function updateIal(

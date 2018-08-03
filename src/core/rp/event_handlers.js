@@ -74,7 +74,10 @@ export async function handleMessageFromQueue(messageStr) {
         });
         challengeRequestProcessLocks[responseId] = true;
         await Promise.all([
-          cacheDb.setPublicProofReceivedFromMQ(responseId, message.public_proof),
+          cacheDb.setPublicProofReceivedFromMQ(
+            responseId,
+            message.public_proof
+          ),
           cacheDb.addExpectedIdpPublicProofInBlock(message.height, {
             requestId: message.request_id,
             idpId: message.idp_id,
@@ -94,7 +97,9 @@ export async function handleMessageFromQueue(messageStr) {
       });
       delete challengeRequestProcessLocks[responseId];
     } else if (message.type === privateMessageType.IDP_RESPONSE) {
-      const callbackUrl = await cacheDb.getRequestCallbackUrl(message.request_id);
+      const callbackUrl = await cacheDb.getRequestCallbackUrl(
+        message.request_id
+      );
       if (!callbackUrl) return;
 
       //check accessor_id, undefined means mode 1
@@ -285,7 +290,9 @@ export async function handleTendermintNewBlockEvent(
       challengeRequestMetadataList.map(async ({ requestId, idpId }) => {
         const responseId = requestId + ':' + idpId;
         if (challengeRequestProcessLocks[responseId]) return;
-        const publicProof = await cacheDb.getPublicProofReceivedFromMQ(responseId);
+        const publicProof = await cacheDb.getPublicProofReceivedFromMQ(
+          responseId
+        );
         if (publicProof == null) return;
         await common.handleChallengeRequest({
           request_id: requestId,
@@ -403,7 +410,9 @@ async function processRequestUpdate(requestId, height) {
     }
   }
 
-  const savedResponseValidList = await cacheDb.getIdpResponseValidList(requestId);
+  const savedResponseValidList = await cacheDb.getIdpResponseValidList(
+    requestId
+  );
   let responseValidList;
 
   if (needResponseVerification) {
@@ -503,7 +512,9 @@ async function checkAsDataSignaturesAndSetReceived(requestId, metadataList) {
     metadataList.map(async ({ requestId, serviceId, asId }) => {
       const asResponseId = requestId + ':' + serviceId + ':' + asId;
       if (asDataResponseProcessLocks[asResponseId]) return;
-      const dataResponseFromAS = await cacheDb.getDataResponsefromAS(asResponseId);
+      const dataResponseFromAS = await cacheDb.getDataResponsefromAS(
+        asResponseId
+      );
       if (dataResponseFromAS == null) return; // Have not received data from AS through message queue yet
       await processAsData({
         requestId,

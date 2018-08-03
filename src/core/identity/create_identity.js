@@ -62,7 +62,7 @@ import {
  * @param {boolean} options.synchronous
  * @param {number} options.apiVersion
  *
- * @returns {{ request_id: string, exist: boolean, accessor_id: string }} 
+ * @returns {{ request_id: string, exist: boolean, accessor_id: string }}
  * Remark: "exist" property is present only when using with synchronous mode
  */
 export async function createIdentity(

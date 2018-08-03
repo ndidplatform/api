@@ -42,7 +42,7 @@ import privateMessageType from '../private_message_type';
 
 /**
  * Create a new request
- * 
+ *
  * @param {Object} createRequestParams
  * @param {number} createRequestParams.mode
  * @param {string} createRequestParams.namespace
@@ -62,7 +62,7 @@ import privateMessageType from '../private_message_type';
  * @param {Array} options.callbackAdditionalArgs
  * @param {Object} additionalParams
  * @param {string} additionalParams.request_id
- * 
+ *
  * @returns {Promise<Object>} Request ID and request message salt
  */
 export async function createRequest(
