@@ -140,7 +140,7 @@ export async function createIdentity(
 export async function clearRegisterMsqDestinationTimeout(
   hash_id,
   callbackFnName,
-  callbackAdditionalArgs,
+  callbackAdditionalArgs
 ) {
   try {
     const result = await tendermint.transact(
@@ -164,7 +164,6 @@ export async function registerMqDestination(
   callbackFnName,
   callbackAdditionalArgs
 ) {
-
   try {
     const result = await tendermint.transact(
       'RegisterMsqDestination',
@@ -247,7 +246,7 @@ export async function closeRequest(
   try {
     const result = await tendermint.transact(
       'CloseRequest',
-      { requestId, response_valid_list: responseValidList },
+      { request_id: requestId, response_valid_list: responseValidList },
       utils.getNonce(),
       callbackFnName,
       callbackAdditionalArgs
@@ -272,7 +271,7 @@ export async function timeoutRequest(
     if (request.closed === false) {
       await tendermint.transact(
         'TimeOutRequest',
-        { requestId, response_valid_list: responseValidList },
+        { request_id: requestId, response_valid_list: responseValidList },
         utils.getNonce(),
         callbackFnName,
         callbackAdditionalArgs
@@ -295,7 +294,7 @@ export async function setDataReceived(
     const result = await tendermint.transact(
       'SetDataReceived',
       {
-        requestId,
+        request_id: requestId,
         service_id,
         as_id,
       },
@@ -501,7 +500,7 @@ export async function getNodeToken(node_id = nodeId) {
 
 export async function getRequest({ requestId }) {
   try {
-    return await tendermint.query('GetRequest', { requestId });
+    return await tendermint.query('GetRequest', { request_id: requestId });
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get request from blockchain',
@@ -514,7 +513,7 @@ export async function getRequestDetail({ requestId, height }) {
   try {
     const requestDetail = await tendermint.query(
       'GetRequestDetail',
-      { requestId },
+      { request_id: requestId },
       height
     );
     if (requestDetail == null) {

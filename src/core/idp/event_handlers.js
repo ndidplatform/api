@@ -255,9 +255,7 @@ export async function handleTendermintNewBlockEvent(
 
         let requestIdsToCleanUp = await Promise.all(
           transactions.map(async (transaction) => {
-            // TODO: clear key with smart-contract, eg. request_id or requestId
-            const requestId =
-              transaction.args.request_id || transaction.args.requestId;
+            const requestId = transaction.args.request_id;
             if (requestId == null) return;
             if (
               transaction.fnName === 'CloseRequest' ||
