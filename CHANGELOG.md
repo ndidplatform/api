@@ -1,6 +1,6 @@
 # Changelog
 
-## TBD
+## 0.5.5 (August 3, 2018)
 
 BUG FIXES:
 
