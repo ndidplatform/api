@@ -303,6 +303,7 @@ export async function processMessage(message) {
     await cacheDb.setRequestMessage(message.request_id, {
       request_message: message.request_message,
       request_message_salt: message.request_message_salt,
+      initial_salt: message.initial_salt,
     });
     notifyIncomingRequestByCallback({
       mode: message.mode,
@@ -310,15 +311,17 @@ export async function processMessage(message) {
       namespace: message.namespace,
       identifier: message.identifier,
       request_message: message.request_message,
-      request_message_hash: utils.hashRequestMessage(
+      request_message_hash: utils.hashRequestMessageForConsent(
         message.request_message,
-        message.request_message_salt
+        message.initial_salt,
+        message.request_id,
       ),
       request_message_salt: message.request_message_salt,
       requester_node_id: message.rp_id,
       min_ial: message.min_ial,
       min_aal: message.min_aal,
       data_request_list: message.data_request_list,
+      initial_salt: message.initial_salt,
     });
   }
 }

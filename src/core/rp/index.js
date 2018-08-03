@@ -212,6 +212,7 @@ export async function sendRequestToAS(requestData, height) {
           privateProofObjectList: requestData.privateProofObjectList,
           rp_id: requestData.rp_id,
           height,
+          initial_salt: requestData.initial_salt,
         })
     )
   );

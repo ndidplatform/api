@@ -105,13 +105,14 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
       // Verify accessor signature
       const {
         request_message,
-        request_message_salt,
+        initial_salt,
       } = await cacheDb.getRequestMessage(request_id);
       const signatureValid = utils.verifyResponseSignature(
         signature,
         accessorPublicKey,
         request_message,
-        request_message_salt
+        initial_salt,
+        request_id
       );
       if (!signatureValid) {
         throw new CustomError({

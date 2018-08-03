@@ -406,10 +406,10 @@ function generateCustomPadding(initialSalt, blockLength = 2048) {
   return paddingBuffer;
 }
 
-export function hashRequestMessage(request_message, request_message_salt) {
-  const paddingBuffer = generateCustomPadding(request_message_salt);
+export function hashRequestMessageForConsent(request_message, initial_salt, request_id) {
+  const paddingBuffer = generateCustomPadding(initial_salt);
   const derivedSalt = cryptoUtils
-    .sha256(request_message_salt)
+    .sha256(request_id + initial_salt)
     .slice(0, config.saltLength)
     .toString('base64');
 
@@ -418,11 +418,11 @@ export function hashRequestMessage(request_message, request_message_salt) {
   return Buffer.concat([paddingBuffer, normalHashBuffer]).toString('base64');
 }
 
-export function verifyResponseSignature(signature, publicKey, plainText, salt) {
+export function verifyResponseSignature(signature, publicKey, request_message, initial_salt, request_id) {
   //should find block length if use another sign method
-  const paddingBuffer = generateCustomPadding(salt);
+  const paddingBuffer = generateCustomPadding(initial_salt);
   const derivedSalt = cryptoUtils
-    .sha256(salt)
+    .sha256(request_id + initial_salt)
     .slice(0, config.saltLength)
     .toString('base64');
 
@@ -438,7 +438,7 @@ export function verifyResponseSignature(signature, publicKey, plainText, salt) {
 
   const paddedBase64 = Buffer.concat([
     paddingBuffer,
-    cryptoUtils.sha256(plainText + derivedSalt),
+    cryptoUtils.sha256(request_message + derivedSalt),
   ]).toString('base64');
 
   return paddedBase64 === decryptedSignature;
@@ -448,13 +448,18 @@ export function createRequestId() {
   return cryptoUtils.randomHexBytes(32);
 }
 
+export function generateRequestMessageSalt(initial_salt) {
+  const bufferHash = cryptoUtils.sha256(initial_salt);
+  return bufferHash.slice(0, config.saltLength).toString('base64');
+}
+
 export function generateRequestParamSalt({
   request_id,
   service_id,
-  request_message_salt,
+  initial_salt,
 }) {
   const bufferHash = cryptoUtils.sha256(
-    request_id + service_id + request_message_salt
+    request_id + service_id + initial_salt
   );
   return bufferHash.slice(0, config.saltLength).toString('base64');
 }
@@ -462,10 +467,10 @@ export function generateRequestParamSalt({
 export function generateDataSalt({
   request_id,
   service_id,
-  request_message_salt,
+  initial_salt,
 }) {
   const bufferHash = cryptoUtils.sha256(
-    request_id + service_id + config.nodeId + request_message_salt
+    request_id + service_id + config.nodeId + initial_salt
   );
   return bufferHash.slice(0, config.saltLength).toString('base64');
 }

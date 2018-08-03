@@ -127,11 +127,11 @@ async function processDataForRPInternalAsync(
 ) {
   try {
     const as_id = config.nodeId;
-    const request_message_salt = await cacheDb.getRequestMessageSalt(requestId);
+    const initial_salt = await cacheDb.getInitialSalt(requestId);
     const data_salt = utils.generateDataSalt({
       request_id: requestId,
       service_id: serviceId,
-      request_message_salt,
+      initial_salt,
     });
     const signatureBuffer = await utils.createSignature(data + data_salt);
     const signature = signatureBuffer.toString('base64');
@@ -261,7 +261,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
 
     const dataRequestId = requestId + ':' + serviceId;
     cacheDb.removeRpIdFromDataRequestId(dataRequestId);
-    cacheDb.removeRequestMessageSalt(requestId);
+    cacheDb.removeInitialSalt(requestId);
   } catch (error) {
     logger.error({
       message: 'Send data to RP internal async after blockchain error',

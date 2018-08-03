@@ -249,7 +249,8 @@ export async function createRequest(
     // ];
     await cacheDb.setChallengeFromRequestId(request_id, {});
 
-    const request_message_salt = utils.randomBase64Bytes(config.saltLength);
+    const initial_salt = utils.randomBase64Bytes(config.saltLength);
+    const request_message_salt = utils.generateRequestMessageSalt(initial_salt);
 
     const data_request_params_salt_list = data_request_list.map(
       (data_request) => {
@@ -257,7 +258,7 @@ export async function createRequest(
         return utils.generateRequestParamSalt({
           request_id,
           service_id,
-          request_message_salt,
+          initial_salt,
         });
       }
     );
@@ -278,6 +279,7 @@ export async function createRequest(
       //challenge,
       rp_id: config.nodeId,
       request_message_salt,
+      initial_salt,
     };
 
     // save request data to DB to send to AS via mq when authen complete

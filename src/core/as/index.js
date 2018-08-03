@@ -372,7 +372,7 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
     namespace,
     identifier,
     request_message,
-    request_message_salt,
+    initial_salt,
   } = dataFromMq;
 
   const requestDetail = await tendermintNdid.getRequestDetail({
@@ -422,14 +422,15 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
       signature,
       public_key,
       request_message,
-      request_message_salt,
+      initial_salt,
+      request_id,
     );
 
     logger.debug({
       message: 'Verify signature',
       signatureValid,
       request_message,
-      request_message_salt,
+      initial_salt,
       public_key,
       signature,
       privateProofObjectList,

@@ -635,13 +635,13 @@ export async function checkIdpResponse({
   if (requestStatus.mode === 1) {
     signatureValid = null; // Cannot check in mode 1
   } else if (requestStatus.mode === 3) {
-    const { request_message, request_message_salt } = requestData;
+    const { request_message, initial_salt, request_id } = requestData;
     const signature = response.signature;
 
     logger.debug({
       message: 'Verifying signature',
       request_message,
-      request_message_salt,
+      initial_salt,
       accessor_public_key,
       signature,
     });
@@ -650,7 +650,8 @@ export async function checkIdpResponse({
       signature,
       accessor_public_key,
       request_message,
-      request_message_salt
+      initial_salt,
+      request_id,
     );
   }
 

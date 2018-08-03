@@ -871,31 +871,31 @@ export function removeRequestMessage(requestId) {
   });
 }
 
-export function getRequestMessageSalt(requestId) {
+export function getInitialSalt(requestId) {
   return db.get({
     dbName,
-    name: 'requestMessageSalt',
+    name: 'initialSalt',
     keyName: 'requestId',
     key: requestId,
-    valueName: 'requestMessageSalt',
+    valueName: 'initialSalt',
   });
 }
 
-export function setRequestMessageSalt(requestId, requestMessageSalt) {
+export function setInitialSalt(requestId, initialSalt) {
   return db.set({
     dbName,
-    name: 'requestMessageSalt',
+    name: 'initialSalt',
     keyName: 'requestId',
     key: requestId,
-    valueName: 'requestMessageSalt',
-    value: requestMessageSalt,
+    valueName: 'initialSalt',
+    value: initialSalt,
   });
 }
 
-export function removeRequestMessageSalt(requestId) {
+export function removeInitialSalt(requestId) {
   return db.remove({
     dbName,
-    name: 'requestMessageSalt',
+    name: 'initialSalt',
     keyName: 'requestId',
     key: requestId,
   });
