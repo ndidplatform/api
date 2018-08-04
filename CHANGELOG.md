@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+IMPROVEMENTS:
+
+- Use ROUTER mode instead of REP mode on the receiving side of message queue (ZeroMQ) to make it an asynchronous server that can talk to multiple REQ clients at the same time. This also fixes process hang when receiving malformed data.
+
 ## 0.6.1 (August 4, 2018)
 
 IMPROVEMENTS:

@@ -27,7 +27,7 @@ import zmq from 'zeromq';
 export default class MQRecvSocket extends EventEmitter {
   constructor(config) {
     super();
-    this.receivingSocket = zmq.socket('rep');
+    this.receivingSocket = zmq.socket('router');
     // maximum receiver size ( -1 receive all )
     this.receivingSocket.setsockopt(
       zmq.ZMQ_MAXMSGSIZE,
@@ -41,8 +41,8 @@ export default class MQRecvSocket extends EventEmitter {
 
     this.receivingSocket.on(
       'message',
-      function(messageBuffer) {
-        this.emit('message', messageBuffer);
+      function(identity, emptyDelimiter, messageBuffer) {
+        this.emit('message', identity, messageBuffer);
       }.bind(this)
     );
 
@@ -54,8 +54,8 @@ export default class MQRecvSocket extends EventEmitter {
     );
   }
 
-  send(payload) {
-    this.receivingSocket.send(payload);
+  send(identity, payload) {
+    this.receivingSocket.send([identity, Buffer.alloc(0), payload]);
   }
 
   close() {

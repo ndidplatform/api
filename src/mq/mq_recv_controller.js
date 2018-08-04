@@ -37,7 +37,7 @@ export default class MQRecv extends EventEmitter {
 
     this.recvSocket.on(
       'message',
-      function(messageBuffer) {
+      function(identity, messageBuffer) {
         let jsonMessage;
         try {
           jsonMessage = MQProtocol.extractMsg(messageBuffer);
@@ -57,7 +57,7 @@ export default class MQRecv extends EventEmitter {
           seqId: jsonMessage.retryspec.seqId,
         });
 
-        this.recvSocket.send(ackMSG);
+        this.recvSocket.send(identity, ackMSG);
         this.emit('message', {
           message: jsonMessage.message,
           msgId: jsonMessage.retryspec.msgId,
@@ -69,16 +69,13 @@ export default class MQRecv extends EventEmitter {
     this.recvSocket.on(
       'error',
       function(error) {
-        console.log(error);
         this.emit(
           'error',
-          error && error.getCode()
-            ? error
-            : new CustomError({
-                code: 'MQERR_RECEIVER',
-                message: 'Message queue (receiver) error',
-                cause: error,
-              })
+          new CustomError({
+            code: 'MQERR_RECEIVER',
+            message: 'Message queue (receiver) error',
+            cause: error,
+          })
         );
       }.bind(this)
     );
