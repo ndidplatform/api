@@ -28,7 +28,7 @@ import CustomError from '../../error/custom_error';
 import errorType from '../../error/type';
 
 import * as tendermintNdid from '../../tendermint/ndid';
-import { getFunction, validateKey } from '../common';
+import { getFunction } from '../common';
 import * as utils from '../../utils';
 import * as config from '../../config';
 
@@ -61,7 +61,7 @@ export async function addAccessorMethodForAssociatedIdp(
   },
   { synchronous = false, apiVersion } = {}
 ) {
-  validateKey(accessor_public_key, accessor_type);
+  utils.validateKey(accessor_public_key, accessor_type);
 
   const associated = await checkAssociated({
     namespace,

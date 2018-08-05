@@ -687,50 +687,6 @@ export async function isRequestClosedOrTimedOut(requestId) {
   return true;
 }
 
-export function validateKey(publicKey, publicKeyType) {
-  let parsedPubKey;
-  try {
-    parsedPubKey = parseKey(publicKey);
-  } catch (error) {
-    throw new CustomError({
-      message: errorType.INVALID_KEY_FORMAT.message,
-      code: errorType.INVALID_KEY_FORMAT.code,
-      clientError: true,
-    });
-  }
-  if (publicKeyType != null) {
-    if (publicKeyType === 'RSA') {
-      if (parsedPubKey.type !== 'rsa') {
-        throw new CustomError({
-          message: errorType.MISMATCHED_KEY_TYPE.message,
-          code: errorType.MISMATCHED_KEY_TYPE.code,
-          clientError: true,
-        });
-      }
-    }
-  } else {
-    // Default to RSA type
-    if (parsedPubKey.type !== 'rsa') {
-      throw new CustomError({
-        message: errorType.UNSUPPORTED_KEY_TYPE.message,
-        code: errorType.UNSUPPORTED_KEY_TYPE.code,
-        clientError: true,
-      });
-    }
-  }
-  // Check RSA key length to be at least 2048-bit
-  if (
-    parsedPubKey.type === 'rsa' &&
-    parsedPubKey.data.modulus.bitLength() < 2048
-  ) {
-    throw new CustomError({
-      message: errorType.RSA_KEY_LENGTH_TOO_SHORT.message,
-      code: errorType.RSA_KEY_LENGTH_TOO_SHORT.code,
-      clientError: true,
-    });
-  }
-}
-
 export async function notifyError({ callbackUrl, action, error, requestId }) {
   logger.debug({
     message: 'Notifying error through callback',

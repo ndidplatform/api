@@ -38,6 +38,24 @@ let masterPrivateKey;
 if (!config.useExternalCryptoService) {
   privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
   masterPrivateKey = fs.readFileSync(config.masterPrivateKeyPath, 'utf8');
+  try {
+    validateKey(privateKey, null, config.privateKeyPassphrase);
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error verifying node private key',
+      cause: error,
+    });
+    throw err; // process will exit with error
+  }
+  try {
+    validateKey(masterPrivateKey, null, config.masterPrivateKeyPassphrase);
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error verifying node master private key',
+      cause: error,
+    });
+    throw err; // process will exit with error
+  }
 }
 
 export function wait(ms, stoppable) {
@@ -406,7 +424,11 @@ function generateCustomPadding(initialSalt, blockLength = 2048) {
   return paddingBuffer;
 }
 
-export function hashRequestMessageForConsent(request_message, initial_salt, request_id) {
+export function hashRequestMessageForConsent(
+  request_message,
+  initial_salt,
+  request_id
+) {
   const paddingBuffer = generateCustomPadding(initial_salt);
   const derivedSalt = cryptoUtils
     .sha256(request_id + initial_salt)
@@ -418,7 +440,13 @@ export function hashRequestMessageForConsent(request_message, initial_salt, requ
   return Buffer.concat([paddingBuffer, normalHashBuffer]).toString('base64');
 }
 
-export function verifyResponseSignature(signature, publicKey, request_message, initial_salt, request_id) {
+export function verifyResponseSignature(
+  signature,
+  publicKey,
+  request_message,
+  initial_salt,
+  request_id
+) {
   //should find block length if use another sign method
   const paddingBuffer = generateCustomPadding(initial_salt);
   const derivedSalt = cryptoUtils
@@ -458,17 +486,11 @@ export function generateRequestParamSalt({
   service_id,
   initial_salt,
 }) {
-  const bufferHash = cryptoUtils.sha256(
-    request_id + service_id + initial_salt
-  );
+  const bufferHash = cryptoUtils.sha256(request_id + service_id + initial_salt);
   return bufferHash.slice(0, config.saltLength).toString('base64');
 }
 
-export function generateDataSalt({
-  request_id,
-  service_id,
-  initial_salt,
-}) {
+export function generateDataSalt({ request_id, service_id, initial_salt }) {
   const bufferHash = cryptoUtils.sha256(
     request_id + service_id + config.nodeId + initial_salt
   );
@@ -597,4 +619,54 @@ export function getDetailedRequestStatus(requestDetail) {
     timed_out: requestDetail.timed_out,
     service_list: serviceList,
   };
+}
+
+export function validateKey(key, keyType, passphrase) {
+  let parsedKey;
+  try {
+    parsedKey = parseKey({
+      key,
+      passphrase,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.INVALID_KEY_FORMAT.message,
+      code: errorType.INVALID_KEY_FORMAT.code,
+      clientError: true,
+      cause: error,
+    });
+  }
+  if (keyType != null) {
+    if (keyType === 'RSA') {
+      if (parsedKey.type !== 'rsa') {
+        throw new CustomError({
+          message: errorType.MISMATCHED_KEY_TYPE.message,
+          code: errorType.MISMATCHED_KEY_TYPE.code,
+          clientError: true,
+        });
+      }
+    }
+  } else {
+    // Default to RSA type
+    if (parsedKey.type !== 'rsa') {
+      throw new CustomError({
+        message: errorType.UNSUPPORTED_KEY_TYPE.message,
+        code: errorType.UNSUPPORTED_KEY_TYPE.code,
+        clientError: true,
+      });
+    }
+  }
+  // Check RSA key length to be at least 2048-bit
+  if (parsedKey.type === 'rsa') {
+    if (
+      (parsedKey.data && parsedKey.data.modulus.bitLength() < 2048) ||
+      (parsedKey.privateKey && parsedKey.privateKey.modulus.bitLength() < 2048)
+    ) {
+      throw new CustomError({
+        message: errorType.RSA_KEY_LENGTH_TOO_SHORT.message,
+        code: errorType.RSA_KEY_LENGTH_TOO_SHORT.code,
+        clientError: true,
+      });
+    }
+  }
 }

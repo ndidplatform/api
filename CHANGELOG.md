@@ -5,6 +5,7 @@
 IMPROVEMENTS:
 
 - Use ROUTER mode instead of REP mode on the receiving side of message queue (ZeroMQ) to make it an asynchronous server that can talk to multiple REQ clients at the same time. This also fixes process hang when receiving malformed data.
+- Validate node's private key and master private key on server start when using private key file (PEM format, RSA type with at least 2048-bit length is allowed).
 
 ## 0.6.1 (August 4, 2018)
 

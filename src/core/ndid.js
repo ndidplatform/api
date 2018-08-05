@@ -21,7 +21,6 @@
  */
 
 import * as tendermint from '../tendermint';
-import { validateKey } from './common';
 import logger from '../logger';
 import * as utils from '../utils';
 import { callbackToClient } from '../utils/callback';
@@ -45,11 +44,11 @@ export async function initNDID({
   }
   try {
     if (public_key != null) {
-      validateKey(public_key, public_key_type);
+      utils.validateKey(public_key, public_key_type);
     }
 
     if (master_public_key != null) {
-      validateKey(master_public_key, master_public_key_type);
+      utils.validateKey(master_public_key, master_public_key_type);
     }
 
     await tendermint.transact(
@@ -127,11 +126,11 @@ export async function reduceNodeToken(data) {
 export async function registerNode(data, { synchronous = false } = {}) {
   try {
     if (data.public_key != null) {
-      validateKey(data.public_key, data.public_key_type);
+      utils.validateKey(data.public_key, data.public_key_type);
     }
 
     if (data.master_public_key != null) {
-      validateKey(data.master_public_key, data.master_public_key_type);
+      utils.validateKey(data.master_public_key, data.master_public_key_type);
     }
 
     if (synchronous) {
