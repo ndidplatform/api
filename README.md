@@ -59,8 +59,8 @@
 - `HTTPS`: Use HTTPS server [Default: `false`]
 - `HTTPS_KEY_PATH`: HTTPS private key file path. Required when HTTPS=true [Default: pre-generated development key]
 - `HTTPS_CERT_PATH`: HTTPS certificate file path. Required when HTTPS=true [Default: pre-generated development cert]
-- `CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH`: Request message template in mustache format filepath to use in consent request when creating identity [Default: `../request_message_templates/create_identity.mustache`] [Required in production]
-- `ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH`: Request message template in mustache format filepath to use in consent request when adding new accessor [Default: `../request_message_templates/add_accessor.mustache`] [Required in production]
+- `CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH`: Request message template in mustache format filepath to use in consent request when creating identity [Default: `../request_message_templates/create_identity.mustache`][required in production]
+- `ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH`: Request message template in mustache format filepath to use in consent request when adding new accessor [Default: `../request_message_templates/add_accessor.mustache`][required in production]
 - `CALLBACK_RETRY_TIMEOUT`: Callback retry timeout in seconds. Only applies to some callbacks (that do not have shouldRetry function check e.g. request status update callback to RP client) [Default: `600`]
 - `REGISTER_MQ_AT_STARTUP`: Flag to tell API node whether to register message queue address when start (will override previously registered address) [Default: `true` for RP, IdP, and AS roles, `false` for NDID role]
 - `MAX_INTERVAL_TENDERMINT_SYNC_CHECK`: Maximum time interval in milliseconds for polling Tendermint syncing status on server start [Default: `15000`]
@@ -127,6 +127,17 @@ Required
 - Docker CE 17.06+ [Install docker](https://docs.docker.com/install/)
 - docker-compose 1.14.0+ [Install docker-compose](https://docs.docker.com/compose/install/)
 
+### Build
+
+```
+npm run docker-build
+```
+
+or
+
+```
+./docker/build.sh
+```
 
 ### Run
 
@@ -140,27 +151,11 @@ or
 docker-compose -f docker/docker-compose.yml up
 ```
 
-### Build
-
-```
-npm run docker-build
-```
-
-or
-
-```
-./docker/build.sh
-```
-
 ### Note
 
-* To run docker container without building image, run command show in **Run** section (no building required). It will run docker container with image from Dockerhub (https://hub.docker.com/r/ndidplatform/api/).
-* To pull latest image from Dockerhub, run `docker pull ndidplatform/api`
+- To run docker container without building image, run command show in **Run** section (no building required). It will run docker container with image from Dockerhub (https://hub.docker.com/r/ndidplatform/api/).
+- To pull latest image from Dockerhub, run `docker pull ndidplatform/api`
 
 ## Note
 
-- When working in development, if you clear/delete the blockchain, you need to delete DB files and latest block height files by running `npm run reset-data-for-dev`. (Automatically run when running `npm run initDevKey`)
-
-- Run `npm run delete-local-db-cache` to delete local DB used for caching. Local DB file name is `db-api-` following by node ID (env: `NODE_ID`) set on server start (e.g. `db-api-idp1` when node ID is set to `idp1`).
-
-- Run `npm run delete-latest-block-height` to delete persistent latest block height saved by the server. File name is `latest-block-height-` following by node ID (env: `NODE_ID`).
+- When working in development, if you clear/delete the blockchain, you need to delete DB files and latest block height files by running `npm run delete-local-data-cache`. (Automatically run when running `npm run initDevKey`) For docker, run `npm run docker-down` or `docker-compose -f docker/docker-compose.yml down` before starting containers again.
