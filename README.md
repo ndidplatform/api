@@ -36,10 +36,10 @@
 
 **Environment variable options**
 
-- `ROLE`: Can be `idp`, `rp`, or `as` [Required]
+- `ROLE`: Can be `idp`, `rp`, `as`, or `ndid` [Required]
 - `TENDERMINT_IP`: IP Address to contact tendermint RPC [Default: `localhost`]
 - `TENDERMINT_PORT`: Port to contact tendermint RPC [Default: `45000` for IDP, `45001` for RP, and `45002` for AS]
-- `MQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted [Required]
+- `MQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted [Required when role is set to `idp`, `rp`, or `as`]
 - `MQ_BINDING_PORT`: A port to bind message queue [Default: `5555`]
 - `SERVER_PORT`: API server port [Default: `8080`]
 - `PRIVATE_KEY_PATH`: Path to node's private key (if call back to create signature is not set) [Default: using pre-generated development key]
