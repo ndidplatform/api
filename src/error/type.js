@@ -235,7 +235,7 @@ export default {
   },
   IDENTITY_ALREADY_CREATED: {
     code: 20019,
-    message: 'Already created an idenity for this user',
+    message: 'Already created an identity for this user',
     clientError: true,
   },
   IDENTITY_NOT_FOUND: {
@@ -340,7 +340,7 @@ export default {
   SERVICE_ID_NOT_FOUND_IN_REQUEST: {
     code: 20039,
     message:
-      'Service ID cound not be found in data request list of the request',
+      'Service ID could not be found in data request list of the request',
     clientError: true,
   },
   INVALID_KEY_FORMAT: {
