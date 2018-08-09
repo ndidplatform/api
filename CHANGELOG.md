@@ -6,7 +6,8 @@ IMPROVEMENTS:
 
 - Prevent received message loss when external crypto service cannot be contacted or Tendermint is not yet ready by retrying processing later and persisting raw message buffer to cache DB and delete it after decryption and signature verification.
 - Process Tendermint missing block events after finish syncing without having to wait for the next block.
-- Return error HTTP response when creating request with duplicate reference ID on RP side. (Note: Error only when the request of the reference ID is in process).
+- Return error HTTP response when creating request on RP side or creating create identity request on IdP side with duplicate reference ID. (Note: Error only when the request of the reference ID is in progress which is when it is not closed or timed out yet).
+- Add new API: GET `/identity/requests/reference/:reference_id` for getting request ID and accessor ID of an unfinished create identity request.
 
 ## 0.6.2 (August 5, 2018)
 

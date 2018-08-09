@@ -64,6 +64,28 @@ router.post('/', validateBody, async (req, res, next) => {
   }
 });
 
+router.get('/requests/reference/:reference_number', async (req, res, next) => {
+  try {
+    const { reference_number } = req.path;
+
+    const createIdentityData = await identity.getCreateIdentityDataByReferenceId(
+      reference_number
+    );
+    if (createIdentityData != null) {
+      res
+        .status(200)
+        .json({
+          request_id: createIdentityData.request_id,
+          accessor_id: createIdentityData.accessor_id,
+        });
+    } else {
+      res.status(404).end();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/requests/close', validateBody, async (req, res, next) => {
   try {
     const { reference_id, callback_url, request_id } = req.body;

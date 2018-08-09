@@ -231,7 +231,7 @@ export async function getRequestIdByReferenceId(referenceId) {
     return await cacheDb.getRequestIdByReferenceId(referenceId);
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get data received from AS',
+      message: 'Cannot get request ID by reference ID',
       cause: error,
     });
   }

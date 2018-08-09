@@ -29,6 +29,7 @@ import errorType from '../../error/type';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import { getFunction } from '../common';
+import * as cacheDb from '../../db/cache';
 import * as utils from '../../utils';
 import * as config from '../../config';
 
@@ -199,5 +200,16 @@ export function checkForExistedIdentityAfterBlockchain(
     } else {
       getFunction(callbackFnName)({ exist, error: errorToReturn });
     }
+  }
+}
+
+export async function getCreateIdentityDataByReferenceId(referenceId) {
+  try {
+    return await cacheDb.getCreateIdentityDataByReferenceId(referenceId);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get create identity data by reference ID',
+      cause: error,
+    });
   }
 }

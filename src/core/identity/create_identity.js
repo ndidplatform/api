@@ -86,8 +86,11 @@ export async function createIdentity(
       reference_id
     );
     if (createIdentityData) {
-      const { request_id, accessor_id } = createIdentityData;
-      return { request_id, accessor_id };
+      throw new CustomError({
+        message: errorType.DUPLICATE_REFERENCE_ID.message,
+        code: errorType.DUPLICATE_REFERENCE_ID.code,
+        clientError: true,
+      });
     }
 
     ial = parseFloat(ial);

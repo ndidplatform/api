@@ -95,11 +95,11 @@ router.post(
   }
 );
 
-router.get('/requests/reference/:reference_number', async (req, res, next) => {
+router.get('/requests/reference/:reference_id', async (req, res, next) => {
   try {
-    const { reference_number } = req.params;
+    const { reference_id } = req.params;
 
-    const requestId = await rp.getRequestIdByReferenceId(reference_number);
+    const requestId = await rp.getRequestIdByReferenceId(reference_id);
     if (requestId != null) {
       res.status(200).json({ request_id: requestId });
     } else {
