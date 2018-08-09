@@ -156,9 +156,19 @@ async function callbackWithRetry(
       }
 
       if (shouldRetryFnName) {
-        if (
-          !(await getShouldRetryFn(shouldRetryFnName)(...shouldRetryArguments))
-        ) {
+        let shouldRetry;
+        try {
+          shouldRetry = await getShouldRetryFn(shouldRetryFnName)(
+            ...shouldRetryArguments
+          );
+        } catch (error) {
+          logger.debug({
+            message: 'Error calling should retry decision function. Will retry callback.',
+            shouldRetryFnName,
+          });
+          shouldRetry = true;
+        }
+        if (!shouldRetry) {
           cacheDb.removeCallbackWithRetryData(cbId);
           return;
         }
