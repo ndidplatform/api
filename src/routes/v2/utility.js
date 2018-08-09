@@ -25,6 +25,7 @@ import express from 'express';
 import { validateQuery } from '../middleware/validation';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as privateMessage from '../../core/common/private_message';
+import * as cacheDb from '../../db/cache';
 
 const router = express.Router();
 
@@ -211,5 +212,16 @@ router.post(
     }
   }
 );
+
+router.get('/createRequest/:reference_id', async (req, res, next) => {
+  try {
+    const { reference_id } = req.params;
+    const request_id = await cacheDb.getRequestIdByReferenceId(reference_id);
+    if(request_id) res.status(200).send({ request_id });
+    else res.status(404).end();
+  } catch(error) {
+    next(error);
+  }
+});
 
 export default router;

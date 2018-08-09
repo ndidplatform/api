@@ -89,11 +89,13 @@ export async function createRequest(
     request_id, // Pre-generated request ID. Used by create identity function.
   } = additionalParams;
   try {
-    // FIXME: throw error ref ID is processing instead
-    // existing reference_id, return request ID
     const requestId = await cacheDb.getRequestIdByReferenceId(reference_id);
     if (requestId) {
-      return { request_id: requestId };
+      throw new CustomError({
+        message: errorType.DUPLICATE_REFERENCE_ID.message,
+        code: errorType.DUPLICATE_REFERENCE_ID.code,
+        clientError: true,
+      });
     }
 
     if (
