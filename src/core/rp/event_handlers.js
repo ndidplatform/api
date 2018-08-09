@@ -264,14 +264,13 @@ export async function handleMessageFromQueue(messageStr) {
   }
 }
 
-export async function handleTendermintNewBlockEvent(
+export async function handleTendermintNewBlock(
   error,
-  result,
+  height,
   missingBlockCount
 ) {
   if (missingBlockCount == null) return;
   try {
-    const height = tendermint.getBlockHeightFromNewBlockEvent(result);
     const fromHeight = height - 1 - missingBlockCount;
     const toHeight = height - 1;
 
@@ -362,7 +361,7 @@ export async function handleTendermintNewBlockEvent(
     logger.error(err.getInfoForLog());
     await common.notifyError({
       callbackUrl: callbackUrls.error_url,
-      action: 'handleTendermintNewBlockEvent',
+      action: 'handleTendermintNewBlock',
       error: err,
     });
   }

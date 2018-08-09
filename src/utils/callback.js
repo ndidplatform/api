@@ -278,7 +278,7 @@ export async function callbackToClient(
 
 /**
  * Resume all cached retry callback
- * This function should be called only when server starts
+ * This function should be called once on server start
  *
  * @param {function} responseCallback
  */

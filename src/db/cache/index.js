@@ -160,6 +160,42 @@ export function getAllCallbackWithRetryData() {
   });
 }
 
+export function setRawMessageFromMQ(messageId, messageBuffer) {
+  return db.set({
+    dbName,
+    name: 'rawReceivedMessageFromMQ',
+    keyName: 'messageId',
+    key: messageId,
+    valueName: 'messageBuffer',
+    value: messageBuffer,
+  });
+}
+
+export function getRawMessageFromMQ(messageId) {
+  return db.get({
+    dbName,
+    name: 'rawReceivedMessageFromMQ',
+    keyName: 'messageId',
+    key: messageId,
+  });
+}
+
+export function removeRawMessageFromMQ(messageId) {
+  return db.remove({
+    dbName,
+    name: 'rawReceivedMessageFromMQ',
+    keyName: 'messageId',
+    key: messageId,
+  });
+}
+
+export function getAllRawMessageFromMQ() {
+  return db.getAll({
+    dbName,
+    name: 'rawReceivedMessageFromMQ',
+  });
+}
+
 //
 // Used by IdP and AS
 //

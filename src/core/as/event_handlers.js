@@ -93,15 +93,13 @@ export async function handleMessageFromQueue(messageStr) {
   }
 }
 
-export async function handleTendermintNewBlockEvent(
+export async function handleTendermintNewBlock(
   error,
-  result,
+  height,
   missingBlockCount
 ) {
   if (missingBlockCount == null) return;
   try {
-    const height = tendermint.getBlockHeightFromNewBlockEvent(result);
-
     // messages that arrived before 'NewBlock' event
     // including messages between the start of missing block's height
     // and the block before latest block height
@@ -140,7 +138,7 @@ export async function handleTendermintNewBlockEvent(
     logger.error(err.getInfoForLog());
     await common.notifyError({
       callbackUrl: callbackUrls.error_url,
-      action: 'handleTendermintNewBlockEvent',
+      action: 'handleTendermintNewBlock',
       error: err,
     });
   }

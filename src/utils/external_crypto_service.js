@@ -339,6 +339,7 @@ async function callbackWithRetry(url, body, logPrefix) {
           details: {
             url,
             cbId,
+            callbackRetryTimedOut: true,
           },
         });
       }

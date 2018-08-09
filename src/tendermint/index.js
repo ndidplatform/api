@@ -38,13 +38,13 @@ import * as utils from '../utils';
 import { sha256 } from '../utils/crypto';
 import * as config from '../config';
 
-let handleTendermintNewBlockEvent;
+let handleTendermintNewBlock;
 
 const expectedTx = {};
 let getTxResultCallbackFn;
 const txEventEmitter = new EventEmitter();
 export let expectedTxsLoaded = false;
-let shouldCheckForMissingExpectedTxs = false; // Use when reconnect WS
+let reconnecting = false; // Use when reconnect WS
 
 const cacheBlocks = {};
 let lastKnownAppHash;
@@ -97,16 +97,30 @@ function saveLatestBlockHeight(height) {
 }
 
 export function setTendermintNewBlockEventHandler(handler) {
-  handleTendermintNewBlockEvent = handler;
+  handleTendermintNewBlock = handler;
 }
 
 export async function loadExpectedTxFromDB() {
-  const savedExpectedTxs = await cacheDb.getAllExpectedTxs();
-  savedExpectedTxs.forEach(({ tx: txHash, metadata }) => {
-    expectedTx[txHash] = metadata;
+  logger.info({
+    message: 'Loading backlog expected Txs for processing',
   });
-  expectedTxsLoaded = true;
-  checkForMissingExpectedTx();
+  try {
+    const savedExpectedTxs = await cacheDb.getAllExpectedTxs();
+    if (savedExpectedTxs.length === 0) {
+      logger.info({
+        message: 'No backlog expected Txs to process',
+      });
+    }
+    savedExpectedTxs.forEach(({ tx: txHash, metadata }) => {
+      expectedTx[txHash] = metadata;
+    });
+    expectedTxsLoaded = true;
+    checkForMissingExpectedTx();
+  } catch (error) {
+    logger.error({
+      message: 'Cannot load backlog expected Txs from cache DB',
+    });
+  }
 }
 
 async function checkForMissingExpectedTx() {
@@ -212,6 +226,7 @@ async function pollStatusUntilSynced() {
           message: 'Tendermint blockchain synced',
         });
         eventEmitter.emit('ready');
+        processMissingBlocksAfterSync(status);
         break;
       }
       await utils.wait(backoff.next());
@@ -226,17 +241,18 @@ tendermintWsClient.on('connected', () => {
   pollStatusUntilSynced();
   tendermintWsClient.subscribeToNewBlockEvent();
   tendermintWsClient.subscribeToTxEvent();
-  if (shouldCheckForMissingExpectedTxs) {
+  if (reconnecting) {
     // Check for expected transactions in case there are missing Tx events after reconnect
     checkForMissingExpectedTx();
-    shouldCheckForMissingExpectedTxs = false;
+    eventEmitter.emit('reconnect');
+    reconnecting = false;
   }
 });
 
 tendermintWsClient.on('disconnected', () => {
   connected = false;
   syncing = null;
-  shouldCheckForMissingExpectedTxs = true;
+  reconnecting = true;
 });
 
 tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(
@@ -256,6 +272,24 @@ tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(
 
   const appHash = getAppHashFromNewBlockEvent(result);
 
+  await processNewBlock(blockHeight, appHash);
+});
+
+tendermintWsClient.on('tx#event', async function handleTxEvent(error, result) {
+  const txBase64 = result.data.value.TxResult.tx;
+  const txString = Buffer.from(txBase64, 'base64').toString('utf8');
+  const txHash = sha256(txString).toString('hex');
+  if (expectedTx[txHash] == null) return;
+  await processExpectedTx(txHash, result, true);
+});
+
+async function processMissingBlocksAfterSync(status) {
+  const blockHeight = status.sync_info.latest_block_height;
+  const appHash = status.sync_info.latest_app_hash;
+  await processNewBlock(blockHeight, appHash);
+}
+
+async function processNewBlock(blockHeight, appHash) {
   if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
     const lastKnownBlockHeight = latestBlockHeight;
     latestBlockHeight = blockHeight;
@@ -266,29 +300,21 @@ tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(
         : blockHeight - lastKnownBlockHeight - 1;
     if (missingBlockCount > 0) {
       logger.debug({
-        message: 'Tendermint NewBlock event missed',
+        message: 'Tendermint NewBlock missed',
         missingBlockCount,
       });
     }
 
     if (lastKnownAppHash !== appHash) {
-      if (handleTendermintNewBlockEvent) {
-        await handleTendermintNewBlockEvent(error, result, missingBlockCount);
+      if (handleTendermintNewBlock) {
+        await handleTendermintNewBlock(null, blockHeight, missingBlockCount);
         delete cacheBlocks[blockHeight - 1];
       }
     }
     lastKnownAppHash = appHash;
     saveLatestBlockHeight(blockHeight);
   }
-});
-
-tendermintWsClient.on('tx#event', async function handleTxEvent(error, result) {
-  const txBase64 = result.data.value.TxResult.tx;
-  const txString = Buffer.from(txBase64, 'base64').toString('utf8');
-  const txHash = sha256(txString).toString('hex');
-  if (expectedTx[txHash] == null) return;
-  await processExpectedTx(txHash, result, true);
-});
+}
 
 /**
  *

@@ -1,5 +1,12 @@
 # Changelog
 
+## TBD
+
+IMPROVEMENTS:
+
+- Prevent received message loss when external crypto service cannot be contacted or Tendermint is not yet ready by retrying processing later and persisting raw message buffer to cache DB and delete it after decryption and signature verification.
+- Process Tendermint missing block events after finish syncing without having to wait for the next block.
+
 ## 0.6.2 (August 5, 2018)
 
 IMPROVEMENTS:

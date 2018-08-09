@@ -163,6 +163,10 @@ export const Entities = {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     initialSalt: Sequelize.STRING,
   }),
+  rawReceivedMessageFromMQ: sequelize.define('rawReceivedMessageFromMQ', {
+    messageId: { type: Sequelize.STRING, primaryKey: true },
+    messageBuffer: Sequelize.BLOB,
+  }),
 };
 
 export const init = sequelize.sync();

@@ -39,7 +39,6 @@ import {
   resumeCallbackToClient,
   callbackToClient,
 } from '../../utils/callback';
-import { parseKey } from '../../utils/asn1parser';
 import * as utils from '../../utils';
 import * as lt from '../../utils/long_timeout';
 import * as config from '../../config';
@@ -53,6 +52,8 @@ export * from './create_request';
 export * from './close_request';
 
 const role = config.role;
+
+let initialized = false;
 
 let messageQueueAddressRegistered = !config.registerMqAtStartup;
 let handleMessageFromQueue;
@@ -79,10 +80,16 @@ async function registerMessageQueueAddress() {
 }
 
 async function initialize() {
-  if (role === 'rp' || role === 'idp' || role === 'as') {
-    await registerMessageQueueAddress();
+  if (!initialized) {
+    if (role === 'rp' || role === 'idp' || role === 'as') {
+      await registerMessageQueueAddress();
+    }
+    await Promise.all([
+      tendermint.loadExpectedTxFromDB(),
+      mq.loadAndProcessBacklogMessages(),
+    ]);
+    initialized = true;
   }
-  await tendermint.loadExpectedTxFromDB();
 }
 
 tendermint.eventEmitter.on('ready', async () => {
@@ -149,7 +156,7 @@ tendermint.setTxResultCallbackFnGetter(getFunction);
 if (role === 'rp') {
   handleMessageFromQueue = rp.handleMessageFromQueue;
   tendermint.setTendermintNewBlockEventHandler(
-    rp.handleTendermintNewBlockEvent
+    rp.handleTendermintNewBlock
   );
   setShouldRetryFnGetter(getFunction);
   setResponseCallbackFnGetter(getFunction);
@@ -158,7 +165,7 @@ if (role === 'rp') {
 } else if (role === 'idp') {
   handleMessageFromQueue = idp.handleMessageFromQueue;
   tendermint.setTendermintNewBlockEventHandler(
-    idp.handleTendermintNewBlockEvent
+    idp.handleTendermintNewBlock
   );
   setShouldRetryFnGetter(getFunction);
   setResponseCallbackFnGetter(getFunction);
@@ -167,7 +174,7 @@ if (role === 'rp') {
 } else if (role === 'as') {
   handleMessageFromQueue = as.handleMessageFromQueue;
   tendermint.setTendermintNewBlockEventHandler(
-    as.handleTendermintNewBlockEvent
+    as.handleTendermintNewBlock
   );
   setShouldRetryFnGetter(getFunction);
   setResponseCallbackFnGetter(getFunction);

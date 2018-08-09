@@ -27,6 +27,7 @@ import protobuf from 'protobufjs';
 
 import MQSend from './mq_send_controller';
 import MQRecv from './mq_recv_controller';
+import * as tendermint from '../tendermint';
 import * as tendermintNdid from '../tendermint/ndid';
 import * as cacheDb from '../db/cache';
 import * as utils from '../utils';
@@ -49,6 +50,8 @@ const EncryptedMqMessage = encryptedMqMessageProtobufRoot.lookup(
 let mqSend;
 let mqRecv;
 const timer = {};
+
+const rawMessagesToRetry = [];
 
 export const eventEmitter = new EventEmitter();
 
@@ -93,6 +96,24 @@ export const eventEmitter = new EventEmitter();
 async function onMessage(messageBuffer) {
   logger.info({
     message: 'Received message from message queue',
+    messageLength: messageBuffer.length,
+  });
+  try {
+    const messageId = utils.randomBase64Bytes(10);
+    await cacheDb.setRawMessageFromMQ(messageId, messageBuffer);
+
+    // TODO: Refactor MQ module to send ACK here (after save to persistence)
+
+    await processMessage(messageId, messageBuffer);
+  } catch (error) {
+    eventEmitter.emit('error', error);
+  }
+}
+
+async function processMessage(messageId, messageBuffer) {
+  logger.info({
+    message: 'Processing raw received message from message queue',
+    messageId,
     messageLength: messageBuffer.length,
   });
   try {
@@ -165,8 +186,57 @@ async function onMessage(messageBuffer) {
         code: errorType.INVALID_MESSAGE_SIGNATURE.code,
       });
     }
+    removeRawMessageFromCache(messageId);
   } catch (error) {
+    rawMessagesToRetry[messageId] = messageBuffer;
     eventEmitter.emit('error', error);
+  }
+}
+
+async function removeRawMessageFromCache(messageId) {
+  logger.debug({
+    message: 'Removing raw received message from MQ from cache DB',
+    messageId,
+  });
+  try {
+    await cacheDb.removeRawMessageFromMQ(messageId);
+  } catch (error) {
+    logger.error({
+      message: 'Cannot remove raw received message from MQ from cache DB',
+      messageId,
+      error,
+    });
+  }
+}
+
+async function retryProcessMessages() {
+  Object.entries(rawMessagesToRetry).map(([messageId, messageBuffer]) => {
+    processMessage(messageId, messageBuffer);
+    delete rawMessagesToRetry[messageId];
+  });
+}
+
+/**
+ * This function should be called once on server start
+ */
+export async function loadAndProcessBacklogMessages() {
+  logger.info({
+    message: 'Loading backlog messages received from MQ for processing',
+  });
+  try {
+    const rawMessages = await cacheDb.getAllRawMessageFromMQ();
+    if (rawMessages.length === 0) {
+      logger.info({
+        message: 'No backlog messages received from MQ to process',
+      });
+    }
+    rawMessages.map(({ messageId, messageBuffer }) =>
+      processMessage(messageId, messageBuffer)
+    );
+  } catch (error) {
+    logger.error({
+      message: 'Cannot get backlog messages received from MQ from cache DB',
+    });
   }
 }
 
@@ -230,3 +300,7 @@ export function close() {
     message: 'Message queue socket closed',
   });
 }
+
+tendermint.eventEmitter.on('reconnect', function() {
+  retryProcessMessages();
+});
