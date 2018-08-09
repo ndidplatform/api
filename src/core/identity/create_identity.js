@@ -166,6 +166,11 @@ export async function createIdentity(
 
     const request_id = utils.createRequestId();
 
+    await cacheDb.setCreateIdentityDataByReferenceId(reference_id, {
+      request_id,
+      accessor_id,
+    });
+
     if (synchronous) {
       const sid = namespace + ':' + identifier;
       const hash_id = utils.hash(sid);
@@ -205,6 +210,12 @@ export async function createIdentity(
       cause: error,
     });
     logger.error(err.getInfoForLog());
+
+    await Promise.all([
+      cacheDb.removeCreateIdentityDataByReferenceId(reference_id),
+      cacheDb.removeCallbackUrlByReferenceId(reference_id),
+    ]);
+
     throw err;
   }
 }
@@ -518,10 +529,6 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
   try {
     if (error) throw error;
 
-    await cacheDb.setCreateIdentityDataByReferenceId(reference_id, {
-      request_id,
-      accessor_id,
-    });
     await cacheDb.setReferenceIdByRequestId(request_id, reference_id);
 
     if (exist) {
@@ -849,7 +856,7 @@ async function createIdentityCleanUpOnError({ requestId, referenceId }) {
   await Promise.all([
     cacheDb.removeCallbackUrlByReferenceId(referenceId),
     cacheDb.removeReferenceIdByRequestId(requestId),
-    cacheDb.removeCreateIdentityDataByReferenceId(requestId),
+    cacheDb.removeCreateIdentityDataByReferenceId(referenceId),
     cacheDb.removeIdentityFromRequestId(requestId),
   ]);
 }

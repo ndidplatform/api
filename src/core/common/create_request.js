@@ -246,10 +246,6 @@ export async function createRequest(
       request_id = utils.createRequestId();
     }
 
-    // const challenge = [
-    //   utils.randomBase64Bytes(config.challengeLength),
-    //   utils.randomBase64Bytes(config.challengeLength),
-    // ];
     await cacheDb.setChallengeFromRequestId(request_id, {});
 
     const initial_salt = utils.randomBase64Bytes(config.saltLength);
@@ -318,6 +314,12 @@ export async function createRequest(
       cause: error,
     });
     logger.error(err.getInfoForLog());
+
+    await createRequestCleanUpOnError({
+      requestId: request_id,
+      referenceId: reference_id,
+    });
+
     throw err;
   }
 }

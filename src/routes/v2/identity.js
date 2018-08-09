@@ -72,12 +72,10 @@ router.get('/requests/reference/:reference_number', async (req, res, next) => {
       reference_number
     );
     if (createIdentityData != null) {
-      res
-        .status(200)
-        .json({
-          request_id: createIdentityData.request_id,
-          accessor_id: createIdentityData.accessor_id,
-        });
+      res.status(200).json({
+        request_id: createIdentityData.request_id,
+        accessor_id: createIdentityData.accessor_id,
+      });
     } else {
       res.status(404).end();
     }
