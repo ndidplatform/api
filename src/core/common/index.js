@@ -597,7 +597,7 @@ export async function checkIdpResponse({
   if (requestStatus.mode === 1) {
     validIal = null; // Cannot check in mode 1
   } else if (requestStatus.mode === 3) {
-    if (responseIal == identityInfo.ial) {
+    if (responseIal === identityInfo.ial) {
       validIal = true;
     } else {
       validIal = false;
