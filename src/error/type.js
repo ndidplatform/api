@@ -370,6 +370,11 @@ export default {
     message: 'RSA key length is too short. Must be at least 2048-bit.',
     clientError: true,
   },
+  DUPLICATE_REFERENCE_ID: {
+    code: 20045,
+    message: 'Request for this reference ID is already created.',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
