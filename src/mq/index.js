@@ -104,7 +104,11 @@ async function onMessage(messageBuffer) {
 
     // TODO: Refactor MQ module to send ACK here (after save to persistence)
 
-    await processMessage(messageId, messageBuffer);
+    if (!tendermint.connected || tendermint.syncing) {
+      rawMessagesToRetry[messageId] = messageBuffer;
+    } else {
+      await processMessage(messageId, messageBuffer);
+    }
   } catch (error) {
     eventEmitter.emit('error', error);
   }
@@ -180,16 +184,16 @@ async function processMessage(messageId, messageBuffer) {
 
     if (signatureValid) {
       eventEmitter.emit('message', messageStr);
+      removeRawMessageFromCache(messageId);
     } else {
       throw new CustomError({
         message: errorType.INVALID_MESSAGE_SIGNATURE.message,
         code: errorType.INVALID_MESSAGE_SIGNATURE.code,
       });
     }
-    removeRawMessageFromCache(messageId);
   } catch (error) {
-    rawMessagesToRetry[messageId] = messageBuffer;
     eventEmitter.emit('error', error);
+    removeRawMessageFromCache(messageId);
   }
 }
 
@@ -224,12 +228,15 @@ export async function loadAndProcessBacklogMessages() {
     message: 'Loading backlog messages received from MQ for processing',
   });
   try {
-    const rawMessages = await cacheDb.getAllRawMessageFromMQ();
+    let rawMessages = await cacheDb.getAllRawMessageFromMQ();
     if (rawMessages.length === 0) {
       logger.info({
         message: 'No backlog messages received from MQ to process',
       });
     }
+    rawMessages = rawMessages.filter(
+      ({ messageId }) => rawMessagesToRetry[messageId] == null
+    );
     rawMessages.map(({ messageId, messageBuffer }) =>
       processMessage(messageId, messageBuffer)
     );
@@ -301,6 +308,6 @@ export function close() {
   });
 }
 
-tendermint.eventEmitter.on('reconnect', function() {
+tendermint.eventEmitter.on('ready', function() {
   retryProcessMessages();
 });
