@@ -372,7 +372,7 @@ export default {
   },
   DUPLICATE_REFERENCE_ID: {
     code: 20045,
-    message: 'Request for this reference ID is already created.',
+    message: 'Request for this reference ID is in progress.',
     clientError: true,
   },
 
