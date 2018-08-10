@@ -54,18 +54,22 @@ async function addKeyAndSetToken(role, index) {
   );
   const master_public_key = fs.readFileSync(masterFilePath, 'utf8').toString();
 
-  await ndid.registerNode(
-    {
-      node_id,
-      node_name,
-      public_key,
-      master_public_key,
-      role,
+  let node = {
+    node_id,
+    node_name,
+    public_key,
+    master_public_key,
+    role,
+  };
+  if (role === 'idp') {
+    node = {
+      ...node,
       max_ial: 3,
       max_aal: 3,
-    },
-    { synchronous: true }
-  );
+    };
+  }
+
+  await ndid.registerNode(node, { synchronous: true });
 
   await ndid.setNodeToken({
     node_id,

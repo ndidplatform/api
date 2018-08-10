@@ -162,7 +162,16 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
   } = data;
 
   data.role = data.role.toUpperCase();
-  if (data.role === 'IDP') data.role = 'IdP';
+  if (data.role === 'IDP') {
+    data.role = 'IdP';
+  } else {
+    if (max_ial != null || max_aal != null) {
+      throw new CustomError({
+        message:
+          'Roles other than IdP should not have property "max_ial" and/or "max_aal"',
+      });
+    }
+  }
 
   try {
     await tendermint.transact('RegisterNode', data, utils.getNonce());
