@@ -193,6 +193,11 @@ async function processMessage(messageId, messageBuffer) {
     }
   } catch (error) {
     eventEmitter.emit('error', error);
+    logger.warn({
+      message:
+        'Error processing received message from message queue. Discarding message.',
+      error,
+    });
     removeRawMessageFromCache(messageId);
   }
 }
