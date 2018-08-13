@@ -479,6 +479,10 @@ export default {
     code: 15024,
     message: 'Service destination is disabled',
   },
+  ABCI_SERVICE_DESTINATION_IS_NOT_APPROVED: {
+    code: 15025,
+    message: 'Service destination is not approved or disabled by NDID',
+  },
 
   // Client errors
   ABCI_REQUEST_ID_NOT_FOUND: {

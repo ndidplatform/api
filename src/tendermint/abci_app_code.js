@@ -94,6 +94,7 @@ import errorType from '../error/type';
 // NodeIsNotActive                           uint32 = 68
 // ServiceIsNotActive                        uint32 = 69
 // ServiceDestinationIsNotActive             uint32 = 70
+// ServiceDestinationIsNotApprovedByNDID     uint32 = 71
 // UnknownError                              uint32 = 999
 
 const codeMapping = {
@@ -167,6 +168,7 @@ const codeMapping = {
   68: errorType.ABCI_NODE_IS_NOT_ACTIVE,
   69: errorType.ABCI_SERVICE_IS_NOT_ACTIVE,
   70: errorType.ABCI_SERVICE_DESTINATION_IS_NOT_ACTIVE,
+  71: errorType.ABCI_SERVICE_DESTINATION_IS_NOT_APPROVED,
   999: errorType.UNKNOWN_ERROR,
 };
 
