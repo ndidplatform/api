@@ -55,8 +55,7 @@ const rawMessagesToRetry = [];
 
 export const eventEmitter = new EventEmitter();
 
-(async function init() {
-  if (config.role === 'ndid') return;
+export async function init() {
   const timeoutList = await cacheDb.getAllDuplicateMessageTimeout();
   const promiseArray = [];
   for (let id in timeoutList) {
@@ -91,7 +90,11 @@ export const eventEmitter = new EventEmitter();
   //should tell client via error callback?
   mqSend.on('error', (error) => logger.error(error.getInfoForLog()));
   mqRecv.on('error', (error) => logger.error(error.getInfoForLog()));
-})();
+
+  logger.info({
+    message: 'Message queue initialized',
+  });
+}
 
 async function onMessage(messageBuffer) {
   logger.info({
@@ -239,9 +242,6 @@ export async function loadAndProcessBacklogMessages() {
         message: 'No backlog messages received from MQ to process',
       });
     }
-    rawMessages = rawMessages.filter(
-      ({ messageId }) => rawMessagesToRetry[messageId] == null
-    );
     rawMessages.map(({ messageId, messageBuffer }) =>
       processMessage(messageId, messageBuffer)
     );
@@ -301,7 +301,6 @@ export async function send(receivers, message) {
 }
 
 export function close() {
-  if (config.role === 'ndid') return;
   if (mqRecv) {
     mqRecv.close();
   }

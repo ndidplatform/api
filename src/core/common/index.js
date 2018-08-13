@@ -71,9 +71,19 @@ async function registerMessageQueueAddress() {
       //if not same
       if (ip !== config.mqRegister.ip || port !== config.mqRegister.port) {
         await tendermintNdid.registerMsqAddress(config.mqRegister);
+        logger.info({
+          message: 'Message queue address change registered',
+        });
+      } else {
+        logger.info({
+          message: 'Message queue address unchanged',
+        });
       }
     } else {
       await tendermintNdid.registerMsqAddress(config.mqRegister);
+      logger.info({
+        message: 'Message queue address registered',
+      });
     }
     messageQueueAddressRegistered = true;
   }
@@ -83,11 +93,10 @@ async function initialize() {
   if (!initialized) {
     if (role === 'rp' || role === 'idp' || role === 'as') {
       await registerMessageQueueAddress();
+      await mq.init();
+      await mq.loadAndProcessBacklogMessages();
     }
-    await Promise.all([
-      tendermint.loadExpectedTxFromDB(),
-      mq.loadAndProcessBacklogMessages(),
-    ]);
+    await tendermint.loadExpectedTxFromDB();
     initialized = true;
   }
 }
@@ -155,27 +164,21 @@ tendermint.setTxResultCallbackFnGetter(getFunction);
 
 if (role === 'rp') {
   handleMessageFromQueue = rp.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockEventHandler(
-    rp.handleTendermintNewBlock
-  );
+  tendermint.setTendermintNewBlockEventHandler(rp.handleTendermintNewBlock);
   setShouldRetryFnGetter(getFunction);
   setResponseCallbackFnGetter(getFunction);
   resumeTimeoutScheduler();
   resumeCallbackToClient();
 } else if (role === 'idp') {
   handleMessageFromQueue = idp.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockEventHandler(
-    idp.handleTendermintNewBlock
-  );
+  tendermint.setTendermintNewBlockEventHandler(idp.handleTendermintNewBlock);
   setShouldRetryFnGetter(getFunction);
   setResponseCallbackFnGetter(getFunction);
   resumeTimeoutScheduler();
   resumeCallbackToClient();
 } else if (role === 'as') {
   handleMessageFromQueue = as.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockEventHandler(
-    as.handleTendermintNewBlock
-  );
+  tendermint.setTendermintNewBlockEventHandler(as.handleTendermintNewBlock);
   setShouldRetryFnGetter(getFunction);
   setResponseCallbackFnGetter(getFunction);
   resumeCallbackToClient();

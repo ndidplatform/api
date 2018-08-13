@@ -132,7 +132,9 @@ function shutDown() {
 
     stopAllCallbackRetries();
     stopAllExternalCryptoServiceCallbackRetries();
-    closeMQ();
+    if (config.role !== 'ndid') {
+      closeMQ();
+    }
     tendermintWsClient.close();
     // TODO: wait for async operations which going to use DB to finish before closing
     // a connection to DB
