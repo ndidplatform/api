@@ -372,7 +372,7 @@ export default {
   },
   DUPLICATE_REFERENCE_ID: {
     code: 20045,
-    message: 'Request for this reference ID is in progress.',
+    message: 'Request for this reference ID is in progress',
     clientError: true,
   },
 
@@ -462,6 +462,22 @@ export default {
   ABCI_UNKNOWN_METHOD: {
     code: 15020,
     message: 'Unknown method',
+  },
+  ABCI_MQ_DESTINATION_TIMED_OUT: {
+    code: 15021,
+    message: 'Message queue destination registration is timed out',
+  },
+  ABCI_NODE_IS_NOT_ACTIVE: {
+    code: 15022,
+    message: 'Node is disabled',
+  },
+  ABCI_SERVICE_IS_NOT_ACTIVE: {
+    code: 15023,
+    message: 'Service is disabled',
+  },
+  ABCI_SERVICE_DESTINATION_IS_NOT_ACTIVE: {
+    code: 15024,
+    message: 'Service destination is disabled',
   },
 
   // Client errors
@@ -680,6 +696,16 @@ export default {
     code: 25043,
     message:
       'Block timeout for registering message queue destination must be greater than 0',
+    clientError: true,
+  },
+  ABCI_RSA_KEY_LENGTH_TOO_SHORT: {
+    code: 25044,
+    message: 'RSA key length is too short. Must be at least 2048-bit',
+    clientError: true,
+  },
+  ABCI_AMOUNT_MUST_BE_GREATER_OR_EQUAL_ZERO: {
+    code: 25045,
+    message: 'Amount must be greater than or equal to 0',
     clientError: true,
   },
 

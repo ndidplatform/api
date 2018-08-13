@@ -88,6 +88,12 @@ import errorType from '../error/type';
 // CannotGetMasterPublicKeyFromNodeID        uint32 = 62
 // CannotGetPublicKeyFromNodeID              uint32 = 63
 // TimeOutBlockIsMustGreaterThanZero         uint32 = 64
+// RSAKeyLengthTooShort                      uint32 = 65
+// MsqDestinationIsTimedOut                  uint32 = 66
+// AmountMustBeGreaterOrEqualZero            uint32 = 67
+// NodeIsNotActive                           uint32 = 68
+// ServiceIsNotActive                        uint32 = 69
+// ServiceDestinationIsNotActive             uint32 = 70
 // UnknownError                              uint32 = 999
 
 const codeMapping = {
@@ -155,6 +161,12 @@ const codeMapping = {
   62: errorType.ABCI_CANNOT_GET_MASTER_PUBLIC_KEY_BY_NODE_ID,
   63: errorType.ABCI_CANNOT_GET_PUBLIC_KEY_BY_NODE_ID,
   64: errorType.ABCI_BLOCK_TIMEOUT_MUST_BE_GREATER_THAN_ZERO,
+  65: errorType.ABCI_RSA_KEY_LENGTH_TOO_SHORT,
+  66: errorType.ABCI_MQ_DESTINATION_TIMED_OUT,
+  67: errorType.ABCI_AMOUNT_MUST_BE_GREATER_OR_EQUAL_ZERO,
+  68: errorType.ABCI_NODE_IS_NOT_ACTIVE,
+  69: errorType.ABCI_SERVICE_IS_NOT_ACTIVE,
+  70: errorType.ABCI_SERVICE_DESTINATION_IS_NOT_ACTIVE,
   999: errorType.UNKNOWN_ERROR,
 };
 
