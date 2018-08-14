@@ -9,6 +9,7 @@ BREAKING CHANGES:
 FEATURES:
 
 - Add new API: GET `/identity/requests/reference/:reference_id` for getting request ID and accessor ID of an unfinished create identity request.
+- Validate HTTP request body for NDID APIs.
 
 IMPROVEMENTS:
 

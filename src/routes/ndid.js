@@ -27,7 +27,7 @@ import * as ndid from '../core/ndid';
 
 const router = express.Router();
 
-router.post('/initNDID', async (req, res, next) => {
+router.post('/initNDID', validateBody, async (req, res, next) => {
   try {
     const {
       public_key,
@@ -48,24 +48,17 @@ router.post('/initNDID', async (req, res, next) => {
   }
 });
 
-router.post('/approveService', async (req, res, next) => {
-  try {
-    await ndid.approveService(req.body);
-    res.status(204).end();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post('/registerNode', async (req, res, next) => {
+router.post('/registerNode', validateBody, async (req, res, next) => {
   try {
     const {
       node_id,
       node_name,
-      public_key,
-      public_key_type,
-      master_public_key,
-      master_public_key_type,
+      node_key,
+      node_key_type,
+      // node_sign_method,
+      node_master_key,
+      node_master_key_type,
+      // node_master_sign_method,
       role,
       max_aal,
       max_ial,
@@ -75,10 +68,10 @@ router.post('/registerNode', async (req, res, next) => {
       {
         node_id,
         node_name,
-        public_key,
-        public_key_type,
-        master_public_key,
-        master_public_key_type,
+        public_key: node_key,
+        public_key_type: node_key_type,
+        master_public_key: node_master_key,
+        master_public_key_type: node_master_key_type,
         role,
         max_aal,
         max_ial,
@@ -92,7 +85,7 @@ router.post('/registerNode', async (req, res, next) => {
   }
 });
 
-router.post('/updateNode', async (req, res, next) => {
+router.post('/updateNode', validateBody, async (req, res, next) => {
   try {
     const {
       node_id,
@@ -119,7 +112,7 @@ router.post('/updateNode', async (req, res, next) => {
   }
 });
 
-router.post('/setNodeToken', async (req, res, next) => {
+router.post('/setNodeToken', validateBody, async (req, res, next) => {
   try {
     const { node_id, amount } = req.body;
 
@@ -134,7 +127,7 @@ router.post('/setNodeToken', async (req, res, next) => {
   }
 });
 
-router.post('/addNodeToken', async (req, res, next) => {
+router.post('/addNodeToken', validateBody, async (req, res, next) => {
   try {
     const { node_id, amount } = req.body;
 
@@ -149,7 +142,7 @@ router.post('/addNodeToken', async (req, res, next) => {
   }
 });
 
-router.post('/reduceNodeToken', async (req, res, next) => {
+router.post('/reduceNodeToken', validateBody, async (req, res, next) => {
   try {
     const { node_id, amount } = req.body;
 
@@ -164,7 +157,7 @@ router.post('/reduceNodeToken', async (req, res, next) => {
   }
 });
 
-router.post('/namespaces', async (req, res, next) => {
+router.post('/namespaces', validateBody, async (req, res, next) => {
   try {
     const { namespace, description } = req.body;
 
@@ -199,7 +192,7 @@ router.delete('/namespaces/:namespace', async (req, res, next) => {
   }
 });
 
-router.post('/services', async (req, res, next) => {
+router.post('/services', validateBody, async (req, res, next) => {
   try {
     const { service_id, service_name } = req.body;
 
@@ -213,7 +206,7 @@ router.post('/services', async (req, res, next) => {
   }
 });
 
-router.post('/services/:service_id', async (req, res, next) => {
+router.post('/services/:service_id', validateBody, async (req, res, next) => {
   try {
     const { service_name } = req.body;
     const { service_id } = req.params;
@@ -241,7 +234,7 @@ router.delete('/services/:service_id', async (req, res, next) => {
   }
 });
 
-router.post('/validator', async (req, res, next) => {
+router.post('/validator', validateBody, async (req, res, next) => {
   try {
     const { public_key, power } = req.body;
 
@@ -255,45 +248,66 @@ router.post('/validator', async (req, res, next) => {
   }
 });
 
-router.post('/setTimeoutBlockRegisterMqDestination', async (req, res, next) => {
-  try {
-    const { blocks_to_timeout } = req.body;
+router.post(
+  '/setTimeoutBlockRegisterMqDestination',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { blocks_to_timeout } = req.body;
 
-    await ndid.setTimeoutBlockRegisterMqDestination({
-      blocks_to_timeout,
-    });
+      await ndid.setTimeoutBlockRegisterMqDestination({
+        blocks_to_timeout,
+      });
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post('/approveService', validateBody, async (req, res, next) => {
+  try {
+    await ndid.approveService(req.body);
     res.status(204).end();
   } catch (error) {
     next(error);
   }
 });
 
-router.post('/enableServiceDestination', async (req, res, next) => {
-  try {
-    const { service_id, node_id } = req.body;
+router.post(
+  '/enableServiceDestination',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { service_id, node_id } = req.body;
 
-    await ndid.enableServiceDestination({
-      service_id,
-      node_id,
-    });
-    res.status(204).end();
-  } catch (error) {
-    next(error);
+      await ndid.enableServiceDestination({
+        service_id,
+        node_id,
+      });
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
-router.post('/disableServiceDestination', async (req, res, next) => {
-  try {
-    const { service_id, node_id } = req.body;
+router.post(
+  '/disableServiceDestination',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { service_id, node_id } = req.body;
 
-    await ndid.disableServiceDestination({
-      service_id,
-      node_id,
-    });
-    res.status(204).end();
-  } catch (error) {
-    next(error);
+      await ndid.disableServiceDestination({
+        service_id,
+        node_id,
+      });
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 export default router;

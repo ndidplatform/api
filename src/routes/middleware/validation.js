@@ -27,6 +27,12 @@ import CustomError from '../../error/custom_error';
 
 function getBaseUrlAndApiVersion(req) {
   let baseUrl = req.baseUrl;
+  if (baseUrl.startsWith('/ndid')) {
+    return {
+      ndidApi: true,
+      baseUrl,
+    };
+  }
   const matchedPath = baseUrl.match(/^\/v([0-9]+)/);
   let apiVersion;
   if (matchedPath != null) {
@@ -87,8 +93,9 @@ export function validateQuery(req, res, next) {
 }
 
 export function validateBody(req, res, next) {
-  const { baseUrl, apiVersion } = getBaseUrlAndApiVersion(req);
+  const { ndidApi, baseUrl, apiVersion } = getBaseUrlAndApiVersion(req);
   const bodyValidationResult = validate({
+    ndidApi,
     apiVersion,
     method: req.method,
     path: `${baseUrl}${req.route.path}`,

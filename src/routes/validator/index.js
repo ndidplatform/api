@@ -24,6 +24,7 @@ import Ajv from 'ajv';
 
 import schemasV1 from './json_schema/v1';
 import schemasV2 from './json_schema/v2';
+import ndidSchemas from './json_schema/ndid';
 
 const ajvOptions = {
   allErrors: true,
@@ -31,7 +32,7 @@ const ajvOptions = {
 
 const ajv = new Ajv(ajvOptions);
 
-const validate = ({ apiVersion, method, path, params, query, body }) => {
+function validate({ ndidApi, apiVersion, method, path, params, query, body }) {
   let data;
   let dataType;
   if (typeof params === 'object') {
@@ -47,13 +48,17 @@ const validate = ({ apiVersion, method, path, params, query, body }) => {
 
   ajv.removeSchema('defs');
 
-  if (apiVersion === 1) {
-    ajv.addSchema(schemasV1.defsSchema, 'defs');
+  if (ndidApi) {
+    ajv.addSchema(ndidSchemas.defsSchema, 'defs');
   } else {
-    ajv.addSchema(schemasV2.defsSchema, 'defs');
+    if (apiVersion === 1) {
+      ajv.addSchema(schemasV1.defsSchema, 'defs');
+    } else {
+      ajv.addSchema(schemasV2.defsSchema, 'defs');
+    }
   }
 
-  const jsonSchema = getJSONSchema(apiVersion, method, path, dataType);
+  const jsonSchema = getJSONSchema(ndidApi, apiVersion, method, path, dataType);
   const validate = ajv.compile(jsonSchema);
   const valid = validate(data);
 
@@ -61,18 +66,22 @@ const validate = ({ apiVersion, method, path, params, query, body }) => {
     valid,
     errors: validate.errors,
   };
-};
+}
 
-const getJSONSchema = (apiVersion, method, path, dataType) => {
+function getJSONSchema(ndidApi, apiVersion, method, path, dataType) {
   try {
-    if (apiVersion === 1) {
-      return schemasV1[method][path][dataType];
+    if (ndidApi) {
+      return ndidSchemas[method][path][dataType];
     } else {
-      return schemasV2[method][path][dataType];
+      if (apiVersion === 1) {
+        return schemasV1[method][path][dataType];
+      } else {
+        return schemasV2[method][path][dataType];
+      }
     }
   } catch (error) {
     throw new Error('Cannot find JSON schema for validation');
   }
-};
+}
 
 export default validate;

@@ -119,7 +119,7 @@ register_node_id() {
   local NODE_NAME=${NODE_NAME:-"This is name: ${NODE_ID}"}
   local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/registerNode \
     -H "Content-Type: application/json" \
-    -d "{\"public_key\":\"${PUBLIC_KEY}\",\"master_public_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3}}" \
+    -d "{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3}}" \
     -w '%{http_code}' \
     -o /dev/null)
 
