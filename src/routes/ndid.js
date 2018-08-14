@@ -260,7 +260,35 @@ router.post('/setTimeoutBlockRegisterMqDestination', async (req, res, next) => {
     const { blocks_to_timeout } = req.body;
 
     await ndid.setTimeoutBlockRegisterMqDestination({
-      blocks_to_timeout
+      blocks_to_timeout,
+    });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/enableServiceDestination', async (req, res, next) => {
+  try {
+    const { service_id, node_id } = req.body;
+
+    await ndid.enableServiceDestination({
+      service_id,
+      node_id,
+    });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/disableServiceDestination', async (req, res, next) => {
+  try {
+    const { service_id, node_id } = req.body;
+
+    await ndid.disableServiceDestination({
+      service_id,
+      node_id,
     });
     res.status(204).end();
   } catch (error) {

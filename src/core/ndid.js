@@ -373,3 +373,29 @@ export async function setTimeoutBlockRegisterMqDestination({
     throw error;
   }
 }
+
+export async function enableServiceDestination({ service_id, node_id }) {
+  try {
+    await tendermint.transact(
+      'EnableServiceDestinationByNDID',
+      { service_id, node_id },
+      utils.getNonce()
+    );
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function disableServiceDestination({ service_id, node_id }) {
+  try {
+    await tendermint.transact(
+      'DisableServiceDestinationByNDID',
+      { service_id, node_id },
+      utils.getNonce()
+    );
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
