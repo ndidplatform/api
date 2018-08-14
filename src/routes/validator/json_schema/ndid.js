@@ -91,8 +91,6 @@ export default {
           // 'node_master_key_type',
           // 'node_master_sign_method',
           'role',
-          'max_ial',
-          'max_aal',
         ],
       },
     },
