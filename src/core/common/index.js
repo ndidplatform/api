@@ -156,7 +156,12 @@ export function getFunction(fnName) {
     case 'identity.addAccessorAfterConsentAfterRegisterMqDest':
       return identity.addAccessorAfterConsentAfterRegisterMqDest;
     default:
-      return function noop() {};
+      throw new CustomError({
+        message: 'Unknown function name',
+        details: {
+          fnName,
+        },
+      });
   }
 }
 
