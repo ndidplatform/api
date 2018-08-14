@@ -44,7 +44,7 @@ function filterTooLongMessage(rest, depth = 0) {
 
   const display = util.inspect(rest, {
     depth: null,
-    colors: true,
+    colors: config.logColor,
   });
   if (display.length <= config.thresholdLogLength) {
     return depth === 0 ? display : rest;
@@ -56,14 +56,14 @@ function filterTooLongMessage(rest, depth = 0) {
   if (depth === 0)
     return util.inspect(clone, {
       depth: null,
-      colors: true,
+      colors: config.logColor,
     });
   return clone;
 }
 
 const customFormat = winston.format.printf((info) => {
   const {
-    // timestamp,
+    timestamp,
     level,
     message,
     [Symbol.for('level')]: _level, // eslint-disable-line no-unused-vars
@@ -71,6 +71,7 @@ const customFormat = winston.format.printf((info) => {
     [Symbol.for('splat')]: _splat, // eslint-disable-line no-unused-vars
     ...rest
   } = info;
+  const timestampStr = timestamp != null ? `${timestamp} ` : '';
   const messageToDisplay =
     typeof message === 'object'
       ? util.inspect(message, {
@@ -79,16 +80,21 @@ const customFormat = winston.format.printf((info) => {
         })
       : message;
   if (Object.keys(rest).length === 0) {
-    return `${level}: ${messageToDisplay}`;
+    return `${timestampStr}${level}: ${messageToDisplay}`;
   } else {
     if (rest._printErrStack) {
       const { _printErrStack, stack, ...restWithoutStack } = rest; // eslint-disable-line no-unused-vars
-      return `${level}: ${messageToDisplay} ${util.inspect(restWithoutStack, {
-        depth: null,
-        colors: true,
-      })}\n${stack}`;
+      return `${timestampStr}${level}: ${messageToDisplay} ${util.inspect(
+        restWithoutStack,
+        {
+          depth: null,
+          colors: config.logColor,
+        }
+      )}\n${stack}`;
     } else {
-      return `${level}: ${messageToDisplay} ${filterTooLongMessage(rest)}`;
+      return `${timestampStr}${level}: ${messageToDisplay} ${filterTooLongMessage(
+        rest
+      )}`;
     }
   }
 });
@@ -101,13 +107,15 @@ function getLogFormat() {
   }
 }
 
-const defaultLogFormat = config.logColor
-  ? winston.format.combine(
-      winston.format.colorize(),
-      // winston.format.timestamp(),
-      customFormat
-    )
-  : winston.format.combine(customFormat);
+const combinedFormat = [];
+if (config.logColor) {
+  combinedFormat.push(winston.format.colorize());
+}
+if (config.logTarget === 'file') {
+  combinedFormat.push(winston.format.timestamp());
+}
+combinedFormat.push(customFormat);
+const defaultLogFormat = winston.format.combine(...combinedFormat);
 
 const jsonLogFormat = winston.format.combine(
   removePrintErrStackProp(),
@@ -130,13 +138,19 @@ if (config.logTarget === 'file') {
       //   filename: 'combined.log',
       // }),
       new winston.transports.DailyRotateFile({
-        filename: path.join(config.logDirectoryPath, 'error-%DATE%.log'),
+        filename: path.join(
+          config.logDirectoryPath,
+          `error-${config.nodeId}-%DATE%.log`
+        ),
         level: 'error',
         // datePattern: 'YYYY-MM-DD',
         zippedArchive: true, // gzip archived log files
       }),
       new winston.transports.DailyRotateFile({
-        filename: path.join(config.logDirectoryPath, 'combined-%DATE%.log'),
+        filename: path.join(
+          config.logDirectoryPath,
+          `combined-${config.nodeId}-%DATE%.log`
+        ),
         // datePattern: 'YYYY-MM-DD',
         zippedArchive: true, // gzip archived log files
       }),
