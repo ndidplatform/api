@@ -164,6 +164,11 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
   data.role = data.role.toUpperCase();
   if (data.role === 'IDP') {
     data.role = 'IdP';
+    if (max_ial == null || max_aal == null) {
+      throw new CustomError({
+        message: 'IdP role must have property "max_ial" and "max_aal"',
+      });
+    }
   } else {
     if (max_ial != null || max_aal != null) {
       throw new CustomError({
