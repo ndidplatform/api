@@ -138,6 +138,10 @@ export default {
     code: 10027,
     message: 'Received unrecognized message via message queue',
   },
+  DB_ERROR: {
+    code: 10028,
+    message: 'Database error',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {

@@ -24,7 +24,9 @@ import Sequelize from 'sequelize';
 
 import * as cacheDb from './cache/sequelize';
 import * as longTermDb from './long_term/sequelize';
+
 import CustomError from '../error/custom_error';
+import errorType from '../error/type';
 
 function getDB(dbName) {
   switch (dbName) {
@@ -38,26 +40,44 @@ function getDB(dbName) {
 }
 
 export async function getList({ dbName, name, keyName, key, valueName }) {
-  const db = getDB(dbName);
-  await db.init;
-  const models = await db.Entities[name].findAll({
-    attributes: [valueName],
-    where: {
-      [keyName]: key,
-    },
-  });
-  return models.map((model) => model.get(valueName));
+  try {
+    const db = getDB(dbName);
+    await db.init;
+    const models = await db.Entities[name].findAll({
+      attributes: [valueName],
+      where: {
+        [keyName]: key,
+      },
+    });
+    return models.map((model) => model.get(valueName));
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.DB_ERROR.message,
+      code: errorType.DB_ERROR.code,
+      cause: error,
+      details: { operation: 'getList', dbName, table: name },
+    });
+  }
 }
 
 export async function count({ dbName, name, keyName, key }) {
-  const db = getDB(dbName);
-  await db.init;
-  const count = await db.Entities[name].count({
-    where: {
-      [keyName]: key,
-    },
-  });
-  return count;
+  try {
+    const db = getDB(dbName);
+    await db.init;
+    const count = await db.Entities[name].count({
+      where: {
+        [keyName]: key,
+      },
+    });
+    return count;
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.DB_ERROR.message,
+      code: errorType.DB_ERROR.code,
+      cause: error,
+      details: { operation: 'count', dbName, table: name },
+    });
+  }
 }
 
 export async function getListRange({
@@ -67,18 +87,27 @@ export async function getListRange({
   keyRange,
   valueName,
 }) {
-  const db = getDB(dbName);
-  await db.init;
-  const models = await db.Entities[name].findAll({
-    attributes: [valueName],
-    where: {
-      [keyName]: {
-        [Sequelize.Op.gte]: keyRange.gte,
-        [Sequelize.Op.lte]: keyRange.lte,
+  try {
+    const db = getDB(dbName);
+    await db.init;
+    const models = await db.Entities[name].findAll({
+      attributes: [valueName],
+      where: {
+        [keyName]: {
+          [Sequelize.Op.gte]: keyRange.gte,
+          [Sequelize.Op.lte]: keyRange.lte,
+        },
       },
-    },
-  });
-  return models.map((model) => model.get(valueName));
+    });
+    return models.map((model) => model.get(valueName));
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.DB_ERROR.message,
+      code: errorType.DB_ERROR.code,
+      cause: error,
+      details: { operation: 'getListRange', dbName, table: name },
+    });
+  }
 }
 
 export async function pushToList({
@@ -89,12 +118,21 @@ export async function pushToList({
   valueName,
   value,
 }) {
-  const db = getDB(dbName);
-  await db.init;
-  await db.Entities[name].create({
-    [keyName]: key,
-    [valueName]: value,
-  });
+  try {
+    const db = getDB(dbName);
+    await db.init;
+    await db.Entities[name].create({
+      [keyName]: key,
+      [valueName]: value,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.DB_ERROR.message,
+      code: errorType.DB_ERROR.code,
+      cause: error,
+      details: { operation: 'pushToList', dbName, table: name },
+    });
+  }
 }
 
 export async function removeFromList({
@@ -105,87 +143,159 @@ export async function removeFromList({
   valueName,
   valuesToRemove,
 }) {
-  const db = getDB(dbName);
-  await db.init;
-  await db.Entities[name].destroy({
-    where: {
-      [keyName]: key,
-      [valueName]: {
-        [Sequelize.Op.in]: valuesToRemove,
+  try {
+    const db = getDB(dbName);
+    await db.init;
+    await db.Entities[name].destroy({
+      where: {
+        [keyName]: key,
+        [valueName]: {
+          [Sequelize.Op.in]: valuesToRemove,
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.DB_ERROR.message,
+      code: errorType.DB_ERROR.code,
+      cause: error,
+      details: { operation: 'removeFromList', dbName, table: name },
+    });
+  }
 }
 
 export async function removeList({ dbName, name, keyName, key }) {
-  const db = getDB(dbName);
-  await db.init;
-  await db.Entities[name].destroy({
-    where: {
-      [keyName]: key,
-    },
-  });
+  try {
+    const db = getDB(dbName);
+    await db.init;
+    await db.Entities[name].destroy({
+      where: {
+        [keyName]: key,
+      },
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.DB_ERROR.message,
+      code: errorType.DB_ERROR.code,
+      cause: error,
+      details: { operation: 'removeList', dbName, table: name },
+    });
+  }
 }
 
 export async function removeListRange({ dbName, name, keyName, keyRange }) {
-  const db = getDB(dbName);
-  await db.init;
-  await db.Entities[name].destroy({
-    where: {
-      [keyName]: {
-        [Sequelize.Op.gte]: keyRange.gte,
-        [Sequelize.Op.lte]: keyRange.lte,
+  try {
+    const db = getDB(dbName);
+    await db.init;
+    await db.Entities[name].destroy({
+      where: {
+        [keyName]: {
+          [Sequelize.Op.gte]: keyRange.gte,
+          [Sequelize.Op.lte]: keyRange.lte,
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.DB_ERROR.message,
+      code: errorType.DB_ERROR.code,
+      cause: error,
+      details: { operation: 'removeListRange', dbName, table: name },
+    });
+  }
 }
 
 export async function removeAllLists({ dbName, name }) {
-  const db = getDB(dbName);
-  await db.init;
-  await db.Entities[name].destroy({
-    where: {},
-  });
+  try {
+    const db = getDB(dbName);
+    await db.init;
+    await db.Entities[name].destroy({
+      where: {},
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.DB_ERROR.message,
+      code: errorType.DB_ERROR.code,
+      cause: error,
+      details: { operation: 'removeAllLists', dbName, table: name },
+    });
+  }
 }
 
 export async function get({ dbName, name, keyName, key, valueName }) {
-  const db = getDB(dbName);
-  await db.init;
-  const model = await db.Entities[name].findOne({
-    attributes: [valueName],
-    where: {
-      [keyName]: key,
-    },
-  });
-  return model != null ? model.get(valueName) : null;
+  try {
+    const db = getDB(dbName);
+    await db.init;
+    const model = await db.Entities[name].findOne({
+      attributes: [valueName],
+      where: {
+        [keyName]: key,
+      },
+    });
+    return model != null ? model.get(valueName) : null;
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.DB_ERROR.message,
+      code: errorType.DB_ERROR.code,
+      cause: error,
+      details: { operation: 'get', dbName, table: name },
+    });
+  }
 }
 
 export async function set({ dbName, name, keyName, key, valueName, value }) {
-  const db = getDB(dbName);
-  await db.init;
-  await db.Entities[name].upsert({
-    [keyName]: key,
-    [valueName]: value,
-  });
+  try {
+    const db = getDB(dbName);
+    await db.init;
+    await db.Entities[name].upsert({
+      [keyName]: key,
+      [valueName]: value,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.DB_ERROR.message,
+      code: errorType.DB_ERROR.code,
+      cause: error,
+      details: { operation: 'set', dbName, table: name },
+    });
+  }
 }
 
 export async function remove({ dbName, name, keyName, key }) {
-  const db = getDB(dbName);
-  await db.init;
-  await db.Entities[name].destroy({
-    where: {
-      [keyName]: key,
-    },
-  });
+  try {
+    const db = getDB(dbName);
+    await db.init;
+    await db.Entities[name].destroy({
+      where: {
+        [keyName]: key,
+      },
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.DB_ERROR.message,
+      code: errorType.DB_ERROR.code,
+      cause: error,
+      details: { operation: 'remove', dbName, table: name },
+    });
+  }
 }
 
 export async function getAll({ dbName, name }) {
-  const db = getDB(dbName);
-  await db.init;
-  const models = await db.Entities[name].findAll({
-    attributes: {
-      exclude: ['id', 'createdAt', 'updatedAt'],
-    },
-  });
-  return models.map((model) => model.get({ plain: true }));
+  try {
+    const db = getDB(dbName);
+    await db.init;
+    const models = await db.Entities[name].findAll({
+      attributes: {
+        exclude: ['id', 'createdAt', 'updatedAt'],
+      },
+    });
+    return models.map((model) => model.get({ plain: true }));
+  } catch (error) {
+    throw new CustomError({
+      message: errorType.DB_ERROR.message,
+      code: errorType.DB_ERROR.code,
+      cause: error,
+      details: { operation: 'getAll', dbName, table: name },
+    });
+  }
 }
