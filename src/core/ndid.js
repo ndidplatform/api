@@ -299,10 +299,23 @@ export async function addNamespace({ namespace, description }) {
   }
 }
 
-export async function deleteNamespace({ namespace }) {
+export async function enableNamespace({ namespace }) {
   try {
     await tendermint.transact(
-      'DeleteNamespace',
+      'EnableNamespace',
+      { namespace },
+      utils.getNonce()
+    );
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function disableNamespace({ namespace }) {
+  try {
+    await tendermint.transact(
+      'DisableNamespace',
       { namespace },
       utils.getNonce()
     );
@@ -338,10 +351,23 @@ export async function updateService({ service_id, service_name }) {
   }
 }
 
-export async function deleteService({ service_id }) {
+export async function enableService({ service_id }) {
   try {
     await tendermint.transact(
-      'DeleteService',
+      'EnableService',
+      { service_id },
+      utils.getNonce()
+    );
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function disableService({ service_id }) {
+  try {
+    await tendermint.transact(
+      'DisableService',
       { service_id },
       utils.getNonce()
     );

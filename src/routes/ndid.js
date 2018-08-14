@@ -179,11 +179,24 @@ router.post('/namespaces', validateBody, async (req, res, next) => {
   }
 });
 
-router.delete('/namespaces/:namespace', async (req, res, next) => {
+router.post('/namespaces/:namespace/enable', async (req, res, next) => {
   try {
     const { namespace } = req.params;
 
-    await ndid.deleteNamespace({
+    await ndid.enableNamespace({
+      namespace,
+    });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/namespaces/:namespace/disable', async (req, res, next) => {
+  try {
+    const { namespace } = req.params;
+
+    await ndid.disableNamespace({
       namespace,
     });
     res.status(204).end();
@@ -221,11 +234,24 @@ router.post('/services/:service_id', validateBody, async (req, res, next) => {
   }
 });
 
-router.delete('/services/:service_id', async (req, res, next) => {
+router.post('/services/:service_id/enable', async (req, res, next) => {
   try {
     const { service_id } = req.params;
 
-    await ndid.deleteService({
+    await ndid.enableService({
+      service_id,
+    });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/services/:service_id/disable', async (req, res, next) => {
+  try {
+    const { service_id } = req.params;
+
+    await ndid.disableService({
       service_id,
     });
     res.status(204).end();
