@@ -36,7 +36,7 @@ export async function close() {
 }
 
 //
-// Used by RP, IdP, and AS
+// Used by all roles
 //
 
 export function getAllExpectedTxs() {
@@ -103,36 +103,6 @@ export function removeCallbackUrlByReferenceId(referenceId) {
   });
 }
 
-export function getRequestData(requestId) {
-  return db.get({
-    dbName,
-    name: 'requestData',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'request',
-  });
-}
-
-export function setRequestData(requestId, request) {
-  return db.set({
-    dbName,
-    name: 'requestData',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'request',
-    value: request,
-  });
-}
-
-export function removeRequestData(requestId) {
-  return db.remove({
-    dbName,
-    name: 'requestData',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
 export function addCallbackWithRetryData(cbId, data) {
   return db.pushToList({
     dbName,
@@ -159,6 +129,10 @@ export function getAllCallbackWithRetryData() {
     name: 'callbackWithRetry',
   });
 }
+
+//
+// Used by RP, IdP, and AS
+//
 
 export function setRawMessageFromMQ(messageId, messageBuffer) {
   return db.set({
@@ -193,6 +167,40 @@ export function getAllRawMessageFromMQ() {
   return db.getAll({
     dbName,
     name: 'rawReceivedMessageFromMQ',
+  });
+}
+
+export function getAllDuplicateMessageTimeout() {
+  return db.getAll({ dbName, name: 'duplicateMessageTimeout' });
+}
+
+export function getDuplicateMessageTimeout(id) {
+  return db.get({
+    dbName,
+    name: 'duplicateMessageTimeout',
+    keyName: 'id',
+    key: id,
+    valueName: 'unixTimeout',
+  });
+}
+
+export function addDuplicateMessageTimeout(id, unixTimeout) {
+  return db.set({
+    dbName,
+    name: 'duplicateMessageTimeout',
+    keyName: 'id',
+    key: id,
+    valueName: 'unixTimeout',
+    value: unixTimeout,
+  });
+}
+
+export function removeDuplicateMessageTimeout(id) {
+  return db.remove({
+    dbName,
+    name: 'duplicateMessageTimeout',
+    keyName: 'id',
+    key: id,
   });
 }
 
@@ -246,6 +254,317 @@ export function removeRequestIdsExpectedInBlock(fromHeight, toHeight) {
   });
 }
 
+export function getRequestReceivedFromMQ(requestId) {
+  return db.get({
+    dbName,
+    name: 'requestReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+  });
+}
+
+export function setRequestReceivedFromMQ(requestId, request) {
+  return db.set({
+    dbName,
+    name: 'requestReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+    value: request,
+  });
+}
+
+export function removeRequestReceivedFromMQ(requestId) {
+  return db.remove({
+    dbName,
+    name: 'requestReceivedFromMQ',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+//
+// Used by RP and IdP
+//
+
+export function getRequestIdByReferenceId(referenceId) {
+  return db.get({
+    dbName,
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'requestId',
+  });
+}
+
+export function setRequestIdByReferenceId(referenceId, requestId) {
+  return db.set({
+    dbName,
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'requestId',
+    value: requestId,
+  });
+}
+
+export function removeRequestIdByReferenceId(referenceId) {
+  return db.remove({
+    dbName,
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+  });
+}
+
+export function removeRequestIdReferenceIdMappingByRequestId(requestId) {
+  return db.remove({
+    dbName,
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getReferenceIdByRequestId(requestId) {
+  return db.get({
+    dbName,
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'referenceId',
+  });
+}
+
+export function setReferenceIdByRequestId(requestId, referenceId) {
+  return db.set({
+    dbName,
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'referenceId',
+    value: referenceId,
+  });
+}
+
+export function removeReferenceIdByRequestId(requestId) {
+  return db.remove({
+    dbName,
+    name: 'requestIdReferenceIdMapping',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getRequestCallbackUrl(requestId) {
+  return db.get({
+    dbName,
+    name: 'requestCallbackUrl',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'url',
+  });
+}
+
+export function setRequestCallbackUrl(requestId, callbackUrl) {
+  return db.set({
+    dbName,
+    name: 'requestCallbackUrl',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'url',
+    value: callbackUrl,
+  });
+}
+
+export function removeRequestCallbackUrl(requestId) {
+  return db.remove({
+    dbName,
+    name: 'requestCallbackUrl',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getRequestData(requestId) {
+  return db.get({
+    dbName,
+    name: 'requestData',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+  });
+}
+
+export function setRequestData(requestId, request) {
+  return db.set({
+    dbName,
+    name: 'requestData',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'request',
+    value: request,
+  });
+}
+
+export function removeRequestData(requestId) {
+  return db.remove({
+    dbName,
+    name: 'requestData',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getAllTimeoutScheduler() {
+  return db.getAll({ dbName, name: 'timeoutScheduler' });
+}
+
+export function addTimeoutScheduler(requestId, unixTimeout) {
+  return db.set({
+    dbName,
+    name: 'timeoutScheduler',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'unixTimeout',
+    value: unixTimeout,
+  });
+}
+
+export function removeTimeoutScheduler(requestId) {
+  return db.remove({
+    dbName,
+    name: 'timeoutScheduler',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getIdpResponseValidList(requestId) {
+  return db.getList({
+    dbName,
+    name: 'idpResponseValid',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'validInfo',
+  });
+}
+
+export function addIdpResponseValidList(requestId, validInfo) {
+  return db.pushToList({
+    dbName,
+    name: 'idpResponseValid',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'validInfo',
+    value: validInfo,
+  });
+}
+
+export function removeIdpResponseValidList(requestId) {
+  return db.removeList({
+    dbName,
+    name: 'idpResponseValid',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function getPublicProofReceivedFromMQ(responseId) {
+  return db.get({
+    dbName,
+    name: 'publicProofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'publicProofArray',
+  });
+}
+
+export function setPublicProofReceivedFromMQ(responseId, publicProofArray) {
+  return db.set({
+    dbName,
+    name: 'publicProofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'publicProofArray',
+    value: publicProofArray,
+  });
+}
+
+export function removePublicProofReceivedFromMQ(responseId) {
+  return db.remove({
+    dbName,
+    name: 'publicProofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+  });
+}
+
+export function getPrivateProofReceivedFromMQ(responseId) {
+  return db.get({
+    dbName,
+    name: 'privateProofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'privateProofObject',
+  });
+}
+
+export function setPrivateProofReceivedFromMQ(responseId, privateProofObject) {
+  return db.set({
+    dbName,
+    name: 'privateProofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+    valueName: 'privateProofObject',
+    value: privateProofObject,
+  });
+}
+
+export function removePrivateProofReceivedFromMQ(responseId) {
+  return db.remove({
+    dbName,
+    name: 'privateProofReceivedFromMQ',
+    keyName: 'responseId',
+    key: responseId,
+  });
+}
+
+export function getChallengeFromRequestId(requestId) {
+  return db.get({
+    dbName,
+    name: 'challengeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'challenge',
+  });
+}
+
+export function setChallengeFromRequestId(requestId, challenge) {
+  return db.set({
+    dbName,
+    name: 'challengeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'challenge',
+    value: challenge,
+  });
+}
+
+export function removeChallengeFromRequestId(requestId) {
+  return db.remove({
+    dbName,
+    name: 'challengeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+//
+// Used by RP
+//
+
 export function getExpectedIdpResponseNodeIdInBlockList(height) {
   return db.getList({
     dbName,
@@ -276,35 +595,150 @@ export function removeExpectedIdpResponseNodeIdInBlockList(height) {
   });
 }
 
-export function getRequestReceivedFromMQ(requestId) {
+export function getExpectedIdpPublicProofInBlockList(fromHeight, toHeight) {
+  return db.getListRange({
+    dbName,
+    name: 'expectedIdpPublicProofInBlock',
+    keyName: 'expectedBlockHeight',
+    keyRange: {
+      gte: fromHeight, // greaterThanOrEqual
+      lte: toHeight, // lessThanOrEqual
+    },
+    valueName: 'responseMetadata',
+  });
+}
+
+export function addExpectedIdpPublicProofInBlock(height, responseMetadata) {
+  return db.pushToList({
+    dbName,
+    name: 'expectedIdpPublicProofInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'responseMetadata',
+    value: responseMetadata,
+  });
+}
+
+export function removeExpectedIdpPublicProofInBlockList(fromHeight, toHeight) {
+  return db.removeListRange({
+    dbName,
+    name: 'expectedIdpPublicProofInBlock',
+    keyName: 'expectedBlockHeight',
+    keyRange: {
+      gte: fromHeight, // greaterThanOrEqual
+      lte: toHeight, // lessThanOrEqual
+    },
+  });
+}
+
+export function getDataResponsefromAS(asResponseId) {
   return db.get({
     dbName,
-    name: 'requestReceivedFromMQ',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'request',
+    name: 'dataResponseFromAS',
+    keyName: 'asResponseId',
+    key: asResponseId,
+    valueName: 'dataResponse',
   });
 }
-
-export function setRequestReceivedFromMQ(requestId, request) {
+export function setDataResponseFromAS(asResponseId, data) {
   return db.set({
     dbName,
-    name: 'requestReceivedFromMQ',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'request',
-    value: request,
+    name: 'dataResponseFromAS',
+    keyName: 'asResponseId',
+    key: asResponseId,
+    valueName: 'dataResponse',
+    value: data,
   });
 }
 
-export function removeRequestReceivedFromMQ(requestId) {
+export function removeDataResponseFromAS(asResponseId) {
   return db.remove({
     dbName,
-    name: 'requestReceivedFromMQ',
+    name: 'dataResponseFromAS',
+    keyName: 'asResponseId',
+    key: asResponseId,
+  });
+}
+
+export function getDatafromAS(requestId) {
+  return db.getList({
+    dbName,
+    name: 'dataFromAS',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'data',
+  });
+}
+
+export function countDataFromAS(requestId) {
+  return db.count({
+    dbName,
+    name: 'dataFromAS',
     keyName: 'requestId',
     key: requestId,
   });
 }
+
+export function addDataFromAS(requestId, data) {
+  return db.pushToList({
+    dbName,
+    name: 'dataFromAS',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'data',
+    value: data,
+  });
+}
+
+export function removeDataFromAS(requestId) {
+  return db.removeList({
+    dbName,
+    name: 'dataFromAS',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function removeAllDataFromAS() {
+  return db.removeAllLists({
+    dbName,
+    name: 'dataFromAS',
+  });
+}
+
+export function getExpectedDataSignInBlockList(height) {
+  return db.getList({
+    dbName,
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'metadata',
+  });
+}
+
+export function addExpectedDataSignInBlock(height, metadata) {
+  return db.pushToList({
+    dbName,
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+    valueName: 'metadata',
+    value: metadata,
+  });
+}
+
+export function removeExpectedDataSignInBlockList(height) {
+  return db.removeList({
+    dbName,
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    key: height,
+  });
+}
+
+//
+// Used by IdP
+//
 
 export function getRequestToProcessReceivedFromMQ(requestId) {
   return db.get({
@@ -426,130 +860,6 @@ export function removeIdentityFromRequestId(requestId) {
   });
 }
 
-export function getChallengeFromRequestId(requestId) {
-  return db.get({
-    dbName,
-    name: 'challengeFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'challenge',
-  });
-}
-
-export function setChallengeFromRequestId(requestId, challenge) {
-  return db.set({
-    dbName,
-    name: 'challengeFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'challenge',
-    value: challenge,
-  });
-}
-
-export function removeChallengeFromRequestId(requestId) {
-  return db.remove({
-    dbName,
-    name: 'challengeFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
-export function getPrivateProofReceivedFromMQ(responseId) {
-  return db.get({
-    dbName,
-    name: 'privateProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-    valueName: 'privateProofObject',
-  });
-}
-
-export function setPrivateProofReceivedFromMQ(responseId, privateProofObject) {
-  return db.set({
-    dbName,
-    name: 'privateProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-    valueName: 'privateProofObject',
-    value: privateProofObject,
-  });
-}
-
-export function removePrivateProofReceivedFromMQ(responseId) {
-  return db.remove({
-    dbName,
-    name: 'privateProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-  });
-}
-
-export function getPublicProofReceivedFromMQ(responseId) {
-  return db.get({
-    dbName,
-    name: 'publicProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-    valueName: 'publicProofArray',
-  });
-}
-
-export function setPublicProofReceivedFromMQ(responseId, publicProofArray) {
-  return db.set({
-    dbName,
-    name: 'publicProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-    valueName: 'publicProofArray',
-    value: publicProofArray,
-  });
-}
-
-export function removePublicProofReceivedFromMQ(responseId) {
-  return db.remove({
-    dbName,
-    name: 'publicProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-  });
-}
-
-//
-// Used by RP
-//
-
-export function getRequestIdByReferenceId(referenceId) {
-  return db.get({
-    dbName,
-    name: 'requestIdReferenceIdMapping',
-    keyName: 'referenceId',
-    key: referenceId,
-    valueName: 'requestId',
-  });
-}
-
-export function setRequestIdByReferenceId(referenceId, requestId) {
-  return db.set({
-    dbName,
-    name: 'requestIdReferenceIdMapping',
-    keyName: 'referenceId',
-    key: referenceId,
-    valueName: 'requestId',
-    value: requestId,
-  });
-}
-
-export function removeRequestIdByReferenceId(referenceId) {
-  return db.remove({
-    dbName,
-    name: 'requestIdReferenceIdMapping',
-    keyName: 'referenceId',
-    key: referenceId,
-  });
-}
-
 export function getCreateIdentityDataByReferenceId(referenceId) {
   return db.get({
     dbName,
@@ -583,329 +893,6 @@ export function removeCreateIdentityDataByReferenceId(referenceId) {
   });
 }
 
-export function removeRequestIdReferenceIdMappingByRequestId(requestId) {
-  return db.remove({
-    dbName,
-    name: 'requestIdReferenceIdMapping',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
-export function getServiceCallbackUrl(serviceId) {
-  return db.get({
-    dbName,
-    name: 'serviceCallbackUrl',
-    keyName: 'serviceId',
-    key: serviceId,
-    valueName: 'url',
-  });
-}
-
-export function setServiceCallbackUrl(serviceId, callbackUrl) {
-  return db.set({
-    dbName,
-    name: 'serviceCallbackUrl',
-    keyName: 'serviceId',
-    key: serviceId,
-    valueName: 'url',
-    value: callbackUrl,
-  });
-}
-
-export function getRequestCallbackUrl(requestId) {
-  return db.get({
-    dbName,
-    name: 'requestCallbackUrl',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'url',
-  });
-}
-
-export function setRequestCallbackUrl(requestId, callbackUrl) {
-  return db.set({
-    dbName,
-    name: 'requestCallbackUrl',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'url',
-    value: callbackUrl,
-  });
-}
-
-export function removeRequestCallbackUrl(requestId) {
-  return db.remove({
-    dbName,
-    name: 'requestCallbackUrl',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
-export function getDataResponsefromAS(asResponseId) {
-  return db.get({
-    dbName,
-    name: 'dataResponseFromAS',
-    keyName: 'asResponseId',
-    key: asResponseId,
-    valueName: 'dataResponse',
-  });
-}
-export function setDataResponseFromAS(asResponseId, data) {
-  return db.set({
-    dbName,
-    name: 'dataResponseFromAS',
-    keyName: 'asResponseId',
-    key: asResponseId,
-    valueName: 'dataResponse',
-    value: data,
-  });
-}
-
-export function removeDataResponseFromAS(asResponseId) {
-  return db.remove({
-    dbName,
-    name: 'dataResponseFromAS',
-    keyName: 'asResponseId',
-    key: asResponseId,
-  });
-}
-
-export function getDatafromAS(requestId) {
-  return db.getList({
-    dbName,
-    name: 'dataFromAS',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'data',
-  });
-}
-
-export function countDataFromAS(requestId) {
-  return db.count({
-    dbName,
-    name: 'dataFromAS',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
-export function addDataFromAS(requestId, data) {
-  return db.pushToList({
-    dbName,
-    name: 'dataFromAS',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'data',
-    value: data,
-  });
-}
-
-export function removeDataFromAS(requestId) {
-  return db.removeList({
-    dbName,
-    name: 'dataFromAS',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
-export function removeAllDataFromAS() {
-  return db.removeAllLists({
-    dbName,
-    name: 'dataFromAS',
-  });
-}
-
-export function getAllTimeoutScheduler() {
-  return db.getAll({ dbName, name: 'timeoutScheduler' });
-}
-
-export function addTimeoutScheduler(requestId, unixTimeout) {
-  return db.set({
-    dbName,
-    name: 'timeoutScheduler',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'unixTimeout',
-    value: unixTimeout,
-  });
-}
-
-export function removeTimeoutScheduler(requestId) {
-  return db.remove({
-    dbName,
-    name: 'timeoutScheduler',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
-export function getAllDuplicateMessageTimeout() {
-  return db.getAll({ dbName, name: 'duplicateMessageTimeout' });
-}
-
-export function getDuplicateMessageTimeout(id) {
-  return db.get({
-    dbName,
-    name: 'duplicateMessageTimeout',
-    keyName: 'id',
-    key: id,
-    valueName: 'unixTimeout',
-  });
-}
-
-export function addDuplicateMessageTimeout(id, unixTimeout) {
-  return db.set({
-    dbName,
-    name: 'duplicateMessageTimeout',
-    keyName: 'id',
-    key: id,
-    valueName: 'unixTimeout',
-    value: unixTimeout,
-  });
-}
-
-export function removeDuplicateMessageTimeout(id) {
-  return db.remove({
-    dbName,
-    name: 'duplicateMessageTimeout',
-    keyName: 'id',
-    key: id,
-  });
-}
-
-export function getIdpResponseValidList(requestId) {
-  return db.getList({
-    dbName,
-    name: 'idpResponseValid',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'validInfo',
-  });
-}
-
-export function addIdpResponseValidList(requestId, validInfo) {
-  return db.pushToList({
-    dbName,
-    name: 'idpResponseValid',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'validInfo',
-    value: validInfo,
-  });
-}
-
-export function removeIdpResponseValidList(requestId) {
-  return db.removeList({
-    dbName,
-    name: 'idpResponseValid',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
-export function getExpectedDataSignInBlockList(height) {
-  return db.getList({
-    dbName,
-    name: 'expectedDataSignInBlock',
-    keyName: 'expectedBlockHeight',
-    key: height,
-    valueName: 'metadata',
-  });
-}
-
-export function addExpectedDataSignInBlock(height, metadata) {
-  return db.pushToList({
-    dbName,
-    name: 'expectedDataSignInBlock',
-    keyName: 'expectedBlockHeight',
-    key: height,
-    valueName: 'metadata',
-    value: metadata,
-  });
-}
-
-export function removeExpectedDataSignInBlockList(height) {
-  return db.removeList({
-    dbName,
-    name: 'expectedDataSignInBlock',
-    keyName: 'expectedBlockHeight',
-    key: height,
-  });
-}
-
-export function getExpectedIdpPublicProofInBlockList(fromHeight, toHeight) {
-  return db.getListRange({
-    dbName,
-    name: 'expectedIdpPublicProofInBlock',
-    keyName: 'expectedBlockHeight',
-    keyRange: {
-      gte: fromHeight, // greaterThanOrEqual
-      lte: toHeight, // lessThanOrEqual
-    },
-    valueName: 'responseMetadata',
-  });
-}
-
-export function addExpectedIdpPublicProofInBlock(height, responseMetadata) {
-  return db.pushToList({
-    dbName,
-    name: 'expectedIdpPublicProofInBlock',
-    keyName: 'expectedBlockHeight',
-    key: height,
-    valueName: 'responseMetadata',
-    value: responseMetadata,
-  });
-}
-
-export function removeExpectedIdpPublicProofInBlockList(fromHeight, toHeight) {
-  return db.removeListRange({
-    dbName,
-    name: 'expectedIdpPublicProofInBlock',
-    keyName: 'expectedBlockHeight',
-    keyRange: {
-      gte: fromHeight, // greaterThanOrEqual
-      lte: toHeight, // lessThanOrEqual
-    },
-  });
-}
-
-//
-// Used by IdP
-//
-
-export function getReferenceIdByRequestId(requestId) {
-  return db.get({
-    dbName,
-    name: 'requestIdReferenceIdMapping',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'referenceId',
-  });
-}
-
-export function setReferenceIdByRequestId(requestId, referenceId) {
-  return db.set({
-    dbName,
-    name: 'requestIdReferenceIdMapping',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'referenceId',
-    value: referenceId,
-  });
-}
-
-export function removeReferenceIdByRequestId(requestId) {
-  return db.remove({
-    dbName,
-    name: 'requestIdReferenceIdMapping',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
 export function getRequestMessage(requestId) {
   return db.get({
     dbName,
@@ -933,6 +920,31 @@ export function removeRequestMessage(requestId) {
     name: 'requestMessage',
     keyName: 'requestId',
     key: requestId,
+  });
+}
+
+//
+// Used by AS
+//
+
+export function getServiceCallbackUrl(serviceId) {
+  return db.get({
+    dbName,
+    name: 'serviceCallbackUrl',
+    keyName: 'serviceId',
+    key: serviceId,
+    valueName: 'url',
+  });
+}
+
+export function setServiceCallbackUrl(serviceId, callbackUrl) {
+  return db.set({
+    dbName,
+    name: 'serviceCallbackUrl',
+    keyName: 'serviceId',
+    key: serviceId,
+    valueName: 'url',
+    value: callbackUrl,
   });
 }
 
@@ -965,10 +977,6 @@ export function removeInitialSalt(requestId) {
     key: requestId,
   });
 }
-
-//
-// Used by AS
-//
 
 export function getRpIdFromDataRequestId(dataRequestId) {
   return db.get({

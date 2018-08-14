@@ -47,127 +47,172 @@ export const Entities = {
     referenceId: { type: Sequelize.STRING, primaryKey: true },
     url: Sequelize.TEXT,
   }),
-  requestIdExpectedInBlock: sequelize.define('requestIdExpectedInBlock', {
-    requestId: Sequelize.STRING,
-    expectedBlockHeight: Sequelize.INTEGER,
+  callbackWithRetry: sequelize.define('callbackWithRetry', {
+    cbId: { type: Sequelize.STRING, primaryKey: true },
+    data: Sequelize.JSON,
   }),
-  expectedIdpResponseNodeIdInBlock: sequelize.define(
+};
+
+if (config.role === 'rp' || config.role === 'idp' || config.role === 'as') {
+  Entities.rawReceivedMessageFromMQ = sequelize.define(
+    'rawReceivedMessageFromMQ',
+    {
+      messageId: { type: Sequelize.STRING, primaryKey: true },
+      messageBuffer: Sequelize.BLOB,
+    }
+  );
+  Entities.duplicateMessageTimeout = sequelize.define(
+    'duplicateMessageTimeout',
+    {
+      id: { type: Sequelize.STRING, primaryKey: true },
+      unixTimeout: Sequelize.INTEGER,
+    }
+  );
+}
+
+if (config.role === 'rp' || config.role === 'idp') {
+  Entities.requestIdReferenceIdMapping = sequelize.define(
+    'requestIdReferenceIdMapping',
+    {
+      referenceId: { type: Sequelize.TEXT, primaryKey: true },
+      requestId: { type: Sequelize.STRING, primaryKey: true },
+    }
+  );
+  Entities.requestCallbackUrl = sequelize.define('requestCallbackUrl', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    url: Sequelize.TEXT,
+  });
+  Entities.requestData = sequelize.define('requestData', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    request: Sequelize.JSON,
+  });
+  Entities.timeoutScheduler = sequelize.define('timeoutScheduler', {
+    requestId: Sequelize.STRING,
+    unixTimeout: Sequelize.INTEGER,
+  });
+  Entities.idpResponseValid = sequelize.define('idpResponseValid', {
+    requestId: Sequelize.STRING,
+    validInfo: Sequelize.JSON,
+  });
+  Entities.publicProofReceivedFromMQ = sequelize.define(
+    'publicProofReceivedFromMQ',
+    {
+      responseId: { type: Sequelize.STRING, primaryKey: true },
+      publicProofArray: Sequelize.JSON,
+    }
+  );
+  Entities.privateProofReceivedFromMQ = sequelize.define(
+    'privateProofReceivedFromMQ',
+    {
+      responseId: { type: Sequelize.STRING, primaryKey: true },
+      privateProofObject: Sequelize.JSON,
+    }
+  );
+  Entities.challengeFromRequestId = sequelize.define('challengeFromRequestId', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    challenge: Sequelize.JSON,
+  });
+}
+
+if (config.role === 'idp' || config.role === 'as') {
+  Entities.requestIdExpectedInBlock = sequelize.define(
+    'requestIdExpectedInBlock',
+    {
+      requestId: Sequelize.STRING,
+      expectedBlockHeight: Sequelize.INTEGER,
+    }
+  );
+  Entities.requestReceivedFromMQ = sequelize.define('requestReceivedFromMQ', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    request: Sequelize.JSON,
+  });
+}
+
+if (config.role === 'rp') {
+  Entities.expectedIdpResponseNodeIdInBlock = sequelize.define(
     'expectedIdpResponseNodeIdInBlock',
     {
       responseMetadata: Sequelize.JSON,
       expectedBlockHeight: Sequelize.INTEGER,
     }
-  ),
-  requestToProcessReceivedFromMQ: sequelize.define(
-    'requestToProcessReceivedFromMQ',
-    {
-      requestId: { type: Sequelize.STRING, primaryKey: true },
-      request: Sequelize.JSON,
-    }
-  ),
-  requestReceivedFromMQ: sequelize.define('requestReceivedFromMQ', {
-    requestId: { type: Sequelize.STRING, primaryKey: true },
-    request: Sequelize.JSON,
-  }),
-  responseDataFromRequestId: sequelize.define('responseDataFromRequestId', {
-    requestId: { type: Sequelize.STRING, primaryKey: true },
-    response: Sequelize.JSON,
-  }),
-  rpIdFromRequestId: sequelize.define('rpIdFromRequestId', {
-    requestId: { type: Sequelize.STRING, primaryKey: true },
-    rp_id: Sequelize.STRING,
-  }),
-  challengeFromRequestId: sequelize.define('challengeFromRequestId', {
-    requestId: { type: Sequelize.STRING, primaryKey: true },
-    challenge: Sequelize.JSON,
-  }),
-  privateProofReceivedFromMQ: sequelize.define('privateProofReceivedFromMQ', {
-    responseId: { type: Sequelize.STRING, primaryKey: true },
-    privateProofObject: Sequelize.JSON,
-  }),
-  publicProofReceivedFromMQ: sequelize.define('publicProofReceivedFromMQ', {
-    responseId: { type: Sequelize.STRING, primaryKey: true },
-    publicProofArray: Sequelize.JSON,
-  }),
-  requestIdReferenceIdMapping: sequelize.define('requestIdReferenceIdMapping', {
-    referenceId: { type: Sequelize.TEXT, primaryKey: true },
-    requestId: { type: Sequelize.STRING, primaryKey: true },
-  }),
-  createIdentityDataReferenceIdMapping: sequelize.define(
-    'createIdentityDataReferenceIdMapping',
-    {
-      referenceId: { type: Sequelize.TEXT, primaryKey: true },
-      createIdentityData: { type: Sequelize.JSON },
-    }
-  ),
-  requestData: sequelize.define('requestData', {
-    requestId: { type: Sequelize.STRING, primaryKey: true },
-    request: Sequelize.JSON,
-  }),
-  requestCallbackUrl: sequelize.define('requestCallbackUrl', {
-    requestId: { type: Sequelize.STRING, primaryKey: true },
-    url: Sequelize.TEXT,
-  }),
-  serviceCallbackUrl: sequelize.define('serviceCallbackUrl', {
-    serviceId: { type: Sequelize.STRING, primaryKey: true },
-    url: Sequelize.TEXT,
-  }),
-  dataResponseFromAS: sequelize.define('dataResponseFromAS', {
-    asResponseId: { type: Sequelize.STRING, primaryKey: true },
-    dataResponse: Sequelize.JSON,
-  }),
-  dataFromAS: sequelize.define('dataFromAS', {
-    requestId: Sequelize.STRING,
-    data: Sequelize.JSON,
-  }),
-  timeoutScheduler: sequelize.define('timeoutScheduler', {
-    requestId: Sequelize.STRING,
-    unixTimeout: Sequelize.INTEGER,
-  }),
-  callbackWithRetry: sequelize.define('callbackWithRetry', {
-    cbId: { type: Sequelize.STRING, primaryKey: true },
-    data: Sequelize.JSON,
-  }),
-  identityRequestIdMapping: sequelize.define('identityRequestIdMapping', {
-    requestId: { type: Sequelize.STRING, primaryKey: true },
-    identity: Sequelize.JSON,
-  }),
-  idpResponseValid: sequelize.define('idpResponseValid', {
-    requestId: Sequelize.STRING,
-    validInfo: Sequelize.JSON,
-  }),
-  expectedDataSignInBlock: sequelize.define('expectedDataSignInBlock', {
-    expectedBlockHeight: Sequelize.INTEGER,
-    metadata: Sequelize.JSON,
-  }),
-  duplicateMessageTimeout: sequelize.define('duplicateMessageTimeout', {
-    id: { type: Sequelize.STRING, primaryKey: true },
-    unixTimeout: Sequelize.INTEGER,
-  }),
-  expectedIdpPublicProofInBlock: sequelize.define(
+  );
+  Entities.expectedIdpPublicProofInBlock = sequelize.define(
     'expectedIdpPublicProofInBlock',
     {
       responseMetadata: Sequelize.JSON,
       expectedBlockHeight: Sequelize.INTEGER,
     }
-  ),
-  rpIdFromDataRequestId: sequelize.define('rpIdFromDataRequestId', {
-    dataRequestId: { type: Sequelize.STRING, primaryKey: true },
-    rpId: Sequelize.STRING,
-  }),
-  requestMessage: sequelize.define('requestMessage', {
+  );
+  Entities.dataFromAS = sequelize.define('dataFromAS', {
+    requestId: Sequelize.STRING,
+    data: Sequelize.JSON,
+  });
+  Entities.expectedDataSignInBlock = sequelize.define(
+    'expectedDataSignInBlock',
+    {
+      expectedBlockHeight: Sequelize.INTEGER,
+      metadata: Sequelize.JSON,
+    }
+  );
+  Entities.dataResponseFromAS = sequelize.define('dataResponseFromAS', {
+    asResponseId: { type: Sequelize.STRING, primaryKey: true },
+    dataResponse: Sequelize.JSON,
+  });
+}
+
+if (config.role === 'idp') {
+  Entities.requestToProcessReceivedFromMQ = sequelize.define(
+    'requestToProcessReceivedFromMQ',
+    {
+      requestId: { type: Sequelize.STRING, primaryKey: true },
+      request: Sequelize.JSON,
+    }
+  );
+  Entities.responseDataFromRequestId = sequelize.define(
+    'responseDataFromRequestId',
+    {
+      requestId: { type: Sequelize.STRING, primaryKey: true },
+      response: Sequelize.JSON,
+    }
+  );
+  Entities.rpIdFromRequestId = sequelize.define('rpIdFromRequestId', {
+    requestId: { type: Sequelize.STRING, primaryKey: true },
+    rp_id: Sequelize.STRING,
+  });
+  Entities.identityRequestIdMapping = sequelize.define(
+    'identityRequestIdMapping',
+    {
+      requestId: { type: Sequelize.STRING, primaryKey: true },
+      identity: Sequelize.JSON,
+    }
+  );
+  Entities.createIdentityDataReferenceIdMapping = sequelize.define(
+    'createIdentityDataReferenceIdMapping',
+    {
+      referenceId: { type: Sequelize.TEXT, primaryKey: true },
+      createIdentityData: { type: Sequelize.JSON },
+    }
+  );
+  Entities.requestMessage = sequelize.define('requestMessage', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     requestMessageAndSalt: Sequelize.JSON,
-  }),
-  initialSalt: sequelize.define('initialSalt', {
+  });
+}
+
+if (config.role === 'as') {
+  Entities.serviceCallbackUrl = sequelize.define('serviceCallbackUrl', {
+    serviceId: { type: Sequelize.STRING, primaryKey: true },
+    url: Sequelize.TEXT,
+  });
+  Entities.initialSalt = sequelize.define('initialSalt', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     initialSalt: Sequelize.STRING,
-  }),
-  rawReceivedMessageFromMQ: sequelize.define('rawReceivedMessageFromMQ', {
-    messageId: { type: Sequelize.STRING, primaryKey: true },
-    messageBuffer: Sequelize.BLOB,
-  }),
-};
+  });
+  Entities.rpIdFromDataRequestId = sequelize.define('rpIdFromDataRequestId', {
+    dataRequestId: { type: Sequelize.STRING, primaryKey: true },
+    rpId: Sequelize.STRING,
+  });
+}
 
 export const init = sequelize.sync();
 

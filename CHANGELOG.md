@@ -14,6 +14,7 @@ IMPROVEMENTS:
 
 - Prevent received message loss when external crypto service cannot be contacted (until callback timeout) or Tendermint is not yet ready by retrying processing later and persisting raw message buffer to cache DB and delete it after decryption and signature verification.
 - Process Tendermint missing block events after finish syncing without having to wait for the next block.
+- Create cache DB tables that are going to be used by role instead of creating all tables for all roles.
 
 ## 0.6.2 (August 5, 2018)
 
