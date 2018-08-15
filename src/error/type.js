@@ -379,6 +379,36 @@ export default {
     message: 'Request for this reference ID is in progress',
     clientError: true,
   },
+  EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE: {
+    code: 200046,
+    message: 'External service: Receive invalid signature',
+    clientError: true,
+  },
+  EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR: {
+    code: 200047,
+    message: 'External service: Cannot connect to external sign service or receive malform response',
+    clientError: true,
+  },
+  EXTERNAL_DECRYPT_TEST_FAILED_MESSAGE_MISMATCH: {
+    code: 200048,
+    message: 'External service: Receive mismatched message after decrypt',
+    clientError: true,
+  },
+  EXTERNAL_DECRYPT_TEST_FAILED_CONNECTIVITY_ERROR: {
+    code: 200049,
+    message: 'External service: Cannot connect to external decrypt service or receive malform response',
+    clientError: true,
+  },
+  EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE: {
+    code: 200050,
+    message: 'External service: Receive invalid signature for master',
+    clientError: true,
+  },
+  EXTERNAL_MASTER_SIGN_TEST_FAILED_CONNECTIVITY_ERROR: {
+    code: 200051,
+    message: 'External service: Cannot connect to external master sign service or receive malform response',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

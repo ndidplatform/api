@@ -77,7 +77,7 @@ export const eventEmitter = new EventEmitter();
   }
 });
 
-async function testSignCallback(url, publicKey) {
+async function testSignCallback(url, publicKey, isMaster) {
   const body = {
     node_id: config.nodeId,
     request_message: TEST_MESSAGE,
@@ -92,25 +92,51 @@ async function testSignCallback(url, publicKey) {
     publicKey,
     body,
   });
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-  const responseBody = await response.text();
-  logger.info({
-    message: 'Testing external sign with node key: response',
-    httpStatusCode: response.status,
-    body: responseBody,
-  });
-  const { signature } = JSON.parse(responseBody);
-  if (!verifySignature(signature, publicKey, TEST_MESSAGE)) {
-    throw new CustomError({
-      message: 'Invalid signature',
+
+  let response, responseBody, signature;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(body),
     });
+    responseBody = await response.text();
+    logger.info({
+      message: 'Testing external sign with node key: response',
+      httpStatusCode: response.status,
+      body: responseBody,
+    });
+    signature = JSON.parse(responseBody).signature;
+  } catch(error) {
+    throw {
+      errorObject: new CustomError({
+        code: (isMaster
+          ? errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code
+          : errorType.EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code),
+        message: (isMaster
+          ? errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code
+          : errorType.EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code),
+        cause: error,
+      }),
+      isCatched: true
+    };
+  }
+
+  if (!verifySignature(signature, publicKey, TEST_MESSAGE)) {
+    throw {
+      errorObject: new CustomError({
+        code: (isMaster
+          ? errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE.code
+          : errorType.EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE.code),
+        message: (isMaster
+          ? errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE.code
+          : errorType.EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE.code),
+      }),
+      isCatched: true
+    };
   }
 }
 
@@ -135,25 +161,43 @@ async function testDecryptCallback(url, publicKey) {
     publicKey,
     body,
   });
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-  const responseBody = await response.text();
-  logger.info({
-    message: 'Testing external decrypt with node key: response',
-    httpStatusCode: response.status,
-    body: responseBody,
-  });
-  const decryptedMessageBase64 = JSON.parse(responseBody).decrypted_message;
-  if (TEST_MESSAGE_BASE_64 !== decryptedMessageBase64) {
-    throw new CustomError({
-      message: 'Decrypted message mismatch',
+
+  let response, responseBody, decryptedMessageBase64;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(body),
     });
+    responseBody = await response.text();
+    logger.info({
+      message: 'Testing external decrypt with node key: response',
+      httpStatusCode: response.status,
+      body: responseBody,
+    });
+    decryptedMessageBase64 = JSON.parse(responseBody).decrypted_message;
+  } catch(error) {
+    throw {
+      errorObject: {
+        code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_CONNECTIVITY_ERROR.code,
+        message: errorType.EXTERNAL_DECRYPT_TEST_FAILED_CONNECTIVITY_ERROR.message,
+        cause: error,
+      },
+      isCatched: true,
+    };
+  }
+
+  if (TEST_MESSAGE_BASE_64 !== decryptedMessageBase64) {
+    throw {
+      errorObject: {
+        code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_MESSAGE_MISMATCH.code,
+        message: errorType.EXTERNAL_DECRYPT_TEST_FAILED_MESSAGE_MISMATCH.message,
+      },
+      isCatched: true,
+    };
   }
 }
 
@@ -190,6 +234,7 @@ export async function setDpkiCallback({
       }
       await testSignCallback(signCallbackUrl, public_key);
     } catch (error) {
+      if(error.isCatched) throw error.errorObject;
       throw new CustomError({
         message: errorType.EXTERNAL_SIGN_TEST_FAILED.message,
         code: errorType.EXTERNAL_SIGN_TEST_FAILED.code,
@@ -216,8 +261,9 @@ export async function setDpkiCallback({
       const { master_public_key } = await tendermintNdid.getNodeMasterPubKey(
         config.nodeId
       );
-      await testSignCallback(masterSignCallbackUrl, master_public_key);
+      await testSignCallback(masterSignCallbackUrl, master_public_key, true);
     } catch (error) {
+      if(error.isCatched) throw error.errorObject;
       throw new CustomError({
         message: errorType.EXTERNAL_SIGN_MASTER_TEST_FAILED.message,
         code: errorType.EXTERNAL_SIGN_MASTER_TEST_FAILED.code,
@@ -247,6 +293,7 @@ export async function setDpkiCallback({
       }
       await testDecryptCallback(decryptCallbackUrl, public_key);
     } catch (error) {
+      if(error.isCatched) throw error.errorObject;
       throw new CustomError({
         message: errorType.EXTERNAL_DECRYPT_TEST_FAILED.message,
         code: errorType.EXTERNAL_DECRYPT_TEST_FAILED.code,
