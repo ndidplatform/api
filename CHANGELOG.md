@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+IMPROVEMENTS:
+
+- Differentiate external crypto service test errors when setting DPKI callbacks by separating into multiple error types.
+
 ## 0.7.0 (August 15, 2018)
 
 BREAKING CHANGES:
