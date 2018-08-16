@@ -109,34 +109,55 @@ async function testSignCallback(url, publicKey, isMaster) {
       httpStatusCode: response.status,
       body: responseBody,
     });
-    signature = JSON.parse(responseBody).signature;
-  } catch(error) {
-    throw {
-      errorObject: new CustomError({
-        code: (isMaster
-          ? errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code
-          : errorType.EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code),
-        message: (isMaster
-          ? errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code
-          : errorType.EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code),
+  } catch (error) {
+    if (isMaster) {
+      throw new CustomError({
+        code:
+          errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code,
+        message:
+          errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.message,
         cause: error,
-      }),
-      isCatched: true
-    };
+      });
+    } else {
+      throw new CustomError({
+        code: errorType.EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code,
+        message: errorType.EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.message,
+        cause: error,
+      });
+    }
+  }
+
+  try {
+    signature = JSON.parse(responseBody).signature;
+  } catch (error) {
+    if (isMaster) {
+      throw new CustomError({
+        code:
+          errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_JSON_PARSING_ERROR.code,
+        message:
+          errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_JSON_PARSING_ERROR.message,
+      });
+    } else {
+      throw new CustomError({
+        code: errorType.EXTERNAL_SIGN_TEST_FAILED_JSON_PARSING_ERROR.code,
+        message: errorType.EXTERNAL_SIGN_TEST_FAILED_JSON_PARSING_ERROR.message,
+      });
+    }
   }
 
   if (!verifySignature(signature, publicKey, TEST_MESSAGE)) {
-    throw {
-      errorObject: new CustomError({
-        code: (isMaster
-          ? errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE.code
-          : errorType.EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE.code),
-        message: (isMaster
-          ? errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE.code
-          : errorType.EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE.code),
-      }),
-      isCatched: true
-    };
+    if (isMaster) {
+      throw new CustomError({
+        code: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE.code,
+        message:
+          errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE.message,
+      });
+    } else {
+      throw new CustomError({
+        code: errorType.EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE.code,
+        message: errorType.EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE.message,
+      });
+    }
   }
 }
 
@@ -178,26 +199,31 @@ async function testDecryptCallback(url, publicKey) {
       httpStatusCode: response.status,
       body: responseBody,
     });
+  } catch (error) {
+    throw new CustomError({
+      code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_CONNECTIVITY_ERROR.code,
+      message:
+        errorType.EXTERNAL_DECRYPT_TEST_FAILED_CONNECTIVITY_ERROR.message,
+      cause: error,
+    });
+  }
+
+  try {
     decryptedMessageBase64 = JSON.parse(responseBody).decrypted_message;
-  } catch(error) {
-    throw {
-      errorObject: {
-        code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_CONNECTIVITY_ERROR.code,
-        message: errorType.EXTERNAL_DECRYPT_TEST_FAILED_CONNECTIVITY_ERROR.message,
-        cause: error,
-      },
-      isCatched: true,
-    };
+  } catch (error) {
+    throw new CustomError({
+      code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_JSON_PARSING_ERROR.code,
+      message:
+        errorType.EXTERNAL_DECRYPT_TEST_FAILED_JSON_PARSING_ERROR.message,
+      cause: error,
+    });
   }
 
   if (TEST_MESSAGE_BASE_64 !== decryptedMessageBase64) {
-    throw {
-      errorObject: {
-        code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_MESSAGE_MISMATCH.code,
-        message: errorType.EXTERNAL_DECRYPT_TEST_FAILED_MESSAGE_MISMATCH.message,
-      },
-      isCatched: true,
-    };
+    throw new CustomError({
+      code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_MESSAGE_MISMATCH.code,
+      message: errorType.EXTERNAL_DECRYPT_TEST_FAILED_MESSAGE_MISMATCH.message,
+    });
   }
 }
 
@@ -227,20 +253,17 @@ export async function setDpkiCallback({
   let public_key;
 
   if (signCallbackUrl) {
-    try {
-      if (public_key == null) {
-        public_key = (await tendermintNdid.getNodePubKey(config.nodeId))
-          .public_key;
+    if (public_key == null) {
+      const publicKeyObj = await tendermintNdid.getNodePubKey(config.nodeId);
+      if (publicKeyObj == null) {
+        throw new CustomError({
+          message: errorType.EXTERNAL_SIGN_TEST_FAILED_NO_PUB_KEY.message,
+          code: errorType.EXTERNAL_SIGN_TEST_FAILED_NO_PUB_KEY.code,
+        });
       }
-      await testSignCallback(signCallbackUrl, public_key);
-    } catch (error) {
-      if(error.isCatched) throw error.errorObject;
-      throw new CustomError({
-        message: errorType.EXTERNAL_SIGN_TEST_FAILED.message,
-        code: errorType.EXTERNAL_SIGN_TEST_FAILED.code,
-        cause: error,
-      });
+      public_key = publicKeyObj.public_key;
     }
+    await testSignCallback(signCallbackUrl, public_key);
 
     callbackUrls.sign_url = signCallbackUrl;
     fs.writeFile(
@@ -257,19 +280,17 @@ export async function setDpkiCallback({
     );
   }
   if (masterSignCallbackUrl) {
-    try {
-      const { master_public_key } = await tendermintNdid.getNodeMasterPubKey(
-        config.nodeId
-      );
-      await testSignCallback(masterSignCallbackUrl, master_public_key, true);
-    } catch (error) {
-      if(error.isCatched) throw error.errorObject;
+    const masterPublicKeyObj = await tendermintNdid.getNodeMasterPubKey(
+      config.nodeId
+    );
+    if (masterPublicKeyObj == null) {
       throw new CustomError({
-        message: errorType.EXTERNAL_SIGN_MASTER_TEST_FAILED.message,
-        code: errorType.EXTERNAL_SIGN_MASTER_TEST_FAILED.code,
-        cause: error,
+        message: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_NO_PUB_KEY.message,
+        code: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_NO_PUB_KEY.code,
       });
     }
+    const master_public_key = masterPublicKeyObj.master_public_key;
+    await testSignCallback(masterSignCallbackUrl, master_public_key, true);
 
     callbackUrls.master_sign_url = masterSignCallbackUrl;
     fs.writeFile(
@@ -286,20 +307,17 @@ export async function setDpkiCallback({
     );
   }
   if (decryptCallbackUrl) {
-    try {
-      if (public_key == null) {
-        public_key = (await tendermintNdid.getNodePubKey(config.nodeId))
-          .public_key;
+    if (public_key == null) {
+      const publicKeyObj = await tendermintNdid.getNodePubKey(config.nodeId);
+      if (publicKeyObj == null) {
+        throw new CustomError({
+          message: errorType.EXTERNAL_DECRYPT_TEST_FAILED_NO_PUB_KEY.message,
+          code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_NO_PUB_KEY.code,
+        });
       }
-      await testDecryptCallback(decryptCallbackUrl, public_key);
-    } catch (error) {
-      if(error.isCatched) throw error.errorObject;
-      throw new CustomError({
-        message: errorType.EXTERNAL_DECRYPT_TEST_FAILED.message,
-        code: errorType.EXTERNAL_DECRYPT_TEST_FAILED.code,
-        cause: error,
-      });
+      public_key = publicKeyObj.public_key;
     }
+    await testDecryptCallback(decryptCallbackUrl, public_key);
 
     callbackUrls.decrypt_url = decryptCallbackUrl;
     fs.writeFile(

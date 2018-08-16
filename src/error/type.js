@@ -181,19 +181,22 @@ export default {
     message: 'Unable to parse body',
     clientError: true,
   },
-  EXTERNAL_SIGN_TEST_FAILED: {
+  EXTERNAL_SIGN_TEST_FAILED_NO_PUB_KEY: {
     code: 20008,
-    message: 'External service: Sign with node key test failed',
+    message:
+      'External service: Sign with node key test failed. Node public key could not be found. This node may have not been registered with NDID.',
     clientError: true,
   },
-  EXTERNAL_SIGN_MASTER_TEST_FAILED: {
+  EXTERNAL_MASTER_SIGN_TEST_FAILED_NO_PUB_KEY: {
     code: 20009,
-    message: 'External service: Sign with node master key test failed',
+    message:
+      'External service: Sign with node master key test failed. Node master public key could not be found. This node may have not been registered with NDID.',
     clientError: true,
   },
-  EXTERNAL_DECRYPT_TEST_FAILED: {
+  EXTERNAL_DECRYPT_TEST_FAILED_NO_PUB_KEY: {
     code: 20010,
-    message: 'External service: Decrypt with node key test failed',
+    message:
+      'External service: Decrypt with node key test failed. Node public key could not be found. This node may have not been registered with NDID.',
     clientError: true,
   },
   ACCESSOR_PUBLIC_KEY_NOT_FOUND: {
@@ -379,34 +382,52 @@ export default {
     message: 'Request for this reference ID is in progress',
     clientError: true,
   },
-  EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE: {
-    code: 200046,
-    message: 'External service: Receive invalid signature',
-    clientError: true,
-  },
-  EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR: {
-    code: 200047,
-    message: 'External service: Cannot connect to external sign service or receive malform response',
-    clientError: true,
-  },
   EXTERNAL_DECRYPT_TEST_FAILED_MESSAGE_MISMATCH: {
-    code: 200048,
+    code: 20046,
     message: 'External service: Receive mismatched message after decrypt',
     clientError: true,
   },
   EXTERNAL_DECRYPT_TEST_FAILED_CONNECTIVITY_ERROR: {
-    code: 200049,
-    message: 'External service: Cannot connect to external decrypt service or receive malform response',
+    code: 20047,
+    message:
+      'External service: Cannot connect to external decrypt service or receive malform response',
+    clientError: true,
+  },
+  EXTERNAL_DECRYPT_TEST_FAILED_JSON_PARSING_ERROR: {
+    code: 20048,
+    message: 'External service: Cannot parse JSON response',
+    clientError: true,
+  },
+  EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE: {
+    code: 20049,
+    message: 'External service: Receive invalid signature',
+    clientError: true,
+  },
+  EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR: {
+    code: 20050,
+    message:
+      'External service: Cannot connect to external sign service or receive malform response',
+    clientError: true,
+  },
+  EXTERNAL_SIGN_TEST_FAILED_JSON_PARSING_ERROR: {
+    code: 20051,
+    message: 'External service: Cannot parse JSON response',
     clientError: true,
   },
   EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE: {
-    code: 200050,
+    code: 20052,
     message: 'External service: Receive invalid signature for master',
     clientError: true,
   },
   EXTERNAL_MASTER_SIGN_TEST_FAILED_CONNECTIVITY_ERROR: {
-    code: 200051,
-    message: 'External service: Cannot connect to external master sign service or receive malform response',
+    code: 20053,
+    message:
+      'External service: Cannot connect to external master sign service or receive malform response',
+    clientError: true,
+  },
+  EXTERNAL_MASTER_SIGN_TEST_FAILED_JSON_PARSING_ERROR: {
+    code: 20054,
+    message: 'External service: Cannot parse JSON response',
     clientError: true,
   },
 
