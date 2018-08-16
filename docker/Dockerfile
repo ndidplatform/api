@@ -15,18 +15,25 @@ RUN apk del .build-deps
 
 
 FROM node:8-alpine
+LABEL maintainer="NDID IT Team <it@ndid.co.th>"
+ENV TERM=xterm-256color
+
+# Set umask to 027
+RUN umask 027 && echo "umask 0027" >> /etc/profile
 
 COPY --from=build /var/cache/apk /var/cache/apk
-RUN apk add --no-cache jq bash openssl curl
+RUN apk add --no-cache jq bash openssl curl && rm -rf /var/cache/apk
 
 COPY . /api
 COPY --from=build /tmp/api/node_modules /api/node_modules
 
-ENV TERM=xterm-256color
-
 WORKDIR /api
 
-RUN npm run build
-RUN npm prune --production
+RUN npm run build && npm prune --production
+
+# Change owner to nobodoy:nogroup and permission to 640
+RUN chown -R nobody:nogroup /api
+RUN chmod -R 640 /api
+RUN chmod -R 740 /api/docker/start-api.sh
 
 ENTRYPOINT [ "/api/docker/start-api.sh" ]
