@@ -116,12 +116,14 @@ async function testSignCallback(url, publicKey, isMaster) {
           errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code,
         message:
           errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.message,
+        clientError: true,
         cause: error,
       });
     } else {
       throw new CustomError({
         code: errorType.EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code,
         message: errorType.EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.message,
+        clientError: true,
         cause: error,
       });
     }
@@ -136,11 +138,13 @@ async function testSignCallback(url, publicKey, isMaster) {
           errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_JSON_PARSING_ERROR.code,
         message:
           errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_JSON_PARSING_ERROR.message,
+        clientError: true,
       });
     } else {
       throw new CustomError({
         code: errorType.EXTERNAL_SIGN_TEST_FAILED_JSON_PARSING_ERROR.code,
         message: errorType.EXTERNAL_SIGN_TEST_FAILED_JSON_PARSING_ERROR.message,
+        clientError: true,
       });
     }
   }
@@ -151,11 +155,13 @@ async function testSignCallback(url, publicKey, isMaster) {
         code: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE.code,
         message:
           errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE.message,
+        clientError: true,
       });
     } else {
       throw new CustomError({
         code: errorType.EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE.code,
         message: errorType.EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE.message,
+        clientError: true,
       });
     }
   }
@@ -204,6 +210,7 @@ async function testDecryptCallback(url, publicKey) {
       code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_CONNECTIVITY_ERROR.code,
       message:
         errorType.EXTERNAL_DECRYPT_TEST_FAILED_CONNECTIVITY_ERROR.message,
+      clientError: true,
       cause: error,
     });
   }
@@ -215,6 +222,7 @@ async function testDecryptCallback(url, publicKey) {
       code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_JSON_PARSING_ERROR.code,
       message:
         errorType.EXTERNAL_DECRYPT_TEST_FAILED_JSON_PARSING_ERROR.message,
+      clientError: true,
       cause: error,
     });
   }
@@ -223,6 +231,7 @@ async function testDecryptCallback(url, publicKey) {
     throw new CustomError({
       code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_MESSAGE_MISMATCH.code,
       message: errorType.EXTERNAL_DECRYPT_TEST_FAILED_MESSAGE_MISMATCH.message,
+      clientError: true,
     });
   }
 }
@@ -259,6 +268,7 @@ export async function setDpkiCallback({
         throw new CustomError({
           message: errorType.EXTERNAL_SIGN_TEST_FAILED_NO_PUB_KEY.message,
           code: errorType.EXTERNAL_SIGN_TEST_FAILED_NO_PUB_KEY.code,
+          clientError: true,
         });
       }
       public_key = publicKeyObj.public_key;
@@ -287,6 +297,7 @@ export async function setDpkiCallback({
       throw new CustomError({
         message: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_NO_PUB_KEY.message,
         code: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_NO_PUB_KEY.code,
+        clientError: true,
       });
     }
     const master_public_key = masterPublicKeyObj.master_public_key;
@@ -313,6 +324,7 @@ export async function setDpkiCallback({
         throw new CustomError({
           message: errorType.EXTERNAL_DECRYPT_TEST_FAILED_NO_PUB_KEY.message,
           code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_NO_PUB_KEY.code,
+          clientError: true,
         });
       }
       public_key = publicKeyObj.public_key;
