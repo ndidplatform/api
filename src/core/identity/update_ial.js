@@ -53,9 +53,7 @@ export async function updateIal(
     // check for created identity
     if (!checkAssociated({ namespace, identifier })) {
       throw new CustomError({
-        message: errorType.IDENTITY_NOT_FOUND.message,
-        code: errorType.IDENTITY_NOT_FOUND.code,
-        clientError: true,
+        errorType: errorType.IDENTITY_NOT_FOUND,
         details: {
           namespace,
           identifier,
@@ -68,9 +66,7 @@ export async function updateIal(
     let { max_ial } = await tendermintNdid.getNodeInfo(config.nodeId);
     if (ial > max_ial) {
       throw new CustomError({
-        message: errorType.MAXIMUM_IAL_EXCEED.message,
-        code: errorType.MAXIMUM_IAL_EXCEED.code,
-        clientError: true,
+        errorType: errorType.MAXIMUM_IAL_EXCEED,
         details: {
           namespace,
           identifier,

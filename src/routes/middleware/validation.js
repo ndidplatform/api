@@ -81,9 +81,7 @@ export function validateQuery(req, res, next) {
   if (!queryValidationResult.valid) {
     next(
       new CustomError({
-        message: errorType.QUERY_STRING_VALIDATION_FAILED.message,
-        code: errorType.QUERY_STRING_VALIDATION_FAILED.code,
-        clientError: true,
+        errorType: errorType.QUERY_STRING_VALIDATION_FAILED,
         details: queryValidationResult,
       })
     );
@@ -104,9 +102,7 @@ export function validateBody(req, res, next) {
   if (!bodyValidationResult.valid) {
     next(
       new CustomError({
-        message: errorType.BODY_VALIDATION_FAILED.message,
-        code: errorType.BODY_VALIDATION_FAILED.code,
-        clientError: true,
+        errorType: errorType.BODY_VALIDATION_FAILED,
         details: bodyValidationResult,
       })
     );

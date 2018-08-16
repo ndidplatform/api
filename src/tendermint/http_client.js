@@ -69,8 +69,7 @@ async function httpUriCall(method, params) {
     return responseJson.result;
   } catch (error) {
     throw new CustomError({
-      message: errorType.TENDERMINT_HTTP_CALL_ERROR.message,
-      code: errorType.TENDERMINT_HTTP_CALL_ERROR.code,
+      errorType: errorType.TENDERMINT_HTTP_CALL_ERROR,
       details: {
         uri,
       },

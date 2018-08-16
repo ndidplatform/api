@@ -379,8 +379,7 @@ function getQueryResult(result) {
 
   if (result.response.value == null) {
     throw new CustomError({
-      message: errorType.TENDERMINT_QUERY_ERROR.message,
-      code: errorType.TENDERMINT_QUERY_ERROR.code,
+      errorType: errorType.TENDERMINT_QUERY_ERROR,
       details: result,
     });
   }
@@ -390,8 +389,7 @@ function getQueryResult(result) {
     return JSON.parse(queryResult);
   } catch (error) {
     throw new CustomError({
-      message: errorType.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR.message,
-      code: errorType.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR.code,
+      errorType: errorType.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR,
       cause: error,
     });
   }
@@ -420,9 +418,7 @@ function getTransactResultFromTx(result, fromEvent) {
       if (convertedErrorType != null) {
         return {
           error: new CustomError({
-            message: convertedErrorType.message,
-            code: convertedErrorType.code,
-            clientError: convertedErrorType.clientError,
+            errorType: convertedErrorType,
             details: {
               abciCode: deliverTxResult.code,
               height,
@@ -433,8 +429,7 @@ function getTransactResultFromTx(result, fromEvent) {
     }
     return {
       error: new CustomError({
-        message: errorType.TENDERMINT_TRANSACT_ERROR.message,
-        code: errorType.TENDERMINT_TRANSACT_ERROR.code,
+        errorType: errorType.TENDERMINT_TRANSACT_ERROR,
         details: {
           abciCode: deliverTxResult.code,
           height,
@@ -457,17 +452,14 @@ function getBroadcastTxSyncResult(result) {
     const convertedErrorType = convertAbciAppCodeToErrorType(result.code);
     if (convertedErrorType != null) {
       throw new CustomError({
-        message: convertedErrorType.message,
-        code: convertedErrorType.code,
-        clientError: convertedErrorType.clientError,
+        errorType: convertedErrorType,
         details: {
           abciCode: result.code,
         },
       });
     } else {
       throw new CustomError({
-        message: errorType.TENDERMINT_TRANSACT_ERROR.message,
-        code: errorType.TENDERMINT_TRANSACT_ERROR.code,
+        errorType: errorType.TENDERMINT_TRANSACT_ERROR,
         details: {
           abciCode: result.code,
         },
@@ -495,9 +487,7 @@ function getBroadcastTxCommitResult(result) {
       );
       if (convertedErrorType != null) {
         throw new CustomError({
-          message: convertedErrorType.message,
-          code: convertedErrorType.code,
-          clientError: convertedErrorType.clientError,
+          errorType: convertedErrorType,
           details: {
             abciCode: result.deliver_tx.code,
             height,
@@ -506,8 +496,7 @@ function getBroadcastTxCommitResult(result) {
       }
     }
     throw new CustomError({
-      message: errorType.TENDERMINT_TRANSACT_ERROR.message,
-      code: errorType.TENDERMINT_TRANSACT_ERROR.code,
+      errorType: errorType.TENDERMINT_TRANSACT_ERROR,
       details: {
         abciCode: result.code,
         height,
@@ -538,8 +527,7 @@ export async function query(fnName, data, height) {
   } catch (error) {
     if (error.type === 'JSON-RPC ERROR') {
       throw new CustomError({
-        message: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR.message,
-        code: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR.code,
+        errorType: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR,
         details: error.error,
       });
     } else {
@@ -624,8 +612,7 @@ export async function transact(
     await cacheDb.removeExpectedTxMetadata(txHash);
     if (error.type === 'JSON-RPC ERROR') {
       throw new CustomError({
-        message: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR.message,
-        code: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR.code,
+        errorType: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
         details: error.error,
       });
     } else {

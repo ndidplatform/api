@@ -41,9 +41,7 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
     });
     if (request == null) {
       throw new CustomError({
-        message: errorType.REQUEST_NOT_FOUND.message,
-        code: errorType.REQUEST_NOT_FOUND.code,
-        clientError: true,
+        errorType: errorType.REQUEST_NOT_FOUND,
         details: {
           requestId: request_id,
         },
@@ -51,9 +49,7 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
     }
     if (request.closed) {
       throw new CustomError({
-        message: errorType.REQUEST_IS_CLOSED.message,
-        code: errorType.REQUEST_IS_CLOSED.code,
-        clientError: true,
+        errorType: errorType.REQUEST_IS_CLOSED,
         details: {
           requestId: request_id,
         },
@@ -61,9 +57,7 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
     }
     if (request.timed_out) {
       throw new CustomError({
-        message: errorType.REQUEST_IS_TIMED_OUT.message,
-        code: errorType.REQUEST_IS_TIMED_OUT.code,
-        clientError: true,
+        errorType: errorType.REQUEST_IS_TIMED_OUT,
         details: {
           requestId: request_id,
         },
@@ -73,18 +67,14 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
     const savedRpId = await cacheDb.getRPIdFromRequestId(request_id);
     if (!savedRpId) {
       throw new CustomError({
-        message: errorType.UNKNOWN_CONSENT_REQUEST.message,
-        code: errorType.UNKNOWN_CONSENT_REQUEST.code,
-        clientError: true,
+        errorType: errorType.UNKNOWN_CONSENT_REQUEST,
       });
     }
 
     if (request.mode === 3) {
       if (accessor_id == null) {
         throw new CustomError({
-          message: errorType.ACCESSOR_ID_NEEDED.message,
-          code: errorType.ACCESSOR_ID_NEEDED.code,
-          clientError: true,
+          errorType: errorType.ACCESSOR_ID_NEEDED,
         });
       }
 
@@ -93,9 +83,7 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
       );
       if (accessorPublicKey == null) {
         throw new CustomError({
-          message: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.message,
-          code: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND.code,
-          clientError: true,
+          errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND,
           details: {
             accessor_id,
           },
@@ -115,26 +103,20 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
       );
       if (!signatureValid) {
         throw new CustomError({
-          message: errorType.INVALID_ACCESSOR_SIGNATURE.message,
-          code: errorType.INVALID_ACCESSOR_SIGNATURE.code,
-          clientError: true,
+          errorType: errorType.INVALID_ACCESSOR_SIGNATURE,
         });
       }
 
       if (secret == null) {
         throw new CustomError({
-          message: errorType.SECRET_NEEDED.message,
-          code: errorType.SECRET_NEEDED.code,
-          clientError: true,
+          errorType: errorType.SECRET_NEEDED,
         });
       }
       // Check secret format
       const [padding, signedHash] = secret.split('|');
       if (padding == null || signedHash == null) {
         throw new CustomError({
-          message: errorType.MALFORMED_SECRET_FORMAT.message,
-          code: errorType.MALFORMED_SECRET_FORMAT.code,
-          clientError: true,
+          errorType: errorType.MALFORMED_SECRET_FORMAT,
         });
       }
       await cacheDb.setResponseFromRequestId(request_id, createResponseParams);
@@ -364,8 +346,7 @@ async function requestChallenge({
   const request = await cacheDb.getRequestReceivedFromMQ(request_id);
   if (!request) {
     throw new CustomError({
-      message: errorType.NO_INCOMING_REQUEST.message,
-      code: errorType.NO_INCOMING_REQUEST.code,
+      errorType: errorType.NO_INCOMING_REQUEST,
       details: {
         request_id,
       },
@@ -416,8 +397,7 @@ export async function requestChallengeAfterBlockchain(
     const mqAddress = await tendermintNdid.getMsqAddress(rp_id);
     if (mqAddress == null) {
       throw new CustomError({
-        message: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.message,
-        code: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.code,
+        errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
         details: {
           request_id,
           accessor_id,
@@ -478,8 +458,7 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   const mqAddress = await tendermintNdid.getMsqAddress(rp_id);
   if (mqAddress == null) {
     throw new CustomError({
-      message: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.message,
-      code: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.code,
+      errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
       details: {
         request_id,
         privateProofObject,

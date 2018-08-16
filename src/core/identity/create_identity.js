@@ -87,9 +87,7 @@ export async function createIdentity(
     );
     if (createIdentityData) {
       throw new CustomError({
-        message: errorType.DUPLICATE_REFERENCE_ID.message,
-        code: errorType.DUPLICATE_REFERENCE_ID.code,
-        clientError: true,
+        errorType: errorType.DUPLICATE_REFERENCE_ID,
       });
     }
 
@@ -101,9 +99,7 @@ export async function createIdentity(
     );
     if (!valid) {
       throw new CustomError({
-        message: errorType.INVALID_NAMESPACE.message,
-        code: errorType.INVALID_NAMESPACE.code,
-        clientError: true,
+        errorType: errorType.INVALID_NAMESPACE,
         details: {
           namespace,
         },
@@ -117,9 +113,7 @@ export async function createIdentity(
     //already created identity for this user
     if (!addAccessor && associated) {
       throw new CustomError({
-        message: errorType.IDENTITY_ALREADY_CREATED.message,
-        code: errorType.IDENTITY_ALREADY_CREATED.code,
-        clientError: true,
+        errorType: errorType.IDENTITY_ALREADY_CREATED,
         details: {
           namespace,
           identifier,
@@ -131,9 +125,7 @@ export async function createIdentity(
     let { max_ial } = await tendermintNdid.getNodeInfo(config.nodeId);
     if (ial > max_ial) {
       throw new CustomError({
-        message: errorType.MAXIMUM_IAL_EXCEED.message,
-        code: errorType.MAXIMUM_IAL_EXCEED.code,
-        clientError: true,
+        errorType: errorType.MAXIMUM_IAL_EXCEED,
         details: {
           namespace,
           identifier,
@@ -145,8 +137,7 @@ export async function createIdentity(
 
     if (!isAccessorSignUrlSet()) {
       throw new CustomError({
-        message: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.message,
-        code: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.code,
+        errorType: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET,
       });
     }
 
@@ -155,9 +146,7 @@ export async function createIdentity(
     );
     if (checkDuplicateAccessorId != null) {
       throw new CustomError({
-        message: errorType.DUPLICATE_ACCESSOR_ID.message,
-        code: errorType.DUPLICATE_ACCESSOR_ID.code,
-        clientError: true,
+        errorType: errorType.DUPLICATE_ACCESSOR_ID,
         details: {
           accessor_id,
         },

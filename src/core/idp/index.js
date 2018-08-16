@@ -142,8 +142,7 @@ export async function accessorSign({
 
   if (callbackUrls.accessor_sign_url == null) {
     throw new CustomError({
-      message: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.message,
-      code: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET.code,
+      errorType: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET,
     });
   }
 
@@ -178,16 +177,13 @@ export async function accessorSign({
     const signature = signatureObj.signature;
     if (!verifySignature(signature, accessor_public_key, sid)) {
       throw new CustomError({
-        message: errorType.INVALID_ACCESSOR_SIGNATURE.message,
-        code: errorType.INVALID_ACCESSOR_SIGNATURE.code,
-        clientError: true,
+        errorType: errorType.INVALID_ACCESSOR_SIGNATURE,
       });
     }
     return signature;
   } catch (error) {
     throw new CustomError({
-      message: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED.message,
-      code: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED.code,
+      errorType: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED,
       cause: error,
       details: {
         callbackUrl: callbackUrls.accessor_sign_url,
@@ -293,8 +289,7 @@ export async function processMessage(message) {
     );
     if (!valid) {
       throw new CustomError({
-        message: errorType.REQUEST_INTEGRITY_CHECK_FAILED.message,
-        code: errorType.REQUEST_INTEGRITY_CHECK_FAILED.code,
+        errorType: errorType.REQUEST_INTEGRITY_CHECK_FAILED,
         details: {
           requestId: message.request_id,
         },
@@ -419,8 +414,7 @@ async function checkCreateIdentityResponse(message) {
       !responseValid.valid_ial
     ) {
       throw new CustomError({
-        message: errorType.INVALID_RESPONSE.message,
-        code: errorType.INVALID_RESPONSE.code,
+        errorType: errorType.INVALID_RESPONSE,
       });
     }
 
@@ -428,8 +422,7 @@ async function checkCreateIdentityResponse(message) {
 
     if (response.status !== 'accept') {
       throw new CustomError({
-        message: errorType.USER_REJECTED.message,
-        code: errorType.USER_REJECTED.code,
+        errorType: errorType.USER_REJECTED,
       });
     }
 

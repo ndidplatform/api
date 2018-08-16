@@ -92,9 +92,7 @@ export async function createRequest(
     const requestId = await cacheDb.getRequestIdByReferenceId(reference_id);
     if (requestId) {
       throw new CustomError({
-        message: errorType.DUPLICATE_REFERENCE_ID.message,
-        code: errorType.DUPLICATE_REFERENCE_ID.code,
-        clientError: true,
+        errorType: errorType.DUPLICATE_REFERENCE_ID,
       });
     }
 
@@ -104,9 +102,7 @@ export async function createRequest(
       idp_id_list.length < min_idp
     ) {
       throw new CustomError({
-        message: errorType.IDP_LIST_LESS_THAN_MIN_IDP.message,
-        code: errorType.IDP_LIST_LESS_THAN_MIN_IDP.code,
-        clientError: true,
+        errorType: errorType.IDP_LIST_LESS_THAN_MIN_IDP,
         details: {
           namespace,
           identifier,
@@ -118,9 +114,7 @@ export async function createRequest(
 
     if (mode === 1 && (idp_id_list == null || idp_id_list.length === 0)) {
       throw new CustomError({
-        message: errorType.IDP_ID_LIST_NEEDED.message,
-        code: errorType.IDP_ID_LIST_NEEDED.code,
-        clientError: true,
+        errorType: errorType.IDP_ID_LIST_NEEDED,
       });
     }
 
@@ -131,9 +125,7 @@ export async function createRequest(
 
         if (serviceIds.includes(service_id)) {
           throw new CustomError({
-            message: errorType.DUPLICATE_SERVICE_ID.message,
-            code: errorType.DUPLICATE_SERVICE_ID.code,
-            clientError: true,
+            errorType: errorType.DUPLICATE_SERVICE_ID,
             details: {
               index: i,
               service_id,
@@ -149,9 +141,7 @@ export async function createRequest(
         if (as_id_list != null && as_id_list.length > 0) {
           if (as_id_list.length < min_as) {
             throw new CustomError({
-              message: errorType.AS_LIST_LESS_THAN_MIN_AS.message,
-              code: errorType.AS_LIST_LESS_THAN_MIN_AS.code,
-              clientError: true,
+              errorType: errorType.AS_LIST_LESS_THAN_MIN_AS,
               details: {
                 service_id,
                 as_id_list,
@@ -162,9 +152,7 @@ export async function createRequest(
 
           if (potential_as_list.length < min_as) {
             throw new CustomError({
-              message: errorType.NOT_ENOUGH_AS.message,
-              code: errorType.NOT_ENOUGH_AS.code,
-              clientError: true,
+              errorType: errorType.NOT_ENOUGH_AS,
               details: {
                 service_id,
                 potential_as_list,
@@ -180,9 +168,7 @@ export async function createRequest(
 
           if (potential_as_list.length !== as_id_list.length) {
             throw new CustomError({
-              message: errorType.SOME_AS_DO_NOT_PROVIDE_SERVICE.message,
-              code: errorType.SOME_AS_DO_NOT_PROVIDE_SERVICE.code,
-              clientError: true,
+              errorType: errorType.SOME_AS_DO_NOT_PROVIDE_SERVICE,
             });
           }
         }
@@ -193,9 +179,7 @@ export async function createRequest(
 
         if (potential_as_list.length < min_as) {
           throw new CustomError({
-            message: errorType.CONDITION_TOO_LOW.message,
-            code: errorType.CONDITION_TOO_LOW.code,
-            clientError: true,
+            errorType: errorType.CONDITION_TOO_LOW,
             details: {
               service_id,
               min_ial,
@@ -218,9 +202,7 @@ export async function createRequest(
 
     if (receivers.length === 0 && min_idp !== 0) {
       throw new CustomError({
-        message: errorType.NO_IDP_FOUND.message,
-        code: errorType.NO_IDP_FOUND.code,
-        clientError: true,
+        errorType: errorType.NO_IDP_FOUND,
         details: {
           namespace,
           identifier,
@@ -231,9 +213,7 @@ export async function createRequest(
 
     if (receivers.length < min_idp) {
       throw new CustomError({
-        message: errorType.NOT_ENOUGH_IDP.message,
-        code: errorType.NOT_ENOUGH_IDP.code,
-        clientError: true,
+        errorType: errorType.NOT_ENOUGH_IDP,
         details: {
           namespace,
           identifier,

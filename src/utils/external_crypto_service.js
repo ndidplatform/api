@@ -112,18 +112,13 @@ async function testSignCallback(url, publicKey, isMaster) {
   } catch (error) {
     if (isMaster) {
       throw new CustomError({
-        code:
-          errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code,
-        message:
-          errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.message,
-        clientError: true,
+        errorType:
+          errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_CONNECTIVITY_ERROR,
         cause: error,
       });
     } else {
       throw new CustomError({
-        code: errorType.EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.code,
-        message: errorType.EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR.message,
-        clientError: true,
+        errorType: errorType.EXTERNAL_SIGN_TEST_FAILED_CONNECTIVITY_ERROR,
         cause: error,
       });
     }
@@ -134,17 +129,12 @@ async function testSignCallback(url, publicKey, isMaster) {
   } catch (error) {
     if (isMaster) {
       throw new CustomError({
-        code:
-          errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_JSON_PARSING_ERROR.code,
-        message:
-          errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_JSON_PARSING_ERROR.message,
-        clientError: true,
+        errorType:
+          errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_JSON_PARSING_ERROR,
       });
     } else {
       throw new CustomError({
-        code: errorType.EXTERNAL_SIGN_TEST_FAILED_JSON_PARSING_ERROR.code,
-        message: errorType.EXTERNAL_SIGN_TEST_FAILED_JSON_PARSING_ERROR.message,
-        clientError: true,
+        errorType: errorType.EXTERNAL_SIGN_TEST_FAILED_JSON_PARSING_ERROR,
       });
     }
   }
@@ -152,16 +142,11 @@ async function testSignCallback(url, publicKey, isMaster) {
   if (!verifySignature(signature, publicKey, TEST_MESSAGE)) {
     if (isMaster) {
       throw new CustomError({
-        code: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE.code,
-        message:
-          errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE.message,
-        clientError: true,
+        errorType: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE,
       });
     } else {
       throw new CustomError({
-        code: errorType.EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE.code,
-        message: errorType.EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE.message,
-        clientError: true,
+        errorType: errorType.EXTERNAL_SIGN_TEST_FAILED_INVALID_SIGNATURE,
       });
     }
   }
@@ -207,10 +192,7 @@ async function testDecryptCallback(url, publicKey) {
     });
   } catch (error) {
     throw new CustomError({
-      code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_CONNECTIVITY_ERROR.code,
-      message:
-        errorType.EXTERNAL_DECRYPT_TEST_FAILED_CONNECTIVITY_ERROR.message,
-      clientError: true,
+      errorType: errorType.EXTERNAL_DECRYPT_TEST_FAILED_CONNECTIVITY_ERROR,
       cause: error,
     });
   }
@@ -219,19 +201,14 @@ async function testDecryptCallback(url, publicKey) {
     decryptedMessageBase64 = JSON.parse(responseBody).decrypted_message;
   } catch (error) {
     throw new CustomError({
-      code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_JSON_PARSING_ERROR.code,
-      message:
-        errorType.EXTERNAL_DECRYPT_TEST_FAILED_JSON_PARSING_ERROR.message,
-      clientError: true,
+      errorType: errorType.EXTERNAL_DECRYPT_TEST_FAILED_JSON_PARSING_ERROR,
       cause: error,
     });
   }
 
   if (TEST_MESSAGE_BASE_64 !== decryptedMessageBase64) {
     throw new CustomError({
-      code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_MESSAGE_MISMATCH.code,
-      message: errorType.EXTERNAL_DECRYPT_TEST_FAILED_MESSAGE_MISMATCH.message,
-      clientError: true,
+      errorType: errorType.EXTERNAL_DECRYPT_TEST_FAILED_MESSAGE_MISMATCH,
     });
   }
 }
@@ -266,9 +243,7 @@ export async function setDpkiCallback({
       const publicKeyObj = await tendermintNdid.getNodePubKey(config.nodeId);
       if (publicKeyObj == null) {
         throw new CustomError({
-          message: errorType.EXTERNAL_SIGN_TEST_FAILED_NO_PUB_KEY.message,
-          code: errorType.EXTERNAL_SIGN_TEST_FAILED_NO_PUB_KEY.code,
-          clientError: true,
+          errorType: errorType.EXTERNAL_SIGN_TEST_FAILED_NO_PUB_KEY,
         });
       }
       public_key = publicKeyObj.public_key;
@@ -295,9 +270,7 @@ export async function setDpkiCallback({
     );
     if (masterPublicKeyObj == null) {
       throw new CustomError({
-        message: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_NO_PUB_KEY.message,
-        code: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_NO_PUB_KEY.code,
-        clientError: true,
+        errorType: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_NO_PUB_KEY,
       });
     }
     const master_public_key = masterPublicKeyObj.master_public_key;
@@ -322,9 +295,7 @@ export async function setDpkiCallback({
       const publicKeyObj = await tendermintNdid.getNodePubKey(config.nodeId);
       if (publicKeyObj == null) {
         throw new CustomError({
-          message: errorType.EXTERNAL_DECRYPT_TEST_FAILED_NO_PUB_KEY.message,
-          code: errorType.EXTERNAL_DECRYPT_TEST_FAILED_NO_PUB_KEY.code,
-          clientError: true,
+          errorType: errorType.EXTERNAL_DECRYPT_TEST_FAILED_NO_PUB_KEY,
         });
       }
       public_key = publicKeyObj.public_key;
@@ -438,8 +409,7 @@ export async function decryptAsymetricKey(encryptedMessage) {
   const url = callbackUrls.decrypt_url;
   if (url == null) {
     throw new CustomError({
-      message: errorType.EXTERNAL_DECRYPT_URL_NOT_SET.message,
-      code: errorType.EXTERNAL_DECRYPT_URL_NOT_SET.code,
+      errorType: errorType.EXTERNAL_DECRYPT_URL_NOT_SET,
     });
   }
   const body = {
@@ -515,13 +485,11 @@ export async function createSignature(message, messageHash, useMasterKey) {
   if (url == null) {
     if (useMasterKey) {
       throw new CustomError({
-        message: errorType.EXTERNAL_SIGN_MASTER_URL_NOT_SET.message,
-        code: errorType.EXTERNAL_SIGN_MASTER_URL_NOT_SET.code,
+        errorType: errorType.EXTERNAL_SIGN_MASTER_URL_NOT_SET,
       });
     } else {
       throw new CustomError({
-        message: errorType.EXTERNAL_SIGN_URL_NOT_SET.message,
-        code: errorType.EXTERNAL_SIGN_URL_NOT_SET.code,
+        errorType: errorType.EXTERNAL_SIGN_URL_NOT_SET,
       });
     }
   }

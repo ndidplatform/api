@@ -71,9 +71,7 @@ export async function addAccessorMethodForAssociatedIdp(
 
   if (!associated) {
     throw new CustomError({
-      message: errorType.IDENTITY_NOT_FOUND.message,
-      code: errorType.IDENTITY_NOT_FOUND.code,
-      clientError: true,
+      errorType: errorType.IDENTITY_NOT_FOUND,
       details: {
         namespace,
         identifier,

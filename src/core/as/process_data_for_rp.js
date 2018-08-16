@@ -44,9 +44,7 @@ export async function processDataForRP(
     });
     if (requestDetail == null) {
       throw new CustomError({
-        message: errorType.REQUEST_NOT_FOUND.message,
-        code: errorType.REQUEST_NOT_FOUND.code,
-        clientError: true,
+        errorType: errorType.REQUEST_NOT_FOUND,
         details: {
           requestId,
         },
@@ -54,9 +52,7 @@ export async function processDataForRP(
     }
     if (requestDetail.closed) {
       throw new CustomError({
-        message: errorType.REQUEST_IS_CLOSED.message,
-        code: errorType.REQUEST_IS_CLOSED.code,
-        clientError: true,
+        errorType: errorType.REQUEST_IS_CLOSED,
         details: {
           requestId,
         },
@@ -64,9 +60,7 @@ export async function processDataForRP(
     }
     if (requestDetail.timed_out) {
       throw new CustomError({
-        message: errorType.REQUEST_IS_TIMED_OUT.message,
-        code: errorType.REQUEST_IS_TIMED_OUT.code,
-        clientError: true,
+        errorType: errorType.REQUEST_IS_TIMED_OUT,
         details: {
           requestId,
         },
@@ -79,9 +73,7 @@ export async function processDataForRP(
     );
     if (serviceIdInRequest == null) {
       throw new CustomError({
-        message: errorType.SERVICE_ID_NOT_FOUND_IN_REQUEST.message,
-        code: errorType.SERVICE_ID_NOT_FOUND_IN_REQUEST.code,
-        clientError: true,
+        errorType: errorType.SERVICE_ID_NOT_FOUND_IN_REQUEST,
       });
     }
 
@@ -90,9 +82,7 @@ export async function processDataForRP(
 
     if (!savedRpId) {
       throw new CustomError({
-        message: errorType.UNKNOWN_DATA_REQUEST.message,
-        code: errorType.UNKNOWN_DATA_REQUEST.code,
-        clientError: true,
+        errorType: errorType.UNKNOWN_DATA_REQUEST,
       });
     }
 
@@ -296,8 +286,7 @@ async function sendDataToRP(rpId, data) {
   const mqAddress = await tendermintNdid.getMsqAddress(nodeId);
   if (mqAddress == null) {
     throw new CustomError({
-      message: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.message,
-      code: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.code,
+      errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
       details: {
         request_id: data.request_id,
       },

@@ -23,7 +23,13 @@
 import type from './type';
 
 export default class CustomError extends Error {
-  constructor({ message, code, clientError, details, cause }) {
+  constructor({ message, code, clientError, errorType, details, cause }) {
+    if (errorType != null) {
+      message = errorType.message;
+      code = errorType.code;
+      clientError = errorType.clientError;
+    }
+
     super(message);
 
     Object.defineProperty(this, 'name', {
@@ -33,11 +39,11 @@ export default class CustomError extends Error {
     if (code != null) {
       this.code = code;
     }
-    if (details != null) {
-      this.details = details;
-    }
     if (clientError != null) {
       this.clientError = clientError;
+    }
+    if (details != null) {
+      this.details = details;
     }
 
     if (cause != null) {

@@ -52,8 +52,7 @@ export async function getList({ dbName, name, keyName, key, valueName }) {
     return models.map((model) => model.get(valueName));
   } catch (error) {
     throw new CustomError({
-      message: errorType.DB_ERROR.message,
-      code: errorType.DB_ERROR.code,
+      errorType: errorType.DB_ERROR,
       cause: error,
       details: { operation: 'getList', dbName, table: name },
     });
@@ -72,8 +71,7 @@ export async function count({ dbName, name, keyName, key }) {
     return count;
   } catch (error) {
     throw new CustomError({
-      message: errorType.DB_ERROR.message,
-      code: errorType.DB_ERROR.code,
+      errorType: errorType.DB_ERROR,
       cause: error,
       details: { operation: 'count', dbName, table: name },
     });
@@ -102,8 +100,7 @@ export async function getListRange({
     return models.map((model) => model.get(valueName));
   } catch (error) {
     throw new CustomError({
-      message: errorType.DB_ERROR.message,
-      code: errorType.DB_ERROR.code,
+      errorType: errorType.DB_ERROR,
       cause: error,
       details: { operation: 'getListRange', dbName, table: name },
     });
@@ -127,8 +124,7 @@ export async function pushToList({
     });
   } catch (error) {
     throw new CustomError({
-      message: errorType.DB_ERROR.message,
-      code: errorType.DB_ERROR.code,
+      errorType: errorType.DB_ERROR,
       cause: error,
       details: { operation: 'pushToList', dbName, table: name },
     });
@@ -156,8 +152,7 @@ export async function removeFromList({
     });
   } catch (error) {
     throw new CustomError({
-      message: errorType.DB_ERROR.message,
-      code: errorType.DB_ERROR.code,
+      errorType: errorType.DB_ERROR,
       cause: error,
       details: { operation: 'removeFromList', dbName, table: name },
     });
@@ -175,8 +170,7 @@ export async function removeList({ dbName, name, keyName, key }) {
     });
   } catch (error) {
     throw new CustomError({
-      message: errorType.DB_ERROR.message,
-      code: errorType.DB_ERROR.code,
+      errorType: errorType.DB_ERROR,
       cause: error,
       details: { operation: 'removeList', dbName, table: name },
     });
@@ -197,8 +191,7 @@ export async function removeListRange({ dbName, name, keyName, keyRange }) {
     });
   } catch (error) {
     throw new CustomError({
-      message: errorType.DB_ERROR.message,
-      code: errorType.DB_ERROR.code,
+      errorType: errorType.DB_ERROR,
       cause: error,
       details: { operation: 'removeListRange', dbName, table: name },
     });
@@ -214,8 +207,7 @@ export async function removeAllLists({ dbName, name }) {
     });
   } catch (error) {
     throw new CustomError({
-      message: errorType.DB_ERROR.message,
-      code: errorType.DB_ERROR.code,
+      errorType: errorType.DB_ERROR,
       cause: error,
       details: { operation: 'removeAllLists', dbName, table: name },
     });
@@ -235,8 +227,7 @@ export async function get({ dbName, name, keyName, key, valueName }) {
     return model != null ? model.get(valueName) : null;
   } catch (error) {
     throw new CustomError({
-      message: errorType.DB_ERROR.message,
-      code: errorType.DB_ERROR.code,
+      errorType: errorType.DB_ERROR,
       cause: error,
       details: { operation: 'get', dbName, table: name },
     });
@@ -253,8 +244,7 @@ export async function set({ dbName, name, keyName, key, valueName, value }) {
     });
   } catch (error) {
     throw new CustomError({
-      message: errorType.DB_ERROR.message,
-      code: errorType.DB_ERROR.code,
+      errorType: errorType.DB_ERROR,
       cause: error,
       details: { operation: 'set', dbName, table: name },
     });
@@ -272,8 +262,7 @@ export async function remove({ dbName, name, keyName, key }) {
     });
   } catch (error) {
     throw new CustomError({
-      message: errorType.DB_ERROR.message,
-      code: errorType.DB_ERROR.code,
+      errorType: errorType.DB_ERROR,
       cause: error,
       details: { operation: 'remove', dbName, table: name },
     });
@@ -292,8 +281,7 @@ export async function getAll({ dbName, name }) {
     return models.map((model) => model.get({ plain: true }));
   } catch (error) {
     throw new CustomError({
-      message: errorType.DB_ERROR.message,
-      code: errorType.DB_ERROR.code,
+      errorType: errorType.DB_ERROR,
       cause: error,
       details: { operation: 'getAll', dbName, table: name },
     });

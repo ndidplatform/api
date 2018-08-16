@@ -468,8 +468,7 @@ async function verifyZKProof({
       });
 
       throw new CustomError({
-        message: errorType.DIFFERENT_ACCESSOR_GROUP_ID.message,
-        code: errorType.DIFFERENT_ACCESSOR_GROUP_ID.code,
+        errorType: errorType.DIFFERENT_ACCESSOR_GROUP_ID,
         details: {
           accessorId: privateProofObject.accessor_id,
           accessor_group_id,
@@ -553,8 +552,7 @@ export async function handleChallengeRequest({
   const mqAddress = await tendermintNdid.getMsqAddress(idp_id);
   if (mqAddress == null) {
     throw new CustomError({
-      message: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.message,
-      code: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND.code,
+      errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
       details: {
         request_id,
       },

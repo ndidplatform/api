@@ -141,9 +141,7 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
     (rawMessageBuffer[1] !== 0 && rawMessageBuffer[1] !== 1)
   ) {
     throw new CustomError({
-      message: errorType.INVALID_CIPHER.message,
-      code: errorType.INVALID_CIPHER.code,
-      clientError: true,
+      errorType: errorType.INVALID_CIPHER,
     });
   }
   let padLength = 2;
@@ -180,9 +178,7 @@ export function generateIdentityProof(data) {
   let [padding, signedHash] = data.secret.split('|');
   if (padding == null || signedHash == null) {
     throw new CustomError({
-      message: errorType.MALFORMED_SECRET_FORMAT.message,
-      code: errorType.MALFORMED_SECRET_FORMAT.code,
-      clientError: true,
+      errorType: errorType.MALFORMED_SECRET_FORMAT,
     });
   }
   let { n, e } = extractParameterFromPublicKey(data.publicKey);
@@ -630,9 +626,7 @@ export function validateKey(key, keyType, passphrase) {
     });
   } catch (error) {
     throw new CustomError({
-      message: errorType.INVALID_KEY_FORMAT.message,
-      code: errorType.INVALID_KEY_FORMAT.code,
-      clientError: true,
+      errorType: errorType.INVALID_KEY_FORMAT,
       cause: error,
     });
   }
@@ -640,9 +634,7 @@ export function validateKey(key, keyType, passphrase) {
     if (keyType === 'RSA') {
       if (parsedKey.type !== 'rsa') {
         throw new CustomError({
-          message: errorType.MISMATCHED_KEY_TYPE.message,
-          code: errorType.MISMATCHED_KEY_TYPE.code,
-          clientError: true,
+          errorType: errorType.MISMATCHED_KEY_TYPE,
         });
       }
     }
@@ -650,9 +642,7 @@ export function validateKey(key, keyType, passphrase) {
     // Default to RSA type
     if (parsedKey.type !== 'rsa') {
       throw new CustomError({
-        message: errorType.UNSUPPORTED_KEY_TYPE.message,
-        code: errorType.UNSUPPORTED_KEY_TYPE.code,
-        clientError: true,
+        errorType: errorType.UNSUPPORTED_KEY_TYPE,
       });
     }
   }
@@ -663,9 +653,7 @@ export function validateKey(key, keyType, passphrase) {
       (parsedKey.privateKey && parsedKey.privateKey.modulus.bitLength() < 2048)
     ) {
       throw new CustomError({
-        message: errorType.RSA_KEY_LENGTH_TOO_SHORT.message,
-        code: errorType.RSA_KEY_LENGTH_TOO_SHORT.code,
-        clientError: true,
+        errorType: errorType.RSA_KEY_LENGTH_TOO_SHORT,
       });
     }
   }

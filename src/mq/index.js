@@ -134,8 +134,7 @@ async function processMessage(messageId, messageBuffer) {
       );
     } catch (error) {
       throw new CustomError({
-        message: errorType.DECRYPT_MESSAGE_ERROR.message,
-        code: errorType.DECRYPT_MESSAGE_ERROR.code,
+        errorType: errorType.DECRYPT_MESSAGE_ERROR,
         cause: error,
       });
     }
@@ -150,8 +149,7 @@ async function processMessage(messageId, messageBuffer) {
     const messageSignature = decodedDecryptedMessage.signature;
     if (messageStr == null || messageSignature == null) {
       throw new CustomError({
-        message: errorType.MALFORMED_MESSAGE_FORMAT.message,
-        code: errorType.MALFORMED_MESSAGE_FORMAT.code,
+        errorType: errorType.MALFORMED_MESSAGE_FORMAT,
       });
     }
 
@@ -165,8 +163,7 @@ async function processMessage(messageId, messageBuffer) {
     const nodeId = idp_id || rp_id || as_id;
     if (nodeId == null) {
       throw new CustomError({
-        message: errorType.MESSAGE_FROM_UNKNOWN_NODE.message,
-        code: errorType.MESSAGE_FROM_UNKNOWN_NODE.code,
+        errorType: errorType.MESSAGE_FROM_UNKNOWN_NODE,
       });
     }
     const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
@@ -190,8 +187,7 @@ async function processMessage(messageId, messageBuffer) {
       removeRawMessageFromCache(messageId);
     } else {
       throw new CustomError({
-        message: errorType.INVALID_MESSAGE_SIGNATURE.message,
-        code: errorType.INVALID_MESSAGE_SIGNATURE.code,
+        errorType: errorType.INVALID_MESSAGE_SIGNATURE,
       });
     }
   } catch (error) {

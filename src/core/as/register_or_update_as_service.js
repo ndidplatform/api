@@ -47,9 +47,7 @@ export async function registerOrUpdateASService(
     if (!isRegisterd) {
       if (!service_id || !min_aal || !min_ial || !url) {
         throw new CustomError({
-          message: errorType.MISSING_ARGUMENTS.message,
-          code: errorType.MISSING_ARGUMENTS.code,
-          clientError: true,
+          errorType: errorType.MISSING_ARGUMENTS,
         });
       }
     }

@@ -113,8 +113,7 @@ export async function processRequest(request) {
   );
   if (!requestMessageValid || !serviceDataRequestParamsValid) {
     throw new CustomError({
-      message: errorType.REQUEST_INTEGRITY_CHECK_FAILED.message,
-      code: errorType.REQUEST_INTEGRITY_CHECK_FAILED.code,
+      errorType: errorType.REQUEST_INTEGRITY_CHECK_FAILED,
       details: {
         requestId: request.request_id,
       },
@@ -126,8 +125,7 @@ export async function processRequest(request) {
   );
   if (!idpResponsesValid) {
     throw new CustomError({
-      message: errorType.INVALID_RESPONSES.message,
-      code: errorType.INVALID_RESPONSES.code,
+      errorType: errorType.INVALID_RESPONSES,
       details: {
         requestId: request.request_id,
       },
@@ -151,8 +149,7 @@ export async function afterGotDataFromCallback(
         additionalData.requestId + ':' + additionalData.serviceId;
       cacheDb.removeRpIdFromDataRequestId(dataRequestId);
       throw new CustomError({
-        message: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE.message,
-        code: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE.code,
+        errorType: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE,
         details: {
           status: response.status,
           body,
@@ -172,15 +169,13 @@ export async function afterGotDataFromCallback(
       });
     } catch (error) {
       throw new CustomError({
-        message: errorType.CANNOT_PARSE_JSON.message,
-        code: errorType.CANNOT_PARSE_JSON.code,
+        errorType: errorType.CANNOT_PARSE_JSON,
         cause: error,
       });
     }
     if (result.data == null) {
       throw new CustomError({
-        message: errorType.MISSING_DATA_IN_AS_DATA_RESPONSE.message,
-        code: errorType.MISSING_DATA_IN_AS_DATA_RESPONSE.code,
+        errorType: errorType.MISSING_DATA_IN_AS_DATA_RESPONSE,
         details: {
           result,
         },
@@ -188,8 +183,7 @@ export async function afterGotDataFromCallback(
     }
     if (typeof result.data !== 'string') {
       throw new CustomError({
-        message: errorType.INVALID_DATA_TYPE_IN_AS_DATA_RESPONSE.message,
-        code: errorType.INVALID_DATA_TYPE_IN_AS_DATA_RESPONSE.code,
+        errorType: errorType.INVALID_DATA_TYPE_IN_AS_DATA_RESPONSE,
         details: {
           dataType: typeof result.data,
         },

@@ -145,8 +145,7 @@ async function callbackWithRetry(
           getResponseCallbackFn(responseCallbackFnName)(
             {
               error: new CustomError({
-                message: errorType.BODY_TOO_LARGE.message,
-                code: errorType.BODY_TOO_LARGE.code,
+                errorType: errorType.BODY_TOO_LARGE,
               }),
             },
             dataForResponseCallback
@@ -274,8 +273,7 @@ export async function callbackToClient(
           getResponseCallbackFn(responseCallbackFnName)(
             {
               error: new CustomError({
-                message: errorType.BODY_TOO_LARGE.message,
-                code: errorType.BODY_TOO_LARGE.code,
+                errorType: errorType.BODY_TOO_LARGE,
               }),
             },
             dataForResponseCallback
