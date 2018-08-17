@@ -591,7 +591,7 @@ export async function getServicesByAsID({ as_id }) {
       : [];
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get servies by AS ID from blockchain',
+      message: 'Cannot get services by AS ID from blockchain',
       cause: error,
     });
   }
