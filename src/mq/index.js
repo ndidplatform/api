@@ -166,7 +166,7 @@ async function processMessage(messageId, messageBuffer) {
         errorType: errorType.MESSAGE_FROM_UNKNOWN_NODE,
       });
     }
-    const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
+    const public_key = await tendermintNdid.getNodePubKey(nodeId);
 
     const signatureValid = utils.verifySignature(
       messageSignature,

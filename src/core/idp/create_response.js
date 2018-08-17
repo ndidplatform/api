@@ -409,7 +409,7 @@ export async function requestChallengeAfterBlockchain(
       {
         ip,
         port,
-        ...(await tendermintNdid.getNodePubKey(rp_id)),
+        public_key: await tendermintNdid.getNodePubKey(rp_id),
       },
     ];
     mq.send(receiver, {
@@ -470,7 +470,7 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   const rpMq = {
     ip,
     port,
-    ...(await tendermintNdid.getNodePubKey(rp_id)),
+    public_key: await tendermintNdid.getNodePubKey(rp_id),
   };
 
   mq.send([rpMq], {

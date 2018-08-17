@@ -140,7 +140,7 @@ async function getASReceiverList(data_request) {
           return null;
         }
         const { ip, port } = mqAddress;
-        const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
+        const public_key = await tendermintNdid.getNodePubKey(nodeId);
         return {
           node_id: nodeId,
           ip,

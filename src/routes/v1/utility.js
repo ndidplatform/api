@@ -109,12 +109,12 @@ router.get('/node_token/:node_id', async (req, res, next) => {
   try {
     const { node_id } = req.params;
 
-    const result = await tendermintNdid.getNodeToken(node_id);
+    const amount = await tendermintNdid.getNodeToken(node_id);
 
-    if (result == null) {
+    if (amount == null) {
       res.status(404).end();
     } else {
-      res.status(200).json(result);
+      res.status(200).json({ amount });
     }
   } catch (error) {
     next(error);

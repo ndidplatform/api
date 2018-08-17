@@ -603,24 +603,23 @@ async function cleanUpDataResponseFromAS(asResponseId) {
 }
 
 async function isDataSignatureValid(asNodeId, signature, salt, data) {
-  const publicKeyObj = await tendermintNdid.getNodePubKey(asNodeId);
-  if (publicKeyObj == null) return;
-  if (publicKeyObj.public_key == null) return;
+  const public_key = await tendermintNdid.getNodePubKey(asNodeId);
+  if (public_key == null) return;
 
   logger.debug({
     message: 'Verifying AS data signature',
     asNodeId,
-    asNodePublicKey: publicKeyObj.public_key,
+    asNodePublicKey: public_key,
     signature,
     salt,
     data,
   });
-  if (!utils.verifySignature(signature, publicKeyObj.public_key, data + salt)) {
+  if (!utils.verifySignature(signature, public_key, data + salt)) {
     logger.warn({
       message: 'Data signature from AS is not valid',
       signature,
       asNodeId,
-      asNodePublicKey: publicKeyObj.public_key,
+      asNodePublicKey: public_key,
     });
     return false;
   }

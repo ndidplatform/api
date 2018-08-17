@@ -240,13 +240,12 @@ export async function setDpkiCallback({
 
   if (signCallbackUrl) {
     if (public_key == null) {
-      const publicKeyObj = await tendermintNdid.getNodePubKey(config.nodeId);
-      if (publicKeyObj == null) {
+      public_key = await tendermintNdid.getNodePubKey(config.nodeId);
+      if (public_key == null) {
         throw new CustomError({
           errorType: errorType.EXTERNAL_SIGN_TEST_FAILED_NO_PUB_KEY,
         });
       }
-      public_key = publicKeyObj.public_key;
     }
     await testSignCallback(signCallbackUrl, public_key);
 
@@ -265,15 +264,14 @@ export async function setDpkiCallback({
     );
   }
   if (masterSignCallbackUrl) {
-    const masterPublicKeyObj = await tendermintNdid.getNodeMasterPubKey(
+    const master_public_key = await tendermintNdid.getNodeMasterPubKey(
       config.nodeId
     );
-    if (masterPublicKeyObj == null) {
+    if (master_public_key == null) {
       throw new CustomError({
         errorType: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_NO_PUB_KEY,
       });
     }
-    const master_public_key = masterPublicKeyObj.master_public_key;
     await testSignCallback(masterSignCallbackUrl, master_public_key, true);
 
     callbackUrls.master_sign_url = masterSignCallbackUrl;
@@ -292,13 +290,12 @@ export async function setDpkiCallback({
   }
   if (decryptCallbackUrl) {
     if (public_key == null) {
-      const publicKeyObj = await tendermintNdid.getNodePubKey(config.nodeId);
-      if (publicKeyObj == null) {
+      public_key = await tendermintNdid.getNodePubKey(config.nodeId);
+      if (public_key == null) {
         throw new CustomError({
           errorType: errorType.EXTERNAL_DECRYPT_TEST_FAILED_NO_PUB_KEY,
         });
       }
-      public_key = publicKeyObj.public_key;
     }
     await testDecryptCallback(decryptCallbackUrl, public_key);
 

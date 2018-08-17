@@ -338,7 +338,7 @@ export async function getIdpsMsqDestination({
       if (mqAddress == null) {
         return null;
       }
-      const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
+      const public_key = await tendermintNdid.getNodePubKey(nodeId);
       return {
         idp_id: nodeId,
         ip: mqAddress.ip,
@@ -563,7 +563,7 @@ export async function handleChallengeRequest({
     {
       ip,
       port,
-      ...(await tendermintNdid.getNodePubKey(idp_id)),
+      public_key: await tendermintNdid.getNodePubKey(idp_id),
     },
   ];
   mq.send(receiver, {

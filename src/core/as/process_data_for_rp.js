@@ -293,7 +293,7 @@ async function sendDataToRP(rpId, data) {
     });
   }
   const { ip, port } = mqAddress;
-  const { public_key } = await tendermintNdid.getNodePubKey(nodeId);
+  const public_key = await tendermintNdid.getNodePubKey(nodeId);
   receivers.push({
     ip,
     port,

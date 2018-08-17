@@ -456,7 +456,11 @@ export async function updateServiceDestination(
 
 export async function getNodePubKey(node_id) {
   try {
-    return await tendermint.query('GetNodePublicKey', { node_id });
+    const result = await tendermint.query('GetNodePublicKey', { node_id });
+    if (result == null) {
+      return null;
+    }
+    return result.public_key;
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get node public key from blockchain',
@@ -467,7 +471,13 @@ export async function getNodePubKey(node_id) {
 
 export async function getNodeMasterPubKey(node_id) {
   try {
-    return await tendermint.query('GetNodeMasterPublicKey', { node_id });
+    const result = await tendermint.query('GetNodeMasterPublicKey', {
+      node_id,
+    });
+    if (result == null) {
+      return null;
+    }
+    return result.master_public_key;
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get node master public key from blockchain',
@@ -489,7 +499,11 @@ export async function getMsqAddress(node_id) {
 
 export async function getNodeToken(node_id = nodeId) {
   try {
-    return await tendermint.query('GetNodeToken', { node_id });
+    const result = await tendermint.query('GetNodeToken', { node_id });
+    if (result == null) {
+      return null;
+    }
+    return result.amount;
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get node token from blockchain',
@@ -585,13 +599,13 @@ export async function getServicesByAsID({ as_id }) {
 
 export async function getAccessorGroupId(accessor_id) {
   try {
-    const accessorGroupIdObj = await tendermint.query('GetAccessorGroupID', {
+    const result = await tendermint.query('GetAccessorGroupID', {
       accessor_id,
     });
-    if (accessorGroupIdObj == null) {
+    if (result == null) {
       return null;
     }
-    return accessorGroupIdObj.accessor_group_id;
+    return result.accessor_group_id;
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get accessor group ID from blockchain',
@@ -619,10 +633,13 @@ export async function getAccessorKey(accessor_id) {
 
 export async function checkExistingIdentity(hash_id) {
   try {
-    const { exist } = await tendermint.query('CheckExistingIdentity', {
+    const result = await tendermint.query('CheckExistingIdentity', {
       hash_id,
     });
-    return exist;
+    if (result == null) {
+      return null;
+    }
+    return result.exist;
   } catch (error) {
     throw new CustomError({
       message: 'Cannot check existing identity from blockchain',
@@ -650,14 +667,14 @@ export async function getIdentityInfo(namespace, identifier, node_id) {
 
 export async function getIdentityProof(request_id, idp_id) {
   try {
-    const identityProofObj = await tendermint.query('GetIdentityProof', {
+    const result = await tendermint.query('GetIdentityProof', {
       request_id,
       idp_id,
     });
-    if (identityProofObj == null) {
+    if (result == null) {
       return null;
     }
-    return identityProofObj.identity_proof;
+    return result.identity_proof;
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get identity proof from blockchain',
@@ -732,6 +749,40 @@ export async function getNodeInfo(node_id) {
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get node info from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function checkExistingAccessorID(accessor_id) {
+  try {
+    const result = await tendermint.query('CheckExistingAccessorID', {
+      accessor_id,
+    });
+    if (result == null) {
+      return null;
+    }
+    return result.exist;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot check existing accessor ID from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function checkExistingAccessorGroupID(accessor_group_id) {
+  try {
+    const result = await tendermint.query('CheckExistingAccessorGroupID', {
+      accessor_group_id,
+    });
+    if (result == null) {
+      return null;
+    }
+    return result.exist;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot check existing accessor group ID from blockchain',
       cause: error,
     });
   }
