@@ -64,55 +64,57 @@ export default function readyHandler(req, res, next) {
     return;
   }
 
-  if (
-    config.useExternalCryptoService &&
-    !isCallbackUrlsSet() &&
-    req.method === 'POST' &&
-    !req.url.endsWith('/dpki/node/callback')
-  ) {
-    const responseBody = {
-      error: {
-        errorType: errorType.WAITING_FOR_DPKI_CALLBACK_URL_SET.message,
-        code: errorType.WAITING_FOR_DPKI_CALLBACK_URL_SET.code,
-      },
-    };
-    res.status(503).json(responseBody);
-    logger.error({
-      message: 'Responded Service Unavailable with HTTP code 503',
-      responseBody,
-    });
+  if (req.method === 'POST' && req.url.endsWith('/dpki/node/callback')) {
+    next();
     return;
   }
 
-  // Reject all POST calls while message queue address is being registered
-  if (!registeredMsqAddress() && req.method === 'POST') {
-    const responseBody = {
-      error: {
-        message: errorType.REGISTERING_MESSAGE_QUEUE_ADDRESS.message,
-        code: errorType.REGISTERING_MESSAGE_QUEUE_ADDRESS.code,
-      },
-    };
-    res.status(503).json(responseBody);
-    logger.error({
-      message: 'Responded Service Unavailable with HTTP code 503',
-      responseBody,
-    });
-    return;
-  }
+  if (req.method === 'POST') {
+    if (config.useExternalCryptoService && !isCallbackUrlsSet()) {
+      const responseBody = {
+        error: {
+          errorType: errorType.WAITING_FOR_DPKI_CALLBACK_URL_SET.message,
+          code: errorType.WAITING_FOR_DPKI_CALLBACK_URL_SET.code,
+        },
+      };
+      res.status(503).json(responseBody);
+      logger.error({
+        message: 'Responded Service Unavailable with HTTP code 503',
+        responseBody,
+      });
+      return;
+    }
 
-  if (!tendermint.expectedTxsLoaded && req.method === 'POST') {
-    const responseBody = {
-      error: {
-        message: errorType.LOADING_EXPECTED_TXS_CACHE.message,
-        code: errorType.LOADING_EXPECTED_TXS_CACHE.code,
-      },
-    };
-    res.status(503).json(responseBody);
-    logger.error({
-      message: 'Responded Service Unavailable with HTTP code 503',
-      responseBody,
-    });
-    return;
+    // Reject all POST calls while message queue address is being registered
+    if (!registeredMsqAddress()) {
+      const responseBody = {
+        error: {
+          message: errorType.REGISTERING_MESSAGE_QUEUE_ADDRESS.message,
+          code: errorType.REGISTERING_MESSAGE_QUEUE_ADDRESS.code,
+        },
+      };
+      res.status(503).json(responseBody);
+      logger.error({
+        message: 'Responded Service Unavailable with HTTP code 503',
+        responseBody,
+      });
+      return;
+    }
+
+    if (!tendermint.expectedTxsLoaded) {
+      const responseBody = {
+        error: {
+          message: errorType.LOADING_EXPECTED_TXS_CACHE.message,
+          code: errorType.LOADING_EXPECTED_TXS_CACHE.code,
+        },
+      };
+      res.status(503).json(responseBody);
+      logger.error({
+        message: 'Responded Service Unavailable with HTTP code 503',
+        responseBody,
+      });
+      return;
+    }
   }
 
   next();
