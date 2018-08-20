@@ -5,6 +5,7 @@
 IMPROVEMENTS:
 
 - Differentiate external crypto service test errors when setting DPKI callbacks by separating into multiple error types.
+- Return HTTP response 503 with correct reason when waiting for DPKI callback URLs to be set (if configured to use external crypto service).
 
 ## 0.7.1 (August 16, 2018)
 
