@@ -169,7 +169,6 @@ export async function registerMqDestination(
       'RegisterMsqDestination',
       {
         users,
-        node_id: nodeId,
       },
       utils.getNonce(),
       callbackFnName,
