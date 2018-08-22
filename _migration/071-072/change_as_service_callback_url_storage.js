@@ -68,7 +68,10 @@ async function main() {
     process.env.DATA_DIRECTORY_PATH == null ||
     process.env.DATA_DIRECTORY_PATH === ''
   ) {
-    console.log('DATA_DIRECTORY_PATH env var not set. Using default path.');
+    console.log(
+      'DATA_DIRECTORY_PATH env var not set. Using default path:',
+      path.join(__dirname, '..', '..', 'data')
+    );
   }
 
   const serviceCallbackUrls = await getAll({ name: 'serviceCallbackUrl' });
