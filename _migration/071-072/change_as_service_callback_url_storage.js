@@ -64,17 +64,20 @@ async function main() {
     process.exit(1);
   }
 
-  if (process.env.DATA_DIRECTORY_PATH == null || process.env.DATA_DIRECTORY_PATH === '') {
+  if (
+    process.env.DATA_DIRECTORY_PATH == null ||
+    process.env.DATA_DIRECTORY_PATH === ''
+  ) {
     console.log('DATA_DIRECTORY_PATH env var not set. Using default path.');
   }
 
   const serviceCallbackUrls = await getAll({ name: 'serviceCallbackUrl' });
   await Promise.all(
-    serviceCallbackUrls.map(async ({ serviceId, url }) =>
+    serviceCallbackUrls.map(({ serviceId, url }) =>
       setServiceCallbackUrl(serviceId, url)
     )
   );
-  console.log('Migration DONE!')
+  console.log('Migration DONE!');
 }
 
 main();
