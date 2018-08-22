@@ -4,9 +4,11 @@ const path = require('path');
 const fs = require('fs');
 const Sequelize = require('sequelize');
 
+const defaultDataDirectoryPath = path.join(__dirname, '..', '..', 'data');
+
 const nodeId = process.env.NODE_ID;
 const dataDirectoryPath =
-  process.env.DATA_DIRECTORY_PATH || path.join(__dirname, '..', '..', 'data');
+  process.env.DATA_DIRECTORY_PATH || defaultDataDirectoryPath;
 
 const callbackUrlFilesPrefix = path.join(
   dataDirectoryPath,
@@ -70,7 +72,7 @@ async function main() {
   ) {
     console.log(
       'DATA_DIRECTORY_PATH env var not set. Using default path:',
-      path.join(__dirname, '..', '..', 'data')
+      defaultDataDirectoryPath
     );
   }
 
