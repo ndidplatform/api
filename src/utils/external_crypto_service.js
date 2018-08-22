@@ -477,7 +477,7 @@ export async function decryptAsymetricKey(encryptedMessage) {
 
 export async function createSignature(message, messageHash, useMasterKey) {
   const url = useMasterKey
-    ? callbackUrls.master_sing_url
+    ? callbackUrls.master_sign_url
     : callbackUrls.sign_url;
   if (url == null) {
     if (useMasterKey) {
