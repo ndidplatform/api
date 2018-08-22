@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix creating signature with master key using external crypto service invalid URL error.
+
 ## 0.7.1 (August 16, 2018)
 
 IMPROVEMENTS:
