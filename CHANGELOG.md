@@ -10,7 +10,7 @@ IMPROVEMENTS:
 
 - Differentiate external crypto service test errors when setting DPKI callbacks by separating into multiple error types.
 - Return HTTP response 503 with correct reason when waiting for DPKI callback URLs to be set (if configured to use external crypto service).
-- Change storage for AS service callback URLs from storing in cache DB to write to file in plain text for easier URL change when the process is not running. (NOTE: AS node must run a migration script after updating to this version)
+- Change storage for AS service callback URLs from storing in cache DB to write to file in plain text for easier URL change when the process is not running. (NOTE: AS node must run a migration script `change_as_service_callback_url_storage.js` after updating to this version)
 
 BUG FIXES:
 
