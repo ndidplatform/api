@@ -27,6 +27,15 @@ import 'winston-daily-rotate-file';
 
 import * as config from './config';
 
+const utilInspectOptions = {
+  depth: null,
+  colors: config.logColor,
+};
+const utilInspectOptionsOneline = {
+  ...utilInspectOptions,
+  breakLength: Infinity,
+};
+
 const removePrintErrStackProp = winston.format((info) => {
   if (info._printErrStack != null) {
     const { _printErrStack, ...rest } = info; // eslint-disable-line no-unused-vars
@@ -37,16 +46,16 @@ const removePrintErrStackProp = winston.format((info) => {
 
 function filterTooLongMessage(rest, depth = 0) {
   if (typeof rest !== 'object') {
-    return rest.toString().length > config.thresholdLogLength
+    return rest.toString().length > config.logLengthThreshold
       ? config.replaceForTooLongLog
       : rest;
   }
 
-  const display = util.inspect(rest, {
-    depth: null,
-    colors: config.logColor,
-  });
-  if (display.length <= config.thresholdLogLength) {
+  const display = util.inspect(
+    rest,
+    config.logOneLine ? utilInspectOptionsOneline : utilInspectOptions
+  );
+  if (display.length <= config.logLengthThreshold) {
     return depth === 0 ? display : rest;
   }
   const clone = JSON.parse(JSON.stringify(rest));
@@ -54,10 +63,10 @@ function filterTooLongMessage(rest, depth = 0) {
     clone[key] = filterTooLongMessage(clone[key], depth + 1);
   }
   if (depth === 0)
-    return util.inspect(clone, {
-      depth: null,
-      colors: config.logColor,
-    });
+    return util.inspect(
+      clone,
+      config.logOneLine ? utilInspectOptionsOneline : utilInspectOptions
+    );
   return clone;
 }
 
@@ -74,23 +83,25 @@ const customFormat = winston.format.printf((info) => {
   const timestampStr = timestamp != null ? `${timestamp} ` : '';
   const messageToDisplay =
     typeof message === 'object'
-      ? util.inspect(message, {
-          depth: null,
-          colors: config.logColor,
-        })
+      ? util.inspect(message, utilInspectOptions)
       : message;
   if (Object.keys(rest).length === 0) {
     return `${timestampStr}${level}: ${messageToDisplay}`;
   } else {
     if (rest._printErrStack) {
-      const { _printErrStack, stack, ...restWithoutStack } = rest; // eslint-disable-line no-unused-vars
-      return `${timestampStr}${level}: ${messageToDisplay} ${util.inspect(
-        restWithoutStack,
-        {
-          depth: null,
-          colors: config.logColor,
-        }
-      )}\n${stack}`;
+      if (config.logOneLine) {
+        const { _printErrStack, ...restWithoutStack } = rest; // eslint-disable-line no-unused-vars
+        return `${timestampStr}${level}: ${messageToDisplay} ${util.inspect(
+          restWithoutStack,
+          utilInspectOptionsOneline
+        )}`;
+      } else {
+        const { _printErrStack, stack, ...restWithoutStack } = rest; // eslint-disable-line no-unused-vars
+        return `${timestampStr}${level}: ${messageToDisplay} ${util.inspect(
+          restWithoutStack,
+          utilInspectOptions
+        )}\n${stack}`;
+      }
     } else {
       return `${timestampStr}${level}: ${messageToDisplay} ${filterTooLongMessage(
         rest

@@ -2,6 +2,10 @@
 
 ## TBD
 
+FEATURES:
+
+- Add `LOG_ONE_LINE` environment variable option for logging in a single line.
+
 IMPROVEMENTS:
 
 - Differentiate external crypto service test errors when setting DPKI callbacks by separating into multiple error types.

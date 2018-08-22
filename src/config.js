@@ -55,8 +55,12 @@ export const logColor =
   process.env.LOG_COLOR == null
     ? logTarget === 'console'
     : process.env.LOG_COLOR === 'true';
+export const logOneLine = process.env.LOG_ONE_LINE === 'true';
 export const logDirectoryPath =
   process.env.LOG_DIRECTORY_PATH || path.join(__dirname, '..', 'log');
+
+export const logLengthThreshold = Infinity; // 2000
+export const replaceForTooLongLog = '<--- Too long, omitted --->';
 
 export const role = process.env.ROLE;
 
@@ -130,8 +134,6 @@ export const masterPrivateKeyPassphrase = useExternalCryptoService
 export const challengeLength = 2;
 export const zkRandomLengthForIdp = 128;
 export const saltLength = 16;
-export const thresholdLogLength = Infinity; // 2000
-export const replaceForTooLongLog = '<--- Too long, omitted --->';
 
 export const createIdentityRequestMessageTemplateFilepath =
   process.env.CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH ||
