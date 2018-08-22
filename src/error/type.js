@@ -146,6 +146,14 @@ export default {
     code: 10029,
     message: 'Waiting for DPKI callback URLs to be set',
   },
+  CANNOT_WRITE_CALLBACK_URL_TO_FILE: {
+    code: 10030,
+    message: 'Cannot write callback url to file',
+  },
+  CANNOT_READ_CALLBACK_URL_FROM_FILE: {
+    code: 10031,
+    message: 'Cannot read callback url from file',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {

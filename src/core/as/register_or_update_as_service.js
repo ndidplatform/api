@@ -20,13 +20,14 @@
  *
  */
 
+import { setServiceCallbackUrl } from '.';
+
 import { callbackToClient } from '../../utils/callback';
 import CustomError from '../../error/custom_error';
 import logger from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as config from '../../config';
-import * as cacheDb from '../../db/cache';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
 
@@ -166,7 +167,7 @@ export async function registerOrUpdateASServiceInternalAsyncAfterBlockchain(
     if (error) throw error;
 
     if (url) {
-      await cacheDb.setServiceCallbackUrl(service_id, url);
+      await setServiceCallbackUrl(service_id, url);
     }
 
     if (!synchronous) {

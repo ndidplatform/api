@@ -927,27 +927,6 @@ export function removeRequestMessage(requestId) {
 // Used by AS
 //
 
-export function getServiceCallbackUrl(serviceId) {
-  return db.get({
-    dbName,
-    name: 'serviceCallbackUrl',
-    keyName: 'serviceId',
-    key: serviceId,
-    valueName: 'url',
-  });
-}
-
-export function setServiceCallbackUrl(serviceId, callbackUrl) {
-  return db.set({
-    dbName,
-    name: 'serviceCallbackUrl',
-    keyName: 'serviceId',
-    key: serviceId,
-    valueName: 'url',
-    value: callbackUrl,
-  });
-}
-
 export function getInitialSalt(requestId) {
   return db.get({
     dbName,

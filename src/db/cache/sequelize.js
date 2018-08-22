@@ -200,10 +200,6 @@ if (config.role === 'idp') {
 }
 
 if (config.role === 'as') {
-  Entities.serviceCallbackUrl = sequelize.define('serviceCallbackUrl', {
-    serviceId: { type: Sequelize.STRING, primaryKey: true },
-    url: Sequelize.TEXT,
-  });
   Entities.initialSalt = sequelize.define('initialSalt', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     initialSalt: Sequelize.STRING,

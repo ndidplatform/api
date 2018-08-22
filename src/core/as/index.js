@@ -41,6 +41,7 @@ export * from './process_data_for_rp';
 export * from './event_handlers';
 
 export const callbackUrls = {};
+export const seviceCallbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
   config.dataDirectoryPath,
@@ -91,6 +92,59 @@ export function getCallbackUrls() {
 
 export function getErrorCallbackUrl() {
   return callbackUrls.error_url;
+}
+
+export function setServiceCallbackUrl(serviceId, url) {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(
+      callbackUrlFilesPrefix + '-service-' + serviceId,
+      url,
+      (err) => {
+        if (err) {
+          reject(
+            new CustomError({
+              errorType: errorType.CANNOT_WRITE_CALLBACK_URL_TO_FILE,
+              cause: err,
+              details: {
+                serviceId,
+              },
+            })
+          );
+          return;
+        }
+        seviceCallbackUrls[serviceId] = url;
+        resolve();
+      }
+    );
+  });
+}
+
+export function getServiceCallbackUrl(serviceId) {
+  if (seviceCallbackUrls[serviceId] != null) {
+    return seviceCallbackUrls[serviceId];
+  }
+  return new Promise((resolve, reject) => {
+    fs.readFile(
+      callbackUrlFilesPrefix + '-service-' + serviceId,
+      'utf8',
+      (err, data) => {
+        if (err) {
+          reject(
+            new CustomError({
+              errorType: errorType.CANNOT_READ_CALLBACK_URL_FROM_FILE,
+              cause: err,
+              details: {
+                serviceId,
+              },
+            })
+          );
+          return;
+        }
+        seviceCallbackUrls[serviceId] = data;
+        resolve(data);
+      }
+    );
+  });
 }
 
 export async function processRequest(request) {
@@ -221,7 +275,7 @@ async function getDataAndSendBackToRP(request, responseDetails) {
   await Promise.all(
     request.service_data_request_list.map(async (serviceData) => {
       let { service_id, request_params } = serviceData;
-      const callbackUrl = await cacheDb.getServiceCallbackUrl(service_id);
+      const callbackUrl = await getServiceCallbackUrl(service_id);
 
       if (!callbackUrl) {
         logger.error({
@@ -343,7 +397,7 @@ export async function getServiceDetail(service_id) {
     });
     if (service == null) return null;
     return {
-      url: await cacheDb.getServiceCallbackUrl(service_id),
+      url: await getServiceCallbackUrl(service_id),
       min_ial: service.min_ial,
       min_aal: service.min_aal,
       active: service.active,
