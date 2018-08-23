@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+FEATURES:
+
+- Support loading environment variables from `.env` file.
+
 ## 0.7.2 (August 22, 2018)
 
 FEATURES:

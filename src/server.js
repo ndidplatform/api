@@ -22,6 +22,8 @@
 
 import 'source-map-support/register';
 
+import 'dotenv/config';
+
 import fs from 'fs';
 import http from 'http';
 import https from 'https';
