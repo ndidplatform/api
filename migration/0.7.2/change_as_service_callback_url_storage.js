@@ -1,5 +1,7 @@
 // MUST USE WITH Node.js >= 8
 
+require('dotenv').config();
+
 const path = require('path');
 const fs = require('fs');
 const Sequelize = require('sequelize');
