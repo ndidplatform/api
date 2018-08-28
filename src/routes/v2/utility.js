@@ -25,6 +25,7 @@ import express from 'express';
 import { validateQuery } from '../middleware/validation';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as privateMessage from '../../core/common/private_message';
+import { reCalculateSecret } from '../../utils';
 
 const router = express.Router();
 
@@ -206,6 +207,29 @@ router.post(
         type,
       });
       res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/secret',
+  async (req, res, next) => {
+    try {
+      let {
+        accessor_id,
+        namespace,
+        identifier,
+        reference_id,
+      } = req.body;
+      const secret = await reCalculateSecret({
+        accessor_id,
+        namespace,
+        identifier,
+        reference_id,
+      });
+      res.status(200).send(secret);
     } catch (error) {
       next(error);
     }

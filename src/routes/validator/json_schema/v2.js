@@ -75,6 +75,17 @@ export default {
     },
   },
   POST: {
+    '/utility/secret': {
+      body: {
+        properties: {
+          accessor_id: { type: 'string', minLength: 1 },
+          namespace: { type: 'string', minLength: 1 },
+          identifier: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+        },
+        required: ['accessor_id', 'namespace', 'identifier']
+      },
+    },
     '/rp/requests/:namespace/:identifier': {
       params: {
         properties: {
