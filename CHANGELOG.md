@@ -6,6 +6,10 @@ FEATURES:
 
 - Support loading environment variables from `.env` file.
 
+BUG FIXES:
+
+- Fix GET `/identity/requests/reference/:reference_id` always return HTTP response 404. (API v2)
+
 ## 0.7.2 (August 22, 2018)
 
 FEATURES:

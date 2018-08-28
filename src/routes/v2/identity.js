@@ -64,12 +64,12 @@ router.post('/', validateBody, async (req, res, next) => {
   }
 });
 
-router.get('/requests/reference/:reference_number', async (req, res, next) => {
+router.get('/requests/reference/:reference_id', async (req, res, next) => {
   try {
-    const { reference_number } = req.path;
+    const { reference_id } = req.params;
 
     const createIdentityData = await identity.getCreateIdentityDataByReferenceId(
-      reference_number
+      reference_id
     );
     if (createIdentityData != null) {
       res.status(200).json({
