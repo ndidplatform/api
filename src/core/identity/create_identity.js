@@ -870,3 +870,42 @@ async function createSecret({
   );
   return padding + '|' + signature;
 }
+
+export async function reCalculateSecret({
+  accessor_id,
+  namespace,
+  identifier,
+  reference_id,
+}) {
+  let sid = namespace + ':' + identifier;
+  let hash_id = utils.hash(sid);
+  let accessor_public_key = await tendermintNdid.getAccessorKey(accessor_id);
+  
+  if(accessor_public_key == null) {
+    throw new CustomError({
+      errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND,
+      details: {
+        accessor_id,
+      },
+    });
+  }
+
+  let isAssociate = await checkAssociated({ namespace, identifier });
+  if(!isAssociate) {
+    throw new CustomError({
+      errorType: errorType.IDENTITY_NOT_FOUND,
+      details: {
+        namespace,
+        identifier,
+      },
+    });
+  }
+
+  return await createSecret({
+    sid,
+    hash_id,
+    accessor_id,
+    reference_id,
+    accessor_public_key,
+  });
+}

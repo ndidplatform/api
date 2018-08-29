@@ -25,7 +25,7 @@ import express from 'express';
 import { validateQuery } from '../middleware/validation';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as privateMessage from '../../core/common/private_message';
-import { reCalculateSecret } from '../../utils';
+import { reCalculateSecret } from '../../core/identity';
 
 const router = express.Router();
 
@@ -229,7 +229,7 @@ router.post(
         identifier,
         reference_id,
       });
-      res.status(200).send(secret);
+      res.status(200).send({ secret });
     } catch (error) {
       next(error);
     }
