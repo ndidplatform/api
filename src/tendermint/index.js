@@ -140,7 +140,7 @@ async function checkForMissingExpectedTx() {
           message:
             'Error getting Tx for processing missing expected Tx (Tx may still be in mempool or does not exist)',
           txHash,
-          error,
+          error: error.name === 'CustomError' ? error.getInfoForLog() : error,
         });
       }
     })
@@ -236,7 +236,7 @@ async function pollStatusUntilSynced() {
 
 export const tendermintWsClient = new TendermintWsClient();
 
-tendermintWsClient.on('connected', () => {
+tendermintWsClient.on('connected', async () => {
   connected = true;
   pollStatusUntilSynced();
   tendermintWsClient.subscribeToNewBlockEvent();

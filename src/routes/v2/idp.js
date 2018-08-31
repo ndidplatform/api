@@ -99,27 +99,19 @@ router.post('/response', validateBody, async (req, res, next) => {
   }
 });
 
-router.post(
-  '/secret',
-  async (req, res, next) => {
-    try {
-      let {
-        accessor_id,
-        namespace,
-        identifier,
-        reference_id,
-      } = req.body;
-      const secret = await reCalculateSecret({
-        accessor_id,
-        namespace,
-        identifier,
-        reference_id,
-      });
-      res.status(200).send({ secret });
-    } catch (error) {
-      next(error);
-    }
+router.post('/secret', async (req, res, next) => {
+  try {
+    let { accessor_id, namespace, identifier, reference_id } = req.body;
+    const secret = await reCalculateSecret({
+      accessor_id,
+      namespace,
+      identifier,
+      reference_id,
+    });
+    res.status(200).json({ secret });
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 export default router;
