@@ -24,6 +24,7 @@ import express from 'express';
 
 import { validateBody } from '../middleware/validation';
 import * as idp from '../../core/idp';
+import { reCalculateSecret } from '../../core/identity';
 
 const router = express.Router();
 
@@ -97,5 +98,28 @@ router.post('/response', validateBody, async (req, res, next) => {
     next(error);
   }
 });
+
+router.post(
+  '/secret',
+  async (req, res, next) => {
+    try {
+      let {
+        accessor_id,
+        namespace,
+        identifier,
+        reference_id,
+      } = req.body;
+      const secret = await reCalculateSecret({
+        accessor_id,
+        namespace,
+        identifier,
+        reference_id,
+      });
+      res.status(200).send({ secret });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;
