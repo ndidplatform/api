@@ -28,6 +28,7 @@ import * as common from '../../core/common';
 import * as tendermintNdid from '../../tendermint/ndid';
 
 import errorType from '../../error/type';
+import { reCalculateSecret } from '../../core/identity';
 
 const router = express.Router();
 
@@ -232,5 +233,20 @@ router.post(
     }
   }
 );
+
+router.post('/secret', async (req, res, next) => {
+  try {
+    let { accessor_id, namespace, identifier, reference_id } = req.body;
+    const secret = await reCalculateSecret({
+      accessor_id,
+      namespace,
+      identifier,
+      reference_id,
+    });
+    res.status(200).json({ secret });
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;
