@@ -442,6 +442,16 @@ export default {
     message: 'External service: Cannot parse JSON response',
     clientError: true,
   },
+  IAL_IS_LESS_THAN_REQUEST_MIN_IAL: {
+    code: 20055,
+    message: "IAL is less than request's minimum IAL",
+    clientError: true,
+  },
+  AAL_IS_LESS_THAN_REQUEST_MIN_AAL: {
+    code: 20056,
+    message: "AAL is less than request's minimum AAL",
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

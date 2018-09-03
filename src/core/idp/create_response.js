@@ -34,9 +34,16 @@ import * as mq from '../../mq';
 import privateMessageType from '../private_message_type';
 
 export async function requestChallengeAndCreateResponse(createResponseParams) {
-  const { request_id, signature, secret, accessor_id } = createResponseParams;
+  const {
+    request_id,
+    ial,
+    aal,
+    signature,
+    secret,
+    accessor_id,
+  } = createResponseParams;
   try {
-    const request = await tendermintNdid.getRequest({
+    const request = await tendermintNdid.getRequestDetail({
       requestId: request_id,
     });
     if (request == null) {
@@ -58,6 +65,23 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
     if (request.timed_out) {
       throw new CustomError({
         errorType: errorType.REQUEST_IS_TIMED_OUT,
+        details: {
+          requestId: request_id,
+        },
+      });
+    }
+
+    if (ial < request.min_ial) {
+      throw new CustomError({
+        errorType: errorType.IAL_IS_LESS_THAN_REQUEST_MIN_IAL,
+        details: {
+          requestId: request_id,
+        },
+      });
+    }
+    if (aal < request.min_aal) {
+      throw new CustomError({
+        errorType: errorType.AAL_IS_LESS_THAN_REQUEST_MIN_AAL,
         details: {
           requestId: request_id,
         },
