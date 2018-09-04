@@ -314,7 +314,7 @@ async function createRequestInternalAsync(
     mode,
     reference_id,
     callback_url,
-    data_request_list,
+    data_request_list = [],
     request_message,
     min_ial,
     min_aal,
