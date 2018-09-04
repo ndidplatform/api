@@ -46,6 +46,7 @@ import privateMessageType from '../private_message_type';
  * @param {Object} createRequestParams
  * @param {number} createRequestParams.mode
  * @param {string} createRequestParams.namespace
+ * @param {string} createRequestParams.identifier
  * @param {string} createRequestParams.reference_id
  * @param {Array.<string>} createRequestParams.idp_id_list
  * @param {string} createRequestParams.callback_url
