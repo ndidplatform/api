@@ -78,7 +78,7 @@ export async function createRequest(
     reference_id,
     idp_id_list,
     callback_url,
-    data_request_list,
+    data_request_list = [],
     request_message,
     min_ial,
     min_aal,
