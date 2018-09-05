@@ -6,6 +6,10 @@ FEATURES:
 
 - Support loading environment variables from `.env` file.
 
+IMPROVEMENTS:
+
+- [DB - Sequelize] Try setting a value first if error with unique constraint error then update instead of using upsert in `set()` function.
+
 BUG FIXES:
 
 - Fix GET `/identity/requests/reference/:reference_id` always return HTTP response 404. (API v2)
