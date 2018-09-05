@@ -62,7 +62,7 @@ router.post(
         callback_url,
         mode,
         idp_id_list,
-        data_request_list = [],
+        data_request_list,
         request_message,
         min_ial,
         min_aal,

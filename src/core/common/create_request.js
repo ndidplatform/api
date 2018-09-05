@@ -46,6 +46,7 @@ import privateMessageType from '../private_message_type';
  * @param {Object} createRequestParams
  * @param {number} createRequestParams.mode
  * @param {string} createRequestParams.namespace
+ * @param {string} createRequestParams.identifier
  * @param {string} createRequestParams.reference_id
  * @param {Array.<string>} createRequestParams.idp_id_list
  * @param {string} createRequestParams.callback_url
@@ -77,7 +78,7 @@ export async function createRequest(
     reference_id,
     idp_id_list,
     callback_url,
-    data_request_list,
+    data_request_list = [],
     request_message,
     min_ial,
     min_aal,
@@ -313,7 +314,7 @@ async function createRequestInternalAsync(
     mode,
     reference_id,
     callback_url,
-    data_request_list,
+    data_request_list = [],
     request_message,
     min_ial,
     min_aal,
