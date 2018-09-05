@@ -22,7 +22,7 @@
 
 import {
   getIdpsMsqDestination,
-  addTimeoutScheduler,
+  setTimeoutScheduler,
   removeTimeoutScheduler,
   getFunction,
 } from '.';
@@ -468,7 +468,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
     const creation_time = Date.now();
 
-    await addTimeoutScheduler(request_id, request_timeout);
+    await setTimeoutScheduler(request_id, request_timeout);
 
     // send request data to IDPs via message queue
     if (min_idp > 0) {
