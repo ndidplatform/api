@@ -1,4 +1,3 @@
-//@ts-check
 /**
  * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
  *
