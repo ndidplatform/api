@@ -1,3 +1,4 @@
+//@ts-check
 /**
  * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
  *
@@ -57,12 +58,12 @@ import privateMessageType from '../private_message_type';
  * @param {number} createRequestParams.min_idp
  * @param {number} createRequestParams.request_timeout
  * @param {Object} options
- * @param {boolean} options.synchronous
- * @param {boolean} options.sendCallbackToClient
- * @param {string} options.callbackFnName
- * @param {Array} options.callbackAdditionalArgs
+ * @param {boolean} [options.synchronous]
+ * @param {boolean} [options.sendCallbackToClient]
+ * @param {string} [options.callbackFnName]
+ * @param {Array} [options.callbackAdditionalArgs]
  * @param {Object} additionalParams
- * @param {string} additionalParams.request_id
+ * @param {string} [additionalParams.request_id]
  *
  * @returns {Promise<Object>} Request ID and request message salt
  */
