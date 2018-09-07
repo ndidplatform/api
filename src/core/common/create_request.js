@@ -22,7 +22,7 @@
 
 import {
   getIdpsMsqDestination,
-  addTimeoutScheduler,
+  setTimeoutScheduler,
   removeTimeoutScheduler,
   getFunction,
 } from '.';
@@ -57,12 +57,12 @@ import privateMessageType from '../private_message_type';
  * @param {number} createRequestParams.min_idp
  * @param {number} createRequestParams.request_timeout
  * @param {Object} options
- * @param {boolean} options.synchronous
- * @param {boolean} options.sendCallbackToClient
- * @param {string} options.callbackFnName
- * @param {Array} options.callbackAdditionalArgs
+ * @param {boolean} [options.synchronous]
+ * @param {boolean} [options.sendCallbackToClient]
+ * @param {string} [options.callbackFnName]
+ * @param {Array} [options.callbackAdditionalArgs]
  * @param {Object} additionalParams
- * @param {string} additionalParams.request_id
+ * @param {string} [additionalParams.request_id]
  *
  * @returns {Promise<Object>} Request ID and request message salt
  */
@@ -468,7 +468,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
     const creation_time = Date.now();
 
-    await addTimeoutScheduler(request_id, request_timeout);
+    await setTimeoutScheduler(request_id, request_timeout);
 
     // send request data to IDPs via message queue
     if (min_idp > 0) {

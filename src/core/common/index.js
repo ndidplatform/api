@@ -402,9 +402,9 @@ export function runTimeoutScheduler(requestId, secondsToTimeout) {
   }
 }
 
-export async function addTimeoutScheduler(requestId, secondsToTimeout) {
+export async function setTimeoutScheduler(requestId, secondsToTimeout) {
   let unixTimeout = Date.now() + secondsToTimeout * 1000;
-  await cacheDb.addTimeoutScheduler(requestId, unixTimeout);
+  await cacheDb.setTimeoutScheduler(requestId, unixTimeout);
   runTimeoutScheduler(requestId, secondsToTimeout);
 }
 
