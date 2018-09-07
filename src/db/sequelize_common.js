@@ -59,6 +59,10 @@ export async function getList({ dbName, name, keyName, key, valueName }) {
   }
 }
 
+export function getListWithRangeSupport() {
+  return getList(...arguments);
+}
+
 export async function count({ dbName, name, keyName, key }) {
   try {
     const db = getDB(dbName);
@@ -131,33 +135,37 @@ export async function pushToList({
   }
 }
 
-export async function removeFromList({
-  dbName,
-  name,
-  keyName,
-  key,
-  valueName,
-  valuesToRemove,
-}) {
-  try {
-    const db = getDB(dbName);
-    await db.init;
-    await db.Entities[name].destroy({
-      where: {
-        [keyName]: key,
-        [valueName]: {
-          [Sequelize.Op.in]: valuesToRemove,
-        },
-      },
-    });
-  } catch (error) {
-    throw new CustomError({
-      errorType: errorType.DB_ERROR,
-      cause: error,
-      details: { operation: 'removeFromList', dbName, table: name },
-    });
-  }
+export function pushToListWithRangeSupport() {
+  return pushToList(...arguments);
 }
+
+// export async function removeFromList({
+//   dbName,
+//   name,
+//   keyName,
+//   key,
+//   valueName,
+//   valuesToRemove,
+// }) {
+//   try {
+//     const db = getDB(dbName);
+//     await db.init;
+//     await db.Entities[name].destroy({
+//       where: {
+//         [keyName]: key,
+//         [valueName]: {
+//           [Sequelize.Op.in]: valuesToRemove,
+//         },
+//       },
+//     });
+//   } catch (error) {
+//     throw new CustomError({
+//       errorType: errorType.DB_ERROR,
+//       cause: error,
+//       details: { operation: 'removeFromList', dbName, table: name },
+//     });
+//   }
+// }
 
 export async function removeList({ dbName, name, keyName, key }) {
   try {

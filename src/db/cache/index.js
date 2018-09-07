@@ -20,8 +20,8 @@
  *
  */
 
-import * as db from '../sequelize_common';
-import * as cacheDb from './sequelize';
+import * as db from '../redis_common';
+import * as cacheDb from './redis';
 
 import logger from '../../logger';
 
@@ -222,7 +222,7 @@ export function getRequestIdsExpectedInBlock(fromHeight, toHeight) {
 }
 
 export function getRequestIdExpectedInBlock(height) {
-  return db.getList({
+  return db.getListWithRangeSupport({
     dbName,
     name: 'requestIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
@@ -232,7 +232,7 @@ export function getRequestIdExpectedInBlock(height) {
 }
 
 export function addRequestIdExpectedInBlock(height, requestId) {
-  return db.pushToList({
+  return db.pushToListWithRangeSupport({
     dbName,
     name: 'requestIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
@@ -609,7 +609,7 @@ export function getExpectedIdpPublicProofInBlockList(fromHeight, toHeight) {
 }
 
 export function addExpectedIdpPublicProofInBlock(height, responseMetadata) {
-  return db.pushToList({
+  return db.pushToListWithRangeSupport({
     dbName,
     name: 'expectedIdpPublicProofInBlock',
     keyName: 'expectedBlockHeight',
