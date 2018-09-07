@@ -246,10 +246,27 @@ export async function set({ dbName, name, keyName, key, valueName, value }) {
   try {
     const db = getDB(dbName);
     await db.init;
-    await db.Entities[name].upsert({
-      [keyName]: key,
-      [valueName]: value,
-    });
+    try {
+      await db.Entities[name].create({
+        [keyName]: key,
+        [valueName]: value,
+      });
+    } catch (error) {
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        await db.Entities[name].update(
+          {
+            [valueName]: value,
+          },
+          {
+            where: {
+              [keyName]: key,
+            },
+          }
+        );
+      } else {
+        throw error;
+      }
+    }
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,

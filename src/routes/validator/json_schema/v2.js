@@ -75,7 +75,7 @@ export default {
     },
   },
   POST: {
-    '/utility/secret': {
+    '/identity/secret': {
       body: {
         properties: {
           accessor_id: { type: 'string', minLength: 1 },

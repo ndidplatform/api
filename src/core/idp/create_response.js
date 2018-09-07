@@ -186,10 +186,10 @@ async function requestChallengeAndCreateResponseInternalAsync(
         request_id,
         accessor_id,
       });
-      cacheDb.removeRequestMessage(request_id);
     } else if (request.mode === 1) {
       await createResponse(createResponseParams);
     }
+    cacheDb.removeRequestMessage(request_id);
   } catch (error) {
     await callbackToClient(
       callback_url,
@@ -331,6 +331,7 @@ export async function createResponseAfterBlockchain(
       },
       true
     );
+    cacheDb.removeRPIdFromRequestId(request_id);
     cacheDb.removeResponseFromRequestId(request_id);
   } catch (error) {
     logger.error({
@@ -504,6 +505,4 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
     height,
     idp_id: config.nodeId,
   });
-
-  await cacheDb.removeRPIdFromRequestId(request_id);
 }

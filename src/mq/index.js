@@ -79,7 +79,7 @@ export async function init() {
     if (unixTimeout != null) return;
 
     unixTimeout = Date.now() + 120000;
-    cacheDb.addDuplicateMessageTimeout(id, unixTimeout);
+    cacheDb.setDuplicateMessageTimeout(id, unixTimeout);
     timer[id] = setTimeout(() => {
       cacheDb.removeDuplicateMessageTimeout(id);
       delete timer[id];

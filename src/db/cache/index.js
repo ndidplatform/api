@@ -184,7 +184,7 @@ export function getDuplicateMessageTimeout(id) {
   });
 }
 
-export function addDuplicateMessageTimeout(id, unixTimeout) {
+export function setDuplicateMessageTimeout(id, unixTimeout) {
   return db.set({
     dbName,
     name: 'duplicateMessageTimeout',
@@ -421,7 +421,7 @@ export function getAllTimeoutScheduler() {
   return db.getAll({ dbName, name: 'timeoutScheduler' });
 }
 
-export function addTimeoutScheduler(requestId, unixTimeout) {
+export function setTimeoutScheduler(requestId, unixTimeout) {
   return db.set({
     dbName,
     name: 'timeoutScheduler',
