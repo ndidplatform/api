@@ -11,6 +11,7 @@ BUG FIXES:
 - Fix GET `/identity/requests/reference/:reference_id` always return HTTP response 404. (API v2)
 - Fix unable to make an IdP response more than once when responding with less than request's minimum IAL and/or AAL the first time (by validating IdP response's IAL and AAL to be greater than or equal to request's minimum IAL and request's minimum AAL respectively).
 - Fix error when creating request without `data_request_list` (not set to empty array).
+- Fix cached request message data does not get deleted after used on IdP side.
 
 ## 0.7.2 (August 22, 2018)
 
