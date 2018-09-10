@@ -315,7 +315,7 @@ export async function getIdpsMsqDestination({
   idp_id_list,
   mode,
 }) {
-  const idpNodes = await tendermintNdid.getIdpNodes({
+  const idpNodes = await tendermintNdid.getIdpNodesInfo({
     namespace: mode === 3 ? namespace : undefined,
     identifier: mode === 3 ? identifier : undefined,
     min_ial,
@@ -323,7 +323,7 @@ export async function getIdpsMsqDestination({
   });
 
   let filteredIdpNodes;
-  if (idp_id_list != null && idp_id_list.length !== 0) {
+  if (idp_id_list != null && idp_id_list.length > 0) {
     filteredIdpNodes = idpNodes.filter(
       (idpNode) => idp_id_list.indexOf(idpNode.node_id) >= 0
     );
@@ -331,22 +331,14 @@ export async function getIdpsMsqDestination({
     filteredIdpNodes = idpNodes;
   }
 
-  const receivers = (await Promise.all(
-    filteredIdpNodes.map(async (idpNode) => {
-      const nodeId = idpNode.node_id;
-      const mqAddress = await tendermintNdid.getMsqAddress(nodeId);
-      if (mqAddress == null) {
-        return null;
-      }
-      const public_key = await tendermintNdid.getNodePubKey(nodeId);
-      return {
-        idp_id: nodeId,
-        ip: mqAddress.ip,
-        port: mqAddress.port,
-        public_key,
-      };
-    })
-  )).filter((receiver) => receiver != null);
+  const receivers = filteredIdpNodes.map((idpNode) => {
+    return {
+      idp_id: idpNode.node_id,
+      ip: idpNode.mq.ip,
+      port: idpNode.mq.port,
+      public_key: idpNode.public_key,
+    };
+  });
   return receivers;
 }
 

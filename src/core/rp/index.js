@@ -122,40 +122,27 @@ export function isAllIdpRespondedAndValid({
 }
 
 async function getASReceiverList(data_request) {
-  let nodeIdList;
-  if (!data_request.as_id_list || data_request.as_id_list.length === 0) {
-    const asNodes = await tendermintNdid.getAsNodesByServiceId({
-      service_id: data_request.service_id,
-    });
-    nodeIdList = asNodes.map((asNode) => asNode.node_id);
+  const asNodes = await tendermintNdid.getAsNodesInfoByServiceId({
+    service_id: data_request.service_id,
+  });
+
+  let nodes;
+  if (data_request.as_id_list != null && data_request.as_id_list.length > 0) {
+    nodes = asNodes.filter(
+      (asNode) => data_request.as_id_list.indexOf(asNode.node_id) >= 0
+    );
   } else {
-    nodeIdList = data_request.as_id_list;
+    nodes = asNodes;
   }
 
-  const receivers = (await Promise.all(
-    nodeIdList.map(async (nodeId) => {
-      try {
-        const mqAddress = await tendermintNdid.getMsqAddress(nodeId);
-        if (mqAddress == null) {
-          return null;
-        }
-        const { ip, port } = mqAddress;
-        const public_key = await tendermintNdid.getNodePubKey(nodeId);
-        return {
-          node_id: nodeId,
-          ip,
-          port,
-          public_key,
-        };
-      } catch (error) {
-        logger.error({
-          message: 'Cannot get IP, port, and/or public key of receiver AS',
-          nodeId,
-        });
-        return null;
-      }
-    })
-  )).filter((elem) => elem !== null);
+  const receivers = nodes.map((node) => {
+    return {
+      node_id: node.node_id,
+      ip: node.mq.ip,
+      port: node.mq.port,
+      public_key: node.public_key,
+    };
+  });
   return receivers;
 }
 

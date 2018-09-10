@@ -564,9 +564,47 @@ export async function getIdpNodes({ namespace, identifier, min_ial, min_aal }) {
   }
 }
 
+export async function getIdpNodesInfo({
+  namespace,
+  identifier,
+  min_ial,
+  min_aal,
+}) {
+  try {
+    const result = await tendermint.query('GetIdpNodesInfo', {
+      hash_id:
+        namespace && identifier
+          ? utils.hash(namespace + ':' + identifier)
+          : undefined,
+      min_ial,
+      min_aal,
+    });
+    return result != null ? (result.node != null ? result.node : []) : [];
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get IdP nodes from blockchain',
+      cause: error,
+    });
+  }
+}
+
 export async function getAsNodesByServiceId({ service_id }) {
   try {
     const result = await tendermint.query('GetAsNodesByServiceId', {
+      service_id,
+    });
+    return result != null ? (result.node != null ? result.node : []) : [];
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get AS nodes by service ID from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function getAsNodesInfoByServiceId({ service_id }) {
+  try {
+    const result = await tendermint.query('GetAsNodesInfoByServiceId', {
       service_id,
     });
     return result != null ? (result.node != null ? result.node : []) : [];
