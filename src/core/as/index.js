@@ -307,6 +307,7 @@ async function getDataAndSendBackToRP(request, responseDetails) {
           identifier: request.identifier,
           service_id,
           request_params,
+          requester_node_id: request.rp_id,
           ...responseDetails,
         },
         true,
