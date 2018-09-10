@@ -146,7 +146,10 @@ if (process.env.NODE_ENV === 'production') {
     process.exit(1);
   }
 
-  if (process.env.CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH == null) {
+  if (
+    process.env.ROLE === 'idp' &&
+    process.env.CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH == null
+  ) {
     console.error(
       'ERROR:',
       '"CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH" environment variable is not set. Process will now exit.'
@@ -154,7 +157,10 @@ if (process.env.NODE_ENV === 'production') {
     process.exit(1);
   }
 
-  if (process.env.ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH == null) {
+  if (
+    process.env.ROLE === 'idp' &&
+    process.env.ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH == null
+  ) {
     console.error(
       'ERROR:',
       '"ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH" environment variable is not set. Process will now exit.'
