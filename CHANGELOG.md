@@ -9,6 +9,7 @@ FEATURES:
 IMPROVEMENTS:
 
 - [DB - Sequelize] Try setting a value first if error with unique constraint error then update instead of using upsert in `set()` function.
+- Add `requester_node_id` property to AS service callback data.
 
 BUG FIXES:
 
@@ -16,6 +17,7 @@ BUG FIXES:
 - Fix unable to make an IdP response more than once when responding with less than request's minimum IAL and/or AAL the first time (by validating IdP response's IAL and AAL to be greater than or equal to request's minimum IAL and request's minimum AAL respectively).
 - Fix error when creating request without `data_request_list` (not set to empty array).
 - Fix cached request message data does not get deleted after used on IdP side.
+- Fix `CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH` and `ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH` environment variables are required even when role does not set to `idp`.
 
 ## 0.7.2 (August 22, 2018)
 
