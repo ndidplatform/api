@@ -419,8 +419,19 @@ export async function requestChallengeAfterBlockchain(
   try {
     if (error) throw error;
     //send message queue with public proof
-    const mqAddress = await tendermintNdid.getMsqAddress(rp_id);
-    if (mqAddress == null) {
+
+    const nodeInfo = await tendermintNdid.getNodeInfo(rp_id);
+    if (nodeInfo == null) {
+      throw new CustomError({
+        errorType: errorType.NODE_INFO_NOT_FOUND,
+        details: {
+          request_id,
+          accessor_id,
+        },
+      });
+    }
+
+    if (nodeInfo.mq == null) {
       throw new CustomError({
         errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
         details: {
@@ -429,12 +440,12 @@ export async function requestChallengeAfterBlockchain(
         },
       });
     }
-    const { ip, port } = mqAddress;
+
     const receiver = [
       {
-        ip,
-        port,
-        public_key: await tendermintNdid.getNodePubKey(rp_id),
+        ip: nodeInfo.mq.ip,
+        port: nodeInfo.mq.port,
+        public_key: nodeInfo.public_key,
       },
     ];
     mq.send(receiver, {
@@ -480,10 +491,10 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
     rp_id,
   });
 
-  const mqAddress = await tendermintNdid.getMsqAddress(rp_id);
-  if (mqAddress == null) {
+  const nodeInfo = await tendermintNdid.getNodeInfo(rp_id);
+  if (nodeInfo == null) {
     throw new CustomError({
-      errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+      errorType: errorType.NODE_INFO_NOT_FOUND,
       details: {
         request_id,
         privateProofObject,
@@ -491,11 +502,11 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
       },
     });
   }
-  const { ip, port } = mqAddress;
+
   const rpMq = {
-    ip,
-    port,
-    public_key: await tendermintNdid.getNodePubKey(rp_id),
+    ip: nodeInfo.mq.ip,
+    port: nodeInfo.mq.port,
+    public_key: nodeInfo.public_key,
   };
 
   mq.send([rpMq], {

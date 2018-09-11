@@ -154,6 +154,10 @@ export default {
     code: 10031,
     message: 'Cannot read callback url from file',
   },
+  NODE_INFO_NOT_FOUND: {
+    code: 10032,
+    message: 'Node info could not be found',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
