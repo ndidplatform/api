@@ -20,8 +20,8 @@
  *
  */
 
-import * as db from '../sequelize_common';
-import * as longTermDb from './sequelize';
+import * as db from '../redis_common';
+import * as longTermDb from './redis';
 import privateMessageType from '../../core/private_message_type';
 
 import logger from '../../logger';

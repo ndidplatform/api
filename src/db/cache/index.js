@@ -291,7 +291,7 @@ export function removeRequestReceivedFromMQ(requestId) {
 export function getRequestIdByReferenceId(referenceId) {
   return db.get({
     dbName,
-    name: 'requestIdReferenceIdMapping',
+    name: 'referenceIdRequestIdMapping',
     keyName: 'referenceId',
     key: referenceId,
     valueName: 'requestId',
@@ -301,7 +301,7 @@ export function getRequestIdByReferenceId(referenceId) {
 export function setRequestIdByReferenceId(referenceId, requestId) {
   return db.set({
     dbName,
-    name: 'requestIdReferenceIdMapping',
+    name: 'referenceIdRequestIdMapping',
     keyName: 'referenceId',
     key: referenceId,
     valueName: 'requestId',
@@ -312,20 +312,20 @@ export function setRequestIdByReferenceId(referenceId, requestId) {
 export function removeRequestIdByReferenceId(referenceId) {
   return db.remove({
     dbName,
-    name: 'requestIdReferenceIdMapping',
+    name: 'referenceIdRequestIdMapping',
     keyName: 'referenceId',
     key: referenceId,
   });
 }
 
-export function removeRequestIdReferenceIdMappingByRequestId(requestId) {
-  return db.remove({
-    dbName,
-    name: 'requestIdReferenceIdMapping',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
+// export function removeRequestIdReferenceIdMappingByRequestId(requestId) {
+//   return db.remove({
+//     dbName,
+//     name: 'requestIdReferenceIdMapping',
+//     keyName: 'requestId',
+//     key: requestId,
+//   });
+// }
 
 export function getReferenceIdByRequestId(requestId) {
   return db.get({

@@ -8,7 +8,7 @@ FEATURES:
 
 IMPROVEMENTS:
 
-- [DB - Sequelize] Try setting a value first if error with unique constraint error then update instead of using upsert in `set()` function.
+- Change cache and long-term database to Redis for better performance. This change introduces 2 new environment variables `DB_IP` and `DB_PORT`.
 - Add `requester_node_id` property to AS service callback data.
 - Reduce RPC/HTTP query calls to Tendermint.
 

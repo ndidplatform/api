@@ -1,4 +1,5 @@
 import * as cacheDb from './cache/redis';
+import * as longTermDb from './long_term/redis';
 
 import CustomError from '../error/custom_error';
 import errorType from '../error/type';
@@ -13,8 +14,8 @@ function getRedis(dbName) {
   switch (dbName) {
     case 'cache':
       return cacheDb.redis;
-    // case 'long-term':
-    //   return longTermDb;
+    case 'long-term':
+      return longTermDb.redis;
     default:
       throw new CustomError({ message: 'Unknown database name' });
   }

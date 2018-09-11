@@ -6,6 +6,7 @@
 
 - Node.js 8.9 or later (Recommended: latest version of Node.js 8 LTS)
 - npm 5.6.0 or later
+- Redis
 
 ## Getting started
 
@@ -48,6 +49,8 @@
 - `MASTER_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's master private key
 - `NODE_ID`: Node ID. Only when there are more than one node per role in the system. This ID tie to public key, in dev mode we have `rp1`, `rp2`, `rp3`, `idp1`, `idp2`, `idp3`, `as1`, `as2`, `as3` [Required]
 - `DATA_DIRECTORY_PATH`: Directory path for persistence data files [Default: `__dirname/../data` (`data` directory in repository's directory)]
+- `DB_IP`: IP address of Redis server [Default: `localhost`]
+- `DB_PORT`: Port of Redis server [Default: `6379`]
 - `LOG_LEVEL`: Log level. Allowed values are `error`, `warn`, `info`, `verbose`, `debug` and `silly` [Default: `debug` in development, `info` in production]
 - `LOG_FORMAT`: Log format. Allowed values are `default` and `json` [Default: `default`]
 - `LOG_TARGET`: Where should logger writes logs to. Allowed values are `console` and `file` [Default: `console`]

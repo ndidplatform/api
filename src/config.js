@@ -44,6 +44,9 @@ export const httpsCertPath =
 export const clientHttpErrorCode = process.env.CLIENT_HTTP_ERROR_CODE || 400;
 export const serverHttpErrorCode = process.env.SERVER_HTTP_ERROR_CODE || 500;
 
+export const dbIp = process.env.DB_IP || 'localhost';
+export const dbPort = process.env.DB_PORT || 6379;
+
 export const dataDirectoryPath =
   process.env.DATA_DIRECTORY_PATH || path.join(__dirname, '..', 'data');
 
@@ -163,6 +166,3 @@ export const maxIntervalTendermintSyncCheck = process.env
   .MAX_INTERVAL_TENDERMINT_SYNC_CHECK
   ? parseInt(process.env.MAX_INTERVAL_TENDERMINT_SYNC_CHECK)
   : 15000;
-
-export const redisIp = process.env.REDIS_IP || 'localhost';
-export const redisPort = process.env.REDIS_PORT || 6379;

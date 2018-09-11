@@ -5,7 +5,7 @@ import logger from '../../logger';
 
 import * as config from '../../config';
 
-const dbName = 'cache';
+const dbName = 'long-term';
 
 let backoff = new ExponentialBackoff({
   min: 1000,
