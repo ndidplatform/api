@@ -73,7 +73,7 @@ async function addKeyAndSetToken(role, index) {
 
   await ndid.setNodeToken({
     node_id,
-    amount: 1000,
+    amount: 100000,
   });
 }
 

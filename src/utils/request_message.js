@@ -25,14 +25,19 @@ import mustache from 'mustache';
 
 import * as config from '../config';
 
-const createIdentityTemplate = fs.readFileSync(
-  config.createIdentityRequestMessageTemplateFilepath,
-  'utf8'
-);
-const addAccessorTemplate = fs.readFileSync(
-  config.addAccessorRequestMessageTemplateFilepath,
-  'utf8'
-);
+let createIdentityTemplate;
+let addAccessorTemplate;
+
+if (config.role === 'idp') {
+  createIdentityTemplate = fs.readFileSync(
+    config.createIdentityRequestMessageTemplateFilepath,
+    'utf8'
+  );
+  addAccessorTemplate = fs.readFileSync(
+    config.addAccessorRequestMessageTemplateFilepath,
+    'utf8'
+  );
+}
 
 export function getRequestMessageForCreatingIdentity({
   reference_id,
