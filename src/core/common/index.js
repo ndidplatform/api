@@ -541,8 +541,17 @@ export async function handleChallengeRequest({
     challenge,
   });
 
-  const mqAddress = await tendermintNdid.getMsqAddress(idp_id);
-  if (mqAddress == null) {
+  const nodeInfo = await tendermintNdid.getNodeInfo(idp_id);
+  if (nodeInfo == null) {
+    throw new CustomError({
+      errorType: errorType.NODE_INFO_NOT_FOUND,
+      details: {
+        request_id,
+      },
+    });
+  }
+
+  if (nodeInfo.mq == null) {
     throw new CustomError({
       errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
       details: {
@@ -550,12 +559,12 @@ export async function handleChallengeRequest({
       },
     });
   }
-  const { ip, port } = mqAddress;
+
   const receiver = [
     {
-      ip,
-      port,
-      public_key: await tendermintNdid.getNodePubKey(idp_id),
+      ip: nodeInfo.mq.ip,
+      port: nodeInfo.mq.port,
+      public_key: nodeInfo.public_key,
     },
   ];
   mq.send(receiver, {
