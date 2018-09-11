@@ -10,7 +10,7 @@ IMPROVEMENTS:
 
 - [DB - Sequelize] Try setting a value first if error with unique constraint error then update instead of using upsert in `set()` function.
 - Add `requester_node_id` property to AS service callback data.
-- Reduce query RPC/HTTP calls to Tendermint.
+- Reduce RPC/HTTP query calls to Tendermint.
 
 BUG FIXES:
 
