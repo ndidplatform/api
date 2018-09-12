@@ -200,10 +200,17 @@ export async function createIdentity(
     });
     logger.error(err.getInfoForLog());
 
-    await Promise.all([
-      cacheDb.removeCreateIdentityDataByReferenceId(reference_id),
-      cacheDb.removeCallbackUrlByReferenceId(reference_id),
-    ]);
+    if (
+      !(
+        error.name === 'CustomError' &&
+        error.code === errorType.DUPLICATE_REFERENCE_ID.code
+      )
+    ) {
+      await Promise.all([
+        cacheDb.removeCreateIdentityDataByReferenceId(reference_id),
+        cacheDb.removeCallbackUrlByReferenceId(reference_id),
+      ]);
+    }
 
     throw err;
   }
@@ -880,8 +887,8 @@ export async function reCalculateSecret({
   let sid = namespace + ':' + identifier;
   let hash_id = utils.hash(sid);
   let accessor_public_key = await tendermintNdid.getAccessorKey(accessor_id);
-  
-  if(accessor_public_key == null) {
+
+  if (accessor_public_key == null) {
     throw new CustomError({
       errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND,
       details: {
@@ -891,7 +898,7 @@ export async function reCalculateSecret({
   }
 
   let isAssociate = await checkAssociated({ namespace, identifier });
-  if(!isAssociate) {
+  if (!isAssociate) {
     throw new CustomError({
       errorType: errorType.IDENTITY_NOT_FOUND,
       details: {
