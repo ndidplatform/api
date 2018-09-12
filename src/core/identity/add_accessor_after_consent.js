@@ -23,8 +23,6 @@
 import { getFunction } from '../common';
 
 import logger from '../../logger';
-import CustomError from '../../error/custom_error';
-import errorType from '../../error/type';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';

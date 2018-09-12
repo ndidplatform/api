@@ -441,14 +441,14 @@ export async function requestChallengeAfterBlockchain(
       });
     }
 
-    const receiver = [
+    const receivers = [
       {
         ip: nodeInfo.mq.ip,
         port: nodeInfo.mq.port,
         public_key: nodeInfo.public_key,
       },
     ];
-    mq.send(receiver, {
+    mq.send(receivers, {
       type: privateMessageType.CHALLENGE_REQUEST,
       request_id: request_id,
       idp_id: config.nodeId,
