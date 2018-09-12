@@ -30,6 +30,7 @@ import MQRecv from './mq_recv_controller';
 import * as tendermint from '../tendermint';
 import * as tendermintNdid from '../tendermint/ndid';
 import * as cacheDb from '../db/cache';
+import * as longTermDb from '../db/long_term';
 import * as utils from '../utils';
 import logger from '../logger';
 import CustomError from '../error/custom_error';
@@ -183,7 +184,18 @@ async function processMessage(messageId, messageBuffer) {
     });
 
     if (signatureValid) {
-      eventEmitter.emit('message', messageStr);
+      const message = JSON.parse(messageStr);
+
+      // TODO: validate message schema
+
+      await longTermDb.addMessage(
+        // longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+        message.type,
+        message.request_id,
+        messageStr
+      );
+
+      eventEmitter.emit('message', message);
       removeRawMessageFromCache(messageId);
     } else {
       throw new CustomError({
@@ -278,7 +290,7 @@ export async function send(receivers, message) {
     protoBuffer,
   });
 
-  receivers.forEach(async (receiver) => {
+  receivers.forEach((receiver) => {
     const {
       encryptedSymKey: encryptedSymmetricKey,
       encryptedMessage: encryptedMqMessage,
@@ -294,6 +306,13 @@ export async function send(receivers, message) {
     ).finish();
     mqSend.send(receiver, protoEncryptedBuffer);
   });
+
+  // await longTermDb.addMessage(
+  //   longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
+  //   message.type,
+  //   message.request_id,
+  //   messageStr
+  // );
 }
 
 export function close() {

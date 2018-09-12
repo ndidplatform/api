@@ -28,28 +28,21 @@ import logger from '../../logger';
 import * as tendermint from '../../tendermint';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
-import * as longTermDb from '../../db/long_term';
 import privateMessageType from '../private_message_type';
 
 const requestIdLocks = {};
 
-export async function handleMessageFromQueue(messageStr) {
+export async function handleMessageFromQueue(message) {
   logger.info({
     message: 'Received message from MQ',
   });
   logger.debug({
     message: 'Message from MQ',
-    messageStr,
+    messageJSON: message,
   });
-  // TODO: validate message schema
 
-  let requestId;
+  const requestId = message.request_id;
   try {
-    const message = JSON.parse(messageStr);
-    requestId = message.request_id;
-
-    await longTermDb.addMessage(message.type, requestId, messageStr);
-
     if (message.type === privateMessageType.DATA_REQUEST) {
       await cacheDb.setInitialSalt(message.request_id, message.initial_salt);
       const latestBlockHeight = tendermint.latestBlockHeight;
