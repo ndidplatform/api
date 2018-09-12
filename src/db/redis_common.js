@@ -25,7 +25,7 @@ export async function getList({ dbName, name, keyName, key, valueName }) {
   try {
     const redis = getRedis(dbName);
     const result = await redis.lrange(
-      prefixKey(`${dbName}-${name}-${key}`),
+      prefixKey(`${dbName}:${name}:${key}`),
       0,
       -1
     );
@@ -49,7 +49,7 @@ export async function getListWithRangeSupport({
   try {
     const redis = getRedis(dbName);
     const result = await redis.zrangebyscore(
-      prefixKey(`${dbName}-${name}`),
+      prefixKey(`${dbName}:${name}`),
       key,
       key
     );
@@ -66,7 +66,7 @@ export async function getListWithRangeSupport({
 export async function count({ dbName, name, keyName, key }) {
   try {
     const redis = getRedis(dbName);
-    const length = await redis.llen(prefixKey(`${dbName}-${name}-${key}`));
+    const length = await redis.llen(prefixKey(`${dbName}:${name}:${key}`));
     return length;
   } catch (error) {
     throw new CustomError({
@@ -87,7 +87,7 @@ export async function getListRange({
   try {
     const redis = getRedis(dbName);
     const result = await redis.zrangebyscore(
-      prefixKey(`${dbName}-${name}`),
+      prefixKey(`${dbName}:${name}`),
       keyRange.gte,
       keyRange.lte
     );
@@ -112,7 +112,7 @@ export async function pushToList({
   try {
     const redis = getRedis(dbName);
     value = JSON.stringify(value);
-    await redis.rpush(prefixKey(`${dbName}-${name}-${key}`), value);
+    await redis.rpush(prefixKey(`${dbName}:${name}:${key}`), value);
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,
@@ -133,7 +133,7 @@ export async function pushToListWithRangeSupport({
   try {
     const redis = getRedis(dbName);
     value = JSON.stringify(value);
-    await redis.zadd(prefixKey(`${dbName}-${name}`), 'NX', key, value);
+    await redis.zadd(prefixKey(`${dbName}:${name}`), 'NX', key, value);
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,
@@ -146,7 +146,7 @@ export async function pushToListWithRangeSupport({
 export async function removeList({ dbName, name, keyName, key }) {
   try {
     const redis = getRedis(dbName);
-    await redis.del(prefixKey(`${dbName}-${name}-${key}`));
+    await redis.del(prefixKey(`${dbName}:${name}:${key}`));
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,
@@ -160,7 +160,7 @@ export async function removeListRange({ dbName, name, keyName, keyRange }) {
   try {
     const redis = getRedis(dbName);
     await redis.zremrangebyscore(
-      prefixKey(`${dbName}-${name}`),
+      prefixKey(`${dbName}:${name}`),
       keyRange.gte,
       keyRange.lte
     );
@@ -176,7 +176,7 @@ export async function removeListRange({ dbName, name, keyName, keyRange }) {
 export async function removeAllLists({ dbName, name }) {
   try {
     const redis = getRedis(dbName);
-    const keys = await redis.keys(prefixKey(`${dbName}-${name}-*`));
+    const keys = await redis.keys(prefixKey(`${dbName}:${name}:*`));
     if (keys.length > 0) {
       await redis.del(...keys);
     }
@@ -192,7 +192,7 @@ export async function removeAllLists({ dbName, name }) {
 export async function get({ dbName, name, keyName, key, valueName }) {
   try {
     const redis = getRedis(dbName);
-    const result = await redis.get(prefixKey(`${dbName}-${name}-${key}`));
+    const result = await redis.get(prefixKey(`${dbName}:${name}:${key}`));
     return JSON.parse(result);
   } catch (error) {
     throw new CustomError({
@@ -207,7 +207,7 @@ export async function set({ dbName, name, keyName, key, valueName, value }) {
   try {
     const redis = getRedis(dbName);
     value = JSON.stringify(value);
-    await redis.set(prefixKey(`${dbName}-${name}-${key}`), value);
+    await redis.set(prefixKey(`${dbName}:${name}:${key}`), value);
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,
@@ -220,7 +220,7 @@ export async function set({ dbName, name, keyName, key, valueName, value }) {
 export async function remove({ dbName, name, keyName, key }) {
   try {
     const redis = getRedis(dbName);
-    await redis.del(prefixKey(`${dbName}-${name}-${key}`));
+    await redis.del(prefixKey(`${dbName}:${name}:${key}`));
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,
@@ -233,7 +233,7 @@ export async function remove({ dbName, name, keyName, key }) {
 export async function getAll({ dbName, name }) {
   try {
     const redis = getRedis(dbName);
-    const keys = await redis.keys(prefixKey(`${dbName}-${name}-*`));
+    const keys = await redis.keys(prefixKey(`${dbName}:${name}:*`));
     if (keys.length > 0) {
       const result = await redis.mget(...keys);
       return result.map((item) => JSON.parse(item));
