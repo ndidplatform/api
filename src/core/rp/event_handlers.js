@@ -102,7 +102,7 @@ export async function handleMessageFromQueue(messageStr) {
       );
       if (!callbackUrl) return;
 
-      //check accessor_id, undefined means mode 1
+      // "accessor_id" and private proof are present only in mode 3
       if (message.mode === 3) {
         //store private parameter from EACH idp to request, to pass along to as
         const request = await cacheDb.getRequestData(message.request_id);
