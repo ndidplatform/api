@@ -297,10 +297,17 @@ export async function createRequest(
     });
     logger.error(err.getInfoForLog());
 
-    await createRequestCleanUpOnError({
-      requestId: request_id,
-      referenceId: reference_id,
-    });
+    if (
+      !(
+        error.name === 'CustomError' &&
+        error.code === errorType.DUPLICATE_REFERENCE_ID.code
+      )
+    ) {
+      await createRequestCleanUpOnError({
+        requestId: request_id,
+        referenceId: reference_id,
+      });
+    }
 
     throw err;
   }
