@@ -300,7 +300,7 @@ export async function createResponse(createResponseParams) {
     await tendermintNdid.createIdpResponse(
       dataToBlockchain,
       'idp.createResponseAfterBlockchain',
-      [{ reference_id, callback_url, request_id, privateProofObject }]
+      [{ reference_id, callback_url, request_id, mode, privateProofObject }]
     );
   } catch (error) {
     const err = new CustomError({
@@ -314,12 +314,12 @@ export async function createResponse(createResponseParams) {
 
 export async function createResponseAfterBlockchain(
   { height, error },
-  { reference_id, callback_url, request_id, privateProofObject }
+  { reference_id, callback_url, request_id, mode, privateProofObject }
 ) {
   try {
     if (error) throw error;
 
-    await sendPrivateProofToRP(request_id, privateProofObject, height);
+    await sendResponseToRP(request_id, mode, privateProofObject, height);
 
     await callbackToClient(
       callback_url,
@@ -478,7 +478,7 @@ export async function requestChallengeAfterBlockchain(
   }
 }
 
-async function sendPrivateProofToRP(request_id, privateProofObject, height) {
+async function sendResponseToRP(request_id, mode, privateProofObject, height) {
   //mode 1
   if (!privateProofObject) privateProofObject = {};
   const rp_id = await cacheDb.getRPIdFromRequestId(request_id);
@@ -512,6 +512,7 @@ async function sendPrivateProofToRP(request_id, privateProofObject, height) {
   mq.send([rpMq], {
     type: privateMessageType.IDP_RESPONSE,
     request_id,
+    mode,
     ...privateProofObject,
     height,
     idp_id: config.nodeId,
