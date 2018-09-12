@@ -280,10 +280,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
 }
 
 async function sendDataToRP(rpId, data) {
-  const receivers = [];
-  const nodeId = rpId;
-
-  const nodeInfo = await tendermintNdid.getNodeInfo(nodeId);
+  const nodeInfo = await tendermintNdid.getNodeInfo(rpId);
   if (nodeInfo == null) {
     throw new CustomError({
       errorType: errorType.NODE_INFO_NOT_FOUND,
@@ -302,11 +299,13 @@ async function sendDataToRP(rpId, data) {
     });
   }
 
-  receivers.push({
-    ip: nodeInfo.mq.ip,
-    port: nodeInfo.mq.port,
-    public_key: nodeInfo.public_key,
-  });
+  const receivers = [
+    {
+      ip: nodeInfo.mq.ip,
+      port: nodeInfo.mq.port,
+      public_key: nodeInfo.public_key,
+    },
+  ];
   mq.send(receivers, {
     type: privateMessageType.AS_DATA_RESPONSE,
     request_id: data.request_id,

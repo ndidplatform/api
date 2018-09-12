@@ -503,13 +503,14 @@ async function sendResponseToRP(request_id, mode, privateProofObject, height) {
     });
   }
 
-  const rpMq = {
-    ip: nodeInfo.mq.ip,
-    port: nodeInfo.mq.port,
-    public_key: nodeInfo.public_key,
-  };
-
-  mq.send([rpMq], {
+  const receivers = [
+    {
+      ip: nodeInfo.mq.ip,
+      port: nodeInfo.mq.port,
+      public_key: nodeInfo.public_key,
+    },
+  ];
+  mq.send(receivers, {
     type: privateMessageType.IDP_RESPONSE,
     request_id,
     mode,
