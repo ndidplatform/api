@@ -320,18 +320,10 @@ export async function getIdpsMsqDestination({
     identifier: mode === 3 ? identifier : undefined,
     min_ial,
     min_aal,
+    node_id_list: idp_id_list, // filter to include only nodes in this list if node ID exists
   });
 
-  let filteredIdpNodes;
-  if (idp_id_list != null && idp_id_list.length > 0) {
-    filteredIdpNodes = idpNodes.filter(
-      (idpNode) => idp_id_list.indexOf(idpNode.node_id) >= 0
-    );
-  } else {
-    filteredIdpNodes = idpNodes;
-  }
-
-  const receivers = filteredIdpNodes.map((idpNode) => {
+  const receivers = idpNodes.map((idpNode) => {
     return {
       idp_id: idpNode.node_id,
       ip: idpNode.mq.ip,

@@ -569,6 +569,7 @@ export async function getIdpNodesInfo({
   identifier,
   min_ial,
   min_aal,
+  node_id_list,
 }) {
   try {
     const result = await tendermint.query('GetIdpNodesInfo', {
@@ -578,6 +579,7 @@ export async function getIdpNodesInfo({
           : undefined,
       min_ial,
       min_aal,
+      node_id_list,
     });
     return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {
@@ -602,10 +604,11 @@ export async function getAsNodesByServiceId({ service_id }) {
   }
 }
 
-export async function getAsNodesInfoByServiceId({ service_id }) {
+export async function getAsNodesInfoByServiceId({ service_id, node_id_list }) {
   try {
     const result = await tendermint.query('GetAsNodesInfoByServiceId', {
       service_id,
+      node_id_list,
     });
     return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {

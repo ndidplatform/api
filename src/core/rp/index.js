@@ -124,23 +124,15 @@ export function isAllIdpRespondedAndValid({
 async function getASReceiverList(data_request) {
   const asNodes = await tendermintNdid.getAsNodesInfoByServiceId({
     service_id: data_request.service_id,
+    node_id_list: data_request.as_id_list, // filter to include only nodes in this list if node ID exists
   });
 
-  let nodes;
-  if (data_request.as_id_list != null && data_request.as_id_list.length > 0) {
-    nodes = asNodes.filter(
-      (asNode) => data_request.as_id_list.indexOf(asNode.node_id) >= 0
-    );
-  } else {
-    nodes = asNodes;
-  }
-
-  const receivers = nodes.map((node) => {
+  const receivers = asNodes.map((asNode) => {
     return {
-      node_id: node.node_id,
-      ip: node.mq.ip,
-      port: node.mq.port,
-      public_key: node.public_key,
+      node_id: asNode.node_id,
+      ip: asNode.mq.ip,
+      port: asNode.mq.port,
+      public_key: asNode.public_key,
     };
   });
   return receivers;
