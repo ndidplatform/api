@@ -552,14 +552,14 @@ export async function handleChallengeRequest({
     });
   }
 
-  const receiver = [
+  const receivers = [
     {
       ip: nodeInfo.mq.ip,
       port: nodeInfo.mq.port,
       public_key: nodeInfo.public_key,
     },
   ];
-  mq.send(receiver, {
+  mq.send(receivers, {
     type: privateMessageType.CHALLENGE_RESPONSE,
     challenge,
     request_id,
