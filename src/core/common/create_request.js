@@ -120,76 +120,81 @@ export async function createRequest(
     }
 
     if (data_request_list != null && data_request_list.length > 0) {
-      const serviceIds = [];
-      for (let i = 0; i < data_request_list.length; i++) {
-        const { service_id, as_id_list, min_as } = data_request_list[i];
+      const serviceIds = data_request_list.map(
+        (dataRequest) => dataRequest.service_id
+      );
 
-        if (serviceIds.includes(service_id)) {
-          throw new CustomError({
-            errorType: errorType.DUPLICATE_SERVICE_ID,
-            details: {
-              index: i,
-              service_id,
-            },
-          });
-        }
-        serviceIds.push(service_id);
+      const serviceIdsNoDuplicate = [...new Set(serviceIds)];
 
-        //all as_list offer the service
-        let potential_as_list = await tendermintNdid.getAsNodesByServiceId({
-          service_id,
+      if (serviceIds.length !== serviceIdsNoDuplicate.length) {
+        throw new CustomError({
+          errorType: errorType.DUPLICATE_SERVICE_ID,
+          details: {
+            data_request_list,
+          },
         });
-        if (as_id_list != null && as_id_list.length > 0) {
-          if (as_id_list.length < min_as) {
-            throw new CustomError({
-              errorType: errorType.AS_LIST_LESS_THAN_MIN_AS,
-              details: {
-                service_id,
-                as_id_list,
-                min_as,
-              },
+      }
+
+      await Promise.all(
+        data_request_list.map(async (dataRequest) => {
+          const { service_id, as_id_list, min_as } = dataRequest;
+
+          //all as_list offer the service
+          let potential_as_list = await tendermintNdid.getAsNodesByServiceId({
+            service_id,
+          });
+          if (as_id_list != null && as_id_list.length > 0) {
+            if (as_id_list.length < min_as) {
+              throw new CustomError({
+                errorType: errorType.AS_LIST_LESS_THAN_MIN_AS,
+                details: {
+                  service_id,
+                  as_id_list,
+                  min_as,
+                },
+              });
+            }
+
+            if (potential_as_list.length < min_as) {
+              throw new CustomError({
+                errorType: errorType.NOT_ENOUGH_AS,
+                details: {
+                  service_id,
+                  potential_as_list,
+                  min_as,
+                },
+              });
+            }
+
+            //filter potential AS to be only in as_id_list
+            potential_as_list = potential_as_list.filter((as_node) => {
+              return as_id_list.indexOf(as_node.node_id) !== -1;
             });
+
+            if (potential_as_list.length !== as_id_list.length) {
+              throw new CustomError({
+                errorType: errorType.SOME_AS_DO_NOT_PROVIDE_SERVICE,
+              });
+            }
           }
+          //filter min_ial, min_aal
+          potential_as_list = potential_as_list.filter((as_node) => {
+            return as_node.min_ial <= min_ial && as_node.min_aal <= min_aal;
+          });
 
           if (potential_as_list.length < min_as) {
             throw new CustomError({
-              errorType: errorType.NOT_ENOUGH_AS,
+              errorType: errorType.CONDITION_TOO_LOW,
               details: {
                 service_id,
-                potential_as_list,
+                min_ial,
+                min_aal,
                 min_as,
               },
             });
           }
-
-          //filter potential AS to be only in as_id_list
-          potential_as_list = potential_as_list.filter((as_node) => {
-            return as_id_list.indexOf(as_node.node_id) !== -1;
-          });
-
-          if (potential_as_list.length !== as_id_list.length) {
-            throw new CustomError({
-              errorType: errorType.SOME_AS_DO_NOT_PROVIDE_SERVICE,
-            });
-          }
-        }
-        //filter min_ial, min_aal
-        potential_as_list = potential_as_list.filter((as_node) => {
-          return as_node.min_ial <= min_ial && as_node.min_aal <= min_aal;
-        });
-
-        if (potential_as_list.length < min_as) {
-          throw new CustomError({
-            errorType: errorType.CONDITION_TOO_LOW,
-            details: {
-              service_id,
-              min_ial,
-              min_aal,
-              min_as,
-            },
-          });
-        }
-      }
+        })
+      );
     }
 
     const receivers = await getIdpsMsqDestination({
