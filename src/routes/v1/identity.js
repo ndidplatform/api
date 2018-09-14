@@ -23,6 +23,7 @@
 import express from 'express';
 
 import { validateBody } from '../middleware/validation';
+import { idpOnlyHandler } from '../middleware/role_handler';
 import * as identity from '../../core/identity';
 import * as common from '../../core/common';
 import * as tendermintNdid from '../../tendermint/ndid';
@@ -31,7 +32,7 @@ import errorType from '../../error/type';
 
 const router = express.Router();
 
-router.post('/', validateBody, async (req, res, next) => {
+router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
   try {
     const {
       namespace,
@@ -62,16 +63,21 @@ router.post('/', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/requests/close', validateBody, async (req, res, next) => {
-  try {
-    const { request_id } = req.body;
+router.post(
+  '/requests/close',
+  idpOnlyHandler,
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { request_id } = req.body;
 
-    await common.closeRequest(request_id);
-    res.status(204).end();
-  } catch (error) {
-    next(error);
+      await common.closeRequest(request_id);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
@@ -94,21 +100,27 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
   }
 });
 
-router.post('/:namespace/:identifier', validateBody, async (req, res, next) => {
-  try {
-    const { namespace, identifier } = req.params;
+router.post(
+  '/:namespace/:identifier',
+  idpOnlyHandler,
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { namespace, identifier } = req.params;
 
-    // Not Implemented
-    // TODO
+      // Not Implemented
+      // TODO
 
-    res.status(501).end();
-  } catch (error) {
-    next(error);
+      res.status(501).end();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 router.post(
   '/:namespace/:identifier/ial',
+  idpOnlyHandler,
   validateBody,
   async (req, res, next) => {
     try {
@@ -162,6 +174,7 @@ router.post(
 
 router.post(
   '/:namespace/:identifier/accessors',
+  idpOnlyHandler,
   validateBody,
   async (req, res, next) => {
     try {

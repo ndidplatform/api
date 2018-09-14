@@ -23,6 +23,7 @@
 import express from 'express';
 
 import { validateBody } from '../middleware/validation';
+import { idpOnlyHandler } from '../middleware/role_handler';
 import * as identity from '../../core/identity';
 import * as common from '../../core/common';
 import * as tendermintNdid from '../../tendermint/ndid';
@@ -32,7 +33,7 @@ import { reCalculateSecret } from '../../core/identity';
 
 const router = express.Router();
 
-router.post('/', validateBody, async (req, res, next) => {
+router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
   try {
     const {
       reference_id,
@@ -65,39 +66,48 @@ router.post('/', validateBody, async (req, res, next) => {
   }
 });
 
-router.get('/requests/reference/:reference_id', async (req, res, next) => {
-  try {
-    const { reference_id } = req.params;
+router.get(
+  '/requests/reference/:reference_id',
+  idpOnlyHandler,
+  async (req, res, next) => {
+    try {
+      const { reference_id } = req.params;
 
-    const createIdentityData = await identity.getCreateIdentityDataByReferenceId(
-      reference_id
-    );
-    if (createIdentityData != null) {
-      res.status(200).json({
-        request_id: createIdentityData.request_id,
-        accessor_id: createIdentityData.accessor_id,
-      });
-    } else {
-      res.status(404).end();
+      const createIdentityData = await identity.getCreateIdentityDataByReferenceId(
+        reference_id
+      );
+      if (createIdentityData != null) {
+        res.status(200).json({
+          request_id: createIdentityData.request_id,
+          accessor_id: createIdentityData.accessor_id,
+        });
+      } else {
+        res.status(404).end();
+      }
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
   }
-});
+);
 
-router.post('/requests/close', validateBody, async (req, res, next) => {
-  try {
-    const { reference_id, callback_url, request_id } = req.body;
+router.post(
+  '/requests/close',
+  idpOnlyHandler,
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { reference_id, callback_url, request_id } = req.body;
 
-    await common.closeRequest(
-      { reference_id, callback_url, request_id },
-      { synchronous: false }
-    );
-    res.status(202).end();
-  } catch (error) {
-    next(error);
+      await common.closeRequest(
+        { reference_id, callback_url, request_id },
+        { synchronous: false }
+      );
+      res.status(202).end();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
@@ -120,22 +130,28 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
   }
 });
 
-router.post('/:namespace/:identifier', validateBody, async (req, res, next) => {
-  try {
-    const { namespace, identifier } = req.params;
-    const { reference_id, callback_url, identifier_list } = req.body;
+router.post(
+  '/:namespace/:identifier',
+  idpOnlyHandler,
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { namespace, identifier } = req.params;
+      const { reference_id, callback_url, identifier_list } = req.body;
 
-    // Not Implemented
-    // TODO
+      // Not Implemented
+      // TODO
 
-    res.status(501).end();
-  } catch (error) {
-    next(error);
+      res.status(501).end();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 router.post(
   '/:namespace/:identifier/ial',
+  idpOnlyHandler,
   validateBody,
   async (req, res, next) => {
     try {
@@ -197,6 +213,7 @@ router.post(
 
 router.post(
   '/:namespace/:identifier/accessors',
+  idpOnlyHandler,
   validateBody,
   async (req, res, next) => {
     try {
@@ -234,7 +251,7 @@ router.post(
   }
 );
 
-router.post('/secret', async (req, res, next) => {
+router.post('/secret', idpOnlyHandler, async (req, res, next) => {
   try {
     let { accessor_id, namespace, identifier, reference_id } = req.body;
     const secret = await reCalculateSecret({

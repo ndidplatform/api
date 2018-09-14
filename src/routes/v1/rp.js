@@ -23,10 +23,13 @@
 import express from 'express';
 
 import { validateBody } from '../middleware/validation';
+import { rpOnlyHandler } from '../middleware/role_handler';
 import * as rp from '../../core/rp';
 import * as common from '../../core/common';
 
 const router = express.Router();
+
+router.use(rpOnlyHandler);
 
 router.post(
   '/requests/housekeeping/data/:request_id',

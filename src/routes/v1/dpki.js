@@ -23,48 +23,54 @@
 import express from 'express';
 
 import { validateBody } from '../middleware/validation';
+import { ndidOnlyHandler } from '../middleware/role_handler';
 import * as ndid from '../../core/ndid';
 import * as dpki from '../../core/dpki';
 import * as externalCryptoService from '../../utils/external_crypto_service';
 
 const router = express.Router();
 
-router.post('/node/create', validateBody, async (req, res, next) => {
-  try {
-    const {
-      node_id,
-      node_name,
-      node_key,
-      node_key_type,
-      // node_sign_method,
-      node_master_key,
-      node_master_key_type,
-      // node_master_sign_method,
-      role,
-      max_aal,
-      max_ial,
-    } = req.body;
-
-    await ndid.registerNode(
-      {
+router.post(
+  '/node/create',
+  ndidOnlyHandler,
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const {
         node_id,
         node_name,
-        public_key: node_key,
-        public_key_type: node_key_type,
-        master_public_key: node_master_key,
-        master_public_key_type: node_master_key_type,
+        node_key,
+        node_key_type,
+        // node_sign_method,
+        node_master_key,
+        node_master_key_type,
+        // node_master_sign_method,
         role,
-        max_ial,
         max_aal,
-      },
-      { synchronous: true }
-    );
+        max_ial,
+      } = req.body;
 
-    res.status(201).end();
-  } catch (error) {
-    next(error);
+      await ndid.registerNode(
+        {
+          node_id,
+          node_name,
+          public_key: node_key,
+          public_key_type: node_key_type,
+          master_public_key: node_master_key,
+          master_public_key_type: node_master_key_type,
+          role,
+          max_ial,
+          max_aal,
+        },
+        { synchronous: true }
+      );
+
+      res.status(201).end();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 router.post('/node/update', validateBody, async (req, res, next) => {
   try {

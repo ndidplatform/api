@@ -23,9 +23,12 @@
 import express from 'express';
 
 import { validateBody } from '../middleware/validation';
+import { asOnlyHandler } from '../middleware/role_handler';
 import * as as from '../../core/as';
 
 const router = express.Router();
+
+router.use(asOnlyHandler);
 
 router.post('/service/:service_id', validateBody, async (req, res, next) => {
   try {
