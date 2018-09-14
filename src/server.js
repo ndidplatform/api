@@ -72,11 +72,13 @@ async function initialize() {
 
     let externalCryptoServiceReady;
     if (config.useExternalCryptoService) {
-      externalCryptoServiceReady = new Promise((resolve) =>
-        externalCryptoService.eventEmitter.once('allCallbacksSet', () =>
-          resolve()
-        )
-      );
+      if (!externalCryptoService.isCallbackUrlsSet()) {
+        externalCryptoServiceReady = new Promise((resolve) =>
+          externalCryptoService.eventEmitter.once('allCallbacksSet', () =>
+            resolve()
+          )
+        );
+      }
     }
 
     httpServer.initialize();
