@@ -26,6 +26,7 @@ import { closeRequestInternalAsyncAfterBlockchain } from './close_request';
 import CustomError from '../../error/custom_error';
 import logger from '../../logger';
 
+import { role } from '../../node';
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as rp from '../rp';
@@ -45,18 +46,14 @@ import * as config from '../../config';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
 import * as cacheDb from '../../db/cache';
-import * as externalCryptoService from '../../utils/external_crypto_service';
 import privateMessageType from '../private_message_type';
 
 export * from './create_request';
 export * from './close_request';
 
-const role = config.role;
-
-let initialized = false;
-
 let messageQueueAddressRegistered = !config.registerMqAtStartup;
-let handleMessageFromQueue;
+
+tendermint.setTxResultCallbackFnGetter(getFunction);
 
 export function registeredMsqAddress() {
   return messageQueueAddressRegistered;
@@ -89,35 +86,60 @@ async function registerMessageQueueAddress() {
   }
 }
 
-async function initialize() {
-  if (!initialized) {
-    if (role === 'rp' || role === 'idp' || role === 'as') {
-      await registerMessageQueueAddress();
-      await mq.init();
-      await mq.loadAndProcessBacklogMessages();
-    }
-    await tendermint.loadExpectedTxFromDB();
-    initialized = true;
+export async function initialize() {
+  if (role === 'rp' || role === 'idp' || role === 'as') {
+    await registerMessageQueueAddress();
+    await mq.init();
+    await mq.loadAndProcessBacklogMessages();
   }
+  await tendermint.loadExpectedTxFromDB();
+
+  let handleMessageFromQueue;
+  if (role === 'rp') {
+    handleMessageFromQueue = rp.handleMessageFromQueue;
+    tendermint.setTendermintNewBlockEventHandler(rp.handleTendermintNewBlock);
+    setShouldRetryFnGetter(getFunction);
+    setResponseCallbackFnGetter(getFunction);
+    resumeTimeoutScheduler();
+    resumeCallbackToClient();
+  } else if (role === 'idp') {
+    handleMessageFromQueue = idp.handleMessageFromQueue;
+    tendermint.setTendermintNewBlockEventHandler(idp.handleTendermintNewBlock);
+    setShouldRetryFnGetter(getFunction);
+    setResponseCallbackFnGetter(getFunction);
+    resumeTimeoutScheduler();
+    resumeCallbackToClient();
+  } else if (role === 'as') {
+    handleMessageFromQueue = as.handleMessageFromQueue;
+    tendermint.setTendermintNewBlockEventHandler(as.handleTendermintNewBlock);
+    setShouldRetryFnGetter(getFunction);
+    setResponseCallbackFnGetter(getFunction);
+    resumeCallbackToClient();
+  }
+
+  if (handleMessageFromQueue) {
+    mq.eventEmitter.on('message', handleMessageFromQueue);
+  }
+  mq.eventEmitter.on('error', handleMessageQueueError);
 }
 
-tendermint.eventEmitter.on('ready', async () => {
-  if (
-    !config.useExternalCryptoService ||
-    (config.useExternalCryptoService &&
-      externalCryptoService.isCallbackUrlsSet())
-  ) {
-    await initialize();
-  }
-});
+// tendermint.eventEmitter.on('ready', async () => {
+//   if (
+//     !config.useExternalCryptoService ||
+//     (config.useExternalCryptoService &&
+//       externalCryptoService.isCallbackUrlsSet())
+//   ) {
+//     await initialize();
+//   }
+// });
 
-if (config.useExternalCryptoService) {
-  externalCryptoService.eventEmitter.on('allCallbacksSet', async () => {
-    if (tendermint.syncing === false) {
-      await initialize();
-    }
-  });
-}
+// if (config.useExternalCryptoService) {
+//   externalCryptoService.eventEmitter.on('allCallbacksSet', async () => {
+//     if (tendermint.syncing === false) {
+//       await initialize();
+//     }
+//   });
+// }
 
 export function getFunction(fnName) {
   switch (fnName) {
@@ -163,30 +185,6 @@ export function getFunction(fnName) {
         },
       });
   }
-}
-
-tendermint.setTxResultCallbackFnGetter(getFunction);
-
-if (role === 'rp') {
-  handleMessageFromQueue = rp.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockEventHandler(rp.handleTendermintNewBlock);
-  setShouldRetryFnGetter(getFunction);
-  setResponseCallbackFnGetter(getFunction);
-  resumeTimeoutScheduler();
-  resumeCallbackToClient();
-} else if (role === 'idp') {
-  handleMessageFromQueue = idp.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockEventHandler(idp.handleTendermintNewBlock);
-  setShouldRetryFnGetter(getFunction);
-  setResponseCallbackFnGetter(getFunction);
-  resumeTimeoutScheduler();
-  resumeCallbackToClient();
-} else if (role === 'as') {
-  handleMessageFromQueue = as.handleMessageFromQueue;
-  tendermint.setTendermintNewBlockEventHandler(as.handleTendermintNewBlock);
-  setShouldRetryFnGetter(getFunction);
-  setResponseCallbackFnGetter(getFunction);
-  resumeCallbackToClient();
 }
 
 async function resumeTimeoutScheduler() {
@@ -288,11 +286,11 @@ async function handleMessageQueueError(error) {
   });
   logger.error(err.getInfoForLog());
   let callbackUrl;
-  if (config.role === 'rp') {
+  if (role === 'rp') {
     callbackUrl = rp.getErrorCallbackUrl();
-  } else if (config.role === 'idp') {
+  } else if (role === 'idp') {
     callbackUrl = idp.getErrorCallbackUrl();
-  } else if (config.role === 'as') {
+  } else if (role === 'as') {
     callbackUrl = as.getErrorCallbackUrl();
   }
   await notifyError({
@@ -301,11 +299,6 @@ async function handleMessageQueueError(error) {
     error: err,
   });
 }
-
-if (handleMessageFromQueue) {
-  mq.eventEmitter.on('message', handleMessageFromQueue);
-}
-mq.eventEmitter.on('error', handleMessageQueueError);
 
 export async function getIdpsMsqDestination({
   namespace,
@@ -508,8 +501,8 @@ export async function handleChallengeRequest({
 
   //if match, send challenge and return
   const nodeId = {};
-  if (config.role === 'idp') nodeId.idp_id = config.nodeId;
-  else if (config.role === 'rp') nodeId.rp_id = config.nodeId;
+  if (role === 'idp') nodeId.idp_id = config.nodeId;
+  else if (role === 'rp') nodeId.rp_id = config.nodeId;
 
   let challenge;
   let challengeObject = await cacheDb.getChallengeFromRequestId(request_id);

@@ -53,7 +53,7 @@ export const Entities = {
   }),
 };
 
-if (config.role === 'rp' || config.role === 'idp' || config.role === 'as') {
+// if (role === 'rp' || role === 'idp' || role === 'as') {
   Entities.rawReceivedMessageFromMQ = sequelize.define(
     'rawReceivedMessageFromMQ',
     {
@@ -68,9 +68,9 @@ if (config.role === 'rp' || config.role === 'idp' || config.role === 'as') {
       unixTimeout: Sequelize.INTEGER,
     }
   );
-}
+// }
 
-if (config.role === 'rp' || config.role === 'idp') {
+// if (role === 'rp' || role === 'idp') {
   Entities.requestIdReferenceIdMapping = sequelize.define(
     'requestIdReferenceIdMapping',
     {
@@ -112,9 +112,9 @@ if (config.role === 'rp' || config.role === 'idp') {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     challenge: Sequelize.JSON,
   });
-}
+// }
 
-if (config.role === 'idp' || config.role === 'as') {
+// if (role === 'idp' || role === 'as') {
   Entities.requestIdExpectedInBlock = sequelize.define(
     'requestIdExpectedInBlock',
     {
@@ -126,9 +126,9 @@ if (config.role === 'idp' || config.role === 'as') {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     request: Sequelize.JSON,
   });
-}
+// }
 
-if (config.role === 'rp') {
+// if (role === 'rp') {
   Entities.expectedIdpResponseNodeIdInBlock = sequelize.define(
     'expectedIdpResponseNodeIdInBlock',
     {
@@ -158,9 +158,9 @@ if (config.role === 'rp') {
     asResponseId: { type: Sequelize.STRING, primaryKey: true },
     dataResponse: Sequelize.JSON,
   });
-}
+// }
 
-if (config.role === 'idp') {
+// if (role === 'idp') {
   Entities.requestToProcessReceivedFromMQ = sequelize.define(
     'requestToProcessReceivedFromMQ',
     {
@@ -197,9 +197,9 @@ if (config.role === 'idp') {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     requestMessageAndSalt: Sequelize.JSON,
   });
-}
+// }
 
-if (config.role === 'as') {
+// if (role === 'as') {
   Entities.initialSalt = sequelize.define('initialSalt', {
     requestId: { type: Sequelize.STRING, primaryKey: true },
     initialSalt: Sequelize.STRING,
@@ -208,7 +208,7 @@ if (config.role === 'as') {
     dataRequestId: { type: Sequelize.STRING, primaryKey: true },
     rpId: Sequelize.STRING,
   });
-}
+// }
 
 export const init = sequelize.sync();
 

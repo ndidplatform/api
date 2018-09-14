@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD - proxy
+
+IMPROVEMENTS:
+
+- Remove `ROLE` environment variable option. The server will get a node's role from blockchain on start.
+
 ## TBD
 
 FEATURES:

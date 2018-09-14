@@ -40,15 +40,8 @@ if (process.env.NODE_ENV == null || process.env.NODE_ENV === '') {
   }
 }
 
-if (process.env.ROLE == null) {
-  console.error(
-    'ERROR:',
-    '"ROLE" environment variable is not set. Process will now exit.'
-  );
-  process.exit(1);
-}
-
 if (
+  process.env.ROLE != null &&
   process.env.ROLE !== 'idp' &&
   process.env.ROLE !== 'rp' &&
   process.env.ROLE !== 'as' &&
@@ -146,25 +139,25 @@ if (process.env.NODE_ENV === 'production') {
     process.exit(1);
   }
 
-  if (
-    process.env.ROLE === 'idp' &&
-    process.env.CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH == null
-  ) {
-    console.error(
-      'ERROR:',
-      '"CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH" environment variable is not set. Process will now exit.'
-    );
-    process.exit(1);
-  }
+  // if (
+  //   process.env.ROLE === 'idp' &&
+  //   process.env.CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH == null
+  // ) {
+  //   console.error(
+  //     'ERROR:',
+  //     '"CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH" environment variable is not set. Process will now exit.'
+  //   );
+  //   process.exit(1);
+  // }
 
-  if (
-    process.env.ROLE === 'idp' &&
-    process.env.ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH == null
-  ) {
-    console.error(
-      'ERROR:',
-      '"ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH" environment variable is not set. Process will now exit.'
-    );
-    process.exit(1);
-  }
+  // if (
+  //   process.env.ROLE === 'idp' &&
+  //   process.env.ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH == null
+  // ) {
+  //   console.error(
+  //     'ERROR:',
+  //     '"ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH" environment variable is not set. Process will now exit.'
+  //   );
+  //   process.exit(1);
+  // }
 }

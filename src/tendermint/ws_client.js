@@ -33,7 +33,7 @@ import CustomError from '../error/custom_error';
 const PING_INTERVAL = 30000;
 
 export default class TendermintWsClient extends EventEmitter {
-  constructor() {
+  constructor(connect) {
     super();
     this.wsConnected = false;
     this.isAlive = false;
@@ -46,7 +46,9 @@ export default class TendermintWsClient extends EventEmitter {
       factor: 2,
       jitter: 0,
     });
-    this.connect();
+    if (connect) {
+      this.connect();
+    }
   }
 
   connect() {

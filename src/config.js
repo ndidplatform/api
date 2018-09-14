@@ -62,21 +62,9 @@ export const logDirectoryPath =
 export const logLengthThreshold = Infinity; // 2000
 export const replaceForTooLongLog = '<--- Too long, omitted --->';
 
-export const role = process.env.ROLE;
+export const defaultMqBindingPort = 5555;
 
-export const defaultMqBindingPort = (() => {
-  if (process.env.ROLE === 'idp') return 5555;
-  if (process.env.ROLE === 'rp') return 5556;
-  if (process.env.ROLE === 'as') return 5557;
-  else return 5555;
-})();
-
-export const defaultTendermintPort = (() => {
-  if (process.env.ROLE === 'idp' || process.env.ROLE === 'ndid') return '45000';
-  if (process.env.ROLE === 'rp') return '45001';
-  if (process.env.ROLE === 'as') return '45002';
-  else return '45000';
-})();
+export const defaultTendermintPort = 45000;
 
 export const tendermintIp =
   process.env.TENDERMINT_IP == null ? 'localhost' : process.env.TENDERMINT_IP;
@@ -105,9 +93,7 @@ export const mqRegister = {
 export const registerMqAtStartup =
   process.env.REGISTER_MQ_AT_STARTUP != null
     ? process.env.REGISTER_MQ_AT_STARTUP === 'true'
-    : role === 'ndid'
-      ? false
-      : true;
+    : true;
 
 export const useExternalCryptoService =
   process.env.USE_EXTERNAL_CRYPTO_SERVICE === 'true';
@@ -115,7 +101,7 @@ export const useExternalCryptoService =
 export const privateKeyPath = useExternalCryptoService
   ? null
   : process.env.PRIVATE_KEY_PATH == null
-    ? path.join(__dirname, '..', 'dev_key', role, nodeId)
+    ? path.join(__dirname, '..', 'dev_key', 'keys', nodeId)
     : process.env.PRIVATE_KEY_PATH;
 export const privateKeyPassphrase = useExternalCryptoService
   ? null
@@ -124,11 +110,15 @@ export const privateKeyPassphrase = useExternalCryptoService
 export const masterPrivateKeyPath = useExternalCryptoService
   ? null
   : process.env.MASTER_PRIVATE_KEY_PATH == null
-    ? path.join(__dirname, '..', 'dev_key', role, nodeId + '_master')
+    ? path.join(__dirname, '..', 'dev_key', 'master_keys', nodeId + '_master')
     : process.env.MASTER_PRIVATE_KEY_PATH;
 export const masterPrivateKeyPassphrase = useExternalCryptoService
   ? null
   : process.env.MASTER_PRIVATE_KEY_PASSPHRASE;
+
+export const privateKeyDirectoryPath = process.env.PRIVATE_KEY_DIRECTORY_PATH;
+export const masterPrivateKeyDirectoryPath =
+  process.env.MASTER_PRIVATE_KEY_DIRECTORY_PATH;
 
 //in byte
 export const challengeLength = 2;

@@ -317,14 +317,14 @@ export async function send(receivers, message) {
 
 export function close() {
   if (mqRecv) {
+    logger.info({
+      message: 'Message queue socket closed',
+    });
     mqRecv.close();
   }
   for (let id in timer) {
     clearTimeout(timer[id]);
   }
-  logger.info({
-    message: 'Message queue socket closed',
-  });
 }
 
 tendermint.eventEmitter.on('ready', function() {

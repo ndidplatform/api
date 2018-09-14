@@ -23,29 +23,22 @@
 import 'source-map-support/register';
 
 import 'dotenv/config';
-
-import fs from 'fs';
-import http from 'http';
-import https from 'https';
-import express from 'express';
-import bodyParser from 'body-parser';
-import morgan from 'morgan';
 import mkdirp from 'mkdirp';
 
 import './env_var_validate';
 
-import logger from './logger';
-
-import routes from './routes';
-import { bodyParserErrorHandler } from './routes/middleware/error_handler';
-import { stopAllTimeoutScheduler } from './core/common';
+import * as httpServer from './http_server';
+import * as node from './node';
+import * as core from './core/common';
 
 import { close as closeCacheDb } from './db/cache';
 import { close as closeLongTermDb } from './db/long_term';
-import { tendermintWsClient } from './tendermint';
+import * as tendermint from './tendermint';
 import { close as closeMQ } from './mq';
 import { stopAllCallbackRetries } from './utils/callback';
-import { stopAllCallbackRetries as stopAllExternalCryptoServiceCallbackRetries } from './utils/external_crypto_service';
+import * as externalCryptoService from './utils/external_crypto_service';
+
+import logger from './logger';
 
 import * as config from './config';
 
@@ -65,6 +58,48 @@ process.on('unhandledRejection', function(reason, p) {
   }
 });
 
+async function initialize() {
+  logger.info({
+    message: 'Initializing server',
+  });
+  try {
+    const tendermintReady = new Promise((resolve) =>
+      tendermint.eventEmitter.once('ready', () => resolve())
+    );
+
+    await tendermint.initialize();
+    await node.getNodeRoleFromBlockchain();
+
+    let externalCryptoServiceReady;
+    if (config.useExternalCryptoService) {
+      externalCryptoServiceReady = new Promise((resolve) =>
+        externalCryptoService.eventEmitter.once('allCallbacksSet', () =>
+          resolve()
+        )
+      );
+    }
+
+    httpServer.initialize();
+
+    if (config.useExternalCryptoService) {
+      await externalCryptoServiceReady;
+    }
+    await tendermintReady;
+
+    await core.initialize();
+
+    logger.info({
+      message: 'Server initialized',
+    });
+  } catch (error) {
+    logger.error({
+      message: 'Cannot initialize server',
+      error,
+    });
+    // shutDown();
+  }
+}
+
 const {
   privateKeyPassphrase, // eslint-disable-line no-unused-vars
   masterPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
@@ -80,40 +115,9 @@ logger.info({
 mkdirp.sync(config.dataDirectoryPath);
 mkdirp.sync(config.logDirectoryPath);
 
-const app = express();
-
-app.use(
-  morgan('combined', {
-    stream: { write: (message) => logger.info(message.trim()) },
-  })
-);
-
-app.use(bodyParser.json({ limit: '3mb' }));
-app.use(bodyParserErrorHandler);
-
-app.use(routes);
-
-let server;
-if (config.https) {
-  const httpsOptions = {
-    key: fs.readFileSync(config.httpsKeyPath),
-    cert: fs.readFileSync(config.httpsCertPath),
-  };
-  server = https.createServer(httpsOptions, app);
-} else {
-  server = http.createServer(app);
-}
-server.listen(config.serverPort);
-
-logger.info({
-  message: `${config.https ? 'HTTPS' : 'HTTP'} server listening on port ${
-    config.serverPort
-  }`,
-});
-
 // Graceful Shutdown
 let shutDownCalledOnce = false;
-function shutDown() {
+async function shutDown() {
   if (shutDownCalledOnce) {
     logger.error({
       message: 'Forcefully shutting down',
@@ -127,30 +131,21 @@ function shutDown() {
   });
   console.log('(Ctrl+C again to force shutdown)');
 
-  server.close(async () => {
-    logger.info({
-      message: 'HTTP server closed',
-    });
-
-    stopAllCallbackRetries();
-    stopAllExternalCryptoServiceCallbackRetries();
-    if (config.role !== 'ndid') {
-      closeMQ();
-    }
-    tendermintWsClient.close();
-    // TODO: wait for async operations which going to use DB to finish before closing
-    // a connection to DB
-    // Possible solution: Have those async operations append a queue to use DB and
-    // remove after finish using DB
-    // => Wait here until a queue to use DB is empty
-    await closeCacheDb();
-    await closeLongTermDb();
-    stopAllTimeoutScheduler();
-  });
+  await httpServer.close();
+  stopAllCallbackRetries();
+  externalCryptoService.stopAllCallbackRetries();
+  closeMQ();
+  tendermint.tendermintWsClient.close();
+  // TODO: wait for async operations which going to use DB to finish before closing
+  // a connection to DB
+  // Possible solution: Have those async operations append a queue to use DB and
+  // remove after finish using DB
+  // => Wait here until a queue to use DB is empty
+  await Promise.all([closeCacheDb(), closeLongTermDb()]);
+  core.stopAllTimeoutScheduler();
 }
 
 process.on('SIGTERM', shutDown);
 process.on('SIGINT', shutDown);
 
-// For testing
-module.exports = server;
+initialize();

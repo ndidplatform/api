@@ -40,7 +40,7 @@ const sequelize = new Sequelize('ndid-api', null, null, {
 // Models
 export const Entities = {};
 
-if (config.role === 'rp' || config.role === 'idp') {
+// if (role === 'rp' || role === 'idp') {
   Entities.challengeRequestMessage = sequelize.define(
     'challengeRequestMessage',
     {
@@ -52,16 +52,16 @@ if (config.role === 'rp' || config.role === 'idp') {
     requestId: Sequelize.STRING,
     message: Sequelize.TEXT,
   });
-}
+// }
 
-if (config.role === 'rp') {
+// if (role === 'rp') {
   Entities.asDataResponseMessage = sequelize.define('asDataResponseMessage', {
     requestId: Sequelize.STRING,
     message: Sequelize.TEXT,
   });
-}
+// }
 
-if (config.role === 'idp') {
+// if (role === 'idp') {
   Entities.challengeResponseMessage = sequelize.define(
     'challengeResponseMessage',
     {
@@ -73,14 +73,14 @@ if (config.role === 'idp') {
     requestId: Sequelize.STRING,
     message: Sequelize.TEXT,
   });
-}
+// }
 
-if (config.role === 'as') {
+// if (role === 'as') {
   Entities.dataRequestMessage = sequelize.define('dataRequestMessage', {
     requestId: Sequelize.STRING,
     message: Sequelize.TEXT,
   });
-}
+// }
 
 export const init = sequelize.sync();
 

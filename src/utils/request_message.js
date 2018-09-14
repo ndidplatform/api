@@ -23,12 +23,14 @@
 import fs from 'fs';
 import mustache from 'mustache';
 
+import logger from '../logger';
+
 import * as config from '../config';
 
 let createIdentityTemplate;
 let addAccessorTemplate;
 
-if (config.role === 'idp') {
+try {
   createIdentityTemplate = fs.readFileSync(
     config.createIdentityRequestMessageTemplateFilepath,
     'utf8'
@@ -37,6 +39,11 @@ if (config.role === 'idp') {
     config.addAccessorRequestMessageTemplateFilepath,
     'utf8'
   );
+} catch (error) {
+  logger.warn({
+    message: 'Cannot read request message template files',
+    error,
+  });
 }
 
 export function getRequestMessageForCreatingIdentity({

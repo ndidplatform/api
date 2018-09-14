@@ -23,6 +23,7 @@
 import * as tendermint from '../../tendermint';
 import { registeredMsqAddress } from '../../core/common';
 import { isCallbackUrlsSet } from '../../utils/external_crypto_service';
+import { role } from '../../node';
 
 import errorType from '../../error/type';
 
@@ -86,7 +87,7 @@ export default function readyHandler(req, res, next) {
     }
 
     // Reject all POST calls while message queue address is being registered
-    if (!registeredMsqAddress()) {
+    if (role !== 'ndid' && !registeredMsqAddress()) {
       const responseBody = {
         error: {
           message: errorType.REGISTERING_MESSAGE_QUEUE_ADDRESS.message,

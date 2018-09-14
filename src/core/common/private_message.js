@@ -22,23 +22,11 @@
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as longTermDb from '../../db/long_term';
-import {
-  RP_PRIVATE_MESSAGE_TYPES,
-  IDP_PRIVATE_MESSAGE_TYPES,
-  AS_PRIVATE_MESSAGE_TYPES,
-} from '../private_message_type';
-import { role } from '../../config';
+import PRIVATE_MESSAGE_TYPES from '../private_message_type';
 
 import CustomError from '../../error/custom_error';
 
-let privateMessageTypes;
-if (role === 'rp') {
-  privateMessageTypes = RP_PRIVATE_MESSAGE_TYPES;
-} else if (role === 'idp') {
-  privateMessageTypes = IDP_PRIVATE_MESSAGE_TYPES;
-} else if (role === 'as') {
-  privateMessageTypes = AS_PRIVATE_MESSAGE_TYPES;
-}
+const privateMessageTypes = Object.values(PRIVATE_MESSAGE_TYPES);
 
 export async function getPrivateMessages({ requestId, type } = {}) {
   try {

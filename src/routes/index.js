@@ -99,9 +99,7 @@ router.get('/source', (req, res) => {
 
 router.use(readyHandler);
 
-if (config.role === 'ndid') {
-  router.use('/ndid', ndidRouter);
-}
+router.use('/ndid', ndidRouter);
 
 router.use(apiV2Router);
 router.use('/v1', apiV1Router);

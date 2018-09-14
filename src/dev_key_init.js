@@ -28,7 +28,13 @@ import path from 'path';
 import mkdirp from 'mkdirp';
 
 import * as ndid from './core/ndid';
+import * as tendermint from './tendermint';
+
 import * as config from './config';
+
+process.on('unhandledRejection', function(reason, p) {
+  console.error('Unhandled Rejection', p, reason.stack || reason);
+});
 
 // Make sure data and log directories exist
 mkdirp.sync(config.dataDirectoryPath);
@@ -41,7 +47,7 @@ async function addKeyAndSetToken(role, index) {
     __dirname,
     '..',
     'dev_key',
-    role,
+    'keys',
     node_id + '.pub'
   );
   const public_key = fs.readFileSync(filePath, 'utf8').toString();
@@ -49,7 +55,7 @@ async function addKeyAndSetToken(role, index) {
     __dirname,
     '..',
     'dev_key',
-    role,
+    'master_keys',
     node_id + '_master.pub'
   );
   const master_public_key = fs.readFileSync(masterFilePath, 'utf8').toString();
@@ -78,20 +84,22 @@ async function addKeyAndSetToken(role, index) {
 }
 
 export async function init() {
+  await tendermint.initialize();
+
   console.log('========= Initializing keys for development =========');
 
   const publicKeyFilePath = path.join(
     __dirname,
     '..',
     'dev_key',
-    'ndid',
+    'keys',
     'ndid1.pub'
   );
   const masterPublicKeyFilePath = path.join(
     __dirname,
     '..',
     'dev_key',
-    'ndid',
+    'master_keys',
     'ndid1_master.pub'
   );
   const public_key = fs.readFileSync(publicKeyFilePath, 'utf8').toString();
@@ -105,7 +113,7 @@ export async function init() {
       master_public_key,
     });
     let promiseArr = [];
-    ['rp', 'idp', 'as'].forEach(async (role) => {
+    ['rp', 'idp', 'as'].forEach((role) => {
       promiseArr.push(addKeyAndSetToken(role, 1));
       promiseArr.push(addKeyAndSetToken(role, 2));
       promiseArr.push(addKeyAndSetToken(role, 3));
@@ -153,7 +161,7 @@ export async function init() {
     ]);
     console.log('========= Done =========');
   } catch (error) {
-    console.error('Cannot initialize NDID master key', error);
+    console.error('Cannot initialize NDID platform:', error);
   }
 
   process.exit();

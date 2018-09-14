@@ -38,6 +38,8 @@ import * as utils from '../utils';
 import { sha256 } from '../utils/crypto';
 import * as config from '../config';
 
+export const tendermintWsClient = new TendermintWsClient(false);
+
 let handleTendermintNewBlock;
 
 const expectedTx = {};
@@ -76,6 +78,13 @@ try {
       error,
     });
   }
+}
+
+export function initialize() {
+  return new Promise((resolve, reject) => {
+    tendermintWsClient.once('connected', () => resolve());
+    tendermintWsClient.connect();
+  });
 }
 
 /**
@@ -234,8 +243,6 @@ async function pollStatusUntilSynced() {
   }
 }
 
-export const tendermintWsClient = new TendermintWsClient();
-
 tendermintWsClient.on('connected', async () => {
   connected = true;
   pollStatusUntilSynced();
@@ -308,10 +315,10 @@ async function processNewBlock(blockHeight, appHash) {
     if (lastKnownAppHash !== appHash) {
       if (handleTendermintNewBlock) {
         await handleTendermintNewBlock(null, blockHeight, missingBlockCount);
-        delete cacheBlocks[blockHeight - 1];
       }
     }
     lastKnownAppHash = appHash;
+    delete cacheBlocks[blockHeight - 1];
     saveLatestBlockHeight(blockHeight);
   }
 }
