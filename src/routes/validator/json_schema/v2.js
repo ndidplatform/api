@@ -75,17 +75,6 @@ export default {
     },
   },
   POST: {
-    '/identity/secret': {
-      body: {
-        properties: {
-          accessor_id: { type: 'string', minLength: 1 },
-          namespace: { type: 'string', minLength: 1 },
-          identifier: { type: 'string', minLength: 1 },
-          reference_id: { type: 'string', minLength: 1 },
-        },
-        required: ['accessor_id', 'namespace', 'identifier']
-      },
-    },
     '/rp/requests/:namespace/:identifier': {
       params: {
         properties: {
@@ -96,6 +85,7 @@ export default {
       },
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           mode: { type: 'number', enum: [1, 3] },
@@ -154,6 +144,7 @@ export default {
     '/rp/requests/close': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           request_id: { type: 'string', minLength: 1 },
@@ -164,6 +155,7 @@ export default {
     '/rp/callback': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           error_url: {
             $ref: 'defs#/definitions/url',
           },
@@ -173,6 +165,7 @@ export default {
     '/idp/callback': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           incoming_request_url: {
             $ref: 'defs#/definitions/url',
           },
@@ -188,6 +181,7 @@ export default {
     '/idp/response': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           request_id: { type: 'string', minimum: 1 },
@@ -217,6 +211,7 @@ export default {
     '/as/service/:service_id': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           min_ial: { $ref: 'defs#/definitions/ial' },
@@ -231,6 +226,7 @@ export default {
     '/as/data/:request_id/:service_id': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           data: { type: 'string', minLength: 1 },
@@ -241,6 +237,7 @@ export default {
     '/as/callback': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           error_url: {
             $ref: 'defs#/definitions/url',
           },
@@ -282,6 +279,7 @@ export default {
     '/dpki/node/update': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           node_key: { type: 'string', minLength: 1 },
@@ -316,6 +314,7 @@ export default {
     '/dpki/node/callback': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           sign_url: {
             $ref: 'defs#/definitions/url',
           },
@@ -342,6 +341,7 @@ export default {
     '/identity/': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           namespace: { type: 'string', minLength: 1 },
@@ -366,6 +366,7 @@ export default {
     '/identity/:namespace/:identifier': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           identifier_list: {
@@ -386,6 +387,7 @@ export default {
     '/identity/:namespace/:identifier/ial': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           ial: { $ref: 'defs#/definitions/ial' },
@@ -396,6 +398,7 @@ export default {
     '/identity/:namespace/:identifier/accessors': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           accessor_type: { $ref: 'defs#/definitions/keyType' },
@@ -413,6 +416,7 @@ export default {
     '/identity/:namespace/:identifier/endorsement': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           // TODO: After v1.0
         },
       },
@@ -420,11 +424,23 @@ export default {
     '/identity/requests/close': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           request_id: { type: 'string', minLength: 1 },
         },
         required: ['reference_id', 'callback_url', 'request_id'],
+      },
+    },
+    '/identity/secret': {
+      body: {
+        properties: {
+          accessor_id: { type: 'string', minLength: 1 },
+          namespace: { type: 'string', minLength: 1 },
+          identifier: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+        },
+        required: ['accessor_id', 'namespace', 'identifier'],
       },
     },
   },

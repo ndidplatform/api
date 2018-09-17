@@ -79,6 +79,7 @@ router.post(
 router.post('/node/update', validateBody, async (req, res, next) => {
   try {
     const {
+      node_id,
       reference_id,
       callback_url,
       node_key,
@@ -110,6 +111,7 @@ router.post('/node/update', validateBody, async (req, res, next) => {
 
 router.get('/node/callback', async (req, res, next) => {
   try {
+    const { node_id } = req.query;
     const urls = externalCryptoService.getCallbackUrls();
 
     if (Object.keys(urls).length > 0) {
@@ -124,7 +126,7 @@ router.get('/node/callback', async (req, res, next) => {
 
 router.post('/node/callback', validateBody, async (req, res, next) => {
   try {
-    const { sign_url, master_sign_url, decrypt_url } = req.body;
+    const { node_id, sign_url, master_sign_url, decrypt_url } = req.body;
 
     await externalCryptoService.setDpkiCallback({
       signCallbackUrl: sign_url,

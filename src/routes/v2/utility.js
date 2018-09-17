@@ -170,7 +170,7 @@ router.get('/services', async (req, res, next) => {
 router.get('/private_messages/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
-    const { type } = req.query;
+    const { node_id, type } = req.query;
     const messages = await privateMessage.getPrivateMessages({
       requestId: request_id,
       type,
@@ -188,6 +188,7 @@ router.get('/private_messages/:request_id', async (req, res, next) => {
 router.post('/private_messages/housekeeping', async (req, res, next) => {
   try {
     const { type } = req.query;
+    const { node_id } = req.body;
     await privateMessage.removePrivateMessages({ type });
     res.status(204).end();
   } catch (error) {
@@ -201,6 +202,7 @@ router.post(
     try {
       const { request_id } = req.params;
       const { type } = req.query;
+      const { node_id } = req.body;
       await privateMessage.removePrivateMessages({
         requestId: request_id,
         type,

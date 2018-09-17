@@ -36,6 +36,7 @@ const router = express.Router();
 router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
   try {
     const {
+      node_id,
       reference_id,
       callback_url,
       namespace,
@@ -71,6 +72,7 @@ router.get(
   idpOnlyHandler,
   async (req, res, next) => {
     try {
+      const { node_id } = req.query;
       const { reference_id } = req.params;
 
       const createIdentityData = await identity.getCreateIdentityDataByReferenceId(
@@ -96,7 +98,7 @@ router.post(
   validateBody,
   async (req, res, next) => {
     try {
-      const { reference_id, callback_url, request_id } = req.body;
+      const { node_id, reference_id, callback_url, request_id } = req.body;
 
       await common.closeRequest(
         { reference_id, callback_url, request_id },
@@ -111,6 +113,7 @@ router.post(
 
 router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
+    const { node_id } = req.query;
     const { namespace, identifier } = req.params;
 
     const idpNodes = await tendermintNdid.getIdpNodes({
@@ -137,7 +140,7 @@ router.post(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { reference_id, callback_url, identifier_list } = req.body;
+      const { node_id, reference_id, callback_url, identifier_list } = req.body;
 
       // Not Implemented
       // TODO
@@ -156,7 +159,7 @@ router.post(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { reference_id, callback_url, ial } = req.body;
+      const { node_id, reference_id, callback_url, ial } = req.body;
       await identity.updateIal(
         {
           reference_id,
@@ -176,6 +179,7 @@ router.post(
 
 router.get('/:namespace/:identifier/endorsement', async (req, res, next) => {
   try {
+    const { node_id } = req.query;
     const { namespace, identifier } = req.params;
 
     // Not Implemented
@@ -194,6 +198,7 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const {
+        node_id,
         reference_id,
         callback_url,
         accessor_type,
@@ -218,6 +223,7 @@ router.post(
   async (req, res, next) => {
     try {
       const {
+        node_id,
         reference_id,
         callback_url,
         accessor_type,
@@ -253,7 +259,12 @@ router.post(
 
 router.post('/secret', idpOnlyHandler, async (req, res, next) => {
   try {
-    let { accessor_id, namespace, identifier, reference_id } = req.body;
+    let {
+      accessor_id,
+      namespace,
+      identifier,
+      reference_id,
+    } = req.body;
     const secret = await reCalculateSecret({
       accessor_id,
       namespace,

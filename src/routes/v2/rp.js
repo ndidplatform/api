@@ -36,6 +36,7 @@ router.post(
   async (req, res, next) => {
     try {
       const { request_id } = req.params;
+      const { node_id } = req.body;
 
       await rp.removeDataFromAS(request_id);
       res.status(204).end();
@@ -47,6 +48,7 @@ router.post(
 
 router.post('/requests/housekeeping/data', async (req, res, next) => {
   try {
+    const { node_id } = req.body;
     await rp.removeAllDataFromAS();
     res.status(204).end();
   } catch (error) {
@@ -61,6 +63,7 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const {
+        node_id,
         reference_id,
         callback_url,
         mode,
@@ -100,6 +103,7 @@ router.post(
 
 router.get('/requests/reference/:reference_id', async (req, res, next) => {
   try {
+    const { node_id } = req.query;
     const { reference_id } = req.params;
 
     const requestId = await rp.getRequestIdByReferenceId(reference_id);
@@ -115,6 +119,7 @@ router.get('/requests/reference/:reference_id', async (req, res, next) => {
 
 router.get('/requests/data/:request_id', async (req, res, next) => {
   try {
+    const { node_id } = req.query;
     const { request_id } = req.params;
 
     const data = await rp.getDataFromAS(request_id);
@@ -130,7 +135,7 @@ router.get('/requests/data/:request_id', async (req, res, next) => {
 
 router.post('/requests/close', validateBody, async (req, res, next) => {
   try {
-    const { reference_id, callback_url, request_id } = req.body;
+    const { node_id, reference_id, callback_url, request_id } = req.body;
 
     await common.closeRequest(
       {
@@ -148,6 +153,8 @@ router.post('/requests/close', validateBody, async (req, res, next) => {
 
 router.get('/callback', async (req, res, next) => {
   try {
+    const { node_id } = req.query;
+
     const urls = rp.getCallbackUrls();
 
     if (Object.keys(urls).length > 0) {
@@ -162,7 +169,7 @@ router.get('/callback', async (req, res, next) => {
 
 router.post('/callback', validateBody, async (req, res, next) => {
   try {
-    const { error_url } = req.body;
+    const { node_id, error_url } = req.body;
 
     rp.setCallbackUrls({
       error_url,

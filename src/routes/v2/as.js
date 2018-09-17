@@ -33,7 +33,14 @@ router.use(asOnlyHandler);
 router.post('/service/:service_id', validateBody, async (req, res, next) => {
   try {
     const { service_id } = req.params;
-    const { reference_id, callback_url, min_ial, min_aal, url } = req.body;
+    const {
+      node_id,
+      reference_id,
+      callback_url,
+      min_ial,
+      min_aal,
+      url,
+    } = req.body;
 
     await as.registerOrUpdateASService(
       {
@@ -55,6 +62,7 @@ router.post('/service/:service_id', validateBody, async (req, res, next) => {
 
 router.get('/service/:service_id', async (req, res, next) => {
   try {
+    const { node_id } = req.query;
     const { service_id } = req.params;
 
     const result = await as.getServiceDetail(service_id);
@@ -75,7 +83,7 @@ router.post(
   async (req, res, next) => {
     try {
       const { request_id, service_id } = req.params;
-      const { reference_id, callback_url, data } = req.body;
+      const { node_id, reference_id, callback_url, data } = req.body;
 
       await as.processDataForRP(
         data,
@@ -97,6 +105,8 @@ router.post(
 
 router.get('/callback', async (req, res, next) => {
   try {
+    const { node_id } = req.query;
+
     const urls = as.getCallbackUrls();
 
     if (Object.keys(urls).length > 0) {
@@ -111,7 +121,7 @@ router.get('/callback', async (req, res, next) => {
 
 router.post('/callback', validateBody, async (req, res, next) => {
   try {
-    const { error_url } = req.body;
+    const { node_id, error_url } = req.body;
 
     as.setCallbackUrls({
       error_url,
