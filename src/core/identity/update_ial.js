@@ -98,6 +98,7 @@ async function updateIalInternalAsync(
     if (!synchronous) {
       await tendermintNdid.updateIal(
         { hash_id, ial },
+        null,
         'identity.updateIalInternalAsyncAfterBlockchain',
         [{ reference_id, callback_url }, { synchronous }]
       );

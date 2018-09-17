@@ -29,8 +29,43 @@ import mkdirp from 'mkdirp';
 
 import * as ndid from './core/ndid';
 import * as tendermint from './tendermint';
+import * as nodeKey from './utils/node_key';
 
 import * as config from './config';
+
+const nodes = [
+  { nodeId: 'rp1', role: 'rp' },
+  { nodeId: 'rp2', role: 'rp' },
+  { nodeId: 'rp3', role: 'rp' },
+  { nodeId: 'idp1', role: 'idp' },
+  { nodeId: 'idp2', role: 'idp' },
+  { nodeId: 'idp3', role: 'idp' },
+  { nodeId: 'as1', role: 'as' },
+  { nodeId: 'as2', role: 'as' },
+  { nodeId: 'as3', role: 'as' },
+  { nodeId: 'proxy1', role: 'proxy' },
+  { nodeId: 'proxy2', role: 'proxy' },
+];
+
+const nodesBehindProxy = [
+  { nodeId: 'proxy1_rp4', role: 'rp', proxyNodeId: 'proxy1' },
+  { nodeId: 'proxy2_rp5', role: 'rp', proxyNodeId: 'proxy2' },
+  { nodeId: 'proxy1_idp4', role: 'idp', proxyNodeId: 'proxy1' },
+  { nodeId: 'proxy2_idp5', role: 'idp', proxyNodeId: 'proxy2' },
+  { nodeId: 'proxy1_as4', role: 'as', proxyNodeId: 'proxy1' },
+  { nodeId: 'proxy2_as5', role: 'as', proxyNodeId: 'proxy2' },
+];
+
+const services = [
+  {
+    serviceId: 'bank_statement',
+    serviceName: 'All transactions in the past 3 months',
+  },
+  {
+    serviceId: 'customer_info',
+    serviceName: 'Customer infomation',
+  },
+];
 
 process.on('unhandledRejection', function(reason, p) {
   console.error('Unhandled Rejection', p, reason.stack || reason);
@@ -40,28 +75,41 @@ process.on('unhandledRejection', function(reason, p) {
 mkdirp.sync(config.dataDirectoryPath);
 mkdirp.sync(config.logDirectoryPath);
 
-async function addKeyAndSetToken(role, index) {
-  const node_id = role + index.toString();
+async function addKeyAndSetToken(nodeId, role, behindProxy) {
   const node_name = ''; //all anonymous
-  const filePath = path.join(
-    __dirname,
-    '..',
-    'dev_key',
-    'keys',
-    node_id + '.pub'
-  );
+
+  const filePath = behindProxy
+    ? path.join(
+        __dirname,
+        '..',
+        'dev_key',
+        'behind_proxy',
+        'keys',
+        nodeId + '.pub'
+      )
+    : path.join(__dirname, '..', 'dev_key', 'keys', nodeId + '.pub');
   const public_key = fs.readFileSync(filePath, 'utf8').toString();
-  const masterFilePath = path.join(
-    __dirname,
-    '..',
-    'dev_key',
-    'master_keys',
-    node_id + '_master.pub'
-  );
+
+  const masterFilePath = behindProxy
+    ? path.join(
+        __dirname,
+        '..',
+        'dev_key',
+        'behind_proxy',
+        'master_keys',
+        nodeId + '_master.pub'
+      )
+    : path.join(
+        __dirname,
+        '..',
+        'dev_key',
+        'master_keys',
+        nodeId + '_master.pub'
+      );
   const master_public_key = fs.readFileSync(masterFilePath, 'utf8').toString();
 
   let node = {
-    node_id,
+    node_id: nodeId,
     node_name,
     public_key,
     master_public_key,
@@ -78,13 +126,21 @@ async function addKeyAndSetToken(role, index) {
   await ndid.registerNode(node, { synchronous: true });
 
   await ndid.setNodeToken({
-    node_id,
+    node_id: nodeId,
     amount: 100000,
+  });
+}
+
+function addNodeToProxyNode(nodeId, proxyNodeId) {
+  return ndid.addNodeToProxyNode({
+    node_id: nodeId,
+    proxy_node_id: proxyNodeId,
   });
 }
 
 export async function init() {
   await tendermint.initialize();
+  await nodeKey.initialize();
 
   console.log('========= Initializing keys for development =========');
 
@@ -112,53 +168,54 @@ export async function init() {
       public_key,
       master_public_key,
     });
-    let promiseArr = [];
-    ['rp', 'idp', 'as'].forEach((role) => {
-      promiseArr.push(addKeyAndSetToken(role, 1));
-      promiseArr.push(addKeyAndSetToken(role, 2));
-      promiseArr.push(addKeyAndSetToken(role, 3));
-    });
-    await Promise.all(promiseArr);
+    await Promise.all(
+      nodes.map(({ nodeId, role }) => addKeyAndSetToken(nodeId, role))
+    );
+    await Promise.all(
+      nodesBehindProxy.map(({ nodeId, role }) =>
+        addKeyAndSetToken(nodeId, role, true)
+      )
+    );
+    await Promise.all(
+      nodesBehindProxy.map(({ nodeId, proxyNodeId }) =>
+        addNodeToProxyNode(nodeId, proxyNodeId)
+      )
+    );
     console.log('========= Keys for development initialized =========');
+
     console.log('========= Adding namespaces and services =========');
     await ndid.addNamespace({
       namespace: 'cid',
       description: 'Thai citizen ID',
     });
-    await ndid.addService({
-      service_id: 'bank_statement',
-      service_name: 'All transactions in the past 3 months',
-    });
-    await ndid.addService({
-      service_id: 'customer_info',
-      service_name: 'Customer infomation',
-    });
-    await Promise.all([
-      ndid.approveService({
-        node_id: 'as1',
-        service_id: 'bank_statement',
-      }),
-      ndid.approveService({
-        node_id: 'as1',
-        service_id: 'customer_info',
-      }),
-      ndid.approveService({
-        node_id: 'as2',
-        service_id: 'bank_statement',
-      }),
-      ndid.approveService({
-        node_id: 'as2',
-        service_id: 'customer_info',
-      }),
-      ndid.approveService({
-        node_id: 'as3',
-        service_id: 'bank_statement',
-      }),
-      ndid.approveService({
-        node_id: 'as3',
-        service_id: 'customer_info',
-      }),
-    ]);
+    await Promise.all(
+      services.map(({ serviceId, serviceName }) =>
+        ndid.addService({
+          service_id: serviceId,
+          service_name: serviceName,
+        })
+      )
+    );
+
+    const asNodes = [
+      ...nodes.filter(({ role }) => role === 'as').map(({ nodeId }) => nodeId),
+      ...nodesBehindProxy
+        .filter(({ role }) => role === 'as')
+        .map(({ nodeId }) => nodeId),
+    ];
+
+    await Promise.all(
+      asNodes.map((nodeId) => {
+        return Promise.all(
+          services.map(({ serviceId }) => {
+            return ndid.approveService({
+              node_id: nodeId,
+              service_id: serviceId,
+            });
+          })
+        );
+      })
+    );
     console.log('========= Done =========');
   } catch (error) {
     console.error('Cannot initialize NDID platform:', error);

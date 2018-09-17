@@ -128,12 +128,25 @@ async function getASReceiverList(data_request) {
   });
 
   const receivers = asNodes.map((asNode) => {
-    return {
-      node_id: asNode.node_id,
-      ip: asNode.mq.ip,
-      port: asNode.mq.port,
-      public_key: asNode.public_key,
-    };
+    if (asNode.proxy != null) {
+      return {
+        node_id: asNode.node_id,
+        public_key: asNode.public_key,
+        proxy: {
+          node_id: asNode.proxy.node_id,
+          public_key: asNode.proxy.public_key,
+          ip: asNode.proxy.mq.ip,
+          port: asNode.proxy.mq.port,
+        },
+      };
+    } else {
+      return {
+        node_id: asNode.node_id,
+        public_key: asNode.public_key,
+        ip: asNode.mq.ip,
+        port: asNode.mq.port,
+      };
+    }
   });
   return receivers;
 }

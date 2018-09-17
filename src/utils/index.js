@@ -20,43 +20,22 @@
  *
  */
 
-import fs from 'fs';
 import crypto from 'crypto';
+import constants from 'constants';
+
+import bignum from 'bignum';
 
 import * as cryptoUtils from './crypto';
-import * as config from '../config';
-import bignum from 'bignum';
 import { parseKey, encodeSignature } from './asn1parser';
-import logger from '../logger';
-import constants from 'constants';
+import * as nodeKey from './node_key';
 import * as externalCryptoService from './external_crypto_service';
+
 import CustomError from '../error/custom_error';
 import errorType from '../error/type';
 
-let privateKey;
-let masterPrivateKey;
-if (!config.useExternalCryptoService) {
-  privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
-  masterPrivateKey = fs.readFileSync(config.masterPrivateKeyPath, 'utf8');
-  try {
-    validateKey(privateKey, null, config.privateKeyPassphrase);
-  } catch (error) {
-    const err = new CustomError({
-      message: 'Error verifying node private key',
-      cause: error,
-    });
-    throw err; // process will exit with error
-  }
-  try {
-    validateKey(masterPrivateKey, null, config.masterPrivateKeyPassphrase);
-  } catch (error) {
-    const err = new CustomError({
-      message: 'Error verifying node master private key',
-      cause: error,
-    });
-    throw err; // process will exit with error
-  }
-}
+import logger from '../logger';
+
+import * as config from '../config';
 
 export function wait(ms, stoppable) {
   let setTimeoutFn;
@@ -85,17 +64,22 @@ export function hash(stringToHash) {
   return hashBuffer.toString('base64');
 }
 
-export async function decryptAsymetricKey(encryptedSymKey, encryptedMessage) {
+export async function decryptAsymetricKey(
+  nodeId,
+  encryptedSymKey,
+  encryptedMessage
+) {
   let symKeyBuffer;
   if (config.useExternalCryptoService) {
     symKeyBuffer = await externalCryptoService.decryptAsymetricKey(
+      nodeId,
       encryptedSymKey.toString('base64')
     );
   } else {
-    const passphrase = config.privateKeyPassphrase;
+    const passphrase = nodeKey.getLocalNodePrivateKeyPassphrase(nodeId);
     symKeyBuffer = cryptoUtils.privateDecrypt(
       {
-        key: privateKey,
+        key: nodeKey.getLocalNodePrivateKey(nodeId),
         passphrase,
         padding: crypto.constants.RSA_PKCS1_PADDING,
       },
@@ -364,7 +348,7 @@ function verifyZKProofSingle(
   return stringToBigInt(publicProof).eq(tmp3);
 }
 
-export async function createSignature(messageToSign, useMasterKey) {
+export async function createSignature(messageToSign, nodeId, useMasterKey) {
   if (typeof messageToSign !== 'string') {
     throw new CustomError({
       message: 'Expected message to sign to be a string',
@@ -376,14 +360,17 @@ export async function createSignature(messageToSign, useMasterKey) {
     return await externalCryptoService.createSignature(
       messageToSign,
       messageToSignHash,
+      nodeId,
       useMasterKey
     );
   }
 
-  const key = useMasterKey ? masterPrivateKey : privateKey;
+  const key = useMasterKey
+    ? nodeKey.getLocalNodeMasterPrivateKey(nodeId)
+    : nodeKey.getLocalNodePrivateKey(nodeId);
   const passphrase = useMasterKey
-    ? config.masterPrivateKeyPassphrase
-    : config.privateKeyPassphrase;
+    ? nodeKey.getLocalNodeMasterPrivateKeyPassphrase(nodeId)
+    : nodeKey.getLocalNodePrivateKeyPassphrase(nodeId);
 
   return cryptoUtils.createSignature(messageToSign, {
     key,
@@ -615,46 +602,4 @@ export function getDetailedRequestStatus(requestDetail) {
     timed_out: requestDetail.timed_out,
     service_list: serviceList,
   };
-}
-
-export function validateKey(key, keyType, passphrase) {
-  let parsedKey;
-  try {
-    parsedKey = parseKey({
-      key,
-      passphrase,
-    });
-  } catch (error) {
-    throw new CustomError({
-      errorType: errorType.INVALID_KEY_FORMAT,
-      cause: error,
-    });
-  }
-  if (keyType != null) {
-    if (keyType === 'RSA') {
-      if (parsedKey.type !== 'rsa') {
-        throw new CustomError({
-          errorType: errorType.MISMATCHED_KEY_TYPE,
-        });
-      }
-    }
-  } else {
-    // Default to RSA type
-    if (parsedKey.type !== 'rsa') {
-      throw new CustomError({
-        errorType: errorType.UNSUPPORTED_KEY_TYPE,
-      });
-    }
-  }
-  // Check RSA key length to be at least 2048-bit
-  if (parsedKey.type === 'rsa') {
-    if (
-      (parsedKey.data && parsedKey.data.modulus.bitLength() < 2048) ||
-      (parsedKey.privateKey && parsedKey.privateKey.modulus.bitLength() < 2048)
-    ) {
-      throw new CustomError({
-        errorType: errorType.RSA_KEY_LENGTH_TOO_SHORT,
-      });
-    }
-  }
 }

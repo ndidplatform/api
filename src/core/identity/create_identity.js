@@ -30,6 +30,7 @@ import { getErrorObjectForClient } from '../../error/helpers';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as utils from '../../utils';
+import { validateKey } from '../utils/node_key';
 import { callbackToClient } from '../../utils/callback';
 import * as common from '../common';
 import * as config from '../../config';
@@ -80,7 +81,7 @@ export async function createIdentity(
   { synchronous = false, apiVersion } = {}
 ) {
   try {
-    utils.validateKey(accessor_public_key, accessor_type);
+    validateKey(accessor_public_key, accessor_type);
 
     const createIdentityData = await cacheDb.getCreateIdentityDataByReferenceId(
       reference_id
@@ -596,6 +597,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
             accessor_id,
             accessor_group_id,
           },
+          null,
           'identity.createIdentityInternalAsyncAfterBlockchain',
           [
             {
@@ -695,6 +697,7 @@ export async function createIdentityInternalAsyncAfterBlockchain(
     if (!synchronous) {
       await tendermintNdid.clearRegisterMsqDestinationTimeout(
         hash_id,
+        null,
         'identity.createIdentityInternalAsyncAfterClearMqDestTimeout',
         [
           {

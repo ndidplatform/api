@@ -374,6 +374,7 @@ async function createRequestInternalAsync(
     if (!synchronous) {
       await tendermintNdid.createRequest(
         requestDataToBlockchain,
+        null,
         'common.createRequestInternalAsyncAfterBlockchain',
         [
           {

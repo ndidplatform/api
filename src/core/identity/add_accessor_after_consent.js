@@ -61,6 +61,7 @@ export async function addAccessorAfterConsent(
       accessor_id,
       accessor_public_key,
     },
+    null,
     'identity.addAccessorAfterConsentAfterAddAccessorMethod',
     [
       {
@@ -93,6 +94,7 @@ export async function addAccessorAfterConsentAfterAddAccessorMethod(
             },
           ],
         },
+        null,
         'identity.addAccessorAfterConsentAfterRegisterMqDest',
         [
           {

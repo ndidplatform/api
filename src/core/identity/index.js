@@ -31,6 +31,8 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import { getFunction } from '../common';
 import * as cacheDb from '../../db/cache';
 import * as utils from '../../utils';
+import { validateKey } from '../utils/node_key';
+
 import * as config from '../../config';
 
 export * from './create_identity';
@@ -62,7 +64,7 @@ export async function addAccessorMethodForAssociatedIdp(
   },
   { synchronous = false, apiVersion } = {}
 ) {
-  utils.validateKey(accessor_public_key, accessor_type);
+  validateKey(accessor_public_key, accessor_type);
 
   const associated = await checkAssociated({
     namespace,
@@ -115,6 +117,7 @@ export async function checkForExistedIdentity(
             },
           ],
         },
+        null,
         'identity.checkForExistedIdentityAfterBlockchain',
         [
           {

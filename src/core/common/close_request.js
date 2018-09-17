@@ -90,6 +90,7 @@ async function closeRequestInternalAsync(
           requestId: request_id,
           responseValidList,
         },
+        null,
         'common.closeRequestInternalAsyncAfterBlockchain',
         [{ reference_id, callback_url, request_id }, { synchronous }]
       );

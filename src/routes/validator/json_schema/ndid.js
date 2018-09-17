@@ -77,7 +77,7 @@ export default {
           node_master_key: { type: 'string', minLength: 1 },
           node_master_key_type: { $ref: 'defs#/definitions/keyType' },
           node_master_sign_method: { $ref: 'defs#/definitions/signMethod' },
-          role: { type: 'string', enum: ['rp', 'idp', 'as'] },
+          role: { type: 'string', enum: ['rp', 'idp', 'as', 'proxy'] },
           max_ial: { $ref: 'defs#/definitions/ial' },
           max_aal: { $ref: 'defs#/definitions/aal' },
         },
@@ -200,6 +200,32 @@ export default {
           service_id: { type: 'string', minLength: 1 },
         },
         required: ['node_id', 'service_id'],
+      },
+    },
+    '/ndid/addNodeToProxyNode': {
+      body: {
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          proxy_node_id: { type: 'string', minLength: 1 },
+        },
+        required: ['node_id', 'proxy_node_id'],
+      },
+    },
+    '/ndid/updateNodeProxyNode': {
+      body: {
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          proxy_node_id: { type: 'string', minLength: 1 },
+        },
+        required: ['node_id', 'proxy_node_id'],
+      },
+    },
+    '/ndid/removeNodeFromProxyNode': {
+      body: {
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+        },
+        required: ['node_id'],
       },
     },
   },

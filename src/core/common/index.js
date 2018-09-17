@@ -317,12 +317,25 @@ export async function getIdpsMsqDestination({
   });
 
   const receivers = idpNodes.map((idpNode) => {
-    return {
-      idp_id: idpNode.node_id,
-      ip: idpNode.mq.ip,
-      port: idpNode.mq.port,
-      public_key: idpNode.public_key,
-    };
+    if (idpNode.proxy != null) {
+      return {
+        node_id: idpNode.node_id,
+        public_key: idpNode.public_key,
+        proxy: {
+          node_id: idpNode.proxy.node_id,
+          public_key: idpNode.proxy.public_key,
+          ip: idpNode.proxy.mq.ip,
+          port: idpNode.proxy.mq.port,
+        },
+      };
+    } else {
+      return {
+        node_id: idpNode.node_id,
+        public_key: idpNode.public_key,
+        ip: idpNode.mq.ip,
+        port: idpNode.mq.port,
+      };
+    }
   });
   return receivers;
 }
@@ -545,13 +558,30 @@ export async function handleChallengeRequest({
     });
   }
 
-  const receivers = [
-    {
-      ip: nodeInfo.mq.ip,
-      port: nodeInfo.mq.port,
-      public_key: nodeInfo.public_key,
-    },
-  ];
+  let receivers;
+  if (nodeInfo.proxy != null) {
+    receivers = [
+      {
+        node_id: nodeInfo.node_id,
+        public_key: nodeInfo.public_key,
+        proxy: {
+          node_id: nodeInfo.proxy.node_id,
+          public_key: nodeInfo.proxy.public_key,
+          ip: nodeInfo.proxy.mq.ip,
+          port: nodeInfo.proxy.mq.port,
+        },
+      },
+    ];
+  } else {
+    receivers = [
+      {
+        node_id: nodeInfo.node_id,
+        public_key: nodeInfo.public_key,
+        ip: nodeInfo.mq.ip,
+        port: nodeInfo.mq.port,
+      },
+    ];
+  }
   mq.send(receivers, {
     type: privateMessageType.CHALLENGE_RESPONSE,
     challenge,

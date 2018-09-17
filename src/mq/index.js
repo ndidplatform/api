@@ -97,62 +97,104 @@ export async function init() {
   });
 }
 
-async function onMessage(messageBuffer) {
+async function onMessage(messageProtobuf) {
   logger.info({
     message: 'Received message from message queue',
-    messageLength: messageBuffer.length,
+    messageLength: messageProtobuf.length,
   });
   try {
     const messageId = utils.randomBase64Bytes(10);
-    await cacheDb.setRawMessageFromMQ(messageId, messageBuffer);
+    await cacheDb.setRawMessageFromMQ(messageId, messageProtobuf);
 
     // TODO: Refactor MQ module to send ACK here (after save to persistence)
 
     if (!tendermint.connected || tendermint.syncing) {
-      rawMessagesToRetry[messageId] = messageBuffer;
+      rawMessagesToRetry[messageId] = messageProtobuf;
     } else {
-      await processMessage(messageId, messageBuffer);
+      await processMessage(messageId, messageProtobuf);
     }
   } catch (error) {
     eventEmitter.emit('error', error);
   }
 }
 
-async function processMessage(messageId, messageBuffer) {
+async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
+  const decodedMessage = EncryptedMqMessage.decode(messageProtobuf);
+  const { encryptedSymmetricKey, encryptedMqMessage } = decodedMessage;
+  let decryptedBuffer;
+  try {
+    decryptedBuffer = await utils.decryptAsymetricKey(
+      nodeId,
+      encryptedSymmetricKey,
+      encryptedMqMessage
+    );
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DECRYPT_MESSAGE_ERROR,
+      cause: error,
+    });
+  }
+
+  const decodedDecryptedMessage = MqMessage.decode(decryptedBuffer);
+  return decodedDecryptedMessage;
+}
+
+async function processMessage(messageId, messageProtobuf) {
   logger.info({
     message: 'Processing raw received message from message queue',
     messageId,
-    messageLength: messageBuffer.length,
+    messageLength: messageProtobuf.length,
   });
   try {
-    const decodedMessage = EncryptedMqMessage.decode(messageBuffer);
-    const { encryptedSymmetricKey, encryptedMqMessage } = decodedMessage;
-    let decryptedBuffer;
-    try {
-      decryptedBuffer = await utils.decryptAsymetricKey(
-        encryptedSymmetricKey,
-        encryptedMqMessage
-      );
-    } catch (error) {
-      throw new CustomError({
-        errorType: errorType.DECRYPT_MESSAGE_ERROR,
-        cause: error,
-      });
-    }
+    const decodedDecryptedMessage = getMessageFromProtobufMessage(
+      messageProtobuf,
+      config.nodeId
+    );
 
     logger.debug({
-      message: 'Raw decrypted message from message queue',
-      decryptedBuffer,
+      message: 'Decrypted message from message queue',
+      decodedDecryptedMessage,
     });
 
-    const decodedDecryptedMessage = MqMessage.decode(decryptedBuffer);
-    const messageStr = decodedDecryptedMessage.message;
-    const messageSignature = decodedDecryptedMessage.signature;
-    if (messageStr == null || messageSignature == null) {
+    const messageForProxy = decodedDecryptedMessage.messageForProxy;
+
+    let messageBuffer;
+    let messageSignature;
+
+    if (messageForProxy === true) {
+      // Message is encapsulated with proxy layer
+      const receiverNodeId = decodedDecryptedMessage.receiverNodeId;
+
+      if (receiverNodeId == null || receiverNodeId === '') {
+        throw new CustomError({
+          errorType: errorType.MALFORMED_MESSAGE_FORMAT,
+        });
+      }
+
+      const decodedDecryptedMessage = getMessageFromProtobufMessage(
+        decodedDecryptedMessage.message,
+        receiverNodeId
+      );
+
+      logger.debug({
+        message: 'Decrypted message from message queue (inner layer)',
+        decodedDecryptedMessage,
+      });
+
+      messageBuffer = decodedDecryptedMessage.message;
+      messageSignature = decodedDecryptedMessage.signature;
+    } else {
+      messageBuffer = decodedDecryptedMessage.message;
+      messageSignature = decodedDecryptedMessage.signature;
+    }
+
+    if (messageBuffer == null || messageSignature == null) {
       throw new CustomError({
         errorType: errorType.MALFORMED_MESSAGE_FORMAT,
       });
     }
+
+    const messageStr = messageBuffer.toString('utf8');
 
     logger.debug({
       message: 'Split message and signature',
@@ -160,7 +202,9 @@ async function processMessage(messageId, messageBuffer) {
       messageSignature,
     });
 
-    const { idp_id, rp_id, as_id } = JSON.parse(messageStr);
+    const message = JSON.parse(messageStr);
+
+    const { idp_id, rp_id, as_id } = message;
     const nodeId = idp_id || rp_id || as_id;
     if (nodeId == null) {
       throw new CustomError({
@@ -184,8 +228,6 @@ async function processMessage(messageId, messageBuffer) {
     });
 
     if (signatureValid) {
-      const message = JSON.parse(messageStr);
-
       // TODO: validate message schema
 
       await longTermDb.addMessage(
@@ -260,7 +302,7 @@ export async function loadAndProcessBacklogMessages() {
   }
 }
 
-export async function send(receivers, message) {
+export async function send(receivers, message, senderNodeId) {
   if (receivers.length === 0) {
     logger.debug({
       message: 'No receivers for message queue to send to',
@@ -270,12 +312,14 @@ export async function send(receivers, message) {
     return;
   }
   const messageStr = JSON.stringify(message);
+  const messageBuffer = Buffer.from(messageStr, 'utf8');
   const messageSignatureBuffer = await utils.createSignature(messageStr);
-  const payload = {
-    message: messageStr,
+  const mqMessageObject = {
+    message: messageBuffer,
     signature: messageSignatureBuffer,
+    senderNodeId,
   };
-  const protoMessage = MqMessage.create(payload);
+  const protoMessage = MqMessage.create(mqMessageObject);
   const protoBuffer = MqMessage.encode(protoMessage).finish();
 
   logger.info({
@@ -290,22 +334,58 @@ export async function send(receivers, message) {
     protoBuffer,
   });
 
-  receivers.forEach((receiver) => {
-    const {
-      encryptedSymKey: encryptedSymmetricKey,
-      encryptedMessage: encryptedMqMessage,
-    } = utils.encryptAsymetricKey(receiver.public_key, protoBuffer);
+  await Promise.all(
+    receivers.map(async (receiver) => {
+      const {
+        encryptedSymKey: encryptedSymmetricKey,
+        encryptedMessage: encryptedMqMessage,
+      } = utils.encryptAsymetricKey(receiver.public_key, protoBuffer);
 
-    const encryptedPayload = {
-      encryptedSymmetricKey,
-      encryptedMqMessage,
-    };
-    const protoEncryptedMessage = EncryptedMqMessage.create(encryptedPayload);
-    const protoEncryptedBuffer = EncryptedMqMessage.encode(
-      protoEncryptedMessage
-    ).finish();
-    mqSend.send(receiver, protoEncryptedBuffer);
-  });
+      const encryptedMqMessageObject = {
+        encryptedSymmetricKey,
+        encryptedMqMessage,
+      };
+      const protoEncryptedMessage = EncryptedMqMessage.create(
+        encryptedMqMessageObject
+      );
+      const protoEncryptedBuffer = EncryptedMqMessage.encode(
+        protoEncryptedMessage
+      ).finish();
+
+      let payloadBuffer;
+      if (receiver.proxy != null) {
+        // Encapsulate proxy layer
+        const mqMessageObject = {
+          message: protoEncryptedBuffer,
+          receiverNodeId: receiver.node_id,
+        };
+        const protoMessage = MqMessage.create(mqMessageObject);
+        const protoBuffer = MqMessage.encode(protoMessage).finish();
+
+        const {
+          encryptedSymKey: encryptedSymmetricKey,
+          encryptedMessage: encryptedMqMessage,
+        } = utils.encryptAsymetricKey(receiver.proxy.public_key, protoBuffer);
+
+        const encryptedMqMessageObject = {
+          encryptedSymmetricKey,
+          encryptedMqMessage,
+        };
+        const protoEncryptedMessage = EncryptedMqMessage.create(
+          encryptedMqMessageObject
+        );
+        const protoEncryptedBuffer = EncryptedMqMessage.encode(
+          protoEncryptedMessage
+        ).finish();
+
+        payloadBuffer = protoEncryptedBuffer;
+      } else {
+        payloadBuffer = protoEncryptedBuffer;
+      }
+
+      mqSend.send(receiver, payloadBuffer);
+    })
+  );
 
   // await longTermDb.addMessage(
   //   longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,

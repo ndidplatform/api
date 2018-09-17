@@ -339,4 +339,49 @@ router.post(
   }
 );
 
+router.post('/addNodeToProxyNode', validateBody, async (req, res, next) => {
+  try {
+    const { node_id, proxy_node_id } = req.body;
+
+    await ndid.addNodeToProxyNode({
+      node_id,
+      proxy_node_id,
+    });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/updateNodeProxyNode', validateBody, async (req, res, next) => {
+  try {
+    const { node_id, proxy_node_id } = req.body;
+
+    await ndid.updateNodeProxyNode({
+      node_id,
+      proxy_node_id,
+    });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post(
+  '/removeNodeFromProxyNode',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { node_id } = req.body;
+
+      await ndid.removeNodeFromProxyNode({
+        node_id,
+      });
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default router;

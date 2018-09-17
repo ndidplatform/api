@@ -123,7 +123,10 @@ async function processDataForRPInternalAsync(
       service_id: serviceId,
       initial_salt,
     });
-    const signatureBuffer = await utils.createSignature(data + data_salt);
+    const signatureBuffer = await utils.createSignature(
+      data + data_salt,
+      // config.nodeId // FIXME: receive nodeId from argument
+    );
     const signature = signatureBuffer.toString('base64');
 
     if (!synchronous) {
@@ -134,6 +137,7 @@ async function processDataForRPInternalAsync(
           signature,
           service_id: serviceId,
         },
+        null,
         'as.processDataForRPInternalAsyncAfterBlockchain',
         [
           {
@@ -299,13 +303,30 @@ async function sendDataToRP(rpId, data) {
     });
   }
 
-  const receivers = [
-    {
-      ip: nodeInfo.mq.ip,
-      port: nodeInfo.mq.port,
-      public_key: nodeInfo.public_key,
-    },
-  ];
+  let receivers;
+  if (nodeInfo.proxy != null) {
+    receivers = [
+      {
+        node_id: nodeInfo.node_id,
+        public_key: nodeInfo.public_key,
+        proxy: {
+          node_id: nodeInfo.proxy.node_id,
+          public_key: nodeInfo.proxy.public_key,
+          ip: nodeInfo.proxy.mq.ip,
+          port: nodeInfo.proxy.mq.port,
+        },
+      },
+    ];
+  } else {
+    receivers = [
+      {
+        node_id: nodeInfo.node_id,
+        public_key: nodeInfo.public_key,
+        ip: nodeInfo.mq.ip,
+        port: nodeInfo.mq.port,
+      },
+    ];
+  }
   mq.send(receivers, {
     type: privateMessageType.AS_DATA_RESPONSE,
     request_id: data.request_id,

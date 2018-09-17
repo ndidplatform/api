@@ -30,6 +30,7 @@ import './env_var_validate';
 import * as httpServer from './http_server';
 import * as node from './node';
 import * as core from './core/common';
+import * as nodeKey from './utils/node_key';
 
 import { close as closeCacheDb } from './db/cache';
 import { close as closeLongTermDb } from './db/long_term';
@@ -69,6 +70,7 @@ async function initialize() {
 
     await tendermint.initialize();
     await node.getNodeRoleFromBlockchain();
+    await nodeKey.initialize();
 
     let externalCryptoServiceReady;
     if (config.useExternalCryptoService) {

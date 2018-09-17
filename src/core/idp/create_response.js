@@ -299,6 +299,7 @@ export async function createResponse(createResponseParams) {
 
     await tendermintNdid.createIdpResponse(
       dataToBlockchain,
+      null,
       'idp.createResponseAfterBlockchain',
       [{ reference_id, callback_url, request_id, mode, privateProofObject }]
     );
@@ -389,6 +390,7 @@ async function requestChallenge({
       request_id,
       identity_proof: JSON.stringify([publicProof1, publicProof2]),
     },
+    null,
     'idp.requestChallengeAfterBlockchain',
     [
       {
@@ -441,13 +443,30 @@ export async function requestChallengeAfterBlockchain(
       });
     }
 
-    const receivers = [
-      {
-        ip: nodeInfo.mq.ip,
-        port: nodeInfo.mq.port,
-        public_key: nodeInfo.public_key,
-      },
-    ];
+    let receivers;
+    if (nodeInfo.proxy != null) {
+      receivers = [
+        {
+          node_id: nodeInfo.node_id,
+          public_key: nodeInfo.public_key,
+          proxy: {
+            node_id: nodeInfo.proxy.node_id,
+            public_key: nodeInfo.proxy.public_key,
+            ip: nodeInfo.proxy.mq.ip,
+            port: nodeInfo.proxy.mq.port,
+          },
+        },
+      ];
+    } else {
+      receivers = [
+        {
+          node_id: nodeInfo.node_id,
+          public_key: nodeInfo.public_key,
+          ip: nodeInfo.mq.ip,
+          port: nodeInfo.mq.port,
+        },
+      ];
+    }
     mq.send(receivers, {
       type: privateMessageType.CHALLENGE_REQUEST,
       request_id: request_id,
@@ -503,13 +522,30 @@ async function sendResponseToRP(request_id, mode, privateProofObject, height) {
     });
   }
 
-  const receivers = [
-    {
-      ip: nodeInfo.mq.ip,
-      port: nodeInfo.mq.port,
-      public_key: nodeInfo.public_key,
-    },
-  ];
+  let receivers;
+  if (nodeInfo.proxy != null) {
+    receivers = [
+      {
+        node_id: nodeInfo.node_id,
+        public_key: nodeInfo.public_key,
+        proxy: {
+          node_id: nodeInfo.proxy.node_id,
+          public_key: nodeInfo.proxy.public_key,
+          ip: nodeInfo.proxy.mq.ip,
+          port: nodeInfo.proxy.mq.port,
+        },
+      },
+    ];
+  } else {
+    receivers = [
+      {
+        node_id: nodeInfo.node_id,
+        public_key: nodeInfo.public_key,
+        ip: nodeInfo.mq.ip,
+        port: nodeInfo.mq.port,
+      },
+    ];
+  }
   mq.send(receivers, {
     type: privateMessageType.IDP_RESPONSE,
     request_id,

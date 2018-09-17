@@ -543,25 +543,31 @@ export async function query(fnName, data, height) {
   }
 }
 
-export async function transact(
+export async function transact({
+  nodeId,
   fnName,
-  data,
-  nonce,
+  params,
+  nonce = utils.getNonce(),
   callbackFnName,
   callbackAdditionalArgs,
-  useMasterKey = false
-) {
+  useMasterKey = false,
+}) {
   const waitForCommit = !callbackFnName;
   logger.debug({
     message: 'Tendermint transact',
+    nodeId,
     fnName,
-    data,
+    params,
     nonce,
     waitForCommit,
     useMasterKey,
     callbackFnName,
     callbackAdditionalArgs,
   });
+
+  if (nodeId == null) {
+    nodeId = config.nodeId;
+  }
 
   if (callbackAdditionalArgs != null) {
     if (!Array.isArray(callbackAdditionalArgs)) {
@@ -571,19 +577,20 @@ export async function transact(
     }
   }
 
-  const dataStr = JSON.stringify(data);
+  const paramsStr = JSON.stringify(params);
   const tx =
     fnName +
     '|' +
-    (dataStr != null ? Buffer.from(dataStr).toString('base64') : '') +
+    (paramsStr != null ? Buffer.from(paramsStr).toString('base64') : '') +
     '|' +
     nonce +
     '|' +
-    (await utils.createSignature(dataStr + nonce, useMasterKey)).toString(
+    // FIXME: signature need to be able to specify node ID
+    (await utils.createSignature(paramsStr + nonce, nodeId, useMasterKey)).toString(
       'base64'
     ) +
     '|' +
-    Buffer.from(config.nodeId).toString('base64');
+    Buffer.from(nodeId).toString('base64');
 
   const txHash = sha256(tx).toString('hex');
   const callbackData = {

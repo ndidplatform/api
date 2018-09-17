@@ -402,7 +402,7 @@ async function callbackWithRetry(url, body, logPrefix) {
   }
 }
 
-export async function decryptAsymetricKey(encryptedMessage) {
+export async function decryptAsymetricKey(nodeId, encryptedMessage) {
   const url = callbackUrls.decrypt_url;
   if (url == null) {
     throw new CustomError({
@@ -410,7 +410,7 @@ export async function decryptAsymetricKey(encryptedMessage) {
     });
   }
   const body = {
-    node_id: config.nodeId,
+    node_id: nodeId,
     encrypted_message: encryptedMessage,
     key_type: 'RSA',
   };
@@ -475,7 +475,7 @@ export async function decryptAsymetricKey(encryptedMessage) {
   }
 }
 
-export async function createSignature(message, messageHash, useMasterKey) {
+export async function createSignature(message, messageHash, nodeId, useMasterKey) {
   const url = useMasterKey
     ? callbackUrls.master_sign_url
     : callbackUrls.sign_url;
@@ -491,7 +491,7 @@ export async function createSignature(message, messageHash, useMasterKey) {
     }
   }
   const body = {
-    node_id: config.nodeId,
+    node_id: nodeId,
     request_message: message,
     request_message_hash: messageHash,
     hash_method: 'SHA256',

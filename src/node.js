@@ -51,3 +51,30 @@ export async function getNodeRoleFromBlockchain() {
     });
   }
 }
+
+export async function getNodesBehindProxyFromBlockchain() {
+  if (role == null) {
+    throw new CustomError({
+      message: 'Need to run "getNodeRoleFromBlockchain()" first',
+    });
+  }
+  if (role !== 'proxy') {
+    throw new CustomError({
+      message: 'This node is not a proxy node',
+      details: {
+        role,
+      },
+    });
+  }
+  try {
+    const nodesBehindProxy = await tendermintNdid.getNodesBehindProxyNode(
+      config.nodeId
+    );
+    return nodesBehindProxy;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get nodes behind proxy from blockchain',
+      cause: error,
+    });
+  }
+}

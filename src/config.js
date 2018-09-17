@@ -100,7 +100,7 @@ export const useExternalCryptoService =
 
 export const privateKeyPath = useExternalCryptoService
   ? null
-  : process.env.PRIVATE_KEY_PATH == null
+  : process.env.PRIVATE_KEY_PATH == null && env === 'development'
     ? path.join(__dirname, '..', 'dev_key', 'keys', nodeId)
     : process.env.PRIVATE_KEY_PATH;
 export const privateKeyPassphrase = useExternalCryptoService
@@ -109,16 +109,24 @@ export const privateKeyPassphrase = useExternalCryptoService
 
 export const masterPrivateKeyPath = useExternalCryptoService
   ? null
-  : process.env.MASTER_PRIVATE_KEY_PATH == null
+  : process.env.MASTER_PRIVATE_KEY_PATH == null && env === 'development'
     ? path.join(__dirname, '..', 'dev_key', 'master_keys', nodeId + '_master')
     : process.env.MASTER_PRIVATE_KEY_PATH;
 export const masterPrivateKeyPassphrase = useExternalCryptoService
   ? null
   : process.env.MASTER_PRIVATE_KEY_PASSPHRASE;
 
-export const privateKeyDirectoryPath = process.env.PRIVATE_KEY_DIRECTORY_PATH;
-export const masterPrivateKeyDirectoryPath =
-  process.env.MASTER_PRIVATE_KEY_DIRECTORY_PATH;
+export const privateKeyDirectoryPath = useExternalCryptoService
+  ? null
+  : process.env.PRIVATE_KEY_DIRECTORY_PATH == null && env === 'development'
+    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'keys')
+    : process.env.PRIVATE_KEY_DIRECTORY_PATH;
+export const masterPrivateKeyDirectoryPath = useExternalCryptoService
+  ? null
+  : process.env.MASTER_PRIVATE_KEY_DIRECTORY_PATH == null &&
+    env === 'development'
+    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
+    : process.env.MASTER_PRIVATE_KEY_DIRECTORY_PATH;
 
 //in byte
 export const challengeLength = 2;

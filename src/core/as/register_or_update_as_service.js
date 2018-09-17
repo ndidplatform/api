@@ -92,6 +92,7 @@ async function registerOrUpdateASServiceInternalAsync(
             min_ial,
             node_id: config.nodeId,
           },
+          null,
           'as.registerOrUpdateASServiceInternalAsyncAfterBlockchain',
           [{ reference_id, callback_url, service_id, url }, { synchronous }]
         );
@@ -116,6 +117,7 @@ async function registerOrUpdateASServiceInternalAsync(
             min_aal,
             min_ial,
           },
+          null,
           'as.registerOrUpdateASServiceInternalAsyncAfterBlockchain',
           [{ reference_id, callback_url, service_id, url }, { synchronous }]
         );
