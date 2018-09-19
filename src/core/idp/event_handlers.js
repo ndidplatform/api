@@ -312,11 +312,17 @@ export async function handleTendermintNewBlock(
 
         await Promise.all(
           requestIdsToCleanUp.map(async (requestId) => {
-            cacheDb.removeRequestCallbackUrl(requestId);
-            cacheDb.removeRequestIdReferenceIdMappingByRequestId(requestId);
-            cacheDb.removeRequestData(requestId);
-            cacheDb.removeIdpResponseValidList(requestId);
-            cacheDb.removeTimeoutScheduler(requestId);
+            const referenceId = await cacheDb.getReferenceIdByRequestId(
+              requestId
+            );
+            await Promise.all([
+              cacheDb.removeRequestCallbackUrl(requestId),
+              cacheDb.removeRequestIdByReferenceId(referenceId),
+              cacheDb.removeReferenceIdByRequestId(requestId),
+              cacheDb.removeRequestData(requestId),
+              cacheDb.removeIdpResponseValidList(requestId),
+              cacheDb.removeTimeoutScheduler(requestId),
+            ]);
           })
         );
       })

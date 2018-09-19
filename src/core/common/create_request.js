@@ -282,6 +282,7 @@ export async function createRequest(
     await Promise.all([
       cacheDb.setRequestData(request_id, requestData),
       cacheDb.setRequestIdByReferenceId(reference_id, request_id),
+      cacheDb.setReferenceIdByRequestId(request_id, reference_id),
       cacheDb.setRequestCallbackUrl(request_id, callback_url),
     ]);
 
@@ -571,6 +572,7 @@ async function createRequestCleanUpOnError({ requestId, referenceId }) {
     cacheDb.removeChallengeFromRequestId(requestId),
     cacheDb.removeRequestData(requestId),
     cacheDb.removeRequestIdByReferenceId(referenceId),
+    cacheDb.removeReferenceIdByRequestId(requestId),
     cacheDb.removeRequestCallbackUrl(requestId),
   ]);
 }

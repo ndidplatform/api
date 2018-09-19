@@ -20,8 +20,8 @@
  *
  */
 
-import * as db from '../sequelize_common';
-import * as cacheDb from './sequelize';
+import * as db from '../redis_common';
+import * as cacheDb from './redis';
 
 import logger from '../../logger';
 
@@ -222,7 +222,7 @@ export function getRequestIdsExpectedInBlock(fromHeight, toHeight) {
 }
 
 export function getRequestIdExpectedInBlock(height) {
-  return db.getList({
+  return db.getListWithRangeSupport({
     dbName,
     name: 'requestIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
@@ -232,7 +232,7 @@ export function getRequestIdExpectedInBlock(height) {
 }
 
 export function addRequestIdExpectedInBlock(height, requestId) {
-  return db.pushToList({
+  return db.pushToListWithRangeSupport({
     dbName,
     name: 'requestIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
@@ -291,7 +291,7 @@ export function removeRequestReceivedFromMQ(requestId) {
 export function getRequestIdByReferenceId(referenceId) {
   return db.get({
     dbName,
-    name: 'requestIdReferenceIdMapping',
+    name: 'referenceIdRequestIdMapping',
     keyName: 'referenceId',
     key: referenceId,
     valueName: 'requestId',
@@ -301,7 +301,7 @@ export function getRequestIdByReferenceId(referenceId) {
 export function setRequestIdByReferenceId(referenceId, requestId) {
   return db.set({
     dbName,
-    name: 'requestIdReferenceIdMapping',
+    name: 'referenceIdRequestIdMapping',
     keyName: 'referenceId',
     key: referenceId,
     valueName: 'requestId',
@@ -312,20 +312,20 @@ export function setRequestIdByReferenceId(referenceId, requestId) {
 export function removeRequestIdByReferenceId(referenceId) {
   return db.remove({
     dbName,
-    name: 'requestIdReferenceIdMapping',
+    name: 'referenceIdRequestIdMapping',
     keyName: 'referenceId',
     key: referenceId,
   });
 }
 
-export function removeRequestIdReferenceIdMappingByRequestId(requestId) {
-  return db.remove({
-    dbName,
-    name: 'requestIdReferenceIdMapping',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
+// export function removeRequestIdReferenceIdMappingByRequestId(requestId) {
+//   return db.remove({
+//     dbName,
+//     name: 'requestIdReferenceIdMapping',
+//     keyName: 'requestId',
+//     key: requestId,
+//   });
+// }
 
 export function getReferenceIdByRequestId(requestId) {
   return db.get({
@@ -609,7 +609,7 @@ export function getExpectedIdpPublicProofInBlockList(fromHeight, toHeight) {
 }
 
 export function addExpectedIdpPublicProofInBlock(height, responseMetadata) {
-  return db.pushToList({
+  return db.pushToListWithRangeSupport({
     dbName,
     name: 'expectedIdpPublicProofInBlock',
     keyName: 'expectedBlockHeight',

@@ -483,9 +483,11 @@ async function processRequestUpdate(requestId, height) {
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
     // since the request is no longer going to have further events
     // (the request has reached its end state)
+    const referenceId = await cacheDb.getReferenceIdByRequestId(requestId);
     await Promise.all([
       cacheDb.removeRequestCallbackUrl(requestId),
-      cacheDb.removeRequestIdReferenceIdMappingByRequestId(requestId),
+      cacheDb.removeRequestIdByReferenceId(referenceId),
+      cacheDb.removeReferenceIdByRequestId(requestId),
       cacheDb.removeRequestData(requestId),
       cacheDb.removeIdpResponseValidList(requestId),
       common.removeTimeoutScheduler(requestId),
