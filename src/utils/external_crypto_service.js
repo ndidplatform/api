@@ -213,7 +213,7 @@ async function testDecryptCallback(url, publicKey) {
   }
 }
 
-export function getCallbackUrls() {
+export function getCallbackUrls(nodeId) {
   return callbackUrls;
 }
 
@@ -232,6 +232,7 @@ function checkAndEmitAllCallbacksSet() {
 }
 
 export async function setDpkiCallback({
+  nodeId,
   signCallbackUrl,
   masterSignCallbackUrl,
   decryptCallbackUrl,

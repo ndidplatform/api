@@ -172,6 +172,7 @@ router.get('/private_messages/:request_id', async (req, res, next) => {
     const { request_id } = req.params;
     const { node_id, type } = req.query;
     const messages = await privateMessage.getPrivateMessages({
+      nodeId: node_id,
       requestId: request_id,
       type,
     });
@@ -189,7 +190,7 @@ router.post('/private_messages/housekeeping', async (req, res, next) => {
   try {
     const { type } = req.query;
     const { node_id } = req.body;
-    await privateMessage.removePrivateMessages({ type });
+    await privateMessage.removePrivateMessages({ nodeId: node_id, type });
     res.status(204).end();
   } catch (error) {
     next(error);
@@ -204,6 +205,7 @@ router.post(
       const { type } = req.query;
       const { node_id } = req.body;
       await privateMessage.removePrivateMessages({
+        nodeId: node_id,
         requestId: request_id,
         type,
       });

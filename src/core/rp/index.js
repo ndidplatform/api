@@ -23,14 +23,16 @@
 import fs from 'fs';
 import path from 'path';
 
-import CustomError from '../../error/custom_error';
-import logger from '../../logger';
-
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
-import * as config from '../../config';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../private_message_type';
+import CustomError from '../../error/custom_error';
+import errorType from '../../error/type';
+import logger from '../../logger';
+
+import * as config from '../../config';
+import { role } from '../../node';
 
 export * from './event_handlers';
 
@@ -72,14 +74,14 @@ function writeCallbackUrlToFile(fileSuffix, url) {
   });
 }
 
-export function setCallbackUrls({ error_url }) {
+export function setCallbackUrls({ node_id, error_url }) {
   if (error_url != null) {
     callbackUrls.error_url = error_url;
     writeCallbackUrlToFile('error', error_url);
   }
 }
 
-export function getCallbackUrls() {
+export function getCallbackUrls(nodeId) {
   return callbackUrls;
 }
 
@@ -218,8 +220,14 @@ export async function sendRequestToAS(requestData, height) {
   );
 }
 
-export async function getRequestIdByReferenceId(referenceId) {
+export async function getRequestIdByReferenceId(nodeId, referenceId) {
   try {
+    if (role === 'proxy' && nodeId == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
     return await cacheDb.getRequestIdByReferenceId(referenceId);
   } catch (error) {
     throw new CustomError({
@@ -229,8 +237,14 @@ export async function getRequestIdByReferenceId(referenceId) {
   }
 }
 
-export async function getDataFromAS(requestId) {
+export async function getDataFromAS(nodeId, requestId) {
   try {
+    if (role === 'proxy' && nodeId == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
     // Check if request exists
     const request = await tendermintNdid.getRequest({ requestId });
     if (request == null) {
@@ -246,8 +260,14 @@ export async function getDataFromAS(requestId) {
   }
 }
 
-export async function removeDataFromAS(requestId) {
+export async function removeDataFromAS(nodeId, requestId) {
   try {
+    if (role === 'proxy' && nodeId == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
     return await cacheDb.removeDataFromAS(requestId);
   } catch (error) {
     throw new CustomError({
@@ -257,8 +277,14 @@ export async function removeDataFromAS(requestId) {
   }
 }
 
-export async function removeAllDataFromAS() {
+export async function removeAllDataFromAS(nodeId) {
   try {
+    if (role === 'proxy' && nodeId == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
     return await cacheDb.removeAllDataFromAS();
   } catch (error) {
     throw new CustomError({

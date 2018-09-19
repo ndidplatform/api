@@ -456,6 +456,10 @@ export default {
     message: "AAL is less than request's minimum AAL",
     clientError: true,
   },
+  MISSING_NODE_ID: {
+    code: 20057,
+    message: 'Node ID must be provided',
+  },
 
   // Errors return from ABCI app
   // Server errors

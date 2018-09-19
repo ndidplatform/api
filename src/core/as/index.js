@@ -25,16 +25,18 @@ import path from 'path';
 
 import { processDataForRP } from './process_data_for_rp';
 
-import { callbackToClient } from '../../utils/callback';
-import CustomError from '../../error/custom_error';
-import logger from '../../logger';
-
 import * as tendermintNdid from '../../tendermint/ndid';
-import * as utils from '../../utils';
-import * as config from '../../config';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
+
 import errorType from '../../error/type';
+import CustomError from '../../error/custom_error';
+import * as utils from '../../utils';
+import { callbackToClient } from '../../utils/callback';
+import logger from '../../logger';
+
+import * as config from '../../config';
+import { role } from '../../node';
 
 export * from './register_or_update_as_service';
 export * from './process_data_for_rp';
@@ -79,14 +81,14 @@ function writeCallbackUrlToFile(fileSuffix, url) {
   });
 }
 
-export function setCallbackUrls({ error_url }) {
+export function setCallbackUrls({ node_id, error_url }) {
   if (error_url != null) {
     callbackUrls.error_url = error_url;
     writeCallbackUrlToFile('error', error_url);
   }
 }
 
-export function getCallbackUrls() {
+export function getCallbackUrls(nodeId) {
   return callbackUrls;
 }
 
@@ -388,10 +390,20 @@ export async function checkServiceRequestParamsIntegrity(
   return true;
 }
 
-export async function getServiceDetail(service_id) {
+export async function getServiceDetail(nodeId, service_id) {
   try {
+    if (role === 'proxy' && nodeId == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
+    if (nodeId == null) {
+      nodeId = config.nodeId;
+    }
+
     const services = await tendermintNdid.getServicesByAsID({
-      as_id: config.nodeId,
+      as_id: nodeId,
     });
     const service = services.find((service) => {
       return service.service_id === service_id;

@@ -22,21 +22,23 @@
 
 import { checkAssociated } from '.';
 
-import logger from '../../logger';
+import * as tendermintNdid from '../../tendermint/ndid';
 
 import CustomError from '../../error/custom_error';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
-
-import * as tendermintNdid from '../../tendermint/ndid';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
+import logger from '../../logger';
+
 import * as config from '../../config';
+import { role } from '../../node';
 
 /**
  * Update identity's IAL
  *
  * @param {Object} updateIalParams
+ * @param {string} updateIalParams.node_id
  * @param {string} updateIalParams.reference_id
  * @param {string} updateIalParams.callback_url
  * @param {string} updateIalParams.namespace
@@ -46,10 +48,16 @@ import * as config from '../../config';
  * @param {boolean} options.synchronous
  */
 export async function updateIal(
-  { reference_id, callback_url, namespace, identifier, ial },
+  { node_id, reference_id, callback_url, namespace, identifier, ial },
   { synchronous = false } = {}
 ) {
   try {
+    if (role === 'proxy' && node_id == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
     // check for created identity
     if (!checkAssociated({ namespace, identifier })) {
       throw new CustomError({

@@ -22,18 +22,10 @@
 
 import { checkAssociated, checkForExistedIdentity } from '.';
 
-import logger from '../../logger';
-
-import CustomError from '../../error/custom_error';
-import errorType from '../../error/type';
-import { getErrorObjectForClient } from '../../error/helpers';
-
 import * as tendermintNdid from '../../tendermint/ndid';
-import * as utils from '../../utils';
 import { validateKey } from '../utils/node_key';
 import { callbackToClient } from '../../utils/callback';
 import * as common from '../common';
-import * as config from '../../config';
 import * as cacheDb from '../../db/cache';
 import {
   isAccessorSignUrlSet,
@@ -45,11 +37,21 @@ import {
   getRequestMessageForAddingAccessor,
 } from '../../utils/request_message';
 
+import CustomError from '../../error/custom_error';
+import errorType from '../../error/type';
+import { getErrorObjectForClient } from '../../error/helpers';
+import * as utils from '../../utils';
+import logger from '../../logger';
+
+import * as config from '../../config';
+import { role } from '../../node';
+
 /**
  * Create identity
  * Use in mode 3
  *
  * @param {Object} createIdentityParams
+ * @param {string} createIdentityParams.node_id
  * @param {string} createIdentityParams.reference_id
  * @param {string} createIdentityParams.callback_url
  * @param {string} createIdentityParams.namespace
@@ -68,6 +70,7 @@ import {
  */
 export async function createIdentity(
   {
+    node_id,
     reference_id,
     callback_url,
     namespace,
@@ -81,6 +84,12 @@ export async function createIdentity(
   { synchronous = false, apiVersion } = {}
 ) {
   try {
+    if (role === 'proxy' && node_id == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
     validateKey(accessor_public_key, accessor_type);
 
     const createIdentityData = await cacheDb.getCreateIdentityDataByReferenceId(

@@ -59,8 +59,8 @@ export function getNonce() {
   return randomBase64Bytes(32);
 }
 
-export function hash(stringToHash) {
-  const hashBuffer = cryptoUtils.sha256(stringToHash);
+export function hash(dataToHash) {
+  const hashBuffer = cryptoUtils.sha256(dataToHash);
   return hashBuffer.toString('base64');
 }
 

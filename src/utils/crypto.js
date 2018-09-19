@@ -28,13 +28,13 @@ const AES_KEY_LENGTH_IN_BYTES = 32;
 /**
  * Hash given string with SHA-256
  * 
- * @param {string} stringToHash
+ * @param {string|Buffer} dataToHash
  * 
  * @returns {Buffer} hash in Buffer
  */
-export function sha256(stringToHash) {
+export function sha256(dataToHash) {
   const hash = crypto.createHash('sha256');
-  hash.update(stringToHash);
+  hash.update(dataToHash);
   const hashBuffer = hash.digest();
   return hashBuffer;
 }

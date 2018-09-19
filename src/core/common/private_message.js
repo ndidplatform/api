@@ -28,7 +28,7 @@ import CustomError from '../../error/custom_error';
 
 const privateMessageTypes = Object.values(PRIVATE_MESSAGE_TYPES);
 
-export async function getPrivateMessages({ requestId, type } = {}) {
+export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
   try {
     if (requestId == null) {
       if (type == null) {
@@ -75,7 +75,7 @@ export async function getPrivateMessages({ requestId, type } = {}) {
   }
 }
 
-export async function removePrivateMessages({ requestId, type } = {}) {
+export async function removePrivateMessages({ nodeId, requestId, type } = {}) {
   try {
     if (requestId == null) {
       if (type == null) {

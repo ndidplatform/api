@@ -34,7 +34,7 @@ router.get('/callback', async (req, res, next) => {
   try {
     const { node_id } = req.query;
 
-    const urls = idp.getCallbackUrls();
+    const urls = idp.getCallbackUrls(node_id);
 
     if (Object.keys(urls).length > 0) {
       res.status(200).json(urls);
@@ -56,6 +56,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
     } = req.body;
 
     idp.setCallbackUrls({
+      node_id,
       incoming_request_url,
       accessor_sign_url,
       error_url,
@@ -87,6 +88,7 @@ router.post('/response', validateBody, async (req, res, next) => {
 
     await idp.requestChallengeAndCreateResponse(
       {
+        node_id,
         reference_id,
         callback_url,
         request_id,

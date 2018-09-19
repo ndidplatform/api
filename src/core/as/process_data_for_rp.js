@@ -33,12 +33,20 @@ import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
 import privateMessageType from '../private_message_type';
 
+import { role } from '../../node';
+
 export async function processDataForRP(
   data,
-  { reference_id, callback_url, requestId, serviceId, rpId },
+  { node_id, reference_id, callback_url, requestId, serviceId, rpId },
   { synchronous = false } = {}
 ) {
   try {
+    if (role === 'proxy' && node_id == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
     const requestDetail = await tendermintNdid.getRequestDetail({
       requestId,
     });
@@ -124,7 +132,7 @@ async function processDataForRPInternalAsync(
       initial_salt,
     });
     const signatureBuffer = await utils.createSignature(
-      data + data_salt,
+      data + data_salt
       // config.nodeId // FIXME: receive nodeId from argument
     );
     const signature = signatureBuffer.toString('base64');

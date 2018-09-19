@@ -22,20 +22,27 @@
 
 import { setServiceCallbackUrl } from '.';
 
-import { callbackToClient } from '../../utils/callback';
-import CustomError from '../../error/custom_error';
-import logger from '../../logger';
-
 import * as tendermintNdid from '../../tendermint/ndid';
-import * as config from '../../config';
+import CustomError from '../../error/custom_error';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
+import { callbackToClient } from '../../utils/callback';
+import logger from '../../logger';
+
+import * as config from '../../config';
+import { role } from '../../node';
 
 export async function registerOrUpdateASService(
-  { service_id, reference_id, callback_url, min_ial, min_aal, url },
+  { node_id, service_id, reference_id, callback_url, min_ial, min_aal, url },
   { synchronous = false } = {}
 ) {
   try {
+    if (role === 'proxy' && node_id == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
     //check already register?
     let registeredASList = await tendermintNdid.getAsNodesByServiceId({
       service_id,

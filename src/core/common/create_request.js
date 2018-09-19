@@ -27,23 +27,26 @@ import {
   getFunction,
 } from '.';
 
-import CustomError from '../../error/custom_error';
-import logger from '../../logger';
-
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
-import { callbackToClient } from '../../utils/callback';
-import * as utils from '../../utils';
-import * as config from '../../config';
-import errorType from '../../error/type';
-import { getErrorObjectForClient } from '../../error/helpers';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../private_message_type';
+import * as utils from '../../utils';
+import { callbackToClient } from '../../utils/callback';
+import CustomError from '../../error/custom_error';
+import errorType from '../../error/type';
+import { getErrorObjectForClient } from '../../error/helpers';
+
+import logger from '../../logger';
+
+import * as config from '../../config';
+import { role } from '../../node';
 
 /**
  * Create a new request
  *
  * @param {Object} createRequestParams
+ * @param {string} createRequestParams.node_id
  * @param {number} createRequestParams.mode
  * @param {string} createRequestParams.namespace
  * @param {string} createRequestParams.identifier
@@ -72,6 +75,7 @@ export async function createRequest(
   additionalParams = {}
 ) {
   const {
+    node_id,
     mode,
     namespace,
     identifier,
@@ -90,6 +94,12 @@ export async function createRequest(
     request_id, // Pre-generated request ID. Used by create identity function.
   } = additionalParams;
   try {
+    if (role === 'proxy' && node_id == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
     const requestId = await cacheDb.getRequestIdByReferenceId(reference_id);
     if (requestId) {
       throw new CustomError({

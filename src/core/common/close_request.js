@@ -22,18 +22,22 @@
 
 import { removeTimeoutScheduler } from '.';
 
+import * as tendermintNdid from '../../tendermint/ndid';
+import * as cacheDb from '../../db/cache';
+import { callbackToClient } from '../../utils/callback';
 import CustomError from '../../error/custom_error';
+import errorType from '../../error/type';
+import { getErrorObjectForClient } from '../../error/helpers';
+
 import logger from '../../logger';
 
-import * as tendermintNdid from '../../tendermint/ndid';
-import { callbackToClient } from '../../utils/callback';
-import { getErrorObjectForClient } from '../../error/helpers';
-import * as cacheDb from '../../db/cache';
+import { role } from '../../node';
 
 /**
  * Close a request
  *
  * @param {Object} closeRequestParams
+ * @param {string} closeRequestParams.node_id
  * @param {string} closeRequestParams.reference_id
  * @param {string} closeRequestParams.callback_url
  * @param {string} closeRequestParams.request_id
@@ -41,10 +45,16 @@ import * as cacheDb from '../../db/cache';
  * @param {boolean} options.synchronous
  */
 export async function closeRequest(
-  { reference_id, callback_url, request_id },
+  { node_id, reference_id, callback_url, request_id },
   { synchronous = false } = {}
 ) {
   try {
+    if (role === 'proxy' && node_id == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
     if (synchronous) {
       await closeRequestInternalAsync(...arguments);
     } else {
@@ -63,7 +73,7 @@ export async function closeRequest(
 }
 
 async function closeRequestInternalAsync(
-  { reference_id, callback_url, request_id },
+  { node_id, reference_id, callback_url, request_id },
   { synchronous = false } = {}
 ) {
   try {
@@ -92,7 +102,7 @@ async function closeRequestInternalAsync(
         },
         null,
         'common.closeRequestInternalAsyncAfterBlockchain',
-        [{ reference_id, callback_url, request_id }, { synchronous }]
+        [{ node_id, reference_id, callback_url, request_id }, { synchronous }]
       );
     } else {
       await tendermintNdid.closeRequest({
@@ -101,7 +111,7 @@ async function closeRequestInternalAsync(
       });
       await closeRequestInternalAsyncAfterBlockchain(
         {},
-        { reference_id, callback_url, request_id },
+        { node_id, reference_id, callback_url, request_id },
         { synchronous }
       );
     }
@@ -134,7 +144,7 @@ async function closeRequestInternalAsync(
 
 export async function closeRequestInternalAsyncAfterBlockchain(
   { error },
-  { reference_id, callback_url, request_id },
+  { node_id, reference_id, callback_url, request_id },
   { synchronous = false } = {}
 ) {
   try {

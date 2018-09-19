@@ -49,6 +49,7 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
 
     const result = await identity.createIdentity(
       {
+        node_id,
         reference_id,
         callback_url,
         namespace,
@@ -76,6 +77,7 @@ router.get(
       const { reference_id } = req.params;
 
       const createIdentityData = await identity.getCreateIdentityDataByReferenceId(
+        node_id,
         reference_id
       );
       if (createIdentityData != null) {
@@ -101,7 +103,7 @@ router.post(
       const { node_id, reference_id, callback_url, request_id } = req.body;
 
       await common.closeRequest(
-        { reference_id, callback_url, request_id },
+        { node_id, reference_id, callback_url, request_id },
         { synchronous: false }
       );
       res.status(202).end();
@@ -113,7 +115,6 @@ router.post(
 
 router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
-    const { node_id } = req.query;
     const { namespace, identifier } = req.params;
 
     const idpNodes = await tendermintNdid.getIdpNodes({
@@ -162,6 +163,7 @@ router.post(
       const { node_id, reference_id, callback_url, ial } = req.body;
       await identity.updateIal(
         {
+          node_id,
           reference_id,
           callback_url,
           namespace,
@@ -235,6 +237,7 @@ router.post(
 
       const result = await identity.addAccessorMethodForAssociatedIdp(
         {
+          node_id,
           reference_id,
           callback_url,
           namespace,
@@ -259,12 +262,7 @@ router.post(
 
 router.post('/secret', idpOnlyHandler, async (req, res, next) => {
   try {
-    let {
-      accessor_id,
-      namespace,
-      identifier,
-      reference_id,
-    } = req.body;
+    let { accessor_id, namespace, identifier, reference_id } = req.body;
     const secret = await reCalculateSecret({
       accessor_id,
       namespace,

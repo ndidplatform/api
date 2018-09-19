@@ -44,6 +44,7 @@ router.post('/service/:service_id', validateBody, async (req, res, next) => {
 
     await as.registerOrUpdateASService(
       {
+        node_id,
         service_id,
         reference_id,
         callback_url,
@@ -65,7 +66,7 @@ router.get('/service/:service_id', async (req, res, next) => {
     const { node_id } = req.query;
     const { service_id } = req.params;
 
-    const result = await as.getServiceDetail(service_id);
+    const result = await as.getServiceDetail(node_id, service_id);
 
     if (result == null) {
       res.status(404).end();
@@ -88,6 +89,7 @@ router.post(
       await as.processDataForRP(
         data,
         {
+          node_id,
           reference_id,
           callback_url,
           requestId: request_id,
@@ -107,7 +109,7 @@ router.get('/callback', async (req, res, next) => {
   try {
     const { node_id } = req.query;
 
-    const urls = as.getCallbackUrls();
+    const urls = as.getCallbackUrls(node_id);
 
     if (Object.keys(urls).length > 0) {
       res.status(200).json(urls);
@@ -124,6 +126,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
     const { node_id, error_url } = req.body;
 
     as.setCallbackUrls({
+      node_id,
       error_url,
     });
 

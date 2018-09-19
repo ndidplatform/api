@@ -93,6 +93,7 @@ router.post('/node/update', validateBody, async (req, res, next) => {
     //should we allow organization to update their node's name?
     let result = await dpki.updateNode(
       {
+        node_id,
         reference_id,
         callback_url,
         public_key: node_key,
@@ -112,7 +113,7 @@ router.post('/node/update', validateBody, async (req, res, next) => {
 router.get('/node/callback', async (req, res, next) => {
   try {
     const { node_id } = req.query;
-    const urls = externalCryptoService.getCallbackUrls();
+    const urls = externalCryptoService.getCallbackUrls(node_id);
 
     if (Object.keys(urls).length > 0) {
       res.status(200).json(urls);
@@ -129,6 +130,7 @@ router.post('/node/callback', validateBody, async (req, res, next) => {
     const { node_id, sign_url, master_sign_url, decrypt_url } = req.body;
 
     await externalCryptoService.setDpkiCallback({
+      nodeId: node_id,
       signCallbackUrl: sign_url,
       masterSignCallbackUrl: master_sign_url,
       decryptCallbackUrl: decrypt_url,

@@ -22,18 +22,18 @@
 
 import { createIdentity } from './create_identity';
 
-import logger from '../../logger';
-
-import CustomError from '../../error/custom_error';
-import errorType from '../../error/type';
-
 import * as tendermintNdid from '../../tendermint/ndid';
 import { getFunction } from '../common';
 import * as cacheDb from '../../db/cache';
+
+import CustomError from '../../error/custom_error';
+import errorType from '../../error/type';
 import * as utils from '../../utils';
 import { validateKey } from '../utils/node_key';
+import logger from '../../logger';
 
 import * as config from '../../config';
+import { role } from '../../node';
 
 export * from './create_identity';
 export * from './update_ial';
@@ -54,6 +54,7 @@ export async function checkAssociated({ namespace, identifier }) {
 
 export async function addAccessorMethodForAssociatedIdp(
   {
+    node_id,
     reference_id,
     callback_url,
     namespace,
@@ -64,6 +65,12 @@ export async function addAccessorMethodForAssociatedIdp(
   },
   { synchronous = false, apiVersion } = {}
 ) {
+  if (role === 'proxy' && node_id == null) {
+    throw new CustomError({
+      errorType: errorType.MISSING_NODE_ID,
+    });
+  }
+
   validateKey(accessor_public_key, accessor_type);
 
   const associated = await checkAssociated({
@@ -204,8 +211,14 @@ export function checkForExistedIdentityAfterBlockchain(
   }
 }
 
-export async function getCreateIdentityDataByReferenceId(referenceId) {
+export async function getCreateIdentityDataByReferenceId(nodeId, referenceId) {
   try {
+    if (role === 'proxy' && nodeId == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
     return await cacheDb.getCreateIdentityDataByReferenceId(referenceId);
   } catch (error) {
     throw new CustomError({

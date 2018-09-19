@@ -20,21 +20,24 @@
  *
  */
 
+import * as tendermintNdid from '../../tendermint/ndid';
+import * as cacheDb from '../../db/cache';
+import * as mq from '../../mq';
+import privateMessageType from '../private_message_type';
+
+import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
 import CustomError from '../../error/custom_error';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
 import logger from '../../logger';
 
-import * as tendermintNdid from '../../tendermint/ndid';
-import * as utils from '../../utils';
 import * as config from '../../config';
-import * as cacheDb from '../../db/cache';
-import * as mq from '../../mq';
-import privateMessageType from '../private_message_type';
+import { role } from '../../node';
 
 export async function requestChallengeAndCreateResponse(createResponseParams) {
   const {
+    node_id,
     request_id,
     ial,
     aal,
@@ -43,6 +46,12 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
     accessor_id,
   } = createResponseParams;
   try {
+    if (role === 'proxy' && node_id == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
     const request = await tendermintNdid.getRequestDetail({
       requestId: request_id,
     });
@@ -210,6 +219,7 @@ async function requestChallengeAndCreateResponseInternalAsync(
  * Create a (consent) response to a request
  *
  * @param {Object} createResponseParams
+ * @param {string} createResponseParams.node_id
  * @param {string} createResponseParams.reference_id
  * @param {string} createResponseParams.callback_url
  * @param {string} createResponseParams.request_id

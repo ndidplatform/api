@@ -21,13 +21,18 @@
  */
 
 import * as tendermintNdid from '../tendermint/ndid';
+import CustomError from '../../error/custom_error';
+import errorType from '../../error/type';
+import { getErrorObjectForClient } from '../../error/helpers';
 import { validateKey } from '../utils/node_key';
-import logger from '../logger';
 import { callbackToClient } from '../utils/callback';
-import { getErrorObjectForClient } from '../error/helpers';
+import logger from '../logger';
+
+import { role } from '../../node';
 
 export async function updateNode(
   {
+    node_id,
     reference_id,
     callback_url,
     public_key,
@@ -37,6 +42,12 @@ export async function updateNode(
   },
   { synchronous = false } = {}
 ) {
+  if (role === 'proxy' && node_id == null) {
+    throw new CustomError({
+      errorType: errorType.MISSING_NODE_ID,
+    });
+  }
+
   // Validate public keys
   if (public_key != null) {
     validateKey(public_key, public_key_type);
