@@ -163,6 +163,27 @@ async function processMessage(messageId, messageProtobuf) {
 
     if (messageForProxy === true) {
       // Message is encapsulated with proxy layer
+
+      // Verify signature
+      const messageHashBase64 = utils.hash(decodedDecryptedMessage.message);
+      const senderNodeId = decodedDecryptedMessage.senderNodeId;
+      const signature = decodedDecryptedMessage.signature;
+      const stringToVerify = `${messageHashBase64}|${receiverNodeId}|${senderNodeId}`;
+
+      const proxyPublicKey = await tendermintNdid.getNodePubKey(senderNodeId);
+
+      const signatureValid = utils.verifySignature(
+        signature,
+        proxyPublicKey,
+        stringToVerify
+      );
+
+      if (!signatureValid) {
+        throw new CustomError({
+          errorType: errorType.INVALID_MESSAGE_SIGNATURE,
+        });
+      }
+
       const receiverNodeId = decodedDecryptedMessage.receiverNodeId;
 
       if (receiverNodeId == null || receiverNodeId === '') {
@@ -211,39 +232,39 @@ async function processMessage(messageId, messageProtobuf) {
         errorType: errorType.MESSAGE_FROM_UNKNOWN_NODE,
       });
     }
-    const public_key = await tendermintNdid.getNodePubKey(nodeId);
+    const publicKey = await tendermintNdid.getNodePubKey(nodeId);
 
     const signatureValid = utils.verifySignature(
       messageSignature,
-      public_key,
+      publicKey,
       messageStr
     );
 
     logger.debug({
       message: 'Verifying signature',
       messageSignature,
-      public_key,
+      publicKey,
       messageStr,
       signatureValid,
     });
 
-    if (signatureValid) {
-      // TODO: validate message schema
-
-      await longTermDb.addMessage(
-        // longTermDb.MESSAGE_DIRECTIONS.INBOUND,
-        message.type,
-        message.request_id,
-        messageStr
-      );
-
-      eventEmitter.emit('message', message);
-      removeRawMessageFromCache(messageId);
-    } else {
+    if (!signatureValid) {
       throw new CustomError({
         errorType: errorType.INVALID_MESSAGE_SIGNATURE,
       });
     }
+
+    // TODO: validate message schema
+
+    await longTermDb.addMessage(
+      // longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+      message.type,
+      message.request_id,
+      messageStr
+    );
+
+    eventEmitter.emit('message', message);
+    removeRawMessageFromCache(messageId);
   } catch (error) {
     eventEmitter.emit('error', error);
     logger.warn({
@@ -355,9 +376,19 @@ export async function send(receivers, message, senderNodeId) {
       let payloadBuffer;
       if (receiver.proxy != null) {
         // Encapsulate proxy layer
+
+        const messageHashBase64 = utils.hash(protoEncryptedBuffer);
+        const receiverNodeId = receiver.node_id;
+        const senderNodeId = config.nodeId;
+        const signatureBuffer = await utils.createSignature(
+          `${messageHashBase64}|${receiverNodeId}|${senderNodeId}`
+        );
+
         const mqMessageObject = {
           message: protoEncryptedBuffer,
-          receiverNodeId: receiver.node_id,
+          signature: signatureBuffer,
+          receiverNodeId,
+          senderNodeId,
         };
         const protoMessage = MqMessage.create(mqMessageObject);
         const protoBuffer = MqMessage.encode(protoMessage).finish();

@@ -5,4 +5,5 @@ message MqMessage {
   bytes signature = 2;
   bool messageForProxy = 3;
   string receiverNodeId = 4;
+  string senderNodeId = 5;
 }
