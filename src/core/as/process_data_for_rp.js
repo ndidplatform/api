@@ -37,16 +37,29 @@ import { role } from '../../node';
 
 export async function processDataForRP(
   data,
-  { node_id, reference_id, callback_url, requestId, serviceId, rpId },
+  processDataForRPParams,
   { synchronous = false } = {}
 ) {
-  try {
-    if (role === 'proxy' && node_id == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
+  let { node_id } = processDataForRPParams;
+  const {
+    reference_id,
+    callback_url,
+    requestId,
+    serviceId,
+    rpId,
+  } = processDataForRPParams;
 
+  if (role === 'proxy' && node_id == null) {
+    throw new CustomError({
+      errorType: errorType.MISSING_NODE_ID,
+    });
+  }
+
+  if (node_id == null) {
+    node_id = config.nodeId;
+  }
+
+  try {
     const requestDetail = await tendermintNdid.getRequestDetail({
       requestId,
     });
@@ -86,7 +99,10 @@ export async function processDataForRP(
     }
 
     const dataRequestId = requestId + ':' + serviceId;
-    const savedRpId = await cacheDb.getRpIdFromDataRequestId(dataRequestId);
+    const savedRpId = await cacheDb.getRpIdFromDataRequestId(
+      node_id,
+      dataRequestId
+    );
 
     if (!savedRpId) {
       throw new CustomError({
@@ -95,9 +111,15 @@ export async function processDataForRP(
     }
 
     if (synchronous) {
-      await processDataForRPInternalAsync(...arguments, { savedRpId });
+      await processDataForRPInternalAsync(...arguments, {
+        nodeId: node_id,
+        savedRpId,
+      });
     } else {
-      processDataForRPInternalAsync(...arguments, { savedRpId });
+      processDataForRPInternalAsync(...arguments, {
+        nodeId: node_id,
+        savedRpId,
+      });
     }
   } catch (error) {
     const err = new CustomError({
@@ -121,31 +143,29 @@ async function processDataForRPInternalAsync(
   data,
   { reference_id, callback_url, requestId, serviceId, rpId },
   { synchronous = false } = {},
-  { savedRpId }
+  { nodeId, savedRpId }
 ) {
   try {
-    const as_id = config.nodeId;
-    const initial_salt = await cacheDb.getInitialSalt(requestId);
+    const initial_salt = await cacheDb.getInitialSalt(nodeId, requestId);
     const data_salt = utils.generateDataSalt({
       request_id: requestId,
       service_id: serviceId,
       initial_salt,
     });
     const signatureBuffer = await utils.createSignature(
-      data + data_salt
-      // config.nodeId // FIXME: receive nodeId from argument
+      data + data_salt,
+      nodeId
     );
     const signature = signatureBuffer.toString('base64');
 
     if (!synchronous) {
       await tendermintNdid.signASData(
         {
-          as_id,
           request_id: requestId,
           signature,
           service_id: serviceId,
         },
-        null,
+        nodeId,
         'as.processDataForRPInternalAsyncAfterBlockchain',
         [
           {
@@ -154,22 +174,23 @@ async function processDataForRPInternalAsync(
             data,
             requestId,
             serviceId,
-            as_id,
             signature,
             data_salt,
             rpId,
           },
           { synchronous },
-          { savedRpId },
+          { nodeId, savedRpId },
         ]
       );
     } else {
-      const { height } = await tendermintNdid.signASData({
-        as_id,
-        request_id: requestId,
-        signature,
-        service_id: serviceId,
-      });
+      const { height } = await tendermintNdid.signASData(
+        {
+          request_id: requestId,
+          signature,
+          service_id: serviceId,
+        },
+        nodeId
+      );
       await processDataForRPInternalAsyncAfterBlockchain(
         { height },
         {
@@ -178,13 +199,12 @@ async function processDataForRPInternalAsync(
           data,
           requestId,
           serviceId,
-          as_id,
           signature,
           data_salt,
           rpId,
         },
         { synchronous },
-        { savedRpId }
+        { nodeId, savedRpId }
       );
     }
   } catch (error) {
@@ -223,13 +243,12 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     data,
     requestId,
     serviceId,
-    as_id,
     signature,
     data_salt,
     rpId,
   },
   { synchronous = false } = {},
-  { savedRpId }
+  { nodeId, savedRpId }
 ) {
   try {
     if (error) throw error;
@@ -238,9 +257,9 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
       rpId = savedRpId;
     }
 
-    await sendDataToRP(rpId, {
+    await sendDataToRP(nodeId, rpId, {
       request_id: requestId,
-      as_id,
+      as_id: nodeId,
       signature,
       data_salt,
       service_id: serviceId,
@@ -262,8 +281,8 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     }
 
     const dataRequestId = requestId + ':' + serviceId;
-    cacheDb.removeRpIdFromDataRequestId(dataRequestId);
-    cacheDb.removeInitialSalt(requestId);
+    cacheDb.removeRpIdFromDataRequestId(nodeId, dataRequestId);
+    cacheDb.removeInitialSalt(nodeId, requestId);
   } catch (error) {
     logger.error({
       message: 'Send data to RP internal async after blockchain error',
@@ -291,7 +310,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
   }
 }
 
-async function sendDataToRP(rpId, data) {
+async function sendDataToRP(nodeId, rpId, data) {
   const nodeInfo = await tendermintNdid.getNodeInfo(rpId);
   if (nodeInfo == null) {
     throw new CustomError({
@@ -315,7 +334,7 @@ async function sendDataToRP(rpId, data) {
   if (nodeInfo.proxy != null) {
     receivers = [
       {
-        node_id: nodeInfo.node_id,
+        node_id: rpId,
         public_key: nodeInfo.public_key,
         proxy: {
           node_id: nodeInfo.proxy.node_id,
@@ -328,21 +347,25 @@ async function sendDataToRP(rpId, data) {
   } else {
     receivers = [
       {
-        node_id: nodeInfo.node_id,
+        node_id: rpId,
         public_key: nodeInfo.public_key,
         ip: nodeInfo.mq.ip,
         port: nodeInfo.mq.port,
       },
     ];
   }
-  mq.send(receivers, {
-    type: privateMessageType.AS_DATA_RESPONSE,
-    request_id: data.request_id,
-    as_id: data.as_id,
-    service_id: data.service_id,
-    signature: data.signature,
-    data_salt: data.data_salt,
-    data: data.data,
-    height: data.height,
-  });
+  mq.send(
+    receivers,
+    {
+      type: privateMessageType.AS_DATA_RESPONSE,
+      request_id: data.request_id,
+      as_id: data.as_id,
+      service_id: data.service_id,
+      signature: data.signature,
+      data_salt: data.data_salt,
+      data: data.data,
+      height: data.height,
+    },
+    nodeId
+  );
 }

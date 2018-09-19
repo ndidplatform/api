@@ -552,6 +552,11 @@ export async function transact({
   callbackAdditionalArgs,
   useMasterKey = false,
 }) {
+  if (nodeId == null || nodeId == '') {
+    throw new CustomError({
+      message: 'Missing argument "nodeId"',
+    });
+  }
   const waitForCommit = !callbackFnName;
   logger.debug({
     message: 'Tendermint transact',
@@ -564,10 +569,6 @@ export async function transact({
     callbackFnName,
     callbackAdditionalArgs,
   });
-
-  if (nodeId == null) {
-    nodeId = config.nodeId;
-  }
 
   if (callbackAdditionalArgs != null) {
     if (!Array.isArray(callbackAdditionalArgs)) {
@@ -586,9 +587,11 @@ export async function transact({
     nonce +
     '|' +
     // FIXME: signature need to be able to specify node ID
-    (await utils.createSignature(paramsStr + nonce, nodeId, useMasterKey)).toString(
-      'base64'
-    ) +
+    (await utils.createSignature(
+      paramsStr + nonce,
+      nodeId,
+      useMasterKey
+    )).toString('base64') +
     '|' +
     Buffer.from(nodeId).toString('base64');
 

@@ -29,6 +29,8 @@ import { callbackToClient } from '../utils/callback';
 import CustomError from '../error/custom_error';
 import { getErrorObjectForClient } from '../error/helpers';
 
+import * as config from '../config';
+
 let init = false;
 
 export async function initNDID({
@@ -53,6 +55,7 @@ export async function initNDID({
     }
 
     await tendermint.transact({
+      nodeId: config.nodeId,
       fnName: 'InitNDID',
       params: { node_id: 'ndid1', public_key, master_public_key },
     });
@@ -68,6 +71,7 @@ export async function initNDID({
 export async function approveService({ node_id, service_id }) {
   try {
     await tendermint.transact({
+      nodeId: config.nodeId,
       fnName: 'RegisterServiceDestinationByNDID',
       params: { node_id, service_id },
     });
@@ -84,7 +88,11 @@ export async function setNodeToken(data) {
   const { node_id, amount } = data;
 
   try {
-    await tendermint.transact({ fnName: 'SetNodeToken', params: data });
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'SetNodeToken',
+      params: data,
+    });
   } catch (error) {
     logger.error({
       message: 'Cannot set node token',
@@ -98,7 +106,11 @@ export async function addNodeToken(data) {
   const { node_id, amount } = data;
 
   try {
-    await tendermint.transact({ fnName: 'AddNodeToken', params: data });
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'AddNodeToken',
+      params: data,
+    });
   } catch (error) {
     logger.error({
       message: 'Cannot add node token',
@@ -112,7 +124,11 @@ export async function reduceNodeToken(data) {
   const { node_id, amount } = data;
 
   try {
-    await tendermint.transact({ fnName: 'ReduceNodeToken', params: data });
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'ReduceNodeToken',
+      params: data,
+    });
   } catch (error) {
     logger.error({
       message: 'Cannot reduce node token',
@@ -178,7 +194,11 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
   }
 
   try {
-    await tendermint.transact({ fnName: 'RegisterNode', params: data });
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'RegisterNode',
+      params: data,
+    });
 
     if (!synchronous) {
       await callbackToClient(
@@ -246,7 +266,11 @@ async function updateNodeInternalAsync(data, { synchronous = false } = {}) {
   } = data;
 
   try {
-    await tendermint.transact({ fnName: 'UpdateNodeByNDID', params: data });
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'UpdateNodeByNDID',
+      params: data,
+    });
 
     if (!synchronous) {
       await callbackToClient(
@@ -288,6 +312,7 @@ async function updateNodeInternalAsync(data, { synchronous = false } = {}) {
 export async function addNamespace({ namespace, description }) {
   try {
     await tendermint.transact({
+      nodeId: config.nodeId,
       fnName: 'AddNamespace',
       params: { namespace, description },
     });
@@ -300,6 +325,7 @@ export async function addNamespace({ namespace, description }) {
 export async function enableNamespace({ namespace }) {
   try {
     await tendermint.transact({
+      nodeId: config.nodeId,
       fnName: 'EnableNamespace',
       params: { namespace },
     });
@@ -312,6 +338,7 @@ export async function enableNamespace({ namespace }) {
 export async function disableNamespace({ namespace }) {
   try {
     await tendermint.transact({
+      nodeId: config.nodeId,
       fnName: 'DisableNamespace',
       params: { namespace },
     });
@@ -324,6 +351,7 @@ export async function disableNamespace({ namespace }) {
 export async function addService({ service_id, service_name }) {
   try {
     await tendermint.transact({
+      nodeId: config.nodeId,
       fnName: 'AddService',
       params: { service_id, service_name },
     });
@@ -336,6 +364,7 @@ export async function addService({ service_id, service_name }) {
 export async function updateService({ service_id, service_name }) {
   try {
     await tendermint.transact({
+      nodeId: config.nodeId,
       fnName: 'UpdateService',
       params: { service_id, service_name },
     });
@@ -348,6 +377,7 @@ export async function updateService({ service_id, service_name }) {
 export async function enableService({ service_id }) {
   try {
     await tendermint.transact({
+      nodeId: config.nodeId,
       fnName: 'EnableService',
       params: { service_id },
     });
@@ -360,6 +390,7 @@ export async function enableService({ service_id }) {
 export async function disableService({ service_id }) {
   try {
     await tendermint.transact({
+      nodeId: config.nodeId,
       fnName: 'DisableService',
       params: { service_id },
     });
@@ -372,6 +403,7 @@ export async function disableService({ service_id }) {
 export async function setValidator({ public_key, power }) {
   try {
     await tendermint.transact({
+      nodeId: config.nodeId,
       fnName: 'SetValidator',
       params: { public_key, power },
     });
@@ -386,6 +418,7 @@ export async function setTimeoutBlockRegisterMqDestination({
 }) {
   try {
     await tendermint.transact({
+      nodeId: config.nodeId,
       fnName: 'SetTimeOutBlockRegisterMsqDestination',
       params: { time_out_block: blocks_to_timeout },
     });
@@ -398,6 +431,7 @@ export async function setTimeoutBlockRegisterMqDestination({
 export async function enableServiceDestination({ service_id, node_id }) {
   try {
     await tendermint.transact({
+      nodeId: config.nodeId,
       fnName: 'EnableServiceDestinationByNDID',
       params: { service_id, node_id },
     });
@@ -410,6 +444,7 @@ export async function enableServiceDestination({ service_id, node_id }) {
 export async function disableServiceDestination({ service_id, node_id }) {
   try {
     await tendermint.transact({
+      nodeId: config.nodeId,
       fnName: 'DisableServiceDestinationByNDID',
       params: { service_id, node_id },
     });
@@ -421,7 +456,10 @@ export async function disableServiceDestination({ service_id, node_id }) {
 
 export async function addNodeToProxyNode({ node_id, proxy_node_id }) {
   try {
-    await tendermintNdid.addNodeToProxyNode({ node_id, proxy_node_id });
+    await tendermintNdid.addNodeToProxyNode(
+      { node_id, proxy_node_id },
+      config.nodeId
+    );
   } catch (error) {
     // TODO:
     throw error;
@@ -430,7 +468,10 @@ export async function addNodeToProxyNode({ node_id, proxy_node_id }) {
 
 export async function updateNodeProxyNode({ node_id, proxy_node_id }) {
   try {
-    await tendermintNdid.updateNodeProxyNode({ node_id, proxy_node_id });
+    await tendermintNdid.updateNodeProxyNode(
+      { node_id, proxy_node_id },
+      config.nodeId
+    );
   } catch (error) {
     // TODO:
     throw error;
@@ -439,7 +480,7 @@ export async function updateNodeProxyNode({ node_id, proxy_node_id }) {
 
 export async function removeNodeFromProxyNode({ node_id }) {
   try {
-    await tendermintNdid.removeNodeFromProxyNode({ node_id });
+    await tendermintNdid.removeNodeFromProxyNode({ node_id }, config.nodeId);
   } catch (error) {
     // TODO:
     throw error;

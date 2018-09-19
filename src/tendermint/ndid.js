@@ -337,6 +337,7 @@ export async function updateIal(
 ) {
   try {
     await tendermint.transact({
+      nodeId,
       fnName: 'UpdateIdentity',
       params: {
         hash_id,

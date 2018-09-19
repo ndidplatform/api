@@ -21,14 +21,12 @@
  */
 
 import * as tendermintNdid from '../tendermint/ndid';
-import CustomError from '../../error/custom_error';
-import errorType from '../../error/type';
-import { getErrorObjectForClient } from '../../error/helpers';
+import { getErrorObjectForClient } from '../error/helpers';
 import { validateKey } from '../utils/node_key';
 import { callbackToClient } from '../utils/callback';
 import logger from '../logger';
 
-import { role } from '../../node';
+import * as config from '../config';
 
 export async function updateNode(
   {
@@ -42,10 +40,8 @@ export async function updateNode(
   },
   { synchronous = false } = {}
 ) {
-  if (role === 'proxy' && node_id == null) {
-    throw new CustomError({
-      errorType: errorType.MISSING_NODE_ID,
-    });
+  if (node_id == null) {
+    node_id = config.nodeId;
   }
 
   // Validate public keys
@@ -58,18 +54,20 @@ export async function updateNode(
   }
 
   if (synchronous) {
-    await updateNodeInternalAsync(...arguments);
+    await updateNodeInternalAsync(...arguments, { nodeId: node_id });
   } else {
-    updateNodeInternalAsync(...arguments);
+    updateNodeInternalAsync(...arguments, { nodeId: node_id });
   }
 }
 
 async function updateNodeInternalAsync(
   { reference_id, callback_url, public_key, master_public_key },
-  { synchronous = false } = {}
+  { synchronous = false } = {},
+  { nodeId }
 ) {
   try {
-    await tendermintNdid.updateNode({ public_key, master_public_key });
+    // FIXME: async transact
+    await tendermintNdid.updateNode({ public_key, master_public_key }, nodeId);
 
     if (!synchronous) {
       await callbackToClient(

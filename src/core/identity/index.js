@@ -29,7 +29,7 @@ import * as cacheDb from '../../db/cache';
 import CustomError from '../../error/custom_error';
 import errorType from '../../error/type';
 import * as utils from '../../utils';
-import { validateKey } from '../utils/node_key';
+import { validateKey } from '../../utils/node_key';
 import logger from '../../logger';
 
 import * as config from '../../config';
@@ -39,7 +39,7 @@ export * from './create_identity';
 export * from './update_ial';
 export * from './add_accessor_after_consent';
 
-export async function checkAssociated({ namespace, identifier }) {
+export async function checkAssociated({ node_id, namespace, identifier }) {
   let idpList = await tendermintNdid.getIdpNodes({
     namespace,
     identifier,
@@ -47,7 +47,7 @@ export async function checkAssociated({ namespace, identifier }) {
     min_ial: 1.1,
   });
   for (let i = 0; i < idpList.length; i++) {
-    if (idpList[i].node_id === config.nodeId) return true;
+    if (idpList[i].node_id === node_id) return true;
   }
   return false;
 }
@@ -71,9 +71,14 @@ export async function addAccessorMethodForAssociatedIdp(
     });
   }
 
+  if (node_id == null) {
+    node_id = config.nodeId;
+  }
+
   validateKey(accessor_public_key, accessor_type);
 
   const associated = await checkAssociated({
+    node_id,
     namespace,
     identifier,
   });
@@ -90,6 +95,7 @@ export async function addAccessorMethodForAssociatedIdp(
 
   const result = await createIdentity(
     {
+      node_id,
       reference_id,
       callback_url,
       namespace,
@@ -105,7 +111,7 @@ export async function addAccessorMethodForAssociatedIdp(
 }
 
 export async function checkForExistedIdentity(
-  { namespace, identifier, ial },
+  { node_id, namespace, identifier, ial },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
   const sid = namespace + ':' + identifier;
@@ -124,7 +130,7 @@ export async function checkForExistedIdentity(
             },
           ],
         },
-        null,
+        node_id,
         'identity.checkForExistedIdentityAfterBlockchain',
         [
           {
@@ -139,15 +145,18 @@ export async function checkForExistedIdentity(
       );
     } else {
       try {
-        await tendermintNdid.registerMqDestination({
-          users: [
-            {
-              hash_id,
-              ial,
-              first: true,
-            },
-          ],
-        });
+        await tendermintNdid.registerMqDestination(
+          {
+            users: [
+              {
+                hash_id,
+                ial,
+                first: true,
+              },
+            ],
+          },
+          node_id
+        );
       } catch (error) {
         if (
           error.getCode &&
@@ -219,7 +228,14 @@ export async function getCreateIdentityDataByReferenceId(nodeId, referenceId) {
       });
     }
 
-    return await cacheDb.getCreateIdentityDataByReferenceId(referenceId);
+    if (nodeId == null) {
+      nodeId = config.nodeId;
+    }
+
+    return await cacheDb.getCreateIdentityDataByReferenceId(
+      nodeId,
+      referenceId
+    );
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get create identity data by reference ID',

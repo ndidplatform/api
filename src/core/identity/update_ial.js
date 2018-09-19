@@ -51,13 +51,17 @@ export async function updateIal(
   { node_id, reference_id, callback_url, namespace, identifier, ial },
   { synchronous = false } = {}
 ) {
-  try {
-    if (role === 'proxy' && node_id == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
+  if (role === 'proxy' && node_id == null) {
+    throw new CustomError({
+      errorType: errorType.MISSING_NODE_ID,
+    });
+  }
 
+  if (node_id == null) {
+    node_id = config.nodeId;
+  }
+
+  try {
     // check for created identity
     if (!checkAssociated({ namespace, identifier })) {
       throw new CustomError({
@@ -71,7 +75,7 @@ export async function updateIal(
 
     //check max_ial
     ial = parseFloat(ial);
-    let { max_ial } = await tendermintNdid.getNodeInfo(config.nodeId);
+    let { max_ial } = await tendermintNdid.getNodeInfo(node_id);
     if (ial > max_ial) {
       throw new CustomError({
         errorType: errorType.MAXIMUM_IAL_EXCEED,
@@ -83,9 +87,9 @@ export async function updateIal(
     }
 
     if (synchronous) {
-      await updateIalInternalAsync(...arguments);
+      await updateIalInternalAsync(...arguments, { nodeId: node_id });
     } else {
-      updateIalInternalAsync(...arguments);
+      updateIalInternalAsync(...arguments, { nodeId: node_id });
     }
   } catch (error) {
     const err = new CustomError({
@@ -99,19 +103,20 @@ export async function updateIal(
 
 async function updateIalInternalAsync(
   { reference_id, callback_url, namespace, identifier, ial },
-  { synchronous = false } = {}
+  { synchronous = false } = {},
+  { nodeId }
 ) {
   try {
     const hash_id = utils.hash(namespace + ':' + identifier);
     if (!synchronous) {
       await tendermintNdid.updateIal(
         { hash_id, ial },
-        null,
+        nodeId,
         'identity.updateIalInternalAsyncAfterBlockchain',
         [{ reference_id, callback_url }, { synchronous }]
       );
     } else {
-      await tendermintNdid.updateIal({ hash_id, ial });
+      await tendermintNdid.updateIal({ hash_id, ial }, nodeId);
     }
   } catch (error) {
     logger.error({

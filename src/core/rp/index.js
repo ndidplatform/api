@@ -153,9 +153,10 @@ async function getASReceiverList(data_request) {
   return receivers;
 }
 
-export async function sendRequestToAS(requestData, height) {
+export async function sendRequestToAS(nodeId, requestData, height) {
   logger.debug({
     message: 'Sending request to AS',
+    nodeId,
     requestData,
     height,
   });
@@ -196,26 +197,31 @@ export async function sendRequestToAS(requestData, height) {
   );
 
   const challenge = await cacheDb.getChallengeFromRequestId(
+    nodeId,
     requestData.request_id
   );
   await Promise.all(
     Object.values(dataToSendByNodeId).map(
       ({ receiver, service_data_request_list }) =>
-        mq.send([receiver], {
-          type: privateMessageType.DATA_REQUEST,
-          request_id: requestData.request_id,
-          mode: requestData.mode,
-          namespace: requestData.namespace,
-          identifier: requestData.identifier,
-          service_data_request_list,
-          request_message: requestData.request_message,
-          request_message_salt: requestData.request_message_salt,
-          challenge,
-          privateProofObjectList: requestData.privateProofObjectList,
-          rp_id: requestData.rp_id,
-          height,
-          initial_salt: requestData.initial_salt,
-        })
+        mq.send(
+          [receiver],
+          {
+            type: privateMessageType.DATA_REQUEST,
+            request_id: requestData.request_id,
+            mode: requestData.mode,
+            namespace: requestData.namespace,
+            identifier: requestData.identifier,
+            service_data_request_list,
+            request_message: requestData.request_message,
+            request_message_salt: requestData.request_message_salt,
+            challenge,
+            privateProofObjectList: requestData.privateProofObjectList,
+            rp_id: requestData.rp_id,
+            height,
+            initial_salt: requestData.initial_salt,
+          },
+          nodeId
+        )
     )
   );
 }
@@ -228,7 +234,11 @@ export async function getRequestIdByReferenceId(nodeId, referenceId) {
       });
     }
 
-    return await cacheDb.getRequestIdByReferenceId(referenceId);
+    if (nodeId == null) {
+      nodeId = config.nodeId;
+    }
+
+    return await cacheDb.getRequestIdByReferenceId(nodeId, referenceId);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get request ID by reference ID',
@@ -245,13 +255,17 @@ export async function getDataFromAS(nodeId, requestId) {
       });
     }
 
+    if (nodeId == null) {
+      nodeId = config.nodeId;
+    }
+
     // Check if request exists
     const request = await tendermintNdid.getRequest({ requestId });
     if (request == null) {
       return null;
     }
 
-    return await cacheDb.getDatafromAS(requestId);
+    return await cacheDb.getDatafromAS(nodeId, requestId);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get data received from AS',
@@ -268,7 +282,11 @@ export async function removeDataFromAS(nodeId, requestId) {
       });
     }
 
-    return await cacheDb.removeDataFromAS(requestId);
+    if (nodeId == null) {
+      nodeId = config.nodeId;
+    }
+
+    return await cacheDb.removeDataFromAS(nodeId, requestId);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot remove data received from AS',
@@ -285,7 +303,11 @@ export async function removeAllDataFromAS(nodeId) {
       });
     }
 
-    return await cacheDb.removeAllDataFromAS();
+    if (nodeId == null) {
+      nodeId = config.nodeId;
+    }
+
+    return await cacheDb.removeAllDataFromAS(nodeId);
   } catch (error) {
     throw new CustomError({
       message: 'Cannot remove all data received from AS',

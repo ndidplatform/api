@@ -38,6 +38,8 @@ import * as cacheDb from '../../db/cache';
 import * as utils from '../../utils';
 import privateMessageType from '../private_message_type';
 
+import * as config from '../../config';
+
 const successBase64 = Buffer.from('success').toString('base64');
 const trueBase64 = Buffer.from('true').toString('base64');
 
@@ -45,9 +47,10 @@ const challengeRequestProcessLocks = {};
 const idpResponseProcessLocks = {};
 const asDataResponseProcessLocks = {};
 
-export async function handleMessageFromQueue(message) {
+export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
   logger.info({
     message: 'Received message from MQ',
+    nodeId,
   });
   logger.debug({
     message: 'Message from MQ',
@@ -57,7 +60,8 @@ export async function handleMessageFromQueue(message) {
   const requestId = message.request_id;
   try {
     if (message.type === privateMessageType.CHALLENGE_REQUEST) {
-      const responseId = message.request_id + ':' + message.idp_id;
+      const responseId =
+        nodeId + ':' + message.request_id + ':' + message.idp_id;
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (latestBlockHeight <= message.height) {
         logger.debug({
@@ -68,10 +72,11 @@ export async function handleMessageFromQueue(message) {
         challengeRequestProcessLocks[responseId] = true;
         await Promise.all([
           cacheDb.setPublicProofReceivedFromMQ(
+            nodeId,
             responseId,
             message.public_proof
           ),
-          cacheDb.addExpectedIdpPublicProofInBlock(message.height, {
+          cacheDb.addExpectedIdpPublicProofInBlock(nodeId, message.height, {
             requestId: message.request_id,
             idpId: message.idp_id,
           }),
@@ -80,10 +85,11 @@ export async function handleMessageFromQueue(message) {
           delete challengeRequestProcessLocks[responseId];
           return;
         } else {
-          await cacheDb.removePublicProofReceivedFromMQ(responseId);
+          await cacheDb.removePublicProofReceivedFromMQ(nodeId, responseId);
         }
       }
       await common.handleChallengeRequest({
+        nodeId,
         request_id: message.request_id,
         idp_id: message.idp_id,
         public_proof: message.public_proof,
@@ -91,6 +97,7 @@ export async function handleMessageFromQueue(message) {
       delete challengeRequestProcessLocks[responseId];
     } else if (message.type === privateMessageType.IDP_RESPONSE) {
       const callbackUrl = await cacheDb.getRequestCallbackUrl(
+        nodeId,
         message.request_id
       );
       if (!callbackUrl) return;
@@ -98,7 +105,10 @@ export async function handleMessageFromQueue(message) {
       // "accessor_id" and private proof are present only in mode 3
       if (message.mode === 3) {
         //store private parameter from EACH idp to request, to pass along to as
-        const request = await cacheDb.getRequestData(message.request_id);
+        const request = await cacheDb.getRequestData(
+          nodeId,
+          message.request_id
+        );
         //AS involve
         if (request) {
           if (request.privateProofObjectList) {
@@ -122,11 +132,12 @@ export async function handleMessageFromQueue(message) {
               },
             ];
           }
-          await cacheDb.setRequestData(message.request_id, request);
+          await cacheDb.setRequestData(nodeId, message.request_id, request);
         }
       }
 
-      const responseId = message.request_id + ':' + message.idp_id;
+      const responseId =
+        nodeId + ':' + message.request_id + ':' + message.idp_id;
       //must wait for height
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (latestBlockHeight <= message.height) {
@@ -137,8 +148,8 @@ export async function handleMessageFromQueue(message) {
         });
         idpResponseProcessLocks[responseId] = true;
         await Promise.all([
-          cacheDb.setPrivateProofReceivedFromMQ(responseId, message),
-          cacheDb.addExpectedIdpResponseNodeIdInBlock(message.height, {
+          cacheDb.setPrivateProofReceivedFromMQ(nodeId, responseId, message),
+          cacheDb.addExpectedIdpResponseNodeIdInBlock(nodeId, message.height, {
             requestId: message.request_id,
             idpId: message.idp_id,
           }),
@@ -147,7 +158,7 @@ export async function handleMessageFromQueue(message) {
           delete idpResponseProcessLocks[responseId];
           return;
         } else {
-          await cacheDb.removePrivateProofReceivedFromMQ(responseId);
+          await cacheDb.removePrivateProofReceivedFromMQ(nodeId, responseId);
         }
       }
 
@@ -159,10 +170,12 @@ export async function handleMessageFromQueue(message) {
       const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
       const savedResponseValidList = await cacheDb.getIdpResponseValidList(
+        nodeId,
         message.request_id
       );
 
       const responseValid = await common.checkIdpResponse({
+        nodeId,
         requestStatus,
         idpId: message.idp_id,
         requestDataFromMq: message,
@@ -183,11 +196,14 @@ export async function handleMessageFromQueue(message) {
       await callbackToClient(callbackUrl, eventDataForCallback, true);
 
       if (isAllIdpRespondedAndValid({ requestStatus, responseValidList })) {
-        const requestData = await cacheDb.getRequestData(message.request_id);
+        const requestData = await cacheDb.getRequestData(
+          nodeId,
+          message.request_id
+        );
         if (requestData != null) {
-          await sendRequestToAS(requestData, message.height);
+          await sendRequestToAS(nodeId, requestData, message.height);
         }
-        cacheDb.removeChallengeFromRequestId(message.request_id);
+        cacheDb.removeChallengeFromRequestId(nodeId, message.request_id);
       }
 
       if (
@@ -203,7 +219,7 @@ export async function handleMessageFromQueue(message) {
           requestId: message.request_id,
         });
         await common.closeRequest(
-          { request_id: message.request_id },
+          { node_id: nodeId, request_id: message.request_id },
           { synchronous: true }
         );
       }
@@ -211,8 +227,14 @@ export async function handleMessageFromQueue(message) {
     } else if (message.type === privateMessageType.AS_DATA_RESPONSE) {
       // Receive data from AS
       const asResponseId =
-        message.request_id + ':' + message.service_id + ':' + message.as_id;
-      await cacheDb.setDataResponseFromAS(asResponseId, message);
+        nodeId +
+        ':' +
+        message.request_id +
+        ':' +
+        message.service_id +
+        ':' +
+        message.as_id;
+      await cacheDb.setDataResponseFromAS(nodeId, asResponseId, message);
 
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (latestBlockHeight <= message.height) {
@@ -222,7 +244,7 @@ export async function handleMessageFromQueue(message) {
           messageBlockHeight: message.height,
         });
         asDataResponseProcessLocks[asResponseId] = true;
-        await cacheDb.addExpectedDataSignInBlock(message.height, {
+        await cacheDb.addExpectedDataSignInBlock(nodeId, message.height, {
           requestId: message.request_id,
           serviceId: message.service_id,
           asId: message.as_id,
@@ -233,9 +255,10 @@ export async function handleMessageFromQueue(message) {
         }
       }
       await processAsData({
+        nodeId,
         requestId: message.request_id,
         serviceId: message.service_id,
-        nodeId: message.as_id,
+        asNodeId: message.as_id,
         signature: message.signature,
         dataSalt: message.data_salt,
         data: message.data,
@@ -260,7 +283,8 @@ export async function handleMessageFromQueue(message) {
 export async function handleTendermintNewBlock(
   error,
   height,
-  missingBlockCount
+  missingBlockCount,
+  nodeId = config.nodeId
 ) {
   if (missingBlockCount == null) return;
   try {
@@ -270,31 +294,39 @@ export async function handleTendermintNewBlock(
     //loop through all those block before, and verify all proof
     logger.debug({
       message: 'Getting request IDs to process',
+      nodeId,
       fromHeight,
       toHeight,
     });
 
     const challengeRequestMetadataList = await cacheDb.getExpectedIdpPublicProofInBlockList(
+      nodeId,
       fromHeight,
       toHeight
     );
     await Promise.all(
       challengeRequestMetadataList.map(async ({ requestId, idpId }) => {
-        const responseId = requestId + ':' + idpId;
+        const responseId = nodeId + ':' + requestId + ':' + idpId;
         if (challengeRequestProcessLocks[responseId]) return;
         const publicProof = await cacheDb.getPublicProofReceivedFromMQ(
+          nodeId,
           responseId
         );
         if (publicProof == null) return;
         await common.handleChallengeRequest({
+          nodeId,
           request_id: requestId,
           idp_id: idpId,
           public_proof: publicProof,
         });
-        await cacheDb.removePublicProofReceivedFromMQ(responseId);
+        await cacheDb.removePublicProofReceivedFromMQ(nodeId, responseId);
       })
     );
-    cacheDb.removeExpectedIdpPublicProofInBlockList(fromHeight, toHeight);
+    cacheDb.removeExpectedIdpPublicProofInBlockList(
+      nodeId,
+      fromHeight,
+      toHeight
+    );
 
     const blocks = await tendermint.getBlocks(fromHeight, toHeight);
     await Promise.all(
@@ -308,7 +340,10 @@ export async function handleTendermintNewBlock(
             if (requestId == null) return;
             if (transaction.fnName === 'DeclareIdentityProof') return;
 
-            const callbackUrl = await cacheDb.getRequestCallbackUrl(requestId);
+            const callbackUrl = await cacheDb.getRequestCallbackUrl(
+              nodeId,
+              requestId
+            );
             if (!callbackUrl) return; // This request does not concern this RP
 
             return requestId;
@@ -339,11 +374,11 @@ export async function handleTendermintNewBlock(
 
         await Promise.all(
           requestIdsToProcessUpdate.map((requestId) =>
-            processRequestUpdate(requestId, height)
+            processRequestUpdate(nodeId, requestId, height)
           )
         );
-        cacheDb.removeExpectedIdpResponseNodeIdInBlockList(height);
-        cacheDb.removeExpectedDataSignInBlockList(height);
+        cacheDb.removeExpectedIdpResponseNodeIdInBlockList(nodeId, height);
+        cacheDb.removeExpectedDataSignInBlockList(nodeId, height);
       })
     );
   } catch (error) {
@@ -365,12 +400,13 @@ export async function handleTendermintNewBlock(
  * @param {string} requestId
  * @param {integer} height
  */
-async function processRequestUpdate(requestId, height) {
-  const callbackUrl = await cacheDb.getRequestCallbackUrl(requestId);
+async function processRequestUpdate(nodeId, requestId, height) {
+  const callbackUrl = await cacheDb.getRequestCallbackUrl(nodeId, requestId);
   if (!callbackUrl) return; // This RP does not concern this request
 
   logger.debug({
     message: 'Processing request update',
+    nodeId,
     requestId,
     height,
   });
@@ -403,6 +439,7 @@ async function processRequestUpdate(requestId, height) {
   }
 
   const savedResponseValidList = await cacheDb.getIdpResponseValidList(
+    nodeId,
     requestId
   );
   let responseValidList;
@@ -410,6 +447,7 @@ async function processRequestUpdate(requestId, height) {
   if (needResponseVerification) {
     // Validate ZK Proof and IAL
     const responseMetadataList = await cacheDb.getExpectedIdpResponseNodeIdInBlockList(
+      nodeId,
       height
     );
     const idpNodeIds = responseMetadataList
@@ -418,9 +456,10 @@ async function processRequestUpdate(requestId, height) {
 
     let responseValids = await Promise.all(
       idpNodeIds.map((idpNodeId) => {
-        const responseId = requestId + ':' + idpNodeId;
+        const responseId = nodeId + ':' + requestId + ':' + idpNodeId;
         if (idpResponseProcessLocks[responseId]) return;
         return common.checkIdpResponse({
+          nodeId,
           requestStatus,
           idpId: idpNodeId,
           responseIal: requestDetail.response_list.find(
@@ -448,11 +487,11 @@ async function processRequestUpdate(requestId, height) {
   await callbackToClient(callbackUrl, eventDataForCallback, true);
 
   if (isAllIdpRespondedAndValid({ requestStatus, responseValidList })) {
-    const requestData = await cacheDb.getRequestData(requestId);
+    const requestData = await cacheDb.getRequestData(nodeId, requestId);
     if (requestData != null) {
-      await sendRequestToAS(requestData, height);
+      await sendRequestToAS(nodeId, requestData, height);
     }
-    cacheDb.removeChallengeFromRequestId(requestId);
+    cacheDb.removeChallengeFromRequestId(nodeId, requestId);
   }
 
   if (
@@ -460,8 +499,11 @@ async function processRequestUpdate(requestId, height) {
     requestStatus.min_idp === requestStatus.answered_idp_count &&
     requestStatus.service_list.length > 0
   ) {
-    const metadataList = await cacheDb.getExpectedDataSignInBlockList(height);
-    await checkAsDataSignaturesAndSetReceived(requestId, metadataList);
+    const metadataList = await cacheDb.getExpectedDataSignInBlockList(
+      nodeId,
+      height
+    );
+    await checkAsDataSignaturesAndSetReceived(nodeId, requestId, metadataList);
   }
 
   if (
@@ -475,7 +517,10 @@ async function processRequestUpdate(requestId, height) {
       message: 'Automatically closing request',
       requestId,
     });
-    await common.closeRequest({ request_id: requestId }, { synchronous: true });
+    await common.closeRequest(
+      { node_id: nodeId, request_id: requestId },
+      { synchronous: true }
+    );
   }
 
   if (requestStatus.closed || requestStatus.timed_out) {
@@ -483,37 +528,48 @@ async function processRequestUpdate(requestId, height) {
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
     // since the request is no longer going to have further events
     // (the request has reached its end state)
-    const referenceId = await cacheDb.getReferenceIdByRequestId(requestId);
+    const referenceId = await cacheDb.getReferenceIdByRequestId(
+      nodeId,
+      requestId
+    );
     await Promise.all([
-      cacheDb.removeRequestCallbackUrl(requestId),
-      cacheDb.removeRequestIdByReferenceId(referenceId),
-      cacheDb.removeReferenceIdByRequestId(requestId),
-      cacheDb.removeRequestData(requestId),
-      cacheDb.removeIdpResponseValidList(requestId),
-      common.removeTimeoutScheduler(requestId),
+      cacheDb.removeRequestCallbackUrl(nodeId, requestId),
+      cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
+      cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
+      cacheDb.removeRequestData(nodeId, requestId),
+      cacheDb.removeIdpResponseValidList(nodeId, requestId),
+      common.removeTimeoutScheduler(nodeId, requestId),
     ]);
   }
 }
 
-async function checkAsDataSignaturesAndSetReceived(requestId, metadataList) {
+async function checkAsDataSignaturesAndSetReceived(
+  nodeId,
+  requestId,
+  metadataList
+) {
   logger.debug({
     message: 'Check AS data signatures and set received (bulk)',
+    nodeId,
     requestId,
     metadataList,
   });
 
   await Promise.all(
     metadataList.map(async ({ requestId, serviceId, asId }) => {
-      const asResponseId = requestId + ':' + serviceId + ':' + asId;
+      const asResponseId =
+        nodeId + ':' + requestId + ':' + serviceId + ':' + asId;
       if (asDataResponseProcessLocks[asResponseId]) return;
       const dataResponseFromAS = await cacheDb.getDataResponsefromAS(
+        nodeId,
         asResponseId
       );
       if (dataResponseFromAS == null) return; // Have not received data from AS through message queue yet
       await processAsData({
+        nodeId,
         requestId,
         serviceId,
-        nodeId: asId,
+        asNodeId: asId,
         signature: dataResponseFromAS.signature,
         dataSalt: dataResponseFromAS.data_salt,
         data: dataResponseFromAS.data,
@@ -523,53 +579,56 @@ async function checkAsDataSignaturesAndSetReceived(requestId, metadataList) {
 }
 
 async function processAsData({
+  nodeId,
   requestId,
   serviceId,
-  nodeId,
+  asNodeId,
   signature,
   dataSalt,
   data,
 }) {
   logger.debug({
     message: 'Processing AS data response',
+    nodeId,
     requestId,
     serviceId,
-    nodeId,
+    asNodeId,
     signature,
     dataSalt,
     data,
   });
 
-  const asResponseId = requestId + ':' + serviceId + ':' + nodeId;
+  const asResponseId =
+    nodeId + ':' + requestId + ':' + serviceId + ':' + asNodeId;
 
   const signatureFromBlockchain = await tendermintNdid.getDataSignature({
     request_id: requestId,
     service_id: serviceId,
-    node_id: nodeId,
+    node_id: asNodeId,
   });
 
   if (signatureFromBlockchain == null) {
-    cleanUpDataResponseFromAS(asResponseId);
+    cleanUpDataResponseFromAS(nodeId, asResponseId);
     return;
   }
   if (signature !== signatureFromBlockchain) {
-    cleanUpDataResponseFromAS(asResponseId);
+    cleanUpDataResponseFromAS(nodeId, asResponseId);
     return;
   }
   if (
     !(await isDataSignatureValid(
-      nodeId,
+      asNodeId,
       signatureFromBlockchain,
       dataSalt,
       data
     ))
   ) {
-    cleanUpDataResponseFromAS(asResponseId);
+    cleanUpDataResponseFromAS(nodeId, asResponseId);
     return;
   }
 
-  await cacheDb.addDataFromAS(requestId, {
-    source_node_id: nodeId,
+  await cacheDb.addDataFromAS(nodeId, requestId, {
+    source_node_id: asNodeId,
     service_id: serviceId,
     source_signature: signature,
     signature_sign_method: 'RSA-SHA256',
@@ -577,18 +636,21 @@ async function processAsData({
     data,
   });
 
-  await tendermintNdid.setDataReceived({
-    requestId,
-    service_id: serviceId,
-    as_id: nodeId,
-  });
+  await tendermintNdid.setDataReceived(
+    {
+      requestId,
+      service_id: serviceId,
+      as_id: asNodeId,
+    },
+    nodeId
+  );
 
-  cleanUpDataResponseFromAS(asResponseId);
+  cleanUpDataResponseFromAS(nodeId, asResponseId);
 }
 
-async function cleanUpDataResponseFromAS(asResponseId) {
+async function cleanUpDataResponseFromAS(nodeId, asResponseId) {
   try {
-    await cacheDb.removeDataResponseFromAS(asResponseId);
+    await cacheDb.removeDataResponseFromAS(nodeId, asResponseId);
   } catch (error) {
     logger.error({
       message: 'Cannot remove data response from AS',

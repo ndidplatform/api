@@ -36,8 +36,8 @@ import * as config from '../../config';
 import { role } from '../../node';
 
 export async function requestChallengeAndCreateResponse(createResponseParams) {
+  let { node_id } = createResponseParams;
   const {
-    node_id,
     request_id,
     ial,
     aal,
@@ -45,13 +45,18 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
     secret,
     accessor_id,
   } = createResponseParams;
-  try {
-    if (role === 'proxy' && node_id == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
 
+  if (role === 'proxy' && node_id == null) {
+    throw new CustomError({
+      errorType: errorType.MISSING_NODE_ID,
+    });
+  }
+
+  if (node_id == null) {
+    node_id = config.nodeId;
+  }
+
+  try {
     const request = await tendermintNdid.getRequestDetail({
       requestId: request_id,
     });
@@ -97,7 +102,7 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
       });
     }
 
-    const savedRpId = await cacheDb.getRPIdFromRequestId(request_id);
+    const savedRpId = await cacheDb.getRPIdFromRequestId(node_id, request_id);
     if (!savedRpId) {
       throw new CustomError({
         errorType: errorType.UNKNOWN_CONSENT_REQUEST,
@@ -125,6 +130,7 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
 
       // Verify accessor signature
       const { request_message, initial_salt } = await cacheDb.getRequestMessage(
+        node_id,
         request_id
       );
       const signatureValid = utils.verifyResponseSignature(
@@ -152,11 +158,15 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
           errorType: errorType.MALFORMED_SECRET_FORMAT,
         });
       }
-      await cacheDb.setResponseFromRequestId(request_id, createResponseParams);
+      await cacheDb.setResponseFromRequestId(node_id, request_id, {
+        ...createResponseParams,
+        node_id,
+      });
     }
     requestChallengeAndCreateResponseInternalAsync(
       createResponseParams,
-      request
+      request,
+      node_id
     );
   } catch (error) {
     const err = new CustomError({
@@ -179,7 +189,8 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
  */
 async function requestChallengeAndCreateResponseInternalAsync(
   createResponseParams,
-  request
+  request,
+  nodeId
 ) {
   const {
     reference_id,
@@ -190,15 +201,16 @@ async function requestChallengeAndCreateResponseInternalAsync(
   try {
     if (request.mode === 3) {
       await requestChallenge({
+        nodeId,
         reference_id,
         callback_url,
         request_id,
         accessor_id,
       });
     } else if (request.mode === 1) {
-      await createResponse(createResponseParams);
+      await createResponse(createResponseParams, { nodeId });
     }
-    cacheDb.removeRequestMessage(request_id);
+    cacheDb.removeRequestMessage(nodeId, request_id);
   } catch (error) {
     await callbackToClient(
       callback_url,
@@ -230,7 +242,10 @@ async function requestChallengeAndCreateResponseInternalAsync(
  * @param {string} createResponseParams.accessor_id
  * @param {string} createResponseParams.secret
  */
-export async function createResponse(createResponseParams) {
+export async function createResponse(
+  createResponseParams,
+  additionalParams = {}
+) {
   try {
     const {
       reference_id,
@@ -243,6 +258,7 @@ export async function createResponse(createResponseParams) {
       accessor_id,
       secret,
     } = createResponseParams;
+    const { nodeId } = additionalParams;
 
     const request = await tendermintNdid.getRequest({ requestId: request_id });
     const mode = request.mode;
@@ -253,7 +269,10 @@ export async function createResponse(createResponseParams) {
       let blockchainProofArray = [],
         privateProofValueArray = [],
         samePadding;
-      const requestFromMq = await cacheDb.getRequestReceivedFromMQ(request_id);
+      const requestFromMq = await cacheDb.getRequestReceivedFromMQ(
+        nodeId,
+        request_id
+      );
 
       logger.debug({
         message: 'To generate proof',
@@ -303,15 +322,24 @@ export async function createResponse(createResponseParams) {
     }
 
     await Promise.all([
-      cacheDb.removeRequestReceivedFromMQ(request_id),
-      cacheDb.removeResponseFromRequestId(request_id),
+      cacheDb.removeRequestReceivedFromMQ(nodeId, request_id),
+      cacheDb.removeResponseFromRequestId(nodeId, request_id),
     ]);
 
     await tendermintNdid.createIdpResponse(
       dataToBlockchain,
-      null,
+      nodeId,
       'idp.createResponseAfterBlockchain',
-      [{ reference_id, callback_url, request_id, mode, privateProofObject }]
+      [
+        {
+          nodeId,
+          reference_id,
+          callback_url,
+          request_id,
+          mode,
+          privateProofObject,
+        },
+      ]
     );
   } catch (error) {
     const err = new CustomError({
@@ -325,12 +353,18 @@ export async function createResponse(createResponseParams) {
 
 export async function createResponseAfterBlockchain(
   { height, error },
-  { reference_id, callback_url, request_id, mode, privateProofObject }
+  { nodeId, reference_id, callback_url, request_id, mode, privateProofObject }
 ) {
   try {
     if (error) throw error;
 
-    await sendResponseToRP(request_id, mode, privateProofObject, height);
+    await sendResponseToRP(
+      nodeId,
+      request_id,
+      mode,
+      privateProofObject,
+      height
+    );
 
     await callbackToClient(
       callback_url,
@@ -342,8 +376,8 @@ export async function createResponseAfterBlockchain(
       },
       true
     );
-    cacheDb.removeRPIdFromRequestId(request_id);
-    cacheDb.removeResponseFromRequestId(request_id);
+    cacheDb.removeRPIdFromRequestId(nodeId, request_id);
+    cacheDb.removeResponseFromRequestId(nodeId, request_id);
   } catch (error) {
     logger.error({
       message: 'Create IdP response after blockchain error',
@@ -367,6 +401,7 @@ export async function createResponseAfterBlockchain(
 }
 
 async function requestChallenge({
+  nodeId,
   reference_id,
   callback_url,
   request_id,
@@ -379,7 +414,7 @@ async function requestChallenge({
   const [k2, publicProof2] = utils.generatePublicProof(public_key);
 
   //save k to request
-  const request = await cacheDb.getRequestReceivedFromMQ(request_id);
+  const request = await cacheDb.getRequestReceivedFromMQ(nodeId, request_id);
   if (!request) {
     throw new CustomError({
       errorType: errorType.NO_INCOMING_REQUEST,
@@ -393,17 +428,18 @@ async function requestChallenge({
     message: 'Save K to request',
     request,
   });
-  await cacheDb.setRequestReceivedFromMQ(request_id, request);
+  await cacheDb.setRequestReceivedFromMQ(nodeId, request_id, request);
   //declare public proof to blockchain
   await tendermintNdid.declareIdentityProof(
     {
       request_id,
       identity_proof: JSON.stringify([publicProof1, publicProof2]),
     },
-    null,
+    nodeId,
     'idp.requestChallengeAfterBlockchain',
     [
       {
+        nodeId,
         reference_id,
         callback_url,
         request_id,
@@ -419,6 +455,7 @@ async function requestChallenge({
 export async function requestChallengeAfterBlockchain(
   { height, error },
   {
+    nodeId,
     reference_id,
     callback_url,
     request_id,
@@ -457,7 +494,7 @@ export async function requestChallengeAfterBlockchain(
     if (nodeInfo.proxy != null) {
       receivers = [
         {
-          node_id: nodeInfo.node_id,
+          node_id: rp_id,
           public_key: nodeInfo.public_key,
           proxy: {
             node_id: nodeInfo.proxy.node_id,
@@ -470,20 +507,24 @@ export async function requestChallengeAfterBlockchain(
     } else {
       receivers = [
         {
-          node_id: nodeInfo.node_id,
+          node_id: rp_id,
           public_key: nodeInfo.public_key,
           ip: nodeInfo.mq.ip,
           port: nodeInfo.mq.port,
         },
       ];
     }
-    mq.send(receivers, {
-      type: privateMessageType.CHALLENGE_REQUEST,
-      request_id: request_id,
-      idp_id: config.nodeId,
-      public_proof: [publicProof1, publicProof2],
-      height,
-    });
+    mq.send(
+      receivers,
+      {
+        type: privateMessageType.CHALLENGE_REQUEST,
+        request_id: request_id,
+        idp_id: config.nodeId,
+        public_proof: [publicProof1, publicProof2],
+        height,
+      },
+      nodeId
+    );
   } catch (error) {
     logger.error({
       message: 'Request challenge after blockchain error',
@@ -503,14 +544,20 @@ export async function requestChallengeAfterBlockchain(
       },
       true
     );
-    await cacheDb.removeResponseFromRequestId(request_id);
+    await cacheDb.removeResponseFromRequestId(nodeId, request_id);
   }
 }
 
-async function sendResponseToRP(request_id, mode, privateProofObject, height) {
+async function sendResponseToRP(
+  nodeId,
+  request_id,
+  mode,
+  privateProofObject,
+  height
+) {
   //mode 1
   if (!privateProofObject) privateProofObject = {};
-  const rp_id = await cacheDb.getRPIdFromRequestId(request_id);
+  const rp_id = await cacheDb.getRPIdFromRequestId(nodeId, request_id);
 
   logger.info({
     message: 'Query MQ destination for RP',
@@ -536,7 +583,7 @@ async function sendResponseToRP(request_id, mode, privateProofObject, height) {
   if (nodeInfo.proxy != null) {
     receivers = [
       {
-        node_id: nodeInfo.node_id,
+        node_id: rp_id,
         public_key: nodeInfo.public_key,
         proxy: {
           node_id: nodeInfo.proxy.node_id,
@@ -549,19 +596,23 @@ async function sendResponseToRP(request_id, mode, privateProofObject, height) {
   } else {
     receivers = [
       {
-        node_id: nodeInfo.node_id,
+        node_id: rp_id,
         public_key: nodeInfo.public_key,
         ip: nodeInfo.mq.ip,
         port: nodeInfo.mq.port,
       },
     ];
   }
-  mq.send(receivers, {
-    type: privateMessageType.IDP_RESPONSE,
-    request_id,
-    mode,
-    ...privateProofObject,
-    height,
-    idp_id: config.nodeId,
-  });
+  mq.send(
+    receivers,
+    {
+      type: privateMessageType.IDP_RESPONSE,
+      request_id,
+      mode,
+      ...privateProofObject,
+      height,
+      idp_id: config.nodeId,
+    },
+    nodeId
+  );
 }

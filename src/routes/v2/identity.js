@@ -262,8 +262,9 @@ router.post(
 
 router.post('/secret', idpOnlyHandler, async (req, res, next) => {
   try {
-    let { accessor_id, namespace, identifier, reference_id } = req.body;
+    const { node_id, accessor_id, namespace, identifier, reference_id } = req.body;
     const secret = await reCalculateSecret({
+      node_id,
       accessor_id,
       namespace,
       identifier,

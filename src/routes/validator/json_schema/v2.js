@@ -435,6 +435,7 @@ export default {
     '/identity/secret': {
       body: {
         properties: {
+          node_id: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },

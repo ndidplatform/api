@@ -74,8 +74,8 @@ export async function createRequest(
   options = {},
   additionalParams = {}
 ) {
+  let { node_id } = createRequestParams;
   const {
-    node_id,
     mode,
     namespace,
     identifier,
@@ -93,14 +93,22 @@ export async function createRequest(
   let {
     request_id, // Pre-generated request ID. Used by create identity function.
   } = additionalParams;
-  try {
-    if (role === 'proxy' && node_id == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
 
-    const requestId = await cacheDb.getRequestIdByReferenceId(reference_id);
+  if (role === 'proxy' && node_id == null) {
+    throw new CustomError({
+      errorType: errorType.MISSING_NODE_ID,
+    });
+  }
+
+  if (node_id == null) {
+    node_id = config.nodeId;
+  }
+
+  try {
+    const requestId = await cacheDb.getRequestIdByReferenceId(
+      node_id,
+      reference_id
+    );
     if (requestId) {
       throw new CustomError({
         errorType: errorType.DUPLICATE_REFERENCE_ID,
@@ -242,7 +250,7 @@ export async function createRequest(
       request_id = utils.createRequestId();
     }
 
-    await cacheDb.setChallengeFromRequestId(request_id, {});
+    await cacheDb.setChallengeFromRequestId(node_id, request_id, {});
 
     const initial_salt = utils.randomBase64Bytes(config.saltLength);
     const request_message_salt = utils.generateRequestMessageSalt(initial_salt);
@@ -280,14 +288,15 @@ export async function createRequest(
     // save request data to DB to send to AS via mq when authen complete
     // and for zk proof
     await Promise.all([
-      cacheDb.setRequestData(request_id, requestData),
-      cacheDb.setRequestIdByReferenceId(reference_id, request_id),
-      cacheDb.setReferenceIdByRequestId(request_id, reference_id),
-      cacheDb.setRequestCallbackUrl(request_id, callback_url),
+      cacheDb.setRequestData(node_id, request_id, requestData),
+      cacheDb.setRequestIdByReferenceId(node_id, reference_id, request_id),
+      cacheDb.setReferenceIdByRequestId(node_id, request_id, reference_id),
+      cacheDb.setRequestCallbackUrl(node_id, request_id, callback_url),
     ]);
 
     if (synchronous) {
       await createRequestInternalAsync(createRequestParams, options, {
+        node_id,
         request_id,
         request_message_salt,
         data_request_params_salt_list,
@@ -296,6 +305,7 @@ export async function createRequest(
       });
     } else {
       createRequestInternalAsync(createRequestParams, options, {
+        node_id,
         request_id,
         request_message_salt,
         data_request_params_salt_list,
@@ -319,6 +329,7 @@ export async function createRequest(
       )
     ) {
       await createRequestCleanUpOnError({
+        nodeId: node_id,
         requestId: request_id,
         referenceId: reference_id,
       });
@@ -351,6 +362,7 @@ async function createRequestInternalAsync(
     callbackAdditionalArgs,
   } = options;
   const {
+    node_id,
     request_id,
     request_message_salt,
     data_request_params_salt_list,
@@ -385,10 +397,11 @@ async function createRequestInternalAsync(
     if (!synchronous) {
       await tendermintNdid.createRequest(
         requestDataToBlockchain,
-        null,
+        node_id,
         'common.createRequestInternalAsyncAfterBlockchain',
         [
           {
+            node_id,
             reference_id,
             callback_url,
             request_id,
@@ -407,11 +420,13 @@ async function createRequestInternalAsync(
       );
     } else {
       const { height } = await tendermintNdid.createRequest(
-        requestDataToBlockchain
+        requestDataToBlockchain,
+        node_id
       );
       await createRequestInternalAsyncAfterBlockchain(
         { height },
         {
+          node_id,
           reference_id,
           callback_url,
           request_id,
@@ -461,6 +476,7 @@ async function createRequestInternalAsync(
     }
 
     await createRequestCleanUpOnError({
+      nodeId: node_id,
       requestId: request_id,
       referenceId: reference_id,
     });
@@ -472,6 +488,7 @@ async function createRequestInternalAsync(
 export async function createRequestInternalAsyncAfterBlockchain(
   { height, error },
   {
+    node_id,
     reference_id,
     callback_url,
     request_id,
@@ -492,16 +509,20 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
     const creation_time = Date.now();
 
-    await setTimeoutScheduler(request_id, request_timeout);
+    await setTimeoutScheduler(node_id, request_id, request_timeout);
 
     // send request data to IDPs via message queue
     if (min_idp > 0) {
-      mq.send(receivers, {
-        type: privateMessageType.CONSENT_REQUEST,
-        ...requestData,
-        creation_time,
-        height,
-      });
+      mq.send(
+        receivers,
+        {
+          type: privateMessageType.CONSENT_REQUEST,
+          ...requestData,
+          creation_time,
+          height,
+        },
+        node_id
+      );
     }
 
     if (!synchronous) {
@@ -557,22 +578,23 @@ export async function createRequestInternalAsyncAfterBlockchain(
       }
 
       await createRequestCleanUpOnError({
+        nodeId: node_id,
         requestId: request_id,
         referenceId: reference_id,
       });
-      await removeTimeoutScheduler(request_id);
+      await removeTimeoutScheduler(node_id, request_id);
     } else {
       throw error;
     }
   }
 }
 
-async function createRequestCleanUpOnError({ requestId, referenceId }) {
+async function createRequestCleanUpOnError({ nodeId, requestId, referenceId }) {
   await Promise.all([
-    cacheDb.removeChallengeFromRequestId(requestId),
-    cacheDb.removeRequestData(requestId),
-    cacheDb.removeRequestIdByReferenceId(referenceId),
-    cacheDb.removeReferenceIdByRequestId(requestId),
-    cacheDb.removeRequestCallbackUrl(requestId),
+    cacheDb.removeChallengeFromRequestId(nodeId, requestId),
+    cacheDb.removeRequestData(nodeId, requestId),
+    cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
+    cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
+    cacheDb.removeRequestCallbackUrl(nodeId, requestId),
   ]);
 }

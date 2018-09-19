@@ -34,7 +34,7 @@ export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
       if (type == null) {
         const allTypesMessages = await Promise.all(
           privateMessageTypes.map(async (type) =>
-            longTermDb.getAllMessages(type)
+            longTermDb.getAllMessages(nodeId, type)
           )
         );
         return allTypesMessages.reduce(
@@ -42,7 +42,7 @@ export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
           []
         );
       } else {
-        return await longTermDb.getAllMessages(type);
+        return await longTermDb.getAllMessages(nodeId, type);
       }
     } else {
       const request = await tendermintNdid.getRequest({ requestId });
@@ -52,7 +52,7 @@ export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
       if (type == null) {
         const allTypesMessages = await Promise.all(
           privateMessageTypes.map(async (type) =>
-            longTermDb.getMessages(type, requestId)
+            longTermDb.getMessages(nodeId, type, requestId)
           )
         );
         return allTypesMessages.reduce(
@@ -60,7 +60,7 @@ export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
           []
         );
       } else {
-        return await longTermDb.getMessages(type, requestId);
+        return await longTermDb.getMessages(nodeId, type, requestId);
       }
     }
   } catch (error) {
@@ -81,21 +81,21 @@ export async function removePrivateMessages({ nodeId, requestId, type } = {}) {
       if (type == null) {
         await Promise.all(
           privateMessageTypes.map(async (type) => {
-            longTermDb.removeAllMessages(type);
+            longTermDb.removeAllMessages(nodeId, type);
           })
         );
       } else {
-        await longTermDb.removeAllMessages(type);
+        await longTermDb.removeAllMessages(nodeId, type);
       }
     } else {
       if (type == null) {
         await Promise.all(
           privateMessageTypes.map(async (type) => {
-            longTermDb.removeMessages(type, requestId);
+            longTermDb.removeMessages(nodeId, type, requestId);
           })
         );
       } else {
-        await longTermDb.removeMessages(type, requestId);
+        await longTermDb.removeMessages(nodeId, type, requestId);
       }
     }
   } catch (error) {

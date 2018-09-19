@@ -28,13 +28,14 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 
 export async function addAccessorAfterConsent(
-  { request_id, old_accessor_id },
+  { nodeId, request_id, old_accessor_id },
   { callbackFnName, callbackAdditionalArgs }
 ) {
   //NOTE: zero knowledge proof cannot be verify by blockchain, hence,
   //if this idp call to add their accessor it's imply that zk proof is verified by them
   logger.debug({
-    message: 'Got consent, adding accessor.',
+    message: 'Got consent, adding accessor',
+    nodeId,
     request_id,
     old_accessor_id,
   });
@@ -51,7 +52,7 @@ export async function addAccessorAfterConsent(
     sid,
     associated,
     secret,
-  } = await cacheDb.getIdentityFromRequestId(request_id);
+  } = await cacheDb.getIdentityFromRequestId(nodeId, request_id);
 
   await tendermintNdid.addAccessorMethod(
     {
@@ -61,10 +62,11 @@ export async function addAccessorAfterConsent(
       accessor_id,
       accessor_public_key,
     },
-    null,
+    nodeId,
     'identity.addAccessorAfterConsentAfterAddAccessorMethod',
     [
       {
+        nodeId,
         request_id,
         hash_id,
         ial,
@@ -78,7 +80,7 @@ export async function addAccessorAfterConsent(
 
 export async function addAccessorAfterConsentAfterAddAccessorMethod(
   { error },
-  { request_id, hash_id, ial, secret, associated },
+  { nodeId, request_id, hash_id, ial, secret, associated },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
   try {
@@ -94,10 +96,11 @@ export async function addAccessorAfterConsentAfterAddAccessorMethod(
             },
           ],
         },
-        null,
+        nodeId,
         'identity.addAccessorAfterConsentAfterRegisterMqDest',
         [
           {
+            nodeId,
             request_id,
             secret,
             associated,
@@ -109,6 +112,7 @@ export async function addAccessorAfterConsentAfterAddAccessorMethod(
       await addAccessorAfterConsentAfterRegisterMqDest(
         {},
         {
+          nodeId,
           request_id,
           secret,
           associated,
@@ -132,13 +136,13 @@ export async function addAccessorAfterConsentAfterAddAccessorMethod(
 
 export async function addAccessorAfterConsentAfterRegisterMqDest(
   { error },
-  { request_id, secret, associated },
+  { nodeId, request_id, secret, associated },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
   try {
     if (error) throw error;
 
-    await cacheDb.removeIdentityFromRequestId(request_id);
+    await cacheDb.removeIdentityFromRequestId(nodeId, request_id);
     if (callbackAdditionalArgs != null) {
       getFunction(callbackFnName)(
         {

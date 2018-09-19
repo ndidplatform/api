@@ -31,6 +31,7 @@ import { getErrorObjectForClient } from '../../error/helpers';
 
 import logger from '../../logger';
 
+import * as config from '../../config';
 import { role } from '../../node';
 
 /**
@@ -48,17 +49,21 @@ export async function closeRequest(
   { node_id, reference_id, callback_url, request_id },
   { synchronous = false } = {}
 ) {
-  try {
-    if (role === 'proxy' && node_id == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
+  if (role === 'proxy' && node_id == null) {
+    throw new CustomError({
+      errorType: errorType.MISSING_NODE_ID,
+    });
+  }
 
+  if (node_id == null) {
+    node_id = config.nodeId;
+  }
+
+  try {
     if (synchronous) {
-      await closeRequestInternalAsync(...arguments);
+      await closeRequestInternalAsync(...arguments, { node_id });
     } else {
-      closeRequestInternalAsync(...arguments);
+      closeRequestInternalAsync(...arguments, { node_id });
     }
   } catch (error) {
     throw new CustomError({
@@ -73,11 +78,15 @@ export async function closeRequest(
 }
 
 async function closeRequestInternalAsync(
-  { node_id, reference_id, callback_url, request_id },
-  { synchronous = false } = {}
+  { reference_id, callback_url, request_id },
+  { synchronous = false } = {},
+  { node_id }
 ) {
   try {
-    const responseValidList = await cacheDb.getIdpResponseValidList(request_id);
+    const responseValidList = await cacheDb.getIdpResponseValidList(
+      node_id,
+      request_id
+    );
 
     // FOR DEBUG
     const nodeIds = {};
@@ -100,15 +109,18 @@ async function closeRequestInternalAsync(
           requestId: request_id,
           responseValidList,
         },
-        null,
+        node_id,
         'common.closeRequestInternalAsyncAfterBlockchain',
         [{ node_id, reference_id, callback_url, request_id }, { synchronous }]
       );
     } else {
-      await tendermintNdid.closeRequest({
-        requestId: request_id,
-        responseValidList,
-      });
+      await tendermintNdid.closeRequest(
+        {
+          requestId: request_id,
+          responseValidList,
+        },
+        node_id
+      );
       await closeRequestInternalAsyncAfterBlockchain(
         {},
         { node_id, reference_id, callback_url, request_id },
@@ -150,8 +162,8 @@ export async function closeRequestInternalAsyncAfterBlockchain(
   try {
     if (error) throw error;
 
-    cacheDb.removeChallengeFromRequestId(request_id);
-    removeTimeoutScheduler(request_id);
+    cacheDb.removeChallengeFromRequestId(node_id, request_id);
+    removeTimeoutScheduler(node_id, request_id);
 
     if (!synchronous) {
       await callbackToClient(

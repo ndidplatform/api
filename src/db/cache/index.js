@@ -39,12 +39,13 @@ export async function close() {
 // Used by all roles
 //
 
-export function getAllExpectedTxs() {
-  return db.getAll({ dbName, name: 'expectedTx' });
+export function getAllExpectedTxs(nodeId) {
+  return db.getAll({ nodeId, dbName, name: 'expectedTx' });
 }
 
-export function getExpectedTxMetadata(txHash) {
+export function getExpectedTxMetadata(nodeId, txHash) {
   return db.get({
+    nodeId,
     dbName,
     name: 'expectedTx',
     keyName: 'tx',
@@ -53,8 +54,9 @@ export function getExpectedTxMetadata(txHash) {
   });
 }
 
-export function setExpectedTxMetadata(txHash, metadata) {
+export function setExpectedTxMetadata(nodeId, txHash, metadata) {
   return db.set({
+    nodeId,
     dbName,
     name: 'expectedTx',
     keyName: 'tx',
@@ -64,8 +66,9 @@ export function setExpectedTxMetadata(txHash, metadata) {
   });
 }
 
-export function removeExpectedTxMetadata(txHash) {
+export function removeExpectedTxMetadata(nodeId, txHash) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'expectedTx',
     keyName: 'tx',
@@ -73,8 +76,9 @@ export function removeExpectedTxMetadata(txHash) {
   });
 }
 
-export function getCallbackUrlByReferenceId(referenceId) {
+export function getCallbackUrlByReferenceId(nodeId, referenceId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'callbackUrl',
     keyName: 'referenceId',
@@ -83,8 +87,9 @@ export function getCallbackUrlByReferenceId(referenceId) {
   });
 }
 
-export function setCallbackUrlByReferenceId(referenceId, callbackUrl) {
+export function setCallbackUrlByReferenceId(nodeId, referenceId, callbackUrl) {
   return db.set({
+    nodeId,
     dbName,
     name: 'callbackUrl',
     keyName: 'referenceId',
@@ -94,8 +99,9 @@ export function setCallbackUrlByReferenceId(referenceId, callbackUrl) {
   });
 }
 
-export function removeCallbackUrlByReferenceId(referenceId) {
+export function removeCallbackUrlByReferenceId(nodeId, referenceId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'callbackUrl',
     keyName: 'referenceId',
@@ -103,8 +109,9 @@ export function removeCallbackUrlByReferenceId(referenceId) {
   });
 }
 
-export function addCallbackWithRetryData(cbId, data) {
+export function addCallbackWithRetryData(nodeId, cbId, data) {
   return db.pushToList({
+    nodeId,
     dbName,
     name: 'callbackWithRetry',
     keyName: 'cbId',
@@ -114,8 +121,9 @@ export function addCallbackWithRetryData(cbId, data) {
   });
 }
 
-export function removeCallbackWithRetryData(cbId) {
+export function removeCallbackWithRetryData(nodeId, cbId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'callbackWithRetry',
     keyName: 'cbId',
@@ -123,8 +131,9 @@ export function removeCallbackWithRetryData(cbId) {
   });
 }
 
-export function getAllCallbackWithRetryData() {
+export function getAllCallbackWithRetryData(nodeId) {
   return db.getAll({
+    nodeId,
     dbName,
     name: 'callbackWithRetry',
   });
@@ -134,8 +143,9 @@ export function getAllCallbackWithRetryData() {
 // Used by RP, IdP, and AS
 //
 
-export function setRawMessageFromMQ(messageId, messageBuffer) {
+export function setRawMessageFromMQ(nodeId, messageId, messageBuffer) {
   return db.set({
+    nodeId,
     dbName,
     name: 'rawReceivedMessageFromMQ',
     keyName: 'messageId',
@@ -145,8 +155,9 @@ export function setRawMessageFromMQ(messageId, messageBuffer) {
   });
 }
 
-export function getRawMessageFromMQ(messageId) {
+export function getRawMessageFromMQ(nodeId, messageId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'rawReceivedMessageFromMQ',
     keyName: 'messageId',
@@ -154,8 +165,9 @@ export function getRawMessageFromMQ(messageId) {
   });
 }
 
-export function removeRawMessageFromMQ(messageId) {
+export function removeRawMessageFromMQ(nodeId, messageId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'rawReceivedMessageFromMQ',
     keyName: 'messageId',
@@ -163,19 +175,21 @@ export function removeRawMessageFromMQ(messageId) {
   });
 }
 
-export function getAllRawMessageFromMQ() {
+export function getAllRawMessageFromMQ(nodeId) {
   return db.getAll({
+    nodeId,
     dbName,
     name: 'rawReceivedMessageFromMQ',
   });
 }
 
-export function getAllDuplicateMessageTimeout() {
-  return db.getAll({ dbName, name: 'duplicateMessageTimeout' });
+export function getAllDuplicateMessageTimeout(nodeId) {
+  return db.getAll({ nodeId, dbName, name: 'duplicateMessageTimeout' });
 }
 
-export function getDuplicateMessageTimeout(id) {
+export function getDuplicateMessageTimeout(nodeId, id) {
   return db.get({
+    nodeId,
     dbName,
     name: 'duplicateMessageTimeout',
     keyName: 'id',
@@ -184,8 +198,9 @@ export function getDuplicateMessageTimeout(id) {
   });
 }
 
-export function setDuplicateMessageTimeout(id, unixTimeout) {
+export function setDuplicateMessageTimeout(nodeId, id, unixTimeout) {
   return db.set({
+    nodeId,
     dbName,
     name: 'duplicateMessageTimeout',
     keyName: 'id',
@@ -195,8 +210,9 @@ export function setDuplicateMessageTimeout(id, unixTimeout) {
   });
 }
 
-export function removeDuplicateMessageTimeout(id) {
+export function removeDuplicateMessageTimeout(nodeId, id) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'duplicateMessageTimeout',
     keyName: 'id',
@@ -208,8 +224,9 @@ export function removeDuplicateMessageTimeout(id) {
 // Used by IdP and AS
 //
 
-export function getRequestIdsExpectedInBlock(fromHeight, toHeight) {
+export function getRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight) {
   return db.getListRange({
+    nodeId,
     dbName,
     name: 'requestIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
@@ -221,8 +238,9 @@ export function getRequestIdsExpectedInBlock(fromHeight, toHeight) {
   });
 }
 
-export function getRequestIdExpectedInBlock(height) {
+export function getRequestIdExpectedInBlock(nodeId, height) {
   return db.getListWithRangeSupport({
+    nodeId,
     dbName,
     name: 'requestIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
@@ -231,8 +249,9 @@ export function getRequestIdExpectedInBlock(height) {
   });
 }
 
-export function addRequestIdExpectedInBlock(height, requestId) {
+export function addRequestIdExpectedInBlock(nodeId, height, requestId) {
   return db.pushToListWithRangeSupport({
+    nodeId,
     dbName,
     name: 'requestIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
@@ -242,8 +261,9 @@ export function addRequestIdExpectedInBlock(height, requestId) {
   });
 }
 
-export function removeRequestIdsExpectedInBlock(fromHeight, toHeight) {
+export function removeRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight) {
   return db.removeListRange({
+    nodeId,
     dbName,
     name: 'requestIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
@@ -254,8 +274,9 @@ export function removeRequestIdsExpectedInBlock(fromHeight, toHeight) {
   });
 }
 
-export function getRequestReceivedFromMQ(requestId) {
+export function getRequestReceivedFromMQ(nodeId, requestId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'requestReceivedFromMQ',
     keyName: 'requestId',
@@ -264,8 +285,9 @@ export function getRequestReceivedFromMQ(requestId) {
   });
 }
 
-export function setRequestReceivedFromMQ(requestId, request) {
+export function setRequestReceivedFromMQ(nodeId, requestId, request) {
   return db.set({
+    nodeId,
     dbName,
     name: 'requestReceivedFromMQ',
     keyName: 'requestId',
@@ -275,8 +297,9 @@ export function setRequestReceivedFromMQ(requestId, request) {
   });
 }
 
-export function removeRequestReceivedFromMQ(requestId) {
+export function removeRequestReceivedFromMQ(nodeId, requestId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'requestReceivedFromMQ',
     keyName: 'requestId',
@@ -288,8 +311,9 @@ export function removeRequestReceivedFromMQ(requestId) {
 // Used by RP and IdP
 //
 
-export function getRequestIdByReferenceId(referenceId) {
+export function getRequestIdByReferenceId(nodeId, referenceId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'referenceIdRequestIdMapping',
     keyName: 'referenceId',
@@ -298,8 +322,9 @@ export function getRequestIdByReferenceId(referenceId) {
   });
 }
 
-export function setRequestIdByReferenceId(referenceId, requestId) {
+export function setRequestIdByReferenceId(nodeId, referenceId, requestId) {
   return db.set({
+    nodeId,
     dbName,
     name: 'referenceIdRequestIdMapping',
     keyName: 'referenceId',
@@ -309,8 +334,9 @@ export function setRequestIdByReferenceId(referenceId, requestId) {
   });
 }
 
-export function removeRequestIdByReferenceId(referenceId) {
+export function removeRequestIdByReferenceId(nodeId, referenceId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'referenceIdRequestIdMapping',
     keyName: 'referenceId',
@@ -318,17 +344,9 @@ export function removeRequestIdByReferenceId(referenceId) {
   });
 }
 
-// export function removeRequestIdReferenceIdMappingByRequestId(requestId) {
-//   return db.remove({
-//     dbName,
-//     name: 'requestIdReferenceIdMapping',
-//     keyName: 'requestId',
-//     key: requestId,
-//   });
-// }
-
-export function getReferenceIdByRequestId(requestId) {
+export function getReferenceIdByRequestId(nodeId, requestId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'requestIdReferenceIdMapping',
     keyName: 'requestId',
@@ -337,8 +355,9 @@ export function getReferenceIdByRequestId(requestId) {
   });
 }
 
-export function setReferenceIdByRequestId(requestId, referenceId) {
+export function setReferenceIdByRequestId(nodeId, requestId, referenceId) {
   return db.set({
+    nodeId,
     dbName,
     name: 'requestIdReferenceIdMapping',
     keyName: 'requestId',
@@ -348,8 +367,9 @@ export function setReferenceIdByRequestId(requestId, referenceId) {
   });
 }
 
-export function removeReferenceIdByRequestId(requestId) {
+export function removeReferenceIdByRequestId(nodeId, requestId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'requestIdReferenceIdMapping',
     keyName: 'requestId',
@@ -357,8 +377,9 @@ export function removeReferenceIdByRequestId(requestId) {
   });
 }
 
-export function getRequestCallbackUrl(requestId) {
+export function getRequestCallbackUrl(nodeId, requestId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'requestCallbackUrl',
     keyName: 'requestId',
@@ -367,8 +388,9 @@ export function getRequestCallbackUrl(requestId) {
   });
 }
 
-export function setRequestCallbackUrl(requestId, callbackUrl) {
+export function setRequestCallbackUrl(nodeId, requestId, callbackUrl) {
   return db.set({
+    nodeId,
     dbName,
     name: 'requestCallbackUrl',
     keyName: 'requestId',
@@ -378,8 +400,9 @@ export function setRequestCallbackUrl(requestId, callbackUrl) {
   });
 }
 
-export function removeRequestCallbackUrl(requestId) {
+export function removeRequestCallbackUrl(nodeId, requestId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'requestCallbackUrl',
     keyName: 'requestId',
@@ -387,8 +410,9 @@ export function removeRequestCallbackUrl(requestId) {
   });
 }
 
-export function getRequestData(requestId) {
+export function getRequestData(nodeId, requestId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'requestData',
     keyName: 'requestId',
@@ -397,8 +421,9 @@ export function getRequestData(requestId) {
   });
 }
 
-export function setRequestData(requestId, request) {
+export function setRequestData(nodeId, requestId, request) {
   return db.set({
+    nodeId,
     dbName,
     name: 'requestData',
     keyName: 'requestId',
@@ -408,8 +433,9 @@ export function setRequestData(requestId, request) {
   });
 }
 
-export function removeRequestData(requestId) {
+export function removeRequestData(nodeId, requestId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'requestData',
     keyName: 'requestId',
@@ -417,12 +443,13 @@ export function removeRequestData(requestId) {
   });
 }
 
-export function getAllTimeoutScheduler() {
-  return db.getAll({ dbName, name: 'timeoutScheduler' });
+export function getAllTimeoutScheduler(nodeId) {
+  return db.getAll({ nodeId, dbName, name: 'timeoutScheduler' });
 }
 
-export function setTimeoutScheduler(requestId, unixTimeout) {
+export function setTimeoutScheduler(nodeId, requestId, unixTimeout) {
   return db.set({
+    nodeId,
     dbName,
     name: 'timeoutScheduler',
     keyName: 'requestId',
@@ -432,8 +459,9 @@ export function setTimeoutScheduler(requestId, unixTimeout) {
   });
 }
 
-export function removeTimeoutScheduler(requestId) {
+export function removeTimeoutScheduler(nodeId, requestId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'timeoutScheduler',
     keyName: 'requestId',
@@ -441,8 +469,9 @@ export function removeTimeoutScheduler(requestId) {
   });
 }
 
-export function getIdpResponseValidList(requestId) {
+export function getIdpResponseValidList(nodeId, requestId) {
   return db.getList({
+    nodeId,
     dbName,
     name: 'idpResponseValid',
     keyName: 'requestId',
@@ -451,8 +480,9 @@ export function getIdpResponseValidList(requestId) {
   });
 }
 
-export function addIdpResponseValidList(requestId, validInfo) {
+export function addIdpResponseValidList(nodeId, requestId, validInfo) {
   return db.pushToList({
+    nodeId,
     dbName,
     name: 'idpResponseValid',
     keyName: 'requestId',
@@ -462,8 +492,9 @@ export function addIdpResponseValidList(requestId, validInfo) {
   });
 }
 
-export function removeIdpResponseValidList(requestId) {
+export function removeIdpResponseValidList(nodeId, requestId) {
   return db.removeList({
+    nodeId,
     dbName,
     name: 'idpResponseValid',
     keyName: 'requestId',
@@ -471,8 +502,9 @@ export function removeIdpResponseValidList(requestId) {
   });
 }
 
-export function getPublicProofReceivedFromMQ(responseId) {
+export function getPublicProofReceivedFromMQ(nodeId, responseId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'publicProofReceivedFromMQ',
     keyName: 'responseId',
@@ -481,8 +513,13 @@ export function getPublicProofReceivedFromMQ(responseId) {
   });
 }
 
-export function setPublicProofReceivedFromMQ(responseId, publicProofArray) {
+export function setPublicProofReceivedFromMQ(
+  nodeId,
+  responseId,
+  publicProofArray
+) {
   return db.set({
+    nodeId,
     dbName,
     name: 'publicProofReceivedFromMQ',
     keyName: 'responseId',
@@ -492,8 +529,9 @@ export function setPublicProofReceivedFromMQ(responseId, publicProofArray) {
   });
 }
 
-export function removePublicProofReceivedFromMQ(responseId) {
+export function removePublicProofReceivedFromMQ(nodeId, responseId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'publicProofReceivedFromMQ',
     keyName: 'responseId',
@@ -501,8 +539,9 @@ export function removePublicProofReceivedFromMQ(responseId) {
   });
 }
 
-export function getPrivateProofReceivedFromMQ(responseId) {
+export function getPrivateProofReceivedFromMQ(nodeId, responseId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'privateProofReceivedFromMQ',
     keyName: 'responseId',
@@ -511,8 +550,13 @@ export function getPrivateProofReceivedFromMQ(responseId) {
   });
 }
 
-export function setPrivateProofReceivedFromMQ(responseId, privateProofObject) {
+export function setPrivateProofReceivedFromMQ(
+  nodeId,
+  responseId,
+  privateProofObject
+) {
   return db.set({
+    nodeId,
     dbName,
     name: 'privateProofReceivedFromMQ',
     keyName: 'responseId',
@@ -522,8 +566,9 @@ export function setPrivateProofReceivedFromMQ(responseId, privateProofObject) {
   });
 }
 
-export function removePrivateProofReceivedFromMQ(responseId) {
+export function removePrivateProofReceivedFromMQ(nodeId, responseId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'privateProofReceivedFromMQ',
     keyName: 'responseId',
@@ -531,8 +576,9 @@ export function removePrivateProofReceivedFromMQ(responseId) {
   });
 }
 
-export function getChallengeFromRequestId(requestId) {
+export function getChallengeFromRequestId(nodeId, requestId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'challengeFromRequestId',
     keyName: 'requestId',
@@ -541,8 +587,9 @@ export function getChallengeFromRequestId(requestId) {
   });
 }
 
-export function setChallengeFromRequestId(requestId, challenge) {
+export function setChallengeFromRequestId(nodeId, requestId, challenge) {
   return db.set({
+    nodeId,
     dbName,
     name: 'challengeFromRequestId',
     keyName: 'requestId',
@@ -552,8 +599,9 @@ export function setChallengeFromRequestId(requestId, challenge) {
   });
 }
 
-export function removeChallengeFromRequestId(requestId) {
+export function removeChallengeFromRequestId(nodeId, requestId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'challengeFromRequestId',
     keyName: 'requestId',
@@ -565,8 +613,9 @@ export function removeChallengeFromRequestId(requestId) {
 // Used by RP
 //
 
-export function getExpectedIdpResponseNodeIdInBlockList(height) {
+export function getExpectedIdpResponseNodeIdInBlockList(nodeId, height) {
   return db.getList({
+    nodeId,
     dbName,
     name: 'expectedIdpResponseNodeIdInBlock',
     keyName: 'expectedBlockHeight',
@@ -575,8 +624,13 @@ export function getExpectedIdpResponseNodeIdInBlockList(height) {
   });
 }
 
-export function addExpectedIdpResponseNodeIdInBlock(height, responseMetadata) {
+export function addExpectedIdpResponseNodeIdInBlock(
+  nodeId,
+  height,
+  responseMetadata
+) {
   return db.pushToList({
+    nodeId,
     dbName,
     name: 'expectedIdpResponseNodeIdInBlock',
     keyName: 'expectedBlockHeight',
@@ -586,8 +640,9 @@ export function addExpectedIdpResponseNodeIdInBlock(height, responseMetadata) {
   });
 }
 
-export function removeExpectedIdpResponseNodeIdInBlockList(height) {
+export function removeExpectedIdpResponseNodeIdInBlockList(nodeId, height) {
   return db.removeList({
+    nodeId,
     dbName,
     name: 'expectedIdpResponseNodeIdInBlock',
     keyName: 'expectedBlockHeight',
@@ -595,8 +650,13 @@ export function removeExpectedIdpResponseNodeIdInBlockList(height) {
   });
 }
 
-export function getExpectedIdpPublicProofInBlockList(fromHeight, toHeight) {
+export function getExpectedIdpPublicProofInBlockList(
+  nodeId,
+  fromHeight,
+  toHeight
+) {
   return db.getListRange({
+    nodeId,
     dbName,
     name: 'expectedIdpPublicProofInBlock',
     keyName: 'expectedBlockHeight',
@@ -608,8 +668,13 @@ export function getExpectedIdpPublicProofInBlockList(fromHeight, toHeight) {
   });
 }
 
-export function addExpectedIdpPublicProofInBlock(height, responseMetadata) {
+export function addExpectedIdpPublicProofInBlock(
+  nodeId,
+  height,
+  responseMetadata
+) {
   return db.pushToListWithRangeSupport({
+    nodeId,
     dbName,
     name: 'expectedIdpPublicProofInBlock',
     keyName: 'expectedBlockHeight',
@@ -619,8 +684,13 @@ export function addExpectedIdpPublicProofInBlock(height, responseMetadata) {
   });
 }
 
-export function removeExpectedIdpPublicProofInBlockList(fromHeight, toHeight) {
+export function removeExpectedIdpPublicProofInBlockList(
+  nodeId,
+  fromHeight,
+  toHeight
+) {
   return db.removeListRange({
+    nodeId,
     dbName,
     name: 'expectedIdpPublicProofInBlock',
     keyName: 'expectedBlockHeight',
@@ -631,8 +701,9 @@ export function removeExpectedIdpPublicProofInBlockList(fromHeight, toHeight) {
   });
 }
 
-export function getDataResponsefromAS(asResponseId) {
+export function getDataResponsefromAS(nodeId, asResponseId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'dataResponseFromAS',
     keyName: 'asResponseId',
@@ -640,8 +711,9 @@ export function getDataResponsefromAS(asResponseId) {
     valueName: 'dataResponse',
   });
 }
-export function setDataResponseFromAS(asResponseId, data) {
+export function setDataResponseFromAS(nodeId, asResponseId, data) {
   return db.set({
+    nodeId,
     dbName,
     name: 'dataResponseFromAS',
     keyName: 'asResponseId',
@@ -651,8 +723,9 @@ export function setDataResponseFromAS(asResponseId, data) {
   });
 }
 
-export function removeDataResponseFromAS(asResponseId) {
+export function removeDataResponseFromAS(nodeId, asResponseId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'dataResponseFromAS',
     keyName: 'asResponseId',
@@ -660,8 +733,9 @@ export function removeDataResponseFromAS(asResponseId) {
   });
 }
 
-export function getDatafromAS(requestId) {
+export function getDatafromAS(nodeId, requestId) {
   return db.getList({
+    nodeId,
     dbName,
     name: 'dataFromAS',
     keyName: 'requestId',
@@ -670,8 +744,9 @@ export function getDatafromAS(requestId) {
   });
 }
 
-export function countDataFromAS(requestId) {
+export function countDataFromAS(nodeId, requestId) {
   return db.count({
+    nodeId,
     dbName,
     name: 'dataFromAS',
     keyName: 'requestId',
@@ -679,8 +754,9 @@ export function countDataFromAS(requestId) {
   });
 }
 
-export function addDataFromAS(requestId, data) {
+export function addDataFromAS(nodeId, requestId, data) {
   return db.pushToList({
+    nodeId,
     dbName,
     name: 'dataFromAS',
     keyName: 'requestId',
@@ -690,8 +766,9 @@ export function addDataFromAS(requestId, data) {
   });
 }
 
-export function removeDataFromAS(requestId) {
+export function removeDataFromAS(nodeId, requestId) {
   return db.removeList({
+    nodeId,
     dbName,
     name: 'dataFromAS',
     keyName: 'requestId',
@@ -699,15 +776,17 @@ export function removeDataFromAS(requestId) {
   });
 }
 
-export function removeAllDataFromAS() {
+export function removeAllDataFromAS(nodeId) {
   return db.removeAllLists({
+    nodeId,
     dbName,
     name: 'dataFromAS',
   });
 }
 
-export function getExpectedDataSignInBlockList(height) {
+export function getExpectedDataSignInBlockList(nodeId, height) {
   return db.getList({
+    nodeId,
     dbName,
     name: 'expectedDataSignInBlock',
     keyName: 'expectedBlockHeight',
@@ -716,8 +795,9 @@ export function getExpectedDataSignInBlockList(height) {
   });
 }
 
-export function addExpectedDataSignInBlock(height, metadata) {
+export function addExpectedDataSignInBlock(nodeId, height, metadata) {
   return db.pushToList({
+    nodeId,
     dbName,
     name: 'expectedDataSignInBlock',
     keyName: 'expectedBlockHeight',
@@ -727,8 +807,9 @@ export function addExpectedDataSignInBlock(height, metadata) {
   });
 }
 
-export function removeExpectedDataSignInBlockList(height) {
+export function removeExpectedDataSignInBlockList(nodeId, height) {
   return db.removeList({
+    nodeId,
     dbName,
     name: 'expectedDataSignInBlock',
     keyName: 'expectedBlockHeight',
@@ -740,8 +821,9 @@ export function removeExpectedDataSignInBlockList(height) {
 // Used by IdP
 //
 
-export function getRequestToProcessReceivedFromMQ(requestId) {
+export function getRequestToProcessReceivedFromMQ(nodeId, requestId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'requestToProcessReceivedFromMQ',
     keyName: 'requestId',
@@ -750,8 +832,9 @@ export function getRequestToProcessReceivedFromMQ(requestId) {
   });
 }
 
-export function setRequestToProcessReceivedFromMQ(requestId, request) {
+export function setRequestToProcessReceivedFromMQ(nodeId, requestId, request) {
   return db.set({
+    nodeId,
     dbName,
     name: 'requestToProcessReceivedFromMQ',
     keyName: 'requestId',
@@ -761,8 +844,9 @@ export function setRequestToProcessReceivedFromMQ(requestId, request) {
   });
 }
 
-export function removeRequestToProcessReceivedFromMQ(requestId) {
+export function removeRequestToProcessReceivedFromMQ(nodeId, requestId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'requestToProcessReceivedFromMQ',
     keyName: 'requestId',
@@ -770,8 +854,9 @@ export function removeRequestToProcessReceivedFromMQ(requestId) {
   });
 }
 
-export function getResponseFromRequestId(requestId) {
+export function getResponseFromRequestId(nodeId, requestId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'responseDataFromRequestId',
     keyName: 'requestId',
@@ -780,8 +865,9 @@ export function getResponseFromRequestId(requestId) {
   });
 }
 
-export function setResponseFromRequestId(requestId, response) {
+export function setResponseFromRequestId(nodeId, requestId, response) {
   return db.set({
+    nodeId,
     dbName,
     name: 'responseDataFromRequestId',
     keyName: 'requestId',
@@ -791,8 +877,9 @@ export function setResponseFromRequestId(requestId, response) {
   });
 }
 
-export function removeResponseFromRequestId(requestId) {
+export function removeResponseFromRequestId(nodeId, requestId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'responseDataFromRequestId',
     keyName: 'requestId',
@@ -800,8 +887,9 @@ export function removeResponseFromRequestId(requestId) {
   });
 }
 
-export function getRPIdFromRequestId(requestId) {
+export function getRPIdFromRequestId(nodeId, requestId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'rpIdFromRequestId',
     keyName: 'requestId',
@@ -810,8 +898,9 @@ export function getRPIdFromRequestId(requestId) {
   });
 }
 
-export function setRPIdFromRequestId(requestId, rp_id) {
+export function setRPIdFromRequestId(nodeId, requestId, rp_id) {
   return db.set({
+    nodeId,
     dbName,
     name: 'rpIdFromRequestId',
     keyName: 'requestId',
@@ -821,8 +910,9 @@ export function setRPIdFromRequestId(requestId, rp_id) {
   });
 }
 
-export function removeRPIdFromRequestId(requestId) {
+export function removeRPIdFromRequestId(nodeId, requestId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'rpIdFromRequestId',
     keyName: 'requestId',
@@ -830,8 +920,9 @@ export function removeRPIdFromRequestId(requestId) {
   });
 }
 
-export function getIdentityFromRequestId(requestId) {
+export function getIdentityFromRequestId(nodeId, requestId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'identityRequestIdMapping',
     keyName: 'requestId',
@@ -840,8 +931,9 @@ export function getIdentityFromRequestId(requestId) {
   });
 }
 
-export function setIdentityFromRequestId(requestId, identity) {
+export function setIdentityFromRequestId(nodeId, requestId, identity) {
   return db.set({
+    nodeId,
     dbName,
     name: 'identityRequestIdMapping',
     keyName: 'requestId',
@@ -851,8 +943,9 @@ export function setIdentityFromRequestId(requestId, identity) {
   });
 }
 
-export function removeIdentityFromRequestId(requestId) {
+export function removeIdentityFromRequestId(nodeId, requestId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'identityRequestIdMapping',
     keyName: 'requestId',
@@ -860,8 +953,9 @@ export function removeIdentityFromRequestId(requestId) {
   });
 }
 
-export function getCreateIdentityDataByReferenceId(referenceId) {
+export function getCreateIdentityDataByReferenceId(nodeId, referenceId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'createIdentityDataReferenceIdMapping',
     keyName: 'referenceId',
@@ -871,10 +965,12 @@ export function getCreateIdentityDataByReferenceId(referenceId) {
 }
 
 export function setCreateIdentityDataByReferenceId(
+  nodeId,
   referenceId,
   createIdentityData
 ) {
   return db.set({
+    nodeId,
     dbName,
     name: 'createIdentityDataReferenceIdMapping',
     keyName: 'referenceId',
@@ -884,8 +980,9 @@ export function setCreateIdentityDataByReferenceId(
   });
 }
 
-export function removeCreateIdentityDataByReferenceId(referenceId) {
+export function removeCreateIdentityDataByReferenceId(nodeId, referenceId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'createIdentityDataReferenceIdMapping',
     keyName: 'referenceId',
@@ -893,8 +990,9 @@ export function removeCreateIdentityDataByReferenceId(referenceId) {
   });
 }
 
-export function getRequestMessage(requestId) {
+export function getRequestMessage(nodeId, requestId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'requestMessage',
     keyName: 'requestId',
@@ -903,8 +1001,9 @@ export function getRequestMessage(requestId) {
   });
 }
 
-export function setRequestMessage(requestId, requestMessageAndSalt) {
+export function setRequestMessage(nodeId, requestId, requestMessageAndSalt) {
   return db.set({
+    nodeId,
     dbName,
     name: 'requestMessage',
     keyName: 'requestId',
@@ -914,8 +1013,9 @@ export function setRequestMessage(requestId, requestMessageAndSalt) {
   });
 }
 
-export function removeRequestMessage(requestId) {
+export function removeRequestMessage(nodeId, requestId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'requestMessage',
     keyName: 'requestId',
@@ -927,8 +1027,9 @@ export function removeRequestMessage(requestId) {
 // Used by AS
 //
 
-export function getInitialSalt(requestId) {
+export function getInitialSalt(nodeId, requestId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'initialSalt',
     keyName: 'requestId',
@@ -937,8 +1038,9 @@ export function getInitialSalt(requestId) {
   });
 }
 
-export function setInitialSalt(requestId, initialSalt) {
+export function setInitialSalt(nodeId, requestId, initialSalt) {
   return db.set({
+    nodeId,
     dbName,
     name: 'initialSalt',
     keyName: 'requestId',
@@ -948,8 +1050,9 @@ export function setInitialSalt(requestId, initialSalt) {
   });
 }
 
-export function removeInitialSalt(requestId) {
+export function removeInitialSalt(nodeId, requestId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'initialSalt',
     keyName: 'requestId',
@@ -957,8 +1060,9 @@ export function removeInitialSalt(requestId) {
   });
 }
 
-export function getRpIdFromDataRequestId(dataRequestId) {
+export function getRpIdFromDataRequestId(nodeId, dataRequestId) {
   return db.get({
+    nodeId,
     dbName,
     name: 'rpIdFromDataRequestId',
     keyName: 'dataRequestId',
@@ -967,8 +1071,9 @@ export function getRpIdFromDataRequestId(dataRequestId) {
   });
 }
 
-export function setRpIdFromDataRequestId(dataRequestId, rpId) {
+export function setRpIdFromDataRequestId(nodeId, dataRequestId, rpId) {
   return db.set({
+    nodeId,
     dbName,
     name: 'rpIdFromDataRequestId',
     keyName: 'dataRequestId',
@@ -978,8 +1083,9 @@ export function setRpIdFromDataRequestId(dataRequestId, rpId) {
   });
 }
 
-export function removeRpIdFromDataRequestId(dataRequestId) {
+export function removeRpIdFromDataRequestId(nodeId, dataRequestId) {
   return db.remove({
+    nodeId,
     dbName,
     name: 'rpIdFromDataRequestId',
     keyName: 'dataRequestId',

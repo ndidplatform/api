@@ -123,6 +123,7 @@ export function isAccessorSignUrlSet() {
 }
 
 export async function accessorSign({
+  node_id,
   sid,
   hash_id,
   accessor_id,
@@ -139,6 +140,7 @@ export async function accessorSign({
     padding: 'PKCS#1v1.5',
     accessor_id,
     reference_id,
+    node_id,
   };
 
   if (callbackUrls.accessor_sign_url == null) {
@@ -257,28 +259,31 @@ export function notifyAddAccessorResultByCallback(eventDataForCallback) {
   });
 }
 
-export async function processMessage(message) {
+export async function processMessage(nodeId, message) {
   logger.debug({
     message: 'Processing message',
+    nodeId,
     messagePayload: message,
   });
   if (message.type === privateMessageType.IDP_RESPONSE) {
     //reponse for create identity
-    if (await checkCreateIdentityResponse(message)) {
+    if (await checkCreateIdentityResponse(nodeId, message)) {
       await identity.addAccessorAfterConsent(
         {
+          nodeId,
           request_id: message.request_id,
           old_accessor_id: message.accessor_id,
         },
         {
           callbackFnName: 'idp.processIdpResponseAfterAddAccessor',
-          callbackAdditionalArgs: [{ message }],
+          callbackAdditionalArgs: [{ nodeId, message }],
         }
       );
     }
   } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
     //const responseId = message.request_id + ':' + message.idp_id;
     await common.handleChallengeRequest({
+      nodeId,
       request_id: message.request_id,
       idp_id: message.idp_id,
       public_proof: message.public_proof,
@@ -296,7 +301,7 @@ export async function processMessage(message) {
         },
       });
     }
-    await cacheDb.setRequestMessage(message.request_id, {
+    await cacheDb.setRequestMessage(nodeId, message.request_id, {
       request_message: message.request_message,
       request_message_salt: message.request_message_salt,
       initial_salt: message.initial_salt,
@@ -325,15 +330,19 @@ export async function processMessage(message) {
 
 export async function processIdpResponseAfterAddAccessor(
   { error, secret, associated },
-  { message }
+  { nodeId, message }
 ) {
   try {
     if (error) throw error;
 
     const reference_id = await cacheDb.getReferenceIdByRequestId(
+      nodeId,
       message.request_id
     );
-    const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(reference_id);
+    const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
+      nodeId,
+      reference_id
+    );
     const notifyData = {
       success: true,
       reference_id,
@@ -353,7 +362,7 @@ export async function processIdpResponseAfterAddAccessor(
           },
           true
         );
-        cacheDb.removeCallbackUrlByReferenceId(reference_id);
+        cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
       }
     } else {
       if (callbackUrl == null) {
@@ -368,12 +377,13 @@ export async function processIdpResponseAfterAddAccessor(
           },
           true
         );
-        cacheDb.removeCallbackUrlByReferenceId(reference_id);
+        cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
       }
     }
-    cacheDb.removeReferenceIdByRequestId(message.request_id);
+    cacheDb.removeReferenceIdByRequestId(nodeId, message.request_id);
     await common.closeRequest(
       {
+        node_id: nodeId,
         request_id: message.request_id,
       },
       { synchronous: true }
@@ -393,7 +403,7 @@ export async function processIdpResponseAfterAddAccessor(
   }
 }
 
-async function checkCreateIdentityResponse(message) {
+async function checkCreateIdentityResponse(nodeId, message) {
   try {
     const requestDetail = await tendermintNdid.getRequestDetail({
       requestId: message.request_id,
@@ -401,6 +411,7 @@ async function checkCreateIdentityResponse(message) {
     const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
     const responseValid = await common.checkIdpResponse({
+      nodeId,
       requestStatus,
       idpId: message.idp_id,
       requestDataFromMq: message,
@@ -433,13 +444,18 @@ async function checkCreateIdentityResponse(message) {
     return true;
   } catch (error) {
     const { associated } = await cacheDb.getIdentityFromRequestId(
+      nodeId,
       message.request_id
     );
 
     const reference_id = await cacheDb.getReferenceIdByRequestId(
+      nodeId,
       message.request_id
     );
-    const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(reference_id);
+    const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
+      nodeId,
+      reference_id
+    );
     if (associated) {
       if (callbackUrl == null) {
         // Implies API v1
@@ -460,7 +476,7 @@ async function checkCreateIdentityResponse(message) {
           },
           true
         );
-        cacheDb.removeCallbackUrlByReferenceId(reference_id);
+        cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
       }
     } else {
       if (callbackUrl == null) {
@@ -482,12 +498,13 @@ async function checkCreateIdentityResponse(message) {
           },
           true
         );
-        cacheDb.removeCallbackUrlByReferenceId(reference_id);
+        cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
       }
     }
-    cacheDb.removeCreateIdentityDataByReferenceId(reference_id);
+    cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);
     await common.closeRequest(
       {
+        node_id: nodeId,
         request_id: message.request_id,
       },
       { synchronous: true }

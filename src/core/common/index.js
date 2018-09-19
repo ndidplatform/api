@@ -32,6 +32,7 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import * as rp from '../rp';
 import * as idp from '../idp';
 import * as as from '../as';
+import * as proxy from '../proxy';
 import * as identity from '../identity';
 import * as mq from '../../mq';
 import {
@@ -114,6 +115,15 @@ export async function initialize() {
     tendermint.setTendermintNewBlockEventHandler(as.handleTendermintNewBlock);
     setShouldRetryFnGetter(getFunction);
     setResponseCallbackFnGetter(getFunction);
+    resumeCallbackToClient();
+  } else if (role === 'proxy') {
+    handleMessageFromQueue = proxy.handleMessageFromQueue;
+    tendermint.setTendermintNewBlockEventHandler(
+      proxy.handleTendermintNewBlock
+    );
+    setShouldRetryFnGetter(getFunction);
+    setResponseCallbackFnGetter(getFunction);
+    resumeTimeoutScheduler();
     resumeCallbackToClient();
   }
 
@@ -345,14 +355,17 @@ export async function getIdpsMsqDestination({
 export let timeoutScheduler = {};
 
 export function stopAllTimeoutScheduler() {
-  for (let requestId in timeoutScheduler) {
-    lt.clearTimeout(timeoutScheduler[requestId]);
+  for (let nodeIdAndrequestId in timeoutScheduler) {
+    lt.clearTimeout(timeoutScheduler[nodeIdAndrequestId]);
   }
 }
 
-export async function timeoutRequest(requestId) {
+export async function timeoutRequest(nodeId, requestId) {
   try {
-    const responseValidList = await cacheDb.getIdpResponseValidList(requestId);
+    const responseValidList = await cacheDb.getIdpResponseValidList(
+      nodeId,
+      requestId
+    );
 
     // FOR DEBUG
     const nodeIds = {};
@@ -369,7 +382,10 @@ export async function timeoutRequest(requestId) {
       nodeIds[responseValidList[i].idp_id] = true;
     }
 
-    await tendermintNdid.timeoutRequest({ requestId, responseValidList });
+    await tendermintNdid.timeoutRequest(
+      { requestId, responseValidList },
+      nodeId
+    );
   } catch (error) {
     logger.error({
       message: 'Cannot set timed out',
@@ -378,30 +394,30 @@ export async function timeoutRequest(requestId) {
     });
     throw error;
   }
-  cacheDb.removeTimeoutScheduler(requestId);
-  cacheDb.removeChallengeFromRequestId(requestId);
+  cacheDb.removeTimeoutScheduler(nodeId, requestId);
+  cacheDb.removeChallengeFromRequestId(nodeId, requestId);
 }
 
-export function runTimeoutScheduler(requestId, secondsToTimeout) {
+export function runTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
   if (secondsToTimeout < 0) {
-    timeoutRequest(requestId);
+    timeoutRequest(nodeId, requestId);
   } else {
-    timeoutScheduler[requestId] = lt.setTimeout(() => {
-      timeoutRequest(requestId);
+    timeoutScheduler[`${nodeId}:${requestId}`] = lt.setTimeout(() => {
+      timeoutRequest(nodeId, requestId);
     }, secondsToTimeout * 1000);
   }
 }
 
-export async function setTimeoutScheduler(requestId, secondsToTimeout) {
+export async function setTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
   let unixTimeout = Date.now() + secondsToTimeout * 1000;
-  await cacheDb.setTimeoutScheduler(requestId, unixTimeout);
-  runTimeoutScheduler(requestId, secondsToTimeout);
+  await cacheDb.setTimeoutScheduler(nodeId, requestId, unixTimeout);
+  runTimeoutScheduler(nodeId, requestId, secondsToTimeout);
 }
 
-export async function removeTimeoutScheduler(requestId) {
-  lt.clearTimeout(timeoutScheduler[requestId]);
-  await cacheDb.removeTimeoutScheduler(requestId);
-  delete timeoutScheduler[requestId];
+export async function removeTimeoutScheduler(nodeId, requestId) {
+  lt.clearTimeout(timeoutScheduler[`${nodeId}:${requestId}`]);
+  await cacheDb.removeTimeoutScheduler(nodeId, requestId);
+  delete timeoutScheduler[`${nodeId}:${requestId}`];
 }
 
 async function verifyZKProof({
@@ -411,6 +427,7 @@ async function verifyZKProof({
   response,
   accessor_public_key,
   privateProofObject,
+  challenge,
   mode,
 }) {
   const { namespace, identifier, privateProofObjectList } = requestData;
@@ -418,10 +435,6 @@ async function verifyZKProof({
   if (mode === 1) {
     return null;
   }
-
-  const challenge = (await cacheDb.getChallengeFromRequestId(request_id))[
-    idp_id
-  ];
 
   logger.debug({
     message: 'Verifying zk proof',
@@ -488,12 +501,14 @@ async function verifyZKProof({
 //===== zkp and request related =====
 
 export async function handleChallengeRequest({
+  nodeId,
   request_id,
   idp_id,
   public_proof,
 }) {
   logger.debug({
     message: 'Handle challenge request',
+    nodeId,
     request_id,
     idp_id,
     public_proof,
@@ -513,12 +528,15 @@ export async function handleChallengeRequest({
   }
 
   //if match, send challenge and return
-  const nodeId = {};
-  if (role === 'idp') nodeId.idp_id = config.nodeId;
-  else if (role === 'rp') nodeId.rp_id = config.nodeId;
+  const nodeIdObj = {};
+  if (role === 'idp') nodeIdObj.idp_id = nodeId;
+  else if (role === 'rp') nodeIdObj.rp_id = nodeId;
 
   let challenge;
-  let challengeObject = await cacheDb.getChallengeFromRequestId(request_id);
+  let challengeObject = await cacheDb.getChallengeFromRequestId(
+    nodeId,
+    request_id
+  );
   //challenge deleted, request is done
   if (challengeObject == null) return;
 
@@ -531,7 +549,11 @@ export async function handleChallengeRequest({
     ];
 
     challengeObject[idp_id] = challenge;
-    await cacheDb.setChallengeFromRequestId(request_id, challengeObject);
+    await cacheDb.setChallengeFromRequestId(
+      nodeId,
+      request_id,
+      challengeObject
+    );
   }
 
   logger.debug({
@@ -562,7 +584,7 @@ export async function handleChallengeRequest({
   if (nodeInfo.proxy != null) {
     receivers = [
       {
-        node_id: nodeInfo.node_id,
+        node_id: idp_id,
         public_key: nodeInfo.public_key,
         proxy: {
           node_id: nodeInfo.proxy.node_id,
@@ -575,22 +597,27 @@ export async function handleChallengeRequest({
   } else {
     receivers = [
       {
-        node_id: nodeInfo.node_id,
+        node_id: idp_id,
         public_key: nodeInfo.public_key,
         ip: nodeInfo.mq.ip,
         port: nodeInfo.mq.port,
       },
     ];
   }
-  mq.send(receivers, {
-    type: privateMessageType.CHALLENGE_RESPONSE,
-    challenge,
-    request_id,
-    ...nodeId,
-  });
+  mq.send(
+    receivers,
+    {
+      type: privateMessageType.CHALLENGE_RESPONSE,
+      challenge,
+      request_id,
+      ...nodeIdObj,
+    },
+    nodeId
+  );
 }
 
 export async function checkIdpResponse({
+  nodeId,
   requestStatus,
   idpId,
   responseIal,
@@ -609,7 +636,7 @@ export async function checkIdpResponse({
   const requestId = requestStatus.request_id;
 
   // Check IAL
-  const requestData = await cacheDb.getRequestData(requestId);
+  const requestData = await cacheDb.getRequestData(nodeId, requestId);
   const identityInfo = await tendermintNdid.getIdentityInfo(
     requestData.namespace,
     requestData.identifier,
@@ -629,7 +656,8 @@ export async function checkIdpResponse({
   const privateProofObject = requestDataFromMq
     ? requestDataFromMq
     : await cacheDb.getPrivateProofReceivedFromMQ(
-        requestStatus.request_id + ':' + idpId
+        nodeId,
+        nodeId + ':' + requestStatus.request_id + ':' + idpId
       );
 
   const accessor_public_key = await tendermintNdid.getAccessorKey(
@@ -642,6 +670,10 @@ export async function checkIdpResponse({
   const response = response_list.find((response) => response.idp_id === idpId);
 
   // Check ZK Proof
+  const challenge = (await cacheDb.getChallengeFromRequestId(
+    nodeId,
+    requestStatus.request_id
+  ))[idpId];
   const validProof = await verifyZKProof({
     request_id: requestStatus.request_id,
     idp_id: idpId,
@@ -649,6 +681,7 @@ export async function checkIdpResponse({
     response,
     accessor_public_key,
     privateProofObject,
+    challenge,
     mode: requestStatus.mode,
   });
 
@@ -692,10 +725,11 @@ export async function checkIdpResponse({
     valid_ial: validIal,
   };
 
-  await cacheDb.addIdpResponseValidList(requestId, responseValid);
+  await cacheDb.addIdpResponseValidList(nodeId, requestId, responseValid);
 
   cacheDb.removePrivateProofReceivedFromMQ(
-    `${requestStatus.request_id}:${idpId}`
+    nodeId,
+    `${nodeId}:${requestStatus.request_id}:${idpId}`
   );
 
   return responseValid;

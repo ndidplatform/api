@@ -33,23 +33,37 @@ import * as config from '../../config';
 import { role } from '../../node';
 
 export async function registerOrUpdateASService(
-  { node_id, service_id, reference_id, callback_url, min_ial, min_aal, url },
+  registerOrUpdateASServiceParams,
   { synchronous = false } = {}
 ) {
-  try {
-    if (role === 'proxy' && node_id == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
+  let { node_id } = registerOrUpdateASServiceParams;
+  const {
+    service_id,
+    reference_id,
+    callback_url,
+    min_ial,
+    min_aal,
+    url,
+  } = registerOrUpdateASServiceParams;
 
+  if (role === 'proxy' && node_id == null) {
+    throw new CustomError({
+      errorType: errorType.MISSING_NODE_ID,
+    });
+  }
+
+  if (node_id == null) {
+    node_id = config.nodeId;
+  }
+
+  try {
     //check already register?
     let registeredASList = await tendermintNdid.getAsNodesByServiceId({
       service_id,
     });
     let isRegisterd = false;
-    registeredASList.forEach(({ node_id }) => {
-      isRegisterd = isRegisterd || node_id === config.nodeId;
+    registeredASList.forEach((registeredAS) => {
+      isRegisterd = isRegisterd || registeredAS.node_id === node_id;
     });
 
     if (!isRegisterd) {
@@ -62,10 +76,12 @@ export async function registerOrUpdateASService(
 
     if (synchronous) {
       await registerOrUpdateASServiceInternalAsync(...arguments, {
+        nodeId: node_id,
         isRegisterd,
       });
     } else {
       registerOrUpdateASServiceInternalAsync(...arguments, {
+        nodeId: node_id,
         isRegisterd,
       });
     }
@@ -87,7 +103,7 @@ export async function registerOrUpdateASService(
 async function registerOrUpdateASServiceInternalAsync(
   { service_id, reference_id, callback_url, min_ial, min_aal, url },
   { synchronous = false } = {},
-  { isRegisterd }
+  { nodeId, isRegisterd }
 ) {
   try {
     if (!isRegisterd) {
@@ -97,22 +113,26 @@ async function registerOrUpdateASServiceInternalAsync(
             service_id,
             min_aal,
             min_ial,
-            node_id: config.nodeId,
           },
-          null,
+          nodeId,
           'as.registerOrUpdateASServiceInternalAsyncAfterBlockchain',
-          [{ reference_id, callback_url, service_id, url }, { synchronous }]
+          [
+            { nodeId, reference_id, callback_url, service_id, url },
+            { synchronous },
+          ]
         );
       } else {
-        await tendermintNdid.registerServiceDestination({
-          service_id,
-          min_aal,
-          min_ial,
-          node_id: config.nodeId,
-        });
+        await tendermintNdid.registerServiceDestination(
+          {
+            service_id,
+            min_aal,
+            min_ial,
+          },
+          nodeId
+        );
         await registerOrUpdateASServiceInternalAsyncAfterBlockchain(
           {},
-          { reference_id, callback_url, service_id, url },
+          { nodeId, reference_id, callback_url, service_id, url },
           { synchronous }
         );
       }
@@ -124,19 +144,25 @@ async function registerOrUpdateASServiceInternalAsync(
             min_aal,
             min_ial,
           },
-          null,
+          nodeId,
           'as.registerOrUpdateASServiceInternalAsyncAfterBlockchain',
-          [{ reference_id, callback_url, service_id, url }, { synchronous }]
+          [
+            { nodeId, reference_id, callback_url, service_id, url },
+            { synchronous },
+          ]
         );
       } else {
-        await tendermintNdid.updateServiceDestination({
-          service_id,
-          min_aal,
-          min_ial,
-        });
+        await tendermintNdid.updateServiceDestination(
+          {
+            service_id,
+            min_aal,
+            min_ial,
+          },
+          nodeId
+        );
         await registerOrUpdateASServiceInternalAsyncAfterBlockchain(
           {},
-          { reference_id, callback_url, service_id, url },
+          { nodeId, reference_id, callback_url, service_id, url },
           { synchronous }
         );
       }
@@ -169,14 +195,14 @@ async function registerOrUpdateASServiceInternalAsync(
 
 export async function registerOrUpdateASServiceInternalAsyncAfterBlockchain(
   { error },
-  { reference_id, callback_url, service_id, url },
+  { nodeId, reference_id, callback_url, service_id, url },
   { synchronous = false } = {}
 ) {
   try {
     if (error) throw error;
 
     if (url) {
-      await setServiceCallbackUrl(service_id, url);
+      await setServiceCallbackUrl(nodeId, service_id, url);
     }
 
     if (!synchronous) {

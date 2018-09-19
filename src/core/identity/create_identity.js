@@ -23,8 +23,6 @@
 import { checkAssociated, checkForExistedIdentity } from '.';
 
 import * as tendermintNdid from '../../tendermint/ndid';
-import { validateKey } from '../utils/node_key';
-import { callbackToClient } from '../../utils/callback';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
 import {
@@ -41,6 +39,8 @@ import CustomError from '../../error/custom_error';
 import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
 import * as utils from '../../utils';
+import { validateKey } from '../../utils/node_key';
+import { callbackToClient } from '../../utils/callback';
 import logger from '../../logger';
 
 import * as config from '../../config';
@@ -69,30 +69,35 @@ import { role } from '../../node';
  * Remark: "exist" property is present only when using with synchronous mode
  */
 export async function createIdentity(
-  {
-    node_id,
+  createIdentityParams,
+  { synchronous = false, apiVersion } = {}
+) {
+  let { node_id, ial, accessor_id } = createIdentityParams;
+  const {
     reference_id,
     callback_url,
     namespace,
     identifier,
     accessor_type,
     accessor_public_key,
-    accessor_id,
-    ial,
     addAccessor,
-  },
-  { synchronous = false, apiVersion } = {}
-) {
-  try {
-    if (role === 'proxy' && node_id == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
+  } = createIdentityParams;
 
+  if (role === 'proxy' && node_id == null) {
+    throw new CustomError({
+      errorType: errorType.MISSING_NODE_ID,
+    });
+  }
+
+  if (node_id == null) {
+    node_id = config.nodeId;
+  }
+
+  try {
     validateKey(accessor_public_key, accessor_type);
 
     const createIdentityData = await cacheDb.getCreateIdentityDataByReferenceId(
+      node_id,
       reference_id
     );
     if (createIdentityData) {
@@ -117,6 +122,7 @@ export async function createIdentity(
     }
 
     let associated = await checkAssociated({
+      node_id,
       namespace,
       identifier,
     });
@@ -165,7 +171,7 @@ export async function createIdentity(
 
     const request_id = utils.createRequestId();
 
-    await cacheDb.setCreateIdentityDataByReferenceId(reference_id, {
+    await cacheDb.setCreateIdentityDataByReferenceId(node_id, reference_id, {
       request_id,
       accessor_id,
     });
@@ -174,6 +180,7 @@ export async function createIdentity(
       const sid = namespace + ':' + identifier;
       const hash_id = utils.hash(sid);
       const secret = await createSecret({
+        node_id,
         sid,
         hash_id,
         accessor_id,
@@ -186,6 +193,7 @@ export async function createIdentity(
         ial,
       });
       createIdentityInternalAsync(...arguments, {
+        nodeId: node_id,
         request_id,
         associated,
         generated_accessor_id: accessor_id,
@@ -194,9 +202,14 @@ export async function createIdentity(
       });
       return { request_id, exist, accessor_id };
     } else {
-      await cacheDb.setCallbackUrlByReferenceId(reference_id, callback_url);
+      await cacheDb.setCallbackUrlByReferenceId(
+        node_id,
+        reference_id,
+        callback_url
+      );
 
       createIdentityInternalAsync(...arguments, {
+        nodeId: node_id,
         request_id,
         associated,
         generated_accessor_id: accessor_id,
@@ -217,8 +230,8 @@ export async function createIdentity(
       )
     ) {
       await Promise.all([
-        cacheDb.removeCreateIdentityDataByReferenceId(reference_id),
-        cacheDb.removeCallbackUrlByReferenceId(reference_id),
+        cacheDb.removeCreateIdentityDataByReferenceId(node_id, reference_id),
+        cacheDb.removeCallbackUrlByReferenceId(node_id, reference_id),
       ]);
     }
 
@@ -239,7 +252,7 @@ async function createIdentityInternalAsync(
     addAccessor,
   },
   { synchronous = false, apiVersion } = {},
-  { request_id, associated, generated_accessor_id, exist, secret }
+  { nodeId, request_id, associated, generated_accessor_id, exist, secret }
 ) {
   try {
     if (accessor_id == null) {
@@ -251,6 +264,7 @@ async function createIdentityInternalAsync(
 
     if (secret == null) {
       secret = await createSecret({
+        node_id: nodeId,
         sid,
         hash_id,
         accessor_id,
@@ -262,7 +276,7 @@ async function createIdentityInternalAsync(
     if (exist == null) {
       // async mode
       await checkForExistedIdentity(
-        { namespace, identifier, ial },
+        { node_id: nodeId, namespace, identifier, ial },
         {
           callbackFnName:
             'identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain',
@@ -280,6 +294,7 @@ async function createIdentityInternalAsync(
             },
             { synchronous, apiVersion },
             {
+              nodeId,
               request_id,
               associated,
               generated_accessor_id,
@@ -306,7 +321,15 @@ async function createIdentityInternalAsync(
           addAccessor,
         },
         { synchronous, apiVersion },
-        { request_id, associated, generated_accessor_id, secret, sid, hash_id }
+        {
+          nodeId,
+          request_id,
+          associated,
+          generated_accessor_id,
+          secret,
+          sid,
+          hash_id,
+        }
       );
     }
   } catch (error) {
@@ -337,6 +360,7 @@ async function createIdentityInternalAsync(
     }
 
     await createIdentityCleanUpOnError({
+      nodeId,
       requestId: request_id,
       referenceId: reference_id,
     });
@@ -359,7 +383,15 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
     addAccessor,
   },
   { synchronous = false, apiVersion } = {},
-  { request_id, associated, generated_accessor_id, secret, sid, hash_id }
+  {
+    nodeId,
+    request_id,
+    associated,
+    generated_accessor_id,
+    secret,
+    sid,
+    hash_id,
+  }
 ) {
   try {
     if (error) throw error;
@@ -367,6 +399,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
     if (!synchronous) {
       await common.createRequest(
         {
+          node_id: nodeId,
           namespace,
           identifier,
           reference_id,
@@ -411,6 +444,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
             },
             { synchronous, apiVersion },
             {
+              nodeId,
               exist,
               request_id,
               sid,
@@ -426,6 +460,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
     } else {
       await common.createRequest(
         {
+          node_id: nodeId,
           namespace,
           identifier,
           reference_id,
@@ -469,6 +504,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
         },
         { synchronous, apiVersion },
         {
+          nodeId,
           exist,
           request_id,
           sid,
@@ -508,6 +544,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
     }
 
     await createIdentityCleanUpOnError({
+      nodeId,
       requestId: request_id,
       referenceId: reference_id,
     });
@@ -530,12 +567,21 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
     addAccessor,
   },
   { synchronous = false, apiVersion } = {},
-  { exist, request_id, sid, hash_id, generated_accessor_id, associated, secret }
+  {
+    nodeId,
+    exist,
+    request_id,
+    sid,
+    hash_id,
+    generated_accessor_id,
+    associated,
+    secret,
+  }
 ) {
   try {
     if (error) throw error;
 
-    await cacheDb.setReferenceIdByRequestId(request_id, reference_id);
+    await cacheDb.setReferenceIdByRequestId(nodeId, request_id, reference_id);
 
     if (exist) {
       if (!synchronous) {
@@ -562,7 +608,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       }
 
       //save data for add accessor to persistent
-      await cacheDb.setIdentityFromRequestId(request_id, {
+      await cacheDb.setIdentityFromRequestId(nodeId, request_id, {
         accessor_type,
         accessor_id,
         accessor_public_key,
@@ -606,10 +652,11 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
             accessor_id,
             accessor_group_id,
           },
-          null,
+          nodeId,
           'identity.createIdentityInternalAsyncAfterBlockchain',
           [
             {
+              nodeId,
               reference_id,
               callback_url,
               request_id,
@@ -624,15 +671,19 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
           ]
         );
       } else {
-        await tendermintNdid.createIdentity({
-          accessor_type,
-          accessor_public_key,
-          accessor_id,
-          accessor_group_id,
-        });
+        await tendermintNdid.createIdentity(
+          {
+            accessor_type,
+            accessor_public_key,
+            accessor_id,
+            accessor_group_id,
+          },
+          nodeId
+        );
         await createIdentityInternalAsyncAfterBlockchain(
           {},
           {
+            nodeId,
             reference_id,
             callback_url,
             request_id,
@@ -676,6 +727,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
     }
 
     await createIdentityCleanUpOnError({
+      nodeId,
       requestId: request_id,
       referenceId: reference_id,
     });
@@ -687,6 +739,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
 export async function createIdentityInternalAsyncAfterBlockchain(
   { error },
   {
+    nodeId,
     reference_id,
     callback_url,
     request_id,
@@ -706,10 +759,11 @@ export async function createIdentityInternalAsyncAfterBlockchain(
     if (!synchronous) {
       await tendermintNdid.clearRegisterMsqDestinationTimeout(
         hash_id,
-        null,
+        nodeId,
         'identity.createIdentityInternalAsyncAfterClearMqDestTimeout',
         [
           {
+            nodeId,
             reference_id,
             callback_url,
             request_id,
@@ -724,10 +778,11 @@ export async function createIdentityInternalAsyncAfterBlockchain(
         ]
       );
     } else {
-      await tendermintNdid.clearRegisterMsqDestinationTimeout(hash_id);
+      await tendermintNdid.clearRegisterMsqDestinationTimeout(hash_id, nodeId);
       await createIdentityInternalAsyncAfterClearMqDestTimeout(
         {},
         {
+          nodeId,
           reference_id,
           callback_url,
           request_id,
@@ -769,6 +824,7 @@ export async function createIdentityInternalAsyncAfterBlockchain(
     }
 
     await createIdentityCleanUpOnError({
+      nodeId,
       requestId: request_id,
       referenceId: reference_id,
     });
@@ -780,11 +836,10 @@ export async function createIdentityInternalAsyncAfterBlockchain(
 export async function createIdentityInternalAsyncAfterClearMqDestTimeout(
   { error },
   {
+    nodeId,
     reference_id,
     callback_url,
     request_id,
-    namespace,
-    identifier,
     secret,
     addAccessor,
     accessor_id,
@@ -814,15 +869,16 @@ export async function createIdentityInternalAsyncAfterClearMqDestTimeout(
         },
         true
       );
-      cacheDb.removeCallbackUrlByReferenceId(reference_id);
+      cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
       await common.closeRequest(
         {
+          node_id: nodeId,
           request_id,
         },
         { synchronous: true }
       );
     }
-    cacheDb.removeCreateIdentityDataByReferenceId(reference_id);
+    cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);
   } catch (error) {
     logger.error({
       message:
@@ -852,6 +908,7 @@ export async function createIdentityInternalAsyncAfterClearMqDestTimeout(
     }
 
     await createIdentityCleanUpOnError({
+      nodeId,
       requestId: request_id,
       referenceId: reference_id,
     });
@@ -860,16 +917,21 @@ export async function createIdentityInternalAsyncAfterClearMqDestTimeout(
   }
 }
 
-async function createIdentityCleanUpOnError({ requestId, referenceId }) {
+async function createIdentityCleanUpOnError({
+  nodeId,
+  requestId,
+  referenceId,
+}) {
   await Promise.all([
-    cacheDb.removeCallbackUrlByReferenceId(referenceId),
-    cacheDb.removeReferenceIdByRequestId(requestId),
-    cacheDb.removeCreateIdentityDataByReferenceId(referenceId),
-    cacheDb.removeIdentityFromRequestId(requestId),
+    cacheDb.removeCallbackUrlByReferenceId(nodeId, referenceId),
+    cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
+    cacheDb.removeCreateIdentityDataByReferenceId(nodeId, referenceId),
+    cacheDb.removeIdentityFromRequestId(nodeId, requestId),
   ]);
 }
 
 async function createSecret({
+  node_id,
   sid,
   hash_id,
   accessor_id,
@@ -877,6 +939,7 @@ async function createSecret({
   accessor_public_key,
 }) {
   const signature = await accessorSign({
+    node_id,
     sid,
     hash_id,
     accessor_id,
@@ -891,14 +954,25 @@ async function createSecret({
 }
 
 export async function reCalculateSecret({
+  node_id,
   accessor_id,
   namespace,
   identifier,
   reference_id,
 }) {
-  let sid = namespace + ':' + identifier;
-  let hash_id = utils.hash(sid);
-  let accessor_public_key = await tendermintNdid.getAccessorKey(accessor_id);
+  if (role === 'proxy' && node_id == null) {
+    throw new CustomError({
+      errorType: errorType.MISSING_NODE_ID,
+    });
+  }
+
+  if (node_id == null) {
+    node_id = config.nodeId;
+  }
+
+  const sid = namespace + ':' + identifier;
+  const hash_id = utils.hash(sid);
+  const accessor_public_key = await tendermintNdid.getAccessorKey(accessor_id);
 
   if (accessor_public_key == null) {
     throw new CustomError({
@@ -909,7 +983,7 @@ export async function reCalculateSecret({
     });
   }
 
-  let isAssociate = await checkAssociated({ namespace, identifier });
+  const isAssociate = await checkAssociated({ node_id, namespace, identifier });
   if (!isAssociate) {
     throw new CustomError({
       errorType: errorType.IDENTITY_NOT_FOUND,
@@ -921,6 +995,7 @@ export async function reCalculateSecret({
   }
 
   return await createSecret({
+    node_id,
     sid,
     hash_id,
     accessor_id,

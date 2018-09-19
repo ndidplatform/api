@@ -46,6 +46,9 @@ function getName(messageType) {
     default:
       throw new CustomError({
         message: 'Unknown message type',
+        details: {
+          messageType,
+        },
       });
   }
 }
@@ -58,12 +61,13 @@ export async function close() {
   });
 }
 
-export function getAllMessages(messageType) {
-  return db.getAll({ dbName, name: getName(messageType) });
+export function getAllMessages(nodeId, messageType) {
+  return db.getAll({ nodeId, dbName, name: getName(messageType) });
 }
 
-export function getMessages(messageType, requestId) {
+export function getMessages(nodeId, messageType, requestId) {
   return db.getList({
+    nodeId,
     dbName,
     name: getName(messageType),
     keyName: 'requestId',
@@ -72,8 +76,9 @@ export function getMessages(messageType, requestId) {
   });
 }
 
-export function addMessage(messageType, requestId, message) {
+export function addMessage(nodeId, messageType, requestId, message) {
   return db.pushToList({
+    nodeId,
     dbName,
     name: getName(messageType),
     keyName: 'requestId',
@@ -83,8 +88,9 @@ export function addMessage(messageType, requestId, message) {
   });
 }
 
-export function removeMessages(messageType, requestId) {
+export function removeMessages(nodeId, messageType, requestId) {
   return db.removeList({
+    nodeId,
     dbName,
     name: getName(messageType),
     keyName: 'requestId',
@@ -92,8 +98,9 @@ export function removeMessages(messageType, requestId) {
   });
 }
 
-export function removeAllMessages(messageType) {
+export function removeAllMessages(nodeId, messageType) {
   return db.removeAllLists({
+    nodeId,
     dbName,
     name: getName(messageType),
   });

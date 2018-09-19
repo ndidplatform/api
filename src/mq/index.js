@@ -146,7 +146,7 @@ async function processMessage(messageId, messageProtobuf) {
     messageLength: messageProtobuf.length,
   });
   try {
-    const decodedDecryptedMessage = getMessageFromProtobufMessage(
+    const decodedDecryptedMessage = await getMessageFromProtobufMessage(
       messageProtobuf,
       config.nodeId
     );
@@ -160,6 +160,7 @@ async function processMessage(messageId, messageProtobuf) {
 
     let messageBuffer;
     let messageSignature;
+    let receiverNodeId;
 
     if (messageForProxy === true) {
       // Message is encapsulated with proxy layer
@@ -184,7 +185,7 @@ async function processMessage(messageId, messageProtobuf) {
         });
       }
 
-      const receiverNodeId = decodedDecryptedMessage.receiverNodeId;
+      receiverNodeId = decodedDecryptedMessage.receiverNodeId;
 
       if (receiverNodeId == null || receiverNodeId === '') {
         throw new CustomError({
@@ -257,13 +258,14 @@ async function processMessage(messageId, messageProtobuf) {
     // TODO: validate message schema
 
     await longTermDb.addMessage(
+      nodeId,
       // longTermDb.MESSAGE_DIRECTIONS.INBOUND,
       message.type,
       message.request_id,
       messageStr
     );
 
-    eventEmitter.emit('message', message);
+    eventEmitter.emit('message', message, receiverNodeId);
     removeRawMessageFromCache(messageId);
   } catch (error) {
     eventEmitter.emit('error', error);
@@ -334,11 +336,13 @@ export async function send(receivers, message, senderNodeId) {
   }
   const messageStr = JSON.stringify(message);
   const messageBuffer = Buffer.from(messageStr, 'utf8');
-  const messageSignatureBuffer = await utils.createSignature(messageStr);
+  const messageSignatureBuffer = await utils.createSignature(
+    messageStr,
+    senderNodeId
+  );
   const mqMessageObject = {
     message: messageBuffer,
     signature: messageSignatureBuffer,
-    senderNodeId,
   };
   const protoMessage = MqMessage.create(mqMessageObject);
   const protoBuffer = MqMessage.encode(protoMessage).finish();
@@ -381,12 +385,14 @@ export async function send(receivers, message, senderNodeId) {
         const receiverNodeId = receiver.node_id;
         const senderNodeId = config.nodeId;
         const signatureBuffer = await utils.createSignature(
-          `${messageHashBase64}|${receiverNodeId}|${senderNodeId}`
+          `${messageHashBase64}|${receiverNodeId}|${senderNodeId}`,
+          senderNodeId
         );
 
         const mqMessageObject = {
           message: protoEncryptedBuffer,
           signature: signatureBuffer,
+          messageForProxy: true,
           receiverNodeId,
           senderNodeId,
         };
@@ -419,6 +425,7 @@ export async function send(receivers, message, senderNodeId) {
   );
 
   // await longTermDb.addMessage(
+  //   nodeId,
   //   longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
   //   message.type,
   //   message.request_id,

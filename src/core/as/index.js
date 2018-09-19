@@ -47,13 +47,13 @@ export const seviceCallbackUrls = {};
 
 const callbackUrlFilesPrefix = path.join(
   config.dataDirectoryPath,
-  'as-callback-url-' + config.nodeId
+  'as-callback-url-'
 );
 
 [{ key: 'error_url', fileSuffix: 'error' }].forEach(({ key, fileSuffix }) => {
   try {
     callbackUrls[key] = fs.readFileSync(
-      callbackUrlFilesPrefix + '-' + fileSuffix,
+      callbackUrlFilesPrefix + config.nodeId + '-' + fileSuffix,
       'utf8'
     );
   } catch (error) {
@@ -71,14 +71,18 @@ const callbackUrlFilesPrefix = path.join(
 });
 
 function writeCallbackUrlToFile(fileSuffix, url) {
-  fs.writeFile(callbackUrlFilesPrefix + '-' + fileSuffix, url, (err) => {
-    if (err) {
-      logger.error({
-        message: `Cannot write ${fileSuffix} callback url file`,
-        error: err,
-      });
+  fs.writeFile(
+    callbackUrlFilesPrefix + config.nodeId + '-' + fileSuffix,
+    url,
+    (err) => {
+      if (err) {
+        logger.error({
+          message: `Cannot write ${fileSuffix} callback url file`,
+          error: err,
+        });
+      }
     }
-  });
+  );
 }
 
 export function setCallbackUrls({ node_id, error_url }) {
@@ -96,10 +100,10 @@ export function getErrorCallbackUrl() {
   return callbackUrls.error_url;
 }
 
-export function setServiceCallbackUrl(serviceId, url) {
+export function setServiceCallbackUrl(nodeId, serviceId, url) {
   return new Promise((resolve, reject) => {
     fs.writeFile(
-      callbackUrlFilesPrefix + '-service-' + serviceId,
+      callbackUrlFilesPrefix + nodeId + '-service-' + serviceId,
       url,
       (err) => {
         if (err) {
@@ -114,20 +118,20 @@ export function setServiceCallbackUrl(serviceId, url) {
           );
           return;
         }
-        seviceCallbackUrls[serviceId] = url;
+        seviceCallbackUrls[`${nodeId}:${serviceId}`] = url;
         resolve();
       }
     );
   });
 }
 
-export function getServiceCallbackUrl(serviceId) {
-  if (seviceCallbackUrls[serviceId] != null) {
-    return seviceCallbackUrls[serviceId];
+export function getServiceCallbackUrl(nodeId, serviceId) {
+  if (seviceCallbackUrls[`${nodeId}:${serviceId}`] != null) {
+    return seviceCallbackUrls[`${nodeId}:${serviceId}`];
   }
   return new Promise((resolve, reject) => {
     fs.readFile(
-      callbackUrlFilesPrefix + '-service-' + serviceId,
+      callbackUrlFilesPrefix + nodeId + '-service-' + serviceId,
       'utf8',
       (err, data) => {
         if (err) {
@@ -136,22 +140,24 @@ export function getServiceCallbackUrl(serviceId) {
               errorType: errorType.CANNOT_READ_CALLBACK_URL_FROM_FILE,
               cause: err,
               details: {
+                nodeId,
                 serviceId,
               },
             })
           );
           return;
         }
-        seviceCallbackUrls[serviceId] = data;
+        seviceCallbackUrls[`${nodeId}:${serviceId}`] = data;
         resolve(data);
       }
     );
   });
 }
 
-export async function processRequest(request) {
+export async function processRequest(nodeId, request) {
   logger.debug({
     message: 'Processing request',
+    nodeId,
     requestId: request.request_id,
   });
   const requestDetail = await tendermintNdid.getRequestDetail({
@@ -188,13 +194,14 @@ export async function processRequest(request) {
     });
   }
   const responseDetails = await getResponseDetails(request.request_id);
-  await getDataAndSendBackToRP(request, responseDetails);
+  await getDataAndSendBackToRP(nodeId, request, responseDetails);
 }
 
 export async function afterGotDataFromCallback(
   { error, response, body },
   additionalData
 ) {
+  const { nodeId } = additionalData;
   try {
     if (error) throw error;
     if (response.status === 204) {
@@ -203,7 +210,7 @@ export async function afterGotDataFromCallback(
     if (response.status !== 200) {
       const dataRequestId =
         additionalData.requestId + ':' + additionalData.serviceId;
-      cacheDb.removeRpIdFromDataRequestId(dataRequestId);
+      cacheDb.removeRpIdFromDataRequestId(nodeId, dataRequestId);
       throw new CustomError({
         errorType: errorType.INVALID_HTTP_RESPONSE_STATUS_CODE,
         details: {
@@ -265,7 +272,7 @@ export async function afterGotDataFromCallback(
   }
 }
 
-async function getDataAndSendBackToRP(request, responseDetails) {
+async function getDataAndSendBackToRP(nodeId, request, responseDetails) {
   // Platform→AS
   // The AS replies with the requested data
   logger.debug({
@@ -277,7 +284,7 @@ async function getDataAndSendBackToRP(request, responseDetails) {
   await Promise.all(
     request.service_data_request_list.map(async (serviceData) => {
       let { service_id, request_params } = serviceData;
-      const callbackUrl = await getServiceCallbackUrl(service_id);
+      const callbackUrl = await getServiceCallbackUrl(nodeId, service_id);
 
       if (!callbackUrl) {
         logger.error({
@@ -288,7 +295,11 @@ async function getDataAndSendBackToRP(request, responseDetails) {
       }
 
       const dataRequestId = request.request_id + ':' + service_id;
-      await cacheDb.setRpIdFromDataRequestId(dataRequestId, request.rp_id);
+      await cacheDb.setRpIdFromDataRequestId(
+        nodeId,
+        dataRequestId,
+        request.rp_id
+      );
 
       logger.info({
         message: 'Sending callback to AS',
@@ -317,6 +328,7 @@ async function getDataAndSendBackToRP(request, responseDetails) {
         [request.request_id],
         'as.afterGotDataFromCallback',
         {
+          nodeId,
           rpId: request.rp_id,
           requestId: request.request_id,
           serviceId: service_id,
@@ -410,7 +422,7 @@ export async function getServiceDetail(nodeId, service_id) {
     });
     if (service == null) return null;
     return {
-      url: await getServiceCallbackUrl(service_id),
+      url: await getServiceCallbackUrl(nodeId, service_id),
       min_ial: service.min_ial,
       min_aal: service.min_aal,
       active: service.active,
@@ -425,10 +437,6 @@ export async function getServiceDetail(nodeId, service_id) {
 }
 
 async function isIdpResponsesValid(request_id, dataFromMq) {
-  if (!dataFromMq) {
-    dataFromMq = await cacheDb.getRequestReceivedFromMQ(request_id);
-  }
-
   const {
     privateProofObjectList,
     namespace,
