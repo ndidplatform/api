@@ -23,6 +23,8 @@
 import path from 'path';
 import fs from 'fs';
 
+import { readFileAsync } from '.';
+
 import { parseKey } from './asn1parser';
 import * as node from '../node';
 
@@ -63,19 +65,26 @@ function readNodeMasterPrivateKeyFromFile() {
   }
 }
 
-function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
+async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
   const keyFilePath = path.join(config.privateKeyDirectoryPath, nodeId);
-  const key = fs.readFileSync(keyFilePath, 'utf8');
+  const key = await readFileAsync(keyFilePath, 'utf8');
 
   const passphraseFilePath = path.join(
     config.privateKeyDirectoryPath,
     `${nodeId}_passphrase`
   );
-  const passphraseExists = fs.existsSync(passphraseFilePath);
+
   let passphrase;
-  if (passphraseExists) {
-    passphrase = fs.readFileSync(passphraseFilePath, 'utf8');
+  try {
+    passphrase = await readFileAsync(passphraseFilePath, 'utf8');
     nodeBehindProxyPrivateKeyPassphrases[nodeId] = passphrase;
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      throw new CustomError({
+        message: 'Cannot read private key passpharse file',
+        cause: error,
+      });
+    }
   }
   try {
     validateKey(key, null, passphrase);
@@ -86,7 +95,7 @@ function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
       details: {
         nodeId,
         keyFilePath,
-        passphraseExists,
+        passphraseExists: passphrase != null,
         passphraseFilePath,
       },
     });
@@ -94,22 +103,29 @@ function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
   nodeBehindProxyPrivateKeys[nodeId] = key;
 }
 
-function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
+async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
   const keyFilePath = path.join(
     config.masterPrivateKeyDirectoryPath,
     `${nodeId}_master`
   );
-  const key = fs.readFileSync(keyFilePath, 'utf8');
+  const key = await readFileAsync(keyFilePath, 'utf8');
 
   const passphraseFilePath = path.join(
     config.privateKeyDirectoryPath,
     `${nodeId}_master_passphrase`
   );
-  const passphraseExists = fs.existsSync(passphraseFilePath);
+
   let passphrase;
-  if (passphraseExists) {
-    passphrase = fs.readFileSync(passphraseFilePath, 'utf8');
+  try {
+    passphrase = await readFileAsync(passphraseFilePath, 'utf8');
     nodeBehindProxyMasterPrivateKeyPassphrases[nodeId] = passphrase;
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      throw new CustomError({
+        message: 'Cannot read master private key passpharse file',
+        cause: error,
+      });
+    }
   }
   try {
     validateKey(key, null, passphrase);
@@ -120,7 +136,7 @@ function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
       details: {
         nodeId,
         keyFilePath,
-        passphraseExists,
+        passphraseExists: passphrase != null,
         passphraseFilePath,
       },
     });
@@ -137,10 +153,14 @@ export async function initialize() {
     if (node.role === 'proxy') {
       const nodesBehindProxy = await node.getNodesBehindProxyFromBlockchain();
       const nodeIds = nodesBehindProxy.map((node) => node.node_id);
-      nodeIds.forEach((nodeId) => {
-        readNodeBehindProxyPrivateKeyFromFile(nodeId);
-        readNodeBehindProxyMasterPrivateKeyFromFile(nodeId);
-      });
+      await Promise.all(
+        nodeIds.map((nodeId) => {
+          return Promise.all([
+            readNodeBehindProxyPrivateKeyFromFile(nodeId),
+            readNodeBehindProxyMasterPrivateKeyFromFile(nodeId),
+          ]);
+        })
+      );
     }
   }
 }

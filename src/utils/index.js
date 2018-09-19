@@ -20,6 +20,7 @@
  *
  */
 
+import fs from 'fs';
 import crypto from 'crypto';
 import constants from 'constants';
 
@@ -49,6 +50,18 @@ export function wait(ms, stoppable) {
     };
   }
   return promise;
+}
+
+export function readFileAsync(path, opts) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path, opts, (err, data) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(data);
+    });
+  });
 }
 
 export function randomBase64Bytes(length) {
