@@ -114,7 +114,7 @@ export async function loadExpectedTxFromDB() {
     message: 'Loading backlog expected Txs for processing',
   });
   try {
-    const savedExpectedTxs = await cacheDb.getAllExpectedTxs();
+    const savedExpectedTxs = await cacheDb.getAllExpectedTxs(config.nodeId);
     if (savedExpectedTxs.length === 0) {
       logger.info({
         message: 'No backlog expected Txs to process',
@@ -192,7 +192,7 @@ async function processExpectedTx(txHash, result, fromEvent) {
         });
       }
     }
-    await cacheDb.removeExpectedTxMetadata(txHash);
+    await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
   } catch (error) {
     const err = new CustomError({
       message: 'Error processing expected Tx',
@@ -602,7 +602,7 @@ export async function transact({
     callbackAdditionalArgs,
   };
   expectedTx[txHash] = callbackData;
-  await cacheDb.setExpectedTxMetadata(txHash, callbackData);
+  await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, callbackData);
 
   try {
     let promise;
