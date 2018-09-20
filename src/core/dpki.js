@@ -73,6 +73,7 @@ async function updateNodeInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: 'update_node_result',
           reference_id,
           success: true,
@@ -93,6 +94,7 @@ async function updateNodeInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: 'update_node_result',
           reference_id,
           success: false,

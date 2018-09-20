@@ -326,27 +326,35 @@ export async function getIdpsMsqDestination({
     node_id_list: idp_id_list, // filter to include only nodes in this list if node ID exists
   });
 
-  const receivers = idpNodes.map((idpNode) => {
-    if (idpNode.proxy != null) {
-      return {
-        node_id: idpNode.node_id,
-        public_key: idpNode.public_key,
-        proxy: {
-          node_id: idpNode.proxy.node_id,
-          public_key: idpNode.proxy.public_key,
-          ip: idpNode.proxy.mq.ip,
-          port: idpNode.proxy.mq.port,
-        },
-      };
-    } else {
-      return {
-        node_id: idpNode.node_id,
-        public_key: idpNode.public_key,
-        ip: idpNode.mq.ip,
-        port: idpNode.mq.port,
-      };
-    }
-  });
+  const receivers = idpNodes
+    .map((idpNode) => {
+      if (idpNode.proxy != null) {
+        if (idpNode.proxy.mq == null) {
+          return null;
+        }
+        return {
+          node_id: idpNode.node_id,
+          public_key: idpNode.public_key,
+          proxy: {
+            node_id: idpNode.proxy.node_id,
+            public_key: idpNode.proxy.public_key,
+            ip: idpNode.proxy.mq.ip,
+            port: idpNode.proxy.mq.port,
+          },
+        };
+      } else {
+        if (idpNode.mq == null) {
+          return null;
+        }
+        return {
+          node_id: idpNode.node_id,
+          public_key: idpNode.public_key,
+          ip: idpNode.mq.ip,
+          port: idpNode.mq.port,
+        };
+      }
+    })
+    .filter((idpNode) => idpNode != null);
   return receivers;
 }
 
@@ -529,8 +537,20 @@ export async function handleChallengeRequest({
 
   //if match, send challenge and return
   const nodeIdObj = {};
-  if (role === 'idp') nodeIdObj.idp_id = nodeId;
-  else if (role === 'rp') nodeIdObj.rp_id = nodeId;
+
+  let nodeRole;
+  if (role === 'proxy') {
+    const nodeInfo = await tendermintNdid.getNodeInfo(nodeId);
+    nodeRole = nodeInfo.role.toLowerCase();
+  } else {
+    nodeRole = role;
+  }
+
+  if (nodeRole === 'idp') {
+    nodeIdObj.idp_id = nodeId;
+  } else if (nodeRole === 'rp') {
+    nodeIdObj.rp_id = nodeId;
+  }
 
   let challenge;
   let challengeObject = await cacheDb.getChallengeFromRequestId(
@@ -571,17 +591,17 @@ export async function handleChallengeRequest({
     });
   }
 
-  if (nodeInfo.mq == null) {
-    throw new CustomError({
-      errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
-      details: {
-        request_id,
-      },
-    });
-  }
-
   let receivers;
   if (nodeInfo.proxy != null) {
+    if (nodeInfo.proxy.mq == null) {
+      throw new CustomError({
+        errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+        details: {
+          request_id,
+          nodeId: idp_id,
+        },
+      });
+    }
     receivers = [
       {
         node_id: idp_id,
@@ -595,6 +615,15 @@ export async function handleChallengeRequest({
       },
     ];
   } else {
+    if (nodeInfo.mq == null) {
+      throw new CustomError({
+        errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+        details: {
+          request_id,
+          nodeId: idp_id,
+        },
+      });
+    }
     receivers = [
       {
         node_id: idp_id,
@@ -750,7 +779,13 @@ export async function isRequestClosedOrTimedOut(requestId) {
   return true;
 }
 
-export async function notifyError({ callbackUrl, action, error, requestId }) {
+export async function notifyError({
+  nodeId,
+  callbackUrl,
+  action,
+  error,
+  requestId,
+}) {
   logger.debug({
     message: 'Notifying error through callback',
   });
@@ -763,6 +798,7 @@ export async function notifyError({ callbackUrl, action, error, requestId }) {
   await callbackToClient(
     callbackUrl,
     {
+      node_id: nodeId,
       type: 'error',
       action,
       request_id: requestId,

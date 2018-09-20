@@ -85,6 +85,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         await callbackToClient(
           createResponseParams.callback_url,
           {
+            node_id: nodeId,
             type: 'response_result',
             success: false,
             reference_id: createResponseParams.reference_id,
@@ -253,6 +254,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
     });
     logger.error(err.getInfoForLog());
     await common.notifyError({
+      nodeId,
       callbackUrl: callbackUrls.error_url,
       action: 'handleMessageFromQueue',
       error: err,
@@ -374,6 +376,7 @@ export async function handleTendermintNewBlock(
     });
     logger.error(err.getInfoForLog());
     await common.notifyError({
+      nodeId,
       callbackUrl: callbackUrls.error_url,
       action: 'handleTendermintNewBlock',
       error: err,

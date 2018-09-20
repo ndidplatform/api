@@ -457,6 +457,7 @@ async function createRequestInternalAsync(
         await callbackToClient(
           callback_url,
           {
+            node_id,
             type: 'create_request_result',
             success: false,
             reference_id,
@@ -530,6 +531,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
         await callbackToClient(
           callback_url,
           {
+            node_id,
             type: 'create_request_result',
             success: true,
             reference_id,
@@ -560,6 +562,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
         await callbackToClient(
           callback_url,
           {
+            node_id,
             type: 'create_request_result',
             success: false,
             reference_id,

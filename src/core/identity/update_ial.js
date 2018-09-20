@@ -113,7 +113,7 @@ async function updateIalInternalAsync(
         { hash_id, ial },
         nodeId,
         'identity.updateIalInternalAsyncAfterBlockchain',
-        [{ reference_id, callback_url }, { synchronous }]
+        [{ nodeId, reference_id, callback_url }, { synchronous }]
       );
     } else {
       await tendermintNdid.updateIal({ hash_id, ial }, nodeId);
@@ -131,6 +131,7 @@ async function updateIalInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: 'update_ial_result',
           success: false,
           reference_id,
@@ -146,7 +147,7 @@ async function updateIalInternalAsync(
 
 export async function updateIalInternalAsyncAfterBlockchain(
   { error },
-  { reference_id, callback_url },
+  { nodeId, reference_id, callback_url },
   { synchronous = false } = {}
 ) {
   try {
@@ -156,6 +157,7 @@ export async function updateIalInternalAsyncAfterBlockchain(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: 'update_ial_result',
           success: true,
           reference_id,
@@ -176,6 +178,7 @@ export async function updateIalInternalAsyncAfterBlockchain(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: 'update_ial_result',
           success: false,
           reference_id,

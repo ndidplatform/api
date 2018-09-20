@@ -221,6 +221,7 @@ async function processDataForRPInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: 'send_data_result',
           success: false,
           reference_id,
@@ -271,6 +272,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: 'send_data_result',
           success: true,
           reference_id,
@@ -296,6 +298,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: 'send_data_result',
           success: false,
           reference_id,
@@ -321,17 +324,17 @@ async function sendDataToRP(nodeId, rpId, data) {
     });
   }
 
-  if (nodeInfo.mq == null) {
-    throw new CustomError({
-      errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
-      details: {
-        request_id: data.request_id,
-      },
-    });
-  }
-
   let receivers;
   if (nodeInfo.proxy != null) {
+    if (nodeInfo.proxy.mq == null) {
+      throw new CustomError({
+        errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+        details: {
+          request_id: data.request_id,
+          nodeId: rpId,
+        },
+      });
+    }
     receivers = [
       {
         node_id: rpId,
@@ -345,6 +348,15 @@ async function sendDataToRP(nodeId, rpId, data) {
       },
     ];
   } else {
+    if (nodeInfo.mq == null) {
+      throw new CustomError({
+        errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+        details: {
+          request_id: data.request_id,
+          nodeId: rpId,
+        },
+      });
+    }
     receivers = [
       {
         node_id: rpId,

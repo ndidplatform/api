@@ -180,6 +180,7 @@ async function registerOrUpdateASServiceInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: 'add_or_update_service_result',
           success: false,
           reference_id,
@@ -209,6 +210,7 @@ export async function registerOrUpdateASServiceInternalAsyncAfterBlockchain(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: 'add_or_update_service_result',
           success: true,
           reference_id,
@@ -229,6 +231,7 @@ export async function registerOrUpdateASServiceInternalAsyncAfterBlockchain(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: 'add_or_update_service_result',
           success: false,
           reference_id,

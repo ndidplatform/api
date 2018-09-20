@@ -187,6 +187,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
       const responseValidList = savedResponseValidList.concat([responseValid]);
 
       const eventDataForCallback = {
+        node_id: nodeId,
         type: 'request_status',
         ...requestStatus,
         response_valid_list: responseValidList,
@@ -272,6 +273,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
     });
     logger.error(err.getInfoForLog());
     await common.notifyError({
+      nodeId,
       callbackUrl: callbackUrls.error_url,
       action: 'handleMessageFromQueue',
       error: err,
@@ -388,6 +390,7 @@ export async function handleTendermintNewBlock(
     });
     logger.error(err.getInfoForLog());
     await common.notifyError({
+      nodeId,
       callbackUrl: callbackUrls.error_url,
       action: 'handleTendermintNewBlock',
       error: err,
@@ -478,6 +481,7 @@ async function processRequestUpdate(nodeId, requestId, height) {
   }
 
   const eventDataForCallback = {
+    node_id: nodeId,
     type: 'request_status',
     ...requestStatus,
     response_valid_list: responseValidList,

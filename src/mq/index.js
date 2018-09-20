@@ -246,6 +246,7 @@ async function processMessage(messageId, messageProtobuf) {
     logger.debug({
       message: 'Verifying signature',
       messageSignature,
+      nodeId,
       publicKey,
       messageStr,
       signatureValid,

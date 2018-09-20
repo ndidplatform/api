@@ -204,6 +204,7 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
       await callbackToClient(
         callback_url,
         {
+          node_id: config.nodeId,
           type: 'create_node_result',
           reference_id,
           success: true,
@@ -224,6 +225,7 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
       await callbackToClient(
         callback_url,
         {
+          node_id: config.nodeId,
           type: 'create_node_result',
           reference_id,
           success: false,
@@ -276,6 +278,7 @@ async function updateNodeInternalAsync(data, { synchronous = false } = {}) {
       await callbackToClient(
         callback_url,
         {
+          node_id: config.nodeId,
           type: 'update_node_result',
           reference_id,
           success: true,
@@ -296,6 +299,7 @@ async function updateNodeInternalAsync(data, { synchronous = false } = {}) {
       await callbackToClient(
         callback_url,
         {
+          node_id: config.nodeId,
           type: 'update_node_result',
           reference_id,
           success: false,

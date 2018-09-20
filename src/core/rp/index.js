@@ -129,27 +129,35 @@ async function getASReceiverList(data_request) {
     node_id_list: data_request.as_id_list, // filter to include only nodes in this list if node ID exists
   });
 
-  const receivers = asNodes.map((asNode) => {
-    if (asNode.proxy != null) {
-      return {
-        node_id: asNode.node_id,
-        public_key: asNode.public_key,
-        proxy: {
-          node_id: asNode.proxy.node_id,
-          public_key: asNode.proxy.public_key,
-          ip: asNode.proxy.mq.ip,
-          port: asNode.proxy.mq.port,
-        },
-      };
-    } else {
-      return {
-        node_id: asNode.node_id,
-        public_key: asNode.public_key,
-        ip: asNode.mq.ip,
-        port: asNode.mq.port,
-      };
-    }
-  });
+  const receivers = asNodes
+    .map((asNode) => {
+      if (asNode.proxy != null) {
+        if (asNode.proxy.mq == null) {
+          return null;
+        }
+        return {
+          node_id: asNode.node_id,
+          public_key: asNode.public_key,
+          proxy: {
+            node_id: asNode.proxy.node_id,
+            public_key: asNode.proxy.public_key,
+            ip: asNode.proxy.mq.ip,
+            port: asNode.proxy.mq.port,
+          },
+        };
+      } else {
+        if (asNode.mq == null) {
+          return null;
+        }
+        return {
+          node_id: asNode.node_id,
+          public_key: asNode.public_key,
+          ip: asNode.mq.ip,
+          port: asNode.mq.port,
+        };
+      }
+    })
+    .filter((asNode) => asNode != null);
   return receivers;
 }
 

@@ -215,6 +215,7 @@ async function requestChallengeAndCreateResponseInternalAsync(
     await callbackToClient(
       callback_url,
       {
+        node_id: nodeId,
         type: 'response_result',
         success: false,
         reference_id,
@@ -369,6 +370,7 @@ export async function createResponseAfterBlockchain(
     await callbackToClient(
       callback_url,
       {
+        node_id: nodeId,
         type: 'response_result',
         success: true,
         reference_id,
@@ -389,6 +391,7 @@ export async function createResponseAfterBlockchain(
     await callbackToClient(
       callback_url,
       {
+        node_id: nodeId,
         type: 'response_result',
         success: false,
         reference_id: reference_id,
@@ -480,18 +483,19 @@ export async function requestChallengeAfterBlockchain(
       });
     }
 
-    if (nodeInfo.mq == null) {
-      throw new CustomError({
-        errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
-        details: {
-          request_id,
-          accessor_id,
-        },
-      });
-    }
-
     let receivers;
     if (nodeInfo.proxy != null) {
+      if (nodeInfo.proxy.mq == null) {
+        throw new CustomError({
+          errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+          details: {
+            request_id,
+            accessor_id,
+            nodeId: rp_id,
+          },
+        });
+      }
+
       receivers = [
         {
           node_id: rp_id,
@@ -505,6 +509,17 @@ export async function requestChallengeAfterBlockchain(
         },
       ];
     } else {
+      if (nodeInfo.mq == null) {
+        throw new CustomError({
+          errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+          details: {
+            request_id,
+            accessor_id,
+            nodeId: rp_id,
+          },
+        });
+      }
+
       receivers = [
         {
           node_id: rp_id,
@@ -519,7 +534,7 @@ export async function requestChallengeAfterBlockchain(
       {
         type: privateMessageType.CHALLENGE_REQUEST,
         request_id: request_id,
-        idp_id: config.nodeId,
+        idp_id: nodeId,
         public_proof: [publicProof1, publicProof2],
         height,
       },
@@ -536,6 +551,7 @@ export async function requestChallengeAfterBlockchain(
     await callbackToClient(
       callback_url,
       {
+        node_id: nodeId,
         type: 'response_result',
         success: false,
         reference_id: reference_id,
@@ -581,6 +597,15 @@ async function sendResponseToRP(
 
   let receivers;
   if (nodeInfo.proxy != null) {
+    if (nodeInfo.proxy.mq == null) {
+      throw new CustomError({
+        errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+        details: {
+          request_id,
+          nodeId: rp_id,
+        },
+      });
+    }
     receivers = [
       {
         node_id: rp_id,
@@ -594,6 +619,15 @@ async function sendResponseToRP(
       },
     ];
   } else {
+    if (nodeInfo.mq == null) {
+      throw new CustomError({
+        errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+        details: {
+          request_id,
+          nodeId: rp_id,
+        },
+      });
+    }
     receivers = [
       {
         node_id: rp_id,
@@ -611,7 +645,7 @@ async function sendResponseToRP(
       mode,
       ...privateProofObject,
       height,
-      idp_id: config.nodeId,
+      idp_id: nodeId,
     },
     nodeId
   );

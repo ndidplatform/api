@@ -345,6 +345,7 @@ async function createIdentityInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: addAccessor
             ? 'add_accessor_request_result'
             : 'create_identity_request_result',
@@ -529,6 +530,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: addAccessor
             ? 'add_accessor_request_result'
             : 'create_identity_request_result',
@@ -589,6 +591,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
           callback_url,
           addAccessor
             ? {
+                node_id: nodeId,
                 type: 'add_accessor_request_result',
                 reference_id,
                 request_id,
@@ -596,6 +599,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 success: true,
               }
             : {
+                node_id: nodeId,
                 type: 'create_identity_request_result',
                 reference_id,
                 request_id,
@@ -624,6 +628,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
           callback_url,
           addAccessor
             ? {
+                node_id: nodeId,
                 type: 'add_accessor_request_result',
                 reference_id,
                 request_id,
@@ -631,6 +636,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 success: true,
               }
             : {
+                node_id: nodeId,
                 type: 'create_identity_request_result',
                 reference_id,
                 request_id,
@@ -712,6 +718,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: addAccessor
             ? 'add_accessor_request_result'
             : 'create_identity_request_result',
@@ -809,6 +816,7 @@ export async function createIdentityInternalAsyncAfterBlockchain(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: addAccessor
             ? 'add_accessor_request_result'
             : 'create_identity_request_result',
@@ -861,6 +869,7 @@ export async function createIdentityInternalAsyncAfterClearMqDestTimeout(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: 'create_identity_result',
           success: true,
           reference_id,
@@ -893,6 +902,7 @@ export async function createIdentityInternalAsyncAfterClearMqDestTimeout(
       await callbackToClient(
         callback_url,
         {
+          node_id: nodeId,
           type: addAccessor
             ? 'add_accessor_request_result'
             : 'create_identity_request_result',

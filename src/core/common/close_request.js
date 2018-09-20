@@ -140,6 +140,7 @@ async function closeRequestInternalAsync(
       await callbackToClient(
         callback_url,
         {
+          node_id,
           type: 'close_request_result',
           success: false,
           reference_id,
@@ -169,6 +170,7 @@ export async function closeRequestInternalAsyncAfterBlockchain(
       await callbackToClient(
         callback_url,
         {
+          node_id,
           type: 'close_request_result',
           success: true,
           reference_id,
@@ -190,6 +192,7 @@ export async function closeRequestInternalAsyncAfterBlockchain(
       await callbackToClient(
         callback_url,
         {
+          node_id,
           type: 'close_request_result',
           success: false,
           reference_id,

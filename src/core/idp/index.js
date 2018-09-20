@@ -197,6 +197,7 @@ export async function accessorSign({
   }
 }
 
+// Used by API v1
 function notifyByCallback({ url, type, eventDataForCallback }) {
   if (!url) {
     logger.error({
@@ -214,7 +215,7 @@ function notifyByCallback({ url, type, eventDataForCallback }) {
   );
 }
 
-export function notifyIncomingRequestByCallback(eventDataForCallback) {
+export function notifyIncomingRequestByCallback(nodeId, eventDataForCallback) {
   const url = callbackUrls.incoming_request_url;
   const type = 'incoming_request';
   if (!url) {
@@ -226,6 +227,7 @@ export function notifyIncomingRequestByCallback(eventDataForCallback) {
   return callbackToClient(
     url,
     {
+      node_id: nodeId,
       type,
       ...eventDataForCallback,
     },
@@ -306,7 +308,7 @@ export async function processMessage(nodeId, message) {
       request_message_salt: message.request_message_salt,
       initial_salt: message.initial_salt,
     });
-    notifyIncomingRequestByCallback({
+    notifyIncomingRequestByCallback(nodeId, {
       mode: message.mode,
       request_id: message.request_id,
       namespace: message.namespace,
@@ -357,6 +359,7 @@ export async function processIdpResponseAfterAddAccessor(
         await callbackToClient(
           callbackUrl,
           {
+            node_id: nodeId,
             type: 'add_accessor_result',
             ...notifyData,
           },
@@ -372,6 +375,7 @@ export async function processIdpResponseAfterAddAccessor(
         await callbackToClient(
           callbackUrl,
           {
+            node_id: nodeId,
             type: 'create_identity_result',
             ...notifyData,
           },
@@ -395,6 +399,7 @@ export async function processIdpResponseAfterAddAccessor(
     });
     logger.error(err.getInfoForLog());
     await common.notifyError({
+      nodeId,
       callbackUrl: callbackUrls.error_url,
       action: 'processIdpResponseAfterAddAccessor',
       error: err,
@@ -468,6 +473,7 @@ async function checkCreateIdentityResponse(nodeId, message) {
         await callbackToClient(
           callbackUrl,
           {
+            node_id: nodeId,
             type: 'add_accessor_result',
             success: false,
             reference_id,
@@ -490,6 +496,7 @@ async function checkCreateIdentityResponse(nodeId, message) {
         await callbackToClient(
           callbackUrl,
           {
+            node_id: nodeId,
             type: 'create_identity_result',
             success: false,
             reference_id,

@@ -264,6 +264,7 @@ export async function afterGotDataFromCallback(
     });
     logger.error(err.getInfoForLog());
     await common.notifyError({
+      nodeId,
       callbackUrl: callbackUrls.error_url,
       action: 'afterGotDataFromCallback',
       error: err,
@@ -313,6 +314,7 @@ async function getDataAndSendBackToRP(nodeId, request, responseDetails) {
       await callbackToClient(
         callbackUrl,
         {
+          node_id: nodeId,
           type: 'data_request',
           request_id: request.request_id,
           mode: request.mode,
