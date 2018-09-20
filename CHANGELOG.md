@@ -6,6 +6,8 @@ FEATURES:
 
 - Proxy node support.
 - API version 2.2
+  - New APIs:
+    - GET `/identity/:namespace/:identifier/ial` Get identity's IAL.
 - Support loading environment variables from `.env` file.
 
 IMPROVEMENTS:
