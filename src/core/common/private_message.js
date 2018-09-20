@@ -25,16 +25,34 @@ import * as longTermDb from '../../db/long_term';
 import PRIVATE_MESSAGE_TYPES from '../private_message_type';
 
 import CustomError from '../../error/custom_error';
+import errorType from '../../error/type';
+
+import { role } from '../../node';
+import * as config from '../../config';
 
 const privateMessageTypes = Object.values(PRIVATE_MESSAGE_TYPES);
 
 export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
+  if (role === 'proxy' && nodeId == null) {
+    throw new CustomError({
+      errorType: errorType.MISSING_NODE_ID,
+    });
+  }
+
+  if (nodeId == null) {
+    nodeId = config.nodeId;
+  }
+
   try {
     if (requestId == null) {
       if (type == null) {
         const allTypesMessages = await Promise.all(
-          privateMessageTypes.map(async (type) =>
-            longTermDb.getAllMessages(nodeId, type)
+          privateMessageTypes.map((type) =>
+            longTermDb.getAllMessages(
+              nodeId,
+              longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+              type
+            )
           )
         );
         return allTypesMessages.reduce(
@@ -42,7 +60,11 @@ export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
           []
         );
       } else {
-        return await longTermDb.getAllMessages(nodeId, type);
+        return await longTermDb.getAllMessages(
+          nodeId,
+          longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+          type
+        );
       }
     } else {
       const request = await tendermintNdid.getRequest({ requestId });
@@ -51,8 +73,13 @@ export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
       }
       if (type == null) {
         const allTypesMessages = await Promise.all(
-          privateMessageTypes.map(async (type) =>
-            longTermDb.getMessages(nodeId, type, requestId)
+          privateMessageTypes.map((type) =>
+            longTermDb.getMessages(
+              nodeId,
+              longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+              type,
+              requestId
+            )
           )
         );
         return allTypesMessages.reduce(
@@ -60,7 +87,12 @@ export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
           []
         );
       } else {
-        return await longTermDb.getMessages(nodeId, type, requestId);
+        return await longTermDb.getMessages(
+          nodeId,
+          longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+          type,
+          requestId
+        );
       }
     }
   } catch (error) {
@@ -76,26 +108,54 @@ export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
 }
 
 export async function removePrivateMessages({ nodeId, requestId, type } = {}) {
+  if (role === 'proxy' && nodeId == null) {
+    throw new CustomError({
+      errorType: errorType.MISSING_NODE_ID,
+    });
+  }
+
+  if (nodeId == null) {
+    nodeId = config.nodeId;
+  }
+
   try {
     if (requestId == null) {
       if (type == null) {
         await Promise.all(
           privateMessageTypes.map(async (type) => {
-            longTermDb.removeAllMessages(nodeId, type);
+            longTermDb.removeAllMessages(
+              nodeId,
+              longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+              type
+            );
           })
         );
       } else {
-        await longTermDb.removeAllMessages(nodeId, type);
+        await longTermDb.removeAllMessages(
+          nodeId,
+          longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+          type
+        );
       }
     } else {
       if (type == null) {
         await Promise.all(
           privateMessageTypes.map(async (type) => {
-            longTermDb.removeMessages(nodeId, type, requestId);
+            longTermDb.removeMessages(
+              nodeId,
+              longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+              type,
+              requestId
+            );
           })
         );
       } else {
-        await longTermDb.removeMessages(nodeId, type, requestId);
+        await longTermDb.removeMessages(
+          nodeId,
+          longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+          type,
+          requestId
+        );
       }
     }
   } catch (error) {

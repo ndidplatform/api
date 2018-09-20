@@ -29,6 +29,11 @@ import CustomError from '../../error/custom_error';
 
 const dbName = 'long-term';
 
+export const MESSAGE_DIRECTIONS = {
+  INBOUND: 'inbound',
+  OUTBOUND: 'outbound',
+};
+
 function getName(messageType) {
   switch (messageType) {
     case privateMessageType.CHALLENGE_REQUEST:
@@ -61,26 +66,30 @@ export async function close() {
   });
 }
 
-export function getAllMessages(nodeId, messageType) {
-  return db.getAll({ nodeId, dbName, name: getName(messageType) });
+export function getAllMessages(nodeId, direction, messageType) {
+  return db.getAll({
+    nodeId,
+    dbName,
+    name: `${direction}_${getName(messageType)}`,
+  });
 }
 
-export function getMessages(nodeId, messageType, requestId) {
+export function getMessages(nodeId, direction, messageType, requestId) {
   return db.getList({
     nodeId,
     dbName,
-    name: getName(messageType),
+    name: `${direction}_${getName(messageType)}`,
     keyName: 'requestId',
     key: requestId,
     valueName: 'message',
   });
 }
 
-export function addMessage(nodeId, messageType, requestId, message) {
+export function addMessage(nodeId, direction, messageType, requestId, message) {
   return db.pushToList({
     nodeId,
     dbName,
-    name: getName(messageType),
+    name: `${direction}_${getName(messageType)}`,
     keyName: 'requestId',
     key: requestId,
     valueName: 'message',
@@ -88,20 +97,20 @@ export function addMessage(nodeId, messageType, requestId, message) {
   });
 }
 
-export function removeMessages(nodeId, messageType, requestId) {
+export function removeMessages(nodeId, direction, messageType, requestId) {
   return db.removeList({
     nodeId,
     dbName,
-    name: getName(messageType),
+    name: `${direction}_${getName(messageType)}`,
     keyName: 'requestId',
     key: requestId,
   });
 }
 
-export function removeAllMessages(nodeId, messageType) {
+export function removeAllMessages(nodeId, direction, messageType) {
   return db.removeAllLists({
     nodeId,
     dbName,
-    name: getName(messageType),
+    name: `${direction}_${getName(messageType)}`,
   });
 }

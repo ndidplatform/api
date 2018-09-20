@@ -219,6 +219,7 @@ async function processMessage(messageId, messageProtobuf) {
       messageBuffer = decodedDecryptedMessage.message;
       messageSignature = decodedDecryptedMessage.signature;
     } else {
+      receiverNodeId = config.nodeId;
       messageBuffer = outerLayerDecodedDecryptedMessage.message;
       messageSignature = outerLayerDecodedDecryptedMessage.signature;
     }
@@ -272,8 +273,8 @@ async function processMessage(messageId, messageProtobuf) {
     // TODO: validate message schema
 
     await longTermDb.addMessage(
-      nodeId,
-      // longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+      receiverNodeId,
+      longTermDb.MESSAGE_DIRECTIONS.INBOUND,
       message.type,
       message.request_id,
       messageStr
@@ -451,7 +452,7 @@ export async function send(receivers, message, senderNodeId) {
   );
 
   // await longTermDb.addMessage(
-  //   nodeId,
+  //   config.nodeId,
   //   longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
   //   message.type,
   //   message.request_id,
