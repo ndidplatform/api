@@ -963,7 +963,7 @@ async function createSecret({
   return padding + '|' + signature;
 }
 
-export async function reCalculateSecret({
+export async function calculateSecret({
   node_id,
   accessor_id,
   namespace,
