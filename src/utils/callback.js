@@ -122,7 +122,7 @@ async function callbackWithRetry(
     try {
       const responseObj = await httpPost(cbId, callbackUrl, body);
 
-      cacheDb.removeCallbackWithRetryData(cbId);
+      cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
       if (responseCallbackFnName) {
         getResponseCallbackFn(responseCallbackFnName)(
           responseObj,
@@ -140,7 +140,7 @@ async function callbackWithRetry(
       });
 
       if (error.name === 'FetchError' && error.type === 'max-size') {
-        cacheDb.removeCallbackWithRetryData(cbId);
+        cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
         if (responseCallbackFnName) {
           getResponseCallbackFn(responseCallbackFnName)(
             {
@@ -162,13 +162,14 @@ async function callbackWithRetry(
           );
         } catch (error) {
           logger.debug({
-            message: 'Error calling should retry decision function. Will retry callback.',
+            message:
+              'Error calling should retry decision function. Will retry callback.',
             shouldRetryFnName,
           });
           shouldRetry = true;
         }
         if (!shouldRetry) {
-          cacheDb.removeCallbackWithRetryData(cbId);
+          cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
           return;
         }
       } else {
@@ -181,7 +182,7 @@ async function callbackWithRetry(
             url: callbackUrl,
             cbId,
           });
-          cacheDb.removeCallbackWithRetryData(cbId);
+          cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
           return;
         }
       }
@@ -226,7 +227,7 @@ export async function callbackToClient(
       url: callbackUrl,
       cbId,
     });
-    await cacheDb.addCallbackWithRetryData(cbId, {
+    await cacheDb.addCallbackWithRetryData(config.nodeId, cbId, {
       callbackUrl,
       body,
       shouldRetryFnName,
@@ -291,7 +292,9 @@ export async function callbackToClient(
  * @param {function} responseCallback
  */
 export async function resumeCallbackToClient() {
-  const callbackDatum = await cacheDb.getAllCallbackWithRetryData();
+  const callbackDatum = await cacheDb.getAllCallbackWithRetryData(
+    config.nodeId
+  );
   callbackDatum.forEach((callback) =>
     callbackWithRetry(
       callback.data.callbackUrl,

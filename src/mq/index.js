@@ -57,15 +57,19 @@ const rawMessagesToRetry = [];
 export const eventEmitter = new EventEmitter();
 
 export async function init() {
-  const timeoutList = await cacheDb.getAllDuplicateMessageTimeout();
+  const timeoutList = await cacheDb.getAllDuplicateMessageTimeout(
+    config.nodeId
+  );
   const promiseArray = [];
   for (let id in timeoutList) {
     let unixTimeout = timeoutList[id];
     if (unixTimeout >= Date.now()) {
-      promiseArray.push(cacheDb.removeDuplicateMessageTimeout(id));
+      promiseArray.push(
+        cacheDb.removeDuplicateMessageTimeout(config.nodeId, id)
+      );
     } else {
       timer[id] = setTimeout(() => {
-        cacheDb.removeDuplicateMessageTimeout(id);
+        cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
         delete timer[id];
       }, Date.now() - unixTimeout);
     }
@@ -76,13 +80,16 @@ export async function init() {
 
   mqRecv.on('message', async ({ message, msgId, senderId }) => {
     const id = senderId + ':' + msgId;
-    let unixTimeout = await cacheDb.getDuplicateMessageTimeout(id);
+    let unixTimeout = await cacheDb.getDuplicateMessageTimeout(
+      config.nodeId,
+      id
+    );
     if (unixTimeout != null) return;
 
     unixTimeout = Date.now() + 120000;
-    cacheDb.setDuplicateMessageTimeout(id, unixTimeout);
+    cacheDb.setDuplicateMessageTimeout(config.nodeId, id, unixTimeout);
     timer[id] = setTimeout(() => {
-      cacheDb.removeDuplicateMessageTimeout(id);
+      cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
       delete timer[id];
     }, 120000);
     onMessage(message);
@@ -104,7 +111,11 @@ async function onMessage(messageProtobuf) {
   });
   try {
     const messageId = utils.randomBase64Bytes(10);
-    await cacheDb.setRawMessageFromMQ(messageId, messageProtobuf);
+    await cacheDb.setRawMessageFromMQ(
+      config.nodeId,
+      messageId,
+      messageProtobuf
+    );
 
     // TODO: Refactor MQ module to send ACK here (after save to persistence)
 
@@ -287,7 +298,7 @@ async function removeRawMessageFromCache(messageId) {
     messageId,
   });
   try {
-    await cacheDb.removeRawMessageFromMQ(messageId);
+    await cacheDb.removeRawMessageFromMQ(config.nodeId, messageId);
   } catch (error) {
     logger.error({
       message: 'Cannot remove raw received message from MQ from cache DB',
@@ -312,7 +323,7 @@ export async function loadAndProcessBacklogMessages() {
     message: 'Loading backlog messages received from MQ for processing',
   });
   try {
-    let rawMessages = await cacheDb.getAllRawMessageFromMQ();
+    let rawMessages = await cacheDb.getAllRawMessageFromMQ(config.nodeId);
     if (rawMessages.length === 0) {
       logger.info({
         message: 'No backlog messages received from MQ to process',
