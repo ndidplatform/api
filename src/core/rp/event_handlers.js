@@ -27,16 +27,16 @@ import {
   sendRequestToAS,
 } from '.';
 
-import { callbackToClient } from '../../utils/callback';
-import CustomError from '../../error/custom_error';
-import logger from '../../logger';
-
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
-import * as utils from '../../utils';
 import privateMessageType from '../private_message_type';
+import * as utils from '../../utils';
+import { callbackToClient } from '../../utils/callback';
+import CustomError from '../../error/custom_error';
+import errorType from '../../error/type';
+import logger from '../../logger';
 
 import * as config from '../../config';
 
@@ -628,6 +628,20 @@ async function processAsData({
     ))
   ) {
     cleanUpDataResponseFromAS(nodeId, asResponseId);
+    const err = new CustomError({
+      errorType: errorType.INVALID_DATA_RESPONSE_SIGNATURE,
+      details: {
+        requestId,
+      },
+    });
+    logger.error(err.getInfoForLog());
+    await common.notifyError({
+      nodeId,
+      callbackUrl: callbackUrls.error_url,
+      action: 'processAsData',
+      error: err,
+      requestId,
+    });
     return;
   }
 

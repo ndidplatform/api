@@ -158,6 +158,10 @@ export default {
     code: 10032,
     message: 'Node info could not be found',
   },
+  INVALID_DATA_RESPONSE_SIGNATURE: {
+    code: 10033,
+    message: 'Invalid data response from AS (Invalid signature)',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
