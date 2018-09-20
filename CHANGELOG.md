@@ -1,15 +1,11 @@
 # Changelog
 
-## TBD - proxy
-
-IMPROVEMENTS:
-
-- Remove `ROLE` environment variable option. The server will get a node's role from blockchain on start.
-
 ## TBD
 
 FEATURES:
 
+- Proxy node support.
+- API version 2.2
 - Support loading environment variables from `.env` file.
 
 IMPROVEMENTS:
@@ -17,6 +13,7 @@ IMPROVEMENTS:
 - Change cache and long-term database to Redis for better performance. This change introduces 2 new environment variables `DB_IP` and `DB_PORT`.
 - Add `requester_node_id` property to AS service callback data.
 - Reduce RPC/HTTP query calls to Tendermint.
+- Remove `ROLE` environment variable option. The server will get a node's role from blockchain on start.
 
 BUG FIXES:
 
