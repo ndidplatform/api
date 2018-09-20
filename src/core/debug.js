@@ -38,6 +38,7 @@ export async function tmQuery({ fnName, jsonParameter }) {
 }
 
 export async function tmTransact({
+  nodeId,
   fnName,
   jsonParameter,
   callbackUrl,
@@ -47,16 +48,16 @@ export async function tmTransact({
   try {
     if (sync || !callbackUrl) {
       return JSON.stringify(
-        await tendermint.transact(
+        await tendermint.transact({
+          nodeId,
           fnName,
-          jsonParameter,
-          utils.getNonce(),
-          useMasterKey
-        )
+          params: jsonParameter,
+          useMasterKey,
+        })
       );
     }
     tendermint
-      .transact(fnName, jsonParameter, utils.getNonce(), useMasterKey)
+      .transact({ nodeId, fnName, params: jsonParameter, useMasterKey })
       .then((result) => {
         callbackToClient(callbackUrl, {
           success: true,

@@ -43,11 +43,13 @@ router.post('/tmTransact/:fnName', async (req, res) => {
     debug_callbackUrl,
     debug_useMasterKey,
     debug_sync,
+    nodeId,
     ...jsonParameter
   } = req.body;
   try {
     let sync = debug_sync || !debug_callbackUrl;
     let result = await debug.tmTransact({
+      nodeId,
       fnName: req.params.fnName,
       jsonParameter,
       callbackUrl: debug_callbackUrl,
