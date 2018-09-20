@@ -243,3 +243,29 @@ export async function getCreateIdentityDataByReferenceId(nodeId, referenceId) {
     });
   }
 }
+
+export async function getIdentityInfo({ nodeId, namespace, identifier }) {
+  try {
+    if (role === 'proxy' && nodeId == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+
+    if (nodeId == null) {
+      nodeId = config.nodeId;
+    }
+
+    const identityInfo = await tendermintNdid.getIdentityInfo(
+      namespace,
+      identifier,
+      nodeId
+    );
+    return identityInfo;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get identity info',
+      cause: error,
+    });
+  }
+}

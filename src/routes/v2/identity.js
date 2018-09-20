@@ -152,6 +152,29 @@ router.post(
   }
 );
 
+router.get('/:namespace/:identifier/ial', async (req, res, next) => {
+  try {
+    const { node_id } = req.query;
+    const { namespace, identifier } = req.params;
+
+    const idenityInfo = await identity.getIdentityInfo({
+      nodeId: node_id,
+      namespace,
+      identifier,
+    });
+
+    if (idenityInfo != null) {
+      res.status(200).json({
+        ial: idenityInfo.ial,
+      });
+    } else {
+      res.status(404).end();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post(
   '/:namespace/:identifier/ial',
   idpOnlyHandler,
