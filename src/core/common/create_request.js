@@ -280,7 +280,7 @@ export async function createRequest(
       request_message,
       // for zk proof
       //challenge,
-      rp_id: config.nodeId,
+      rp_id: node_id,
       request_message_salt,
       initial_salt,
     };

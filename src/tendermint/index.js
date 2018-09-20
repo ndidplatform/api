@@ -586,7 +586,6 @@ export async function transact({
     '|' +
     nonce +
     '|' +
-    // FIXME: signature need to be able to specify node ID
     (await utils.createSignature(
       paramsStr + nonce,
       nodeId,

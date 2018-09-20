@@ -8,7 +8,7 @@ import { getNodesBehindProxyFromBlockchain } from '../../node';
 export async function handleMessageFromQueue(message, receiverNodeId) {
   const nodeInfo = await tendermintNdid.getNodeInfo(receiverNodeId);
   const role = nodeInfo.role.toLowerCase();
-  // TODO: cache node role in memory for faster later use, 
+  // TODO: cache node role in memory for faster later use,
   // but how do we invalidate cache when node behind proxy is no longer
   // behind a proxy?
 
@@ -26,9 +26,9 @@ export async function handleTendermintNewBlock(
   height,
   missingBlockCount
 ) {
-  const nodesBehindProxy = await getNodesBehindProxyFromBlockchain();
-  // FIXME: filter out nodes that handle their own keys.
-  const nodesBehindProxyWithKeyOnProxy = nodesBehindProxy;
+  const nodesBehindProxyWithKeyOnProxy = await getNodesBehindProxyFromBlockchain(
+    { withConfig: 'KEY_ON_PROXY' }
+  );
   await Promise.all(
     nodesBehindProxyWithKeyOnProxy.map((node) => {
       let { node_id, role } = node;

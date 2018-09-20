@@ -48,12 +48,42 @@ const nodes = [
 ];
 
 const nodesBehindProxy = [
-  { nodeId: 'proxy1_rp4', role: 'rp', proxyNodeId: 'proxy1' },
-  { nodeId: 'proxy2_rp5', role: 'rp', proxyNodeId: 'proxy2' },
-  { nodeId: 'proxy1_idp4', role: 'idp', proxyNodeId: 'proxy1' },
-  { nodeId: 'proxy2_idp5', role: 'idp', proxyNodeId: 'proxy2' },
-  { nodeId: 'proxy1_as4', role: 'as', proxyNodeId: 'proxy1' },
-  { nodeId: 'proxy2_as5', role: 'as', proxyNodeId: 'proxy2' },
+  {
+    nodeId: 'proxy1_rp4',
+    role: 'rp',
+    proxyNodeId: 'proxy1',
+    config: 'KEY_ON_PROXY',
+  },
+  {
+    nodeId: 'proxy2_rp5',
+    role: 'rp',
+    proxyNodeId: 'proxy2',
+    config: 'KEY_ON_PROXY',
+  },
+  {
+    nodeId: 'proxy1_idp4',
+    role: 'idp',
+    proxyNodeId: 'proxy1',
+    config: 'KEY_ON_PROXY',
+  },
+  {
+    nodeId: 'proxy2_idp5',
+    role: 'idp',
+    proxyNodeId: 'proxy2',
+    config: 'KEY_ON_PROXY',
+  },
+  {
+    nodeId: 'proxy1_as4',
+    role: 'as',
+    proxyNodeId: 'proxy1',
+    config: 'KEY_ON_PROXY',
+  },
+  {
+    nodeId: 'proxy2_as5',
+    role: 'as',
+    proxyNodeId: 'proxy2',
+    config: 'KEY_ON_PROXY',
+  },
 ];
 
 const services = [
@@ -131,10 +161,11 @@ async function addKeyAndSetToken(nodeId, role, behindProxy) {
   });
 }
 
-function addNodeToProxyNode(nodeId, proxyNodeId) {
+function addNodeToProxyNode(nodeId, proxyNodeId, nodeProxyConfig) {
   return ndid.addNodeToProxyNode({
     node_id: nodeId,
     proxy_node_id: proxyNodeId,
+    config: nodeProxyConfig,
   });
 }
 
@@ -177,8 +208,8 @@ export async function init() {
       )
     );
     await Promise.all(
-      nodesBehindProxy.map(({ nodeId, proxyNodeId }) =>
-        addNodeToProxyNode(nodeId, proxyNodeId)
+      nodesBehindProxy.map(({ nodeId, proxyNodeId, config: nodeProxyConfig }) =>
+        addNodeToProxyNode(nodeId, proxyNodeId, nodeProxyConfig)
       )
     );
     console.log('========= Keys for development initialized =========');

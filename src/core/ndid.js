@@ -454,10 +454,14 @@ export async function disableServiceDestination({ service_id, node_id }) {
   }
 }
 
-export async function addNodeToProxyNode({ node_id, proxy_node_id }) {
+export async function addNodeToProxyNode({
+  node_id,
+  proxy_node_id,
+  config: nodeProxyConfig,
+}) {
   try {
     await tendermintNdid.addNodeToProxyNode(
-      { node_id, proxy_node_id },
+      { node_id, proxy_node_id, config: nodeProxyConfig },
       config.nodeId
     );
   } catch (error) {
@@ -466,10 +470,14 @@ export async function addNodeToProxyNode({ node_id, proxy_node_id }) {
   }
 }
 
-export async function updateNodeProxyNode({ node_id, proxy_node_id }) {
+export async function updateNodeProxyNode({
+  node_id,
+  proxy_node_id,
+  config: nodeProxyConfig,
+}) {
   try {
     await tendermintNdid.updateNodeProxyNode(
-      { node_id, proxy_node_id },
+      { node_id, proxy_node_id, config: nodeProxyConfig },
       config.nodeId
     );
   } catch (error) {

@@ -859,7 +859,7 @@ export async function getNodesBehindProxyNode(proxy_node_id) {
     const result = await tendermint.query('GetNodesBehindProxyNode', {
       proxy_node_id,
     });
-    return result != null ? (result.node != null ? result.node : []) : [];
+    return result != null ? (result.nodes != null ? result.nodes : []) : [];
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get nodes behind proxy node from blockchain',
@@ -873,7 +873,7 @@ export async function getNodesBehindProxyNode(proxy_node_id) {
 //
 
 export async function addNodeToProxyNode(
-  { node_id, proxy_node_id },
+  { node_id, proxy_node_id, config: nodeProxyConfig },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs
@@ -882,7 +882,7 @@ export async function addNodeToProxyNode(
     await tendermint.transact({
       nodeId,
       fnName: 'AddNodeToProxyNode',
-      params: { node_id, proxy_node_id },
+      params: { node_id, proxy_node_id, config: nodeProxyConfig },
       callbackFnName,
       callbackAdditionalArgs,
     });
@@ -895,7 +895,7 @@ export async function addNodeToProxyNode(
 }
 
 export async function updateNodeProxyNode(
-  { node_id, proxy_node_id },
+  { node_id, proxy_node_id, config: nodeProxyConfig },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs
@@ -904,7 +904,7 @@ export async function updateNodeProxyNode(
     await tendermint.transact({
       nodeId,
       fnName: 'UpdateNodeProxyNode',
-      params: { node_id, proxy_node_id },
+      params: { node_id, proxy_node_id, config: nodeProxyConfig },
       callbackFnName,
       callbackAdditionalArgs,
     });

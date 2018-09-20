@@ -52,7 +52,7 @@ export async function getNodeRoleFromBlockchain() {
   }
 }
 
-export async function getNodesBehindProxyFromBlockchain() {
+export async function getNodesBehindProxyFromBlockchain({ withConfig } = {}) {
   if (role == null) {
     throw new CustomError({
       message: 'Need to run "getNodeRoleFromBlockchain()" first',
@@ -70,7 +70,11 @@ export async function getNodesBehindProxyFromBlockchain() {
     const nodesBehindProxy = await tendermintNdid.getNodesBehindProxyNode(
       config.nodeId
     );
-    return nodesBehindProxy;
+    if (withConfig != null) {
+      return nodesBehindProxy.filter((node) => node.config === withConfig);
+    } else {
+      return nodesBehindProxy;
+    }
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get nodes behind proxy from blockchain',

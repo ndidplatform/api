@@ -88,7 +88,7 @@ async function registerMessageQueueAddress() {
 }
 
 export async function initialize() {
-  if (role === 'rp' || role === 'idp' || role === 'as') {
+  if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
     await registerMessageQueueAddress();
     await mq.init();
     await mq.loadAndProcessBacklogMessages();

@@ -146,17 +146,17 @@ async function processMessage(messageId, messageProtobuf) {
     messageLength: messageProtobuf.length,
   });
   try {
-    const decodedDecryptedMessage = await getMessageFromProtobufMessage(
+    const outerLayerDecodedDecryptedMessage = await getMessageFromProtobufMessage(
       messageProtobuf,
       config.nodeId
     );
 
     logger.debug({
       message: 'Decrypted message from message queue',
-      decodedDecryptedMessage,
+      outerLayerDecodedDecryptedMessage,
     });
 
-    const messageForProxy = decodedDecryptedMessage.messageForProxy;
+    const messageForProxy = outerLayerDecodedDecryptedMessage.messageForProxy;
 
     let messageBuffer;
     let messageSignature;
@@ -164,12 +164,22 @@ async function processMessage(messageId, messageProtobuf) {
 
     if (messageForProxy === true) {
       // Message is encapsulated with proxy layer
+      const proxyDecodedDecryptedMessage =
+        outerLayerDecodedDecryptedMessage.message;
 
       // Verify signature
-      const messageHashBase64 = utils.hash(decodedDecryptedMessage.message);
-      const senderNodeId = decodedDecryptedMessage.senderNodeId;
-      const signature = decodedDecryptedMessage.signature;
-      const stringToVerify = `${messageHashBase64}|${receiverNodeId}|${senderNodeId}`;
+      const proxyMessageHashBase64 = utils.hash(proxyDecodedDecryptedMessage);
+      const senderNodeId = outerLayerDecodedDecryptedMessage.senderNodeId;
+      const signature = outerLayerDecodedDecryptedMessage.signature;
+
+      receiverNodeId = outerLayerDecodedDecryptedMessage.receiverNodeId;
+      if (receiverNodeId == null || receiverNodeId === '') {
+        throw new CustomError({
+          errorType: errorType.MALFORMED_MESSAGE_FORMAT,
+        });
+      }
+
+      const stringToVerify = `${proxyMessageHashBase64}|${receiverNodeId}|${senderNodeId}`;
 
       const proxyPublicKey = await tendermintNdid.getNodePubKey(senderNodeId);
 
@@ -185,16 +195,8 @@ async function processMessage(messageId, messageProtobuf) {
         });
       }
 
-      receiverNodeId = decodedDecryptedMessage.receiverNodeId;
-
-      if (receiverNodeId == null || receiverNodeId === '') {
-        throw new CustomError({
-          errorType: errorType.MALFORMED_MESSAGE_FORMAT,
-        });
-      }
-
-      const decodedDecryptedMessage = getMessageFromProtobufMessage(
-        decodedDecryptedMessage.message,
+      const decodedDecryptedMessage = await getMessageFromProtobufMessage(
+        proxyDecodedDecryptedMessage,
         receiverNodeId
       );
 
@@ -206,8 +208,8 @@ async function processMessage(messageId, messageProtobuf) {
       messageBuffer = decodedDecryptedMessage.message;
       messageSignature = decodedDecryptedMessage.signature;
     } else {
-      messageBuffer = decodedDecryptedMessage.message;
-      messageSignature = decodedDecryptedMessage.signature;
+      messageBuffer = outerLayerDecodedDecryptedMessage.message;
+      messageSignature = outerLayerDecodedDecryptedMessage.signature;
     }
 
     if (messageBuffer == null || messageSignature == null) {
@@ -377,50 +379,62 @@ export async function send(receivers, message, senderNodeId) {
         protoEncryptedMessage
       ).finish();
 
+      let mqDestAddress;
       let payloadBuffer;
       if (receiver.proxy != null) {
         // Encapsulate proxy layer
-
-        const messageHashBase64 = utils.hash(protoEncryptedBuffer);
+        const proxyMessageHashBase64 = utils.hash(protoEncryptedBuffer);
         const receiverNodeId = receiver.node_id;
         const senderNodeId = config.nodeId;
-        const signatureBuffer = await utils.createSignature(
-          `${messageHashBase64}|${receiverNodeId}|${senderNodeId}`,
+        const proxySignatureBuffer = await utils.createSignature(
+          `${proxyMessageHashBase64}|${receiverNodeId}|${senderNodeId}`,
           senderNodeId
         );
 
-        const mqMessageObject = {
+        const proxyMqMessageObject = {
           message: protoEncryptedBuffer,
-          signature: signatureBuffer,
+          signature: proxySignatureBuffer,
           messageForProxy: true,
           receiverNodeId,
           senderNodeId,
         };
-        const protoMessage = MqMessage.create(mqMessageObject);
-        const protoBuffer = MqMessage.encode(protoMessage).finish();
+        const proxyProtoMessage = MqMessage.create(proxyMqMessageObject);
+        const proxyProtoBuffer = MqMessage.encode(proxyProtoMessage).finish();
 
         const {
-          encryptedSymKey: encryptedSymmetricKey,
-          encryptedMessage: encryptedMqMessage,
-        } = utils.encryptAsymetricKey(receiver.proxy.public_key, protoBuffer);
-
-        const encryptedMqMessageObject = {
-          encryptedSymmetricKey,
-          encryptedMqMessage,
-        };
-        const protoEncryptedMessage = EncryptedMqMessage.create(
-          encryptedMqMessageObject
+          encryptedSymKey: proxyEncryptedSymmetricKey,
+          encryptedMessage: proxyEncryptedMqMessage,
+        } = utils.encryptAsymetricKey(
+          receiver.proxy.public_key,
+          proxyProtoBuffer
         );
-        const protoEncryptedBuffer = EncryptedMqMessage.encode(
-          protoEncryptedMessage
+
+        const proxyEncryptedMqMessageObject = {
+          encryptedSymmetricKey: proxyEncryptedSymmetricKey,
+          encryptedMqMessage: proxyEncryptedMqMessage,
+        };
+        const proxyProtoEncryptedMessage = EncryptedMqMessage.create(
+          proxyEncryptedMqMessageObject
+        );
+        const proxyProtoEncryptedBuffer = EncryptedMqMessage.encode(
+          proxyProtoEncryptedMessage
         ).finish();
 
-        payloadBuffer = protoEncryptedBuffer;
+        payloadBuffer = proxyProtoEncryptedBuffer;
+
+        mqDestAddress = {
+          ip: receiver.proxy.ip,
+          port: receiver.proxy.port,
+        };
       } else {
         payloadBuffer = protoEncryptedBuffer;
+        mqDestAddress = {
+          ip: receiver.ip,
+          port: receiver.port,
+        };
       }
 
-      mqSend.send(receiver, payloadBuffer);
+      mqSend.send(mqDestAddress, payloadBuffer);
     })
   );
 
