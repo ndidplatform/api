@@ -58,6 +58,10 @@ function getName(messageType) {
   }
 }
 
+export function initialize() {
+  return longTermDb.connect();
+}
+
 export async function close() {
   await longTermDb.close();
   logger.info({

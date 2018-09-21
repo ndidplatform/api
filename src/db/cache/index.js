@@ -27,6 +27,10 @@ import logger from '../../logger';
 
 const dbName = 'cache';
 
+export function initialize() {
+  return cacheDb.connect();
+}
+
 export async function close() {
   await cacheDb.close();
   logger.info({

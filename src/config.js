@@ -46,6 +46,7 @@ export const serverHttpErrorCode = process.env.SERVER_HTTP_ERROR_CODE || 500;
 
 export const dbIp = process.env.DB_IP || 'localhost';
 export const dbPort = process.env.DB_PORT || 6379;
+export const dbPassword = process.env.DB_PASSWORD;
 
 export const dataDirectoryPath =
   process.env.DATA_DIRECTORY_PATH || path.join(__dirname, '..', 'data');

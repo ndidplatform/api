@@ -17,9 +17,11 @@ let backoff = new ExponentialBackoff({
 export const redis = new Redis({
   host: config.dbIp,
   port: config.dbPort,
+  password: config.dbPassword,
   retryStrategy: function(times) {
     return backoff.next();
   },
+  lazyConnect: true,
 });
 
 redis.on('connect', function() {
@@ -35,6 +37,10 @@ redis.on('error', function(error) {
     error,
   });
 });
+
+export function connect() {
+  return redis.connect();
+}
 
 export function close() {
   return redis.disconnect();

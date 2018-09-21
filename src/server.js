@@ -32,8 +32,8 @@ import * as node from './node';
 import * as core from './core/common';
 import * as nodeKey from './utils/node_key';
 
-import { close as closeCacheDb } from './db/cache';
-import { close as closeLongTermDb } from './db/long_term';
+import * as cacheDb from './db/cache';
+import * as longTermDb from './db/long_term';
 import * as tendermint from './tendermint';
 import { close as closeMQ } from './mq';
 import { stopAllCallbackRetries } from './utils/callback';
@@ -64,6 +64,8 @@ async function initialize() {
     message: 'Initializing server',
   });
   try {
+    await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
+
     const tendermintReady = new Promise((resolve) =>
       tendermint.eventEmitter.once('ready', () => resolve())
     );
@@ -148,7 +150,7 @@ async function shutDown() {
   // Possible solution: Have those async operations append a queue to use DB and
   // remove after finish using DB
   // => Wait here until a queue to use DB is empty
-  await Promise.all([closeCacheDb(), closeLongTermDb()]);
+  await Promise.all([cacheDb.close(), longTermDb.close()]);
   core.stopAllTimeoutScheduler();
 }
 

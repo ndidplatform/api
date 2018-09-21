@@ -50,8 +50,9 @@
 - `PRIVATE_KEY_DIRECTORY_PATH`:
 - `MASTER_PRIVATE_KEY_DIRECTORY_PATH`:
 - `DATA_DIRECTORY_PATH`: Directory path for persistence data files [Default: `__dirname/../data` (`data` directory in repository's directory)]
-- `DB_IP`: IP address of Redis server [Default: `localhost`]
-- `DB_PORT`: Port of Redis server [Default: `6379`]
+- `DB_IP`: IP address of DB (redis) server [Default: `localhost`]
+- `DB_PORT`: Port of DB (redis) server [Default: `6379`]
+- `DB_PASSWORD`: Authentication password for DB (redis) connection
 - `LOG_LEVEL`: Log level. Allowed values are `error`, `warn`, `info`, `verbose`, `debug` and `silly` [Default: `debug` in development, `info` in production]
 - `LOG_FORMAT`: Log format. Allowed values are `default` and `json` [Default: `default`]
 - `LOG_TARGET`: Where should logger writes logs to. Allowed values are `console` and `file` [Default: `console`]
