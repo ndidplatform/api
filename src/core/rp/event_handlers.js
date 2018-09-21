@@ -293,96 +293,17 @@ export async function handleTendermintNewBlock(
     const fromHeight = height - 1 - missingBlockCount;
     const toHeight = height - 1;
 
-    //loop through all those block before, and verify all proof
     logger.debug({
-      message: 'Getting request IDs to process',
+      message: 'Handling Tendermint new blocks',
       nodeId,
       fromHeight,
       toHeight,
     });
 
-    const challengeRequestMetadataList = await cacheDb.getExpectedIdpPublicProofInBlockList(
-      nodeId,
-      fromHeight,
-      toHeight
-    );
-    await Promise.all(
-      challengeRequestMetadataList.map(async ({ requestId, idpId }) => {
-        const responseId = nodeId + ':' + requestId + ':' + idpId;
-        if (challengeRequestProcessLocks[responseId]) return;
-        const publicProof = await cacheDb.getPublicProofReceivedFromMQ(
-          nodeId,
-          responseId
-        );
-        if (publicProof == null) return;
-        await common.handleChallengeRequest({
-          nodeId,
-          request_id: requestId,
-          idp_id: idpId,
-          public_proof: publicProof,
-        });
-        await cacheDb.removePublicProofReceivedFromMQ(nodeId, responseId);
-      })
-    );
-    cacheDb.removeExpectedIdpPublicProofInBlockList(
-      nodeId,
-      fromHeight,
-      toHeight
-    );
-
-    const blocks = await tendermint.getBlocks(fromHeight, toHeight);
-    await Promise.all(
-      blocks.map(async (block, blockIndex) => {
-        let transactions = tendermint.getTransactionListFromBlock(block);
-        if (transactions.length === 0) return;
-
-        let requestIdsToProcessUpdate = await Promise.all(
-          transactions.map(async (transaction) => {
-            const requestId = transaction.args.request_id;
-            if (requestId == null) return;
-            if (transaction.fnName === 'DeclareIdentityProof') return;
-
-            const callbackUrl = await cacheDb.getRequestCallbackUrl(
-              nodeId,
-              requestId
-            );
-            if (!callbackUrl) return; // This request does not concern this RP
-
-            return requestId;
-          })
-        );
-        const requestIdsToProcessUpdateWithValue = requestIdsToProcessUpdate.filter(
-          (requestId) => requestId != null
-        );
-        if (requestIdsToProcessUpdateWithValue.length === 0) return;
-
-        const height = parseInt(block.header.height);
-        const blockResults = await tendermint.getBlockResults(height, height);
-        requestIdsToProcessUpdate = requestIdsToProcessUpdate.filter(
-          (requestId, index) => {
-            const deliverTxResult =
-              blockResults[blockIndex].results.DeliverTx[index];
-            const successTag = deliverTxResult.tags.find(
-              (tag) => tag.key === successBase64
-            );
-            if (successTag) {
-              return successTag.value === trueBase64;
-            }
-            return false;
-          }
-        );
-
-        requestIdsToProcessUpdate = [...new Set(requestIdsToProcessUpdate)];
-
-        await Promise.all(
-          requestIdsToProcessUpdate.map((requestId) =>
-            processRequestUpdate(nodeId, requestId, height)
-          )
-        );
-        cacheDb.removeExpectedIdpResponseNodeIdInBlockList(nodeId, height);
-        cacheDb.removeExpectedDataSignInBlockList(nodeId, height);
-      })
-    );
+    await Promise.all([
+      processChallengeRequestExpectedInBlocks(fromHeight, toHeight, nodeId),
+      processTasksInBlocks(fromHeight, toHeight, nodeId),
+    ]);
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling Tendermint NewBlock event',
@@ -396,6 +317,93 @@ export async function handleTendermintNewBlock(
       error: err,
     });
   }
+}
+
+async function processChallengeRequestExpectedInBlocks(
+  fromHeight,
+  toHeight,
+  nodeId
+) {
+  const challengeRequestMetadataList = await cacheDb.getExpectedIdpPublicProofInBlockList(
+    nodeId,
+    fromHeight,
+    toHeight
+  );
+  await Promise.all(
+    challengeRequestMetadataList.map(async ({ requestId, idpId }) => {
+      const responseId = nodeId + ':' + requestId + ':' + idpId;
+      if (challengeRequestProcessLocks[responseId]) return;
+      const publicProof = await cacheDb.getPublicProofReceivedFromMQ(
+        nodeId,
+        responseId
+      );
+      if (publicProof == null) return;
+      await common.handleChallengeRequest({
+        nodeId,
+        request_id: requestId,
+        idp_id: idpId,
+        public_proof: publicProof,
+      });
+      await cacheDb.removePublicProofReceivedFromMQ(nodeId, responseId);
+    })
+  );
+  cacheDb.removeExpectedIdpPublicProofInBlockList(nodeId, fromHeight, toHeight);
+}
+
+async function processTasksInBlocks(fromHeight, toHeight, nodeId) {
+  const blocks = await tendermint.getBlocks(fromHeight, toHeight);
+  await Promise.all(
+    blocks.map(async (block, blockIndex) => {
+      let transactions = tendermint.getTransactionListFromBlock(block);
+      if (transactions.length === 0) return;
+
+      let requestIdsToProcessUpdate = await Promise.all(
+        transactions.map(async (transaction) => {
+          const requestId = transaction.args.request_id;
+          if (requestId == null) return;
+          if (transaction.fnName === 'DeclareIdentityProof') return;
+
+          const callbackUrl = await cacheDb.getRequestCallbackUrl(
+            nodeId,
+            requestId
+          );
+          if (!callbackUrl) return; // This request does not concern this RP
+
+          return requestId;
+        })
+      );
+      const requestIdsToProcessUpdateWithValue = requestIdsToProcessUpdate.filter(
+        (requestId) => requestId != null
+      );
+      if (requestIdsToProcessUpdateWithValue.length === 0) return;
+
+      const height = parseInt(block.header.height);
+      const blockResults = await tendermint.getBlockResults(height, height);
+      requestIdsToProcessUpdate = requestIdsToProcessUpdate.filter(
+        (requestId, index) => {
+          const deliverTxResult =
+            blockResults[blockIndex].results.DeliverTx[index];
+          const successTag = deliverTxResult.tags.find(
+            (tag) => tag.key === successBase64
+          );
+          if (successTag) {
+            return successTag.value === trueBase64;
+          }
+          return false;
+        }
+      );
+
+      requestIdsToProcessUpdate = [...new Set(requestIdsToProcessUpdate)];
+
+      await Promise.all(
+        requestIdsToProcessUpdate.map((requestId) =>
+          processRequestUpdate(nodeId, requestId, height)
+        )
+      );
+      cacheDb.removeExpectedIdpResponseNodeIdInBlockList(nodeId, height);
+      cacheDb.removeExpectedDataSignInBlockList(nodeId, height);
+    })
+  );
 }
 
 /**
