@@ -24,6 +24,8 @@ import path from 'path';
 
 import protobuf from 'protobufjs';
 
+import CustomError from '../error/custom_error';
+
 const abciParamsProtobufRoot = protobuf.loadSync(
   path.join(__dirname, '..', '..', 'protos', 'params.proto')
 );
@@ -111,6 +113,11 @@ FUNCTIONS.forEach((fnName) => {
  */
 export function encodeProtobuf(fnName, params) {
   const proto = PROTO_STRUCTS[fnName];
+  if (proto == null) {
+    throw new CustomError({
+      message: 'Unknown function name',
+    });
+  }
   const protobufObject = proto.create(params);
   const protobufBuffer = proto.encode(protobufObject).finish();
   return protobufBuffer;
@@ -123,5 +130,10 @@ export function encodeProtobuf(fnName, params) {
  */
 export function decodeProtobuf(fnName, protobufBuffer) {
   const proto = PROTO_STRUCTS[fnName];
+  if (proto == null) {
+    throw new CustomError({
+      message: 'Unknown function name',
+    });
+  }
   return proto.decode(protobufBuffer).toObject();
 }
