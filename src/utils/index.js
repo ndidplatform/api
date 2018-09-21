@@ -188,7 +188,7 @@ export function generateIdentityProof(data) {
   let blockchainProof = powerMod(kInt, e, n)
     .toBuffer()
     .toString('base64');
-  //console.log(blockchainProof);
+
   let privateProof = kInt
     .mul(powerMod(signedHashInt, challenge, n))
     .mod(n)
