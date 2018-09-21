@@ -33,10 +33,12 @@ import logger from '../logger';
 
 import * as tendermintHttpClient from './http_client';
 import TendermintWsClient from './ws_client';
+import { encodeProtobuf, decodeProtobuf } from './abci_proto';
 import { convertAbciAppCodeToErrorType } from './abci_app_code';
 import * as cacheDb from '../db/cache';
 import * as utils from '../utils';
 import { sha256 } from '../utils/crypto';
+
 import * as config from '../config';
 
 const tendermintProtobufRoot = protobuf.loadSync(
@@ -700,12 +702,10 @@ export function getTransactionListFromBlock(block) {
   const transactions = txs.map((tx) => {
     const txProtoBuffer = Buffer.from(tx, 'base64');
     const txObject = TendermintTx.decode(txProtoBuffer);
-
-    // FIXME: Protobuf decode txObject.params
-
+    const args = decodeProtobuf(txObject.method, txObject.params);
     return {
       fnName: txObject.method,
-      args: null, // FIXME
+      args,
     };
   });
 
@@ -723,17 +723,3 @@ export function getBlockHeightFromNewBlockEvent(result) {
 export function getAppHashFromNewBlockEvent(result) {
   return result.data.value.block.header.app_hash;
 }
-
-/**
- *
- * @param {string} fnName
- * @param {Object} params
- */
-function encodeProtobuf(fnName, params) {}
-
-/**
- *
- * @param {string} fnName
- * @param {Buffer} protobufBuffer
- */
-function decodeProtobuf(fnName, protobufBuffer) {}
