@@ -512,13 +512,23 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
     await setTimeoutScheduler(node_id, request_id, request_timeout);
 
+    const requestDataWithoutDataRequestParams = {
+      ...requestData,
+      data_request_list: requestData.data_request_list.map((dataRequest) => {
+        const { request_params, ...dataRequestWithoutParams } = dataRequest; // eslint-disable-line no-unused-vars
+        return {
+          ...dataRequestWithoutParams,
+        };
+      }),
+    };
+
     // send request data to IDPs via message queue
     if (min_idp > 0) {
       mq.send(
         receivers,
         {
           type: privateMessageType.CONSENT_REQUEST,
-          ...requestData,
+          ...requestDataWithoutDataRequestParams,
           creation_time,
           height,
         },

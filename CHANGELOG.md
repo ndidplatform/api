@@ -2,6 +2,11 @@
 
 ## TBD
 
+BREAKING CHANGES:
+
+- API version 2.2
+  - Remove `request_params` property from `data_request_list` in callback body when notifying incoming request to IdP.
+
 FEATURES:
 
 - Proxy node support.

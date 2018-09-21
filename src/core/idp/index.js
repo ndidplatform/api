@@ -291,9 +291,13 @@ export async function processMessage(nodeId, message) {
       public_proof: message.public_proof,
     });
   } else if (message.type === privateMessageType.CONSENT_REQUEST) {
-    const valid = await common.checkRequestIntegrity(
+    const requestDetail = await tendermintNdid.getRequestDetail({
+      requestId: message.request_id,
+    });
+    const valid = await common.checkRequestMessageIntegrity(
       message.request_id,
-      message
+      message,
+      requestDetail
     );
     if (!valid) {
       throw new CustomError({

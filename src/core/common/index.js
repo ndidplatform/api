@@ -236,59 +236,6 @@ export async function checkRequestMessageIntegrity(
   return true;
 }
 
-export async function checkDataRequestParamsIntegrity(
-  requestId,
-  request,
-  requestDetail
-) {
-  if (!requestDetail) {
-    requestDetail = await tendermintNdid.getRequestDetail({ requestId });
-  }
-
-  for (let i = 0; i < requestDetail.data_request_list.length; i++) {
-    const dataRequest = requestDetail.data_request_list[i];
-    const dataRequestParamsHash = utils.hash(
-      request.data_request_list[i].request_params +
-        request.data_request_params_salt_list[i]
-    );
-    const dataRequestParamsValid =
-      dataRequest.request_params_hash === dataRequestParamsHash;
-    if (!dataRequestParamsValid) {
-      logger.warn({
-        message: 'Request data request params hash mismatched',
-        requestId,
-      });
-      logger.debug({
-        message: 'Request data request params hash mismatched',
-        requestId,
-        givenRequestParams: dataRequest.request_params,
-        givenRequestParamsHashWithSalt: dataRequestParamsHash,
-        requestParamsHashFromBlockchain: dataRequest.request_params_hash,
-      });
-      return false;
-    }
-  }
-  return true;
-}
-
-export async function checkRequestIntegrity(requestId, request) {
-  const requestDetail = await tendermintNdid.getRequestDetail({ requestId });
-
-  const requestMessageValid = checkRequestMessageIntegrity(
-    requestId,
-    request,
-    requestDetail
-  );
-
-  const dataRequestParamsValid = checkDataRequestParamsIntegrity(
-    requestId,
-    request,
-    requestDetail
-  );
-
-  return requestMessageValid && dataRequestParamsValid;
-}
-
 async function handleMessageQueueError(error) {
   const err = new CustomError({
     message: 'Message queue receiving error',
