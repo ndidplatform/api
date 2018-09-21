@@ -3,7 +3,6 @@ syntax = "proto3";
 message MqMessage {
   bytes message = 1;
   bytes signature = 2;
-  bool messageForProxy = 3;
-  string receiverNodeId = 4;
-  string senderNodeId = 5;
+  string receiverNodeId = 3;
+  string senderNodeId = 4;
 }

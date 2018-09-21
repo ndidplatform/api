@@ -85,19 +85,25 @@ export function getMessages(nodeId, direction, messageType, requestId) {
     name: `${direction}_${getName(messageType)}`,
     keyName: 'requestId',
     key: requestId,
-    valueName: 'message',
+    valueName: 'messageWithMetadata',
   });
 }
 
-export function addMessage(nodeId, direction, messageType, requestId, message) {
+export function addMessage(
+  nodeId,
+  direction,
+  messageType,
+  requestId,
+  messageWithMetadata
+) {
   return db.pushToList({
     nodeId,
     dbName,
     name: `${direction}_${getName(messageType)}`,
     keyName: 'requestId',
     key: requestId,
-    valueName: 'message',
-    value: message,
+    valueName: 'messageWithMetadata',
+    value: messageWithMetadata,
   });
 }
 

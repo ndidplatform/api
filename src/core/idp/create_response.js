@@ -505,6 +505,7 @@ export async function requestChallengeAfterBlockchain(
             public_key: nodeInfo.proxy.public_key,
             ip: nodeInfo.proxy.mq.ip,
             port: nodeInfo.proxy.mq.port,
+            config: nodeInfo.proxy.config,
           },
         },
       ];
@@ -615,6 +616,7 @@ async function sendResponseToRP(
           public_key: nodeInfo.proxy.public_key,
           ip: nodeInfo.proxy.mq.ip,
           port: nodeInfo.proxy.mq.port,
+          config: nodeInfo.proxy.config,
         },
       },
     ];

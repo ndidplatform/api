@@ -344,6 +344,7 @@ async function sendDataToRP(nodeId, rpId, data) {
           public_key: nodeInfo.proxy.public_key,
           ip: nodeInfo.proxy.mq.ip,
           port: nodeInfo.proxy.mq.port,
+          config: nodeInfo.proxy.config,
         },
       },
     ];
