@@ -44,7 +44,13 @@ export async function close() {
 //
 
 export function getAllExpectedTxs(nodeId) {
-  return db.getAll({ nodeId, dbName, name: 'expectedTx' });
+  return db.getAll({
+    nodeId,
+    dbName,
+    name: 'expectedTx',
+    keyName: 'tx',
+    valueName: 'metadata',
+  });
 }
 
 export function getExpectedTxMetadata(nodeId, txHash) {
@@ -113,8 +119,8 @@ export function removeCallbackUrlByReferenceId(nodeId, referenceId) {
   });
 }
 
-export function addCallbackWithRetryData(nodeId, cbId, data) {
-  return db.pushToList({
+export function setCallbackWithRetryData(nodeId, cbId, data) {
+  return db.set({
     nodeId,
     dbName,
     name: 'callbackWithRetry',
@@ -140,6 +146,8 @@ export function getAllCallbackWithRetryData(nodeId) {
     nodeId,
     dbName,
     name: 'callbackWithRetry',
+    keyName: 'cbId',
+    valueName: 'data',
   });
 }
 
@@ -184,6 +192,8 @@ export function getAllRawMessageFromMQ(nodeId) {
     nodeId,
     dbName,
     name: 'rawReceivedMessageFromMQ',
+    keyName: 'messageId',
+    valueName: 'messageBuffer',
   });
 }
 
@@ -448,7 +458,13 @@ export function removeRequestData(nodeId, requestId) {
 }
 
 export function getAllTimeoutScheduler(nodeId) {
-  return db.getAll({ nodeId, dbName, name: 'timeoutScheduler' });
+  return db.getAll({
+    nodeId,
+    dbName,
+    name: 'timeoutScheduler',
+    keyName: 'requestId',
+    valueName: 'unixTimeout',
+  });
 }
 
 export function setTimeoutScheduler(nodeId, requestId, unixTimeout) {
