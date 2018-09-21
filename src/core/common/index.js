@@ -587,6 +587,7 @@ export async function handleChallengeRequest({
       challenge,
       request_id,
       ...nodeIdObj,
+      height: tendermint.latestBlockHeight,
     },
     nodeId
   );
