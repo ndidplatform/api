@@ -294,7 +294,7 @@ export async function callbackToClient(
 export async function resumeCallbackToClient() {
   const callbackDatum = await cacheDb.getAllCallbackWithRetryData(
     config.nodeId
-  );console.log('>>>', callbackDatum)
+  );
   callbackDatum.forEach((callback) =>
     callbackWithRetry(
       callback.data.callbackUrl,
