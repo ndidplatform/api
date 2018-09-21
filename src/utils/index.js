@@ -69,7 +69,7 @@ export function randomBase64Bytes(length) {
 }
 
 export function getNonce() {
-  return randomBase64Bytes(32);
+  return crypto.randomBytes(32);
 }
 
 export function hash(dataToHash) {
@@ -361,6 +361,12 @@ function verifyZKProofSingle(
   return stringToBigInt(publicProof).eq(tmp3);
 }
 
+/**
+ * 
+ * @param {string} messageToSign 
+ * @param {string} nodeId 
+ * @param {boolean} useMasterKey 
+ */
 export async function createSignature(messageToSign, nodeId, useMasterKey) {
   if (typeof messageToSign !== 'string') {
     throw new CustomError({

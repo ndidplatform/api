@@ -24,6 +24,7 @@ import path from 'path';
 import fs from 'fs';
 import { EventEmitter } from 'events';
 
+import protobuf from 'protobufjs';
 import { ExponentialBackoff } from 'simple-backoff';
 
 import CustomError from '../error/custom_error';
@@ -37,6 +38,12 @@ import * as cacheDb from '../db/cache';
 import * as utils from '../utils';
 import { sha256 } from '../utils/crypto';
 import * as config from '../config';
+
+const tendermintProtobufRoot = protobuf.loadSync(
+  path.join(__dirname, '..', '..', 'protos', 'tendermint.proto')
+);
+const TendermintTx = tendermintProtobufRoot.lookup('Tx');
+const TendermintQuery = tendermintProtobufRoot.lookup('Query');
 
 export const tendermintWsClient = new TendermintWsClient(false);
 
@@ -284,8 +291,8 @@ tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(
 
 tendermintWsClient.on('tx#event', async function handleTxEvent(error, result) {
   const txBase64 = result.data.value.TxResult.tx;
-  const txString = Buffer.from(txBase64, 'base64').toString('utf8');
-  const txHash = sha256(txString).toString('hex');
+  const txBuffer = Buffer.from(txBase64, 'base64');
+  const txHash = sha256(txBuffer).toString('hex');
   if (expectedTx[txHash] == null) return;
   await processExpectedTx(txHash, result, true);
 });
@@ -374,7 +381,7 @@ export async function getBlockResults(fromHeight, toHeight) {
   return results;
 }
 
-function getQueryResult(result) {
+function getQueryResult(result, fnName) {
   logger.debug({
     message: 'Tendermint query result',
     result,
@@ -391,12 +398,13 @@ function getQueryResult(result) {
     });
   }
 
-  const queryResult = Buffer.from(result.response.value, 'base64').toString();
+  const queryResultProto = Buffer.from(result.response.value, 'base64');
+
   try {
-    return JSON.parse(queryResult);
+    return decodeProtobuf(fnName, queryResultProto);
   } catch (error) {
     throw new CustomError({
-      errorType: errorType.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR,
+      errorType: errorType.TENDERMINT_QUERY_RESULT_PROTOBUF_DECODE_ERROR,
       cause: error,
     });
   }
@@ -515,22 +523,35 @@ function getBroadcastTxCommitResult(result) {
   };
 }
 
-export async function query(fnName, data, height) {
+/**
+ *
+ * @param {string} fnName
+ * @param {Buffer} params
+ * @param {number} height
+ */
+export async function query(fnName, params, height) {
   logger.debug({
     message: 'Tendermint query',
     fnName,
-    data,
+    params,
   });
 
-  const dataStr = JSON.stringify(data);
-  const queryData =
-    fnName +
-    '|' +
-    (dataStr != null ? Buffer.from(dataStr).toString('base64') : '');
+  const paramsProtoBuffer = encodeProtobuf(fnName, params);
+
+  const queryObject = {
+    method: fnName,
+    params: paramsProtoBuffer,
+  };
+  const queryProto = TendermintQuery.create(queryObject);
+  const queryProtoBuffer = TendermintQuery.encode(queryProto).finish();
+  const queryProtoBufferBase64 = queryProtoBuffer.toString('base64');
 
   try {
-    const result = await tendermintHttpClient.abciQuery(queryData, height);
-    return getQueryResult(result);
+    const result = await tendermintHttpClient.abciQuery(
+      queryProtoBufferBase64,
+      height
+    );
+    return getQueryResult(result, fnName);
   } catch (error) {
     if (error.type === 'JSON-RPC ERROR') {
       throw new CustomError({
@@ -543,6 +564,17 @@ export async function query(fnName, data, height) {
   }
 }
 
+/**
+ *
+ * @param {Object} transactParams
+ * @param {string} transactParams.nodeId
+ * @param {string} transactParams.fnName
+ * @param {Buffer} transactParams.params
+ * @param {Buffer} transactParams.nonce
+ * @param {string} transactParams.callbackFnName
+ * @param {Array} transactParams.callbackAdditionalArgs
+ * @param {boolean} transactParams.useMasterKey
+ */
 export async function transact({
   nodeId,
   fnName,
@@ -557,7 +589,17 @@ export async function transact({
       message: 'Missing argument "nodeId"',
     });
   }
+
+  if (callbackAdditionalArgs != null) {
+    if (!Array.isArray(callbackAdditionalArgs)) {
+      throw new CustomError({
+        message: 'callbackAdditionalArgs must be an array',
+      });
+    }
+  }
+
   const waitForCommit = !callbackFnName;
+
   logger.debug({
     message: 'Tendermint transact',
     nodeId,
@@ -570,31 +612,39 @@ export async function transact({
     callbackAdditionalArgs,
   });
 
-  if (callbackAdditionalArgs != null) {
-    if (!Array.isArray(callbackAdditionalArgs)) {
-      throw new CustomError({
-        message: 'callbackAdditionalArgs must be an array',
-      });
-    }
-  }
+  const paramsProtoBuffer = encodeProtobuf(fnName, params);
 
-  const paramsStr = JSON.stringify(params);
-  const tx =
-    fnName +
-    '|' +
-    (paramsStr != null ? Buffer.from(paramsStr).toString('base64') : '') +
-    '|' +
-    nonce +
-    '|' +
-    (await utils.createSignature(
-      paramsStr + nonce,
+  const txObject = {
+    method: fnName,
+    params: paramsProtoBuffer,
+    nonce,
+    signature: await utils.createSignature(
+      Buffer.concat([Buffer.from(fnName), params, nonce]).toString('base64'),
       nodeId,
       useMasterKey
-    )).toString('base64') +
-    '|' +
-    Buffer.from(nodeId).toString('base64');
+    ),
+    node_id: nodeId,
+  };
+  const txProto = TendermintTx.create(txObject);
+  const txProtoBuffer = TendermintTx.encode(txProto).finish();
+  const txProtoBufferBase64 = txProtoBuffer.toString('base64');
 
-  const txHash = sha256(tx).toString('hex');
+  // const tx =
+  //   fnName +
+  //   '|' +
+  //   (paramsStr != null ? Buffer.from(paramsStr).toString('base64') : '') +
+  //   '|' +
+  //   nonce +
+  //   '|' +
+  //   (await utils.createSignature(
+  //     paramsStr + nonce,
+  //     nodeId,
+  //     useMasterKey
+  //   )).toString('base64') +
+  //   '|' +
+  //   Buffer.from(nodeId).toString('base64');
+
+  const txHash = sha256(txProtoBuffer).toString('hex');
   const callbackData = {
     waitForCommit,
     callbackFnName,
@@ -616,7 +666,9 @@ export async function transact({
         })
       );
     }
-    const responseResult = await tendermintHttpClient.broadcastTxSync(tx);
+    const responseResult = await tendermintHttpClient.broadcastTxSync(
+      txProtoBufferBase64
+    );
     const broadcastTxSyncResult = getBroadcastTxSyncResult(responseResult);
     if (waitForCommit) {
       const result = await promise;
@@ -646,12 +698,14 @@ export function getTransactionListFromBlock(block) {
   }
 
   const transactions = txs.map((tx) => {
-    const txContent = Buffer.from(tx, 'base64')
-      .toString()
-      .split('|');
+    const txProtoBuffer = Buffer.from(tx, 'base64');
+    const txObject = TendermintTx.decode(txProtoBuffer);
+
+    // FIXME: Protobuf decode txObject.params
+
     return {
-      fnName: txContent[0],
-      args: JSON.parse(Buffer.from(txContent[1], 'base64').toString()),
+      fnName: txObject.method,
+      args: null, // FIXME
     };
   });
 
@@ -669,3 +723,17 @@ export function getBlockHeightFromNewBlockEvent(result) {
 export function getAppHashFromNewBlockEvent(result) {
   return result.data.value.block.header.app_hash;
 }
+
+/**
+ *
+ * @param {string} fnName
+ * @param {Object} params
+ */
+function encodeProtobuf(fnName, params) {}
+
+/**
+ *
+ * @param {string} fnName
+ * @param {Buffer} protobufBuffer
+ */
+function decodeProtobuf(fnName, protobufBuffer) {}
