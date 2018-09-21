@@ -56,7 +56,11 @@ const rawMessagesToRetry = [];
 
 export const eventEmitter = new EventEmitter();
 
-export async function init() {
+export async function initialize() {
+  logger.info({
+    message: 'Initializing message queue',
+  });
+
   const timeoutList = await cacheDb.getAllDuplicateMessageTimeout(
     config.nodeId
   );

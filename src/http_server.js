@@ -37,6 +37,10 @@ import * as config from './config';
 let server;
 
 export function initialize() {
+  logger.info({
+    message: 'Starting HTTP server',
+  });
+
   const app = express();
 
   app.use(

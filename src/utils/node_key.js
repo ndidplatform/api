@@ -27,9 +27,9 @@ import { readFileAsync } from '.';
 
 import { parseKey } from './asn1parser';
 import * as node from '../node';
-
 import CustomError from '../error/custom_error';
 import errorType from '../error/type';
+import logger from '../logger';
 
 import * as config from '../config';
 
@@ -146,6 +146,10 @@ async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
 
 export async function initialize() {
   if (!config.useExternalCryptoService) {
+    logger.info({
+      message: 'Reading node keys from files',
+    });
+
     readNodePrivateKeyFromFile();
     readNodeMasterPrivateKeyFromFile();
 

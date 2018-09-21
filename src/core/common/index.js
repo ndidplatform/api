@@ -90,7 +90,7 @@ async function registerMessageQueueAddress() {
 export async function initialize() {
   if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
     await registerMessageQueueAddress();
-    await mq.init();
+    await mq.initialize();
     await mq.loadAndProcessBacklogMessages();
   }
   await tendermint.loadExpectedTxFromDB();
