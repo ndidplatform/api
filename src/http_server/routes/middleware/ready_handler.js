@@ -20,16 +20,16 @@
  *
  */
 
-import * as tendermint from '../../tendermint';
-import { registeredMsqAddress } from '../../core/common';
-import { isCallbackUrlsSet } from '../../utils/external_crypto_service';
-import { role } from '../../node';
+import * as tendermint from '../../../tendermint';
+import { registeredMsqAddress } from '../../../core/common';
+import { isCallbackUrlsSet } from '../../../utils/external_crypto_service';
+import { role } from '../../../node';
 
-import errorType from '../../error/type';
+import errorType from '../../../error/type';
 
-import logger from '../../logger';
+import logger from '../../../logger';
 
-import * as config from '../../config';
+import * as config from '../../../config';
 
 export default function readyHandler(req, res, next) {
   // Reject all requests when tendermint is not yet ready.

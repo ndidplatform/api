@@ -21,9 +21,9 @@
  */
 
 import validate from '../validator';
-import errorType from '../../error/type';
+import errorType from '../../../error/type';
 
-import CustomError from '../../error/custom_error';
+import CustomError from '../../../error/custom_error';
 
 function getBaseUrlAndApiVersion(req) {
   let baseUrl = req.baseUrl;
