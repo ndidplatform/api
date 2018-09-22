@@ -362,10 +362,10 @@ function verifyZKProofSingle(
 }
 
 /**
- * 
- * @param {string} messageToSign 
- * @param {string} nodeId 
- * @param {boolean} useMasterKey 
+ *
+ * @param {string} messageToSign
+ * @param {string} nodeId
+ * @param {boolean} useMasterKey
  * @return {Buffer} signature
  */
 export async function createSignature(messageToSign, nodeId, useMasterKey) {
@@ -530,6 +530,9 @@ export function generateDataSalt({ request_id, service_id, initial_salt }) {
  * @returns {RequestStatus} requestStatus
  */
 export function getDetailedRequestStatus(requestDetail) {
+  if (requestDetail.data_request_list == null) {
+    requestDetail.data_request_list = [];
+  }
   if (requestDetail.response_list == null) {
     requestDetail.response_list = [];
   }

@@ -38,9 +38,9 @@ export default {
     code: 10003,
     message: 'Tendermint query failed',
   },
-  TENDERMINT_QUERY_RESULT_PROTOBUF_DECODE_ERROR: {
+  TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR: {
     code: 10004,
-    message: 'Cannot decode Tendermint query result Protobuf',
+    message: 'Cannot parse Tendermint query result JSON',
   },
   TENDERMINT_TRANSACT_JSON_RPC_ERROR: {
     code: 10005,

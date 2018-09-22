@@ -141,8 +141,8 @@ async function getASReceiverList(data_request) {
           proxy: {
             node_id: asNode.proxy.node_id,
             public_key: asNode.proxy.public_key,
-            ip: asNode.proxy.mq.ip,
-            port: asNode.proxy.mq.port,
+            ip: asNode.proxy.mq[0].ip,
+            port: asNode.proxy.mq[0].port,
           },
         };
       } else {
@@ -152,8 +152,8 @@ async function getASReceiverList(data_request) {
         return {
           node_id: asNode.node_id,
           public_key: asNode.public_key,
-          ip: asNode.mq.ip,
-          port: asNode.mq.port,
+          ip: asNode.mq[0].ip,
+          port: asNode.mq[0].port,
         };
       }
     })

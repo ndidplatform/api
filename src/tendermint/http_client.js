@@ -82,7 +82,7 @@ export function abciQuery(data, height) {
   return httpUriCall('abci_query', [
     {
       key: 'data',
-      value: `"${data}"`,
+      value: `0x${data}`,
     },
     {
       key: 'height',
@@ -95,7 +95,7 @@ export function broadcastTxCommit(tx) {
   return httpUriCall('broadcast_tx_commit', [
     {
       key: 'tx',
-      value: `"${tx}"`,
+      value: `0x${tx}`,
     },
   ]);
 }
@@ -104,7 +104,7 @@ export function broadcastTxSync(tx) {
   return httpUriCall('broadcast_tx_sync', [
     {
       key: 'tx',
-      value: `"${tx}"`,
+      value: `0x${tx}`,
     },
   ]);
 }

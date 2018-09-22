@@ -342,8 +342,8 @@ async function sendDataToRP(nodeId, rpId, data) {
         proxy: {
           node_id: nodeInfo.proxy.node_id,
           public_key: nodeInfo.proxy.public_key,
-          ip: nodeInfo.proxy.mq.ip,
-          port: nodeInfo.proxy.mq.port,
+          ip: nodeInfo.proxy.mq[0].ip,
+          port: nodeInfo.proxy.mq[0].port,
         },
       },
     ];
@@ -361,8 +361,8 @@ async function sendDataToRP(nodeId, rpId, data) {
       {
         node_id: rpId,
         public_key: nodeInfo.public_key,
-        ip: nodeInfo.mq.ip,
-        port: nodeInfo.mq.port,
+        ip: nodeInfo.mq[0].ip,
+        port: nodeInfo.mq[0].port,
       },
     ];
   }

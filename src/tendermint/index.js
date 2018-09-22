@@ -33,7 +33,6 @@ import logger from '../logger';
 
 import * as tendermintHttpClient from './http_client';
 import TendermintWsClient from './ws_client';
-import { encodeProtobuf, decodeProtobuf } from './abci_proto';
 import { convertAbciAppCodeToErrorType } from './abci_app_code';
 import * as cacheDb from '../db/cache';
 import * as utils from '../utils';
@@ -385,7 +384,7 @@ export async function getBlockResults(fromHeight, toHeight) {
   return results;
 }
 
-function getQueryResult(result, fnName) {
+function getQueryResult(result) {
   logger.debug({
     message: 'Tendermint query result',
     result,
@@ -402,13 +401,20 @@ function getQueryResult(result, fnName) {
     });
   }
 
-  const queryResultProto = Buffer.from(result.response.value, 'base64');
+  const queryResult = Buffer.from(result.response.value, 'base64').toString();
 
   try {
-    return decodeProtobuf(fnName, queryResultProto);
+    const parsedResultValue = JSON.parse(queryResult);
+
+    logger.debug({
+      message: 'Tendermint query parsed result value',
+      parsedResultValue,
+    });
+
+    return parsedResultValue;
   } catch (error) {
     throw new CustomError({
-      errorType: errorType.TENDERMINT_QUERY_RESULT_PROTOBUF_DECODE_ERROR,
+      errorType: errorType.TENDERMINT_QUERY_RESULT_JSON_PARSE_ERROR,
       cause: error,
     });
   }
@@ -540,25 +546,22 @@ export async function query(fnName, params, height) {
     params,
   });
 
-  let paramsProtoBuffer;
-  if (params != null) {
-    paramsProtoBuffer = encodeProtobuf(fnName, params);
-  }
+  const paramsJsonString = JSON.stringify(params);
 
   const queryObject = {
     method: fnName,
-    params: paramsProtoBuffer,
+    params: paramsJsonString,
   };
   const queryProto = TendermintQuery.create(queryObject);
   const queryProtoBuffer = TendermintQuery.encode(queryProto).finish();
-  const queryProtoBufferBase64 = queryProtoBuffer.toString('base64');
+  const queryProtoBufferHex = queryProtoBuffer.toString('hex');
 
   try {
     const result = await tendermintHttpClient.abciQuery(
-      queryProtoBufferBase64,
+      queryProtoBufferHex,
       height
     );
-    return getQueryResult(result, fnName);
+    return getQueryResult(result);
   } catch (error) {
     if (error.type === 'JSON-RPC ERROR') {
       throw new CustomError({
@@ -619,16 +622,16 @@ export async function transact({
     callbackAdditionalArgs,
   });
 
-  const paramsProtoBuffer = encodeProtobuf(fnName, params);
+  const paramsJsonString = JSON.stringify(params);
 
   const txObject = {
     method: fnName,
-    params: paramsProtoBuffer,
+    params: paramsJsonString,
     nonce,
     signature: await utils.createSignature(
       Buffer.concat([
         Buffer.from(fnName, 'utf8'),
-        paramsProtoBuffer,
+        Buffer.from(paramsJsonString, 'utf8'),
         nonce,
       ]).toString('base64'),
       nodeId,
@@ -638,9 +641,9 @@ export async function transact({
   };
   const txProto = TendermintTx.create(txObject);
   const txProtoBuffer = TendermintTx.encode(txProto).finish();
-  const txProtoBufferBase64 = txProtoBuffer.toString('base64');
+  const txProtoBufferHex = txProtoBuffer.toString('hex');
 
-  const txHash = sha256(txProtoBufferBase64).toString('hex');
+  const txHash = sha256(txProtoBuffer).toString('hex');
   const callbackData = {
     waitForCommit,
     callbackFnName,
@@ -663,7 +666,7 @@ export async function transact({
       );
     }
     const responseResult = await tendermintHttpClient.broadcastTxSync(
-      txProtoBufferBase64
+      txProtoBufferHex
     );
     const broadcastTxSyncResult = getBroadcastTxSyncResult(responseResult);
     if (waitForCommit) {
@@ -694,10 +697,9 @@ export function getTransactionListFromBlock(block) {
   }
 
   const transactions = txs.map((tx) => {
-    const txProtoBufferBase64 = Buffer.from(tx, 'base64').toString();
-    const txProtoBuffer = Buffer.from(txProtoBufferBase64, 'base64');
+    const txProtoBuffer = Buffer.from(tx, 'base64');
     const txObject = TendermintTx.decode(txProtoBuffer);
-    const args = decodeProtobuf(txObject.method, txObject.params);
+    const args = JSON.parse(txObject.params);
     return {
       fnName: txObject.method,
       args,

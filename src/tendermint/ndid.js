@@ -31,7 +31,7 @@ import CustomError from '../error/custom_error';
 //
 
 export async function registerMsqAddress(
-  { ip, port },
+  addresses,
   nodeId,
   callbackFnName,
   callbackAdditionalArgs
@@ -44,9 +44,8 @@ export async function registerMsqAddress(
       nodeId,
       fnName: 'RegisterMsqAddress',
       params: {
-        ip,
-        port,
         node_id: nodeId,
+        addresses,
       },
       callbackFnName,
       callbackAdditionalArgs,

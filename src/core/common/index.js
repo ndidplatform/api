@@ -68,7 +68,9 @@ async function registerMessageQueueAddress() {
       const { ip, port } = selfMqAddress;
       //if not same
       if (ip !== config.mqRegister.ip || port !== config.mqRegister.port) {
-        await tendermintNdid.registerMsqAddress(config.mqRegister);
+        await tendermintNdid.registerMsqAddress([
+          { ip: config.mqRegister.ip, port: config.mqRegister.port },
+        ]);
         logger.info({
           message: 'Message queue address change registered',
         });
@@ -78,7 +80,9 @@ async function registerMessageQueueAddress() {
         });
       }
     } else {
-      await tendermintNdid.registerMsqAddress(config.mqRegister);
+      await tendermintNdid.registerMsqAddress([
+        { ip: config.mqRegister.ip, port: config.mqRegister.port },
+      ]);
       logger.info({
         message: 'Message queue address registered',
       });
@@ -285,8 +289,8 @@ export async function getIdpsMsqDestination({
           proxy: {
             node_id: idpNode.proxy.node_id,
             public_key: idpNode.proxy.public_key,
-            ip: idpNode.proxy.mq.ip,
-            port: idpNode.proxy.mq.port,
+            ip: idpNode.proxy.mq[0].ip,
+            port: idpNode.proxy.mq[0].port,
           },
         };
       } else {
@@ -296,8 +300,8 @@ export async function getIdpsMsqDestination({
         return {
           node_id: idpNode.node_id,
           public_key: idpNode.public_key,
-          ip: idpNode.mq.ip,
-          port: idpNode.mq.port,
+          ip: idpNode.mq[0].ip,
+          port: idpNode.mq[0].port,
         };
       }
     })
@@ -556,8 +560,8 @@ export async function handleChallengeRequest({
         proxy: {
           node_id: nodeInfo.proxy.node_id,
           public_key: nodeInfo.proxy.public_key,
-          ip: nodeInfo.proxy.mq.ip,
-          port: nodeInfo.proxy.mq.port,
+          ip: nodeInfo.proxy.mq[0].ip,
+          port: nodeInfo.proxy.mq[0].port,
         },
       },
     ];
@@ -575,8 +579,8 @@ export async function handleChallengeRequest({
       {
         node_id: idp_id,
         public_key: nodeInfo.public_key,
-        ip: nodeInfo.mq.ip,
-        port: nodeInfo.mq.port,
+        ip: nodeInfo.mq[0].ip,
+        port: nodeInfo.mq[0].port,
       },
     ];
   }

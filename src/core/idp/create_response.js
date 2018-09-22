@@ -503,8 +503,8 @@ export async function requestChallengeAfterBlockchain(
           proxy: {
             node_id: nodeInfo.proxy.node_id,
             public_key: nodeInfo.proxy.public_key,
-            ip: nodeInfo.proxy.mq.ip,
-            port: nodeInfo.proxy.mq.port,
+            ip: nodeInfo.proxy.mq[0].ip,
+            port: nodeInfo.proxy.mq[0].port,
           },
         },
       ];
@@ -524,8 +524,8 @@ export async function requestChallengeAfterBlockchain(
         {
           node_id: rp_id,
           public_key: nodeInfo.public_key,
-          ip: nodeInfo.mq.ip,
-          port: nodeInfo.mq.port,
+          ip: nodeInfo.mq[0].ip,
+          port: nodeInfo.mq[0].port,
         },
       ];
     }
@@ -613,8 +613,8 @@ async function sendResponseToRP(
         proxy: {
           node_id: nodeInfo.proxy.node_id,
           public_key: nodeInfo.proxy.public_key,
-          ip: nodeInfo.proxy.mq.ip,
-          port: nodeInfo.proxy.mq.port,
+          ip: nodeInfo.proxy.mq[0].ip,
+          port: nodeInfo.proxy.mq[0].port,
         },
       },
     ];
@@ -632,8 +632,8 @@ async function sendResponseToRP(
       {
         node_id: rp_id,
         public_key: nodeInfo.public_key,
-        ip: nodeInfo.mq.ip,
-        port: nodeInfo.mq.port,
+        ip: nodeInfo.mq[0].ip,
+        port: nodeInfo.mq[0].port,
       },
     ];
   }
