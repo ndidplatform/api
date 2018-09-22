@@ -24,7 +24,7 @@ import path from 'path';
 import fs from 'fs';
 import express from 'express';
 
-import logger from '../logger';
+import logger from '../../logger';
 
 import readyHandler from './middleware/ready_handler';
 import errorHandler from './middleware/error_handler';
@@ -34,7 +34,7 @@ import apiV2Router from './v2';
 import getInfo from './info';
 import debugRouter from './debug';
 
-import * as config from '../config';
+import * as config from '../../config';
 
 const router = express.Router();
 

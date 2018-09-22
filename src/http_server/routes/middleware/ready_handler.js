@@ -20,16 +20,16 @@
  *
  */
 
-import * as tendermint from '../../tendermint';
-import { registeredMsqAddress } from '../../core/common';
-import { isCallbackUrlsSet } from '../../utils/external_crypto_service';
-import { role } from '../../node';
+import * as tendermint from '../../../tendermint';
+import { registeredMsqAddress } from '../../../core/common';
+import { isCallbackUrlsSet } from '../../../utils/external_crypto_service';
+import { role } from '../../../node';
 
-import errorType from '../../error/type';
+import errorType from '../../../error/type';
 
-import logger from '../../logger';
+import logger from '../../../logger';
 
-import * as config from '../../config';
+import * as config from '../../../config';
 
 export default function readyHandler(req, res, next) {
   // Reject all requests when tendermint is not yet ready.
@@ -74,7 +74,7 @@ export default function readyHandler(req, res, next) {
     if (config.useExternalCryptoService && !isCallbackUrlsSet()) {
       const responseBody = {
         error: {
-          errorType: errorType.WAITING_FOR_DPKI_CALLBACK_URL_SET.message,
+          message: errorType.WAITING_FOR_DPKI_CALLBACK_URL_SET.message,
           code: errorType.WAITING_FOR_DPKI_CALLBACK_URL_SET.code,
         },
       };

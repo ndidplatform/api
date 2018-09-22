@@ -107,37 +107,19 @@ export async function handleTendermintNewBlock(
     // including messages between the start of missing block's height
     // and the block before latest block height
     // (not only just (current height - 1) in case 'NewBlock' events are missing)
-    // NOTE: tendermint always create a pair of block. A block with transactions and
+    // NOTE: Tendermint always create an ending empty block. A block with transactions and
     // a block that signs the previous block which indicates that the previous block is valid
     const fromHeight = height - 1 - missingBlockCount;
     const toHeight = height - 1;
 
     logger.debug({
-      message: 'Getting request IDs to process',
+      message: 'Handling Tendermint new blocks',
       nodeId,
       fromHeight,
       toHeight,
     });
 
-    const requestIdsInTendermintBlock = await cacheDb.getRequestIdsExpectedInBlock(
-      nodeId,
-      fromHeight,
-      toHeight
-    );
-    await Promise.all(
-      requestIdsInTendermintBlock.map(async (requestId) => {
-        if (requestIdLocks[nodeId + ':' + requestId]) return;
-        const request = await cacheDb.getRequestReceivedFromMQ(
-          nodeId,
-          requestId
-        );
-        if (request == null) return;
-        await processRequest(nodeId, request);
-        await cacheDb.removeRequestReceivedFromMQ(nodeId, requestId);
-      })
-    );
-
-    cacheDb.removeRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight);
+    await processRequestExpectedInBlocks(fromHeight, toHeight, nodeId);
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling Tendermint NewBlock event',
@@ -151,4 +133,22 @@ export async function handleTendermintNewBlock(
       error: err,
     });
   }
+}
+
+async function processRequestExpectedInBlocks(fromHeight, toHeight, nodeId) {
+  const requestIdsInTendermintBlock = await cacheDb.getRequestIdsExpectedInBlock(
+    nodeId,
+    fromHeight,
+    toHeight
+  );
+  await Promise.all(
+    requestIdsInTendermintBlock.map(async (requestId) => {
+      if (requestIdLocks[nodeId + ':' + requestId]) return;
+      const request = await cacheDb.getRequestReceivedFromMQ(nodeId, requestId);
+      if (request == null) return;
+      await processRequest(nodeId, request);
+      await cacheDb.removeRequestReceivedFromMQ(nodeId, requestId);
+    })
+  );
+  cacheDb.removeRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight);
 }

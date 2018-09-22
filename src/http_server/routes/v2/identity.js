@@ -24,20 +24,22 @@ import express from 'express';
 
 import { validateBody } from '../middleware/validation';
 import { idpOnlyHandler } from '../middleware/role_handler';
-import * as identity from '../../core/identity';
-import * as common from '../../core/common';
-import * as tendermintNdid from '../../tendermint/ndid';
+import * as identity from '../../../core/identity';
+import * as common from '../../../core/common';
+import * as tendermintNdid from '../../../tendermint/ndid';
 
-import errorType from '../../error/type';
+import errorType from '../../../error/type';
 
 const router = express.Router();
 
 router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
   try {
     const {
+      node_id,
+      reference_id,
+      callback_url,
       namespace,
       identifier,
-      reference_id,
       accessor_type,
       accessor_public_key,
       accessor_id,
@@ -46,22 +48,50 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
 
     const result = await identity.createIdentity(
       {
+        node_id,
+        reference_id,
+        callback_url,
         namespace,
         identifier,
-        reference_id,
         accessor_type,
         accessor_public_key,
         accessor_id,
         ial,
       },
-      { synchronous: true, apiVersion: 1 }
+      { synchronous: false }
     );
 
-    res.status(200).json(result);
+    res.status(202).json(result);
   } catch (error) {
     next(error);
   }
 });
+
+router.get(
+  '/requests/reference/:reference_id',
+  idpOnlyHandler,
+  async (req, res, next) => {
+    try {
+      const { node_id } = req.query;
+      const { reference_id } = req.params;
+
+      const createIdentityData = await identity.getCreateIdentityDataByReferenceId(
+        node_id,
+        reference_id
+      );
+      if (createIdentityData != null) {
+        res.status(200).json({
+          request_id: createIdentityData.request_id,
+          accessor_id: createIdentityData.accessor_id,
+        });
+      } else {
+        res.status(404).end();
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 router.post(
   '/requests/close',
@@ -69,10 +99,13 @@ router.post(
   validateBody,
   async (req, res, next) => {
     try {
-      const { request_id } = req.body;
+      const { node_id, reference_id, callback_url, request_id } = req.body;
 
-      await common.closeRequest(request_id);
-      res.status(204).end();
+      await common.closeRequest(
+        { node_id, reference_id, callback_url, request_id },
+        { synchronous: false }
+      );
+      res.status(202).end();
     } catch (error) {
       next(error);
     }
@@ -107,6 +140,7 @@ router.post(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
+      const { node_id, reference_id, callback_url, identifier_list } = req.body;
 
       // Not Implemented
       // TODO
@@ -118,6 +152,29 @@ router.post(
   }
 );
 
+router.get('/:namespace/:identifier/ial', async (req, res, next) => {
+  try {
+    const { node_id } = req.query;
+    const { namespace, identifier } = req.params;
+
+    const idenityInfo = await identity.getIdentityInfo({
+      nodeId: node_id,
+      namespace,
+      identifier,
+    });
+
+    if (idenityInfo != null) {
+      res.status(200).json({
+        ial: idenityInfo.ial,
+      });
+    } else {
+      res.status(404).end();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post(
   '/:namespace/:identifier/ial',
   idpOnlyHandler,
@@ -125,16 +182,19 @@ router.post(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { ial } = req.body;
+      const { node_id, reference_id, callback_url, ial } = req.body;
       await identity.updateIal(
         {
+          node_id,
+          reference_id,
+          callback_url,
           namespace,
           identifier,
           ial,
         },
-        { synchronous: true }
+        { synchronous: false }
       );
-      res.status(204).end();
+      res.status(202).end();
     } catch (error) {
       next(error);
     }
@@ -143,6 +203,7 @@ router.post(
 
 router.get('/:namespace/:identifier/endorsement', async (req, res, next) => {
   try {
+    const { node_id } = req.query;
     const { namespace, identifier } = req.params;
 
     // Not Implemented
@@ -160,7 +221,14 @@ router.post(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { secret, accessor_type, accessor_key, accessor_id } = req.body;
+      const {
+        node_id,
+        reference_id,
+        callback_url,
+        accessor_type,
+        accessor_key,
+        accessor_id,
+      } = req.body;
 
       // Not Implemented
       // TODO
@@ -179,7 +247,9 @@ router.post(
   async (req, res, next) => {
     try {
       const {
+        node_id,
         reference_id,
+        callback_url,
         accessor_type,
         accessor_public_key,
         accessor_id,
@@ -189,17 +259,19 @@ router.post(
 
       const result = await identity.addAccessorMethodForAssociatedIdp(
         {
+          node_id,
+          reference_id,
+          callback_url,
           namespace,
           identifier,
-          reference_id,
           accessor_type,
           accessor_public_key,
           accessor_id,
         },
-        { synchronous: true, apiVersion: 1 }
+        { synchronous: false }
       );
 
-      res.status(200).json(result);
+      res.status(202).json(result);
     } catch (error) {
       if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
         res.status(404).end();
@@ -209,5 +281,27 @@ router.post(
     }
   }
 );
+
+router.post('/secret', idpOnlyHandler, async (req, res, next) => {
+  try {
+    const {
+      node_id,
+      accessor_id,
+      namespace,
+      identifier,
+      reference_id,
+    } = req.body;
+    const secret = await identity.calculateSecret({
+      node_id,
+      accessor_id,
+      namespace,
+      identifier,
+      reference_id,
+    });
+    res.status(200).json({ secret });
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

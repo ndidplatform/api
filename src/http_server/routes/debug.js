@@ -21,7 +21,7 @@
  */
 
 import express from 'express';
-import * as debug from '../core/debug';
+import * as debug from '../../core/debug';
 
 const router = express.Router();
 

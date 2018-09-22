@@ -24,7 +24,7 @@ import express from 'express';
 
 import { validateBody } from '../middleware/validation';
 import { idpOnlyHandler } from '../middleware/role_handler';
-import * as idp from '../../core/idp';
+import * as idp from '../../../core/idp';
 
 const router = express.Router();
 

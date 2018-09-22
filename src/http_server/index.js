@@ -30,9 +30,9 @@ import morgan from 'morgan';
 import routes from './routes';
 import { bodyParserErrorHandler } from './routes/middleware/error_handler';
 
-import logger from './logger';
+import logger from '../logger';
 
-import * as config from './config';
+import * as config from '../config';
 
 let server;
 

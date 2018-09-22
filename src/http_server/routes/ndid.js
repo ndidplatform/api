@@ -24,7 +24,7 @@ import express from 'express';
 
 import { validateBody } from './middleware/validation';
 import { ndidOnlyHandler } from './middleware/role_handler';
-import * as ndid from '../core/ndid';
+import * as ndid from '../../core/ndid';
 
 const router = express.Router();
 

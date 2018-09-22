@@ -24,9 +24,9 @@ import express from 'express';
 
 import { validateBody } from '../middleware/validation';
 import { ndidOnlyHandler } from '../middleware/role_handler';
-import * as ndid from '../../core/ndid';
-import * as dpki from '../../core/dpki';
-import * as externalCryptoService from '../../utils/external_crypto_service';
+import * as ndid from '../../../core/ndid';
+import * as dpki from '../../../core/dpki';
+import * as externalCryptoService from '../../../utils/external_crypto_service';
 
 const router = express.Router();
 

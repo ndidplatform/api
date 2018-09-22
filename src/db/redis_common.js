@@ -204,13 +204,18 @@ export async function remove({ nodeId, dbName, name, key }) {
   }
 }
 
-export async function getAll({ nodeId, dbName, name }) {
+export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
   try {
     const redis = getRedis(dbName);
     const keys = await redis.keys(`${nodeId}:${dbName}:${name}:*`);
     if (keys.length > 0) {
       const result = await redis.mget(...keys);
-      return result.map((item) => JSON.parse(item));
+      return result.map((item, index) => {
+        return {
+          [keyName]: keys[index].replace(`${nodeId}:${dbName}:${name}:`, ''),
+          [valueName]: JSON.parse(item),
+        };
+      });
     } else {
       return [];
     }

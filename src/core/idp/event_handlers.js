@@ -275,100 +275,22 @@ export async function handleTendermintNewBlock(
     // including messages between the start of missing block's height
     // and the block before latest block height
     // (not only just (current height - 1) in case 'NewBlock' events are missing)
-    // NOTE: tendermint always create a pair of block. A block with transactions and
+    // NOTE: Tendermint always create an ending empty block. A block with transactions and
     // a block that signs the previous block which indicates that the previous block is valid
     const fromHeight = height - 1 - missingBlockCount;
     const toHeight = height - 1;
 
     logger.debug({
-      message: 'Getting request IDs to process',
+      message: 'Handling Tendermint new blocks',
       nodeId,
       fromHeight,
       toHeight,
     });
 
-    const requestIdsInTendermintBlock = await cacheDb.getRequestIdsExpectedInBlock(
-      nodeId,
-      fromHeight,
-      toHeight
-    );
-    await Promise.all(
-      requestIdsInTendermintBlock.map(async (requestId) => {
-        if (requestIdLocks[nodeId + ':' + requestId]) return;
-        const message = await cacheDb.getRequestToProcessReceivedFromMQ(
-          nodeId,
-          requestId
-        );
-        if (message == null) return;
-        await processMessage(nodeId, message);
-        await cacheDb.removeRequestToProcessReceivedFromMQ(nodeId, requestId);
-      })
-    );
-    cacheDb.removeRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight);
-
-    // Clean up closed or timed out create identity requests
-    const blocks = await tendermint.getBlocks(fromHeight, toHeight);
-    await Promise.all(
-      blocks.map(async (block, blockIndex) => {
-        let transactions = tendermint.getTransactionListFromBlock(block);
-        if (transactions.length === 0) return;
-
-        let requestIdsToCleanUp = await Promise.all(
-          transactions.map(async (transaction) => {
-            const requestId = transaction.args.request_id;
-            if (requestId == null) return;
-            if (
-              transaction.fnName === 'CloseRequest' ||
-              transaction.fnName === 'TimeOutRequest'
-            ) {
-              const callbackUrl = await cacheDb.getRequestCallbackUrl(
-                nodeId,
-                requestId
-              );
-              if (!callbackUrl) return;
-              return requestId;
-            }
-          })
-        );
-        const requestIdsToCleanUpWithValue = requestIdsToCleanUp.filter(
-          (requestId) => requestId != null
-        );
-        if (requestIdsToCleanUpWithValue.length === 0) return;
-
-        const height = parseInt(block.header.height);
-        const blockResults = await tendermint.getBlockResults(height, height);
-        requestIdsToCleanUp.filter((requestId, index) => {
-          const deliverTxResult =
-            blockResults[blockIndex].results.DeliverTx[index];
-          const successTag = deliverTxResult.tags.find(
-            (tag) => tag.key === successBase64
-          );
-          if (successTag) {
-            return successTag.value === trueBase64;
-          }
-          return false;
-        });
-
-        requestIdsToCleanUp = [...new Set(requestIdsToCleanUp)];
-
-        await Promise.all(
-          requestIdsToCleanUp.map(async (requestId) => {
-            const referenceId = await cacheDb.getReferenceIdByRequestId(
-              nodeId,
-              requestId
-            );
-            await Promise.all([
-              cacheDb.removeRequestCallbackUrl(nodeId, requestId),
-              cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
-              cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
-              cacheDb.removeRequestData(nodeId, requestId),
-              cacheDb.removeIdpResponseValidList(nodeId, requestId),
-              cacheDb.removeTimeoutScheduler(nodeId, requestId),
-            ]);
-          })
-        );
-      })
-    );
+    await Promise.all([
+      processMessageExptectedInBlocks(fromHeight, toHeight, nodeId),
+      processTasksInBlocks(fromHeight, toHeight, nodeId),
+    ]);
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling Tendermint NewBlock event',
@@ -382,4 +304,91 @@ export async function handleTendermintNewBlock(
       error: err,
     });
   }
+}
+
+async function processMessageExptectedInBlocks(fromHeight, toHeight, nodeId) {
+  const requestIdsInTendermintBlock = await cacheDb.getRequestIdsExpectedInBlock(
+    nodeId,
+    fromHeight,
+    toHeight
+  );
+  await Promise.all(
+    requestIdsInTendermintBlock.map(async (requestId) => {
+      if (requestIdLocks[nodeId + ':' + requestId]) return;
+      const message = await cacheDb.getRequestToProcessReceivedFromMQ(
+        nodeId,
+        requestId
+      );
+      if (message == null) return;
+      await processMessage(nodeId, message);
+      await cacheDb.removeRequestToProcessReceivedFromMQ(nodeId, requestId);
+    })
+  );
+  cacheDb.removeRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight);
+}
+
+async function processTasksInBlocks(fromHeight, toHeight, nodeId) {
+  const blocks = await tendermint.getBlocks(fromHeight, toHeight);
+  await Promise.all(
+    blocks.map(async (block, blockIndex) => {
+      let transactions = tendermint.getTransactionListFromBlock(block);
+      if (transactions.length === 0) return;
+
+      // Clean up closed or timed out create identity requests
+      let requestIdsToCleanUp = await Promise.all(
+        transactions.map(async (transaction) => {
+          const requestId = transaction.args.request_id;
+          if (requestId == null) return;
+          if (
+            transaction.fnName === 'CloseRequest' ||
+            transaction.fnName === 'TimeOutRequest'
+          ) {
+            const callbackUrl = await cacheDb.getRequestCallbackUrl(
+              nodeId,
+              requestId
+            );
+            if (!callbackUrl) return;
+            return requestId;
+          }
+        })
+      );
+      const requestIdsToCleanUpWithValue = requestIdsToCleanUp.filter(
+        (requestId) => requestId != null
+      );
+      if (requestIdsToCleanUpWithValue.length === 0) return;
+
+      const height = parseInt(block.header.height);
+      const blockResults = await tendermint.getBlockResults(height, height);
+      requestIdsToCleanUp.filter((requestId, index) => {
+        const deliverTxResult =
+          blockResults[blockIndex].results.DeliverTx[index];
+        const successTag = deliverTxResult.tags.find(
+          (tag) => tag.key === successBase64
+        );
+        if (successTag) {
+          return successTag.value === trueBase64;
+        }
+        return false;
+      });
+
+      requestIdsToCleanUp = [...new Set(requestIdsToCleanUp)];
+
+      await Promise.all(
+        requestIdsToCleanUp.map(async (requestId) => {
+          const referenceId = await cacheDb.getReferenceIdByRequestId(
+            nodeId,
+            requestId
+          );
+          await Promise.all([
+            cacheDb.removeRequestCallbackUrl(nodeId, requestId),
+            cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
+            cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
+            cacheDb.removeRequestData(nodeId, requestId),
+            cacheDb.removeIdpResponseValidList(nodeId, requestId),
+            cacheDb.removeTimeoutScheduler(nodeId, requestId),
+          ]);
+        })
+      );
+    })
+  );
 }

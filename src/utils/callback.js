@@ -227,7 +227,7 @@ export async function callbackToClient(
       url: callbackUrl,
       cbId,
     });
-    await cacheDb.addCallbackWithRetryData(config.nodeId, cbId, {
+    await cacheDb.setCallbackWithRetryData(config.nodeId, cbId, {
       callbackUrl,
       body,
       shouldRetryFnName,

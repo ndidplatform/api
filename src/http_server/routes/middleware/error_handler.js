@@ -20,10 +20,10 @@
  *
  */
 
-import logger from '../../logger';
-import errorType from '../../error/type';
-import { getErrorObjectForClient } from '../../error/helpers';
-import { env, clientHttpErrorCode, serverHttpErrorCode } from '../../config';
+import logger from '../../../logger';
+import errorType from '../../../error/type';
+import { getErrorObjectForClient } from '../../../error/helpers';
+import { env, clientHttpErrorCode, serverHttpErrorCode } from '../../../config';
 
 export default function errorHandler(err, req, res, next) {
   if (res.headersSent) {

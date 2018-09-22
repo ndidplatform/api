@@ -158,9 +158,11 @@ export async function createRequest(
           const { service_id, as_id_list, min_as } = dataRequest;
 
           //all as_list offer the service
-          let potential_as_list = await tendermintNdid.getAsNodesByServiceId({
-            service_id,
-          });
+          let potential_as_list = await tendermintNdid.getAsNodesInfoByServiceId(
+            {
+              service_id,
+            }
+          );
           if (as_id_list != null && as_id_list.length > 0) {
             if (as_id_list.length < min_as) {
               throw new CustomError({

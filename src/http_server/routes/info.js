@@ -23,9 +23,9 @@
 import path from 'path';
 import fs from 'fs';
 
-import * as tendermintNdid from '../tendermint/ndid';
-import * as config from '../config';
-import logger from '../logger';
+import * as tendermintNdid from '../../tendermint/ndid';
+import * as config from '../../config';
+import logger from '../../logger';
 
 let version;
 
@@ -48,7 +48,7 @@ export default async function getInfo(req, res, next) {
 }
 
 fs.readFile(
-  path.join(__dirname, '..', '..', 'VERSION'),
+  path.join(__dirname, '..', '..', '..', 'VERSION'),
   'utf8',
   (err, data) => {
     if (err) {

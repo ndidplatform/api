@@ -1,4 +1,4 @@
-import { role } from '../../node';
+import { role } from '../../../node';
 
 export function rpOnlyHandler(req, res, next) {
   if (role !== 'rp' && role !== 'proxy') {

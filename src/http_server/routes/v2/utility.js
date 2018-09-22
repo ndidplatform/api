@@ -23,7 +23,8 @@
 import express from 'express';
 
 import { validateQuery } from '../middleware/validation';
-import * as tendermintNdid from '../../tendermint/ndid';
+import * as tendermintNdid from '../../../tendermint/ndid';
+import * as privateMessage from '../../../core/common/private_message';
 
 const router = express.Router();
 
@@ -105,7 +106,23 @@ router.get('/requests/:request_id', async (req, res, next) => {
   }
 });
 
-router.get('/node_token/:node_id', async (req, res, next) => {
+router.get('/nodes/:node_id', async (req, res, next) => {
+  try {
+    const { node_id } = req.params;
+
+    const result = await tendermintNdid.getNodeInfo(node_id);
+
+    if (result == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(result);
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/nodes/:node_id/token', async (req, res, next) => {
   try {
     const { node_id } = req.params;
 
@@ -136,5 +153,67 @@ router.get('/services', async (req, res, next) => {
     next(error);
   }
 });
+
+// NOTE: Should not be able to get all since it might run into trouble
+// and crash the server if the number of messages are too much to handle
+// (e.g. run out of memory)
+// router.get('/private_messages', async (req, res, next) => {
+//   try {
+//     const { type } = req.query;
+//     const messages = await privateMessage.getPrivateMessages({ type });
+//     res.status(200).json(messages);
+//   } catch (error) {
+//     next(error);
+//   }
+// });
+
+router.get('/private_messages/:request_id', async (req, res, next) => {
+  try {
+    const { request_id } = req.params;
+    const { node_id, type } = req.query;
+    const messages = await privateMessage.getPrivateMessages({
+      nodeId: node_id,
+      requestId: request_id,
+      type,
+    });
+    if (messages == null) {
+      res.status(404).end();
+      return;
+    }
+    res.status(200).json(messages);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/private_messages/housekeeping', async (req, res, next) => {
+  try {
+    const { type } = req.query;
+    const { node_id } = req.body;
+    await privateMessage.removePrivateMessages({ nodeId: node_id, type });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post(
+  '/private_messages/:request_id/housekeeping',
+  async (req, res, next) => {
+    try {
+      const { request_id } = req.params;
+      const { type } = req.query;
+      const { node_id } = req.body;
+      await privateMessage.removePrivateMessages({
+        nodeId: node_id,
+        requestId: request_id,
+        type,
+      });
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;
