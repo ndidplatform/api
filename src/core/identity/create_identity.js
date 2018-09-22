@@ -138,7 +138,7 @@ export async function createIdentity(
     }
 
     //check ial
-    let { max_ial } = await tendermintNdid.getNodeInfo(config.nodeId);
+    let { max_ial } = await tendermintNdid.getNodeInfo(node_id);
     if (ial > max_ial) {
       throw new CustomError({
         errorType: errorType.MAXIMUM_IAL_EXCEED,
