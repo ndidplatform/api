@@ -32,9 +32,7 @@ router.use(idpOnlyHandler);
 
 router.get('/callback', async (req, res, next) => {
   try {
-    const { node_id } = req.query;
-
-    const urls = idp.getCallbackUrls(node_id);
+    const urls = idp.getCallbackUrls();
 
     if (Object.keys(urls).length > 0) {
       res.status(200).json(urls);
@@ -48,15 +46,9 @@ router.get('/callback', async (req, res, next) => {
 
 router.post('/callback', validateBody, async (req, res, next) => {
   try {
-    const {
-      node_id,
-      incoming_request_url,
-      accessor_sign_url,
-      error_url,
-    } = req.body;
+    const { incoming_request_url, accessor_sign_url, error_url } = req.body;
 
     idp.setCallbackUrls({
-      node_id,
       incoming_request_url,
       accessor_sign_url,
       error_url,

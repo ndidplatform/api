@@ -107,9 +107,7 @@ router.post(
 
 router.get('/callback', async (req, res, next) => {
   try {
-    const { node_id } = req.query;
-
-    const urls = as.getCallbackUrls(node_id);
+    const urls = as.getCallbackUrls();
 
     if (Object.keys(urls).length > 0) {
       res.status(200).json(urls);
@@ -123,10 +121,9 @@ router.get('/callback', async (req, res, next) => {
 
 router.post('/callback', validateBody, async (req, res, next) => {
   try {
-    const { node_id, error_url } = req.body;
+    const { error_url } = req.body;
 
     as.setCallbackUrls({
-      node_id,
       error_url,
     });
 

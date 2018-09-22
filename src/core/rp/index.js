@@ -74,14 +74,14 @@ function writeCallbackUrlToFile(fileSuffix, url) {
   });
 }
 
-export function setCallbackUrls({ node_id, error_url }) {
+export function setCallbackUrls({ error_url }) {
   if (error_url != null) {
     callbackUrls.error_url = error_url;
     writeCallbackUrlToFile('error', error_url);
   }
 }
 
-export function getCallbackUrls(nodeId) {
+export function getCallbackUrls() {
   return callbackUrls;
 }
 

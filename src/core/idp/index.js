@@ -86,7 +86,6 @@ function writeCallbackUrlToFile(fileSuffix, url) {
 }
 
 export function setCallbackUrls({
-  node_id,
   incoming_request_url,
   identity_result_url,
   accessor_sign_url,
@@ -110,7 +109,7 @@ export function setCallbackUrls({
   }
 }
 
-export function getCallbackUrls(nodeId) {
+export function getCallbackUrls() {
   return callbackUrls;
 }
 
