@@ -291,6 +291,7 @@ export async function getIdpsMsqDestination({
             public_key: idpNode.proxy.public_key,
             ip: idpNode.proxy.mq[0].ip,
             port: idpNode.proxy.mq[0].port,
+            config: idpNode.proxy.config,
           },
         };
       } else {
@@ -562,6 +563,7 @@ export async function handleChallengeRequest({
           public_key: nodeInfo.proxy.public_key,
           ip: nodeInfo.proxy.mq[0].ip,
           port: nodeInfo.proxy.mq[0].port,
+          config: nodeInfo.proxy.config,
         },
       },
     ];

@@ -143,6 +143,7 @@ async function getASReceiverList(data_request) {
             public_key: asNode.proxy.public_key,
             ip: asNode.proxy.mq[0].ip,
             port: asNode.proxy.mq[0].port,
+            config: asNode.proxy.config,
           },
         };
       } else {

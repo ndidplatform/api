@@ -35,6 +35,8 @@ import * as utils from '../utils';
 import logger from '../logger';
 import CustomError from '../error/custom_error';
 import errorType from '../error/type';
+
+import { role } from '../node';
 import * as config from '../config';
 
 const mqMessageProtobufRoot = protobuf.loadSync(
@@ -83,6 +85,7 @@ export async function initialize() {
   mqRecv = new MQRecv({ port: config.mqRegister.port, maxMsgSize: 3250000 });
 
   mqRecv.on('message', async ({ message, msgId, senderId }) => {
+    const timestamp = Date.now();
     const id = senderId + ':' + msgId;
     let unixTimeout = await cacheDb.getDuplicateMessageTimeout(
       config.nodeId,
@@ -90,13 +93,13 @@ export async function initialize() {
     );
     if (unixTimeout != null) return;
 
-    unixTimeout = Date.now() + 120000;
+    unixTimeout = timestamp + 120000;
     cacheDb.setDuplicateMessageTimeout(config.nodeId, id, unixTimeout);
     timer[id] = setTimeout(() => {
       cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
       delete timer[id];
     }, 120000);
-    onMessage(message);
+    onMessage(message, timestamp);
   });
 
   //should tell client via error callback?
@@ -108,7 +111,7 @@ export async function initialize() {
   });
 }
 
-async function onMessage(messageProtobuf) {
+async function onMessage(messageProtobuf, timestamp) {
   logger.info({
     message: 'Received message from message queue',
     messageLength: messageProtobuf.length,
@@ -126,7 +129,7 @@ async function onMessage(messageProtobuf) {
     if (!tendermint.connected || tendermint.syncing) {
       rawMessagesToRetry[messageId] = messageProtobuf;
     } else {
-      await processMessage(messageId, messageProtobuf);
+      await processMessage(messageId, messageProtobuf, timestamp);
     }
   } catch (error) {
     eventEmitter.emit('error', error);
@@ -154,7 +157,7 @@ async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
   return decodedDecryptedMessage;
 }
 
-async function processMessage(messageId, messageProtobuf) {
+async function processMessage(messageId, messageProtobuf, timestamp) {
   logger.info({
     message: 'Processing raw received message from message queue',
     messageId,
@@ -171,13 +174,12 @@ async function processMessage(messageId, messageProtobuf) {
       outerLayerDecodedDecryptedMessage,
     });
 
-    const messageForProxy = outerLayerDecodedDecryptedMessage.messageForProxy;
-
     let messageBuffer;
     let messageSignature;
     let receiverNodeId;
+    let signatureForProxy;
 
-    if (messageForProxy === true) {
+    if (role === 'proxy') {
       // Message is encapsulated with proxy layer
       const proxyDecodedDecryptedMessage =
         outerLayerDecodedDecryptedMessage.message;
@@ -185,10 +187,14 @@ async function processMessage(messageId, messageProtobuf) {
       // Verify signature
       const proxyMessageHashBase64 = utils.hash(proxyDecodedDecryptedMessage);
       const senderNodeId = outerLayerDecodedDecryptedMessage.senderNodeId;
-      const signature = outerLayerDecodedDecryptedMessage.signature;
-
+      signatureForProxy = outerLayerDecodedDecryptedMessage.signature;
       receiverNodeId = outerLayerDecodedDecryptedMessage.receiverNodeId;
-      if (receiverNodeId == null || receiverNodeId === '') {
+      if (
+        receiverNodeId == null ||
+        receiverNodeId === '' ||
+        senderNodeId == null ||
+        senderNodeId === ''
+      ) {
         throw new CustomError({
           errorType: errorType.MALFORMED_MESSAGE_FORMAT,
         });
@@ -199,7 +205,7 @@ async function processMessage(messageId, messageProtobuf) {
       const proxyPublicKey = await tendermintNdid.getNodePubKey(senderNodeId);
 
       const signatureValid = utils.verifySignature(
-        signature,
+        signatureForProxy,
         proxyPublicKey,
         stringToVerify
       );
@@ -251,7 +257,8 @@ async function processMessage(messageId, messageProtobuf) {
         errorType: errorType.MESSAGE_FROM_UNKNOWN_NODE,
       });
     }
-    const publicKey = await tendermintNdid.getNodePubKey(nodeId);
+    const nodeInfo = await tendermintNdid.getNodeInfo(nodeId);
+    const publicKey = nodeInfo.public_key;
 
     const signatureValid = utils.verifySignature(
       messageSignature,
@@ -276,12 +283,32 @@ async function processMessage(messageId, messageProtobuf) {
 
     // TODO: validate message schema
 
+    const source =
+      nodeInfo.proxy != null
+        ? {
+            node_id: nodeId,
+            proxy_node_id: nodeInfo.proxy.node_id,
+            proxy_config: nodeInfo.proxy.config,
+          }
+        : {
+            node_id: nodeId,
+          };
     await longTermDb.addMessage(
       receiverNodeId,
       longTermDb.MESSAGE_DIRECTIONS.INBOUND,
       message.type,
       message.request_id,
-      messageStr
+      {
+        message: messageStr,
+        direction: longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+        source,
+        signature: messageSignature.toString('base64'),
+        signature_for_proxy:
+          signatureForProxy != null
+            ? signatureForProxy.toString('base64')
+            : undefined,
+        timestamp,
+      }
     );
 
     eventEmitter.emit('message', message, receiverNodeId);
@@ -353,6 +380,8 @@ export async function send(receivers, message, senderNodeId) {
     });
     return;
   }
+  const timestamp = Date.now();
+
   const messageStr = JSON.stringify(message);
   const messageBuffer = Buffer.from(messageStr, 'utf8');
   const messageSignatureBuffer = await utils.createSignature(
@@ -411,7 +440,6 @@ export async function send(receivers, message, senderNodeId) {
         const proxyMqMessageObject = {
           message: protoEncryptedBuffer,
           signature: proxySignatureBuffer,
-          messageForProxy: true,
           receiverNodeId,
           senderNodeId,
         };
@@ -438,7 +466,6 @@ export async function send(receivers, message, senderNodeId) {
         ).finish();
 
         payloadBuffer = proxyProtoEncryptedBuffer;
-
         mqDestAddress = {
           ip: receiver.proxy.ip,
           port: receiver.proxy.port,
@@ -455,13 +482,37 @@ export async function send(receivers, message, senderNodeId) {
     })
   );
 
-  // await longTermDb.addMessage(
-  //   config.nodeId,
-  //   longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
-  //   message.type,
-  //   message.request_id,
-  //   messageStr
-  // );
+  await longTermDb.addMessage(
+    config.nodeId,
+    longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
+    message.type,
+    message.request_id,
+    {
+      message: messageStr,
+      direction: longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
+      destinations: receivers.map((receiver) => {
+        if (receiver.proxy != null) {
+          return {
+            node_id: receiver.node_id,
+            public_key: receiver.public_key,
+            ip: receiver.proxy.ip,
+            port: receiver.proxy.port,
+            proxy_node_id: receiver.proxy.node_id,
+            proxy_public_key: receiver.proxy.public_key,
+            proxy_config: receiver.proxy.config,
+          };
+        } else {
+          return {
+            node_id: receiver.node_id,
+            public_key: receiver.public_key,
+            ip: receiver.ip,
+            port: receiver.port,
+          };
+        }
+      }),
+      timestamp,
+    }
+  );
 }
 
 export function close() {

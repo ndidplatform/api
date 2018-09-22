@@ -47,24 +47,40 @@ export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
     if (requestId == null) {
       if (type == null) {
         const allTypesMessages = await Promise.all(
-          privateMessageTypes.map((type) =>
-            longTermDb.getAllMessages(
-              nodeId,
-              longTermDb.MESSAGE_DIRECTIONS.INBOUND,
-              type
-            )
-          )
+          privateMessageTypes.map(async (type) => {
+            const [inboundMessages, outboundMessages] = await Promise.all([
+              longTermDb.getAllMessages(
+                nodeId,
+                longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+                type
+              ),
+              longTermDb.getAllMessages(
+                nodeId,
+                longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
+                type
+              ),
+            ]);
+            return [...inboundMessages, ...outboundMessages];
+          })
         );
         return allTypesMessages.reduce(
           (result, messages) => result.concat(messages),
           []
         );
       } else {
-        return await longTermDb.getAllMessages(
-          nodeId,
-          longTermDb.MESSAGE_DIRECTIONS.INBOUND,
-          type
-        );
+        const [inboundMessages, outboundMessages] = await Promise.all([
+          longTermDb.getAllMessages(
+            nodeId,
+            longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+            type
+          ),
+          longTermDb.getAllMessages(
+            nodeId,
+            longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
+            type
+          ),
+        ]);
+        return [...inboundMessages, ...outboundMessages];
       }
     } else {
       const request = await tendermintNdid.getRequest({ requestId });
@@ -73,26 +89,44 @@ export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
       }
       if (type == null) {
         const allTypesMessages = await Promise.all(
-          privateMessageTypes.map((type) =>
-            longTermDb.getMessages(
-              nodeId,
-              longTermDb.MESSAGE_DIRECTIONS.INBOUND,
-              type,
-              requestId
-            )
-          )
+          privateMessageTypes.map(async (type) => {
+            const [inboundMessages, outboundMessages] = await Promise.all([
+              longTermDb.getMessages(
+                nodeId,
+                longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+                type,
+                requestId
+              ),
+              longTermDb.getMessages(
+                nodeId,
+                longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
+                type,
+                requestId
+              ),
+            ]);
+            return [...inboundMessages, ...outboundMessages];
+          })
         );
         return allTypesMessages.reduce(
           (result, messages) => result.concat(messages),
           []
         );
       } else {
-        return await longTermDb.getMessages(
-          nodeId,
-          longTermDb.MESSAGE_DIRECTIONS.INBOUND,
-          type,
-          requestId
-        );
+        const [inboundMessages, outboundMessages] = await Promise.all([
+          longTermDb.getMessages(
+            nodeId,
+            longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+            type,
+            requestId
+          ),
+          longTermDb.getMessages(
+            nodeId,
+            longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
+            type,
+            requestId
+          ),
+        ]);
+        return [...inboundMessages, ...outboundMessages];
       }
     }
   } catch (error) {
@@ -123,19 +157,33 @@ export async function removePrivateMessages({ nodeId, requestId, type } = {}) {
       if (type == null) {
         await Promise.all(
           privateMessageTypes.map(async (type) => {
-            longTermDb.removeAllMessages(
-              nodeId,
-              longTermDb.MESSAGE_DIRECTIONS.INBOUND,
-              type
-            );
+            return Promise.all([
+              longTermDb.removeAllMessages(
+                nodeId,
+                longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+                type
+              ),
+              longTermDb.removeAllMessages(
+                nodeId,
+                longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
+                type
+              ),
+            ]);
           })
         );
       } else {
-        await longTermDb.removeAllMessages(
-          nodeId,
-          longTermDb.MESSAGE_DIRECTIONS.INBOUND,
-          type
-        );
+        await Promise.all([
+          longTermDb.removeAllMessages(
+            nodeId,
+            longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+            type
+          ),
+          longTermDb.removeAllMessages(
+            nodeId,
+            longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
+            type
+          ),
+        ]);
       }
     } else {
       if (type == null) {
