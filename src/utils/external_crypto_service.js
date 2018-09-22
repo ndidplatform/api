@@ -213,7 +213,7 @@ async function testDecryptCallback(url, publicKey) {
   }
 }
 
-export function getCallbackUrls(nodeId) {
+export function getCallbackUrls() {
   return callbackUrls;
 }
 
@@ -232,7 +232,6 @@ function checkAndEmitAllCallbacksSet() {
 }
 
 export async function setDpkiCallback({
-  nodeId,
   signCallbackUrl,
   masterSignCallbackUrl,
   decryptCallbackUrl,
@@ -476,7 +475,12 @@ export async function decryptAsymetricKey(nodeId, encryptedMessage) {
   }
 }
 
-export async function createSignature(message, messageHash, nodeId, useMasterKey) {
+export async function createSignature(
+  message,
+  messageHash,
+  nodeId,
+  useMasterKey
+) {
   const url = useMasterKey
     ? callbackUrls.master_sign_url
     : callbackUrls.sign_url;
