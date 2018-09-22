@@ -26,17 +26,19 @@ import protobuf from 'protobufjs';
 
 import { nodeId } from '../config';
 
-const protobufRoot = protobuf.loadSync(
-  path.join(__dirname, '..', '..', 'protos', 'mq_protocol_message.proto')
+const protobufRootInstance = new protobuf.Root();
+const protobufRoot = protobufRootInstance.loadSync(
+  path.join(__dirname, '..', '..', 'protos', 'mq_protocol_message.proto'),
+  { keepCase: true }
 );
-const MqProtocolMessage = protobufRoot.lookup('MqProtocolMessage');
+const MqProtocolMessage = protobufRoot.lookupType('MqProtocolMessage');
 
 function applyRetrySpec(message, retryspec) {
   const payload = {
-    msgId: retryspec.msgId,
-    seqId: retryspec.seqId,
+    msg_id: retryspec.msgId,
+    seq_id: retryspec.seqId,
     message: message,
-    senderId: nodeId,
+    sender_id: nodeId,
   };
   const errMsg = MqProtocolMessage.verify(payload);
   if (errMsg) {
@@ -51,11 +53,11 @@ function extractRetrySpec(message) {
   const decodedMessage = MqProtocolMessage.decode(message);
   return {
     retryspec: {
-      msgId: decodedMessage.msgId.toNumber(),
-      seqId: decodedMessage.seqId,
+      msgId: decodedMessage.msg_id.toNumber(),
+      seqId: decodedMessage.seq_id,
     },
     message: decodedMessage.message,
-    senderId: decodedMessage.senderId,
+    senderId: decodedMessage.sender_id,
   };
 }
 

@@ -39,14 +39,18 @@ import errorType from '../error/type';
 import { role } from '../node';
 import * as config from '../config';
 
-const mqMessageProtobufRoot = protobuf.loadSync(
-  path.join(__dirname, '..', '..', 'protos', 'mq_message.proto')
+const mqMessageProtobufRootInstance = new protobuf.Root();
+const mqMessageProtobufRoot = mqMessageProtobufRootInstance.loadSync(
+  path.join(__dirname, '..', '..', 'protos', 'mq_message.proto'),
+  { keepCase: true }
 );
-const encryptedMqMessageProtobufRoot = protobuf.loadSync(
-  path.join(__dirname, '..', '..', 'protos', 'encrypted_mq_message.proto')
+const encryptedMqMessageProtobufRootInstance = new protobuf.Root();
+const encryptedMqMessageProtobufRoot = encryptedMqMessageProtobufRootInstance.loadSync(
+  path.join(__dirname, '..', '..', 'protos', 'encrypted_mq_message.proto'),
+  { keepCase: true }
 );
-const MqMessage = mqMessageProtobufRoot.lookup('MqMessage');
-const EncryptedMqMessage = encryptedMqMessageProtobufRoot.lookup(
+const MqMessage = mqMessageProtobufRoot.lookupType('MqMessage');
+const EncryptedMqMessage = encryptedMqMessageProtobufRoot.lookupType(
   'EncryptedMqMessage'
 );
 
@@ -138,7 +142,10 @@ async function onMessage(messageProtobuf, timestamp) {
 
 async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
   const decodedMessage = EncryptedMqMessage.decode(messageProtobuf);
-  const { encryptedSymmetricKey, encryptedMqMessage } = decodedMessage;
+  const {
+    encrypted_symmetric_key: encryptedSymmetricKey,
+    encrypted_mq_message: encryptedMqMessage,
+  } = decodedMessage;
   let decryptedBuffer;
   try {
     decryptedBuffer = await utils.decryptAsymetricKey(
@@ -186,9 +193,9 @@ async function processMessage(messageId, messageProtobuf, timestamp) {
 
       // Verify signature
       const proxyMessageHashBase64 = utils.hash(proxyDecodedDecryptedMessage);
-      const senderNodeId = outerLayerDecodedDecryptedMessage.senderNodeId;
+      const senderNodeId = outerLayerDecodedDecryptedMessage.sender_node_id;
       signatureForProxy = outerLayerDecodedDecryptedMessage.signature;
-      receiverNodeId = outerLayerDecodedDecryptedMessage.receiverNodeId;
+      receiverNodeId = outerLayerDecodedDecryptedMessage.receiver_node_id;
       if (
         receiverNodeId == null ||
         receiverNodeId === '' ||
@@ -409,14 +416,14 @@ export async function send(receivers, message, senderNodeId) {
 
   await Promise.all(
     receivers.map(async (receiver) => {
-      const {
-        encryptedSymKey: encryptedSymmetricKey,
-        encryptedMessage: encryptedMqMessage,
-      } = utils.encryptAsymetricKey(receiver.public_key, protoBuffer);
+      const { encryptedSymKey, encryptedMessage } = utils.encryptAsymetricKey(
+        receiver.public_key,
+        protoBuffer
+      );
 
       const encryptedMqMessageObject = {
-        encryptedSymmetricKey,
-        encryptedMqMessage,
+        encrypted_symmetric_key: encryptedSymKey,
+        encrypted_mq_message: encryptedMessage,
       };
       const protoEncryptedMessage = EncryptedMqMessage.create(
         encryptedMqMessageObject
@@ -440,8 +447,8 @@ export async function send(receivers, message, senderNodeId) {
         const proxyMqMessageObject = {
           message: protoEncryptedBuffer,
           signature: proxySignatureBuffer,
-          receiverNodeId,
-          senderNodeId,
+          receiver_node_id: receiverNodeId,
+          sender_node_id: senderNodeId,
         };
         const proxyProtoMessage = MqMessage.create(proxyMqMessageObject);
         const proxyProtoBuffer = MqMessage.encode(proxyProtoMessage).finish();
@@ -455,8 +462,8 @@ export async function send(receivers, message, senderNodeId) {
         );
 
         const proxyEncryptedMqMessageObject = {
-          encryptedSymmetricKey: proxyEncryptedSymmetricKey,
-          encryptedMqMessage: proxyEncryptedMqMessage,
+          encrypted_symmetric_key: proxyEncryptedSymmetricKey,
+          encrypted_mq_message: proxyEncryptedMqMessage,
         };
         const proxyProtoEncryptedMessage = EncryptedMqMessage.create(
           proxyEncryptedMqMessageObject
