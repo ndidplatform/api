@@ -41,11 +41,13 @@ import { sha256 } from '../utils/crypto';
 
 import * as config from '../config';
 
-const tendermintProtobufRoot = protobuf.loadSync(
-  path.join(__dirname, '..', '..', 'protos', 'tendermint.proto')
+const tendermintProtobufRootInstance = new protobuf.Root();
+const tendermintProtobufRoot = tendermintProtobufRootInstance.loadSync(
+  path.join(__dirname, '..', '..', 'protos', 'tendermint.proto'),
+  { keepCase: true }
 );
-const TendermintTx = tendermintProtobufRoot.lookup('Tx');
-const TendermintQuery = tendermintProtobufRoot.lookup('Query');
+const TendermintTx = tendermintProtobufRoot.lookupType('Tx');
+const TendermintQuery = tendermintProtobufRoot.lookupType('Query');
 
 export const tendermintWsClient = new TendermintWsClient(false);
 
@@ -538,7 +540,10 @@ export async function query(fnName, params, height) {
     params,
   });
 
-  const paramsProtoBuffer = encodeProtobuf(fnName, params);
+  let paramsProtoBuffer;
+  if (params != null) {
+    paramsProtoBuffer = encodeProtobuf(fnName, params);
+  }
 
   const queryObject = {
     method: fnName,
@@ -621,7 +626,11 @@ export async function transact({
     params: paramsProtoBuffer,
     nonce,
     signature: await utils.createSignature(
-      Buffer.concat([Buffer.from(fnName), params, nonce]).toString('base64'),
+      Buffer.concat([
+        Buffer.from(fnName, 'utf8'),
+        paramsProtoBuffer,
+        nonce,
+      ]).toString('base64'),
       nodeId,
       useMasterKey
     ),
@@ -631,22 +640,7 @@ export async function transact({
   const txProtoBuffer = TendermintTx.encode(txProto).finish();
   const txProtoBufferBase64 = txProtoBuffer.toString('base64');
 
-  // const tx =
-  //   fnName +
-  //   '|' +
-  //   (paramsStr != null ? Buffer.from(paramsStr).toString('base64') : '') +
-  //   '|' +
-  //   nonce +
-  //   '|' +
-  //   (await utils.createSignature(
-  //     paramsStr + nonce,
-  //     nodeId,
-  //     useMasterKey
-  //   )).toString('base64') +
-  //   '|' +
-  //   Buffer.from(nodeId).toString('base64');
-
-  const txHash = sha256(txProtoBuffer).toString('hex');
+  const txHash = sha256(txProtoBufferBase64).toString('hex');
   const callbackData = {
     waitForCommit,
     callbackFnName,
@@ -700,7 +694,8 @@ export function getTransactionListFromBlock(block) {
   }
 
   const transactions = txs.map((tx) => {
-    const txProtoBuffer = Buffer.from(tx, 'base64');
+    const txProtoBufferBase64 = Buffer.from(tx, 'base64').toString();
+    const txProtoBuffer = Buffer.from(txProtoBufferBase64, 'base64');
     const txObject = TendermintTx.decode(txProtoBuffer);
     const args = decodeProtobuf(txObject.method, txObject.params);
     return {

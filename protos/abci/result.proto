@@ -1,0 +1,250 @@
+syntax = "proto3";
+
+message GetPriceFuncResult {
+  double price = 1;
+}
+
+message GetNodeTokenResult {
+  double amount = 1;
+}
+
+message ReportInResult {
+  string method = 1;
+  double price = 2;
+  string data = 3;
+}
+
+message GetUsedTokenReportResult {
+  repeated ReportInResult reports = 1;
+}
+
+message GetNodePublicKeyResult {
+  string public_key = 1;
+}
+
+message GetNodeMasterPublicKeyResult {
+  string master_public_key = 1;
+}
+
+message MsqDestinationNode {
+  string node_id = 1;
+  string node_name = 2;
+  double max_ial = 3;
+  double max_aal = 4;
+}
+
+message GetIdpNodesResult {
+  repeated MsqDestinationNode node = 1;
+}
+
+message ASNodeInGetAsNodesByServiceIdResult {
+  string node_id = 1;
+  string node_name = 2;
+  double min_ial = 3;
+  double min_aal = 4;
+}
+
+message GetAsNodesByServiceIdResult {
+  repeated ASNodeInGetAsNodesByServiceIdResult node = 1;
+}
+
+message MsqAddressInResult {
+  string ip = 1;
+  int64 port = 2;
+}
+
+message GetMsqAddressResult {
+  repeated MsqAddressInResult mq = 1;
+}
+
+message GetRequestResult {
+  bool closed = 1;
+  bool timed_out = 2;
+  string request_message_hash = 3;
+  int64 mode = 4;
+}
+
+message DataRequestInResult {
+  string service_id = 1;
+  repeated string as_id_list = 2;
+  int64 min_as = 3;
+  string request_params_hash = 4;
+  repeated string answered_as_id_list = 5;
+  repeated string received_data_from_list = 6;
+}
+
+message ResponseInResult {
+  double ial = 1;
+  double aal = 2;
+  string status = 3;
+  string signature = 4;
+  string identity_proof = 5;
+  string private_proof_hash = 6;
+  string idp_id = 7;
+  oneof valid_proof {
+    bool valid_proof_bool = 8;
+  }
+  oneof valid_ial {
+    bool valid_ial_bool = 9;
+  }
+  oneof valid_signature {
+    bool valid_signature_bool = 10;
+  }
+}
+
+message GetRequestDetailResult {
+  string request_id = 1;
+  int64 min_idp = 2;
+  double min_aal = 3;
+  double min_ial = 4;
+  int64 request_timeout = 5;
+  repeated DataRequestInResult data_request_list = 6;
+  string request_message_hash = 7;
+  repeated ResponseInResult response_list = 8;
+  bool closed = 9;
+  bool timed_out = 10;
+  bool special = 11;
+  int64 mode = 12;
+  string requester_node_id = 13;
+}
+
+message GetNamespaceListResult {
+  repeated NamespaceInResult namespaces = 1;
+}
+
+message NamespaceInResult {
+  string namespace = 1;
+  string description = 2;
+  bool active = 3;
+}
+
+message GetServiceDetailResult {
+  string service_id = 1;
+  string service_name = 2;
+  bool active = 3;
+}
+
+message GetNodeIDListResult {
+  repeated string node_id_list = 1;
+}
+
+message NodeBehindProxy {
+  string node_id = 1;
+  string node_name = 2;
+  string role = 3;
+  string public_key = 4;
+  string master_public_key = 5;
+  double max_ial = 6;
+  double max_aal = 7;
+  string config = 8;
+}
+
+message GetNodesBehindProxyNodeResult {
+  repeated NodeBehindProxy nodes = 1;
+}
+
+message ProxyInResult {
+  string node_id = 1;
+  string public_key = 2;
+  repeated MsqAddressInResult mq = 3;
+  string config = 4;
+}
+
+message ASWithMqNode {
+  string node_id = 1;
+  string name = 2;
+  double min_ial = 3;
+  double min_aal = 4;
+  string public_key = 5;
+  repeated MsqAddressInResult mq = 6;
+  ProxyInResult proxy = 7;
+}
+
+message GetAsNodesInfoByServiceIdResult {
+  repeated ASWithMqNode node = 1;
+}
+
+message IdpNode {
+  string node_id = 1;
+  string name = 2;
+  double max_ial = 3;
+  double max_aal = 4;
+  string public_key = 5;
+  repeated MsqAddressInResult mq = 6;
+  ProxyInResult proxy = 7;
+}
+
+message GetIdpNodesInfoResult {
+  repeated IdpNode node = 1;
+}
+
+message CheckExistingIdentityResult {
+  bool exist = 1;
+}
+
+message GetAccessorGroupIDResult {
+  string accessor_group_id = 1;
+}
+
+message GetAccessorKeyResult {
+  string accessor_public_key = 1;
+  bool active = 2;
+}
+
+message ServiceDetailInResult {
+  string service_id = 1;
+  string service_name = 2;
+  bool active = 3;
+}
+
+message GetServiceListResult {
+  repeated ServiceDetailInResult services = 1;
+}
+
+message CheckExistingAccessorIDResult {
+  bool exist = 1;
+}
+
+message GetIdentityInfoResult {
+  double ial = 1;
+}
+
+message GetDataSignatureResult {
+  string signature = 1;
+}
+
+message GetIdentityProofResult {
+  string identity_proof = 1;
+}
+
+message ServiceInResult {
+  string service_id = 1;
+  double min_ial = 2;
+  double min_aal = 3;
+  bool active = 4;
+  bool suspended = 5;
+}
+
+message GetServicesByAsIDResult {
+  repeated ServiceInResult services = 1;
+}
+
+message ProxyInGetNodeInfoResult {
+  string node_id = 1;
+  string node_name = 2;
+  string public_key = 3;
+  string master_public_key = 4;
+  repeated MsqAddressInResult mq = 5;
+  string config = 6;
+}
+
+message GetNodeInfoResult {
+  string public_key = 1;
+  string master_public_key = 2;
+  string node_name = 3;
+  string role = 4;
+  double max_ial = 5;
+  double max_aal = 6;
+  repeated MsqAddressInResult mq = 7;
+  ProxyInGetNodeInfoResult proxy = 8;
+}

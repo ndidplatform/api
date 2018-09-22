@@ -366,6 +366,7 @@ function verifyZKProofSingle(
  * @param {string} messageToSign 
  * @param {string} nodeId 
  * @param {boolean} useMasterKey 
+ * @return {Buffer} signature
  */
 export async function createSignature(messageToSign, nodeId, useMasterKey) {
   if (typeof messageToSign !== 'string') {

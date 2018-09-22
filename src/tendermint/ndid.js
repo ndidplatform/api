@@ -30,35 +30,6 @@ import CustomError from '../error/custom_error';
 // Transact
 //
 
-/**
- *
- * @param {Object} data
- * @param {string} data.node_id
- * @param {string} data.public_key
- */
-export async function addNodePubKey(
-  params,
-  nodeId,
-  callbackFnName,
-  callbackAdditionalArgs
-) {
-  try {
-    const result = await tendermint.transact({
-      nodeId,
-      fnName: 'AddNodePublicKey',
-      params,
-      callbackFnName,
-      callbackAdditionalArgs,
-    });
-    return result;
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot add node public key to blockchain',
-      cause: error,
-    });
-  }
-}
-
 export async function registerMsqAddress(
   { ip, port },
   nodeId,

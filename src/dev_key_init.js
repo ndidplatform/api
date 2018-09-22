@@ -170,8 +170,14 @@ function addNodeToProxyNode(nodeId, proxyNodeId, nodeProxyConfig) {
 }
 
 export async function init() {
+  const tendermintReady = new Promise((resolve) =>
+    tendermint.eventEmitter.once('ready', () => resolve())
+  );
+
   await tendermint.initialize();
   await nodeKey.initialize();
+
+  await tendermintReady;
 
   console.log('========= Initializing keys for development =========');
 

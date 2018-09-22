@@ -26,11 +26,23 @@ import protobuf from 'protobufjs';
 
 import CustomError from '../error/custom_error';
 
-const abciParamsProtobufRoot = protobuf.loadSync(
-  path.join(__dirname, '..', '..', 'protos', 'params.proto')
+const abciParamsProtobufRootInstance = new protobuf.Root();
+const abciParamsProtobufRoot = abciParamsProtobufRootInstance.loadSync(
+  path.join(__dirname, '..', '..', 'protos', 'abci', 'params.proto'),
+  {
+    keepCase: true,
+  }
 );
 
-const FUNCTIONS = [
+const abciResultProtobufRootInstance = new protobuf.Root();
+const abciResultProtobufRoot = abciResultProtobufRootInstance.loadSync(
+  path.join(__dirname, '..', '..', 'protos', 'abci', 'result.proto'),
+  {
+    keepCase: true,
+  }
+);
+
+const TX_FUNCTIONS = [
   // NDID only Tx
   'InitNDID',
   'RegisterServiceDestinationByNDID',
@@ -55,7 +67,6 @@ const FUNCTIONS = [
   'RemoveNodeFromProxyNode',
 
   // Tx
-  'AddNodePublicKey',
   'RegisterMsqAddress',
   'UpdateNode',
   'CreateIdentity',
@@ -72,8 +83,54 @@ const FUNCTIONS = [
   'SignData',
   'RegisterServiceDestination',
   'UpdateServiceDestination',
+];
 
-  // Query
+const TX_FUNCTION_PARAMS_MESSAGE_TYPES = {
+  // NDID only Tx
+  InitNDID: 'InitNDIDParams',
+  RegisterServiceDestinationByNDID: 'RegisterServiceDestinationByNDIDParams',
+  SetNodeToken: 'SetNodeTokenParams',
+  AddNodeToken: 'AddNodeTokenParams',
+  ReduceNodeToken: 'ReduceNodeTokenParams',
+  RegisterNode: 'RegisterNodeParams',
+  UpdateNodeByNDID: 'UpdateNodeByNDIDParams',
+  AddNamespace: 'AddNamespaceParams',
+  EnableNamespace: 'DisableNamespaceParams',
+  DisableNamespace: 'DisableNamespaceParams',
+  AddService: 'AddServiceParams',
+  UpdateService: 'UpdateServiceParams',
+  EnableService: 'DisableServiceParams',
+  DisableService: 'DisableServiceParams',
+  SetValidator: 'SetValidatorParams',
+  SetTimeOutBlockRegisterMsqDestination:
+    'TimeOutBlockRegisterMsqDestinationParams',
+  EnableServiceDestinationByNDID: 'DisableServiceDestinationByNDIDParams',
+  DisableServiceDestinationByNDID: 'DisableServiceDestinationByNDIDParams',
+  AddNodeToProxyNode: 'AddNodeToProxyNodeParams',
+  UpdateNodeProxyNode: 'UpdateNodeProxyNodeParams',
+  RemoveNodeFromProxyNode: 'RemoveNodeFromProxyNodeParams',
+
+  // Tx
+  RegisterMsqAddress: 'RegisterMsqAddressParams',
+  UpdateNode: 'UpdateNodeParams',
+  CreateIdentity: 'CreateIdentityParams',
+  ClearRegisterMsqDestinationTimeout:
+    'ClearRegisterMsqDestinationTimeoutParams',
+  RegisterMsqDestination: 'RegisterMsqDestinationParams',
+  AddAccessorMethod: 'AccessorMethodParams',
+  CreateRequest: 'CreateRequestParams',
+  CloseRequest: 'CloseRequestParams',
+  TimeOutRequest: 'TimeOutRequestParams',
+  SetDataReceived: 'SetDataReceivedParams',
+  UpdateIdentity: 'UpdateIdentityParams',
+  DeclareIdentityProof: 'DeclareIdentityProofParams',
+  CreateIdpResponse: 'CreateIdpResponseParams',
+  SignData: 'SignDataParams',
+  RegisterServiceDestination: 'RegisterServiceDestinationParams',
+  UpdateServiceDestination: 'UpdateServiceDestinationParams',
+};
+
+const QUERY_FUNCTIONS = [
   'GetNodePublicKey',
   'GetNodeMasterPublicKey',
   'GetMsqAddress',
@@ -100,10 +157,86 @@ const FUNCTIONS = [
   'GetNodesBehindProxyNode',
 ];
 
-const PROTO_STRUCTS = {};
+const QUERY_FUNCTION_PARAMS_MESSAGE_TYPES = {
+  GetNodePublicKey: 'GetNodePublicKeyParams',
+  GetNodeMasterPublicKey: 'GetNodeMasterPublicKeyParams',
+  GetMsqAddress: 'GetMsqAddressParams',
+  GetNodeToken: 'GetNodeTokenParams',
+  GetRequest: 'GetRequestParams',
+  GetRequestDetail: 'GetRequestParams',
+  GetIdpNodes: 'GetIdpNodesParams',
+  GetIdpNodesInfo: 'GetIdpNodesParams',
+  GetAsNodesByServiceId: 'GetAsNodesByServiceIdParams',
+  GetAsNodesInfoByServiceId: 'GetAsNodesByServiceIdParams',
+  GetServicesByAsID: 'GetServicesByAsIDParams',
+  GetAccessorGroupID: 'GetAccessorGroupIDParams',
+  GetAccessorKey: 'GetAccessorKeyParams',
+  CheckExistingIdentity: 'CheckExistingIdentityParams',
+  GetIdentityInfo: 'GetIdentityInfoParams',
+  GetIdentityProof: 'GetIdentityProofParams',
+  GetDataSignature: 'GetDataSignatureParams',
+  GetServiceDetail: 'GetServiceDetailParams',
+  GetNamespaceList: null, // no params
+  GetServiceList: null, // no params
+  GetNodeInfo: 'GetNodeInfoParams',
+  CheckExistingAccessorID: 'CheckExistingAccessorIDParams',
+  CheckExistingAccessorGroupID: 'CheckExistingAccessorGroupIDParams',
+  GetNodesBehindProxyNode: 'GetNodesBehindProxyNodeParams',
+};
 
-FUNCTIONS.forEach((fnName) => {
-  PROTO_STRUCTS[fnName] = abciParamsProtobufRoot.lookup(''); // FIXME: concat with "Params" or another mapping
+const QUERY_FUNCTION_RESULT_MESSAGE_TYPES = {
+  GetNodePublicKey: 'GetNodePublicKeyResult',
+  GetNodeMasterPublicKey: 'GetNodeMasterPublicKeyResult',
+  GetMsqAddress: 'GetMsqAddressResult',
+  GetNodeToken: 'GetNodeTokenResult',
+  GetRequest: 'GetRequestResult',
+  GetRequestDetail: 'GetRequestDetailResult',
+  GetIdpNodes: 'GetIdpNodesResult',
+  GetIdpNodesInfo: 'GetIdpNodesInfoResult',
+  GetAsNodesByServiceId: 'GetAsNodesByServiceIdResult',
+  GetAsNodesInfoByServiceId: 'GetAsNodesInfoByServiceIdResult',
+  GetServicesByAsID: 'GetServicesByAsIDResult',
+  GetAccessorGroupID: 'GetAccessorGroupIDResult',
+  GetAccessorKey: 'GetAccessorKeyResult',
+  CheckExistingIdentity: 'CheckExistingIdentityResult',
+  GetIdentityInfo: 'GetIdentityInfoResult',
+  GetIdentityProof: 'GetIdentityProofResult',
+  GetDataSignature: 'GetDataSignatureResult',
+  GetServiceDetail: 'GetServiceDetailResult',
+  GetNamespaceList: 'GetNamespaceListResult',
+  GetServiceList: 'GetServiceListResult',
+  GetNodeInfo: 'GetNodeInfoResult',
+  CheckExistingAccessorID: 'CheckExistingAccessorIDResult',
+  CheckExistingAccessorGroupID: 'CheckExistingAccessorIDResult',
+  GetNodesBehindProxyNode: 'GetNodesBehindProxyNodeResult',
+};
+
+const TX_PARAMS_PROTO_STRUCTS = {};
+const QUERY_PARAMS_PROTO_STRUCTS = {};
+const QUERY_RESULT_PROTO_STRUCTS = {};
+
+TX_FUNCTIONS.forEach((fnName) => {
+  if (TX_FUNCTION_PARAMS_MESSAGE_TYPES[fnName] != null) {
+    TX_PARAMS_PROTO_STRUCTS[fnName] = abciParamsProtobufRoot.lookupType(
+      TX_FUNCTION_PARAMS_MESSAGE_TYPES[fnName]
+    );
+  }
+});
+
+QUERY_FUNCTIONS.forEach((fnName) => {
+  if (QUERY_FUNCTION_PARAMS_MESSAGE_TYPES[fnName] != null) {
+    QUERY_PARAMS_PROTO_STRUCTS[fnName] = abciParamsProtobufRoot.lookupType(
+      QUERY_FUNCTION_PARAMS_MESSAGE_TYPES[fnName]
+    );
+  }
+});
+
+QUERY_FUNCTIONS.forEach((fnName) => {
+  if (QUERY_FUNCTION_RESULT_MESSAGE_TYPES[fnName] != null) {
+    QUERY_RESULT_PROTO_STRUCTS[fnName] = abciResultProtobufRoot.lookupType(
+      QUERY_FUNCTION_RESULT_MESSAGE_TYPES[fnName]
+    );
+  }
 });
 
 /**
@@ -112,14 +245,19 @@ FUNCTIONS.forEach((fnName) => {
  * @param {Object} params
  */
 export function encodeProtobuf(fnName, params) {
-  const proto = PROTO_STRUCTS[fnName];
+  let proto;
+  if (TX_FUNCTIONS.indexOf(fnName) >= 0) {
+    proto = TX_PARAMS_PROTO_STRUCTS[fnName];
+  } else if (QUERY_FUNCTIONS.indexOf(fnName) >= 0) {
+    proto = QUERY_PARAMS_PROTO_STRUCTS[fnName];
+  }
   if (proto == null) {
     throw new CustomError({
       message: 'Unknown function name',
     });
   }
-  const protobufObject = proto.create(params);
-  const protobufBuffer = proto.encode(protobufObject).finish();
+  const protobufMessageObject = proto.create(params);
+  const protobufBuffer = proto.encode(protobufMessageObject).finish();
   return protobufBuffer;
 }
 
@@ -129,11 +267,19 @@ export function encodeProtobuf(fnName, params) {
  * @param {Buffer} protobufBuffer
  */
 export function decodeProtobuf(fnName, protobufBuffer) {
-  const proto = PROTO_STRUCTS[fnName];
+  let proto;
+  if (TX_FUNCTIONS.indexOf(fnName) >= 0) {
+    proto = TX_PARAMS_PROTO_STRUCTS[fnName];
+  } else if (QUERY_FUNCTIONS.indexOf(fnName) >= 0) {
+    proto = QUERY_RESULT_PROTO_STRUCTS[fnName];
+  }
   if (proto == null) {
     throw new CustomError({
       message: 'Unknown function name',
     });
   }
-  return proto.decode(protobufBuffer).toObject();
+  const protobufMessageObject = proto.decode(protobufBuffer);
+  return proto.toObject(protobufMessageObject, {
+    longs: Number,
+  });
 }
