@@ -30,7 +30,7 @@ import CustomError from '../error/custom_error';
 // Transact
 //
 
-export async function registerMsqAddress(
+export async function setMqAddresses(
   addresses,
   nodeId,
   callbackFnName,
@@ -42,7 +42,7 @@ export async function registerMsqAddress(
   try {
     return await tendermint.transact({
       nodeId,
-      fnName: 'RegisterMsqAddress',
+      fnName: 'SetMqAddresses',
       params: {
         node_id: nodeId,
         addresses,
@@ -52,7 +52,7 @@ export async function registerMsqAddress(
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot register message queue address to blockchain',
+      message: 'Cannot register message queue addresses to blockchain',
       cause: error,
     });
   }
@@ -85,7 +85,7 @@ export async function updateNode(
   }
 }
 
-export async function createIdentity(
+export async function registerAccessor(
   { accessor_type, accessor_public_key, accessor_id, accessor_group_id },
   nodeId,
   callbackFnName,
@@ -94,7 +94,7 @@ export async function createIdentity(
   try {
     return await tendermint.transact({
       nodeId,
-      fnName: 'CreateIdentity',
+      fnName: 'RegisterAccessor',
       params: {
         accessor_type,
         accessor_public_key,
@@ -106,13 +106,13 @@ export async function createIdentity(
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot create identity to blockchain',
+      message: 'Cannot register accessor to blockchain',
       cause: error,
     });
   }
 }
 
-export async function clearRegisterMsqDestinationTimeout(
+export async function clearRegisterIdentityTimeout(
   hash_id,
   nodeId,
   callbackFnName,
@@ -121,7 +121,7 @@ export async function clearRegisterMsqDestinationTimeout(
   try {
     const result = await tendermint.transact({
       nodeId,
-      fnName: 'ClearRegisterMsqDestinationTimeout',
+      fnName: 'ClearRegisterIdentityTimeout',
       params: { hash_id },
       callbackFnName,
       callbackAdditionalArgs,
@@ -129,13 +129,13 @@ export async function clearRegisterMsqDestinationTimeout(
     return result;
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot mark message queue destination as success to blockchain',
+      message: 'Cannot mark register identity as success to blockchain',
       cause: error,
     });
   }
 }
 
-export async function registerMqDestination(
+export async function registerIdentity(
   { users },
   nodeId,
   callbackFnName,
@@ -144,7 +144,7 @@ export async function registerMqDestination(
   try {
     const result = await tendermint.transact({
       nodeId,
-      fnName: 'RegisterMsqDestination',
+      fnName: 'RegisterIdentity',
       params: {
         users,
       },
@@ -154,7 +154,7 @@ export async function registerMqDestination(
     return result;
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot register message queue destination to blockchain',
+      message: 'Cannot register identity to blockchain',
       cause: error,
     });
   }
@@ -481,9 +481,9 @@ export async function getNodeMasterPubKey(node_id) {
   }
 }
 
-export async function getMsqAddress(node_id) {
+export async function getMqAddresses(node_id) {
   try {
-    return await tendermint.query('GetMsqAddress', { node_id });
+    return await tendermint.query('GetMqAddresses', { node_id });
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get message queue address from blockchain',

@@ -552,9 +552,9 @@ export default {
     code: 15020,
     message: 'Unknown method',
   },
-  ABCI_MQ_DESTINATION_TIMED_OUT: {
+  ABCI_REGISTER_IDENTITY_TIMED_OUT: {
     code: 15021,
-    message: 'Message queue destination registration is timed out',
+    message: 'Identity registration is timed out',
   },
   ABCI_NODE_IS_NOT_ACTIVE: {
     code: 15022,
@@ -735,9 +735,9 @@ export default {
     message: 'NDID node is already existed',
     clientError: true,
   },
-  ABCI_NO_PERMISSION_TO_REGISTER_MESSAGE_QUEUE_ADDRESS: {
+  ABCI_NO_PERMISSION_TO_REGISTER_MESSAGE_QUEUE_ADDRESSES: {
     code: 25033,
-    message: 'No permission to register message queue address',
+    message: 'No permission to register message queue addresses',
     clientError: true,
   },
   ABCI_NO_PERMISSION_TO_CALL_NDID_METHOD: {

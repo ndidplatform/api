@@ -87,7 +87,7 @@ export async function addAccessorAfterConsentAfterAddAccessorMethod(
     if (error) throw error;
     //no ial means old idp add new accessor
     if (ial) {
-      await tendermintNdid.registerMqDestination(
+      await tendermintNdid.registerIdentity(
         {
           users: [
             {

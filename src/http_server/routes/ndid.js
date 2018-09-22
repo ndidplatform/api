@@ -278,13 +278,13 @@ router.post('/validator', validateBody, async (req, res, next) => {
 });
 
 router.post(
-  '/setTimeoutBlockRegisterMqDestination',
+  '/setTimeoutBlockRegisterIdentity',
   validateBody,
   async (req, res, next) => {
     try {
       const { blocks_to_timeout } = req.body;
 
-      await ndid.setTimeoutBlockRegisterMqDestination({
+      await ndid.setTimeoutBlockRegisterIdentity({
         blocks_to_timeout,
       });
       res.status(204).end();

@@ -167,7 +167,7 @@ export default {
         required: ['public_key', 'power'],
       },
     },
-    '/ndid/setTimeoutBlockRegisterMqDestination': {
+    '/ndid/setTimeoutBlockRegisterIdentity': {
       body: {
         properties: {
           blocks_to_timeout: { type: 'number', minimum: 0 },

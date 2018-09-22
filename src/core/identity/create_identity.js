@@ -651,7 +651,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       const accessor_group_id = utils.randomBase64Bytes(32);
 
       if (!synchronous) {
-        await tendermintNdid.createIdentity(
+        await tendermintNdid.registerAccessor(
           {
             accessor_type,
             accessor_public_key,
@@ -677,7 +677,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
           ]
         );
       } else {
-        await tendermintNdid.createIdentity(
+        await tendermintNdid.registerAccessor(
           {
             accessor_type,
             accessor_public_key,
@@ -764,10 +764,10 @@ export async function createIdentityInternalAsyncAfterBlockchain(
 
     const hash_id = utils.hash(namespace + ':' + identifier);
     if (!synchronous) {
-      await tendermintNdid.clearRegisterMsqDestinationTimeout(
+      await tendermintNdid.clearRegisterIdentityTimeout(
         hash_id,
         nodeId,
-        'identity.createIdentityInternalAsyncAfterClearMqDestTimeout',
+        'identity.createIdentityInternalAsyncAfterClearRegisterIdentityTimeout',
         [
           {
             nodeId,
@@ -785,8 +785,8 @@ export async function createIdentityInternalAsyncAfterBlockchain(
         ]
       );
     } else {
-      await tendermintNdid.clearRegisterMsqDestinationTimeout(hash_id, nodeId);
-      await createIdentityInternalAsyncAfterClearMqDestTimeout(
+      await tendermintNdid.clearRegisterIdentityTimeout(hash_id, nodeId);
+      await createIdentityInternalAsyncAfterClearRegisterIdentityTimeout(
         {},
         {
           nodeId,
@@ -841,7 +841,7 @@ export async function createIdentityInternalAsyncAfterBlockchain(
   }
 }
 
-export async function createIdentityInternalAsyncAfterClearMqDestTimeout(
+export async function createIdentityInternalAsyncAfterClearRegisterIdentityTimeout(
   { error },
   {
     nodeId,

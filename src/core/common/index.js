@@ -63,28 +63,28 @@ export function registeredMsqAddress() {
 async function registerMessageQueueAddress() {
   if (!messageQueueAddressRegistered) {
     //query current self msq
-    const selfMqAddress = await tendermintNdid.getMsqAddress(config.nodeId);
+    const selfMqAddress = await tendermintNdid.getMqAddresses(config.nodeId);
     if (selfMqAddress) {
       const { ip, port } = selfMqAddress;
       //if not same
       if (ip !== config.mqRegister.ip || port !== config.mqRegister.port) {
-        await tendermintNdid.registerMsqAddress([
+        await tendermintNdid.setMqAddresses([
           { ip: config.mqRegister.ip, port: config.mqRegister.port },
         ]);
         logger.info({
-          message: 'Message queue address change registered',
+          message: 'Message queue addresses change registered',
         });
       } else {
         logger.info({
-          message: 'Message queue address unchanged',
+          message: 'Message queue addresses unchanged',
         });
       }
     } else {
-      await tendermintNdid.registerMsqAddress([
+      await tendermintNdid.setMqAddresses([
         { ip: config.mqRegister.ip, port: config.mqRegister.port },
       ]);
       logger.info({
-        message: 'Message queue address registered',
+        message: 'Message queue addresses registered',
       });
     }
     messageQueueAddressRegistered = true;
@@ -185,8 +185,8 @@ export function getFunction(fnName) {
       return identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain;
     case 'identity.checkForExistedIdentityAfterBlockchain':
       return identity.checkForExistedIdentityAfterBlockchain;
-    case 'identity.createIdentityInternalAsyncAfterClearMqDestTimeout':
-      return identity.createIdentityInternalAsyncAfterClearMqDestTimeout;
+    case 'identity.createIdentityInternalAsyncAfterClearRegisterIdentityTimeout':
+      return identity.createIdentityInternalAsyncAfterClearRegisterIdentityTimeout;
     case 'identity.addAccessorAfterConsentAfterAddAccessorMethod':
       return identity.addAccessorAfterConsentAfterAddAccessorMethod;
     case 'identity.addAccessorAfterConsentAfterRegisterMqDest':

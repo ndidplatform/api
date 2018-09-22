@@ -120,7 +120,7 @@ export async function checkForExistedIdentity(
   let exist = await tendermintNdid.checkExistingIdentity(hash_id);
   if (!exist) {
     if (callbackFnName != null) {
-      await tendermintNdid.registerMqDestination(
+      await tendermintNdid.registerIdentity(
         {
           users: [
             {
@@ -145,7 +145,7 @@ export async function checkForExistedIdentity(
       );
     } else {
       try {
-        await tendermintNdid.registerMqDestination(
+        await tendermintNdid.registerIdentity(
           {
             users: [
               {
@@ -164,7 +164,7 @@ export async function checkForExistedIdentity(
         ) {
           logger.debug({
             message:
-              'Unable to register message queue destination for an identity as the first IdP. Switching to ask for consent mode.',
+              'Unable to register identity as the first IdP. Switching to ask for consent mode.',
             hash_id,
           });
           exist = true;

@@ -77,7 +77,7 @@ import errorType from '../error/type';
 // UnsupportedKeyType                        uint32 = 51
 // UnknownKeyType                            uint32 = 52
 // NDIDisAlreadyExisted                      uint32 = 53
-// NoPermissionForRegisterMsqAddress         uint32 = 54
+// NoPermissionForSetMqAddresses             uint32 = 54
 // NoPermissionForCallNDIDMethod             uint32 = 55
 // NoPermissionForCallIdPMethod              uint32 = 56
 // NoPermissionForCallASMethod               uint32 = 57
@@ -89,7 +89,7 @@ import errorType from '../error/type';
 // CannotGetPublicKeyFromNodeID              uint32 = 63
 // TimeOutBlockIsMustGreaterThanZero         uint32 = 64
 // RSAKeyLengthTooShort                      uint32 = 65
-// MsqDestinationIsTimedOut                  uint32 = 66
+// RegisterIdentityIsTimedOut                uint32 = 66
 // AmountMustBeGreaterOrEqualToZero          uint32 = 67
 // NodeIsNotActive                           uint32 = 68
 // ServiceIsNotActive                        uint32 = 69
@@ -151,7 +151,7 @@ const codeMapping = {
   51: errorType.ABCI_UNSUPPORTED_KEY_TYPE,
   52: errorType.ABCI_UNKNOWN_KEY_TYPE,
   53: errorType.ABCI_NDID_ALREADY_EXIST,
-  54: errorType.ABCI_NO_PERMISSION_TO_REGISTER_MESSAGE_QUEUE_ADDRESS,
+  54: errorType.ABCI_NO_PERMISSION_TO_REGISTER_MESSAGE_QUEUE_ADDRESSES,
   55: errorType.ABCI_NO_PERMISSION_TO_CALL_NDID_METHOD,
   56: errorType.ABCI_NO_PERMISSION_TO_CALL_IDP_METHOD,
   57: errorType.ABCI_NO_PERMISSION_TO_CALL_AS_METHOD,
@@ -163,7 +163,7 @@ const codeMapping = {
   63: errorType.ABCI_CANNOT_GET_PUBLIC_KEY_BY_NODE_ID,
   64: errorType.ABCI_BLOCK_TIMEOUT_MUST_BE_GREATER_THAN_ZERO,
   65: errorType.ABCI_RSA_KEY_LENGTH_TOO_SHORT,
-  66: errorType.ABCI_MQ_DESTINATION_TIMED_OUT,
+  66: errorType.ABCI_REGISTER_IDENTITY_TIMED_OUT,
   67: errorType.ABCI_AMOUNT_MUST_BE_GREATER_OR_EQUAL_ZERO,
   68: errorType.ABCI_NODE_IS_NOT_ACTIVE,
   69: errorType.ABCI_SERVICE_IS_NOT_ACTIVE,
