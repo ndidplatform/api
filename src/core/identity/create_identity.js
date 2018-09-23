@@ -83,13 +83,13 @@ export async function createIdentity(
     addAccessor,
   } = createIdentityParams;
 
-  if (role === 'proxy' && node_id == null) {
-    throw new CustomError({
-      errorType: errorType.MISSING_NODE_ID,
-    });
-  }
-
-  if (node_id == null) {
+  if (role === 'proxy') {
+    if (node_id == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+  } else {
     node_id = config.nodeId;
   }
 
@@ -970,13 +970,13 @@ export async function calculateSecret({
   identifier,
   reference_id,
 }) {
-  if (role === 'proxy' && node_id == null) {
-    throw new CustomError({
-      errorType: errorType.MISSING_NODE_ID,
-    });
-  }
-
-  if (node_id == null) {
+  if (role === 'proxy') {
+    if (node_id == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+  } else {
     node_id = config.nodeId;
   }
 

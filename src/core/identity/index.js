@@ -65,13 +65,13 @@ export async function addAccessorMethodForAssociatedIdp(
   },
   { synchronous = false, apiVersion } = {}
 ) {
-  if (role === 'proxy' && node_id == null) {
-    throw new CustomError({
-      errorType: errorType.MISSING_NODE_ID,
-    });
-  }
-
-  if (node_id == null) {
+  if (role === 'proxy') {
+    if (node_id == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+  } else {
     node_id = config.nodeId;
   }
 
@@ -222,13 +222,13 @@ export function checkForExistedIdentityAfterBlockchain(
 
 export async function getCreateIdentityDataByReferenceId(nodeId, referenceId) {
   try {
-    if (role === 'proxy' && nodeId == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
-
-    if (nodeId == null) {
+    if (role === 'proxy') {
+      if (nodeId == null) {
+        throw new CustomError({
+          errorType: errorType.MISSING_NODE_ID,
+        });
+      }
+    } else {
       nodeId = config.nodeId;
     }
 
@@ -246,13 +246,13 @@ export async function getCreateIdentityDataByReferenceId(nodeId, referenceId) {
 
 export async function getIdentityInfo({ nodeId, namespace, identifier }) {
   try {
-    if (role === 'proxy' && nodeId == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
-
-    if (nodeId == null) {
+    if (role === 'proxy') {
+      if (nodeId == null) {
+        throw new CustomError({
+          errorType: errorType.MISSING_NODE_ID,
+        });
+      }
+    } else {
       nodeId = config.nodeId;
     }
 

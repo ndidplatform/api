@@ -46,13 +46,13 @@ export async function registerOrUpdateASService(
     url,
   } = registerOrUpdateASServiceParams;
 
-  if (role === 'proxy' && node_id == null) {
-    throw new CustomError({
-      errorType: errorType.MISSING_NODE_ID,
-    });
-  }
-
-  if (node_id == null) {
+  if (role === 'proxy') {
+    if (node_id == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+  } else {
     node_id = config.nodeId;
   }
 

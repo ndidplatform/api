@@ -406,13 +406,13 @@ export async function checkServiceRequestParamsIntegrity(
 
 export async function getServiceDetail(nodeId, service_id) {
   try {
-    if (role === 'proxy' && nodeId == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
-
-    if (nodeId == null) {
+    if (role === 'proxy') {
+      if (nodeId == null) {
+        throw new CustomError({
+          errorType: errorType.MISSING_NODE_ID,
+        });
+      }
+    } else {
       nodeId = config.nodeId;
     }
 

@@ -237,13 +237,13 @@ export async function sendRequestToAS(nodeId, requestData, height) {
 
 export async function getRequestIdByReferenceId(nodeId, referenceId) {
   try {
-    if (role === 'proxy' && nodeId == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
-
-    if (nodeId == null) {
+    if (role === 'proxy') {
+      if (nodeId == null) {
+        throw new CustomError({
+          errorType: errorType.MISSING_NODE_ID,
+        });
+      }
+    } else {
       nodeId = config.nodeId;
     }
 
@@ -258,13 +258,13 @@ export async function getRequestIdByReferenceId(nodeId, referenceId) {
 
 export async function getDataFromAS(nodeId, requestId) {
   try {
-    if (role === 'proxy' && nodeId == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
-
-    if (nodeId == null) {
+    if (role === 'proxy') {
+      if (nodeId == null) {
+        throw new CustomError({
+          errorType: errorType.MISSING_NODE_ID,
+        });
+      }
+    } else {
       nodeId = config.nodeId;
     }
 
@@ -285,13 +285,13 @@ export async function getDataFromAS(nodeId, requestId) {
 
 export async function removeDataFromAS(nodeId, requestId) {
   try {
-    if (role === 'proxy' && nodeId == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
-
-    if (nodeId == null) {
+    if (role === 'proxy') {
+      if (nodeId == null) {
+        throw new CustomError({
+          errorType: errorType.MISSING_NODE_ID,
+        });
+      }
+    } else {
       nodeId = config.nodeId;
     }
 
@@ -306,13 +306,13 @@ export async function removeDataFromAS(nodeId, requestId) {
 
 export async function removeAllDataFromAS(nodeId) {
   try {
-    if (role === 'proxy' && nodeId == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
-
-    if (nodeId == null) {
+    if (role === 'proxy') {
+      if (nodeId == null) {
+        throw new CustomError({
+          errorType: errorType.MISSING_NODE_ID,
+        });
+      }
+    } else {
       nodeId = config.nodeId;
     }
 

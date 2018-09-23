@@ -49,13 +49,13 @@ export async function closeRequest(
   { node_id, reference_id, callback_url, request_id },
   { synchronous = false } = {}
 ) {
-  if (role === 'proxy' && node_id == null) {
-    throw new CustomError({
-      errorType: errorType.MISSING_NODE_ID,
-    });
-  }
-
-  if (node_id == null) {
+  if (role === 'proxy') {
+    if (node_id == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+  } else {
     node_id = config.nodeId;
   }
 

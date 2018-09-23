@@ -33,13 +33,13 @@ import * as config from '../../config';
 const privateMessageTypes = Object.values(PRIVATE_MESSAGE_TYPES);
 
 export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
-  if (role === 'proxy' && nodeId == null) {
-    throw new CustomError({
-      errorType: errorType.MISSING_NODE_ID,
-    });
-  }
-
-  if (nodeId == null) {
+  if (role === 'proxy') {
+    if (nodeId == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+  } else {
     nodeId = config.nodeId;
   }
 
@@ -142,13 +142,13 @@ export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
 }
 
 export async function removePrivateMessages({ nodeId, requestId, type } = {}) {
-  if (role === 'proxy' && nodeId == null) {
-    throw new CustomError({
-      errorType: errorType.MISSING_NODE_ID,
-    });
-  }
-
-  if (nodeId == null) {
+  if (role === 'proxy') {
+    if (nodeId == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+  } else {
     nodeId = config.nodeId;
   }
 
