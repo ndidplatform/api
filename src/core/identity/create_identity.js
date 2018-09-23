@@ -60,6 +60,7 @@ import { role } from '../../node';
  * @param {string} createIdentityParams.accessor_public_key
  * @param {string} createIdentityParams.accessor_id
  * @param {number} createIdentityParams.ial
+ * @param {string} createIdentityParams.request_message
  * @param {boolean} createIdentityParams.addAccessor
  * @param {Object} options
  * @param {boolean} options.synchronous
@@ -249,6 +250,7 @@ async function createIdentityInternalAsync(
     accessor_public_key,
     accessor_id,
     ial,
+    request_message,
     addAccessor,
   },
   { synchronous = false, apiVersion } = {},
@@ -290,6 +292,7 @@ async function createIdentityInternalAsync(
               accessor_public_key,
               accessor_id,
               ial,
+              request_message,
               addAccessor,
             },
             { synchronous, apiVersion },
@@ -318,6 +321,7 @@ async function createIdentityInternalAsync(
           accessor_public_key,
           accessor_id,
           ial,
+          request_message,
           addAccessor,
         },
         { synchronous, apiVersion },
@@ -381,6 +385,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
     accessor_public_key,
     accessor_id,
     ial,
+    request_message,
     addAccessor,
   },
   { synchronous = false, apiVersion } = {},
@@ -407,19 +412,22 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
           idp_id_list: [],
           callback_url: 'none_system_generated',
           data_request_list: [],
-          request_message: ial
-            ? getRequestMessageForCreatingIdentity({
-                namespace,
-                identifier,
-                reference_id,
-                node_id: config.nodeId,
-              })
-            : getRequestMessageForAddingAccessor({
-                namespace,
-                identifier,
-                reference_id,
-                node_id: config.nodeId,
-              }),
+          request_message:
+            request_message != null
+              ? request_message
+              : addAccessor
+                ? getRequestMessageForAddingAccessor({
+                    namespace,
+                    identifier,
+                    reference_id,
+                    node_id: config.nodeId,
+                  })
+                : getRequestMessageForCreatingIdentity({
+                    namespace,
+                    identifier,
+                    reference_id,
+                    node_id: config.nodeId,
+                  }),
           min_ial: 1.1,
           min_aal: 1,
           min_idp: exist ? 1 : 0,
@@ -468,19 +476,22 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
           idp_id_list: [],
           callback_url: 'none_system_generated',
           data_request_list: [],
-          request_message: ial
-            ? getRequestMessageForCreatingIdentity({
-                namespace,
-                identifier,
-                reference_id,
-                node_id: config.nodeId,
-              })
-            : getRequestMessageForAddingAccessor({
-                namespace,
-                identifier,
-                reference_id,
-                node_id: config.nodeId,
-              }),
+          request_message:
+            request_message != null
+              ? request_message
+              : addAccessor
+                ? getRequestMessageForAddingAccessor({
+                    namespace,
+                    identifier,
+                    reference_id,
+                    node_id: config.nodeId,
+                  })
+                : getRequestMessageForCreatingIdentity({
+                    namespace,
+                    identifier,
+                    reference_id,
+                    node_id: config.nodeId,
+                  }),
           min_ial: 1.1,
           min_aal: 1,
           min_idp: exist ? 1 : 0,

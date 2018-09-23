@@ -350,6 +350,7 @@ export default {
           accessor_public_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
           ial: { $ref: 'defs#/definitions/ial' },
+          request_message: { type: 'string' },
         },
         required: [
           'reference_id',
@@ -404,6 +405,7 @@ export default {
           accessor_type: { $ref: 'defs#/definitions/keyType' },
           accessor_public_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
+          request_message: { type: 'string' },
         },
         required: [
           'reference_id',

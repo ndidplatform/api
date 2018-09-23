@@ -44,6 +44,7 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
       accessor_public_key,
       accessor_id,
       ial,
+      request_message,
     } = req.body;
 
     const result = await identity.createIdentity(
@@ -57,6 +58,7 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
         accessor_public_key,
         accessor_id,
         ial,
+        request_message,
       },
       { synchronous: false }
     );
@@ -253,6 +255,7 @@ router.post(
         accessor_type,
         accessor_public_key,
         accessor_id,
+        request_message,
       } = req.body;
 
       const { namespace, identifier } = req.params;
@@ -267,6 +270,7 @@ router.post(
           accessor_type,
           accessor_public_key,
           accessor_id,
+          request_message,
         },
         { synchronous: false }
       );

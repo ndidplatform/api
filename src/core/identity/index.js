@@ -62,6 +62,7 @@ export async function addAccessorMethodForAssociatedIdp(
     accessor_type,
     accessor_public_key,
     accessor_id,
+    request_message,
   },
   { synchronous = false, apiVersion } = {}
 ) {
@@ -103,6 +104,7 @@ export async function addAccessorMethodForAssociatedIdp(
       accessor_type,
       accessor_public_key,
       accessor_id,
+      request_message,
       addAccessor: true,
     },
     { synchronous, apiVersion }
