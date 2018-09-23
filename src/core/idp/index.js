@@ -329,6 +329,7 @@ export async function processMessage(nodeId, message) {
       data_request_list: message.data_request_list,
       initial_salt: message.initial_salt,
       creation_time: message.creation_time,
+      request_timeout: message.request_timeout,
     });
   }
 }

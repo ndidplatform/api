@@ -20,6 +20,7 @@ IMPROVEMENTS:
 - API version 2.2
   - Add `requester_node_id` property to AS service callback data.
   - Add `requester_node_id` property to GET `/utility/requests/:request_id`.
+  - Add `request_timeout` property to IdP incoming request callback data.
 - Change cache and long-term database to Redis for better performance. This change introduces 2 new environment variables `DB_IP` and `DB_PORT`.
 - Reduce RPC/HTTP query calls to Tendermint.
 - Remove `ROLE` environment variable option. The server will get a node's role from blockchain on start.
