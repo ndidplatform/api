@@ -8,9 +8,9 @@ services:
       - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-ndid
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - MQ_CONTACT_IP=api-ndid
-      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
+      - SKIP_GET_ROLE=true
     security_opt:
       - no-new-privileges
     ports:
@@ -27,6 +27,7 @@ services:
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=api-idp-1
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
     security_opt:
       - no-new-privileges
@@ -44,6 +45,7 @@ services:
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=api-idp-2
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
     security_opt:
       - no-new-privileges
@@ -61,6 +63,7 @@ services:
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=api-rp
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
     security_opt:
       - no-new-privileges
@@ -78,11 +81,18 @@ services:
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=api-as
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
     security_opt:
       - no-new-privileges
     ports:
       - "8300:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-redis:
+    image: redis:4-alpine
+    security_opt:
+      - no-new-privileges
     networks:
       - ndidplatform
       
