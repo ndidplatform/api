@@ -6,14 +6,16 @@ BREAKING CHANGES:
 
 - API version 2.2
   - Remove `request_params` property from `data_request_list` in callback body when notifying incoming request to IdP.
+  - Change return body JSON schema for GET `/utility/private_messages/:request_id`
+- Switch from using SQLite3 as a database to Redis. Redis server is mandatory to run the server.
 
 FEATURES:
 
 - Proxy node support.
 - API version 2.2
-  - New APIs:
-    - GET `/identity/:namespace/:identifier/ial` Get identity's IAL.
+  - New APIs: GET `/identity/:namespace/:identifier/ial` Get identity's IAL.
   - Add `request_message` optional property to POST `/identity` and POST `/identity/:namespace/:identifier/accessors`
+  - Add `node_id` property to POST body and query string to GET of APIs for proxy node to specify node ID it wants to act on behalf of. This property is ignored if node is not a proxy.
 - Support loading environment variables from `.env` file.
 
 IMPROVEMENTS:
@@ -22,9 +24,9 @@ IMPROVEMENTS:
   - Add `requester_node_id` property to AS service callback data.
   - Add `requester_node_id` property to GET `/utility/requests/:request_id`.
   - Add `request_timeout` property to IdP incoming request callback data.
-- Change cache and long-term database to Redis for better performance. This change introduces 2 new environment variables `DB_IP` and `DB_PORT`.
+- Change cache and long-term database to Redis for better performance. This change introduces 3 new environment variables `DB_IP`, `DB_PORT`, and `DB_PASSWORD`.
 - Reduce RPC/HTTP query calls to Tendermint.
-- Remove `ROLE` environment variable option. The server will get a node's role from blockchain on start.
+- Remove `ROLE` environment variable option. The server will get a node's role from blockchain on start. Error if it cannot get node's role from blockchain.
 
 BUG FIXES:
 
