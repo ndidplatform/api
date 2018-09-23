@@ -66,11 +66,14 @@ function readNodeMasterPrivateKeyFromFile() {
 }
 
 async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
-  const keyFilePath = path.join(config.privateKeyDirectoryPath, nodeId);
+  const keyFilePath = path.join(
+    config.nodeBehindProxyPrivateKeyDirectoryPath,
+    nodeId
+  );
   const key = await readFileAsync(keyFilePath, 'utf8');
 
   const passphraseFilePath = path.join(
-    config.privateKeyDirectoryPath,
+    config.nodeBehindProxyPrivateKeyDirectoryPath,
     `${nodeId}_passphrase`
   );
 
@@ -105,13 +108,13 @@ async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
 
 async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
   const keyFilePath = path.join(
-    config.masterPrivateKeyDirectoryPath,
+    config.nodeBehindProxyMasterPrivateKeyDirectoryPath,
     `${nodeId}_master`
   );
   const key = await readFileAsync(keyFilePath, 'utf8');
 
   const passphraseFilePath = path.join(
-    config.privateKeyDirectoryPath,
+    config.nodeBehindProxyMasterPrivateKeyDirectoryPath,
     `${nodeId}_master_passphrase`
   );
 

@@ -122,17 +122,18 @@ export const masterPrivateKeyPassphrase = useExternalCryptoService
   ? null
   : process.env.MASTER_PRIVATE_KEY_PASSPHRASE;
 
-export const privateKeyDirectoryPath = useExternalCryptoService
+export const nodeBehindProxyPrivateKeyDirectoryPath = useExternalCryptoService
   ? null
-  : process.env.PRIVATE_KEY_DIRECTORY_PATH == null && env === 'development'
+  : process.env.NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH == null &&
+    env === 'development'
     ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'keys')
-    : process.env.PRIVATE_KEY_DIRECTORY_PATH;
-export const masterPrivateKeyDirectoryPath = useExternalCryptoService
+    : process.env.NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH;
+export const nodeBehindProxyMasterPrivateKeyDirectoryPath = useExternalCryptoService
   ? null
-  : process.env.MASTER_PRIVATE_KEY_DIRECTORY_PATH == null &&
+  : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH == null &&
     env === 'development'
     ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
-    : process.env.MASTER_PRIVATE_KEY_DIRECTORY_PATH;
+    : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH;
 
 //in byte
 export const challengeLength = 2;

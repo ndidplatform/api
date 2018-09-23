@@ -44,12 +44,12 @@
 - `MQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted [Required when role is set to `idp`, `rp`, or `as`]
 - `MQ_BINDING_PORT`: A port to bind message queue [Default: `5555`]
 - `SERVER_PORT`: API server port [Default: `8080`]
-- `PRIVATE_KEY_PATH`: Path to node's private key (if call back to create signature is not set) [Default: using pre-generated development key]
+- `PRIVATE_KEY_PATH`: Path to node's private key (if call back to create signature is not set) [Default: use pre-generated development key in development mode]
 - `PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key
-- `MASTER_PRIVATE_KEY_PATH`: Path to node's master private key (if call back to create signature is not set) [Default: using pre-generated development key]
+- `MASTER_PRIVATE_KEY_PATH`: Path to node's master private key (if call back to create signature is not set) [Default: use pre-generated development key in development mode]
 - `MASTER_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's master private key
-- `PRIVATE_KEY_DIRECTORY_PATH`:
-- `MASTER_PRIVATE_KEY_DIRECTORY_PATH`:
+- `NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy private keys and passphrases [Default: use pre-generated development key in development mode]
+- `NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy master private keys and passphrases [Default: use pre-generated development key in development mode]
 - `DATA_DIRECTORY_PATH`: Directory path for persistence data files [Default: `__dirname/../data` (`data` directory in repository's directory)]
 - `DB_IP`: IP address of DB (redis) server [Default: `localhost`]
 - `DB_PORT`: Port of DB (redis) server [Default: `6379`]
