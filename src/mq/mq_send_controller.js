@@ -62,7 +62,7 @@ export default class MQSend extends EventEmitter {
 
     this.logic.on(
       'PerformTotalTimeout',
-      function(msgId) {
+      function({ msgId }) {
         this.emit(
           'error',
           new CustomError({
