@@ -13,6 +13,7 @@ jobs:
           - --proxy_app=tcp://localhost:46000
       - image: ndidplatform/abci:latest
         command: ["tcp://0.0.0.0:46000"]
+      - image: redis:4-alpine
     steps:
       - checkout
       - restore_cache:
@@ -39,10 +40,8 @@ jobs:
       - run:
           name: Start service
           command: |
-            MQ_CONTACT_IP=localhost \
-            MQ_BINDING_PORT=5555 \
-            ROLE=ndid \
             NODE_ID=ndid1 \
+            SKIP_GET_ROLE=true \
             npm start
           background: true
       - run:
