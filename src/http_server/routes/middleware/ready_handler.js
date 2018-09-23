@@ -87,7 +87,7 @@ export default function readyHandler(req, res, next) {
     }
 
     // Reject all POST calls while message queue address is being registered
-    if (role !== 'ndid' && !registeredMsqAddress()) {
+    if (role != null && role !== 'ndid' && !registeredMsqAddress()) {
       const responseBody = {
         error: {
           message: errorType.REGISTERING_MESSAGE_QUEUE_ADDRESS.message,

@@ -71,7 +71,9 @@ async function initialize() {
     );
 
     await tendermint.initialize();
-    await node.getNodeRoleFromBlockchain();
+    if (!config.skipGetRole) {
+      await node.getNodeRoleFromBlockchain();
+    }
     await nodeKey.initialize();
 
     let externalCryptoServiceReady;

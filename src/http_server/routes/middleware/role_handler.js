@@ -25,7 +25,7 @@ export function asOnlyHandler(req, res, next) {
 }
 
 export function ndidOnlyHandler(req, res, next) {
-  if (role !== 'ndid') {
+  if (role != null && role !== 'ndid') {
     res.status(404).end();
     return;
   }

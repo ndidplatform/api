@@ -40,21 +40,6 @@ if (process.env.NODE_ENV == null || process.env.NODE_ENV === '') {
   }
 }
 
-if (
-  process.env.ROLE != null &&
-  process.env.ROLE !== 'idp' &&
-  process.env.ROLE !== 'rp' &&
-  process.env.ROLE !== 'as' &&
-  process.env.ROLE !== 'ndid'
-) {
-  console.error(
-    `Unknown role: ${
-      process.env.ROLE
-    }; Must be one of "idp", "rp", "as", or "ndid". Process will now exit.`
-  );
-  process.exit(1);
-}
-
 if (process.env.NODE_ID == null || process.env.NODE_ID === '') {
   console.error(
     'ERROR:',

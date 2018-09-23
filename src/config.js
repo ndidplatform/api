@@ -86,6 +86,8 @@ export const tendermintBaseWsUrl = `ws://${tendermintIp}:${tendermintPort}`;
 
 export const nodeId = process.env.NODE_ID;
 
+export const skipGetRole = process.env.SKIP_GET_ROLE === 'true';
+
 export const mqRegister = {
   ip: process.env.MQ_CONTACT_IP || 'localhost',
   port:
