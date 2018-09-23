@@ -46,6 +46,10 @@ export default {
         type: 'string',
         enum: ['RSA-SHA256'],
       },
+      proxyNodeConfig: {
+        type: 'string',
+        enum: ['KEY_ON_PROXY', 'KEY_ON_NODE'],
+      },
     },
   },
   GET: {},
@@ -207,8 +211,9 @@ export default {
         properties: {
           node_id: { type: 'string', minLength: 1 },
           proxy_node_id: { type: 'string', minLength: 1 },
+          config: { $ref: 'defs#/definitions/proxyNodeConfig' },
         },
-        required: ['node_id', 'proxy_node_id'],
+        required: ['node_id', 'proxy_node_id', 'config'],
       },
     },
     '/ndid/updateNodeProxyNode': {
@@ -216,6 +221,7 @@ export default {
         properties: {
           node_id: { type: 'string', minLength: 1 },
           proxy_node_id: { type: 'string', minLength: 1 },
+          config: { $ref: 'defs#/definitions/proxyNodeConfig' },
         },
         required: ['node_id', 'proxy_node_id'],
       },

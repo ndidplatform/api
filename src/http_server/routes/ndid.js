@@ -341,11 +341,12 @@ router.post(
 
 router.post('/addNodeToProxyNode', validateBody, async (req, res, next) => {
   try {
-    const { node_id, proxy_node_id } = req.body;
+    const { node_id, proxy_node_id, config } = req.body;
 
     await ndid.addNodeToProxyNode({
       node_id,
       proxy_node_id,
+      config,
     });
     res.status(204).end();
   } catch (error) {
@@ -355,11 +356,12 @@ router.post('/addNodeToProxyNode', validateBody, async (req, res, next) => {
 
 router.post('/updateNodeProxyNode', validateBody, async (req, res, next) => {
   try {
-    const { node_id, proxy_node_id } = req.body;
+    const { node_id, proxy_node_id, config } = req.body;
 
     await ndid.updateNodeProxyNode({
       node_id,
       proxy_node_id,
+      config,
     });
     res.status(204).end();
   } catch (error) {
