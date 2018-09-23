@@ -80,9 +80,9 @@ does_node_id_exist() {
   if [ $# -gt 0 ]; then _NODE_ID=$1; fi
 
   echo "Checking if node_id=${_NODE_ID} exist..."
-  local PARAMS=$(echo "{\"node_id\":\"${_NODE_ID}\"}" | base64 | sed 's/\//%2F/g;s/+/%2B/g')
-  local DATA="GetNodePublicKey|${PARAMS}"
-  if [ "$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/abci_query?data=\"${DATA}\" | jq -r .result.response.value | base64 -d | jq -r .public_key)" = "" ]; then
+  local PARAMS="{\"node_id\":\"${_NODE_ID}\"}"
+  local DATA=$(printf "\x0a\x10GetNodePublicKey\x12\x$(printf %x ${#PARAMS})${PARAMS}" | xxd -p -c 1000)
+  if [ "$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/abci_query?data=0x${DATA} | jq -r .result.response.value | base64 -d | jq -r .public_key)" = "" ]; then
     echo "node_id=${_NODE_ID} does not exist"
     return 1
   else
