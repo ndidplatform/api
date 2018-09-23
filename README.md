@@ -6,7 +6,7 @@
 
 - Node.js 8.9 or later (Recommended: latest version of Node.js 8 LTS)
 - npm 5.6.0 or later
-- Redis
+- Redis 3.2 or later
 
 ## Getting started
 
@@ -30,7 +30,6 @@
 4.  Run a server
 
     ```sh
-    ROLE=$ROLE \
     NODE_ID=$NODE_ID \
     npm start
     ```
@@ -85,7 +84,6 @@ Debug APIs (Only in development mode)
 - Run a server as an IDP
 
   ```sh
-  ROLE=idp \
   TENDERMINT_IP=127.0.0.1 \
   TENDERMINT_PORT=45000 \
   MQ_CONTACT_IP=127.0.0.1 \
@@ -98,7 +96,6 @@ Debug APIs (Only in development mode)
 - Run a server as a RP
 
   ```sh
-  ROLE=rp \
   TENDERMINT_IP=127.0.0.1 \
   TENDERMINT_PORT=45001 \
   MQ_CONTACT_IP=127.0.0.1 \
@@ -111,7 +108,6 @@ Debug APIs (Only in development mode)
 - Run a server as a AS
 
   ```sh
-  ROLE=as \
   TENDERMINT_IP=127.0.0.1 \
   TENDERMINT_PORT=45000 \
   MQ_CONTACT_IP=127.0.0.1 \
@@ -125,7 +121,6 @@ Don't forget to
 
 1.  Set `SERVER_PORT` when running on the same machine to avoid port collision.
 2.  Set `TENDERMINT_IP` and/or `TENDERMINT_PORT` when running `smart-contract`/`tendermint` on another machine.
-3.  Set `NODE_ID` when there are more than one node per role in the system.
 
 ## Run in Docker
 
@@ -165,4 +160,7 @@ docker-compose -f docker/docker-compose.yml up
 
 ## Note
 
-- When working in development, if you clear/delete the blockchain, you need to delete DB files and latest block height files by running `npm run delete-local-data-cache`. (Automatically run when running `npm run initDevKey`) For docker, run `npm run docker-down` or `docker-compose -f docker/docker-compose.yml down` before starting containers again.
+- When working in development, if you clear/delete the blockchain, you need to delete latest block height files by running `npm run delete-local-data-cache`. (Automatically run when running `npm run initDevKey`) For docker, run `npm run docker-down` or `docker-compose -f docker/docker-compose.yml down` before starting containers again.
+- When running as a proxy node:
+  - `NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH` is where node behind proxy private keys are stored. The server expects key filename to be node's ID. If keys have a passphrase, it should be in a text file with filename `<NODE_ID>_passphrase`
+  - `NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH` is where node behind proxy master private keys are stored. The server expects key filename to be `<NODE_ID>_master`. If keys have a passphrase, it should be in a text file with filename `<NODE_ID>_master_passphrase`
