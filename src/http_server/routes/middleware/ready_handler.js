@@ -32,6 +32,11 @@ import logger from '../../../logger';
 import * as config from '../../../config';
 
 export default function readyHandler(req, res, next) {
+  if (req.url.endsWith('/dpki/node/callback')) {
+    next();
+    return;
+  }
+
   // Reject all requests when tendermint is not yet ready.
   // This includes when tendermint is syncing (happens when starting a new node or resuming tendermint)
 
@@ -62,11 +67,6 @@ export default function readyHandler(req, res, next) {
       message: 'Responded Service Unavailable with HTTP code 503',
       responseBody,
     });
-    return;
-  }
-
-  if (req.method === 'POST' && req.url.endsWith('/dpki/node/callback')) {
-    next();
     return;
   }
 

@@ -23,6 +23,7 @@
 import path from 'path';
 import fs from 'fs';
 
+import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as config from '../../config';
 import logger from '../../logger';
@@ -30,7 +31,10 @@ import logger from '../../logger';
 let version;
 
 export default async function getInfo(req, res, next) {
-  const nodeInfo = await tendermintNdid.getNodeInfo(config.nodeId);
+  let nodeInfo;
+  if (tendermint.connected) {
+    nodeInfo = await tendermintNdid.getNodeInfo(config.nodeId);
+  }
 
   res.status(200).json({
     env: config.env,

@@ -97,6 +97,8 @@ router.get('/source', (req, res) => {
   res.status(200).send('https://github.com/ndidplatform/api');
 });
 
+router.get('/info', getInfo);
+
 router.use(readyHandler);
 
 router.use('/ndid', ndidRouter);
@@ -104,8 +106,6 @@ router.use('/ndid', ndidRouter);
 router.use(apiV2Router);
 router.use('/v1', apiV1Router);
 router.use('/v2', apiV2Router);
-
-router.get('/info', getInfo);
 
 router.use(errorHandler);
 
