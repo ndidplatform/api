@@ -45,9 +45,12 @@ export default async function getInfo(req, res, next) {
     nodePublicKey: nodeInfo != null ? nodeInfo.public_key : undefined,
     role: nodeInfo != null ? nodeInfo.role : undefined,
     serverListenPort: config.serverPort,
+    dbIp: config.dbIp,
+    dbPort: config.dbPort,
     messageQueueIp: config.mqRegister.ip,
     messageQueuePort: config.mqRegister.port,
     tendermintAddress: config.tendermintAddress,
+    tendermintWebSocketConnected: tendermint.connected,
   });
 }
 
