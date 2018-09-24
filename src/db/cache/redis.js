@@ -24,11 +24,18 @@ export const redis = new Redis({
   lazyConnect: true,
 });
 
+export let connected = false;
+
 redis.on('connect', function() {
   logger.info({
     message: `DB (${dbName}): Connected to Redis server`,
   });
+  connected = true;
   backoff.reset();
+});
+
+redis.on('close', function() {
+  connected = false;
 });
 
 redis.on('error', function(error) {

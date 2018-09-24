@@ -130,7 +130,7 @@ async function onMessage(messageProtobuf, timestamp) {
 
     // TODO: Refactor MQ module to send ACK here (after save to persistence)
 
-    if (!tendermint.connected || tendermint.syncing) {
+    if (!tendermint.connected || tendermint.syncing) { // TODO: check for redis connection
       rawMessagesToRetry[messageId] = messageProtobuf;
     } else {
       await processMessage(messageId, messageProtobuf, timestamp);
