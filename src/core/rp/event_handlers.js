@@ -360,14 +360,9 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
       requestIdsToProcessUpdate = [...new Set(requestIdsToProcessUpdate)];
 
       await Promise.all(
-        requestIdsToProcessUpdate.map(async (requestId) => {
-          const callbackUrl = await cacheDb.getRequestCallbackUrl(
-            nodeId,
-            requestId
-          );
-          if (!callbackUrl) return; // This request does not concern this RP
-          await processRequestUpdate(nodeId, requestId, height);
-        })
+        requestIdsToProcessUpdate.map((requestId) =>
+          processRequestUpdate(nodeId, requestId, height)
+        )
       );
       cacheDb.removeExpectedIdpResponseNodeIdInBlockList(nodeId, height);
       cacheDb.removeExpectedDataSignInBlockList(nodeId, height);
