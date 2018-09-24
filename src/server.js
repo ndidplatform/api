@@ -60,19 +60,14 @@ process.on('unhandledRejection', function(reason, p) {
 });
 
 async function initialize() {
-  logger.info({
-    message: 'Initializing server',
-  });
+  logger.info({ message: 'Initializing server' });
   try {
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
 
-    const tendermintReady = new Promise((resolve) =>
-      tendermint.eventEmitter.once('ready', () => resolve())
-    );
-
-    await tendermint.initialize();
     if (!config.skipGetRole) {
-      await node.getNodeRoleFromBlockchain();
+      logger.info({ message: 'Getting node role' });
+      const role = await node.getNodeRoleFromBlockchain();
+      logger.info({ message: 'Node role', role });
     }
     await nodeKey.initialize();
 
@@ -90,18 +85,20 @@ async function initialize() {
     httpServer.initialize();
 
     if (externalCryptoServiceReady != null) {
-      logger.info({
-        message: 'Waiting for DPKI callback URLs to be set',
-      });
+      logger.info({ message: 'Waiting for DPKI callback URLs to be set' });
       await externalCryptoServiceReady;
     }
+
+    const tendermintReady = new Promise((resolve) =>
+      tendermint.eventEmitter.once('ready', () => resolve())
+    );
+
+    await tendermint.initialize();
     await tendermintReady;
 
     await core.initialize();
 
-    logger.info({
-      message: 'Server initialized',
-    });
+    logger.info({ message: 'Server initialized' });
   } catch (error) {
     logger.error({
       message: 'Cannot initialize server',
