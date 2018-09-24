@@ -350,8 +350,6 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
   await Promise.all(
     transactionsInBlocksToProcess.map(async ({ height, transactions }) => {
-      if (transactions.length === 0) return;
-
       let requestIdsToProcessUpdate = transactions
         .map((transaction) => {
           const requestId = transaction.args.request_id;
