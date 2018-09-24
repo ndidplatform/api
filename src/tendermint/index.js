@@ -676,7 +676,7 @@ export async function transact({
     return broadcastTxSyncResult;
   } catch (error) {
     delete expectedTx[txHash];
-    await cacheDb.removeExpectedTxMetadata(txHash);
+    await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
     if (error.type === 'JSON-RPC ERROR') {
       throw new CustomError({
         errorType: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
