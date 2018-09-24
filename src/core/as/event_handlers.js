@@ -26,6 +26,7 @@ import CustomError from '../../error/custom_error';
 import logger from '../../logger';
 
 import * as tendermint from '../../tendermint';
+import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../private_message_type';
@@ -108,7 +109,10 @@ export async function handleTendermintNewBlock(
     toHeight,
   });
   try {
-    await processRequestExpectedInBlocks(fromHeight, toHeight, nodeId);
+    await Promise.all([
+      processRequestExpectedInBlocks(fromHeight, toHeight, nodeId),
+      processTasksInBlocks(parsedTransactionsInBlocks, nodeId),
+    ]);
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling Tendermint NewBlock event',
@@ -140,4 +144,53 @@ async function processRequestExpectedInBlocks(fromHeight, toHeight, nodeId) {
     })
   );
   cacheDb.removeRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight);
+}
+
+async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
+  const transactionsInBlocksToProcess = parsedTransactionsInBlocks.filter(
+    ({ transactions }) => transactions.length >= 0
+  );
+
+  await Promise.all(
+    transactionsInBlocksToProcess.map(async ({ transactions }) => {
+      // Clean up closed or timed out create identity requests
+      const requestIdsToCleanUpSet = new Set();
+      transactions.forEach((transaction) => {
+        const requestId = transaction.args.request_id;
+        if (requestId == null) return;
+        if (
+          transaction.fnName === 'CloseRequest' ||
+          transaction.fnName === 'TimeOutRequest'
+        ) {
+          requestIdsToCleanUpSet.add(requestId);
+        }
+      });
+      const requestIdsToCleanUp = [...requestIdsToCleanUpSet];
+
+      await Promise.all(
+        requestIdsToCleanUp.map(async (requestId) => {
+          // Clean up when request is timed out or closed before AS response
+          const initialSalt = await cacheDb.getInitialSalt(nodeId, requestId);
+          if (initialSalt != null) {
+            const requestDetail = await tendermintNdid.getRequestDetail({
+              requestId,
+            });
+            const serviceIds = requestDetail.data_request_list.map(
+              (dataRequest) => dataRequest.service_id
+            );
+            await Promise.all([
+              ...serviceIds.map(async (serviceId) => {
+                const dataRequestId = requestId + ':' + serviceId;
+                await cacheDb.removeRpIdFromDataRequestId(
+                  nodeId,
+                  dataRequestId
+                );
+              }),
+              cacheDb.removeInitialSalt(nodeId, requestId),
+            ]);
+          }
+        })
+      );
+    })
+  );
 }

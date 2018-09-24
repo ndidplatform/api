@@ -25,6 +25,7 @@ import { createResponse } from './create_response';
 
 import { callbackToClient } from '../../utils/callback';
 import CustomError from '../../error/custom_error';
+import errorType from '../../error/type';
 import { getErrorObjectForClient } from '../../error/helpers';
 import logger from '../../logger';
 
@@ -323,38 +324,86 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
     transactionsInBlocksToProcess.map(async ({ transactions }) => {
       // Clean up closed or timed out create identity requests
       const requestIdsToCleanUpSet = new Set();
+      const closedRequestIds = new Set();
+      const timedOutRequestIds = new Set();
       transactions.forEach((transaction) => {
         const requestId = transaction.args.request_id;
         if (requestId == null) return;
-        if (
-          transaction.fnName === 'CloseRequest' ||
-          transaction.fnName === 'TimeOutRequest'
-        ) {
+        if (transaction.fnName === 'CloseRequest') {
           requestIdsToCleanUpSet.add(requestId);
+          closedRequestIds.add(requestId);
+        }
+        if (transaction.fnName === 'TimeOutRequest') {
+          requestIdsToCleanUpSet.add(requestId);
+          timedOutRequestIds.add(requestId);
         }
       });
       const requestIdsToCleanUp = [...requestIdsToCleanUpSet];
 
       await Promise.all(
         requestIdsToCleanUp.map(async (requestId) => {
+          // When IdP act as an RP (create identity)
           const callbackUrl = await cacheDb.getRequestCallbackUrl(
             nodeId,
             requestId
           );
-          if (!callbackUrl) return;
+          if (callbackUrl != null) {
+            const referenceId = await cacheDb.getReferenceIdByRequestId(
+              nodeId,
+              requestId
+            );
 
-          const referenceId = await cacheDb.getReferenceIdByRequestId(
+            let createIdentityError;
+            if (closedRequestIds.has(requestId)) {
+              createIdentityError = new CustomError({
+                errorType: errorType.REQUEST_IS_CLOSED,
+              });
+            } else if (timedOutRequestIds.has(requestId)) {
+              createIdentityError = new CustomError({
+                errorType: errorType.REQUEST_IS_TIMED_OUT,
+              });
+            }
+
+            await callbackToClient(
+              callbackUrl,
+              {
+                node_id: nodeId,
+                type: 'create_identity_result',
+                success: false,
+                reference_id: referenceId,
+                request_id: requestId,
+                error: getErrorObjectForClient(createIdentityError),
+              },
+              true
+            );
+
+            await Promise.all([
+              cacheDb.removeRequestCallbackUrl(nodeId, requestId),
+              cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
+              cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
+              cacheDb.removeRequestData(nodeId, requestId),
+              cacheDb.removeIdpResponseValidList(nodeId, requestId),
+              cacheDb.removeTimeoutScheduler(nodeId, requestId),
+              cacheDb.removeCreateIdentityDataByReferenceId(
+                nodeId,
+                referenceId
+              ),
+              cacheDb.removeIdentityFromRequestId(nodeId, requestId),
+            ]);
+          }
+
+          // Clean up when request is timed out or closed before IdP response
+          const requestReceivedFromMQ = await cacheDb.getRequestReceivedFromMQ(
             nodeId,
             requestId
           );
-          await Promise.all([
-            cacheDb.removeRequestCallbackUrl(nodeId, requestId),
-            cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
-            cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
-            cacheDb.removeRequestData(nodeId, requestId),
-            cacheDb.removeIdpResponseValidList(nodeId, requestId),
-            cacheDb.removeTimeoutScheduler(nodeId, requestId),
-          ]);
+          if (requestReceivedFromMQ != null) {
+            await Promise.all([
+              cacheDb.removeRequestReceivedFromMQ(nodeId, requestId),
+              cacheDb.removeRPIdFromRequestId(nodeId, requestId),
+              cacheDb.removeRequestMessage(nodeId, requestId),
+            ]);
+          }
         })
       );
     })
