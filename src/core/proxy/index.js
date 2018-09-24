@@ -22,9 +22,9 @@ export async function handleMessageFromQueue(message, receiverNodeId) {
 }
 
 export async function handleTendermintNewBlock(
-  error,
-  height,
-  missingBlockCount
+  fromHeight,
+  toHeight,
+  parsedTransactionsInBlocks
 ) {
   const nodesBehindProxyWithKeyOnProxy = await getNodesBehindProxyFromBlockchain(
     { withConfig: 'KEY_ON_PROXY' }
@@ -35,23 +35,23 @@ export async function handleTendermintNewBlock(
       role = role.toLowerCase();
       if (role === 'rp') {
         return rp.handleTendermintNewBlock(
-          error,
-          height,
-          missingBlockCount,
+          fromHeight,
+          toHeight,
+          parsedTransactionsInBlocks,
           node_id
         );
       } else if (role === 'idp') {
         return idp.handleTendermintNewBlock(
-          error,
-          height,
-          missingBlockCount,
+          fromHeight,
+          toHeight,
+          parsedTransactionsInBlocks,
           node_id
         );
       } else if (role === 'as') {
         return as.handleTendermintNewBlock(
-          error,
-          height,
-          missingBlockCount,
+          fromHeight,
+          toHeight,
+          parsedTransactionsInBlocks,
           node_id
         );
       }

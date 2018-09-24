@@ -96,29 +96,18 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
 }
 
 export async function handleTendermintNewBlock(
-  error,
-  height,
-  missingBlockCount,
+  fromHeight,
+  toHeight,
+  parsedTransactionsInBlocks,
   nodeId = config.nodeId
 ) {
-  if (missingBlockCount == null) return;
+  logger.debug({
+    message: 'Handling Tendermint new blocks',
+    nodeId,
+    fromHeight,
+    toHeight,
+  });
   try {
-    // messages that arrived before 'NewBlock' event
-    // including messages between the start of missing block's height
-    // and the block before latest block height
-    // (not only just (current height - 1) in case 'NewBlock' events are missing)
-    // NOTE: Tendermint always create an ending empty block. A block with transactions and
-    // a block that signs the previous block which indicates that the previous block is valid
-    const fromHeight = height - 1 - missingBlockCount;
-    const toHeight = height - 1;
-
-    logger.debug({
-      message: 'Handling Tendermint new blocks',
-      nodeId,
-      fromHeight,
-      toHeight,
-    });
-
     await processRequestExpectedInBlocks(fromHeight, toHeight, nodeId);
   } catch (error) {
     const err = new CustomError({

@@ -35,9 +35,6 @@ import privateMessageType from '../private_message_type';
 
 import * as config from '../../config';
 
-const successBase64 = Buffer.from('success').toString('base64');
-const trueBase64 = Buffer.from('true').toString('base64');
-
 const requestIdLocks = {};
 
 export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
@@ -264,32 +261,22 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
 }
 
 export async function handleTendermintNewBlock(
-  error,
-  height,
-  missingBlockCount,
+  fromHeight,
+  toHeight,
+  parsedTransactionsInBlocks,
   nodeId = config.nodeId
 ) {
-  if (missingBlockCount == null) return;
+  logger.debug({
+    message: 'Handling Tendermint new blocks',
+    nodeId,
+    fromHeight,
+    toHeight,
+  });
+
   try {
-    // messages that arrived before 'NewBlock' event
-    // including messages between the start of missing block's height
-    // and the block before latest block height
-    // (not only just (current height - 1) in case 'NewBlock' events are missing)
-    // NOTE: Tendermint always create an ending empty block. A block with transactions and
-    // a block that signs the previous block which indicates that the previous block is valid
-    const fromHeight = height - 1 - missingBlockCount;
-    const toHeight = height - 1;
-
-    logger.debug({
-      message: 'Handling Tendermint new blocks',
-      nodeId,
-      fromHeight,
-      toHeight,
-    });
-
     await Promise.all([
       processMessageExptectedInBlocks(fromHeight, toHeight, nodeId),
-      processTasksInBlocks(fromHeight, toHeight, nodeId),
+      processTasksInBlocks(parsedTransactionsInBlocks, nodeId),
     ]);
   } catch (error) {
     const err = new CustomError({
@@ -327,54 +314,35 @@ async function processMessageExptectedInBlocks(fromHeight, toHeight, nodeId) {
   cacheDb.removeRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight);
 }
 
-async function processTasksInBlocks(fromHeight, toHeight, nodeId) {
-  const blocks = await tendermint.getBlocks(fromHeight, toHeight);
-  await Promise.all(
-    blocks.map(async (block, blockIndex) => {
-      let transactions = tendermint.getTransactionListFromBlock(block);
-      if (transactions.length === 0) return;
+async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
+  const transactionsInBlocksToProcess = parsedTransactionsInBlocks.filter(
+    ({ transactions }) => transactions.length >= 0
+  );
 
+  await Promise.all(
+    transactionsInBlocksToProcess.map(async ({ transactions }) => {
       // Clean up closed or timed out create identity requests
-      let requestIdsToCleanUp = await Promise.all(
-        transactions.map(async (transaction) => {
+      let requestIdsToCleanUp = transactions
+        .map((transaction) => {
           const requestId = transaction.args.request_id;
-          if (requestId == null) return;
           if (
             transaction.fnName === 'CloseRequest' ||
             transaction.fnName === 'TimeOutRequest'
           ) {
-            const callbackUrl = await cacheDb.getRequestCallbackUrl(
-              nodeId,
-              requestId
-            );
-            if (!callbackUrl) return;
             return requestId;
           }
         })
-      );
-      const requestIdsToCleanUpWithValue = requestIdsToCleanUp.filter(
-        (requestId) => requestId != null
-      );
-      if (requestIdsToCleanUpWithValue.length === 0) return;
-
-      const height = parseInt(block.header.height);
-      const blockResults = await tendermint.getBlockResults(height, height);
-      requestIdsToCleanUp.filter((requestId, index) => {
-        const deliverTxResult =
-          blockResults[blockIndex].results.DeliverTx[index];
-        const successTag = deliverTxResult.tags.find(
-          (tag) => tag.key === successBase64
-        );
-        if (successTag) {
-          return successTag.value === trueBase64;
-        }
-        return false;
-      });
-
+        .filter((requestId) => requestId != null);
       requestIdsToCleanUp = [...new Set(requestIdsToCleanUp)];
 
       await Promise.all(
         requestIdsToCleanUp.map(async (requestId) => {
+          const callbackUrl = await cacheDb.getRequestCallbackUrl(
+            nodeId,
+            requestId
+          );
+          if (!callbackUrl) return;
+
           const referenceId = await cacheDb.getReferenceIdByRequestId(
             nodeId,
             requestId

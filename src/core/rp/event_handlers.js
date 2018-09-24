@@ -40,9 +40,6 @@ import logger from '../../logger';
 
 import * as config from '../../config';
 
-const successBase64 = Buffer.from('success').toString('base64');
-const trueBase64 = Buffer.from('true').toString('base64');
-
 const challengeRequestProcessLocks = {};
 const idpResponseProcessLocks = {};
 const asDataResponseProcessLocks = {};
@@ -283,26 +280,22 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
 }
 
 export async function handleTendermintNewBlock(
-  error,
-  height,
-  missingBlockCount,
+  fromHeight,
+  toHeight,
+  parsedTransactionsInBlocks,
   nodeId = config.nodeId
 ) {
-  if (missingBlockCount == null) return;
+  logger.debug({
+    message: 'Handling Tendermint new blocks',
+    nodeId,
+    fromHeight,
+    toHeight,
+  });
+
   try {
-    const fromHeight = height - 1 - missingBlockCount;
-    const toHeight = height - 1;
-
-    logger.debug({
-      message: 'Handling Tendermint new blocks',
-      nodeId,
-      fromHeight,
-      toHeight,
-    });
-
     await Promise.all([
       processChallengeRequestExpectedInBlocks(fromHeight, toHeight, nodeId),
-      processTasksInBlocks(fromHeight, toHeight, nodeId),
+      processTasksInBlocks(parsedTransactionsInBlocks, nodeId),
     ]);
   } catch (error) {
     const err = new CustomError({
@@ -350,55 +343,33 @@ async function processChallengeRequestExpectedInBlocks(
   cacheDb.removeExpectedIdpPublicProofInBlockList(nodeId, fromHeight, toHeight);
 }
 
-async function processTasksInBlocks(fromHeight, toHeight, nodeId) {
-  const blocks = await tendermint.getBlocks(fromHeight, toHeight);
+async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
+  const transactionsInBlocksToProcess = parsedTransactionsInBlocks.filter(
+    ({ transactions }) => transactions.length >= 0
+  );
+
   await Promise.all(
-    blocks.map(async (block, blockIndex) => {
-      let transactions = tendermint.getTransactionListFromBlock(block);
+    transactionsInBlocksToProcess.map(async ({ height, transactions }) => {
       if (transactions.length === 0) return;
 
-      let requestIdsToProcessUpdate = await Promise.all(
-        transactions.map(async (transaction) => {
+      let requestIdsToProcessUpdate = transactions
+        .map((transaction) => {
           const requestId = transaction.args.request_id;
-          if (requestId == null) return;
           if (transaction.fnName === 'DeclareIdentityProof') return;
+          return requestId;
+        })
+        .filter((requestId) => requestId != null);
+      requestIdsToProcessUpdate = [...new Set(requestIdsToProcessUpdate)];
 
+      await Promise.all(
+        requestIdsToProcessUpdate.map(async (requestId) => {
           const callbackUrl = await cacheDb.getRequestCallbackUrl(
             nodeId,
             requestId
           );
           if (!callbackUrl) return; // This request does not concern this RP
-
-          return requestId;
+          await processRequestUpdate(nodeId, requestId, height);
         })
-      );
-      const requestIdsToProcessUpdateWithValue = requestIdsToProcessUpdate.filter(
-        (requestId) => requestId != null
-      );
-      if (requestIdsToProcessUpdateWithValue.length === 0) return;
-
-      const height = parseInt(block.header.height);
-      const blockResults = await tendermint.getBlockResults(height, height);
-      requestIdsToProcessUpdate = requestIdsToProcessUpdate.filter(
-        (requestId, index) => {
-          const deliverTxResult =
-            blockResults[blockIndex].results.DeliverTx[index];
-          const successTag = deliverTxResult.tags.find(
-            (tag) => tag.key === successBase64
-          );
-          if (successTag) {
-            return successTag.value === trueBase64;
-          }
-          return false;
-        }
-      );
-
-      requestIdsToProcessUpdate = [...new Set(requestIdsToProcessUpdate)];
-
-      await Promise.all(
-        requestIdsToProcessUpdate.map((requestId) =>
-          processRequestUpdate(nodeId, requestId, height)
-        )
       );
       cacheDb.removeExpectedIdpResponseNodeIdInBlockList(nodeId, height);
       cacheDb.removeExpectedDataSignInBlockList(nodeId, height);

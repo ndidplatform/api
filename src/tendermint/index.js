@@ -48,6 +48,9 @@ const tendermintProtobufRoot = tendermintProtobufRootInstance.loadSync(
 const TendermintTx = tendermintProtobufRoot.lookupType('Tx');
 const TendermintQuery = tendermintProtobufRoot.lookupType('Query');
 
+const successBase64 = Buffer.from('success').toString('base64');
+const trueBase64 = Buffer.from('true').toString('base64');
+
 export const tendermintWsClient = new TendermintWsClient(false);
 
 let handleTendermintNewBlock;
@@ -322,15 +325,62 @@ async function processNewBlock(blockHeight, appHash) {
       });
     }
 
-    if (lastKnownAppHash !== appHash) {
+    if (lastKnownAppHash !== appHash && missingBlockCount != null) {
       if (handleTendermintNewBlock) {
-        await handleTendermintNewBlock(null, blockHeight, missingBlockCount);
+        // messages that arrived before 'NewBlock' event
+        // including messages between the start of missing block's height
+        // and the block before latest block height
+        // (not only just (current height - 1) in case 'NewBlock' events are missing)
+        // NOTE: Tendermint always create an ending empty block. A block with transactions and
+        // a block that signs the previous block which indicates that the previous block is valid
+        const fromHeight = blockHeight - 1 - missingBlockCount;
+        const toHeight = blockHeight - 1;
+
+        const parsedTransactionsInBlocks = await getParsedTxsInBlocks(
+          fromHeight,
+          toHeight
+        );
+        await handleTendermintNewBlock(
+          fromHeight,
+          toHeight,
+          parsedTransactionsInBlocks
+        );
       }
     }
     lastKnownAppHash = appHash;
     delete cacheBlocks[blockHeight - 1];
     saveLatestBlockHeight(blockHeight);
   }
+}
+
+async function getParsedTxsInBlocks(fromHeight, toHeight) {
+  const blocks = await getBlocks(fromHeight, toHeight);
+  const parsedTransactionsInBlocks = await Promise.all(
+    blocks.map(async (block, blockIndex) => {
+      const height = parseInt(block.header.height);
+
+      const transactions = getTransactionListFromBlock(block);
+      const blockResults = await getBlockResults(height, height);
+
+      const successTransactions = transactions.filter((transaction, index) => {
+        const deliverTxResult =
+          blockResults[blockIndex].results.DeliverTx[index];
+        const successTag = deliverTxResult.tags.find(
+          (tag) => tag.key === successBase64
+        );
+        if (successTag) {
+          return successTag.value === trueBase64;
+        }
+        return false;
+      });
+
+      return {
+        height,
+        transactions: successTransactions,
+      };
+    })
+  );
+  return [].concat(...parsedTransactionsInBlocks);
 }
 
 /**
