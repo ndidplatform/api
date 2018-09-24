@@ -322,18 +322,18 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
   await Promise.all(
     transactionsInBlocksToProcess.map(async ({ transactions }) => {
       // Clean up closed or timed out create identity requests
-      let requestIdsToCleanUp = transactions
-        .map((transaction) => {
-          const requestId = transaction.args.request_id;
-          if (
-            transaction.fnName === 'CloseRequest' ||
-            transaction.fnName === 'TimeOutRequest'
-          ) {
-            return requestId;
-          }
-        })
-        .filter((requestId) => requestId != null);
-      requestIdsToCleanUp = [...new Set(requestIdsToCleanUp)];
+      const requestIdsToCleanUpSet = new Set();
+      transactions.forEach((transaction) => {
+        const requestId = transaction.args.request_id;
+        if (requestId == null) return;
+        if (
+          transaction.fnName === 'CloseRequest' ||
+          transaction.fnName === 'TimeOutRequest'
+        ) {
+          requestIdsToCleanUpSet.add(requestId);
+        }
+      });
+      const requestIdsToCleanUp = [...requestIdsToCleanUpSet];
 
       await Promise.all(
         requestIdsToCleanUp.map(async (requestId) => {

@@ -350,14 +350,14 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
   await Promise.all(
     transactionsInBlocksToProcess.map(async ({ height, transactions }) => {
-      let requestIdsToProcessUpdate = transactions
-        .map((transaction) => {
-          const requestId = transaction.args.request_id;
-          if (transaction.fnName === 'DeclareIdentityProof') return;
-          return requestId;
-        })
-        .filter((requestId) => requestId != null);
-      requestIdsToProcessUpdate = [...new Set(requestIdsToProcessUpdate)];
+      const requestIdsToProcessUpdateSet = new Set();
+      transactions.forEach((transaction) => {
+        const requestId = transaction.args.request_id;
+        if (requestId == null) return;
+        if (transaction.fnName === 'DeclareIdentityProof') return;
+        requestIdsToProcessUpdateSet.add(requestId);
+      });
+      const requestIdsToProcessUpdate = [...requestIdsToProcessUpdateSet];
 
       await Promise.all(
         requestIdsToProcessUpdate.map((requestId) =>
