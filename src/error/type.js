@@ -801,6 +801,21 @@ export default {
     message: 'Amount must be greater than or equal to 0',
     clientError: true,
   },
+  ABCI_NODE_IS_ALREADY_ASSOCIATED_WITH_PROXY_NODE: {
+    code: 25046,
+    message: 'Node is already associated with a proxy node',
+    clientError: true,
+  },
+  ABCI_NODE_IS_PROXY_NODE: {
+    code: 25047,
+    message: 'Node is a proxy node',
+    clientError: true,
+  },
+  ABCI_NODE_NOT_ASSOCIATED_WITH_PROXY_NODE: {
+    code: 25048,
+    message: 'Node is not associated with any proxy node',
+    clientError: true,
+  },
 
   ABCI_UNAUTHORIZED: {
     code: 35001,
