@@ -21,7 +21,7 @@
  */
 
 import * as db from '../redis_common';
-import * as longTermDb from './redis';
+import redisInstance from './redis';
 import privateMessageType from '../../core/private_message_type';
 
 import logger from '../../logger';
@@ -58,12 +58,16 @@ function getName(messageType) {
   }
 }
 
+export function getRedisInstance() {
+  return redisInstance;
+}
+
 export function initialize() {
-  return longTermDb.connect();
+  return redisInstance.connect();
 }
 
 export async function close() {
-  await longTermDb.close();
+  await redisInstance.close();
   logger.info({
     message: 'DB connection closed',
     dbName,

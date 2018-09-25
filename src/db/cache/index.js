@@ -21,18 +21,22 @@
  */
 
 import * as db from '../redis_common';
-import * as cacheDb from './redis';
+import redisInstance from './redis';
 
 import logger from '../../logger';
 
 const dbName = 'cache';
 
+export function getRedisInstance() {
+  return redisInstance;
+}
+
 export function initialize() {
-  return cacheDb.connect();
+  return redisInstance.connect();
 }
 
 export async function close() {
-  await cacheDb.close();
+  await redisInstance.close();
   logger.info({
     message: 'DB connection closed',
     dbName,

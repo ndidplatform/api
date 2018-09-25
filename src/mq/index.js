@@ -130,7 +130,12 @@ async function onMessage(messageProtobuf, timestamp) {
 
     // TODO: Refactor MQ module to send ACK here (after save to persistence)
 
-    if (!tendermint.connected || tendermint.syncing) { // TODO: check for redis connection
+    if (
+      !tendermint.connected ||
+      tendermint.syncing ||
+      !cacheDb.getRedisInstance().connected ||
+      !longTermDb.getRedisInstance().connected
+    ) {
       rawMessagesToRetry[messageId] = messageProtobuf;
     } else {
       await processMessage(messageId, messageProtobuf, timestamp);
@@ -347,11 +352,18 @@ async function removeRawMessageFromCache(messageId) {
   }
 }
 
-async function retryProcessMessages() {
-  Object.entries(rawMessagesToRetry).map(([messageId, messageBuffer]) => {
-    processMessage(messageId, messageBuffer);
-    delete rawMessagesToRetry[messageId];
-  });
+function retryProcessMessages() {
+  if (
+    tendermint.connected &&
+    !tendermint.syncing &&
+    cacheDb.getRedisInstance().connected &&
+    longTermDb.getRedisInstance().connected
+  ) {
+    Object.entries(rawMessagesToRetry).map(([messageId, messageBuffer]) => {
+      processMessage(messageId, messageBuffer);
+      delete rawMessagesToRetry[messageId];
+    });
+  }
 }
 
 /**
@@ -534,6 +546,7 @@ export function close() {
   }
 }
 
-tendermint.eventEmitter.on('ready', function() {
-  retryProcessMessages();
-});
+tendermint.eventEmitter.on('ready', retryProcessMessages);
+
+cacheDb.getRedisInstance().on('reconnect', retryProcessMessages);
+longTermDb.getRedisInstance().on('reconnect', retryProcessMessages);

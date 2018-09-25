@@ -2,6 +2,11 @@
 
 ## TBD
 
+IMPROVEMENTS:
+
+- Wait for DB (Redis) reconnect when the connection is down before processing received message from MQ.
+- Wait for DB (Redis) to connect on server start. (Previously, stop server initialization process if fail to connect on the first try.)
+
 BUG FIXES:
 
 - Fix data related to a request in cache DB does not get cleared when a request is closed or timed out.
