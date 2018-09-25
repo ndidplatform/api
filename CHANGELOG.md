@@ -1,5 +1,13 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix data related to a request in cache DB does not get cleared when a request is closed or timed out.
+- Fix expected Tx in cache DB does not get cleared when error trying to make a transaction to Tendermint.
+- Fix Tendermint new blocks get processed without waiting for node's private key read on server start.
+
 ## 0.8.0 (September 23, 2018)
 
 BREAKING CHANGES:
