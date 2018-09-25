@@ -156,7 +156,7 @@ export async function removePrivateMessages({ nodeId, requestId, type } = {}) {
     if (requestId == null) {
       if (type == null) {
         await Promise.all(
-          privateMessageTypes.map(async (type) => {
+          privateMessageTypes.map((type) => {
             return Promise.all([
               longTermDb.removeAllMessages(
                 nodeId,
@@ -188,22 +188,38 @@ export async function removePrivateMessages({ nodeId, requestId, type } = {}) {
     } else {
       if (type == null) {
         await Promise.all(
-          privateMessageTypes.map(async (type) => {
-            longTermDb.removeMessages(
-              nodeId,
-              longTermDb.MESSAGE_DIRECTIONS.INBOUND,
-              type,
-              requestId
-            );
+          privateMessageTypes.map((type) => {
+            return Promise.all([
+              longTermDb.removeMessages(
+                nodeId,
+                longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+                type,
+                requestId
+              ),
+              longTermDb.removeMessages(
+                nodeId,
+                longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
+                type,
+                requestId
+              ),
+            ]);
           })
         );
       } else {
-        await longTermDb.removeMessages(
-          nodeId,
-          longTermDb.MESSAGE_DIRECTIONS.INBOUND,
-          type,
-          requestId
-        );
+        await Promise.all([
+          longTermDb.removeMessages(
+            nodeId,
+            longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+            type,
+            requestId
+          ),
+          longTermDb.removeMessages(
+            nodeId,
+            longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
+            type,
+            requestId
+          ),
+        ]);
       }
     }
   } catch (error) {

@@ -13,6 +13,7 @@ BUG FIXES:
 - Fix expected Tx in cache DB does not get cleared when error trying to make a transaction to Tendermint.
 - Fix Tendermint new blocks get processed without waiting for node's private key read on server start.
 - Fix MQ address check on server start.
+- Fix POST `/utility/private_messages/:request_id/housekeeping` does not remove outbound messages.
 
 ## 0.8.0 (September 23, 2018)
 
