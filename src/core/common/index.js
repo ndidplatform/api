@@ -65,7 +65,7 @@ async function registerMessageQueueAddress() {
     //query current self msq
     const selfMqAddress = await tendermintNdid.getMqAddresses(config.nodeId);
     if (selfMqAddress) {
-      const { ip, port } = selfMqAddress;
+      const { ip, port } = selfMqAddress[0];
       //if not same
       if (ip !== config.mqRegister.ip || port !== config.mqRegister.port) {
         await tendermintNdid.setMqAddresses([
