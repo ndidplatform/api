@@ -222,8 +222,12 @@ export async function init() {
 
     console.log('========= Adding namespaces and services =========');
     await ndid.addNamespace({
-      namespace: 'cid',
+      namespace: 'citizen_id',
       description: 'Thai citizen ID',
+    });
+    await ndid.addNamespace({
+      namespace: 'passport_num',
+      description: 'Passport Number',
     });
     await Promise.all(
       services.map(({ serviceId, serviceName }) =>
