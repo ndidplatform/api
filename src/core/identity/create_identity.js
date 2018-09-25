@@ -410,7 +410,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
           identifier,
           reference_id,
           idp_id_list: [],
-          callback_url: 'none_system_generated',
+          callback_url: 'SYS_GEN_CREATE_IDENTITY',
           data_request_list: [],
           request_message:
             request_message != null
@@ -474,7 +474,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
           identifier,
           reference_id,
           idp_id_list: [],
-          callback_url: 'none_system_generated',
+          callback_url: 'SYS_GEN_CREATE_IDENTITY',
           data_request_list: [],
           request_message:
             request_message != null

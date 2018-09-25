@@ -352,30 +352,36 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
               nodeId,
               requestId
             );
-
-            let createIdentityError;
-            if (closedRequestIds.has(requestId)) {
-              createIdentityError = new CustomError({
-                errorType: errorType.REQUEST_IS_CLOSED,
-              });
-            } else if (timedOutRequestIds.has(requestId)) {
-              createIdentityError = new CustomError({
-                errorType: errorType.REQUEST_IS_TIMED_OUT,
-              });
-            }
-
-            await callbackToClient(
-              callbackUrl,
-              {
-                node_id: nodeId,
-                type: 'create_identity_result',
-                success: false,
-                reference_id: referenceId,
-                request_id: requestId,
-                error: getErrorObjectForClient(createIdentityError),
-              },
-              true
+            const createIdentityCallbackUrl = await cacheDb.getCallbackUrlByReferenceId(
+              nodeId,
+              referenceId
             );
+
+            if (createIdentityCallbackUrl != null) {
+              let createIdentityError;
+              if (closedRequestIds.has(requestId)) {
+                createIdentityError = new CustomError({
+                  errorType: errorType.REQUEST_IS_CLOSED,
+                });
+              } else if (timedOutRequestIds.has(requestId)) {
+                createIdentityError = new CustomError({
+                  errorType: errorType.REQUEST_IS_TIMED_OUT,
+                });
+              }
+
+              await callbackToClient(
+                createIdentityCallbackUrl,
+                {
+                  node_id: nodeId,
+                  type: 'create_identity_result',
+                  success: false,
+                  reference_id: referenceId,
+                  request_id: requestId,
+                  error: getErrorObjectForClient(createIdentityError),
+                },
+                true
+              );
+            }
 
             await Promise.all([
               cacheDb.removeRequestCallbackUrl(nodeId, requestId),
