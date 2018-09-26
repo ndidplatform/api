@@ -302,7 +302,7 @@ case ${ROLE} in
       until 
         register_namespace "citizen_id" "Thai citizen ID" && \
         register_namespace "passport_num" "Passport Number" && \
-        register_service "bank_statement" "All transactions in the pass 3 month" && \
+        register_service "bank_statement" "All transactions in the past 3 months" && \
         register_service "customer_info" "Customer Information"
       do
         sleep 1; 
