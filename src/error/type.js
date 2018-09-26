@@ -816,6 +816,11 @@ export default {
     message: 'Node is not associated with any proxy node',
     clientError: true,
   },
+  ABCI_PROXY_NODE_NOT_FOUND: {
+    code: 25049,
+    message: 'Proxy node could not be found or does not exist',
+    clientError: true,
+  },
 
   ABCI_UNAUTHORIZED: {
     code: 35001,
