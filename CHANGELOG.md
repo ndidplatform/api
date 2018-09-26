@@ -39,6 +39,7 @@ IMPROVEMENTS:
   - Add `requester_node_id` property to AS service callback data.
   - Add `requester_node_id` property to GET `/utility/requests/:request_id`.
   - Add `request_timeout` property to IdP incoming request callback data.
+  - Add `node_id` property to all callbacks. (Note that `/error` callback may not have `node_id` property.)
 - Change cache and long-term database to Redis for better performance. This change introduces 3 new environment variables `DB_IP`, `DB_PORT`, and `DB_PASSWORD`.
 - Reduce RPC/HTTP query calls to Tendermint.
 - Remove `ROLE` environment variable option. The server will get a node's role from blockchain on start. Error if it cannot get node's role from blockchain.
