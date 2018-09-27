@@ -162,6 +162,10 @@ export default {
     code: 10033,
     message: 'Invalid data response from AS (Invalid signature)',
   },
+  NODE_KEY_NOT_FOUND: {
+    code: 10034,
+    message: 'Key could not be found. May need to re-initialize node keys.',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
@@ -712,7 +716,7 @@ export default {
   ABCI_REGISTER_SERVICE_UNAUTHORIZED: {
     code: 25028,
     message:
-      'Unauthorized to register a service (NDID may have not granted you the right to register this service)',
+      'Unauthorized to register a service (NDID may have not granted this node the right to register this service)',
     clientError: true,
   },
   ABCI_INVALID_KEY_FORMAT: {
@@ -825,6 +829,6 @@ export default {
   ABCI_UNAUTHORIZED: {
     code: 35001,
     message:
-      'Unauthorized (You may have not registered your node with NDID or calling a function with a wrong role)',
+      'Unauthorized (This node may have not been registered with NDID or calling a function with a wrong role)',
   },
 };

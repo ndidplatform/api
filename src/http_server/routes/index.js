@@ -32,6 +32,7 @@ import ndidRouter from './ndid';
 import apiV1Router from './v1';
 import apiV2Router from './v2';
 import getInfo from './info';
+import reinitNodeKeys from './reinit_keys';
 import debugRouter from './debug';
 
 import * as config from '../../config';
@@ -98,6 +99,7 @@ router.get('/source', (req, res) => {
 });
 
 router.get('/info', getInfo);
+router.get('/reinit_node_key', reinitNodeKeys);
 
 router.use(readyHandler);
 

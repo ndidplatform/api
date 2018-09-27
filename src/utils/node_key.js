@@ -148,31 +148,27 @@ async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
 }
 
 export async function initialize() {
-  if (!config.useExternalCryptoService) {
-    logger.info({
-      message: 'Reading node keys from files',
-    });
+  logger.info({
+    message: 'Reading node keys from files',
+  });
 
-    readNodePrivateKeyFromFile();
-    readNodeMasterPrivateKeyFromFile();
+  readNodePrivateKeyFromFile();
+  readNodeMasterPrivateKeyFromFile();
 
-    // Nodes behind proxy
-    if (node.role === 'proxy') {
-      const nodesBehindProxyWithKeyOnProxy = await node.getNodesBehindProxyFromBlockchain(
-        { withConfig: 'KEY_ON_PROXY' }
-      );
-      const nodeIds = nodesBehindProxyWithKeyOnProxy.map(
-        (node) => node.node_id
-      );
-      await Promise.all(
-        nodeIds.map((nodeId) => {
-          return Promise.all([
-            readNodeBehindProxyPrivateKeyFromFile(nodeId),
-            readNodeBehindProxyMasterPrivateKeyFromFile(nodeId),
-          ]);
-        })
-      );
-    }
+  // Nodes behind proxy
+  if (node.role === 'proxy') {
+    const nodesBehindProxyWithKeyOnProxy = await node.getNodesBehindProxyFromBlockchain(
+      { withConfig: 'KEY_ON_PROXY' }
+    );
+    const nodeIds = nodesBehindProxyWithKeyOnProxy.map((node) => node.node_id);
+    await Promise.all(
+      nodeIds.map((nodeId) => {
+        return Promise.all([
+          readNodeBehindProxyPrivateKeyFromFile(nodeId),
+          readNodeBehindProxyMasterPrivateKeyFromFile(nodeId),
+        ]);
+      })
+    );
   }
 }
 
@@ -224,6 +220,12 @@ export function getLocalNodePrivateKey(nodeId) {
   }
 
   // Assume nodes behind proxy
+  if (nodeBehindProxyPrivateKeys[nodeId] == null) {
+    throw new CustomError({
+      errorType: errorType.NODE_KEY_NOT_FOUND,
+    });
+  }
+
   return nodeBehindProxyPrivateKeys[nodeId];
 }
 
@@ -233,6 +235,12 @@ export function getLocalNodeMasterPrivateKey(nodeId) {
   }
 
   // Assume nodes behind proxy
+  if (nodeBehindProxyMasterPrivateKeys[nodeId] == null) {
+    throw new CustomError({
+      errorType: errorType.NODE_KEY_NOT_FOUND,
+    });
+  }
+
   return nodeBehindProxyMasterPrivateKeys[nodeId];
 }
 

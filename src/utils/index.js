@@ -89,10 +89,11 @@ export async function decryptAsymetricKey(
       encryptedSymKey.toString('base64')
     );
   } else {
+    const key = nodeKey.getLocalNodePrivateKey(nodeId);
     const passphrase = nodeKey.getLocalNodePrivateKeyPassphrase(nodeId);
     symKeyBuffer = cryptoUtils.privateDecrypt(
       {
-        key: nodeKey.getLocalNodePrivateKey(nodeId),
+        key,
         passphrase,
         padding: crypto.constants.RSA_PKCS1_PADDING,
       },
