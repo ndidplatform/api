@@ -959,7 +959,7 @@ async function createSecret({
   reference_id,
   accessor_public_key,
 }) {
-  const signature = await accessorSign({
+  return await accessorSign({
     node_id,
     sid,
     hash_id,
@@ -967,11 +967,6 @@ async function createSecret({
     accessor_public_key,
     reference_id,
   });
-  const padding = utils.extractPaddingFromPrivateEncrypt(
-    signature,
-    accessor_public_key
-  );
-  return padding + '|' + signature;
 }
 
 export async function calculateSecret({

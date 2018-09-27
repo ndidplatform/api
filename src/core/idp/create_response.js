@@ -151,13 +151,6 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
           errorType: errorType.SECRET_NEEDED,
         });
       }
-      // Check secret format
-      const [padding, signedHash] = secret.split('|');
-      if (padding == null || signedHash == null) {
-        throw new CustomError({
-          errorType: errorType.MALFORMED_SECRET_FORMAT,
-        });
-      }
       await cacheDb.setResponseFromRequestId(node_id, request_id, {
         ...createResponseParams,
         node_id,

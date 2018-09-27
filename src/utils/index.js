@@ -172,8 +172,8 @@ export function generateIdentityProof(data) {
     data,
   });
 
-  let [padding, signedHash] = data.secret.split('|');
-  if (padding == null || signedHash == null) {
+  let signedHash = data.secret;
+  if (signedHash == null) {
     throw new CustomError({
       errorType: errorType.MALFORMED_SECRET_FORMAT,
     });
@@ -195,6 +195,8 @@ export function generateIdentityProof(data) {
     .toBuffer()
     .toString('base64');
 
+  let padding = extractPaddingFromPrivateEncrypt(signedHash, data.publicKey);
+
   logger.debug({
     message: 'Proof generated',
     k: stringToBigInt(k),
@@ -211,7 +213,7 @@ export function generateIdentityProof(data) {
   return {
     blockchainProof,
     privateProofValue: privateProof,
-    padding: data.secret.split('|')[0],
+    padding,
   };
 }
 
