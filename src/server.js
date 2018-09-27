@@ -69,7 +69,6 @@ async function initialize() {
       const role = await node.getNodeRoleFromBlockchain();
       logger.info({ message: 'Node role', role });
     }
-    await nodeKey.initialize();
 
     let externalCryptoServiceReady;
     if (config.useExternalCryptoService) {
@@ -80,6 +79,8 @@ async function initialize() {
           )
         );
       }
+    } else {
+      await nodeKey.initialize();
     }
 
     httpServer.initialize();
