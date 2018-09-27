@@ -42,7 +42,7 @@ let nodeBehindProxyPrivateKeyPassphrases = {};
 let nodeBehindProxyMasterPrivateKeyPassphrases = {};
 
 function readNodePrivateKeyFromFile() {
-  privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
+  const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
   try {
     validateKey(privateKey, null, config.privateKeyPassphrase);
   } catch (error) {
@@ -51,10 +51,11 @@ function readNodePrivateKeyFromFile() {
       cause: error,
     });
   }
+  return privateKey;
 }
 
 function readNodeMasterPrivateKeyFromFile() {
-  masterPrivateKey = fs.readFileSync(config.masterPrivateKeyPath, 'utf8');
+  const masterPrivateKey = fs.readFileSync(config.masterPrivateKeyPath, 'utf8');
   try {
     validateKey(masterPrivateKey, null, config.masterPrivateKeyPassphrase);
   } catch (error) {
@@ -63,6 +64,7 @@ function readNodeMasterPrivateKeyFromFile() {
       cause: error,
     });
   }
+  return masterPrivateKey;
 }
 
 async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
@@ -80,7 +82,6 @@ async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
   let passphrase;
   try {
     passphrase = await readFileAsync(passphraseFilePath, 'utf8');
-    nodeBehindProxyPrivateKeyPassphrases[nodeId] = passphrase;
   } catch (error) {
     if (error.code !== 'ENOENT') {
       throw new CustomError({
@@ -103,7 +104,10 @@ async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
       },
     });
   }
-  nodeBehindProxyPrivateKeys[nodeId] = key;
+  return {
+    key,
+    passphrase,
+  };
 }
 
 async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
@@ -121,7 +125,6 @@ async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
   let passphrase;
   try {
     passphrase = await readFileAsync(passphraseFilePath, 'utf8');
-    nodeBehindProxyMasterPrivateKeyPassphrases[nodeId] = passphrase;
   } catch (error) {
     if (error.code !== 'ENOENT') {
       throw new CustomError({
@@ -144,7 +147,10 @@ async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
       },
     });
   }
-  nodeBehindProxyMasterPrivateKeys[nodeId] = key;
+  return {
+    key,
+    passphrase,
+  };
 }
 
 export async function initialize() {
@@ -152,8 +158,8 @@ export async function initialize() {
     message: 'Reading node keys from files',
   });
 
-  readNodePrivateKeyFromFile();
-  readNodeMasterPrivateKeyFromFile();
+  const newPrivateKey = readNodePrivateKeyFromFile();
+  const newMasterPrivateKey = readNodeMasterPrivateKeyFromFile();
 
   // Nodes behind proxy
   if (node.role === 'proxy') {
@@ -161,15 +167,45 @@ export async function initialize() {
       { withConfig: 'KEY_ON_PROXY' }
     );
     const nodeIds = nodesBehindProxyWithKeyOnProxy.map((node) => node.node_id);
+
+    const newNodeBehindProxyPrivateKeys = {};
+    const newNodeBehindProxyPrivateKeyPassphrases = {};
+
+    const newNodeBehindProxyMasterPrivateKeys = {};
+    const newNodeBehindProxyMasterPrivateKeyPassphrases = {};
+
     await Promise.all(
-      nodeIds.map((nodeId) => {
-        return Promise.all([
+      nodeIds.map(async (nodeId) => {
+        const [
+          { key: privateKey, passphrase: privateKeyPassphrase },
+          { key: masterPrivateKey, passphrase: masterPrivateKeyPassphrase },
+        ] = await Promise.all([
           readNodeBehindProxyPrivateKeyFromFile(nodeId),
           readNodeBehindProxyMasterPrivateKeyFromFile(nodeId),
         ]);
+        newNodeBehindProxyPrivateKeys[nodeId] = privateKey;
+        if (privateKeyPassphrase != null) {
+          newNodeBehindProxyPrivateKeyPassphrases[
+            nodeId
+          ] = privateKeyPassphrase;
+        }
+        newNodeBehindProxyMasterPrivateKeys[nodeId] = masterPrivateKey;
+        if (masterPrivateKeyPassphrase != null) {
+          newNodeBehindProxyMasterPrivateKeyPassphrases[
+            nodeId
+          ] = masterPrivateKeyPassphrase;
+        }
       })
     );
+    nodeBehindProxyPrivateKeys = newNodeBehindProxyPrivateKeys;
+    nodeBehindProxyPrivateKeyPassphrases = newNodeBehindProxyPrivateKeyPassphrases;
+
+    nodeBehindProxyMasterPrivateKeys = newNodeBehindProxyMasterPrivateKeys;
+    nodeBehindProxyMasterPrivateKeyPassphrases = newNodeBehindProxyMasterPrivateKeyPassphrases;
   }
+
+  privateKey = newPrivateKey;
+  masterPrivateKey = newMasterPrivateKey;
 }
 
 export function validateKey(key, keyType, passphrase) {
