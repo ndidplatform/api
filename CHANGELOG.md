@@ -2,6 +2,10 @@
 
 ## TBD
 
+FEATURES:
+
+- Add GET `/reinit_node_keys` for reading node keys from files again while the server is running.
+
 IMPROVEMENTS:
 
 - Wait for DB (Redis) reconnect when the connection is down before processing received message from MQ.
