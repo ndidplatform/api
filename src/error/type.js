@@ -305,9 +305,9 @@ export default {
     message: 'Request is already timed out',
     clientError: true,
   },
-  INVALID_CIPHER: {
+  INVALID_SECRET: {
     code: 20027,
-    message: 'Invalid cipher suite',
+    message: 'Invalid secret',
     clientError: true,
   },
   INVALID_ACCESSOR_SIGNATURE: {

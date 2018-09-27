@@ -125,13 +125,20 @@ export function encryptAsymetricKey(publicKey, messageBuffer) {
 }
 
 export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
-  const rawMessageBuffer = cryptoUtils.publicDecrypt(
-    {
-      key: publicKey,
-      padding: constants.RSA_NO_PADDING,
-    },
-    Buffer.from(cipher, 'base64')
-  );
+  let rawMessageBuffer;
+  try {
+    rawMessageBuffer = cryptoUtils.publicDecrypt(
+      {
+        key: publicKey,
+        padding: constants.RSA_NO_PADDING,
+      },
+      Buffer.from(cipher, 'base64')
+    );
+  } catch(error) {
+    throw new CustomError({
+      errorType: errorType.INVALID_SECRET,
+    });
+  }
 
   //RSA PKCS v. 1.5
   if (
@@ -139,7 +146,7 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
     (rawMessageBuffer[1] !== 0 && rawMessageBuffer[1] !== 1)
   ) {
     throw new CustomError({
-      errorType: errorType.INVALID_CIPHER,
+      errorType: errorType.INVALID_SECRET,
     });
   }
   let padLength = 2;
@@ -196,7 +203,12 @@ export function generateIdentityProof(data) {
     .toBuffer()
     .toString('base64');
 
-  let padding = extractPaddingFromPrivateEncrypt(signedHash, data.publicKey);
+  let padding;
+  try {
+    padding = extractPaddingFromPrivateEncrypt(signedHash, data.publicKey);
+  } catch(error) {
+    throw error;
+  }
 
   logger.debug({
     message: 'Proof generated',
