@@ -31,10 +31,11 @@ describe('Functional Test for MQ receiver with real socket', function() {
     let mqNodeRecv = new MQRecv({ port: ports[0] });
     let expectedResults = [1111111, 222222, 333333];
 
-    mqNodeRecv.on('message', function(msg) {
-      expect(msg.message).to.be.instanceof(Buffer);
-      expect(parseInt(msg.message.toString())).to.be.oneOf(expectedResults);
+    mqNodeRecv.on('message', function({ message, sendAck }) {
+      expect(message).to.be.instanceof(Buffer);
+      expect(parseInt(message.toString())).to.be.oneOf(expectedResults);
 
+      sendAck();
       count++;
       if (count == 3) {
         mqNodeRecv.close();
@@ -70,10 +71,10 @@ describe('Functional Test for MQ receiver with real socket', function() {
 
     this.timeout(10000);
     let mqRecvSmallSize = new MQRecv({ port: ports[0], maxMsgSize: 10 });
-    mqRecvSmallSize.on('message', function(messageBuffer) {
+    mqRecvSmallSize.on('message', function() {
       assert.fail('there should not be message coming through');
     });
-    mqRecvSmallSize.on('error', function(messageBuffer) {
+    mqRecvSmallSize.on('error', function() {
       assert.fail('there should be no error at receiving part');
     });
 

@@ -56,11 +56,12 @@ export default class MQRecv extends EventEmitter {
           seqId: jsonMessage.retryspec.seqId,
         });
 
-        this.recvSocket.send(identity, ackMSG);
+        // this.recvSocket.send(identity, ackMSG);
         this.emit('message', {
           message: jsonMessage.message,
           msgId: jsonMessage.retryspec.msgId,
           senderId: jsonMessage.senderId,
+          sendAck: () => this.recvSocket.send(identity, ackMSG),
         });
       }.bind(this)
     );

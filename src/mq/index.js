@@ -87,7 +87,8 @@ export async function initialize() {
   mqSend = new MQSend({ timeout: 60000, totalTimeout: 500000 });
   mqRecv = new MQRecv({ port: config.mqRegister.port, maxMsgSize: 3250000 });
 
-  mqRecv.on('message', async ({ message, msgId, senderId }) => {
+  mqRecv.on('message', async ({ message, msgId, senderId, sendAck }) => {
+    // Check for duplicate message
     const timestamp = Date.now();
     const id = senderId + ':' + msgId;
     if (timer[id] != null) return;
@@ -98,7 +99,7 @@ export async function initialize() {
       cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
       delete timer[id];
     }, 120000);
-    onMessage(message, id, timestamp);
+    onMessage(message, id, timestamp, sendAck);
   });
 
   //should tell client via error callback?
@@ -110,13 +111,10 @@ export async function initialize() {
   });
 }
 
-async function onMessage(
-  messageProtobuf,
-  messageId = utils.randomBase64Bytes(10),
-  timestamp
-) {
+async function onMessage(messageProtobuf, messageId, timestamp, sendAck) {
   logger.info({
     message: 'Received message from message queue',
+    messageId,
     messageLength: messageProtobuf.length,
   });
   try {
@@ -125,8 +123,7 @@ async function onMessage(
       messageId,
       messageProtobuf
     );
-
-    // TODO: Refactor MQ module to send ACK here (after save to persistence)
+    sendAck();
 
     if (
       !tendermint.connected ||
