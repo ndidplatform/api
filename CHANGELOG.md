@@ -3,6 +3,7 @@
 ## TBD
 
 BREAKING CHANGES:
+
 - Change structure of `secret` (remove prepended padding). All `secret` need to be re-calculated.
 - Change error type `INVALID_CIPHER` to `INVALID_SECRET`.
 - When Idp create response.
@@ -26,6 +27,7 @@ BUG FIXES:
 - Fix Tendermint new blocks get processed without waiting for node's private key read on server start.
 - Fix MQ address check on server start.
 - Fix POST `/utility/private_messages/:request_id/housekeeping` does not remove outbound private messages.
+- Fix loading MQ duplicate timeouts from cache DB on server start.
 
 ## 0.8.0 (September 23, 2018)
 

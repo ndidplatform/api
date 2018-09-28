@@ -71,8 +71,7 @@ export async function initialize() {
     config.nodeId
   );
   const promiseArray = [];
-  for (let id in timeoutList) {
-    let unixTimeout = timeoutList[id];
+  timeoutList.forEach(({ id, unixTimeout }) => {
     if (unixTimeout >= Date.now()) {
       promiseArray.push(
         cacheDb.removeDuplicateMessageTimeout(config.nodeId, id)
@@ -83,7 +82,7 @@ export async function initialize() {
         delete timer[id];
       }, Date.now() - unixTimeout);
     }
-  }
+  });
   await Promise.all(promiseArray);
   mqSend = new MQSend({ timeout: 60000, totalTimeout: 500000 });
   mqRecv = new MQRecv({ port: config.mqRegister.port, maxMsgSize: 3250000 });
@@ -91,19 +90,15 @@ export async function initialize() {
   mqRecv.on('message', async ({ message, msgId, senderId }) => {
     const timestamp = Date.now();
     const id = senderId + ':' + msgId;
-    let unixTimeout = await cacheDb.getDuplicateMessageTimeout(
-      config.nodeId,
-      id
-    );
-    if (unixTimeout != null) return;
+    if (timer[id] != null) return;
 
-    unixTimeout = timestamp + 120000;
+    const unixTimeout = timestamp + 120000;
     cacheDb.setDuplicateMessageTimeout(config.nodeId, id, unixTimeout);
     timer[id] = setTimeout(() => {
       cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
       delete timer[id];
     }, 120000);
-    onMessage(message, timestamp);
+    onMessage(message, id, timestamp);
   });
 
   //should tell client via error callback?
@@ -115,13 +110,16 @@ export async function initialize() {
   });
 }
 
-async function onMessage(messageProtobuf, timestamp) {
+async function onMessage(
+  messageProtobuf,
+  messageId = utils.randomBase64Bytes(10),
+  timestamp
+) {
   logger.info({
     message: 'Received message from message queue',
     messageLength: messageProtobuf.length,
   });
   try {
-    const messageId = utils.randomBase64Bytes(10);
     await cacheDb.setRawMessageFromMQ(
       config.nodeId,
       messageId,

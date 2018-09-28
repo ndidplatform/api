@@ -5,8 +5,8 @@
   "scripts": {
     "build": "rm -rf build/ && npx babel src -d ./build/ --source-maps inline --verbose && cp -r ./dev_key ./build",
     "start": "npm run build && node build/server.js",
-    "test": "npm run build && ROLE=idp NODE_ID=unit-test npx mocha build/**/*.test.js",
-    "test:es6": "ROLE=idp NODE_ID=unit-test mocha src/**/*.test.js --require @babel/register --require source-map-support/register",
+    "test": "npm run build && NODE_ID=unit-test npx mocha build/**/*.test.js",
+    "test:es6": "NODE_ID=unit-test mocha src/**/*.test.js --require @babel/register --require source-map-support/register",
     "initDevKey": "npm run build && ROLE=ndid node build/dev_key_init.js && npm run delete-local-data-cache",
     "delete-local-data-cache": "rm -rf data",
     "docker-build": "./docker/build.sh",
