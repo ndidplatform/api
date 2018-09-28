@@ -202,7 +202,13 @@ export function getAllRawMessageFromMQ(nodeId) {
 }
 
 export function getAllDuplicateMessageTimeout(nodeId) {
-  return db.getAll({ nodeId, dbName, name: 'duplicateMessageTimeout' });
+  return db.getAll({
+    nodeId,
+    dbName,
+    name: 'duplicateMessageTimeout',
+    keyName: 'id',
+    valueName: 'unixTimeout',
+  });
 }
 
 export function getDuplicateMessageTimeout(nodeId, id) {
