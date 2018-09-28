@@ -2,6 +2,13 @@
 
 ## TBD
 
+BREAKING CHANGES:
+- Change structure of `secret` (remove prepended padding). All `secret` need to be re-calculated.
+- Change error type `INVALID_CIPHER` to `INVALID_SECRET`.
+- When Idp create response.
+  - `secret` can no longer be malformed (because `secret` do not have form).
+  - `secret` will be check for validity and may return `INVALID_SECRET`.
+
 FEATURES:
 
 - Add GET `/reinit_node_keys` for reading node keys from files again while the server is running.
