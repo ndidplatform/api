@@ -72,7 +72,18 @@ async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
     config.nodeBehindProxyPrivateKeyDirectoryPath,
     nodeId
   );
-  const key = await readFileAsync(keyFilePath, 'utf8');
+  let key;
+  try {
+    key = await readFileAsync(keyFilePath, 'utf8');
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot read private key file',
+      cause: error,
+      details: {
+        nodeId,
+      },
+    });
+  }
 
   const passphraseFilePath = path.join(
     config.nodeBehindProxyPrivateKeyDirectoryPath,
@@ -87,6 +98,9 @@ async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
       throw new CustomError({
         message: 'Cannot read private key passpharse file',
         cause: error,
+        details: {
+          nodeId,
+        },
       });
     }
   }
@@ -115,7 +129,18 @@ async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
     config.nodeBehindProxyMasterPrivateKeyDirectoryPath,
     `${nodeId}_master`
   );
-  const key = await readFileAsync(keyFilePath, 'utf8');
+  let key;
+  try {
+    key = await readFileAsync(keyFilePath, 'utf8');
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot read master private key file',
+      cause: error,
+      details: {
+        nodeId,
+      },
+    });
+  }
 
   const passphraseFilePath = path.join(
     config.nodeBehindProxyMasterPrivateKeyDirectoryPath,
@@ -130,6 +155,9 @@ async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
       throw new CustomError({
         message: 'Cannot read master private key passpharse file',
         cause: error,
+        details: {
+          nodeId,
+        },
       });
     }
   }
