@@ -21,7 +21,6 @@
  */
 
 import path from 'path';
-import fs from 'fs';
 
 import { readFileAsync } from '.';
 
@@ -41,8 +40,16 @@ let nodeBehindProxyMasterPrivateKeys = {};
 let nodeBehindProxyPrivateKeyPassphrases = {};
 let nodeBehindProxyMasterPrivateKeyPassphrases = {};
 
-function readNodePrivateKeyFromFile() {
-  const privateKey = fs.readFileSync(config.privateKeyPath, 'utf8');
+async function readNodePrivateKeyFromFile() {
+  let privateKey;
+  try {
+    privateKey = await readFileAsync(config.privateKeyPath, 'utf8');
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot read node private key file',
+      cause: error,
+    });
+  }
   try {
     validateKey(privateKey, null, config.privateKeyPassphrase);
   } catch (error) {
@@ -54,8 +61,16 @@ function readNodePrivateKeyFromFile() {
   return privateKey;
 }
 
-function readNodeMasterPrivateKeyFromFile() {
-  const masterPrivateKey = fs.readFileSync(config.masterPrivateKeyPath, 'utf8');
+async function readNodeMasterPrivateKeyFromFile() {
+  let masterPrivateKey;
+  try {
+    masterPrivateKey = await readFileAsync(config.masterPrivateKeyPath, 'utf8');
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot read node master private key file',
+      cause: error,
+    });
+  }
   try {
     validateKey(masterPrivateKey, null, config.masterPrivateKeyPassphrase);
   } catch (error) {
@@ -77,7 +92,7 @@ async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
     key = await readFileAsync(keyFilePath, 'utf8');
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot read private key file',
+      message: 'Cannot read node behind proxy private key file',
       cause: error,
       details: {
         nodeId,
@@ -96,7 +111,7 @@ async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
   } catch (error) {
     if (error.code !== 'ENOENT') {
       throw new CustomError({
-        message: 'Cannot read private key passpharse file',
+        message: 'Cannot read node behind proxy private key passpharse file',
         cause: error,
         details: {
           nodeId,
@@ -134,7 +149,7 @@ async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
     key = await readFileAsync(keyFilePath, 'utf8');
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot read master private key file',
+      message: 'Cannot read node behind proxy master private key file',
       cause: error,
       details: {
         nodeId,
@@ -153,7 +168,8 @@ async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
   } catch (error) {
     if (error.code !== 'ENOENT') {
       throw new CustomError({
-        message: 'Cannot read master private key passpharse file',
+        message:
+          'Cannot read node behind proxy master private key passpharse file',
         cause: error,
         details: {
           nodeId,
@@ -186,8 +202,8 @@ export async function initialize() {
     message: 'Reading node keys from files',
   });
 
-  const newPrivateKey = readNodePrivateKeyFromFile();
-  const newMasterPrivateKey = readNodeMasterPrivateKeyFromFile();
+  const newPrivateKey = await readNodePrivateKeyFromFile();
+  const newMasterPrivateKey = await readNodeMasterPrivateKeyFromFile();
 
   // Nodes behind proxy
   if (node.role === 'proxy') {
