@@ -6,9 +6,9 @@ BREAKING CHANGES:
 
 - Change structure of `secret` (remove prepended padding). All `secret` need to be re-calculated.
 - Change error type `INVALID_CIPHER` to `INVALID_SECRET`.
-- When Idp create response.
-  - `secret` can no longer be malformed (because `secret` do not have form).
-  - `secret` will be check for validity and may return `INVALID_SECRET`.
+- When IdP creates response:
+  - `secret` cannot be malformed (since it no longer has form).
+  - `secret` will be checked for validity and may return `INVALID_SECRET`.
 
 FEATURES:
 
