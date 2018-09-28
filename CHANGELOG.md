@@ -18,6 +18,7 @@ IMPROVEMENTS:
 
 - Wait for DB (Redis) reconnect when the connection is down before processing received message from MQ.
 - Wait for DB (Redis) to connect on server start. (Previously, stop server initialization process if fail to connect on the first try.)
+- Group msq signing when request data from AS to sign only once for same data.
 - [MQ] Wait for receiver to save raw message to cache DB before sending ACK back to sender.
 
 BUG FIXES:

@@ -195,10 +195,12 @@ export async function sendRequestToAS(nodeId, requestData, height) {
           dataToSendByNodeId[receiver.node_id].service_data_request_list.push(
             serviceDataRequest
           );
+          dataToSendByNodeId[receiver.node_id].concat_service_id_index += '|' + index.toString();
         } else {
           dataToSendByNodeId[receiver.node_id] = {
             receiver,
             service_data_request_list: [serviceDataRequest],
+            concat_service_id_index: index.toString(),
           };
         }
       });
@@ -209,11 +211,26 @@ export async function sendRequestToAS(nodeId, requestData, height) {
     nodeId,
     requestData.request_id
   );
+
+  const dataToSendByNodeIdAndServiceList = {};
+  Object.values(dataToSendByNodeId).forEach(
+    ({ receiver, service_data_request_list, concat_service_id_index }) => {
+      if(dataToSendByNodeIdAndServiceList[concat_service_id_index]) {
+        dataToSendByNodeIdAndServiceList[concat_service_id_index].receivers.push(receiver);
+      } else {
+        dataToSendByNodeIdAndServiceList[concat_service_id_index] = {
+          receivers: [receiver],
+          service_data_request_list,
+        };
+      }
+    }
+  );
+
   await Promise.all(
-    Object.values(dataToSendByNodeId).map(
-      ({ receiver, service_data_request_list }) =>
+    Object.values(dataToSendByNodeIdAndServiceList).map(
+      ({ receivers, service_data_request_list }) =>
         mq.send(
-          [receiver],
+          receivers,
           {
             type: privateMessageType.DATA_REQUEST,
             request_id: requestData.request_id,
