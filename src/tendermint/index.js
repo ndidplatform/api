@@ -355,12 +355,12 @@ async function processNewBlock(blockHeight, appHash) {
 
 async function getParsedTxsInBlocks(fromHeight, toHeight) {
   const blocks = await getBlocks(fromHeight, toHeight);
+  const blockResults = await getBlockResults(fromHeight, toHeight);
   const parsedTransactionsInBlocks = await Promise.all(
     blocks.map(async (block, blockIndex) => {
       const height = parseInt(block.header.height);
 
       const transactions = getTransactionListFromBlock(block);
-      const blockResults = await getBlockResults(height, height);
 
       const successTransactions = transactions.filter((transaction, index) => {
         const deliverTxResult =
