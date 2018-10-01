@@ -587,11 +587,8 @@ async function processAsData({
     cleanUpDataResponseFromAS(nodeId, asResponseId);
     return;
   }
-  if (signature !== signatureFromBlockchain) {
-    cleanUpDataResponseFromAS(nodeId, asResponseId);
-    return;
-  }
   if (
+    signature !== signatureFromBlockchain ||
     !(await isDataSignatureValid(
       asNodeId,
       signatureFromBlockchain,
@@ -617,6 +614,37 @@ async function processAsData({
     return;
   }
 
+  try {
+    await tendermintNdid.setDataReceived(
+      {
+        requestId,
+        service_id: serviceId,
+        as_id: asNodeId,
+      },
+      nodeId
+    );
+  } catch (error) {
+    cleanUpDataResponseFromAS(nodeId, asResponseId);
+    const err = new CustomError({
+      message: 'Cannot set data received',
+      details: {
+        requestId,
+        serviceId,
+        asNodeId,
+      },
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    await common.notifyError({
+      nodeId,
+      callbackUrl: callbackUrls.error_url,
+      action: 'processAsData',
+      error: err,
+      requestId,
+    });
+    return;
+  }
+
   await cacheDb.addDataFromAS(nodeId, requestId, {
     source_node_id: asNodeId,
     service_id: serviceId,
@@ -625,15 +653,6 @@ async function processAsData({
     data_salt: dataSalt,
     data,
   });
-
-  await tendermintNdid.setDataReceived(
-    {
-      requestId,
-      service_id: serviceId,
-      as_id: asNodeId,
-    },
-    nodeId
-  );
 
   cleanUpDataResponseFromAS(nodeId, asResponseId);
 }
