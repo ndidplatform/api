@@ -94,10 +94,12 @@ async function initialize() {
       tendermint.eventEmitter.once('ready', () => resolve())
     );
 
+    await core.initialize();
+
     await tendermint.initialize();
     await tendermintReady;
 
-    await core.initialize();
+    await tendermint.loadExpectedTxFromDB();
 
     logger.info({ message: 'Server initialized' });
   } catch (error) {

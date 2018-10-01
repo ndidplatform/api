@@ -97,7 +97,6 @@ export async function initialize() {
     await mq.initialize();
     await mq.loadAndProcessBacklogMessages();
   }
-  await tendermint.loadExpectedTxFromDB();
 
   let handleMessageFromQueue;
   if (role === 'rp') {
