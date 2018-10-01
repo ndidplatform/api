@@ -35,7 +35,7 @@ import * as nodeKey from './utils/node_key';
 import * as cacheDb from './db/cache';
 import * as longTermDb from './db/long_term';
 import * as tendermint from './tendermint';
-import { close as closeMQ } from './mq';
+import * as mq from './mq';
 import { stopAllCallbackRetries } from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
 
@@ -64,9 +64,10 @@ async function initialize() {
   try {
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
 
+    let role;
     if (!config.skipGetRole) {
       logger.info({ message: 'Getting node role' });
-      const role = await node.getNodeRoleFromBlockchain();
+      role = await node.getNodeRoleFromBlockchain();
       logger.info({ message: 'Node role', role });
     }
 
@@ -98,6 +99,12 @@ async function initialize() {
 
     await tendermint.initialize();
     await tendermintReady;
+
+    if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
+      await core.registerMessageQueueAddress();
+      await mq.initialize();
+      await mq.loadAndProcessBacklogMessages();
+    }
 
     await tendermint.loadExpectedTxFromDB();
 
@@ -145,7 +152,7 @@ async function shutDown() {
   await httpServer.close();
   stopAllCallbackRetries();
   externalCryptoService.stopAllCallbackRetries();
-  closeMQ();
+  mq.close();
   tendermint.tendermintWsClient.close();
   // TODO: wait for async operations which going to use DB to finish before closing
   // a connection to DB

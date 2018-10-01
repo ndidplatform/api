@@ -60,7 +60,7 @@ export function registeredMsqAddress() {
   return messageQueueAddressRegistered;
 }
 
-async function registerMessageQueueAddress() {
+export async function registerMessageQueueAddress() {
   if (!messageQueueAddressRegistered) {
     //query current self msq
     const selfMqAddress = await tendermintNdid.getMqAddresses(config.nodeId);
@@ -92,12 +92,6 @@ async function registerMessageQueueAddress() {
 }
 
 export async function initialize() {
-  if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
-    await registerMessageQueueAddress();
-    await mq.initialize();
-    await mq.loadAndProcessBacklogMessages();
-  }
-
   let handleMessageFromQueue;
   if (role === 'rp') {
     handleMessageFromQueue = rp.handleMessageFromQueue;
