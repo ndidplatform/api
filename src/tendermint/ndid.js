@@ -44,7 +44,6 @@ export async function setMqAddresses(
       nodeId,
       fnName: 'SetMqAddresses',
       params: {
-        node_id: nodeId,
         addresses,
       },
       callbackFnName,
