@@ -29,6 +29,7 @@ BUG FIXES:
 - Fix MQ address check on server start.
 - Fix POST `/utility/private_messages/:request_id/housekeeping` does not remove outbound private messages.
 - Fix loading MQ duplicate timeouts from cache DB on server start.
+- Fix RP able to get data from AS through API GET `/requests/data/:request_id` even when RP cannot set data received (e.g. since the request is closed or timed out).
 
 ## 0.8.0 (September 23, 2018)
 
