@@ -33,7 +33,6 @@ BUG FIXES:
 - Fix server initialization flow.
 - Fix race condition when generate new challenge by pre-generate all challenge.
 - Fix race condition when receive private proof by change to redis list
-- Move misplace change log to correct place
 
 ## 0.8.0 (September 23, 2018)
 
