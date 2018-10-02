@@ -363,8 +363,11 @@ async function verifyZKProof({
   privateProofObject,
   challenge,
   mode,
+  nodeId,
 }) {
-  const { namespace, identifier, privateProofObjectList } = requestData;
+  //THIS FUNCTION CHECK ACCESSOR_GROUP_ID AGAINST OTHER RESPONES BEFORE VERIFY ACTUAL ZK-PROOK
+  const { namespace, identifier } = requestData;
+  const privateProofObjectList = await cacheDb.getPrivateProofObjectListInRequest(nodeId, requestData.request_id);
 
   if (mode === 1) {
     return null;
@@ -625,6 +628,7 @@ export async function checkIdpResponse({
     privateProofObject,
     challenge,
     mode: requestStatus.mode,
+    nodeId,
   });
 
   logger.debug({

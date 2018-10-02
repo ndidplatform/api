@@ -610,6 +610,43 @@ export function removePrivateProofReceivedFromMQ(nodeId, responseId) {
 // Used by RP
 //
 
+export function getPrivateProofObjectListInRequest(nodeId, requestId) {
+  return db.getList({
+    nodeId,
+    dbName,
+    name: 'privateProofObjectListInRequest',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'privateProofObjectList',
+  });
+}
+
+export function addPrivateProofObjectInRequest(
+  nodeId,
+  requestId,
+  privateProofObject
+) {
+  return db.pushToList({
+    nodeId,
+    dbName,
+    name: 'privateProofObjectListInRequest',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'privateProofObjectList',
+    value: privateProofObject,
+  });
+}
+
+export function removePrivateProofObjectListInRequest(nodeId, requestId) {
+  return db.removeList({
+    nodeId,
+    dbName,
+    name: 'privateProofObjectListInRequest',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 export function getExpectedIdpResponseNodeIdInBlockList(nodeId, height) {
   return db.getList({
     nodeId,

@@ -173,6 +173,8 @@ export async function sendRequestToAS(nodeId, requestData, height) {
   if (requestData.data_request_list == null) return;
   if (requestData.data_request_list.length === 0) return;
 
+  const privateProofObjectList = await cacheDb.getPrivateProofObjectListInRequest(nodeId, requestData.request_id);
+
   const dataToSendByNodeId = {};
   await Promise.all(
     requestData.data_request_list.map(async (data_request, index) => {
@@ -236,7 +238,7 @@ export async function sendRequestToAS(nodeId, requestData, height) {
             request_message: requestData.request_message,
             request_message_salt: requestData.request_message_salt,
             challenge: requestData.challenge,
-            privateProofObjectList: requestData.privateProofObjectList,
+            privateProofObjectList,
             rp_id: requestData.rp_id,
             height,
             initial_salt: requestData.initial_salt,

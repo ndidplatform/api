@@ -31,6 +31,9 @@ BUG FIXES:
 - Fix loading MQ duplicate timeouts from cache DB on server start.
 - Fix RP able to get data from AS through API GET `/requests/data/:request_id` even when RP cannot set data received (e.g. since the request is closed or timed out).
 - Fix server initialization flow.
+- Fix race condition when generate new challenge by pre-generate all challenge.
+- Fix race condition when receive private proof by change to redis list
+- Move misplace change log to correct place
 
 ## 0.8.0 (September 23, 2018)
 
@@ -69,7 +72,6 @@ BUG FIXES:
 - Fix error when creating request without `data_request_list` (not set to empty array).
 - Fix cached request message data does not get deleted after used on IdP side.
 - Fix cached reference ID get removed when create request or create identity with duplicate reference ID.
-- Fix race condition when generate new challenge by pre-generate all challenge.
 
 ## 0.7.2 (August 22, 2018)
 

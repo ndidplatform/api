@@ -186,28 +186,14 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
           message.request_id
         );
         if (request) {
-          if (request.privateProofObjectList) {
-            request.privateProofObjectList.push({
-              idp_id: message.idp_id,
-              privateProofObject: {
-                privateProofValue: message.privateProofValue,
-                accessor_id: message.accessor_id,
-                padding: message.padding,
-              },
-            });
-          } else {
-            request.privateProofObjectList = [
-              {
-                idp_id: message.idp_id,
-                privateProofObject: {
-                  privateProofValue: message.privateProofValue,
-                  accessor_id: message.accessor_id,
-                  padding: message.padding,
-                },
-              },
-            ];
-          }
-          await cacheDb.setRequestData(nodeId, message.request_id, request);
+          await cacheDb.addPrivateProofObjectInRequest(nodeId, message.request_id, {
+            idp_id: message.idp_id,
+            privateProofObject: {
+              privateProofValue: message.privateProofValueArray,
+              accessor_id: message.accessor_id,
+              padding: message.padding,
+            },
+          });
         }
 
         const latestBlockHeight = tendermint.latestBlockHeight;
@@ -388,6 +374,7 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
               cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
               cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
               cacheDb.removeRequestData(nodeId, requestId),
+              cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
               cacheDb.removeIdpResponseValidList(nodeId, requestId),
               cacheDb.removeTimeoutScheduler(nodeId, requestId),
               cacheDb.removeCreateIdentityDataByReferenceId(

@@ -611,6 +611,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
 async function createRequestCleanUpOnError({ nodeId, requestId, referenceId }) {
   await Promise.all([
     cacheDb.removeRequestData(nodeId, requestId),
+    cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
     cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
     cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
     cacheDb.removeRequestCallbackUrl(nodeId, requestId),

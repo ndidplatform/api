@@ -108,28 +108,14 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         );
         //AS involve
         if (request) {
-          if (request.privateProofObjectList) {
-            request.privateProofObjectList.push({
-              idp_id: message.idp_id,
-              privateProofObject: {
-                privateProofValue: message.privateProofValueArray,
-                accessor_id: message.accessor_id,
-                padding: message.padding,
-              },
-            });
-          } else {
-            request.privateProofObjectList = [
-              {
-                idp_id: message.idp_id,
-                privateProofObject: {
-                  privateProofValue: message.privateProofValueArray,
-                  accessor_id: message.accessor_id,
-                  padding: message.padding,
-                },
-              },
-            ];
-          }
-          await cacheDb.setRequestData(nodeId, message.request_id, request);
+          await cacheDb.addPrivateProofObjectInRequest(nodeId, message.request_id, {
+            idp_id: message.idp_id,
+            privateProofObject: {
+              privateProofValue: message.privateProofValueArray,
+              accessor_id: message.accessor_id,
+              padding: message.padding,
+            },
+          });
         }
       }
 
@@ -511,6 +497,7 @@ async function processRequestUpdate(nodeId, requestId, height) {
       cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
       cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
       cacheDb.removeRequestData(nodeId, requestId),
+      cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
       cacheDb.removeIdpResponseValidList(nodeId, requestId),
       common.removeTimeoutScheduler(nodeId, requestId),
     ]);
