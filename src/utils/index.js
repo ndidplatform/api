@@ -68,8 +68,12 @@ export function randomBase64Bytes(length) {
   return cryptoUtils.randomBase64Bytes(length);
 }
 
+export function randomBufferBytes(length) {
+  return crypto.randomBytes(length);
+}
+
 export function getNonce() {
-  return crypto.randomBytes(32);
+  return randomBufferBytes(32);
 }
 
 export function hash(dataToHash) {
@@ -162,6 +166,23 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
   });
 
   return rawMessageBuffer.slice(0, padLength + 1).toString('base64');
+}
+
+export function generatedChallenges(idp_count) {
+  let challenges = [];
+  let offset = 0;
+  let longChallenge = randomBufferBytes( idp_count * 2 * config.challengeLength );
+
+  for(let i = 0 ; i < idp_count ; i++) {
+    let startSecond = offset + config.challengeLength;
+    let endSecond = startSecond + config.challengeLength; 
+    challenges.push([
+      longChallenge.slice(offset, startSecond).toString('base64'),
+      longChallenge.slice(startSecond, endSecond).toString('base64'),
+    ]);
+    offset = endSecond;
+  }
+  return challenges;
 }
 
 export function generatePublicProof(publicKey) {

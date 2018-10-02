@@ -348,7 +348,6 @@ export async function timeoutRequest(nodeId, requestId) {
     throw error;
   }
   cacheDb.removeTimeoutScheduler(nodeId, requestId);
-  cacheDb.removeChallengeFromRequestId(nodeId, requestId);
 }
 
 export function runTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
@@ -498,28 +497,13 @@ export async function handleChallengeRequest({
   }
 
   let challenge;
-  let challengeObject = await cacheDb.getChallengeFromRequestId(
+  let challengeObject = (await cacheDb.getRequestData(
     nodeId,
     request_id
-  );
-  //challenge deleted, request is done
-  if (challengeObject == null) return;
-
-  if (challengeObject[idp_id]) challenge = challengeObject[idp_id];
-  else {
-    //generate new challenge
-    challenge = [
-      utils.randomBase64Bytes(config.challengeLength),
-      utils.randomBase64Bytes(config.challengeLength),
-    ];
-
-    challengeObject[idp_id] = challenge;
-    await cacheDb.setChallengeFromRequestId(
-      nodeId,
-      request_id,
-      challengeObject
-    );
-  }
+  )).challenge;
+  //no challenge found
+  if (challengeObject == null || !challengeObject[idp_id]) return;
+  challenge = challengeObject[idp_id];
 
   logger.debug({
     message: 'Get challenge',
@@ -646,10 +630,10 @@ export async function checkIdpResponse({
   const response = response_list.find((response) => response.idp_id === idpId);
 
   // Check ZK Proof
-  const challenge = (await cacheDb.getChallengeFromRequestId(
+  const challenge = (await cacheDb.getRequestData(
     nodeId,
     requestStatus.request_id
-  ))[idpId];
+  )).challenge[idpId];
   const validProof = await verifyZKProof({
     request_id: requestStatus.request_id,
     idp_id: idpId,

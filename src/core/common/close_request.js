@@ -163,7 +163,6 @@ export async function closeRequestInternalAsyncAfterBlockchain(
   try {
     if (error) throw error;
 
-    cacheDb.removeChallengeFromRequestId(node_id, request_id);
     removeTimeoutScheduler(node_id, request_id);
 
     if (!synchronous) {

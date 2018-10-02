@@ -207,11 +207,6 @@ export async function sendRequestToAS(nodeId, requestData, height) {
     })
   );
 
-  const challenge = await cacheDb.getChallengeFromRequestId(
-    nodeId,
-    requestData.request_id
-  );
-
   const dataToSendByNodeIdAndServiceList = {};
   Object.values(dataToSendByNodeId).forEach(
     ({ receiver, service_data_request_list, concat_service_id_index }) => {
@@ -240,7 +235,7 @@ export async function sendRequestToAS(nodeId, requestData, height) {
             service_data_request_list,
             request_message: requestData.request_message,
             request_message_salt: requestData.request_message_salt,
-            challenge,
+            challenge: requestData.challenge,
             privateProofObjectList: requestData.privateProofObjectList,
             rp_id: requestData.rp_id,
             height,

@@ -69,6 +69,7 @@ BUG FIXES:
 - Fix error when creating request without `data_request_list` (not set to empty array).
 - Fix cached request message data does not get deleted after used on IdP side.
 - Fix cached reference ID get removed when create request or create identity with duplicate reference ID.
+- Fix race condition when generate new challenge by pre-generate all challenge.
 
 ## 0.7.2 (August 22, 2018)
 

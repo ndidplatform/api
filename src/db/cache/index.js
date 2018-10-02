@@ -606,39 +606,6 @@ export function removePrivateProofReceivedFromMQ(nodeId, responseId) {
   });
 }
 
-export function getChallengeFromRequestId(nodeId, requestId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'challengeFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'challenge',
-  });
-}
-
-export function setChallengeFromRequestId(nodeId, requestId, challenge) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'challengeFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'challenge',
-    value: challenge,
-  });
-}
-
-export function removeChallengeFromRequestId(nodeId, requestId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'challengeFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
 //
 // Used by RP
 //

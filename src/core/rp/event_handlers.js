@@ -201,7 +201,6 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         if (requestData != null) {
           await sendRequestToAS(nodeId, requestData, message.height);
         }
-        cacheDb.removeChallengeFromRequestId(nodeId, message.request_id);
       }
 
       if (
@@ -467,7 +466,6 @@ async function processRequestUpdate(nodeId, requestId, height) {
     if (requestData != null) {
       await sendRequestToAS(nodeId, requestData, height);
     }
-    cacheDb.removeChallengeFromRequestId(nodeId, requestId);
   }
 
   if (

@@ -252,7 +252,11 @@ export async function createRequest(
       request_id = utils.createRequestId();
     }
 
-    await cacheDb.setChallengeFromRequestId(node_id, request_id, {});
+    const challenge = {};
+    const generatedChallenges = utils.generatedChallenges(receivers.length);
+    receivers.forEach(({ node_id }, index) => {
+      challenge[node_id] = generatedChallenges[index];
+    });
 
     const initial_salt = utils.randomBase64Bytes(config.saltLength);
     const request_message_salt = utils.generateRequestMessageSalt(initial_salt);
@@ -281,7 +285,7 @@ export async function createRequest(
       data_request_params_salt_list,
       request_message,
       // for zk proof
-      //challenge,
+      challenge,
       rp_id: node_id,
       request_message_salt,
       initial_salt,
@@ -606,7 +610,6 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
 async function createRequestCleanUpOnError({ nodeId, requestId, referenceId }) {
   await Promise.all([
-    cacheDb.removeChallengeFromRequestId(nodeId, requestId),
     cacheDb.removeRequestData(nodeId, requestId),
     cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
     cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
