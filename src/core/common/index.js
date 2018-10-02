@@ -130,24 +130,6 @@ export async function initialize() {
   mq.eventEmitter.on('error', handleMessageQueueError);
 }
 
-// tendermint.eventEmitter.on('ready', async () => {
-//   if (
-//     !config.useExternalCryptoService ||
-//     (config.useExternalCryptoService &&
-//       externalCryptoService.isCallbackUrlsSet())
-//   ) {
-//     await initialize();
-//   }
-// });
-
-// if (config.useExternalCryptoService) {
-//   externalCryptoService.eventEmitter.on('allCallbacksSet', async () => {
-//     if (tendermint.syncing === false) {
-//       await initialize();
-//     }
-//   });
-// }
-
 export function getFunction(fnName) {
   switch (fnName) {
     case 'common.createRequestInternalAsyncAfterBlockchain':
