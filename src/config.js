@@ -88,13 +88,11 @@ export const nodeId = process.env.NODE_ID;
 
 export const skipGetRole = process.env.SKIP_GET_ROLE === 'true';
 
-export const mqRegister = {
-  ip: process.env.MQ_CONTACT_IP || 'localhost',
-  port:
-    process.env.MQ_BINDING_PORT == null
-      ? defaultMqBindingPort
-      : parseInt(process.env.MQ_BINDING_PORT),
-};
+export const mqIp = process.env.MQ_CONTACT_IP || 'localhost';
+export const mqPort =
+  process.env.MQ_BINDING_PORT == null
+    ? defaultMqBindingPort
+    : parseInt(process.env.MQ_BINDING_PORT);
 
 export const registerMqAtStartup =
   process.env.REGISTER_MQ_AT_STARTUP != null

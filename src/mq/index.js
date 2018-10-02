@@ -85,7 +85,7 @@ export async function initialize() {
   });
   await Promise.all(promiseArray);
   mqSend = new MQSend({ timeout: 60000, totalTimeout: 500000 });
-  mqRecv = new MQRecv({ port: config.mqRegister.port, maxMsgSize: 3250000 });
+  mqRecv = new MQRecv({ port: config.mqPort, maxMsgSize: 3250000 });
 
   mqRecv.on('message', async ({ message, msgId, senderId, sendAck }) => {
     // Check for duplicate message

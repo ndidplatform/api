@@ -52,24 +52,24 @@ import privateMessageType from '../private_message_type';
 export * from './create_request';
 export * from './close_request';
 
-let messageQueueAddressRegistered = !config.registerMqAtStartup;
+let messageQueueAddressesSet = !config.registerMqAtStartup;
 
 tendermint.setTxResultCallbackFnGetter(getFunction);
 
-export function registeredMsqAddress() {
-  return messageQueueAddressRegistered;
+export function isMqAddressesSet() {
+  return messageQueueAddressesSet;
 }
 
-export async function registerMessageQueueAddress() {
-  if (!messageQueueAddressRegistered) {
+export async function setMessageQueueAddress() {
+  if (!messageQueueAddressesSet) {
     //query current self msq
     const selfMqAddress = await tendermintNdid.getMqAddresses(config.nodeId);
     if (selfMqAddress) {
       const { ip, port } = selfMqAddress[0];
       //if not same
-      if (ip !== config.mqRegister.ip || port !== config.mqRegister.port) {
+      if (ip !== config.mqIp || port !== config.mqPort) {
         await tendermintNdid.setMqAddresses([
-          { ip: config.mqRegister.ip, port: config.mqRegister.port },
+          { ip: config.mqIp, port: config.mqPort },
         ]);
         logger.info({
           message: 'Message queue addresses change registered',
@@ -81,13 +81,13 @@ export async function registerMessageQueueAddress() {
       }
     } else {
       await tendermintNdid.setMqAddresses([
-        { ip: config.mqRegister.ip, port: config.mqRegister.port },
+        { ip: config.mqIp, port: config.mqPort },
       ]);
       logger.info({
         message: 'Message queue addresses registered',
       });
     }
-    messageQueueAddressRegistered = true;
+    messageQueueAddressesSet = true;
   }
 }
 

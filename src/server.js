@@ -101,7 +101,7 @@ async function initialize() {
     await tendermintReady;
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
-      await core.registerMessageQueueAddress();
+      await core.setMessageQueueAddress();
       await mq.initialize();
       await mq.loadAndProcessBacklogMessages();
     }

@@ -47,8 +47,8 @@ export default async function getInfo(req, res, next) {
     serverListenPort: config.serverPort,
     dbIp: config.dbIp,
     dbPort: config.dbPort,
-    messageQueueIp: config.mqRegister.ip,
-    messageQueuePort: config.mqRegister.port,
+    messageQueueIp: config.mqIp,
+    messageQueuePort: config.mqPort,
     tendermintAddress: config.tendermintAddress,
     tendermintWebSocketConnected: tendermint.connected,
   });
