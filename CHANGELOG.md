@@ -17,6 +17,10 @@ FEATURES:
 
 IMPROVEMENTS:
 
+- API version 2.3
+  - Add `creation_block_height` property to IdP incoming request callback data.
+  - Add `creation_time` and `creation_block_height` properties to AS service callback data.
+  - Add `creation_block_height` to create request result, create identity request result, and add accessor request result callbacks. (Result callbacks of POST `/rp/requests/:namespace/:identifier`, POST `/identity`, and POST `/identity/:namespace/:identifier/accessors` respectively.)
 - Wait for DB (Redis) reconnect when the connection is down before processing received message from MQ.
 - Wait for DB (Redis) to connect on server start. (Previously, stop server initialization process if fail to connect on the first try.)
 - Group MQ message signing when sending request data from RP to AS. (Reduce message signing if payload is identical.)
@@ -29,10 +33,6 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
-- API version 2.3
-  - Add `creation_block_height` property to IdP incoming request callback data.
-  - Add `creation_time` and `creation_block_height` properties to AS service callback data.
-  - Add `creation_block_height` to create request result, create identity request result, and add accessor request result callbacks. (Result callbacks of POST `/rp/requests/:namespace/:identifier`, POST `/identity`, and POST `/identity/:namespace/:identifier/accessors` respectively.)
 - Fix data related to a request in cache DB does not get cleared when a request is closed or timed out.
 - Fix expected Tx in cache DB does not get cleared when error trying to make a transaction to Tendermint.
 - Fix Tendermint new blocks get processed without waiting for node's private key read on server start.
