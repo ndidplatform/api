@@ -24,7 +24,7 @@ IMPROVEMENTS:
 - If as_id_list or idp_id_list is empty array, API will expand to all potential AS/IDP.
 - Check message from mq against receiver list in blockchain, wheter we are one of designated receivers.
 - Change special tags to purpose (with 'AddAccessor' to create identity or add accessor).
-- Check IDP and AS in list, error if any unqualified IDP/AS is present.
+- Check IDP and AS IDs in request list when creating a request, error if any unqualified IDP/AS is present.
 
 BUG FIXES:
 
