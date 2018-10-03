@@ -525,9 +525,9 @@ export default {
     code: 15010,
     message: 'Request is not completed',
   }, // Try to add accessor when request for consent id not yet completed
-  ABCI_REQUEST_WRONG_PURPOSE: {
+  ABCI_INVALID_REQUEST_PURPOSE: {
     code: 15011,
-    message: 'Request id is wrong purpose',
+    message: 'Invalid request purpose',
   }, // Try to add accessor with request that is not a create identity request type
   ABCI_NODE_ID_DOES_NOT_EXIST_IN_AS_LIST: {
     code: 15012,
