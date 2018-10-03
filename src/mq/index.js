@@ -84,8 +84,8 @@ export async function initialize() {
     }
   });
   await Promise.all(promiseArray);
-  mqSend = new MQSend({ timeout: 60000, totalTimeout: 500000 });
-  mqRecv = new MQRecv({ port: config.mqPort, maxMsgSize: 3250000 });
+  mqSend = new MQSend({ timeout: 60000, totalTimeout: 600000 });
+  mqRecv = new MQRecv({ port: config.mqPort, maxMsgSize: 3300000 });
 
   mqRecv.on('message', async ({ message, msgId, senderId, sendAck }) => {
     // Check for duplicate message
@@ -93,12 +93,12 @@ export async function initialize() {
     const id = senderId + ':' + msgId;
     if (timer[id] != null) return;
 
-    const unixTimeout = timestamp + 120000;
+    const unixTimeout = timestamp + 600000;
     cacheDb.setDuplicateMessageTimeout(config.nodeId, id, unixTimeout);
     timer[id] = setTimeout(() => {
       cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
       delete timer[id];
-    }, 120000);
+    }, 600000);
     onMessage(message, id, timestamp, sendAck);
   });
 
