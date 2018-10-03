@@ -183,24 +183,20 @@ async function resumeTimeoutScheduler() {
   );
 }
 
-export async function checkReceiverIntegrity(
-  requestId,
-  requestDetail,
-  nodeId
-) {
-  let filterIdpList = requestDetail.idp_id_list.filter((node_id) => {
+export async function checkReceiverIntegrity(requestId, requestDetail, nodeId) {
+  const filterIdpList = requestDetail.idp_id_list.filter((node_id) => {
     return node_id === nodeId;
   });
-  if(filterIdpList.length === 0) {
+  if (filterIdpList.length === 0) {
     logger.warn({
-      message: 'Request not involved our nodeId',
+      message: 'Request does not involve receiver node',
       requestId,
     });
     logger.debug({
-      message: 'Request not involved our nodeId',
+      message: 'Request does not involve receiver node',
       requestId,
       idp_id_list: requestDetail.request_message,
-      ourNodeId: nodeId,
+      receiverNodeId: nodeId,
     });
     return false;
   }
@@ -210,7 +206,7 @@ export async function checkReceiverIntegrity(
 export async function checkRequestMessageIntegrity(
   requestId,
   request,
-  requestDetail,
+  requestDetail
 ) {
   const requestMessageHash = utils.hash(
     request.request_message + request.request_message_salt
@@ -387,7 +383,10 @@ async function verifyZKProof({
 }) {
   //THIS FUNCTION CHECK ACCESSOR_GROUP_ID AGAINST OTHER RESPONES BEFORE VERIFY ACTUAL ZK-PROOK
   const { namespace, identifier } = requestData;
-  const privateProofObjectList = await cacheDb.getPrivateProofObjectListInRequest(nodeId, requestData.request_id);
+  const privateProofObjectList = await cacheDb.getPrivateProofObjectListInRequest(
+    nodeId,
+    requestData.request_id
+  );
 
   if (mode === 1) {
     return null;
@@ -502,10 +501,8 @@ export async function handleChallengeRequest({
   }
 
   let challenge;
-  let challengeObject = (await cacheDb.getRequestData(
-    nodeId,
-    request_id
-  )).challenge;
+  let challengeObject = (await cacheDb.getRequestData(nodeId, request_id))
+    .challenge;
   //no challenge found
   if (challengeObject == null || !challengeObject[idp_id]) return;
   challenge = challengeObject[idp_id];

@@ -435,7 +435,7 @@ async function createRequestInternalAsync(
     min_idp,
     request_timeout,
     idp_id_list,
-    purpose = '',
+    purpose,
   } = createRequestParams;
   const {
     synchronous = false,

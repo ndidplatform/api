@@ -260,24 +260,20 @@ export function notifyAddAccessorResultByCallback(eventDataForCallback) {
   });
 }
 
-async function checkReceiverIntegrity(
-  requestId,
-  requestDetail,
-  nodeId
-) {
+async function checkReceiverIntegrity(requestId, requestDetail, nodeId) {
   let filterIdpList = requestDetail.idp_id_list.filter((node_id) => {
     return node_id === nodeId;
   });
-  if(filterIdpList.length === 0) {
+  if (filterIdpList.length === 0) {
     logger.warn({
       message: 'Request message hash mismatched',
       requestId,
     });
     logger.debug({
-      message: 'Request not involved our nodeId',
+      message: 'Request does not involve receiver node',
       requestId,
       idp_id_list: requestDetail.request_message,
-      ourNodeId: nodeId,
+      receiverNodeId: nodeId,
     });
     return false;
   }
@@ -321,7 +317,7 @@ export async function processMessage(nodeId, message) {
     const messageValid = await common.checkRequestMessageIntegrity(
       message.request_id,
       message,
-      requestDetail,
+      requestDetail
     );
     const receiverValid = await checkReceiverIntegrity(
       message.request_id,
