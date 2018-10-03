@@ -20,6 +20,10 @@ IMPROVEMENTS:
 - Wait for DB (Redis) to connect on server start. (Previously, stop server initialization process if fail to connect on the first try.)
 - Group MQ message signing when sending request data from RP to AS. (Reduce message signing if payload is identical.)
 - [MQ] Wait for receiver to save raw message to cache DB before sending ACK back to sender.
+- Store idp_id_list in blockchain.
+- If as_id_list or idp_id_list is empty array, API will expand to all potential AS/IDP.
+- Check message from mq against receiver list in blockchain, wheter we are one of designated receivers.
+- Change special tags to purpose (with 'AddAccessor' to create identity or add accessor).
 
 BUG FIXES:
 

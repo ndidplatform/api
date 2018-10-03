@@ -183,15 +183,35 @@ async function resumeTimeoutScheduler() {
   );
 }
 
+export async function checkReceiverIntegrity(
+  requestId,
+  requestDetail,
+  nodeId
+) {
+  let filterIdpList = requestDetail.idp_id_list.filter((node_id) => {
+    return node_id === nodeId;
+  });
+  if(filterIdpList.length === 0) {
+    logger.warn({
+      message: 'Request not involved our nodeId',
+      requestId,
+    });
+    logger.debug({
+      message: 'Request not involved our nodeId',
+      requestId,
+      idp_id_list: requestDetail.request_message,
+      ourNodeId: nodeId,
+    });
+    return false;
+  }
+  return true;
+}
+
 export async function checkRequestMessageIntegrity(
   requestId,
   request,
-  requestDetail
+  requestDetail,
 ) {
-  if (!requestDetail) {
-    requestDetail = await tendermintNdid.getRequestDetail({ requestId });
-  }
-
   const requestMessageHash = utils.hash(
     request.request_message + request.request_message_salt
   );

@@ -213,6 +213,11 @@ export async function createRequest(
               },
             });
           }
+
+          if(as_id_list == null || as_id_list.length === 0) {
+            dataRequest.as_id_list = potential_as_list;
+          }
+
         })
       );
     }
@@ -245,6 +250,12 @@ export async function createRequest(
           identifier,
           idp_id_list,
         },
+      });
+    }
+
+    if(idp_id_list == null || idp_id_list.length === 0) {
+      receivers.forEach(({ node_id }) => {
+        idp_id_list.push(node_id);
       });
     }
 
@@ -360,6 +371,8 @@ async function createRequestInternalAsync(
     min_aal,
     min_idp,
     request_timeout,
+    idp_id_list,
+    purpose = '',
   } = createRequestParams;
   const {
     synchronous = false,
@@ -398,6 +411,8 @@ async function createRequestInternalAsync(
       request_timeout,
       data_request_list: dataRequestListToBlockchain,
       request_message_hash: utils.hash(request_message + request_message_salt),
+      idp_id_list,
+      purpose,
     };
 
     if (!synchronous) {

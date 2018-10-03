@@ -623,7 +623,7 @@ export function getDetailedRequestStatus(requestDetail) {
       if (
         responseCount.reject === 0 &&
         (responseCount.accept > 0 ||
-          (responseCount.accept === 0 && requestDetail.special))
+          (responseCount.accept === 0 && requestDetail.purpose === 'AddAccessor'))
       ) {
         status = 'completed';
       }

@@ -433,6 +433,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
           min_idp: exist ? 1 : 0,
           request_timeout: 86400,
           mode: 3,
+          purpose: 'AddAccessor'
         },
         {
           synchronous: false,
@@ -497,6 +498,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
           min_idp: exist ? 1 : 0,
           request_timeout: 86400,
           mode: 3,
+          purpose: 'AddAccessor',
         },
         { synchronous: true },
         { request_id }

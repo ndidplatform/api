@@ -154,6 +154,36 @@ export function getServiceCallbackUrl(nodeId, serviceId) {
   });
 }
 
+async function checkReceiverIntegrity(
+  requestId,
+  requestDetail,
+  nodeId
+) {
+  for (let i = 0; i < requestDetail.service_data_request_list.length; i++) {
+    const { as_id_list, service_id } = requestDetail.service_data_request_list[i];
+
+    let filterAsList = as_id_list.filter((node_id) => {
+      return node_id === nodeId;
+    });
+    if(filterAsList.length === 0) {
+      logger.warn({
+        message: 'Request service not involved our nodeId',
+        requestId,
+        service_id,
+      });
+      logger.debug({
+        message: 'Request not involved our nodeId',
+        requestId,
+        service_id,
+        as_id_list: requestDetail.request_message,
+        ourNodeId: nodeId,
+      });
+      return false;
+    }
+  }
+  return true;
+}
+
 export async function processRequest(nodeId, request) {
   logger.debug({
     message: 'Processing request',
@@ -173,7 +203,12 @@ export async function processRequest(nodeId, request) {
     request,
     requestDetail
   );
-  if (!requestMessageValid || !serviceDataRequestParamsValid) {
+  const receiverValid = checkReceiverIntegrity(
+    request.request_id,
+    requestDetail,
+    nodeId
+  );
+  if (!requestMessageValid || !serviceDataRequestParamsValid || !receiverValid) {
     throw new CustomError({
       errorType: errorType.REQUEST_INTEGRITY_CHECK_FAILED,
       details: {

@@ -96,7 +96,7 @@ router.get('/requests/:request_id', async (req, res, next) => {
     });
 
     if (requestWithSpecialTag != null) {
-      const { special, ...request } = requestWithSpecialTag;
+      const { purpose, ...request } = requestWithSpecialTag;
       res.status(200).json(request);
     } else {
       res.status(404).end();

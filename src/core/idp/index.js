@@ -260,6 +260,30 @@ export function notifyAddAccessorResultByCallback(eventDataForCallback) {
   });
 }
 
+async function checkReceiverIntegrity(
+  requestId,
+  requestDetail,
+  nodeId
+) {
+  let filterIdpList = requestDetail.idp_id_list.filter((node_id) => {
+    return node_id === nodeId;
+  });
+  if(filterIdpList.length === 0) {
+    logger.warn({
+      message: 'Request message hash mismatched',
+      requestId,
+    });
+    logger.debug({
+      message: 'Request not involved our nodeId',
+      requestId,
+      idp_id_list: requestDetail.request_message,
+      ourNodeId: nodeId,
+    });
+    return false;
+  }
+  return true;
+}
+
 export async function processMessage(nodeId, message) {
   logger.debug({
     message: 'Processing message',
@@ -269,6 +293,7 @@ export async function processMessage(nodeId, message) {
   if (message.type === privateMessageType.IDP_RESPONSE) {
     //reponse for create identity
     if (await checkCreateIdentityResponse(nodeId, message)) {
+      //TODO what if create identity request need more than 1 min_idp
       await identity.addAccessorAfterConsent(
         {
           nodeId,
@@ -293,11 +318,17 @@ export async function processMessage(nodeId, message) {
     const requestDetail = await tendermintNdid.getRequestDetail({
       requestId: message.request_id,
     });
-    const valid = await common.checkRequestMessageIntegrity(
+    const messageValid = await common.checkRequestMessageIntegrity(
       message.request_id,
       message,
-      requestDetail
+      requestDetail,
     );
+    const receiverValid = await checkReceiverIntegrity(
+      message.request_id,
+      requestDetail,
+      nodeId
+    );
+    const valid = messageValid && receiverValid;
     if (!valid) {
       throw new CustomError({
         errorType: errorType.REQUEST_INTEGRITY_CHECK_FAILED,
