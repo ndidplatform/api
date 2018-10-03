@@ -470,11 +470,13 @@ export default {
   },
   UNQUALIFIED_IDP: {
     code: 20058,
-    message: 'Some Idp in idp_id_list is unqualified to response',
+    message:
+      'Some IdP IDs in requested IdP ID list are unqualified to response',
   },
   UNQUALIFIED_AS: {
     code: 20058,
-    message: 'Some AS in as_id_list of some service is unqualified to release data',
+    message:
+      'Some AS IDs in some services in data request list are unqualified to release data',
   },
 
   // Errors return from ABCI app
