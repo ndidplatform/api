@@ -21,6 +21,7 @@
  */
 
 import { callbackUrls, processRequest } from '.';
+import { invalidateDataSchemaCache } from './data_validator';
 
 import CustomError from '../../error/custom_error';
 import logger from '../../logger';
@@ -153,18 +154,25 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
   await Promise.all(
     transactionsInBlocksToProcess.map(async ({ transactions }) => {
-      // Clean up closed or timed out create identity requests
       const requestIdsToCleanUpSet = new Set();
+
       transactions.forEach((transaction) => {
         const requestId = transaction.args.request_id;
-        if (requestId == null) return;
-        if (
-          transaction.fnName === 'CloseRequest' ||
-          transaction.fnName === 'TimeOutRequest'
-        ) {
-          requestIdsToCleanUpSet.add(requestId);
+        if (requestId != null) {
+          if (
+            transaction.fnName === 'CloseRequest' ||
+            transaction.fnName === 'TimeOutRequest'
+          ) {
+            requestIdsToCleanUpSet.add(requestId);
+          }
+        }
+
+        if (transaction.fnName === 'UpdateService') {
+          invalidateDataSchemaCache(transaction.args.service_id);
         }
       });
+
+      // Clean up closed or timed out create identity requests
       const requestIdsToCleanUp = [...requestIdsToCleanUpSet];
 
       await Promise.all(

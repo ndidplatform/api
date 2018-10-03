@@ -22,20 +22,79 @@
 
 import Ajv from 'ajv';
 
+import * as tendermintNdid from '../../tendermint/ndid';
+import CustomError from '../../error/custom_error';
+import errorType from '../../error/type';
+
 const ajvOptions = {
   allErrors: true,
 };
 
 const ajv = new Ajv(ajvOptions);
 
-function validate({ data, dataJsonSchema }) {
-  const validate = ajv.compile(dataJsonSchema);
-  const valid = validate(data);
+const dataSchemaCache = {};
 
-  return {
-    valid,
-    errors: validate.errors,
-  };
+async function validate({ serviceId, data }) {
+  let dataJson;
+  try {
+    dataJson = JSON.parse(data);
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.CANNOT_PARSE_DATA,
+      cause: error,
+    });
+  }
+
+  let dataSchema, dataSchemaVersion;
+  if (dataSchemaCache[serviceId] != null) {
+    dataSchema = dataSchemaCache[serviceId].dataSchema;
+    dataSchemaVersion = dataSchemaCache[serviceId].dataSchemaVersion;
+  } else {
+    try {
+      const serviceDetail = await tendermintNdid.getServiceDetail(serviceId);
+      dataSchema = serviceDetail.data_schema;
+      dataSchemaVersion = serviceDetail.data_schema_version;
+
+      dataSchemaCache[serviceId] = { dataSchema, dataSchemaVersion };
+    } catch (error) {
+      throw new CustomError({
+        errorType: errorType.CANNOT_GET_DATA_SCHEMA,
+        cause: error,
+      });
+    }
+  }
+
+  if (
+    dataSchema == null ||
+    dataSchema === 'n/a' ||
+    dataSchemaVersion == null ||
+    dataSchemaVersion === 'n/a'
+  ) {
+    return {
+      valid: null,
+    };
+  }
+
+  try {
+    const dataJsonSchema = JSON.parse(dataSchema);
+
+    const validate = ajv.compile(dataJsonSchema);
+    const valid = validate(dataJson);
+
+    return {
+      valid,
+      errors: validate.errors,
+    };
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.CANNOT_VALIDATE_DATA,
+      cause: error,
+    });
+  }
+}
+
+export function invalidateDataSchemaCache(serviceId) {
+  delete dataSchemaCache[serviceId];
 }
 
 export default validate;

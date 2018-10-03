@@ -112,7 +112,13 @@ export async function processDataForRP(
       });
     }
 
-    // TODO: validate data schema
+    const dataValidationResult = await validateData({ serviceId, data });
+    if (dataValidationResult.valid === false) {
+      throw new CustomError({
+        errorType: errorType.DATA_VALIDATION_FAILED,
+        details: dataValidationResult,
+      });
+    }
 
     if (synchronous) {
       await processDataForRPInternalAsync(...arguments, {

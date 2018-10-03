@@ -166,6 +166,18 @@ export default {
     code: 10034,
     message: 'Key could not be found. May need to re-initialize node keys.',
   },
+  CANNOT_PARSE_DATA: {
+    code: 10035,
+    message: 'Cannot parse data string to JSON',
+  },
+  CANNOT_GET_DATA_SCHEMA: {
+    code: 10036,
+    message: 'Cannot get data schema from blockchain',
+  },
+  CANNOT_VALIDATE_DATA: {
+    code: 10037,
+    message: 'Cannot validate AS data response',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
@@ -477,6 +489,11 @@ export default {
     code: 20058,
     message:
       'Some AS IDs in some services in data request list are unqualified to release data',
+  },
+  DATA_VALIDATION_FAILED: {
+    code: 20059,
+    message: 'Data validation failed',
+    clientError: true,
   },
 
   // Errors return from ABCI app

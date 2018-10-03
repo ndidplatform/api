@@ -56,6 +56,9 @@ export default function errorHandler(err, req, res, next) {
     ) {
       responseBody.details = err.details;
     }
+    if (err.getCode() === errorType.DATA_VALIDATION_FAILED.code) {
+      responseBody.details = err.getDetailsOfErrorWithCode();
+    }
     res.status(clientHttpErrorCode).json(responseBody);
     logger.error({
       message: `Responded Bad Request with HTTP code ${clientHttpErrorCode}`,

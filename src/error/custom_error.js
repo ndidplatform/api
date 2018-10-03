@@ -73,6 +73,13 @@ export default class CustomError extends Error {
     return type.UNKNOWN_ERROR.code;
   }
 
+  getDetailsOfErrorWithCode() {
+    if (this.cause != null && this.cause.name === 'CustomError') {
+      return this.cause.getDetailsOfErrorWithCode();
+    }
+    return this.details;
+  }
+
   getMessageWithCode() {
     if (this.code != null) {
       return this.message;

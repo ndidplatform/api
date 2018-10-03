@@ -13,6 +13,7 @@ BREAKING CHANGES:
 FEATURES:
 
 - Add GET `/reinit_node_keys` for reading node keys from files again while the server is running.
+- Add `data` JSON validation when AS responses data with POST `/as/data/:request_id/:service_id`. JSON schema of `data` of each service is fetched from blockchain.
 
 IMPROVEMENTS:
 
