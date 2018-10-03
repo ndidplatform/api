@@ -210,11 +210,18 @@ router.post('/namespaces/:namespace/disable', async (req, res, next) => {
 
 router.post('/services', validateBody, async (req, res, next) => {
   try {
-    const { service_id, service_name } = req.body;
+    const {
+      service_id,
+      service_name,
+      data_schema,
+      data_schema_version,
+    } = req.body;
 
     await ndid.addService({
       service_id,
       service_name,
+      data_schema,
+      data_schema_version,
     });
     res.status(201).end();
   } catch (error) {
@@ -224,12 +231,14 @@ router.post('/services', validateBody, async (req, res, next) => {
 
 router.post('/services/:service_id', validateBody, async (req, res, next) => {
   try {
-    const { service_name } = req.body;
     const { service_id } = req.params;
+    const { service_name, data_schema, data_schema_version } = req.body;
 
     await ndid.updateService({
       service_id,
       service_name,
+      data_schema,
+      data_schema_version,
     });
     res.status(201).end();
   } catch (error) {

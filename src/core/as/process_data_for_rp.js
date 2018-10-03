@@ -20,6 +20,8 @@
  *
  */
 
+import validateData from './data_validator';
+
 import { callbackToClient } from '../../utils/callback';
 import CustomError from '../../error/custom_error';
 import logger from '../../logger';
@@ -109,6 +111,8 @@ export async function processDataForRP(
         errorType: errorType.UNKNOWN_DATA_REQUEST,
       });
     }
+
+    // TODO: validate data schema
 
     if (synchronous) {
       await processDataForRPInternalAsync(...arguments, {

@@ -352,12 +352,17 @@ export async function disableNamespace({ namespace }) {
   }
 }
 
-export async function addService({ service_id, service_name }) {
+export async function addService({
+  service_id,
+  service_name,
+  data_schema,
+  data_schema_version,
+}) {
   try {
     await tendermint.transact({
       nodeId: config.nodeId,
       fnName: 'AddService',
-      params: { service_id, service_name },
+      params: { service_id, service_name, data_schema, data_schema_version },
     });
   } catch (error) {
     // TODO:
@@ -365,12 +370,17 @@ export async function addService({ service_id, service_name }) {
   }
 }
 
-export async function updateService({ service_id, service_name }) {
+export async function updateService({
+  service_id,
+  service_name,
+  data_schema,
+  data_schema_version,
+}) {
   try {
     await tendermint.transact({
       nodeId: config.nodeId,
       fnName: 'UpdateService',
-      params: { service_id, service_name },
+      params: { service_id, service_name, data_schema, data_schema_version },
     });
   } catch (error) {
     // TODO:
@@ -417,9 +427,7 @@ export async function setValidator({ public_key, power }) {
   }
 }
 
-export async function setTimeoutBlockRegisterIdentity({
-  blocks_to_timeout,
-}) {
+export async function setTimeoutBlockRegisterIdentity({ blocks_to_timeout }) {
   try {
     await tendermint.transact({
       nodeId: config.nodeId,
