@@ -576,6 +576,10 @@ export default {
     code: 15025,
     message: 'Service destination is not approved or disabled by NDID',
   },
+  ABCI_PROXY_NODE_IS_NOT_ACTIVE: {
+    code: 15026,
+    message: 'Proxy node is disabled',
+  },
 
   // Client errors
   ABCI_REQUEST_ID_NOT_FOUND: {
@@ -823,6 +827,11 @@ export default {
   ABCI_PROXY_NODE_NOT_FOUND: {
     code: 25049,
     message: 'Proxy node could not be found or does not exist',
+    clientError: true,
+  },
+  ABCI_NODE_ID_DOES_NOT_EXIST_IN_REQUESTED_IDP_LIST: {
+    code: 25050,
+    message: 'Node ID does not exist in requested IdP list',
     clientError: true,
   },
 

@@ -99,6 +99,8 @@ import errorType from '../error/type';
 // NodeIDisProxyNode                         uint32 = 73
 // NodeIDHasNotBeenAssociatedWithProxyNode   uint32 = 74
 // ProxyNodeNotFound                         uint32 = 75
+// NodeIDIsNotExistInIdPList                 uint32 = 76
+// ProxyNodeIsNotActive                      uint32 = 77
 // UnknownError                              uint32 = 999
 
 const codeMapping = {
@@ -177,6 +179,8 @@ const codeMapping = {
   73: errorType.ABCI_NODE_IS_PROXY_NODE,
   74: errorType.ABCI_NODE_NOT_ASSOCIATED_WITH_PROXY_NODE,
   75: errorType.ABCI_PROXY_NODE_NOT_FOUND,
+  76: errorType.ABCI_NODE_ID_DOES_NOT_EXIST_IN_REQUESTED_IDP_LIST,
+  77: errorType.ABCI_PROXY_NODE_IS_NOT_ACTIVE,
   999: errorType.UNKNOWN_ERROR,
 };
 
