@@ -27,7 +27,7 @@ IMPROVEMENTS:
 - Group MQ message signing when sending request data from RP to AS. (Reduce message signing if payload is identical.)
 - [MQ] Wait for receiver to save raw message to cache DB before sending ACK back to sender.
 - Send `idp_id_list` to blockchain when creating a request.
-- If input `as_id_list` or `idp_id_list` is an empty array, API will expand to all potential AS/IDP.
+- If input `as_id_list` or `idp_id_list` is an empty array, It will be replaced with a list of all potential AS/IDP node IDs.
 - Check message from MQ against receiver node ID list in blockchain, whether receiver node is one of the designated receivers.
 - Change `special` tag/property to `purpose` (with value `AddAccessor` to create identity or add accessor).
 - Check IDP and AS IDs in request list when creating a request, error if any unqualified IDP/AS is present.
