@@ -35,16 +35,6 @@ const ajv = new Ajv(ajvOptions);
 const dataSchemaCache = {};
 
 async function validate({ serviceId, data }) {
-  let dataJson;
-  try {
-    dataJson = JSON.parse(data);
-  } catch (error) {
-    throw new CustomError({
-      errorType: errorType.CANNOT_PARSE_DATA,
-      cause: error,
-    });
-  }
-
   let dataSchema, dataSchemaVersion;
   if (dataSchemaCache[serviceId] != null) {
     dataSchema = dataSchemaCache[serviceId].dataSchema;
@@ -73,6 +63,16 @@ async function validate({ serviceId, data }) {
     return {
       valid: null,
     };
+  }
+
+  let dataJson;
+  try {
+    dataJson = JSON.parse(data);
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.CANNOT_PARSE_DATA,
+      cause: error,
+    });
   }
 
   try {
