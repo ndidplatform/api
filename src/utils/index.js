@@ -138,7 +138,7 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
       },
       Buffer.from(cipher, 'base64')
     );
-  } catch(error) {
+  } catch (error) {
     throw new CustomError({
       errorType: errorType.INVALID_SECRET,
     });
@@ -171,11 +171,11 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
 export function generatedChallenges(idp_count) {
   let challenges = [];
   let offset = 0;
-  let longChallenge = randomBufferBytes( idp_count * 2 * config.challengeLength );
+  let longChallenge = randomBufferBytes(idp_count * 2 * config.challengeLength);
 
-  for(let i = 0 ; i < idp_count ; i++) {
+  for (let i = 0; i < idp_count; i++) {
     let startSecond = offset + config.challengeLength;
-    let endSecond = startSecond + config.challengeLength; 
+    let endSecond = startSecond + config.challengeLength;
     challenges.push([
       longChallenge.slice(offset, startSecond).toString('base64'),
       longChallenge.slice(startSecond, endSecond).toString('base64'),
@@ -227,7 +227,7 @@ export function generateIdentityProof(data) {
   let padding;
   try {
     padding = extractPaddingFromPrivateEncrypt(signedHash, data.publicKey);
-  } catch(error) {
+  } catch (error) {
     throw error;
   }
 
@@ -623,7 +623,8 @@ export function getDetailedRequestStatus(requestDetail) {
       if (
         responseCount.reject === 0 &&
         (responseCount.accept > 0 ||
-          (responseCount.accept === 0 && requestDetail.purpose === 'AddAccessor'))
+          (responseCount.accept === 0 &&
+            requestDetail.purpose === 'AddAccessor'))
       ) {
         status = 'completed';
       }
