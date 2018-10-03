@@ -173,7 +173,10 @@ export async function sendRequestToAS(nodeId, requestData, height) {
   if (requestData.data_request_list == null) return;
   if (requestData.data_request_list.length === 0) return;
 
-  const privateProofObjectList = await cacheDb.getPrivateProofObjectListInRequest(nodeId, requestData.request_id);
+  const [privateProofObjectList, requestCreationMetadata] = await Promise.all([
+    cacheDb.getPrivateProofObjectListInRequest(nodeId, requestData.request_id),
+    cacheDb.getRequestCreationMetadata(nodeId, requestData.request_id),
+  ]);
 
   const dataToSendByNodeId = {};
   await Promise.all(
@@ -197,7 +200,8 @@ export async function sendRequestToAS(nodeId, requestData, height) {
           dataToSendByNodeId[receiver.node_id].service_data_request_list.push(
             serviceDataRequest
           );
-          dataToSendByNodeId[receiver.node_id].concat_service_id_index += '|' + index.toString();
+          dataToSendByNodeId[receiver.node_id].concat_service_id_index +=
+            '|' + index.toString();
         } else {
           dataToSendByNodeId[receiver.node_id] = {
             receiver,
@@ -212,8 +216,10 @@ export async function sendRequestToAS(nodeId, requestData, height) {
   const dataToSendByNodeIdAndServiceList = {};
   Object.values(dataToSendByNodeId).forEach(
     ({ receiver, service_data_request_list, concat_service_id_index }) => {
-      if(dataToSendByNodeIdAndServiceList[concat_service_id_index]) {
-        dataToSendByNodeIdAndServiceList[concat_service_id_index].receivers.push(receiver);
+      if (dataToSendByNodeIdAndServiceList[concat_service_id_index]) {
+        dataToSendByNodeIdAndServiceList[
+          concat_service_id_index
+        ].receivers.push(receiver);
       } else {
         dataToSendByNodeIdAndServiceList[concat_service_id_index] = {
           receivers: [receiver],
@@ -237,6 +243,7 @@ export async function sendRequestToAS(nodeId, requestData, height) {
             service_data_request_list,
             request_message: requestData.request_message,
             request_message_salt: requestData.request_message_salt,
+            creation_time: requestCreationMetadata.creation_time,
             challenge: requestData.challenge,
             privateProofObjectList,
             rp_id: requestData.rp_id,

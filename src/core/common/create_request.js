@@ -214,10 +214,9 @@ export async function createRequest(
             });
           }
 
-          if(as_id_list == null || as_id_list.length === 0) {
+          if (as_id_list == null || as_id_list.length === 0) {
             dataRequest.as_id_list = potential_as_list;
           }
-
         })
       );
     }
@@ -253,7 +252,7 @@ export async function createRequest(
       });
     }
 
-    if(idp_id_list == null || idp_id_list.length === 0) {
+    if (idp_id_list == null || idp_id_list.length === 0) {
       receivers.forEach(({ node_id }) => {
         idp_id_list.push(node_id);
       });
@@ -531,6 +530,10 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
     const creation_time = Date.now();
 
+    await cacheDb.setRequestCreationMetadata(node_id, request_id, {
+      creation_time,
+    });
+
     await setTimeoutScheduler(node_id, request_id, request_timeout);
 
     const requestDataWithoutDataRequestParams = {
@@ -567,6 +570,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
             success: true,
             reference_id,
             request_id,
+            creation_block_height: height,
           },
           true
         );
@@ -630,5 +634,6 @@ async function createRequestCleanUpOnError({ nodeId, requestId, referenceId }) {
     cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
     cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
     cacheDb.removeRequestCallbackUrl(nodeId, requestId),
+    cacheDb.removeRequestCreationMetadata(nodeId, requestId),
   ]);
 }
