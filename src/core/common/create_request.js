@@ -42,7 +42,6 @@ import logger from '../../logger';
 import * as config from '../../config';
 import { role } from '../../node';
 
-
 async function checkIdpListCondition({
   namespace,
   identifier,
@@ -52,12 +51,11 @@ async function checkIdpListCondition({
   idp_id_list,
   mode,
 }) {
-
   if (idp_id_list != null && idp_id_list.length === 0) {
     idp_id_list = null;
   }
 
-  if ( idp_id_list != null && idp_id_list.length < min_idp) {
+  if (idp_id_list != null && idp_id_list.length < min_idp) {
     throw new CustomError({
       errorType: errorType.IDP_LIST_LESS_THAN_MIN_IDP,
       details: {
@@ -84,7 +82,7 @@ async function checkIdpListCondition({
     mode,
   });
 
-  if(min_idp !== 0) {
+  if (min_idp !== 0) {
     if (receivers.length === 0) {
       throw new CustomError({
         errorType: errorType.NO_IDP_FOUND,
@@ -130,11 +128,7 @@ async function checkIdpListCondition({
   return receivers;
 }
 
-async function checkAsListCondition({
-  data_request_list,
-  min_ial,
-  min_aal,
-}) {
+async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
   const serviceIds = data_request_list.map(
     (dataRequest) => dataRequest.service_id
   );
@@ -154,15 +148,13 @@ async function checkAsListCondition({
     data_request_list.map(async (dataRequest) => {
       const { service_id, min_as } = dataRequest;
       let { as_id_list } = dataRequest;
-      if(as_id_list != null && as_id_list.length === 0) as_id_list = null;
+      if (as_id_list != null && as_id_list.length === 0) as_id_list = null;
 
       //all as_list offer the service
-      let potential_as_list = await tendermintNdid.getAsNodesInfoByServiceId(
-        {
-          service_id,
-          node_id_list: as_id_list
-        }
-      );
+      let potential_as_list = await tendermintNdid.getAsNodesInfoByServiceId({
+        service_id,
+        node_id_list: as_id_list,
+      });
       if (as_id_list != null) {
         if (as_id_list.length < min_as) {
           throw new CustomError({
@@ -214,7 +206,7 @@ async function checkAsListCondition({
         });
       }
 
-      if(as_id_list != null && potential_as_list.length != as_id_list.length) {
+      if (as_id_list != null && potential_as_list.length != as_id_list.length) {
         throw new CustomError({
           errorType: errorType.UNQUALIFIED_AS,
           details: {
@@ -226,10 +218,9 @@ async function checkAsListCondition({
         });
       }
 
-      if(as_id_list == null) {
+      if (as_id_list == null) {
         dataRequest.as_id_list = potential_as_list;
       }
-
     })
   );
 }
