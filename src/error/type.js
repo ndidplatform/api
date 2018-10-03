@@ -468,6 +468,14 @@ export default {
     code: 20057,
     message: 'Node ID must be provided',
   },
+  UNQUALIFIED_IDP: {
+    code: 20058,
+    message: 'Some Idp in idp_id_list is unqualified to response',
+  },
+  UNQUALIFIED_AS: {
+    code: 20058,
+    message: 'Some AS in as_id_list of some service is unqualified to release data',
+  },
 
   // Errors return from ABCI app
   // Server errors

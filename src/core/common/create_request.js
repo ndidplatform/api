@@ -42,6 +42,198 @@ import logger from '../../logger';
 import * as config from '../../config';
 import { role } from '../../node';
 
+
+async function checkIdpListCondition({
+  namespace,
+  identifier,
+  min_ial,
+  min_aal,
+  min_idp,
+  idp_id_list,
+  mode,
+}) {
+
+  if (idp_id_list != null && idp_id_list.length === 0) {
+    idp_id_list = null;
+  }
+
+  if ( idp_id_list != null && idp_id_list.length < min_idp) {
+    throw new CustomError({
+      errorType: errorType.IDP_LIST_LESS_THAN_MIN_IDP,
+      details: {
+        namespace,
+        identifier,
+        idp_id_list,
+        min_idp,
+      },
+    });
+  }
+
+  if (mode === 1 && idp_id_list == null) {
+    throw new CustomError({
+      errorType: errorType.IDP_ID_LIST_NEEDED,
+    });
+  }
+
+  const receivers = await getIdpsMsqDestination({
+    namespace,
+    identifier,
+    min_ial,
+    min_aal,
+    idp_id_list,
+    mode,
+  });
+
+  if(min_idp !== 0) {
+    if (receivers.length === 0) {
+      throw new CustomError({
+        errorType: errorType.NO_IDP_FOUND,
+        details: {
+          namespace,
+          identifier,
+          idp_id_list,
+          min_ial,
+          min_aal,
+          mode,
+        },
+      });
+    }
+
+    if (idp_id_list != null && receivers.length < idp_id_list.length) {
+      throw new CustomError({
+        errorType: errorType.UNQUALIFIED_IDP,
+        details: {
+          namespace,
+          identifier,
+          idp_id_list,
+          min_ial,
+          min_aal,
+          mode,
+        },
+      });
+    }
+
+    if (receivers.length < min_idp) {
+      throw new CustomError({
+        errorType: errorType.NOT_ENOUGH_IDP,
+        details: {
+          namespace,
+          identifier,
+          idp_id_list,
+          min_ial,
+          min_aal,
+          mode,
+        },
+      });
+    }
+  }
+  return receivers;
+}
+
+async function checkAsListCondition({
+  data_request_list,
+  min_ial,
+  min_aal,
+}) {
+  const serviceIds = data_request_list.map(
+    (dataRequest) => dataRequest.service_id
+  );
+
+  const serviceIdsNoDuplicate = [...new Set(serviceIds)];
+
+  if (serviceIds.length !== serviceIdsNoDuplicate.length) {
+    throw new CustomError({
+      errorType: errorType.DUPLICATE_SERVICE_ID,
+      details: {
+        data_request_list,
+      },
+    });
+  }
+
+  await Promise.all(
+    data_request_list.map(async (dataRequest) => {
+      const { service_id, min_as } = dataRequest;
+      let { as_id_list } = dataRequest;
+      if(as_id_list != null && as_id_list.length === 0) as_id_list = null;
+
+      //all as_list offer the service
+      let potential_as_list = await tendermintNdid.getAsNodesInfoByServiceId(
+        {
+          service_id,
+          node_id_list: as_id_list
+        }
+      );
+      if (as_id_list != null) {
+        if (as_id_list.length < min_as) {
+          throw new CustomError({
+            errorType: errorType.AS_LIST_LESS_THAN_MIN_AS,
+            details: {
+              service_id,
+              as_id_list,
+              min_as,
+            },
+          });
+        }
+
+        if (potential_as_list.length < min_as) {
+          throw new CustomError({
+            errorType: errorType.NOT_ENOUGH_AS,
+            details: {
+              service_id,
+              potential_as_list,
+              min_as,
+            },
+          });
+        }
+
+        //filter potential AS to be only in as_id_list
+        potential_as_list = potential_as_list.filter((as_node) => {
+          return as_id_list.indexOf(as_node.node_id) !== -1;
+        });
+
+        if (potential_as_list.length !== as_id_list.length) {
+          throw new CustomError({
+            errorType: errorType.SOME_AS_DO_NOT_PROVIDE_SERVICE,
+          });
+        }
+      }
+      //filter min_ial, min_aal
+      potential_as_list = potential_as_list.filter((as_node) => {
+        return as_node.min_ial <= min_ial && as_node.min_aal <= min_aal;
+      });
+
+      if (potential_as_list.length < min_as) {
+        throw new CustomError({
+          errorType: errorType.CONDITION_TOO_LOW,
+          details: {
+            service_id,
+            min_ial,
+            min_aal,
+            min_as,
+          },
+        });
+      }
+
+      if(as_id_list != null && potential_as_list.length != as_id_list.length) {
+        throw new CustomError({
+          errorType: errorType.UNQUALIFIED_AS,
+          details: {
+            service_id,
+            min_ial,
+            min_aal,
+            min_as,
+          },
+        });
+      }
+
+      if(as_id_list == null) {
+        dataRequest.as_id_list = potential_as_list;
+      }
+
+    })
+  );
+}
+
 /**
  * Create a new request
  *
@@ -115,140 +307,21 @@ export async function createRequest(
       });
     }
 
-    if (
-      idp_id_list != null &&
-      idp_id_list.length > 0 &&
-      idp_id_list.length < min_idp
-    ) {
-      throw new CustomError({
-        errorType: errorType.IDP_LIST_LESS_THAN_MIN_IDP,
-        details: {
-          namespace,
-          identifier,
-          idp_id_list,
-          min_idp,
-        },
-      });
-    }
-
-    if (mode === 1 && (idp_id_list == null || idp_id_list.length === 0)) {
-      throw new CustomError({
-        errorType: errorType.IDP_ID_LIST_NEEDED,
-      });
-    }
-
-    if (data_request_list != null && data_request_list.length > 0) {
-      const serviceIds = data_request_list.map(
-        (dataRequest) => dataRequest.service_id
-      );
-
-      const serviceIdsNoDuplicate = [...new Set(serviceIds)];
-
-      if (serviceIds.length !== serviceIdsNoDuplicate.length) {
-        throw new CustomError({
-          errorType: errorType.DUPLICATE_SERVICE_ID,
-          details: {
-            data_request_list,
-          },
-        });
-      }
-
-      await Promise.all(
-        data_request_list.map(async (dataRequest) => {
-          const { service_id, as_id_list, min_as } = dataRequest;
-
-          //all as_list offer the service
-          let potential_as_list = await tendermintNdid.getAsNodesInfoByServiceId(
-            {
-              service_id,
-            }
-          );
-          if (as_id_list != null && as_id_list.length > 0) {
-            if (as_id_list.length < min_as) {
-              throw new CustomError({
-                errorType: errorType.AS_LIST_LESS_THAN_MIN_AS,
-                details: {
-                  service_id,
-                  as_id_list,
-                  min_as,
-                },
-              });
-            }
-
-            if (potential_as_list.length < min_as) {
-              throw new CustomError({
-                errorType: errorType.NOT_ENOUGH_AS,
-                details: {
-                  service_id,
-                  potential_as_list,
-                  min_as,
-                },
-              });
-            }
-
-            //filter potential AS to be only in as_id_list
-            potential_as_list = potential_as_list.filter((as_node) => {
-              return as_id_list.indexOf(as_node.node_id) !== -1;
-            });
-
-            if (potential_as_list.length !== as_id_list.length) {
-              throw new CustomError({
-                errorType: errorType.SOME_AS_DO_NOT_PROVIDE_SERVICE,
-              });
-            }
-          }
-          //filter min_ial, min_aal
-          potential_as_list = potential_as_list.filter((as_node) => {
-            return as_node.min_ial <= min_ial && as_node.min_aal <= min_aal;
-          });
-
-          if (potential_as_list.length < min_as) {
-            throw new CustomError({
-              errorType: errorType.CONDITION_TOO_LOW,
-              details: {
-                service_id,
-                min_ial,
-                min_aal,
-                min_as,
-              },
-            });
-          }
-
-          if (as_id_list == null || as_id_list.length === 0) {
-            dataRequest.as_id_list = potential_as_list;
-          }
-        })
-      );
-    }
-
-    const receivers = await getIdpsMsqDestination({
+    const receivers = await checkIdpListCondition({
       namespace,
       identifier,
       min_ial,
       min_aal,
+      min_idp,
       idp_id_list,
       mode,
     });
 
-    if (receivers.length === 0 && min_idp !== 0) {
-      throw new CustomError({
-        errorType: errorType.NO_IDP_FOUND,
-        details: {
-          namespace,
-          identifier,
-          idp_id_list,
-        },
-      });
-    }
-
-    if (receivers.length < min_idp) {
-      throw new CustomError({
-        errorType: errorType.NOT_ENOUGH_IDP,
-        details: {
-          namespace,
-          identifier,
-          idp_id_list,
-        },
+    if (data_request_list != null && data_request_list.length > 0) {
+      await checkAsListCondition({
+        data_request_list,
+        min_ial,
+        min_aal,
       });
     }
 
