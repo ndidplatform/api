@@ -606,6 +606,39 @@ export function removePrivateProofReceivedFromMQ(nodeId, responseId) {
   });
 }
 
+export function getRequestCreationMetadata(nodeId, requestId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'requestCreationMetadata',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'metadata',
+  });
+}
+
+export function setRequestCreationMetadata(nodeId, requestId, metadata) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'requestCreationMetadata',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'metadata',
+    value: metadata,
+  });
+}
+
+export function removeRequestCreationMetadata(nodeId, requestId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'requestCreationMetadata',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 //
 // Used by RP
 //

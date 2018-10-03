@@ -229,7 +229,7 @@ export async function processRequest(nodeId, request) {
     });
   }
   const responseDetails = await getResponseDetails(request.request_id);
-  await getDataAndSendBackToRP(nodeId, request, responseDetails);
+  await getDataAndSendBackToRP(nodeId, request, requestDetail, responseDetails);
 }
 
 export async function afterGotDataFromCallback(
@@ -308,12 +308,18 @@ export async function afterGotDataFromCallback(
   }
 }
 
-async function getDataAndSendBackToRP(nodeId, request, responseDetails) {
+async function getDataAndSendBackToRP(
+  nodeId,
+  request,
+  requestDetail,
+  responseDetails
+) {
   // Platform→AS
   // The AS replies with the requested data
   logger.debug({
     message: 'AS process request for data',
     request,
+    requestDetail,
     responseDetails,
   });
 
@@ -358,7 +364,11 @@ async function getDataAndSendBackToRP(nodeId, request, responseDetails) {
           service_id,
           request_params,
           requester_node_id: request.rp_id,
-          ...responseDetails,
+          response_signature_list: responseDetails.response_signature_list,
+          max_aal: responseDetails.max_aal,
+          max_ial: responseDetails.max_ial,
+          creation_time: request.creation_time,
+          creation_block_height: requestDetail.creation_block_height,
         },
         true,
         'common.isRequestClosedOrTimedOut',

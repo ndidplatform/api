@@ -468,7 +468,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
         { request_id }
       );
     } else {
-      await common.createRequest(
+      const { height } = await common.createRequest(
         {
           node_id: nodeId,
           namespace,
@@ -504,7 +504,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
         { request_id }
       );
       await createIdentityInternalAsyncAfterCreateRequestBlockchain(
-        {},
+        { height },
         {
           reference_id,
           callback_url,
@@ -569,7 +569,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
 }
 
 export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
-  { error },
+  { height, error },
   {
     reference_id,
     callback_url,
@@ -609,6 +609,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 reference_id,
                 request_id,
                 accessor_id,
+                creation_block_height: height,
                 success: true,
               }
             : {
@@ -617,6 +618,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 reference_id,
                 request_id,
                 accessor_id,
+                creation_block_height: height,
                 success: true,
                 exist: true,
               },
@@ -646,6 +648,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 reference_id,
                 request_id,
                 accessor_id,
+                creation_block_height: height,
                 success: true,
               }
             : {
@@ -654,6 +657,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 reference_id,
                 request_id,
                 accessor_id,
+                creation_block_height: height,
                 success: true,
                 exist: false,
               },
