@@ -361,7 +361,7 @@ export async function addService({
   data_schema_version,
 }) {
   try {
-    if (data_schema !== 'n/a') {
+    if (data_schema != null && data_schema !== 'n/a') {
       const validationResult = validateDataSchema(data_schema);
       if (!validationResult.valid) {
         throw new CustomError({
@@ -388,7 +388,7 @@ export async function updateService({
   data_schema_version,
 }) {
   try {
-    if (data_schema !== 'n/a') {
+    if (data_schema != null && data_schema !== 'n/a') {
       const validationResult = validateDataSchema(data_schema);
       if (!validationResult.valid) {
         throw new CustomError({
