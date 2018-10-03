@@ -20,16 +20,18 @@
  *
  */
 
-import * as tendermint from '../tendermint';
-import * as tendermintNdid from '../tendermint/ndid';
-import logger from '../logger';
-import { validateKey } from '../utils/node_key';
-import { callbackToClient } from '../utils/callback';
+import validateDataSchema from './data_schema_validator';
 
-import CustomError from '../error/custom_error';
-import { getErrorObjectForClient } from '../error/helpers';
+import * as tendermint from '../../tendermint';
+import * as tendermintNdid from '../../tendermint/ndid';
+import logger from '../../logger';
+import { validateKey } from '../../utils/node_key';
+import { callbackToClient } from '../../utils/callback';
 
-import * as config from '../config';
+import CustomError from '../../error/custom_error';
+import { getErrorObjectForClient } from '../../error/helpers';
+
+import * as config from '../../config';
 
 let init = false;
 
@@ -359,6 +361,15 @@ export async function addService({
   data_schema_version,
 }) {
   try {
+    if (data_schema !== 'n/a') {
+      const validationResult = validateDataSchema(data_schema);
+      if (!validationResult.valid) {
+        throw new CustomError({
+          message: 'Invalid data schema schema',
+        });
+      }
+    }
+
     await tendermint.transact({
       nodeId: config.nodeId,
       fnName: 'AddService',
@@ -377,6 +388,15 @@ export async function updateService({
   data_schema_version,
 }) {
   try {
+    if (data_schema !== 'n/a') {
+      const validationResult = validateDataSchema(data_schema);
+      if (!validationResult.valid) {
+        throw new CustomError({
+          message: 'Invalid data schema schema',
+        });
+      }
+    }
+
     await tendermint.transact({
       nodeId: config.nodeId,
       fnName: 'UpdateService',
