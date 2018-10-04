@@ -1,9 +1,10 @@
 # Changelog
 
-## 0.9.1 (TBD)
+## TBD
 
 BUG FIXES:
-- AS check receiver integrity is not check properly and cause error in the log.
+
+- Fix receiver integrity check is skipped on AS and causes error.
 
 ## 0.9.0 (October 4, 2018)
 
