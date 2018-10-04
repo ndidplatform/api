@@ -869,6 +869,11 @@ export default {
     message: 'One or more node IDs in requested IdP list are not active',
     clientError: true,
   },
+  ABCI_NODE_ID_IN_AS_LIST_IS_NOT_ACTIVE: {
+    code: 25052,
+    message: 'One or more node IDs in requested service AS list are not active',
+    clientError: true,
+  },
 
   ABCI_UNAUTHORIZED: {
     code: 35001,
