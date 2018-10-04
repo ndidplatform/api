@@ -861,6 +861,11 @@ export default {
     message: 'Node ID does not exist in requested IdP list',
     clientError: true,
   },
+  ABCI_NODE_ID_IN_IDP_LIST_IS_NOT_ACTIVE: {
+    code: 25051,
+    message: 'One or more node IDs in requested IdP list are not active',
+    clientError: true,
+  },
 
   ABCI_UNAUTHORIZED: {
     code: 35001,
