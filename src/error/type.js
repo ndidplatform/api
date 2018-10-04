@@ -479,16 +479,19 @@ export default {
   MISSING_NODE_ID: {
     code: 20057,
     message: 'Node ID must be provided',
+    clientError: true,
   },
   UNQUALIFIED_IDP: {
     code: 20058,
     message:
       'Some IdP IDs in requested IdP ID list are unqualified to response',
+    clientError: true,
   },
   UNQUALIFIED_AS: {
     code: 20058,
     message:
       'Some AS IDs in some services in data request list are unqualified to release data',
+    clientError: true,
   },
   DATA_VALIDATION_FAILED: {
     code: 20059,
