@@ -60,6 +60,7 @@ let getTxResultCallbackFn;
 const txEventEmitter = new EventEmitter();
 export let expectedTxsLoaded = false;
 let reconnecting = false; // Use when reconnect WS
+let pollingStatus = false;
 
 const cacheBlocks = {};
 let lastKnownAppHash;
@@ -93,7 +94,12 @@ try {
   }
 }
 
-export function initialize() {
+export async function initialize() {
+  tendermintWsClient.subscribeToNewBlockEvent();
+  tendermintWsClient.subscribeToTxEvent();
+}
+
+export function connectWS() {
   return new Promise((resolve, reject) => {
     tendermintWsClient.once('connected', () => resolve());
     tendermintWsClient.connect();
@@ -137,7 +143,7 @@ export async function loadExpectedTxFromDB() {
       expectedTx[txHash] = metadata;
     });
     expectedTxsLoaded = true;
-    checkForMissingExpectedTx();
+    processMissingExpectedTxs();
   } catch (error) {
     logger.error({
       message: 'Cannot load backlog expected Txs from cache DB',
@@ -145,7 +151,7 @@ export async function loadExpectedTxFromDB() {
   }
 }
 
-async function checkForMissingExpectedTx() {
+async function processMissingExpectedTxs() {
   const txHashes = Object.keys(expectedTx).map((txHash) => {
     return {
       txHash,
@@ -232,7 +238,8 @@ async function pollStatusUntilSynced() {
   logger.info({
     message: 'Waiting for Tendermint to finish syncing blockchain',
   });
-  if (syncing == null || syncing === true) {
+  if (syncing == null && !pollingStatus) {
+    pollingStatus = true;
     const backoff = new ExponentialBackoff({
       min: 1000,
       max: config.maxIntervalTendermintSyncCheck,
@@ -247,9 +254,9 @@ async function pollStatusUntilSynced() {
         logger.info({
           message: 'Tendermint blockchain synced',
         });
-        eventEmitter.emit('ready');
-        processMissingBlocksAfterSync(status);
-        break;
+        eventEmitter.emit('ready', status);
+        pollingStatus = false;
+        return status;
       }
       await utils.wait(backoff.next());
     }
@@ -258,14 +265,15 @@ async function pollStatusUntilSynced() {
 
 tendermintWsClient.on('connected', async () => {
   connected = true;
-  pollStatusUntilSynced();
-  tendermintWsClient.subscribeToNewBlockEvent();
-  tendermintWsClient.subscribeToTxEvent();
   if (reconnecting) {
-    // Check for expected transactions in case there are missing Tx events after reconnect
-    checkForMissingExpectedTx();
-    eventEmitter.emit('reconnect');
+    tendermintWsClient.subscribeToNewBlockEvent();
+    tendermintWsClient.subscribeToTxEvent();
+    const statusOnSync = await pollStatusUntilSynced();
+    processMissingBlocks(statusOnSync);
+    processMissingExpectedTxs();
     reconnecting = false;
+  } else {
+    pollStatusUntilSynced();
   }
 });
 
@@ -296,6 +304,9 @@ tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(
 });
 
 tendermintWsClient.on('tx#event', async function handleTxEvent(error, result) {
+  if (syncing !== false) {
+    return;
+  }
   const txBase64 = result.data.value.TxResult.tx;
   const txBuffer = Buffer.from(txBase64, 'base64');
   const txHash = sha256(txBuffer).toString('hex');
@@ -303,9 +314,9 @@ tendermintWsClient.on('tx#event', async function handleTxEvent(error, result) {
   await processExpectedTx(txHash, result, true);
 });
 
-async function processMissingBlocksAfterSync(status) {
-  const blockHeight = status.sync_info.latest_block_height;
-  const appHash = status.sync_info.latest_app_hash;
+export async function processMissingBlocks(statusOnSync) {
+  const blockHeight = statusOnSync.sync_info.latest_block_height;
+  const appHash = statusOnSync.sync_info.latest_app_hash;
   await processNewBlock(blockHeight, appHash);
 }
 

@@ -64,6 +64,13 @@ async function initialize() {
   try {
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
 
+    const tendermintReady = new Promise((resolve) =>
+      tendermint.eventEmitter.once('ready', (status) => resolve(status))
+    );
+
+    await tendermint.connectWS();
+    const tendermintStatusOnSync = await tendermintReady;
+
     let role;
     if (!config.skipGetRole) {
       logger.info({ message: 'Getting node role' });
@@ -91,21 +98,20 @@ async function initialize() {
       await externalCryptoServiceReady;
     }
 
-    const tendermintReady = new Promise((resolve) =>
-      tendermint.eventEmitter.once('ready', () => resolve())
-    );
-
     await core.initialize();
 
+    if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
+      await mq.initialize();
+    }
+
     await tendermint.initialize();
-    await tendermintReady;
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
       await core.setMessageQueueAddress();
-      await mq.initialize();
       await mq.loadAndProcessBacklogMessages();
     }
 
+    tendermint.processMissingBlocks(tendermintStatusOnSync);
     await tendermint.loadExpectedTxFromDB();
 
     logger.info({ message: 'Server initialized' });

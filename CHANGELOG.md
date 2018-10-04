@@ -6,6 +6,7 @@ BUG FIXES:
 
 - Fix receiver integrity check is skipped on AS and causes error.
 - Fix receiver integrity check incorrect logic.
+- Fix server initialization flow to wait for Tendermint sync before getting node's role and wait for MQ init before processing blocks and expected Txs.
 
 ## 0.9.0 (October 4, 2018)
 
@@ -80,7 +81,7 @@ IMPROVEMENTS:
 - Change cache and long-term database to Redis for better performance. This change introduces 3 new environment variables `DB_IP`, `DB_PORT`, and `DB_PASSWORD`.
 - Reduce RPC/HTTP query calls to Tendermint.
 - Remove `ROLE` environment variable option. The server will get a node's role from blockchain on start. Error if it cannot get node's role from blockchain.
-- [Docker] Support protobuf in startup script and remove legacy namespaces. 
+- [Docker] Support protobuf in startup script and remove legacy namespaces.
 
 BUG FIXES:
 

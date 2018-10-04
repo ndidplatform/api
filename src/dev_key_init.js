@@ -174,10 +174,11 @@ export async function init() {
     tendermint.eventEmitter.once('ready', () => resolve())
   );
 
-  await tendermint.initialize();
-  await nodeKey.initialize();
-
+  await tendermint.connectWS();
   await tendermintReady;
+
+  await nodeKey.initialize();
+  await tendermint.initialize();
 
   console.log('========= Initializing keys for development =========');
 
