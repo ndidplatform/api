@@ -154,7 +154,7 @@ export function getServiceCallbackUrl(nodeId, serviceId) {
   });
 }
 
-async function checkReceiverIntegrity(requestId, requestDetail, nodeId) {
+function checkReceiverIntegrity(requestId, requestDetail, nodeId) {
   for (let i = 0; i < requestDetail.data_request_list.length; i++) {
     const { as_id_list, service_id } = requestDetail.data_request_list[
       i
@@ -191,17 +191,17 @@ export async function processRequest(nodeId, request) {
   const requestDetail = await tendermintNdid.getRequestDetail({
     requestId: request.request_id,
   });
-  const requestMessageValid = await common.checkRequestMessageIntegrity(
+  const requestMessageValid = common.checkRequestMessageIntegrity(
     request.request_id,
     request,
     requestDetail
   );
-  const serviceDataRequestParamsValid = await checkServiceRequestParamsIntegrity(
+  const serviceDataRequestParamsValid = checkServiceRequestParamsIntegrity(
     request.request_id,
     request,
     requestDetail
   );
-  const receiverValid = await checkReceiverIntegrity(
+  const receiverValid = checkReceiverIntegrity(
     request.request_id,
     requestDetail,
     nodeId
@@ -410,15 +410,11 @@ async function getResponseDetails(requestId) {
   };
 }
 
-export async function checkServiceRequestParamsIntegrity(
+function checkServiceRequestParamsIntegrity(
   requestId,
   request,
   requestDetail
 ) {
-  if (!requestDetail) {
-    requestDetail = await tendermintNdid.getRequestDetail({ requestId });
-  }
-
   for (let i = 0; i < request.service_data_request_list.length; i++) {
     const {
       service_id,

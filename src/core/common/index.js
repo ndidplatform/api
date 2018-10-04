@@ -183,27 +183,7 @@ async function resumeTimeoutScheduler() {
   );
 }
 
-export async function checkReceiverIntegrity(requestId, requestDetail, nodeId) {
-  const filterIdpList = requestDetail.idp_id_list.filter((node_id) => {
-    return node_id === nodeId;
-  });
-  if (filterIdpList.length === 0) {
-    logger.warn({
-      message: 'Request does not involve receiver node',
-      requestId,
-    });
-    logger.debug({
-      message: 'Request does not involve receiver node',
-      requestId,
-      idp_id_list: requestDetail.request_message,
-      receiverNodeId: nodeId,
-    });
-    return false;
-  }
-  return true;
-}
-
-export async function checkRequestMessageIntegrity(
+export function checkRequestMessageIntegrity(
   requestId,
   request,
   requestDetail
