@@ -155,8 +155,8 @@ export function getServiceCallbackUrl(nodeId, serviceId) {
 }
 
 async function checkReceiverIntegrity(requestId, requestDetail, nodeId) {
-  for (let i = 0; i < requestDetail.service_data_request_list.length; i++) {
-    const { as_id_list, service_id } = requestDetail.service_data_request_list[
+  for (let i = 0; i < requestDetail.data_request_list.length; i++) {
+    const { as_id_list, service_id } = requestDetail.data_request_list[
       i
     ];
 
@@ -201,7 +201,7 @@ export async function processRequest(nodeId, request) {
     request,
     requestDetail
   );
-  const receiverValid = checkReceiverIntegrity(
+  const receiverValid = await checkReceiverIntegrity(
     request.request_id,
     requestDetail,
     nodeId
