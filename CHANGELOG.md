@@ -5,6 +5,7 @@
 BUG FIXES:
 
 - Fix receiver integrity check is skipped on AS and causes error.
+- Fix receiver integrity check incorrect logic.
 
 ## 0.9.0 (October 4, 2018)
 

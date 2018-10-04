@@ -154,11 +154,25 @@ export function getServiceCallbackUrl(nodeId, serviceId) {
   });
 }
 
-function checkReceiverIntegrity(requestId, requestDetail, nodeId) {
-  for (let i = 0; i < requestDetail.data_request_list.length; i++) {
-    const { as_id_list, service_id } = requestDetail.data_request_list[
+function checkReceiverIntegrity({
+  requestId, 
+  requestFromBlockchain, 
+  requestFromMq,
+  nodeId
+}) {
+  //only concern service which appear in msq
+  const concernedServiceIdList = {};
+  requestFromMq.service_data_request_list.forEach(
+    ({ service_id }) => {
+      concernedServiceIdList[service_id] = true;
+    }
+  );
+
+  for (let i = 0; i < requestFromBlockchain.data_request_list.length; i++) {
+    const { as_id_list, service_id } = requestFromBlockchain.data_request_list[
       i
     ];
+    if(!concernedServiceIdList[service_id]) continue;
 
     const filterAsList = as_id_list.filter((node_id) => {
       return node_id === nodeId;
@@ -173,7 +187,7 @@ function checkReceiverIntegrity(requestId, requestDetail, nodeId) {
         message: 'Request does not involve a service on receiver node',
         requestId,
         service_id,
-        as_id_list: requestDetail.request_message,
+        as_id_list,
         receiverNodeId: nodeId,
       });
       return false;
@@ -201,11 +215,12 @@ export async function processRequest(nodeId, request) {
     request,
     requestDetail
   );
-  const receiverValid = checkReceiverIntegrity(
-    request.request_id,
-    requestDetail,
+  const receiverValid = checkReceiverIntegrity({
+    requestId: request.request_id,
+    requestFromBlockchain: requestDetail,
+    requestFromMq: request,
     nodeId
-  );
+  });
   if (
     !requestMessageValid ||
     !serviceDataRequestParamsValid ||
