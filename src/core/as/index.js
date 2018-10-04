@@ -155,24 +155,22 @@ export function getServiceCallbackUrl(nodeId, serviceId) {
 }
 
 function checkReceiverIntegrity({
-  requestId, 
-  requestFromBlockchain, 
+  requestId,
+  requestFromBlockchain,
   requestFromMq,
-  nodeId
+  nodeId,
 }) {
   //only concern service which appear in msq
   const concernedServiceIdList = {};
-  requestFromMq.service_data_request_list.forEach(
-    ({ service_id }) => {
-      concernedServiceIdList[service_id] = true;
-    }
-  );
+  requestFromMq.service_data_request_list.forEach(({ service_id }) => {
+    concernedServiceIdList[service_id] = true;
+  });
 
   for (let i = 0; i < requestFromBlockchain.data_request_list.length; i++) {
     const { as_id_list, service_id } = requestFromBlockchain.data_request_list[
       i
     ];
-    if(!concernedServiceIdList[service_id]) continue;
+    if (!concernedServiceIdList[service_id]) continue;
 
     const filterAsList = as_id_list.filter((node_id) => {
       return node_id === nodeId;
@@ -219,7 +217,7 @@ export async function processRequest(nodeId, request) {
     requestId: request.request_id,
     requestFromBlockchain: requestDetail,
     requestFromMq: request,
-    nodeId
+    nodeId,
   });
   if (
     !requestMessageValid ||
@@ -425,11 +423,7 @@ async function getResponseDetails(requestId) {
   };
 }
 
-function checkServiceRequestParamsIntegrity(
-  requestId,
-  request,
-  requestDetail
-) {
+function checkServiceRequestParamsIntegrity(requestId, request, requestDetail) {
   for (let i = 0; i < request.service_data_request_list.length; i++) {
     const {
       service_id,
