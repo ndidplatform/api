@@ -654,12 +654,12 @@ export default {
   },
   ABCI_AAL_ERROR: {
     code: 25009,
-    message: "Response's AAL is less than required minimum AAL",
+    message: 'AAL error',
     clientError: true,
   },
   ABCI_IAL_ERROR: {
     code: 25010,
-    message: "Response's IAL is less than required minimum IAL",
+    message: 'IAL error',
     clientError: true,
   },
   ABCI_DUPLICATE_NODE_ID: {
