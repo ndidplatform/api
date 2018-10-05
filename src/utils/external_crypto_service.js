@@ -53,29 +53,35 @@ let stopCallbackRetry = false;
 
 export const eventEmitter = new EventEmitter();
 
-[
-  { key: 'sign_url', fileSuffix: 'signature' },
-  { key: 'master_sign_url', fileSuffix: 'masterSignature' },
-  { key: 'decrypt_url', fileSuffix: 'decrypt' },
-].forEach(({ key, fileSuffix }) => {
-  try {
-    callbackUrls[key] = fs.readFileSync(
-      callbackUrlFilesPrefix + '-' + fileSuffix,
-      'utf8'
-    );
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      logger.warn({
-        message: `DPKI: ${fileSuffix} callback url file not found`,
+export function readCallbackUrlsFromFiles() {
+  [
+    { key: 'sign_url', fileSuffix: 'signature' },
+    { key: 'master_sign_url', fileSuffix: 'masterSignature' },
+    { key: 'decrypt_url', fileSuffix: 'decrypt' },
+  ].forEach(({ key, fileSuffix }) => {
+    try {
+      callbackUrls[key] = fs.readFileSync(
+        callbackUrlFilesPrefix + '-' + fileSuffix,
+        'utf8'
+      );
+      logger.info({
+        message: `[DPKI] ${fileSuffix} callback url read from file`,
+        callbackUrl: callbackUrls[key],
       });
-    } else {
-      logger.error({
-        message: `Cannot read DPKI: ${fileSuffix} callback url file`,
-        error,
-      });
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        logger.warn({
+          message: `[DPKI] ${fileSuffix} callback url file not found`,
+        });
+      } else {
+        logger.error({
+          message: `[DPKI] Cannot read ${fileSuffix} callback url file`,
+          error,
+        });
+      }
     }
-  }
-});
+  });
+}
 
 async function testSignCallback(url, publicKey, isMaster) {
   const body = {
@@ -256,7 +262,7 @@ export async function setDpkiCallback({
       (err) => {
         if (err) {
           logger.error({
-            message: 'Cannot write DPKI sign callback url file',
+            message: '[DPKI] Cannot write sign callback url file',
             error: err,
           });
         }
@@ -281,7 +287,7 @@ export async function setDpkiCallback({
       (err) => {
         if (err) {
           logger.error({
-            message: 'Cannot write DPKI master-sign callback url file',
+            message: '[DPKI] Cannot write master-sign callback url file',
             error: err,
           });
         }
@@ -306,7 +312,7 @@ export async function setDpkiCallback({
       (err) => {
         if (err) {
           logger.error({
-            message: 'Cannot write DPKI sign callback url file',
+            message: '[DPKI] Cannot write sign callback url file',
             error: err,
           });
         }

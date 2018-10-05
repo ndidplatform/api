@@ -2,6 +2,10 @@
 
 ## TBD
 
+IMPROVEMENTS:
+
+- Read only callback URLs from files that are relevant to node's role and external crypto service settings on server start.
+
 BUG FIXES:
 
 - Fix receiver integrity check is skipped on AS and causes error.

@@ -78,8 +78,11 @@ async function initialize() {
       logger.info({ message: 'Node role', role });
     }
 
+    core.readCallbackUrlsFromFiles();
+
     let externalCryptoServiceReady;
     if (config.useExternalCryptoService) {
+      externalCryptoService.readCallbackUrlsFromFiles();
       if (!externalCryptoService.isCallbackUrlsSet()) {
         externalCryptoServiceReady = new Promise((resolve) =>
           externalCryptoService.eventEmitter.once('allCallbacksSet', () =>

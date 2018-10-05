@@ -43,31 +43,37 @@ const callbackUrlFilesPrefix = path.join(
   'rp-callback-url-' + config.nodeId
 );
 
-[{ key: 'error_url', fileSuffix: 'error' }].forEach(({ key, fileSuffix }) => {
-  try {
-    callbackUrls[key] = fs.readFileSync(
-      callbackUrlFilesPrefix + '-' + fileSuffix,
-      'utf8'
-    );
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      logger.warn({
-        message: `${fileSuffix} callback url file not found`,
+export function readCallbackUrlsFromFiles() {
+  [{ key: 'error_url', fileSuffix: 'error' }].forEach(({ key, fileSuffix }) => {
+    try {
+      callbackUrls[key] = fs.readFileSync(
+        callbackUrlFilesPrefix + '-' + fileSuffix,
+        'utf8'
+      );
+      logger.info({
+        message: `[RP] ${fileSuffix} callback url read from file`,
+        callbackUrl: callbackUrls[key],
       });
-    } else {
-      logger.error({
-        message: `Cannot read ${fileSuffix} callback url file`,
-        error,
-      });
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        logger.warn({
+          message: `[RP] ${fileSuffix} callback url file not found`,
+        });
+      } else {
+        logger.error({
+          message: `[RP] Cannot read ${fileSuffix} callback url file`,
+          error,
+        });
+      }
     }
-  }
-});
+  });
+}
 
 function writeCallbackUrlToFile(fileSuffix, url) {
   fs.writeFile(callbackUrlFilesPrefix + '-' + fileSuffix, url, (err) => {
     if (err) {
       logger.error({
-        message: `Cannot write ${fileSuffix} callback url file`,
+        message: `[RP] Cannot write ${fileSuffix} callback url file`,
         error: err,
       });
     }

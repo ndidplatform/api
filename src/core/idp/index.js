@@ -49,36 +49,42 @@ const callbackUrlFilesPrefix = path.join(
   'idp-callback-url-' + config.nodeId
 );
 
-[
-  { key: 'incoming_request_url', fileSuffix: 'incoming_request' },
-  { key: 'identity_result_url', fileSuffix: 'identity_result' },
-  { key: 'accessor_sign_url', fileSuffix: 'accessor_sign' },
-  { key: 'error_url', fileSuffix: 'error' },
-].forEach(({ key, fileSuffix }) => {
-  try {
-    callbackUrls[key] = fs.readFileSync(
-      callbackUrlFilesPrefix + '-' + fileSuffix,
-      'utf8'
-    );
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      logger.warn({
-        message: `${fileSuffix} callback url file not found`,
+export function readCallbackUrlsFromFiles() {
+  [
+    { key: 'incoming_request_url', fileSuffix: 'incoming_request' },
+    { key: 'identity_result_url', fileSuffix: 'identity_result' },
+    { key: 'accessor_sign_url', fileSuffix: 'accessor_sign' },
+    { key: 'error_url', fileSuffix: 'error' },
+  ].forEach(({ key, fileSuffix }) => {
+    try {
+      callbackUrls[key] = fs.readFileSync(
+        callbackUrlFilesPrefix + '-' + fileSuffix,
+        'utf8'
+      );
+      logger.info({
+        message: `[IdP] ${fileSuffix} callback url read from file`,
+        callbackUrl: callbackUrls[key],
       });
-    } else {
-      logger.error({
-        message: `Cannot read ${fileSuffix} callback url file`,
-        error,
-      });
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        logger.warn({
+          message: `[IdP] ${fileSuffix} callback url file not found`,
+        });
+      } else {
+        logger.error({
+          message: `[IdP] Cannot read ${fileSuffix} callback url file`,
+          error,
+        });
+      }
     }
-  }
-});
+  });
+}
 
 function writeCallbackUrlToFile(fileSuffix, url) {
   fs.writeFile(callbackUrlFilesPrefix + '-' + fileSuffix, url, (err) => {
     if (err) {
       logger.error({
-        message: `Cannot write ${fileSuffix} callback url file`,
+        message: `[IdP] Cannot write ${fileSuffix} callback url file`,
         error: err,
       });
     }

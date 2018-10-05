@@ -91,6 +91,20 @@ export async function setMessageQueueAddress() {
   }
 }
 
+export function readCallbackUrlsFromFiles() {
+  if (role === 'rp') {
+    rp.readCallbackUrlsFromFiles();
+  } else if (role === 'idp') {
+    idp.readCallbackUrlsFromFiles();
+  } else if (role === 'as') {
+    as.readCallbackUrlsFromFiles();
+  } else if (role === 'proxy') {
+    rp.readCallbackUrlsFromFiles();
+    idp.readCallbackUrlsFromFiles();
+    as.readCallbackUrlsFromFiles();
+  }
+}
+
 export async function initialize() {
   let handleMessageFromQueue;
   if (role === 'rp') {
