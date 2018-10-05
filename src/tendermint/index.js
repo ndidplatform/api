@@ -79,8 +79,12 @@ export let latestBlockHeight = null;
 let latestProcessedBlockHeight = null;
 try {
   const blockHeight = fs.readFileSync(latestBlockHeightFilepath, 'utf8');
-  latestBlockHeight = blockHeight;
-  latestProcessedBlockHeight = blockHeight;
+  latestBlockHeight = parseInt(blockHeight);
+  latestProcessedBlockHeight = parseInt(blockHeight);
+  logger.info({
+    message: 'Latest block height read from file',
+    blockHeight,
+  });
 } catch (error) {
   if (error.code === 'ENOENT') {
     logger.warn({
