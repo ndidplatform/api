@@ -5,6 +5,7 @@
 IMPROVEMENTS:
 
 - Read only callback URLs from files that are relevant to node's role and external crypto service settings on server start.
+- Cache nodes behind proxy node info to reduce RPC/HTTP query calls to Tendermint.
 
 BUG FIXES:
 

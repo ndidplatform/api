@@ -24,15 +24,21 @@ import * as rp from '../rp';
 import * as idp from '../idp';
 import * as as from '../as';
 
-import * as tendermintNdid from '../../tendermint/ndid';
-import { getNodesBehindProxyFromBlockchain } from '../../node';
+import {
+  getNodesBehindProxyWithKeyOnProxy,
+  invalidateNodesBehindProxyWithKeyOnProxyCache,
+} from '../../node';
+
+import * as config from '../../config';
 
 export async function handleMessageFromQueue(message, receiverNodeId) {
-  const nodeInfo = await tendermintNdid.getNodeInfo(receiverNodeId);
-  const role = nodeInfo.role.toLowerCase();
-  // TODO: cache node role in memory for faster later use,
-  // but how do we invalidate cache when node behind proxy is no longer
-  // behind a proxy?
+  const nodesBehindProxyWithKeyOnProxy = await getNodesBehindProxyWithKeyOnProxy();
+  const node = nodesBehindProxyWithKeyOnProxy.find(
+    (node) => node.node_id === receiverNodeId
+  );
+  if (node == null) return;
+
+  const role = node.role.toLowerCase();
 
   if (role === 'rp') {
     return rp.handleMessageFromQueue(message, receiverNodeId);
@@ -48,9 +54,8 @@ export async function handleTendermintNewBlock(
   toHeight,
   parsedTransactionsInBlocks
 ) {
-  const nodesBehindProxyWithKeyOnProxy = await getNodesBehindProxyFromBlockchain(
-    { withConfig: 'KEY_ON_PROXY' }
-  );
+  await processTasksInBlocks(parsedTransactionsInBlocks);
+  const nodesBehindProxyWithKeyOnProxy = await getNodesBehindProxyWithKeyOnProxy();
   await Promise.all(
     nodesBehindProxyWithKeyOnProxy.map((node) => {
       let { node_id, role } = node;
@@ -79,4 +84,42 @@ export async function handleTendermintNewBlock(
       }
     })
   );
+}
+
+async function processTasksInBlocks(parsedTransactionsInBlocks) {
+  const transactionsInBlocksToProcess = parsedTransactionsInBlocks.filter(
+    ({ transactions }) => transactions.length >= 0
+  );
+
+  const nodesBehindProxyWithKeyOnProxy = await getNodesBehindProxyWithKeyOnProxy();
+
+  transactionsInBlocksToProcess.forEach(({ transactions }) => {
+    transactions.forEach((transaction) => {
+      if (transaction.fnName === 'UpdateNode') {
+        const childNode = nodesBehindProxyWithKeyOnProxy.find(
+          (node) => node.node_id === transaction.nodeId
+        );
+        if (childNode != null) {
+          invalidateNodesBehindProxyWithKeyOnProxyCache();
+        }
+      }
+      if (transaction.fnName === 'AddNodeToProxyNode') {
+        if (config.nodeId === transaction.args.proxy_node_id) {
+          invalidateNodesBehindProxyWithKeyOnProxyCache();
+        }
+      }
+      if (
+        transaction.fnName === 'UpdateNodeByNDID' ||
+        transaction.fnName === 'RemoveNodeFromProxyNode' ||
+        transaction.fnName === 'UpdateNodeProxyNode'
+      ) {
+        const childNode = nodesBehindProxyWithKeyOnProxy.find(
+          (node) => node.node_id === transaction.args.node_id
+        );
+        if (childNode != null) {
+          invalidateNodesBehindProxyWithKeyOnProxyCache();
+        }
+      }
+    });
+  });
 }

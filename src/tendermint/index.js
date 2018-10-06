@@ -768,6 +768,7 @@ export function getTransactionListFromBlock(block) {
     return {
       fnName: txObject.method,
       args,
+      nodeId: txObject.node_id,
     };
   });
 

@@ -207,9 +207,7 @@ export async function initialize() {
 
   // Nodes behind proxy
   if (node.role === 'proxy') {
-    const nodesBehindProxyWithKeyOnProxy = await node.getNodesBehindProxyFromBlockchain(
-      { withConfig: 'KEY_ON_PROXY' }
-    );
+    const nodesBehindProxyWithKeyOnProxy = await node.getNodesBehindProxyWithKeyOnProxy();
     const nodeIds = nodesBehindProxyWithKeyOnProxy.map((node) => node.node_id);
 
     const newNodeBehindProxyPrivateKeys = {};
