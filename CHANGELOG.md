@@ -5,6 +5,7 @@
 BUG FIXES:
 
 - Fix nodes behind proxy node info cache invalidation when moving child node to another proxy node.
+- Fix error when not providing `idp_id_list` (undefined) when creating a request.
 - Add missing property `request_timeout` to AS data request callback data.
 
 ## 0.10.0 (October 7, 2018)
