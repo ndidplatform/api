@@ -559,7 +559,7 @@ export async function handleChallengeRequest({
       },
     ];
   }
-  mq.send(
+  await mq.send(
     receivers,
     {
       type: privateMessageType.CHALLENGE_RESPONSE,

@@ -41,6 +41,15 @@ export default class MQSendSocket extends EventEmitter {
     this.socketMap.delete(seqId);
   }
 
+  closeAll() {
+    const socketsClosed = this.socketMap.size;
+    for (let [seqId, sendingSocket] of this.socketMap) {
+      sendingSocket.close();
+      this.socketMap.delete(seqId);
+    }
+    return socketsClosed;
+  }
+
   // init socket and connection to destination (init source socket too, which should provide limitation but is cleaner)
   _init(dest) {
     const sendingSocket = zmq.socket('req');

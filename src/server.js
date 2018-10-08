@@ -161,7 +161,7 @@ async function shutDown() {
   await httpServer.close();
   stopAllCallbackRetries();
   externalCryptoService.stopAllCallbackRetries();
-  mq.close();
+  await mq.close();
   tendermint.tendermintWsClient.close();
   // TODO: wait for async operations which going to use DB to finish before closing
   // a connection to DB

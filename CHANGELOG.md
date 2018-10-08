@@ -2,6 +2,10 @@
 
 ## TBD
 
+IMPROVEMENTS:
+
+- Save pending outbound messages for MQ to cache DB on server graceful shutdown. The server will try to send on next start if the messages do not exceed MQ send total timeout.
+
 BUG FIXES:
 
 - Fix nodes behind proxy node info cache invalidation when moving child node to another proxy node.

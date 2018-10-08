@@ -377,7 +377,7 @@ async function sendDataToRP(nodeId, rpId, data) {
       },
     ];
   }
-  mq.send(
+  await mq.send(
     receivers,
     {
       type: privateMessageType.AS_DATA_RESPONSE,

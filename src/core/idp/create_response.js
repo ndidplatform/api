@@ -523,7 +523,7 @@ export async function requestChallengeAfterBlockchain(
         },
       ];
     }
-    mq.send(
+    await mq.send(
       receivers,
       {
         type: privateMessageType.CHALLENGE_REQUEST,
@@ -632,7 +632,7 @@ async function sendResponseToRP(
       },
     ];
   }
-  mq.send(
+  await mq.send(
     receivers,
     {
       type: privateMessageType.IDP_RESPONSE,

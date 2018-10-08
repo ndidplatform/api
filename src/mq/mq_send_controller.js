@@ -119,8 +119,13 @@ export default class MQSend extends EventEmitter {
     }
   }
 
-  send(dest, payload) {
+  send(dest, payload, callbackAfterAck) {
     // let the logic to dictate when\where it should send
-    this.logic.send(dest, payload);
+    this.logic.send(dest, payload, callbackAfterAck);
+  }
+
+  closeAll() {
+    this.logic.stopAllRetries();
+    return this.socket.closeAll();
   }
 }
