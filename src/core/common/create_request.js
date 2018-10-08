@@ -253,8 +253,8 @@ export async function createRequest(
   options = {},
   additionalParams = {}
 ) {
-  if(createRequestParams.idp_id_list == null) {
-    createRequestParams.idp_id_list = []; 
+  if (createRequestParams.idp_id_list == null) {
+    createRequestParams.idp_id_list = [];
   }
   let { node_id } = createRequestParams;
   const {
