@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix nodes behind proxy node info cache invalidation when moving child node to another proxy node.
+
 ## 0.10.0 (October 7, 2018)
 
 IMPROVEMENTS:

@@ -103,7 +103,10 @@ async function processTasksInBlocks(parsedTransactionsInBlocks) {
           invalidateNodesBehindProxyWithKeyOnProxyCache();
         }
       }
-      if (transaction.fnName === 'AddNodeToProxyNode') {
+      if (
+        transaction.fnName === 'AddNodeToProxyNode' ||
+        transaction.fnName === 'UpdateNodeProxyNode'
+      ) {
         if (config.nodeId === transaction.args.proxy_node_id) {
           invalidateNodesBehindProxyWithKeyOnProxyCache();
         }
