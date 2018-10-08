@@ -311,6 +311,7 @@ case ${ROLE} in
     ;;
   idp|rp|as)
     tendermint_wait_for_sync_complete
+    sleep 5 
     
     if ! does_node_id_exist; then
       if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]); then
