@@ -51,11 +51,7 @@ async function checkIdpListCondition({
   idp_id_list,
   mode,
 }) {
-  if (idp_id_list != null && idp_id_list.length === 0) {
-    idp_id_list = null;
-  }
-
-  if (idp_id_list != null && idp_id_list.length < min_idp) {
+  if (idp_id_list.length !== 0 && idp_id_list.length < min_idp) {
     throw new CustomError({
       errorType: errorType.IDP_LIST_LESS_THAN_MIN_IDP,
       details: {
@@ -67,7 +63,7 @@ async function checkIdpListCondition({
     });
   }
 
-  if (mode === 1 && idp_id_list == null) {
+  if (mode === 1 && idp_id_list.length === 0) {
     throw new CustomError({
       errorType: errorType.IDP_ID_LIST_NEEDED,
     });
@@ -97,7 +93,7 @@ async function checkIdpListCondition({
       });
     }
 
-    if (idp_id_list != null && receivers.length < idp_id_list.length) {
+    if (idp_id_list.length !== 0 && receivers.length < idp_id_list.length) {
       throw new CustomError({
         errorType: errorType.UNQUALIFIED_IDP,
         details: {
@@ -257,6 +253,9 @@ export async function createRequest(
   options = {},
   additionalParams = {}
 ) {
+  if(createRequestParams.idp_id_list == null) {
+    createRequestParams.idp_id_list = []; 
+  }
   let { node_id } = createRequestParams;
   const {
     mode,
@@ -316,7 +315,7 @@ export async function createRequest(
       });
     }
 
-    if (idp_id_list == null || idp_id_list.length === 0) {
+    if (idp_id_list.length === 0) {
       receivers.forEach(({ node_id }) => {
         idp_id_list.push(node_id);
       });

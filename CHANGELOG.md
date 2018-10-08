@@ -19,6 +19,7 @@ BUG FIXES:
 - Fix receiver integrity check is skipped on AS and causes error.
 - Fix receiver integrity check incorrect logic.
 - Fix server initialization flow to wait for Tendermint sync before getting node's role and wait for MQ init before processing blocks and expected Txs.
+- Fix bug error when idp_id_list is not present in mode 3.
 
 ## 0.9.0 (October 4, 2018)
 
