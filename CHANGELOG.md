@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix nodes behind proxy node info cache invalidation when moving child node to another proxy node.
+
 ## 0.10.0 (October 7, 2018)
 
 IMPROVEMENTS:
@@ -164,7 +170,7 @@ BREAKING CHANGES:
 
 - API version 2.1
   - Add `initial_salt` property when responding back to POST `/rp/requests/:namespace/:identifier`. This change also applies to API v1.
-  - Add `request_message_salt` property in object when calling callback to IdP with type `incoming_request`. This change also applies to API v1.
+  - Add `request_message_salt` and `initial_salt` properties in object when calling callback to IdP with type `incoming_request`. This change also applies to API v1.
   - Add `data_salt` and `signature_sign_method` properties to data from AS when querying on RP side. (GET `/rp/requests/data/:request_id`) This change also applies to API v1.
   - Separate `valid_proof` into `valid_signature` (accessor signature) and `valid_proof` (ZK proof). This change also applies to API v1. Affect the following APIs:
     - RP Callback type `request_status` in property `response_valid_list`
