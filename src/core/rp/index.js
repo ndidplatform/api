@@ -250,6 +250,7 @@ export async function sendRequestToAS(nodeId, requestData, height) {
             request_message: requestData.request_message,
             request_message_salt: requestData.request_message_salt,
             creation_time: requestCreationMetadata.creation_time,
+            request_timeout: requestData.request_timeout,
             challenge: requestData.challenge,
             privateProofObjectList,
             rp_id: requestData.rp_id,
