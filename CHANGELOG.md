@@ -2,6 +2,11 @@
 
 ## TBD
 
+IMPROVEMENTS:
+- Check ial at API when IDP response
+
+## TBD
+
 BUG FIXES:
 
 - Fix nodes behind proxy node info cache invalidation when moving child node to another proxy node.

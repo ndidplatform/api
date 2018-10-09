@@ -155,6 +155,21 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
         ...createResponseParams,
         node_id,
       });
+
+      const requestData = await cacheDb.getRequestReceivedFromMQ(
+        node_id,
+        request_id
+      );
+      const declareIal = (await tendermintNdid.getIdentityInfo(
+        requestData.namespace,
+        requestData.identifier,
+        node_id,
+      )).ial;
+      if(ial !== declareIal) {
+        throw new CustomError({
+          errorType: errorType.WRONG_IAL
+        });
+      }
     }
     requestChallengeAndCreateResponseInternalAsync(
       createResponseParams,
