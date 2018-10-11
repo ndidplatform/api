@@ -120,9 +120,6 @@ function initialize() {
 
 function shutDown() {
   server.tryShutdown(() => {
-    // TODO: save pending outbound messages to files?
-    // TODO: save ACKed outbound messages to report to client later?
-
     logger.info({
       message: 'Shutdown gracefully',
     });
