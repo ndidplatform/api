@@ -151,6 +151,10 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
           errorType: errorType.SECRET_NEEDED,
         });
       }
+
+      //check secret
+      await utils.extractPaddingFromPrivateEncrypt(secret, accessorPublicKey);
+
       await cacheDb.setResponseFromRequestId(node_id, request_id, {
         ...createResponseParams,
         node_id,
