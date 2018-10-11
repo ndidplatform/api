@@ -1,11 +1,11 @@
 # Changelog
 
-## 0.10.1 (October 9, 2018)
+## TBD
 
 IMPROVEMENTS:
 - Check ial at API when IDP response
 
-## TBD
+## 0.10.1 (October 9, 2018)
 
 BUG FIXES:
 
