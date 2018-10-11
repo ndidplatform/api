@@ -1,26 +1,58 @@
+/**
+ * Copyright (c) 2018, 2019 National Digital ID COMPANY LIMITED
+ *
+ * This file is part of NDID software.
+ *
+ * NDID is the free software: you can redistribute it and/or modify it under
+ * the terms of the Affero GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or any later
+ * version.
+ *
+ * NDID is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the Affero GNU General Public License for more details.
+ *
+ * You should have received a copy of the Affero GNU General Public License
+ * along with the NDID source code. If not, see https://www.gnu.org/licenses/agpl.txt.
+ *
+ * Please contact info@ndid.co.th for any further questions
+ *
+ */
+
+import 'source-map-support/register';
+
+import 'dotenv/config';
+
 import path from 'path';
 
 import grpc from 'grpc';
 import * as protoLoader from '@grpc/proto-loader';
 
-import MQSend from '../mq/mq_send_controller';
-import MQRecv from '../mq/mq_recv_controller';
+import MQSend from '../mq_module/mq_send_controller';
+import MQRecv from '../mq_module/mq_recv_controller';
+
+import errorTypes from '../error/type';
 
 import logger from '../logger';
 
-import * as config from '../config';
+import * as config from './config';
+
+const MQ_SEND_TIMEOUT = 6000; // 1 min
+const MQ_SEND_TOTAL_TIMEOUT = 60000; // 10 min
+const MQ_RECV_MAX_MESSAGE_SIZE = 3300000; // in bytes
 
 let mqSend;
 let mqRecv;
 
-const acks = {};
+const sendACKs = {};
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
-  path.join(__dirname, '..', 'protos', 'message_queue.proto'),
+  path.join(__dirname, '..', '..', 'protos', 'mq_service.proto'),
   {
     keepCase: true,
-    longs: String,
+    longs: Number,
     enums: String,
     defaults: true,
     oneofs: true,
@@ -29,24 +61,35 @@ const packageDefinition = protoLoader.loadSync(
 const proto = grpc.loadPackageDefinition(packageDefinition);
 
 const server = new grpc.Server();
-const SERVER_ADDRESS = '0.0.0.0:5001';
+const SERVER_ADDRESS = `0.0.0.0:${config.serverPort}`;
 
 let recvSubscriberConnections = [];
 let sendCalls = {};
 
 // Recv
-function subscribeToRecvMessages(call, callback) {
+function subscribeToRecvMessages(call) {
+  logger.debug({
+    message: 'subscribeToRecvMessages',
+  });
   recvSubscriberConnections.push(call);
-  callback(null);
 }
 
 function sendAckForRecvMessage(call, callback) {
   const { message_id: msgId } = call.request;
-  if (acks[msgId]) {
-    acks[msgId]();
+  logger.debug({
+    message: 'sendAckForRecvMessage',
+    args: call.request,
+  });
+  if (sendACKs[msgId]) {
+    sendACKs[msgId]();
+    delete sendACKs[msgId];
+    callback(null);
+  } else {
+    callback({
+      code: errorTypes.MQ_SEND_ACK_UNKNOWN_MESSAGE_ID.code,
+      message: errorTypes.MQ_SEND_ACK_UNKNOWN_MESSAGE_ID.message,
+    });
   }
-  // TODO: sending ACK should have an error if msgId does not exist
-  callback(null);
 }
 
 function onRecvMessage({ message, msgId, senderId }) {
@@ -63,35 +106,67 @@ function onRecvError({ error }) {
 
 // Send
 function sendMessage(call, callback) {
-  const { mq_address: mqAddress, payload, call_id: callId } = call.request;
+  const { mq_address: mqAddress, payload } = call.request;
   const { ip, port } = mqAddress;
 
-  sendCalls[callId] = call;
+  logger.debug({
+    message: 'sendMessage',
+    args: call.request,
+  });
 
-  mqSend.send({ ip, port }, payload);
-  callback(null);
+  const msgId = mqSend.send({ ip, port }, payload);
+  sendCalls[msgId] = { call, callback };
+
+  logger.debug({
+    message: 'send',
+    msgId,
+  });
 }
 
 function initialize() {
-  mqSend = new MQSend({ timeout: 60000, totalTimeout: 600000 });
-  mqRecv = new MQRecv({ port: config.mqPort, maxMsgSize: 3300000 });
+  mqSend = new MQSend({
+    senderId: config.nodeId,
+    timeout: MQ_SEND_TIMEOUT,
+    totalTimeout: MQ_SEND_TOTAL_TIMEOUT,
+  });
+  mqRecv = new MQRecv({
+    senderId: config.nodeId,
+    port: config.mqPort,
+    maxMsgSize: MQ_RECV_MAX_MESSAGE_SIZE,
+  });
 
   mqRecv.on('message', async ({ message, msgId, senderId, sendAck }) => {
-    // TODO: refactor MQRecv to accept ack with msgId as a parameter
-    // to eliminate functino caching
-    acks[msgId] = sendAck;
+    logger.debug({
+      message: 'Inbound message',
+      msgId,
+      senderId,
+    });
+    sendACKs[msgId] = sendAck;
     onRecvMessage({ message, msgId, senderId });
   });
 
-  //should tell client via error callback?
-  mqSend.on('error', (error) => {
+  mqSend.on('error', (msgId, error) => {
     logger.error(error.getInfoForLog());
-    // TODO: get msgId from send controller and send error back to client
+    if (sendCalls[msgId]) {
+      const { callback } = sendCalls[msgId];
+      callback({
+        code: error.code,
+        message: error.message,
+      });
+      delete sendCalls[msgId];
+    }
   });
-  // TODO: sender should have closed event after sending socket is closed and cleaned up
-  // mqSend.on('closed', () => {
-  //   // TODO: send event back to client
-  // });
+  mqSend.on('close', (msgId) => {
+    logger.debug({
+      message: 'MQ send socket closed and clened up',
+      msgId,
+    });
+    if (sendCalls[msgId]) {
+      const { callback } = sendCalls[msgId];
+      callback(null);
+      delete sendCalls[msgId];
+    }
+  });
 
   mqRecv.on('error', (error) => {
     logger.error(error.getInfoForLog());
@@ -118,8 +193,36 @@ function initialize() {
   });
 }
 
+let shutDownCalledOnce = false;
 function shutDown() {
+  if (shutDownCalledOnce) {
+    logger.error({
+      message: 'Forcefully shutting down',
+    });
+    process.exit(1);
+  }
+  shutDownCalledOnce = true;
+
+  logger.info({
+    message: 'Received kill signal, shutting down gracefully',
+  });
   server.tryShutdown(() => {
+    if (mqRecv) {
+      mqRecv.close();
+      logger.info({
+        message: 'Message queue (recv) socket closed',
+      });
+    }
+    if (mqSend) {
+      const socketsClosed = mqSend.closeAll();
+      if (socketsClosed > 0) {
+        logger.info({
+          message: 'Message queue (send) sockets closed',
+          socketsClosed,
+        });
+      }
+    }
+
     logger.info({
       message: 'Shutdown gracefully',
     });

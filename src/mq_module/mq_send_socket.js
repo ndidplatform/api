@@ -30,8 +30,8 @@ export default class MQSendSocket extends EventEmitter {
     this.socketMap = new Map();
   }
 
-  send(dest, payload, seqId) {
-    const newSocket = this._init(dest);
+  send(dest, payload, msgId, seqId) {
+    const newSocket = this._init(dest, msgId);
     this.socketMap.set(seqId, newSocket);
     newSocket.send(payload);
   }
@@ -51,7 +51,7 @@ export default class MQSendSocket extends EventEmitter {
   }
 
   // init socket and connection to destination (init source socket too, which should provide limitation but is cleaner)
-  _init(dest) {
+  _init(dest, msgId) {
     const sendingSocket = zmq.socket('req');
     // socket option
     // small lingering time ( 50ms ) after socket close. we want to control send by business logic
@@ -68,7 +68,7 @@ export default class MQSendSocket extends EventEmitter {
     sendingSocket.on(
       'error',
       function(err) {
-        this.emit('error', err);
+        this.emit('error', msgId, err);
       }.bind(this)
     );
 

@@ -178,6 +178,26 @@ export default {
     code: 10037,
     message: 'Cannot validate AS data response',
   },
+  MQ_SEND_ERROR: {
+    code: 10038,
+    message: 'Message queue (sender) error',
+  },
+  MQ_RECV_ERROR: {
+    code: 10039,
+    message: 'Message queue (receiver) error',
+  },
+  MQ_SEND_CLEANUP_ERROR: {
+    code: 10040,
+    message: 'Message queue (sender) clean up error',
+  },
+  MQ_SEND_TIMEOUT: {
+    code: 10041,
+    message: 'Message queue send retry timed out. Give up sending.',
+  },
+  MQ_SEND_ACK_UNKNOWN_MESSAGE_ID: {
+    code: 10042,
+    message: 'Cannot send ACK for unknown message ID',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {

@@ -20,4 +20,13 @@
  *
  */
 
-export * from '../mq_service';
+const defaultMqBindingPort = 5555;
+
+export const mqPort =
+  process.env.MQ_BINDING_PORT == null
+    ? defaultMqBindingPort
+    : parseInt(process.env.MQ_BINDING_PORT);
+
+export const serverPort = process.env.SERVER_PORT || 50051;
+
+export const nodeId = process.env.NODE_ID;

@@ -1,26 +1,25 @@
 syntax = "proto3";
  
 service MessageQueue {
-  rpc subscribeToRecvMessages() returns (stream InboundMessage){}
-  rpc sendAckForRecvMessage(InboundMessageAck) returns(){}
-  rpc sendMessage(OutboundMessage) returns (stream SendMessageEvent){}
+  rpc subscribeToRecvMessages(Empty) returns (stream InboundMessage){}
+  rpc sendAckForRecvMessage(InboundMessageAck) returns(Empty){}
+  rpc sendMessage(OutboundMessage) returns (Empty){}
 }
  
 message InboundMessage {
   bytes message = 1;
-  string message_id = 2;
+  int64 message_id = 2;
   string sender_id = 3;
   Error error = 4;
 }
 
 message InboundMessageAck {
-  string message_id = 1;
+  int64 message_id = 1;
 }
 
 message OutboundMessage {
   MqAddress mq_address = 1;
   bytes payload = 2;
-  string call_id = 3;
 }
 
 message MqAddress {
@@ -28,13 +27,11 @@ message MqAddress {
   int32 port = 2;
 }
 
-message SendMessageEvent {
-  string call_id = 1;
-  bool closed = 2;
-  Error error = 3;
-}
-
 message Error {
   int32 code = 1;
   string message = 2;
+}
+
+message Empty {
+
 }

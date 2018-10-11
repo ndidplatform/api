@@ -66,9 +66,7 @@ export const logDirectoryPath =
 export const logLengthThreshold = Infinity; // 2000
 export const replaceForTooLongLog = '<--- Too long, omitted --->';
 
-export const defaultMqBindingPort = 5555;
-
-export const defaultTendermintPort = 45000;
+const defaultTendermintPort = 45000;
 
 export const tendermintIp =
   process.env.TENDERMINT_IP == null ? 'localhost' : process.env.TENDERMINT_IP;
@@ -88,11 +86,17 @@ export const nodeId = process.env.NODE_ID;
 
 export const skipGetRole = process.env.SKIP_GET_ROLE === 'true';
 
+const defaultMqBindingPort = 5555;
+
 export const mqIp = process.env.MQ_CONTACT_IP || 'localhost';
 export const mqPort =
   process.env.MQ_BINDING_PORT == null
     ? defaultMqBindingPort
     : parseInt(process.env.MQ_BINDING_PORT);
+
+export const mqServiceServerIp =
+  process.env.MQ_SERVICE_SERVER_IP || 'localhost';
+export const mqServiceServerPort = process.env.MQ_SERVICE_SERVER_PORT || 50051;
 
 export const registerMqAtStartup =
   process.env.REGISTER_MQ_AT_STARTUP != null

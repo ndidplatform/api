@@ -27,6 +27,7 @@ import MQLogic from './mq_logic';
 import MQSendSocket from './mq_send_socket';
 
 import CustomError from '../error/custom_error';
+import errorTypes from '../error/type';
 
 export default class MQSend extends EventEmitter {
   constructor(config) {
@@ -43,20 +44,24 @@ export default class MQSend extends EventEmitter {
     this.logic.on(
       'PerformSend',
       function(params) {
-        const message = MQProtocol.generateSendMsg(params.payload, {
-          msgId: params.msgId,
-          seqId: params.seqId,
-        });
+        const message = MQProtocol.generateSendMsg(
+          config.senderId,
+          params.payload,
+          {
+            msgId: params.msgId,
+            seqId: params.seqId,
+          }
+        );
 
         this.emit('debug', this.id + ': sending msg' + params.msgId);
-        this.socket.send(params.dest, message, params.seqId);
+        this.socket.send(params.dest, message, params.msgId, params.seqId);
       }.bind(this)
     );
 
     this.logic.on(
       'PerformCleanUp',
-      function(seqId) {
-        this._cleanUp(seqId);
+      function(msgId, seqId) {
+        this._cleanUp(msgId, seqId);
       }.bind(this)
     );
 
@@ -65,11 +70,13 @@ export default class MQSend extends EventEmitter {
       function({ msgId }) {
         this.emit(
           'error',
+          msgId,
           new CustomError({
-            code: 'MQERR_TIMEOUT',
-            message: `MQSend ID: ${
-              this.id
-            }, Message ID: ${msgId}, Too many retries. Giving up.`,
+            errorType: errorTypes.MQ_SEND_TIMEOUT,
+            details: {
+              id: this.id,
+              msgId,
+            },
           })
         );
       }.bind(this)
@@ -79,12 +86,12 @@ export default class MQSend extends EventEmitter {
 
     this.socket.on(
       'error',
-      function(error) {
+      function(msgId, error) {
         this.emit(
           'error',
+          msgId,
           new CustomError({
-            code: 'MQERR_SENDER',
-            message: 'Message queue (sender) error',
+            errorType: errorTypes.MQ_SEND_ERROR,
             cause: error,
           })
         );
@@ -104,7 +111,7 @@ export default class MQSend extends EventEmitter {
     );
   }
 
-  _cleanUp(seqId) {
+  _cleanUp(msgId, seqId) {
     try {
       this.socket.cleanUp(seqId);
     } catch (error) {
@@ -117,11 +124,12 @@ export default class MQSend extends EventEmitter {
         })
       );
     }
+    this.emit('close', msgId);
   }
 
   send(dest, payload, callbackAfterAck) {
     // let the logic to dictate when\where it should send
-    this.logic.send(dest, payload, callbackAfterAck);
+    return this.logic.send(dest, payload, callbackAfterAck);
   }
 
   closeAll() {

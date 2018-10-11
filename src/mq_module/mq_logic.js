@@ -40,7 +40,7 @@ export default class MQLogic extends EventEmitter {
     for (let [key, value] of this.seqMap) {
       if (value.msgId == msgId) {
         clearTimeout(value.timerId);
-        this.emit('PerformCleanUp', value.seqId);
+        this.emit('PerformCleanUp', msgId, value.seqId);
         itemToDelete.push(key);
       }
     }
@@ -104,6 +104,7 @@ export default class MQLogic extends EventEmitter {
     this.maxMsgId++;
     this.callbacksAfterAck[this.maxMsgId] = callbackAfterAck;
     this._performSend(dest, payload, this.maxMsgId);
+    return this.maxMsgId;
   }
 
   stopAllRetries() {

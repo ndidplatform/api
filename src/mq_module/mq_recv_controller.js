@@ -51,7 +51,7 @@ export default class MQRecv extends EventEmitter {
           );
           return;
         }
-        const ackMSG = MQProtocol.generateAckMsg({
+        const ackMSG = MQProtocol.generateAckMsg(config.senderId, {
           msgId: jsonMessage.retryspec.msgId,
           seqId: jsonMessage.retryspec.seqId,
         });
@@ -72,8 +72,7 @@ export default class MQRecv extends EventEmitter {
         this.emit(
           'error',
           new CustomError({
-            code: 'MQERR_RECEIVER',
-            message: 'Message queue (receiver) error',
+            errorType: errorType.MQ_RECV_ERROR,
             cause: error,
           })
         );
