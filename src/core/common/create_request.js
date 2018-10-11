@@ -611,7 +611,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
     // send request data to IDPs via message queue
     if (min_idp > 0) {
-      mq.send(
+      await mq.send(
         receivers,
         {
           type: privateMessageType.CONSENT_REQUEST,

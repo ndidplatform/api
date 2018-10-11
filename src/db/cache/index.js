@@ -244,6 +244,38 @@ export function removeDuplicateMessageTimeout(nodeId, id) {
   });
 }
 
+export function getAllPendingOutboundMessages(nodeId) {
+  return db.getAll({
+    nodeId,
+    dbName,
+    name: 'pendingOutboundMessages',
+    keyName: 'msgId',
+    valueName: 'data',
+  });
+}
+
+export function setPendingOutboundMessage(nodeId, msgId, data) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'pendingOutboundMessages',
+    keyName: 'msgId',
+    key: msgId,
+    valueName: 'data',
+    value: data,
+  });
+}
+
+export function removePendingOutboundMessage(nodeId, msgId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'pendingOutboundMessages',
+    keyName: 'msgId',
+    key: msgId,
+  });
+}
+
 //
 // Used by IdP and AS
 //

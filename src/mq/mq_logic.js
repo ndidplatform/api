@@ -32,6 +32,7 @@ export default class MQLogic extends EventEmitter {
     this.maxMsgId = Date.now();
     this.id = config.id || '';
     this.seqMap = new Map();
+    this.callbacksAfterAck = {};
   }
 
   _cleanUp(msgId) {
@@ -90,13 +91,24 @@ export default class MQLogic extends EventEmitter {
 
   ackReceived(msgId) {
     this._cleanUp(msgId);
+    if (this.callbacksAfterAck[msgId]) {
+      this.callbacksAfterAck[msgId]();
+      delete this.callbacksAfterAck[msgId];
+    }
   }
 
-  send(dest, payload) {
+  send(dest, payload, callbackAfterAck) {
     if (!Buffer.isBuffer(payload)) {
       throw new Error('Expect payload to be Buffer');
     }
     this.maxMsgId++;
+    this.callbacksAfterAck[this.maxMsgId] = callbackAfterAck;
     this._performSend(dest, payload, this.maxMsgId);
+  }
+
+  stopAllRetries() {
+    for (let [key, value] of this.seqMap) {
+      clearTimeout(value.timerId);
+    }
   }
 }

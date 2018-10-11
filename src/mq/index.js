@@ -39,6 +39,10 @@ import errorType from '../error/type';
 import { role } from '../node';
 import * as config from '../config';
 
+const MQ_SEND_TIMEOUT = 60000;
+const MQ_SEND_TOTAL_TIMEOUT = 600000;
+const MQ_RECV_MAX_MESSAGE_SIZE = 3300000; // in bytes
+
 const mqMessageProtobufRootInstance = new protobuf.Root();
 const mqMessageProtobufRoot = mqMessageProtobufRootInstance.loadSync(
   path.join(__dirname, '..', '..', 'protos', 'mq_message.proto'),
@@ -56,6 +60,8 @@ const EncryptedMqMessage = encryptedMqMessageProtobufRoot.lookupType(
 
 let mqSend;
 let mqRecv;
+let outboundMessageId = Date.now();
+const pendingOutboundMessages = {};
 const timer = {};
 
 const rawMessagesToRetry = [];
@@ -84,8 +90,23 @@ export async function initialize() {
     }
   });
   await Promise.all(promiseArray);
-  mqSend = new MQSend({ timeout: 60000, totalTimeout: 600000 });
-  mqRecv = new MQRecv({ port: config.mqPort, maxMsgSize: 3300000 });
+
+  // Load saved pending outbound messages
+  logger.info({
+    message: 'Loading saved pending outbound messages',
+  });
+  const savedPendingOutboundMessages = await cacheDb.getAllPendingOutboundMessages(
+    config.nodeId
+  );
+
+  mqSend = new MQSend({
+    timeout: MQ_SEND_TIMEOUT,
+    totalTimeout: MQ_SEND_TOTAL_TIMEOUT,
+  });
+  mqRecv = new MQRecv({
+    port: config.mqPort,
+    maxMsgSize: MQ_RECV_MAX_MESSAGE_SIZE,
+  });
 
   mqRecv.on('message', async ({ message, msgId, senderId, sendAck }) => {
     // Check for duplicate message
@@ -93,18 +114,43 @@ export async function initialize() {
     const id = senderId + ':' + msgId;
     if (timer[id] != null) return;
 
-    const unixTimeout = timestamp + 600000;
+    const unixTimeout = timestamp + MQ_SEND_TOTAL_TIMEOUT;
     cacheDb.setDuplicateMessageTimeout(config.nodeId, id, unixTimeout);
     timer[id] = setTimeout(() => {
       cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
       delete timer[id];
-    }, 600000);
+    }, MQ_SEND_TOTAL_TIMEOUT);
     onMessage(message, id, timestamp, sendAck);
   });
 
   //should tell client via error callback?
   mqSend.on('error', (error) => logger.error(error.getInfoForLog()));
   mqRecv.on('error', (error) => logger.error(error.getInfoForLog()));
+
+  // Send saved pending outbound messages
+  if (savedPendingOutboundMessages.length > 0) {
+    logger.info({
+      message: 'Sending saved pending outbound messages',
+      savedPendingOutboundMessageCount: savedPendingOutboundMessages.length,
+    });
+  }
+  await Promise.all(
+    savedPendingOutboundMessages.map(async ({ msgId, data }) => {
+      const { mqDestAddress, payloadBuffer: payloadBufferArr, sendTime } = data;
+      if (sendTime + MQ_SEND_TOTAL_TIMEOUT > Date.now()) {
+        const payloadBuffer = Buffer.from(payloadBufferArr);
+        pendingOutboundMessages[msgId] = {
+          mqDestAddress,
+          payloadBuffer,
+          sendTime,
+        };
+        mqSend.send(mqDestAddress, payloadBuffer, () => {
+          delete pendingOutboundMessages[msgId];
+        });
+      }
+      await cacheDb.removePendingOutboundMessage(config.nodeId, msgId);
+    })
+  );
 
   logger.info({
     message: 'Message queue initialized',
@@ -362,7 +408,8 @@ function retryProcessMessages() {
 }
 
 /**
- * This function should be called once on server start
+ * Load and process backlog received (inbound) messages.
+ * This function should be called once on server start.
  */
 export async function loadAndProcessBacklogMessages() {
   logger.info({
@@ -492,7 +539,16 @@ export async function send(receivers, message, senderNodeId) {
         };
       }
 
-      mqSend.send(mqDestAddress, payloadBuffer);
+      const msgId = (outboundMessageId++).toString();
+      pendingOutboundMessages[msgId] = {
+        mqDestAddress,
+        payloadBuffer,
+        sendTime: Date.now(),
+      };
+
+      mqSend.send(mqDestAddress, payloadBuffer, () => {
+        delete pendingOutboundMessages[msgId];
+      });
     })
   );
 
@@ -529,12 +585,34 @@ export async function send(receivers, message, senderNodeId) {
   );
 }
 
-export function close() {
+export async function close() {
   if (mqRecv) {
-    logger.info({
-      message: 'Message queue socket closed',
-    });
     mqRecv.close();
+    logger.info({
+      message: 'Message queue (recv) socket closed',
+    });
+  }
+  if (mqSend) {
+    const socketsClosed = mqSend.closeAll();
+    if (socketsClosed > 0) {
+      logger.info({
+        message: 'Message queue (send) sockets closed',
+        socketsClosed,
+      });
+    }
+    if (Object.keys(pendingOutboundMessages).length > 0) {
+      // Save pending outbound messages
+      logger.info({
+        message: 'Saving pending outbound messages',
+        pendingOutboundMessageCount: Object.keys(pendingOutboundMessages)
+          .length,
+      });
+      await Promise.all(
+        Object.entries(pendingOutboundMessages).map(([msgId, data]) =>
+          cacheDb.setPendingOutboundMessage(config.nodeId, msgId, data)
+        )
+      );
+    }
   }
   for (let id in timer) {
     clearTimeout(timer[id]);
