@@ -96,7 +96,9 @@ export const mqPort =
 
 export const mqServiceServerIp =
   process.env.MQ_SERVICE_SERVER_IP || 'localhost';
-export const mqServiceServerPort = process.env.MQ_SERVICE_SERVER_PORT || 50051;
+export const mqServiceServerPort = process.env.MQ_SERVICE_SERVER_PORT
+  ? parseInt(process.env.MQ_SERVICE_SERVER_PORT)
+  : 50051;
 
 export const registerMqAtStartup =
   process.env.REGISTER_MQ_AT_STARTUP != null

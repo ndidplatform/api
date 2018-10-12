@@ -31,7 +31,9 @@ export const mqPort =
     ? defaultMqBindingPort
     : parseInt(process.env.MQ_BINDING_PORT);
 
-export const serverPort = process.env.SERVER_PORT || 50051;
+export const serverPort = process.env.SERVER_PORT
+  ? parseInt(process.env.SERVER_PORT)
+  : 50051;
 
 export const nodeId = process.env.NODE_ID;
 
