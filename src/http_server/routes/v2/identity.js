@@ -312,7 +312,6 @@ router.post(
   '/:namespace/:identifier/revoke', 
   validateBody, 
   async (req, res, next) => {
-    //TODO revoke
     try {
       const {
         node_id,

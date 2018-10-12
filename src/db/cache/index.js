@@ -921,6 +921,39 @@ export function removeRequestToProcessReceivedFromMQ(nodeId, requestId) {
   });
 }
 
+export function getAccessorIdToRevokeFromRequestId(nodeId, requestId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'accessorIdToRevokeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'accessorId',
+  });
+}
+
+export function setAccessorIdToRevokeFromRequestId(nodeId, requestId, accessorId) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'accessorIdToRevokeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'accessorId',
+    value: accessorId,
+  });
+}
+
+export function removeAccessorIdToRevokeFromRequestId(nodeId, requestId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'accessorIdToRevokeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 export function getResponseFromRequestId(nodeId, requestId) {
   return db.get({
     nodeId,
@@ -1052,6 +1085,43 @@ export function removeCreateIdentityDataByReferenceId(nodeId, referenceId) {
     nodeId,
     dbName,
     name: 'createIdentityDataReferenceIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+  });
+}
+
+export function getRevokeIdentityDataByReferenceId(nodeId, referenceId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'createRevokeDataReferenceIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'revokeIdentityData',
+  });
+}
+
+export function setRevokeIdentityDataByReferenceId(
+  nodeId,
+  referenceId,
+  revokeIdentityData
+) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'revokeIdentityDataReferenceIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'revokeIdentityData',
+    value: revokeIdentityData,
+  });
+}
+
+export function removeRevokeIdentityDataByReferenceId(nodeId, referenceId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'revokeIdentityDataReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
   });

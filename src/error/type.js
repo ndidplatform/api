@@ -503,6 +503,11 @@ export default {
     message: 'Mismatched ial between response and identity info',
     clientError: true,
   },
+  INVALID_ACCESSOR_RESPONSE: {
+    code: 20061,
+    message: 'Revoking accessor mismatch with responding accessor',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

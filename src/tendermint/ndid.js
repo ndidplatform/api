@@ -193,6 +193,34 @@ export async function addAccessorMethod(
   }
 }
 
+export async function revokeAccessorMethod(
+  {
+    request_id,
+    accessor_id,
+  },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs
+) {
+  try {
+    return await tendermint.transact({
+      nodeId,
+      fnName: 'RevokeAccessorMethod',
+      params: {
+        request_id,
+        accessor_id,
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot revoke accessor method from blockchain',
+      cause: error,
+    });
+  }
+}
+
 export async function createRequest(
   requestDataToBlockchain,
   nodeId,

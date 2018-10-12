@@ -30,145 +30,61 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 
 export async function revokeAccessorAfterConsent(
-  { nodeId, request_id, old_accessor_id },
+  { nodeId, request_id, old_accessor_id, revoking_accessor_id },
   { callbackFnName, callbackAdditionalArgs }
 ) {
   //NOTE: zero knowledge proof cannot be verify by blockchain, hence,
   //if this idp call to add their accessor it's imply that zk proof is verified by them
   logger.debug({
-    message: 'Got consent, adding accessor',
+    message: 'Got consent, revoking accessor',
     nodeId,
     request_id,
     old_accessor_id,
   });
 
-  const accessor_group_id = await tendermintNdid.getAccessorGroupId(
-    old_accessor_id
-  );
-  const {
-    hash_id,
-    ial,
-    accessor_type,
-    accessor_public_key,
-    accessor_id,
-    sid,
-    associated,
-    secret,
-  } = await cacheDb.getIdentityFromRequestId(nodeId, request_id);
-
-  await tendermintNdid.addAccessorMethod(
+  await tendermintNdid.revokeAccessorMethod(
     {
       request_id,
-      accessor_group_id,
-      accessor_type,
-      accessor_id,
-      accessor_public_key,
+      revoking_accessor_id,
     },
     nodeId,
-    'identity.addAccessorAfterConsentAfterAddAccessorMethod',
+    'identity.notifyRevokeAccessorAfterConsent',
     [
       {
         nodeId,
         request_id,
-        hash_id,
-        ial,
-        secret,
-        associated,
       },
       { callbackFnName, callbackAdditionalArgs },
     ]
   );
 }
 
-export async function addAccessorAfterConsentAfterAddAccessorMethod(
+export async function notifyRevokeAccessorAfterConsent(
   { error },
-  { nodeId, request_id, hash_id, ial, secret, associated },
-  { callbackFnName, callbackAdditionalArgs } = {}
-) {
-  try {
-    if (error) throw error;
-    //no ial means old idp add new accessor
-    if (ial) {
-      await tendermintNdid.registerIdentity(
-        {
-          users: [
-            {
-              hash_id,
-              ial,
-            },
-          ],
-        },
-        nodeId,
-        'identity.addAccessorAfterConsentAfterRegisterMqDest',
-        [
-          {
-            nodeId,
-            request_id,
-            secret,
-            associated,
-          },
-          { callbackFnName, callbackAdditionalArgs },
-        ]
-      );
-    } else {
-      await addAccessorAfterConsentAfterRegisterMqDest(
-        {},
-        {
-          nodeId,
-          request_id,
-          secret,
-          associated,
-        },
-        { callbackFnName, callbackAdditionalArgs }
-      );
-    }
-  } catch (error) {
-    logger.error({
-      message:
-        'Add accessor after consent after add accessor method to blockchain error',
-      tendermintResult: arguments[0],
-      additionalArgs: arguments[1],
-      options: arguments[2],
-      error,
-    });
-
-    getFunction(callbackFnName)({ error });
-  }
-}
-
-export async function addAccessorAfterConsentAfterRegisterMqDest(
-  { error },
-  { nodeId, request_id, secret, associated },
+  { nodeId, request_id },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
   try {
     if (error) throw error;
 
-    await cacheDb.removeIdentityFromRequestId(nodeId, request_id);
+    await cacheDb.removeAccessorIdToRevokeFromRequestId(nodeId, request_id);
     if (callbackAdditionalArgs != null) {
       getFunction(callbackFnName)(
-        {
-          secret,
-          associated,
-        },
+        {},
         ...callbackAdditionalArgs
       );
     } else {
-      getFunction(callbackFnName)({
-        secret,
-        associated,
-      });
+      getFunction(callbackFnName)();
     }
   } catch (error) {
     logger.error({
       message:
-        'Add accessor after consent after add register message queue address to blockchain error',
+        'Revoke accessor after consent error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
       error,
     });
-
     getFunction(callbackFnName)({ error });
   }
 }

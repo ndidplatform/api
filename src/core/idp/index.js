@@ -293,7 +293,6 @@ export async function processMessage(nodeId, message) {
     messagePayload: message,
   });
   if (message.type === privateMessageType.IDP_RESPONSE) {
-    //check whether response is for createIddentity or revokeAccessor
     const requestDetail = await tendermintNdid.getRequestDetail({
       requestId: message.request_id,
     });
@@ -316,13 +315,19 @@ export async function processMessage(nodeId, message) {
       }
     }
     else if(requestDetail.purpose === 'RevokeAccessor') {
-      if (await checkRevokeIdentityResponse(nodeId, message, requestDetail)) {
+      //reponse for revoke identity
+      const revoking_accessor_id = ( await 
+        cacheDb.getAccessorIdToRevokeFromRequestId(nodeId, message.request_id)
+      ).accessor_id;
+
+      if (await checkRevokeIdentityResponse(nodeId, message, requestDetail, revoking_accessor_id)) {
         //TODO what if revoke identity request need more than 1 min_idp
         await identity.revokeAccessorAfterConsent(
           {
             nodeId,
             request_id: message.request_id,
             old_accessor_id: message.accessor_id,
+            revoking_accessor_id,
           },
           {
             callbackFnName: 'idp.processIdpResponseAfterRevokeAccessor',
@@ -584,8 +589,62 @@ async function checkCreateIdentityResponse(nodeId, message, requestDetail) {
   }
 }
 
-async function checkRevokeIdentityResponse(nodeId, message, requestDetail) {
-  /*try {
+export async function processIdpResponseAfterRevokeAccessor(
+  { error },
+  { nodeId, message }
+) {
+  try {
+    if (error) throw error;
+
+    const reference_id = await cacheDb.getReferenceIdByRequestId(
+      nodeId,
+      message.request_id
+    );
+    const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
+      nodeId,
+      reference_id
+    );
+    const notifyData = {
+      success: true,
+      reference_id,
+      request_id: message.request_id,
+    };
+    await callbackToClient(
+      callbackUrl,
+      {
+        node_id: nodeId,
+        type: 'revoke_accessor_result',
+        ...notifyData,
+      },
+      true
+    );
+    cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
+    cacheDb.removeReferenceIdByRequestId(nodeId, message.request_id);
+    await common.closeRequest(
+      {
+        node_id: nodeId,
+        request_id: message.request_id,
+      },
+      { synchronous: true }
+    );
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error processing IdP response for revoke identity',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    await common.notifyError({
+      nodeId,
+      callbackUrl: callbackUrls.error_url,
+      action: 'processIdpResponseAfterRevokeAccessor',
+      error: err,
+      requestId: message.request_id,
+    });
+  }
+}
+
+async function checkRevokeIdentityResponse(nodeId, message, requestDetail, revoking_accessor_id) {
+  try {
     const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
     const responseValid = await common.checkIdpResponse({
@@ -597,6 +656,15 @@ async function checkRevokeIdentityResponse(nodeId, message, requestDetail) {
         (response) => response.idp_id === message.idp_id
       ).ial,
     });
+
+    //accessor_group_id must be same as group revoking accessor_id
+    const revoking_group = await tendermintNdid.getAccessorGroupId(revoking_accessor_id);
+    const responding_group = await tendermintNdid.getAccessorGroupId(message.accessor_id);
+    if(revoking_group !== responding_group) {
+      throw new CustomError({
+        errorType: errorType.INVALID_ACCESSOR_RESPONSE,
+      });
+    }
 
     if (
       !responseValid.valid_signature ||
@@ -617,15 +685,10 @@ async function checkRevokeIdentityResponse(nodeId, message, requestDetail) {
     }
 
     logger.debug({
-      message: 'Create identity consented',
+      message: 'Revoke identity consented',
     });
     return true;
   } catch (error) {
-    const { associated } = await cacheDb.getIdentityFromRequestId(
-      nodeId,
-      message.request_id
-    );
-
     const reference_id = await cacheDb.getReferenceIdByRequestId(
       nodeId,
       message.request_id
@@ -634,53 +697,20 @@ async function checkRevokeIdentityResponse(nodeId, message, requestDetail) {
       nodeId,
       reference_id
     );
-    if (associated) {
-      if (callbackUrl == null) {
-        // Implies API v1
-        notifyAddAccessorResultByCallback({
-          request_id: message.request_id,
-          success: false,
-          error: getErrorObjectForClient(error),
-        });
-      } else {
-        await callbackToClient(
-          callbackUrl,
-          {
-            node_id: nodeId,
-            type: 'add_accessor_result',
-            success: false,
-            reference_id,
-            request_id: message.request_id,
-            error: getErrorObjectForClient(error),
-          },
-          true
-        );
-        cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
-      }
-    } else {
-      if (callbackUrl == null) {
-        // Implies API v1
-        notifyCreateIdentityResultByCallback({
-          request_id: message.request_id,
-          success: false,
-          error: getErrorObjectForClient(error),
-        });
-      } else {
-        await callbackToClient(
-          callbackUrl,
-          {
-            node_id: nodeId,
-            type: 'create_identity_result',
-            success: false,
-            reference_id,
-            request_id: message.request_id,
-            error: getErrorObjectForClient(error),
-          },
-          true
-        );
-        cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
-      }
-    }
+    
+    await callbackToClient(
+      callbackUrl,
+      {
+        node_id: nodeId,
+        type: 'revoke_accessor_result',
+        success: false,
+        reference_id,
+        request_id: message.request_id,
+        error: getErrorObjectForClient(error),
+      },
+      true
+    );
+    cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
     cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);
     await common.closeRequest(
       {
@@ -691,9 +721,9 @@ async function checkRevokeIdentityResponse(nodeId, message, requestDetail) {
     );
 
     logger.debug({
-      message: 'Create identity failed',
+      message: 'Revoke identity failed',
       error,
     });
     return false;
-  }*/
+  }
 }

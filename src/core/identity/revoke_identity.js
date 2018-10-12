@@ -93,6 +93,8 @@ export async function revokeIdentity(revokeIdentityParams) {
       identifier,
     });
 
+    await cacheDb.setAccessorIdToRevokeFromRequestId(node_id, request_id, accessor_id);
+
     await cacheDb.setCallbackUrlByReferenceId(
       node_id,
       reference_id,
@@ -155,6 +157,7 @@ export async function createRequestToRevokeIdentity(
                 identifier,
                 reference_id,
                 node_id: config.nodeId,
+                accessor_id
               }),
         //WHAT SHOULD IT BE?
         min_ial: 1.1,
@@ -289,6 +292,6 @@ async function revokeIdentityCleanUpOnError({
     cacheDb.removeCallbackUrlByReferenceId(nodeId, referenceId),
     cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
     cacheDb.removeRevokeIdentityDataByReferenceId(nodeId, referenceId),
-    cacheDb.removeIdentityFromRequestId(nodeId, requestId),
+    cacheDb.removeAccessorIdToRevokeFromRequestId(nodeId, requestId),
   ]);
 }

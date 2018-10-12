@@ -39,6 +39,7 @@ import { role } from '../../node';
 export * from './create_identity';
 export * from './update_ial';
 export * from './add_accessor_after_consent';
+export * from './revoke_accessor_after_consent';
 
 export async function checkAssociated({ node_id, namespace, identifier }) {
   let idpList = await tendermintNdid.getIdpNodes({
