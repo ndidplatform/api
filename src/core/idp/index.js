@@ -620,13 +620,6 @@ export async function processIdpResponseAfterRevokeAccessor(
     );
     cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
     cacheDb.removeReferenceIdByRequestId(nodeId, message.request_id);
-    await common.closeRequest(
-      {
-        node_id: nodeId,
-        request_id: message.request_id,
-      },
-      { synchronous: true }
-    );
   } catch (error) {
     const err = new CustomError({
       message: 'Error processing IdP response for revoke identity',
@@ -687,6 +680,13 @@ async function checkRevokeIdentityResponse(nodeId, message, requestDetail, revok
     logger.debug({
       message: 'Revoke identity consented',
     });
+    await common.closeRequest(
+      {
+        node_id: nodeId,
+        request_id: message.request_id,
+      },
+      { synchronous: true }
+    );
     return true;
   } catch (error) {
     const reference_id = await cacheDb.getReferenceIdByRequestId(
