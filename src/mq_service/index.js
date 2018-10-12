@@ -113,7 +113,8 @@ export async function initialize() {
     });
   }
   await Promise.all(
-    savedPendingOutboundMessages.map(async ({ msgId, data }) => {
+    savedPendingOutboundMessages.map(async ({ msgId: msgIdStr, data }) => {
+      const msgId = Number(msgIdStr);
       const { mqDestAddress, payloadBuffer: payloadBufferArr, sendTime } = data;
       if (sendTime + MQ_SEND_TOTAL_TIMEOUT > Date.now()) {
         const payloadBuffer = Buffer.from(payloadBufferArr);
@@ -126,6 +127,7 @@ export async function initialize() {
           .sendMessage(
             mqDestAddress,
             payloadBuffer,
+            msgId,
             true,
             MQ_SEND_TOTAL_TIMEOUT
           )
@@ -535,7 +537,7 @@ export async function send(receivers, message, senderNodeId) {
         };
       }
 
-      const msgId = (outboundMessageId++).toString();
+      const msgId = outboundMessageId++;
       pendingOutboundMessages[msgId] = {
         mqDestAddress,
         payloadBuffer,
@@ -543,7 +545,13 @@ export async function send(receivers, message, senderNodeId) {
       };
 
       mqServiceFunctions
-        .sendMessage(mqDestAddress, payloadBuffer, true, MQ_SEND_TOTAL_TIMEOUT)
+        .sendMessage(
+          mqDestAddress,
+          payloadBuffer,
+          msgId,
+          true,
+          MQ_SEND_TOTAL_TIMEOUT
+        )
         .then(() => delete pendingOutboundMessages[msgId])
         .catch((error) => logger.error(error.getInfoForLog()));
     })

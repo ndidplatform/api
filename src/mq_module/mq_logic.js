@@ -97,14 +97,16 @@ export default class MQLogic extends EventEmitter {
     }
   }
 
-  send(dest, payload, callbackAfterAck) {
+  send(dest, payload, callbackAfterAck, msgId) {
     if (!Buffer.isBuffer(payload)) {
       throw new Error('Expect payload to be Buffer');
     }
-    this.maxMsgId++;
-    this.callbacksAfterAck[this.maxMsgId] = callbackAfterAck;
-    this._performSend(dest, payload, this.maxMsgId);
-    return this.maxMsgId;
+    if (!msgId) {
+      msgId = this.maxMsgId++;
+    }
+    this.callbacksAfterAck[msgId] = callbackAfterAck;
+    this._performSend(dest, payload, msgId);
+    return msgId;
   }
 
   stopAllRetries() {

@@ -20,6 +20,7 @@ message InboundMessageAck {
 message OutboundMessage {
   MqAddress mq_address = 1;
   bytes payload = 2;
+  int64 message_id = 3;
 }
 
 message MqAddress {

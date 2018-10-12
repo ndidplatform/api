@@ -106,7 +106,11 @@ function onRecvError({ error }) {
 
 // Send
 function sendMessage(call, callback) {
-  const { mq_address: mqAddress, payload } = call.request;
+  const {
+    mq_address: mqAddress,
+    payload,
+    message_id: overriddenMsgId,
+  } = call.request;
   const { ip, port } = mqAddress;
 
   logger.debug({
@@ -114,7 +118,7 @@ function sendMessage(call, callback) {
     args: call.request,
   });
 
-  const msgId = mqSend.send({ ip, port }, payload);
+  const msgId = mqSend.send({ ip, port }, payload, null, overriddenMsgId);
   sendCalls[msgId] = { call, callback };
 
   call.on('cancelled', () => {
@@ -161,9 +165,9 @@ function initialize() {
       delete sendCalls[msgId];
     }
   });
-  mqSend.on('close', (msgId) => {
+  mqSend.on('ack_received', (msgId) => {
     logger.debug({
-      message: 'MQ send socket closed and clened up',
+      message: 'MQ send socket ACK received',
       msgId,
     });
     if (sendCalls[msgId]) {

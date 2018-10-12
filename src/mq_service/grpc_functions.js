@@ -184,6 +184,7 @@ export function sendAckForRecvMessage(msgId) {
 export async function sendMessage(
   mqAddress,
   payload,
+  msgId,
   retryOnServerUnavailable,
   retryDuration
 ) {
@@ -200,11 +201,11 @@ export async function sendMessage(
     for (;;) {
       if (stopSendMessageRetry) return;
       try {
-        await sendMessageInternal(mqAddress, payload);
+        await sendMessageInternal(mqAddress, payload, msgId);
         return;
       } catch (error) {
         if (error.cause.code !== grpc.status.UNAVAILABLE) {
-          throw error;
+          logger.error(error.getInfoForLog());
         }
 
         const nextRetry = backoff.next();
@@ -225,46 +226,51 @@ export async function sendMessage(
       }
     }
   } else {
-    return sendMessageInternal(mqAddress, payload);
+    return sendMessageInternal(mqAddress, payload, msgId);
   }
 }
 
-function sendMessageInternal(mqAddress, payload) {
+function sendMessageInternal(mqAddress, payload, msgId) {
   if (client == null) {
     throw new CustomError({
       message: 'gRPC client is not initialized yet',
     });
   }
   return new Promise((resolve, reject) => {
-    client.sendMessage({ mq_address: mqAddress, payload }, (error) => {
-      if (error) {
-        const errorTypeObj = Object.entries(errorTypes).find(([key, value]) => {
-          return value.code === error.code;
-        });
-        if (errorTypeObj == null) {
+    client.sendMessage(
+      { mq_address: mqAddress, payload, message_id: msgId },
+      (error) => {
+        if (error) {
+          const errorTypeObj = Object.entries(errorTypes).find(
+            ([key, value]) => {
+              return value.code === error.code;
+            }
+          );
+          if (errorTypeObj == null) {
+            reject(
+              new CustomError({
+                errorType: errorTypes.UNKNOWN_ERROR,
+                details: {
+                  module: 'mq_service',
+                  function: 'sendMessage',
+                  arguments: arguments,
+                },
+                cause: error,
+              })
+            );
+            return;
+          }
+          const errorType = errorTypes[errorTypeObj[0]];
           reject(
             new CustomError({
-              errorType: errorTypes.UNKNOWN_ERROR,
-              details: {
-                module: 'mq_service',
-                function: 'sendMessage',
-                arguments: arguments,
-              },
-              cause: error,
+              errorType,
             })
           );
           return;
         }
-        const errorType = errorTypes[errorTypeObj[0]];
-        reject(
-          new CustomError({
-            errorType,
-          })
-        );
-        return;
+        resolve();
       }
-      resolve();
-    });
+    );
   });
 }
 

@@ -107,6 +107,7 @@ export default class MQSend extends EventEmitter {
           'Received ACK for ' + msg.retryspec.msgId + '/' + msg.retryspec.seqId
         );
         this.logic.cleanUp(msg.retryspec.msgId);
+        this.emit('ack_received', msg.retryspec.msgId);
       }.bind(this)
     );
   }
@@ -124,12 +125,11 @@ export default class MQSend extends EventEmitter {
         })
       );
     }
-    this.emit('close', msgId);
   }
 
-  send(dest, payload, callbackAfterAck) {
+  send(dest, payload, callbackAfterAck, msgId) {
     // let the logic to dictate when\where it should send
-    return this.logic.send(dest, payload, callbackAfterAck);
+    return this.logic.send(dest, payload, callbackAfterAck, msgId);
   }
 
   stopSend(msgId) {
