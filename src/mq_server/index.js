@@ -80,6 +80,14 @@ function sendAckForRecvMessage(call, callback) {
     message: 'sendAckForRecvMessage',
     args: call.request,
   });
+
+  call.on('cancelled', () => {
+    logger.debug({
+      message: 'sendAckForRecvMessage cancelled',
+      msgId,
+    });
+  });
+
   if (sendACKs[msgId]) {
     sendACKs[msgId]();
     delete sendACKs[msgId];
@@ -122,6 +130,10 @@ function sendMessage(call, callback) {
   sendCalls[msgId] = { call, callback };
 
   call.on('cancelled', () => {
+    logger.debug({
+      message: 'sendMessage cancelled',
+      msgId,
+    });
     mqSend.stopSend(msgId);
     delete sendCalls[msgId];
   });
