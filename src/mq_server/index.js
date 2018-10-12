@@ -186,7 +186,6 @@ function initialize() {
     message: 'Message queue initialized',
   });
 
-  // Define server with the methods and start it
   server.addService(proto.MessageQueue.service, {
     subscribeToRecvMessages,
     sendAckForRecvMessage,
@@ -201,6 +200,12 @@ function initialize() {
     message: 'Server initialized',
   });
 }
+
+logger.info({
+  message: 'Starting server',
+  NODE_ENV: process.env.NODE_ENV,
+  config,
+});
 
 let shutDownCalledOnce = false;
 function shutDown() {

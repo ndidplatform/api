@@ -20,6 +20,10 @@
  *
  */
 
+import path from 'path';
+
+export const env = process.env.NODE_ENV || 'development';
+
 const defaultMqBindingPort = 5555;
 
 export const mqPort =
@@ -30,3 +34,15 @@ export const mqPort =
 export const serverPort = process.env.SERVER_PORT || 50051;
 
 export const nodeId = process.env.NODE_ID;
+
+export const logLevel =
+  process.env.LOG_LEVEL || (env === 'development' ? 'debug' : 'info');
+export const logFormat = process.env.LOG_FORMAT || 'default';
+export const logTarget = process.env.LOG_TARGET || 'console';
+export const logColor =
+  process.env.LOG_COLOR == null
+    ? logTarget === 'console'
+    : process.env.LOG_COLOR === 'true';
+export const logOneLine = process.env.LOG_ONE_LINE === 'true';
+export const logDirectoryPath =
+  process.env.LOG_DIRECTORY_PATH || path.join(__dirname, '..', 'log');
