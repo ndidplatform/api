@@ -184,7 +184,8 @@ export function sendAckForRecvMessage(msgId) {
 export async function sendMessage(
   mqAddress,
   payload,
-  retryOnServerUnavailable
+  retryOnServerUnavailable,
+  retryDuration
 ) {
   if (retryOnServerUnavailable) {
     const backoff = new ExponentialBackoff({
@@ -193,6 +194,8 @@ export async function sendMessage(
       factor: 2,
       jitter: 0.2,
     });
+
+    const startTime = Date.now();
 
     for (;;) {
       if (stopSendMessageRetry) return;
@@ -205,6 +208,15 @@ export async function sendMessage(
         }
 
         const nextRetry = backoff.next();
+
+        if (retryDuration) {
+          if (Date.now() - startTime + nextRetry > retryDuration) {
+            logger.warn({
+              message: '[MQ Service] Send message retry timed out',
+            });
+            return;
+          }
+        }
 
         const waitPromise = wait(nextRetry, true);
         waitPromises.push(waitPromise);

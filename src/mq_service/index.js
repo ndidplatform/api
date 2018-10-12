@@ -96,23 +96,7 @@ export async function initialize() {
 
   await mqServiceFunctions.initialize();
 
-  mqServiceFunctions.eventEmitter.on(
-    'message',
-    async ({ message, msgId, senderId }) => {
-      // Check for duplicate message
-      const timestamp = Date.now();
-      const id = senderId + ':' + msgId;
-      if (timer[id] != null) return;
-
-      const unixTimeout = timestamp + MQ_SEND_TOTAL_TIMEOUT;
-      cacheDb.setDuplicateMessageTimeout(config.nodeId, id, unixTimeout);
-      timer[id] = setTimeout(() => {
-        cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
-        delete timer[id];
-      }, MQ_SEND_TOTAL_TIMEOUT);
-      onMessage(message, id, msgId, timestamp);
-    }
-  );
+  mqServiceFunctions.eventEmitter.on('message', onMessage);
 
   //should tell client via error callback?
   mqServiceFunctions.eventEmitter.on('error', (error) =>
@@ -139,7 +123,12 @@ export async function initialize() {
           sendTime,
         };
         mqServiceFunctions
-          .sendMessage(mqDestAddress, payloadBuffer, true)
+          .sendMessage(
+            mqDestAddress,
+            payloadBuffer,
+            true,
+            MQ_SEND_TOTAL_TIMEOUT
+          )
           .then(() => delete pendingOutboundMessages[msgId])
           .catch((error) => logger.error(error.getInfoForLog()));
       }
@@ -152,19 +141,28 @@ export async function initialize() {
   });
 }
 
-async function onMessage(messageProtobuf, messageId, msgId, timestamp) {
+async function onMessage({ message, msgId, senderId }) {
   logger.info({
     message: 'Received message from message queue',
-    messageId,
     msgId,
-    messageLength: messageProtobuf.length,
+    messageLength: message.length,
+    senderId,
   });
+
+  // Check for duplicate message
+  const timestamp = Date.now();
+  const id = senderId + ':' + msgId;
+  if (timer[id] != null) return;
+
+  const unixTimeout = timestamp + MQ_SEND_TOTAL_TIMEOUT;
+  cacheDb.setDuplicateMessageTimeout(config.nodeId, id, unixTimeout);
+  timer[id] = setTimeout(() => {
+    cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
+    delete timer[id];
+  }, MQ_SEND_TOTAL_TIMEOUT);
+
   try {
-    await cacheDb.setRawMessageFromMQ(
-      config.nodeId,
-      messageId,
-      messageProtobuf
-    );
+    await cacheDb.setRawMessageFromMQ(config.nodeId, id, message);
     mqServiceFunctions
       .sendAckForRecvMessage(msgId)
       .catch((error) => logger.error(error.getInfoForLog()));
@@ -175,9 +173,9 @@ async function onMessage(messageProtobuf, messageId, msgId, timestamp) {
       !cacheDb.getRedisInstance().connected ||
       !longTermDb.getRedisInstance().connected
     ) {
-      rawMessagesToRetry[messageId] = messageProtobuf;
+      rawMessagesToRetry[id] = message;
     } else {
-      await processMessage(messageId, messageProtobuf, timestamp);
+      await processMessage(id, message, timestamp);
     }
   } catch (error) {
     eventEmitter.emit('error', error);
@@ -545,7 +543,7 @@ export async function send(receivers, message, senderNodeId) {
       };
 
       mqServiceFunctions
-        .sendMessage(mqDestAddress, payloadBuffer, true)
+        .sendMessage(mqDestAddress, payloadBuffer, true, MQ_SEND_TOTAL_TIMEOUT)
         .then(() => delete pendingOutboundMessages[msgId])
         .catch((error) => logger.error(error.getInfoForLog()));
     })
