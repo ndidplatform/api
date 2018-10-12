@@ -293,21 +293,45 @@ export async function processMessage(nodeId, message) {
     messagePayload: message,
   });
   if (message.type === privateMessageType.IDP_RESPONSE) {
-    //reponse for create identity
-    if (await checkCreateIdentityResponse(nodeId, message)) {
-      //TODO what if create identity request need more than 1 min_idp
-      await identity.addAccessorAfterConsent(
-        {
-          nodeId,
-          request_id: message.request_id,
-          old_accessor_id: message.accessor_id,
-        },
-        {
-          callbackFnName: 'idp.processIdpResponseAfterAddAccessor',
-          callbackAdditionalArgs: [{ nodeId, message }],
-        }
-      );
+    //check whether response is for createIddentity or revokeAccessor
+    const requestDetail = await tendermintNdid.getRequestDetail({
+      requestId: message.request_id,
+    });
+
+    if(requestDetail.purpose === 'AddAccessor') {
+      //reponse for create identity
+      if (await checkCreateIdentityResponse(nodeId, message, requestDetail)) {
+        //TODO what if create identity request need more than 1 min_idp
+        await identity.addAccessorAfterConsent(
+          {
+            nodeId,
+            request_id: message.request_id,
+            old_accessor_id: message.accessor_id,
+          },
+          {
+            callbackFnName: 'idp.processIdpResponseAfterAddAccessor',
+            callbackAdditionalArgs: [{ nodeId, message }],
+          }
+        );
+      }
     }
+    else if(requestDetail.purpose === 'RevokeAccessor') {
+      if (await checkRevokeIdentityResponse(nodeId, message, requestDetail)) {
+        //TODO what if revoke identity request need more than 1 min_idp
+        await identity.revokeAccessorAfterConsent(
+          {
+            nodeId,
+            request_id: message.request_id,
+            old_accessor_id: message.accessor_id,
+          },
+          {
+            callbackFnName: 'idp.processIdpResponseAfterRevokeAccessor',
+            callbackAdditionalArgs: [{ nodeId, message }],
+          }
+        );
+      }
+    }
+
   } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
     //const responseId = message.request_id + ':' + message.idp_id;
     await common.handleChallengeRequest({
@@ -446,11 +470,8 @@ export async function processIdpResponseAfterAddAccessor(
   }
 }
 
-async function checkCreateIdentityResponse(nodeId, message) {
+async function checkCreateIdentityResponse(nodeId, message, requestDetail) {
   try {
-    const requestDetail = await tendermintNdid.getRequestDetail({
-      requestId: message.request_id,
-    });
     const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
     const responseValid = await common.checkIdpResponse({
@@ -561,4 +582,118 @@ async function checkCreateIdentityResponse(nodeId, message) {
     });
     return false;
   }
+}
+
+async function checkRevokeIdentityResponse(nodeId, message, requestDetail) {
+  /*try {
+    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+
+    const responseValid = await common.checkIdpResponse({
+      nodeId,
+      requestStatus,
+      idpId: message.idp_id,
+      requestDataFromMq: message,
+      responseIal: requestDetail.response_list.find(
+        (response) => response.idp_id === message.idp_id
+      ).ial,
+    });
+
+    if (
+      !responseValid.valid_signature ||
+      !responseValid.valid_proof ||
+      !responseValid.valid_ial
+    ) {
+      throw new CustomError({
+        errorType: errorType.INVALID_RESPONSE,
+      });
+    }
+
+    const response = requestDetail.response_list[0];
+
+    if (response.status !== 'accept') {
+      throw new CustomError({
+        errorType: errorType.USER_REJECTED,
+      });
+    }
+
+    logger.debug({
+      message: 'Create identity consented',
+    });
+    return true;
+  } catch (error) {
+    const { associated } = await cacheDb.getIdentityFromRequestId(
+      nodeId,
+      message.request_id
+    );
+
+    const reference_id = await cacheDb.getReferenceIdByRequestId(
+      nodeId,
+      message.request_id
+    );
+    const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
+      nodeId,
+      reference_id
+    );
+    if (associated) {
+      if (callbackUrl == null) {
+        // Implies API v1
+        notifyAddAccessorResultByCallback({
+          request_id: message.request_id,
+          success: false,
+          error: getErrorObjectForClient(error),
+        });
+      } else {
+        await callbackToClient(
+          callbackUrl,
+          {
+            node_id: nodeId,
+            type: 'add_accessor_result',
+            success: false,
+            reference_id,
+            request_id: message.request_id,
+            error: getErrorObjectForClient(error),
+          },
+          true
+        );
+        cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
+      }
+    } else {
+      if (callbackUrl == null) {
+        // Implies API v1
+        notifyCreateIdentityResultByCallback({
+          request_id: message.request_id,
+          success: false,
+          error: getErrorObjectForClient(error),
+        });
+      } else {
+        await callbackToClient(
+          callbackUrl,
+          {
+            node_id: nodeId,
+            type: 'create_identity_result',
+            success: false,
+            reference_id,
+            request_id: message.request_id,
+            error: getErrorObjectForClient(error),
+          },
+          true
+        );
+        cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
+      }
+    }
+    cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);
+    await common.closeRequest(
+      {
+        node_id: nodeId,
+        request_id: message.request_id,
+      },
+      { synchronous: true }
+    );
+
+    logger.debug({
+      message: 'Create identity failed',
+      error,
+    });
+    return false;
+  }*/
 }

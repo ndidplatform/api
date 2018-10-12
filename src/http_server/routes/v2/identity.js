@@ -308,4 +308,43 @@ router.post('/secret', idpOnlyHandler, async (req, res, next) => {
   }
 });
 
+router.post(
+  '/:namespace/:identifier/revoke', 
+  validateBody, 
+  async (req, res, next) => {
+    //TODO revoke
+    try {
+      const {
+        node_id,
+        reference_id,
+        callback_url,
+        accessor_id,
+        request_message,
+      } = req.body;
+
+      const { namespace, identifier } = req.params;
+
+      const result = await identity.revokeAccessorMethodForAssociatedIdp(
+        {
+          node_id,
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          accessor_id,
+          request_message,
+        },
+      );
+
+      res.status(202).json(result);
+    } catch (error) {
+      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
+        res.status(404).end();
+        return;
+      }
+      next(error);
+    }
+  }
+);
+
 export default router;
