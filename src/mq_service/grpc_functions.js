@@ -53,6 +53,7 @@ const MQ_SERVICE_SERVER_ADDRESS = `${config.mqServiceServerIp}:${
 export const eventEmitter = new EventEmitter();
 
 let client;
+let recvMessageChannel;
 
 export async function initialize() {
   logger.info({
@@ -95,8 +96,9 @@ export function subscribeToRecvMessages() {
       message: 'gRPC client is not initialized yet',
     });
   }
-  const channel = client.subscribeToRecvMessages(null);
-  channel.on('data', onRecvMessage);
+  if (recvMessageChannel == null) return;
+  recvMessageChannel = client.subscribeToRecvMessages(null);
+  recvMessageChannel.on('data', onRecvMessage);
 }
 
 export function sendAckForRecvMessage(msgId) {
