@@ -204,9 +204,7 @@ export async function sendMessage(
         await sendMessageInternal(mqAddress, payload, msgId);
         return;
       } catch (error) {
-        if (error.cause.code !== grpc.status.UNAVAILABLE) {
-          logger.error(error.getInfoForLog());
-        }
+        logger.error(error.getInfoForLog());
 
         const nextRetry = backoff.next();
 
