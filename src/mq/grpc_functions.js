@@ -56,6 +56,8 @@ const MQ_SERVICE_SERVER_ADDRESS = `${config.mqServiceServerIp}:${
 export const eventEmitter = new EventEmitter();
 
 let client;
+const calls = [];
+
 let recvMessageChannel;
 
 const waitPromises = [];
@@ -82,6 +84,7 @@ export function close() {
     if (recvMessageChannel) {
       recvMessageChannel.cancel();
     }
+    calls.forEach((call) => call.cancel());
     client.close();
     logger.info({
       message: 'Closed connection to MQ service server',
@@ -149,35 +152,41 @@ export function subscribeToRecvMessages() {
 
 export function sendAckForRecvMessage(msgId) {
   return new Promise((resolve, reject) => {
-    client.sendAckForRecvMessage({ message_id: msgId }, (error) => {
-      if (error) {
-        const errorTypeObj = Object.entries(errorTypes).find(([key, value]) => {
-          return value.code === error.code;
-        });
-        if (errorTypeObj == null) {
+    const call = client.sendAckForRecvMessage(
+      { message_id: msgId },
+      (error) => {
+        if (error) {
+          const errorTypeObj = Object.entries(errorTypes).find(
+            ([key, value]) => {
+              return value.code === error.code;
+            }
+          );
+          if (errorTypeObj == null) {
+            reject(
+              new CustomError({
+                errorType: errorTypes.UNKNOWN_ERROR,
+                details: {
+                  module: 'mq_service',
+                  function: 'sendAckForRecvMessage',
+                  msgId,
+                },
+                cause: error,
+              })
+            );
+            return;
+          }
+          const errorType = errorTypes[errorTypeObj[0]];
           reject(
             new CustomError({
-              errorType: errorTypes.UNKNOWN_ERROR,
-              details: {
-                module: 'mq_service',
-                function: 'sendAckForRecvMessage',
-                msgId,
-              },
-              cause: error,
+              errorType,
             })
           );
           return;
         }
-        const errorType = errorTypes[errorTypeObj[0]];
-        reject(
-          new CustomError({
-            errorType,
-          })
-        );
-        return;
+        resolve();
       }
-      resolve();
-    });
+    );
+    calls.push(call);
   });
 }
 
@@ -200,11 +209,20 @@ export async function sendMessage(
 
     for (;;) {
       if (stopSendMessageRetry) return;
+      const { promise, call } = sendMessageInternal(mqAddress, payload, msgId);
+      calls.push(call);
       try {
-        await sendMessageInternal(mqAddress, payload, msgId);
+        await promise;
+        calls.splice(calls.indexOf(call), 1);
         return;
       } catch (error) {
+        calls.splice(calls.indexOf(call), 1);
+
         logger.error(error.getInfoForLog());
+
+        if (error.cause && error.cause.code === grpc.status.CANCELLED) {
+          throw error;
+        }
 
         const nextRetry = backoff.next();
 
@@ -224,7 +242,15 @@ export async function sendMessage(
       }
     }
   } else {
-    return sendMessageInternal(mqAddress, payload, msgId);
+    const { promise, call } = sendMessageInternal(mqAddress, payload, msgId);
+    calls.push(call);
+    try {
+      await promise;
+    } catch (error) {
+      throw error;
+    } finally {
+      calls.splice(calls.indexOf(call), 1);
+    }
   }
 }
 
@@ -234,8 +260,9 @@ function sendMessageInternal(mqAddress, payload, msgId) {
       message: 'gRPC client is not initialized yet',
     });
   }
-  return new Promise((resolve, reject) => {
-    client.sendMessage(
+  let call;
+  const promise = new Promise((resolve, reject) => {
+    call = client.sendMessage(
       { mq_address: mqAddress, payload, message_id: msgId },
       (error) => {
         if (error) {
@@ -270,6 +297,7 @@ function sendMessageInternal(mqAddress, payload, msgId) {
       }
     );
   });
+  return { promise, call };
 }
 
 //When server send a message
