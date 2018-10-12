@@ -151,7 +151,7 @@ if (config.logTarget === 'file') {
       new winston.transports.DailyRotateFile({
         filename: path.join(
           config.logDirectoryPath,
-          `error-${config.nodeId}-%DATE%.log`
+          `${process.pid}-error-${config.nodeId}-%DATE%.log`
         ),
         level: 'error',
         // datePattern: 'YYYY-MM-DD',
@@ -160,7 +160,7 @@ if (config.logTarget === 'file') {
       new winston.transports.DailyRotateFile({
         filename: path.join(
           config.logDirectoryPath,
-          `combined-${config.nodeId}-%DATE%.log`
+          `${process.pid}-combined-${config.nodeId}-%DATE%.log`
         ),
         // datePattern: 'YYYY-MM-DD',
         zippedArchive: true, // gzip archived log files
