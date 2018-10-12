@@ -139,7 +139,7 @@ export async function initialize() {
           sendTime,
         };
         mqServiceFunctions
-          .sendMessage(mqDestAddress, payloadBuffer)
+          .sendMessage(mqDestAddress, payloadBuffer, true)
           .then(() => delete pendingOutboundMessages[msgId])
           .catch((error) => logger.error(error.getInfoForLog()));
       }
@@ -545,7 +545,7 @@ export async function send(receivers, message, senderNodeId) {
       };
 
       mqServiceFunctions
-        .sendMessage(mqDestAddress, payloadBuffer)
+        .sendMessage(mqDestAddress, payloadBuffer, true)
         .then(() => delete pendingOutboundMessages[msgId])
         .catch((error) => logger.error(error.getInfoForLog()));
     })

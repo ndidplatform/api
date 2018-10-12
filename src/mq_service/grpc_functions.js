@@ -25,6 +25,9 @@ import { EventEmitter } from 'events';
 
 import grpc from 'grpc';
 import * as protoLoader from '@grpc/proto-loader';
+import { ExponentialBackoff } from 'simple-backoff';
+
+import { wait } from '../utils';
 
 import CustomError from '../error/custom_error';
 import errorTypes from '../error/type';
@@ -55,6 +58,9 @@ export const eventEmitter = new EventEmitter();
 let client;
 let recvMessageChannel;
 
+const waitPromises = [];
+let stopSendMessageRetry = false;
+
 export async function initialize() {
   logger.info({
     message: 'Connecting to MQ service server',
@@ -70,7 +76,12 @@ export async function initialize() {
 }
 
 export function close() {
+  stopSendMessageRetry = true;
+  waitPromises.forEach((waitPromise) => waitPromise.stop());
   if (client) {
+    if (recvMessageChannel) {
+      recvMessageChannel.cancel();
+    }
     client.close();
     logger.info({
       message: 'Closed connection to MQ service server',
@@ -96,9 +107,44 @@ export function subscribeToRecvMessages() {
       message: 'gRPC client is not initialized yet',
     });
   }
-  if (recvMessageChannel == null) return;
+  if (recvMessageChannel != null) return;
   recvMessageChannel = client.subscribeToRecvMessages(null);
   recvMessageChannel.on('data', onRecvMessage);
+  recvMessageChannel.on('end', async function onRecvMessageChannelEnded() {
+    recvMessageChannel.cancel();
+    recvMessageChannel = null;
+    logger.debug({
+      message:
+        '[MQ Service] Subscription to receive messages has ended due to server close (stream ended)',
+    });
+    // Subscribe on reconnect
+    try {
+      await waitForReady(client);
+      subscribeToRecvMessages();
+    } catch (error) {}
+  });
+  recvMessageChannel.on('error', async function onRecvMessageChannelError(
+    error
+  ) {
+    if (error.code !== grpc.status.CANCELLED) {
+      const err = new CustomError({
+        message: 'Receive Message channel error',
+        cause: error,
+      });
+      logger.error(err.getInfoForLog());
+      recvMessageChannel.cancel();
+      recvMessageChannel = null;
+      logger.debug({
+        message:
+          '[MQ Service] Subscription to receive messages has ended due to error',
+      });
+      // Subscribe on reconnect
+      try {
+        await waitForReady(client);
+        subscribeToRecvMessages();
+      } catch (error) {}
+    }
+  });
 }
 
 export function sendAckForRecvMessage(msgId) {
@@ -117,6 +163,7 @@ export function sendAckForRecvMessage(msgId) {
                 function: 'sendAckForRecvMessage',
                 msgId,
               },
+              cause: error,
             })
           );
           return;
@@ -134,7 +181,43 @@ export function sendAckForRecvMessage(msgId) {
   });
 }
 
-export function sendMessage(mqAddress, payload) {
+export async function sendMessage(
+  mqAddress,
+  payload,
+  retryOnServerUnavailable
+) {
+  if (retryOnServerUnavailable) {
+    const backoff = new ExponentialBackoff({
+      min: 5000,
+      max: 180000,
+      factor: 2,
+      jitter: 0.2,
+    });
+
+    for (;;) {
+      if (stopSendMessageRetry) return;
+      try {
+        await sendMessageInternal(mqAddress, payload);
+        return;
+      } catch (error) {
+        if (error.cause.code !== grpc.status.UNAVAILABLE) {
+          throw error;
+        }
+
+        const nextRetry = backoff.next();
+
+        const waitPromise = wait(nextRetry, true);
+        waitPromises.push(waitPromise);
+        await waitPromise;
+        waitPromises.splice(waitPromises.indexOf(waitPromise), 1);
+      }
+    }
+  } else {
+    return sendMessageInternal(mqAddress, payload);
+  }
+}
+
+function sendMessageInternal(mqAddress, payload) {
   if (client == null) {
     throw new CustomError({
       message: 'gRPC client is not initialized yet',
@@ -155,6 +238,7 @@ export function sendMessage(mqAddress, payload) {
                 function: 'sendMessage',
                 arguments: arguments,
               },
+              cause: error,
             })
           );
           return;
@@ -181,7 +265,30 @@ function onRecvMessage(message) {
     error,
   } = message;
   if (error) {
-    eventEmitter.emit('error', error);
+    const errorTypeObj = Object.entries(errorTypes).find(([key, value]) => {
+      return value.code === error.code;
+    });
+    if (errorTypeObj == null) {
+      eventEmitter.emit(
+        'error',
+        new CustomError({
+          errorType: errorTypes.UNKNOWN_ERROR,
+          details: {
+            module: 'mq_service',
+            function: 'onRecvMessage',
+          },
+          cause: error,
+        })
+      );
+      return;
+    }
+    const errorType = errorTypes[errorTypeObj[0]];
+    eventEmitter.emit(
+      'error',
+      new CustomError({
+        errorType,
+      })
+    );
     return;
   }
   eventEmitter.emit('message', {

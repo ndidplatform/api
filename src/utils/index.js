@@ -44,10 +44,7 @@ export function wait(ms, stoppable) {
     (resolve) => (setTimeoutFn = setTimeout(resolve, ms))
   );
   if (stoppable) {
-    return {
-      promise,
-      stopWaiting: () => clearTimeout(setTimeoutFn),
-    };
+    return Object.assign(promise, { stop: () => clearTimeout(setTimeoutFn) });
   }
   return promise;
 }

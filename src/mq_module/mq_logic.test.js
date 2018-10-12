@@ -42,7 +42,7 @@ describe('MQ Retry Logic Unit Test', function() {
       done();
     });
     logic.send('testDest-2', Buffer.from('testPayload-2'));
-    logic.ackReceived(msgId);
+    logic.cleanUp(msgId);
   });
 
   it('should handle retry command properly', function(done) {

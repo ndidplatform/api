@@ -38,8 +38,8 @@ import logger from '../logger';
 
 import * as config from './config';
 
-const MQ_SEND_TIMEOUT = 6000; // 1 min
-const MQ_SEND_TOTAL_TIMEOUT = 60000; // 10 min
+const MQ_SEND_TIMEOUT = 60000; // 1 min
+const MQ_SEND_TOTAL_TIMEOUT = 600000; // 10 min
 const MQ_RECV_MAX_MESSAGE_SIZE = 3300000; // in bytes
 
 let mqSend;
@@ -116,6 +116,11 @@ function sendMessage(call, callback) {
 
   const msgId = mqSend.send({ ip, port }, payload);
   sendCalls[msgId] = { call, callback };
+
+  call.on('cancelled', () => {
+    mqSend.stopSend(msgId);
+    delete sendCalls[msgId];
+  });
 
   logger.debug({
     message: 'send',
@@ -226,6 +231,9 @@ function shutDown() {
     logger.info({
       message: 'Shutdown gracefully',
     });
+  });
+  recvSubscriberConnections.forEach((connection) => {
+    connection.end();
   });
 }
 

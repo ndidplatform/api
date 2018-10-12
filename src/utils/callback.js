@@ -34,7 +34,7 @@ import * as config from '../config';
 
 const RESPONSE_BODY_SIZE_LIMIT = 3 * 1024 * 1024; // 3MB
 
-const waitStopFunction = [];
+const waitPromises = [];
 let stopCallbackRetry = false;
 
 let getShouldRetryFn;
@@ -192,10 +192,10 @@ async function callbackWithRetry(
         cbId,
       });
 
-      const { promise: waitPromise, stopWaiting } = wait(nextRetry, true);
-      waitStopFunction.push(stopWaiting);
+      const waitPromise = wait(nextRetry, true);
+      waitPromises.push(waitPromise);
       await waitPromise;
-      waitStopFunction.splice(waitStopFunction.indexOf(stopWaiting), 1);
+      waitPromises.splice(waitPromises.indexOf(waitPromise), 1);
     }
   }
 }
@@ -310,7 +310,7 @@ export async function resumeCallbackToClient() {
 
 export function stopAllCallbackRetries() {
   stopCallbackRetry = true;
-  waitStopFunction.forEach((stopWaiting) => stopWaiting());
+  waitPromises.forEach((waitPromise) => waitPromise.stop());
   logger.info({
     message: 'Stopped all callback retries',
   });

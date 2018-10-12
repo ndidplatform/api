@@ -106,7 +106,7 @@ export default class MQSend extends EventEmitter {
           'debug',
           'Received ACK for ' + msg.retryspec.msgId + '/' + msg.retryspec.seqId
         );
-        this.logic.ackReceived(msg.retryspec.msgId);
+        this.logic.cleanUp(msg.retryspec.msgId);
       }.bind(this)
     );
   }
@@ -130,6 +130,10 @@ export default class MQSend extends EventEmitter {
   send(dest, payload, callbackAfterAck) {
     // let the logic to dictate when\where it should send
     return this.logic.send(dest, payload, callbackAfterAck);
+  }
+
+  stopSend(msgId) {
+    this.logic.cleanUp(msgId);
   }
 
   closeAll() {

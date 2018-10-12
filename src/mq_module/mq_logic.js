@@ -89,7 +89,7 @@ export default class MQLogic extends EventEmitter {
     }
   }
 
-  ackReceived(msgId) {
+  cleanUp(msgId) {
     this._cleanUp(msgId);
     if (this.callbacksAfterAck[msgId]) {
       this.callbacksAfterAck[msgId]();

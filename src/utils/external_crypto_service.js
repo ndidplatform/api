@@ -48,7 +48,7 @@ const callbackUrlFilesPrefix = path.join(
   'dpki-callback-url-' + config.nodeId
 );
 
-const waitStopFunction = [];
+const waitPromises = [];
 let stopCallbackRetry = false;
 
 export const eventEmitter = new EventEmitter();
@@ -400,10 +400,10 @@ async function callbackWithRetry(url, body, logPrefix) {
         cbId,
       });
 
-      const { promise: waitPromise, stopWaiting } = wait(nextRetry, true);
-      waitStopFunction.push(stopWaiting);
+      const waitPromise = wait(nextRetry, true);
+      waitPromises.push(waitPromise);
       await waitPromise;
-      waitStopFunction.splice(waitStopFunction.indexOf(stopWaiting), 1);
+      waitPromises.splice(waitPromises.indexOf(waitPromise), 1);
     }
   }
 }
@@ -569,7 +569,7 @@ export async function createSignature(
 
 export function stopAllCallbackRetries() {
   stopCallbackRetry = true;
-  waitStopFunction.forEach((stopWaiting) => stopWaiting());
+  waitPromises.forEach((waitPromise) => waitPromise.stop());
   logger.info({
     message: 'Stopped all external crypto service callback retries',
   });
