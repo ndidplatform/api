@@ -1,5 +1,13 @@
 # Changelog
 
+## TBD
+
+IMPROVEMENTS:
+- Check ial at API when IDP response
+
+BUG FIXES:
+- Fix check validity of secret at create response (if invalid, the response will not store in blockchain).
+
 ## 0.10.1 (October 9, 2018)
 
 IMPROVEMENTS:

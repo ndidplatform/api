@@ -518,6 +518,11 @@ export default {
     message: 'Data validation failed',
     clientError: true,
   },
+  WRONG_IAL: {
+    code: 20060,
+    message: 'Mismatched ial between response and identity info',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

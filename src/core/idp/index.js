@@ -423,13 +423,6 @@ export async function processIdpResponseAfterAddAccessor(
       }
     }
     cacheDb.removeReferenceIdByRequestId(nodeId, message.request_id);
-    await common.closeRequest(
-      {
-        node_id: nodeId,
-        request_id: message.request_id,
-      },
-      { synchronous: true }
-    );
   } catch (error) {
     const err = new CustomError({
       message: 'Error processing IdP response for creating identity',
@@ -484,6 +477,13 @@ async function checkCreateIdentityResponse(nodeId, message) {
     logger.debug({
       message: 'Create identity consented',
     });
+    await common.closeRequest(
+      {
+        node_id: nodeId,
+        request_id: message.request_id,
+      },
+      { synchronous: true }
+    );
     return true;
   } catch (error) {
     const { associated } = await cacheDb.getIdentityFromRequestId(
