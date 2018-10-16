@@ -8,3 +8,11 @@ services:
         build.commit: ${BUILD_COMMIT}
         build.date: ${BUILD_DATE}
     image: ${REPO_NAME:-ndidplatform}/api:${DOCKER_TAG:-latest}
+  mq:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile-mq
+      labels:
+        build.commit: ${BUILD_COMMIT}
+        build.date: ${BUILD_DATE}
+    image: ${REPO_NAME:-ndidplatform}/mq:${DOCKER_TAG:-latest}
