@@ -93,7 +93,7 @@ const services = [
   },
   {
     serviceId: 'customer_info',
-    serviceName: 'Customer infomation',
+    serviceName: 'Customer information',
   },
 ];
 
