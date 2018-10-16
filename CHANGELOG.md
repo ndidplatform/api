@@ -2,6 +2,11 @@
 
 ## TBD
 
+BREAKING CHANGES:
+
+- Separate MQ module from main server process into another process to provide a more flexible deployment strategy.
+  - MQ service server must be run together with its main server pair.
+
 IMPROVEMENTS:
 - Check ial at API when IDP response
 

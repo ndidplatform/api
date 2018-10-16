@@ -21,16 +21,31 @@
 3.  Add development keys to the system (for development mode only)
 
     ```sh
-    TENDERMINT_IP=$IP \
-    TENDERMINT_PORT=$PORT \
+    TENDERMINT_IP=$TENDERMINT_IP \
+    TENDERMINT_PORT=$TENDERMINT_PORT \
     NODE_ID=ndid1 \
     npm run initDevKey
     ```
 
-4.  Run a server
+4.  Run a MQ service server
 
     ```sh
     NODE_ID=$NODE_ID \
+    MQ_BINDING_PORT=$MQ_BINDING_PORT \
+    npm run start-mq
+    ```
+
+**Environment variable options**
+
+- `NODE_ID`: (Must be the same as its server pair) *Description below* [Required]
+- `MQ_BINDING_PORT`: (Must be the same as its server pair) *Description below* [Required]
+- `SERVER_PORT`: gRPC server port [Default: `50051`]
+
+5.  Run a server
+
+    ```sh
+    NODE_ID=$NODE_ID \
+    MQ_CONTACT_IP=$MQ_CONTACT_IP \
     npm start
     ```
 
@@ -42,6 +57,8 @@
 - `TENDERMINT_PORT`: Port to contact tendermint RPC [Default: `45000` for IDP, `45001` for RP, and `45002` for AS]
 - `MQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted [Required when role is set to `idp`, `rp`, or `as`]
 - `MQ_BINDING_PORT`: A port to bind message queue [Default: `5555`]
+- `MQ_SERVICE_SERVER_IP`: IP address of MQ service server [Default: `localhost`]
+- `MQ_SERVICE_SERVER_PORT`: Port of MQ service server [Default: `50051`]
 - `SERVER_PORT`: API server port [Default: `8080`]
 - `PRIVATE_KEY_PATH`: Path to node's private key (if call back to create signature is not set) [Default: use pre-generated development key in development mode]
 - `PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key
