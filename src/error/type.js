@@ -235,9 +235,9 @@ export default {
       'External service: Decrypt with node key test failed. Node public key could not be found. This node may have not been registered with NDID.',
     clientError: true,
   },
-  ACCESSOR_PUBLIC_KEY_NOT_FOUND: {
+  ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE: {
     code: 20011,
-    message: 'Accessor public key for the input accessor ID could not be found',
+    message: 'Accessor public key for the input accessor ID could not be found or inactive',
     clientError: true,
   },
   REQUEST_NOT_FOUND: {

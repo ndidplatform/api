@@ -682,10 +682,9 @@ export async function getAccessorKey(accessor_id) {
     const accessorPubKeyObj = await tendermint.query('GetAccessorKey', {
       accessor_id,
     });
-    if (accessorPubKeyObj == null) {
+    if (accessorPubKeyObj == null || !accessorPubKeyObj.active) {
       return null;
     }
-    if (!accessorPubKeyObj.active) return false;
     return accessorPubKeyObj.accessor_public_key;
   } catch (error) {
     throw new CustomError({

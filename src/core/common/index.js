@@ -682,9 +682,9 @@ export async function checkIdpResponse({
       );
     }
   } else {
-    
+
     logger.debug({
-      message: 'Accessor key not found or in active',
+      message: 'Accessor key not found or inactive',
       accessorId: privateProofObject.accessor_id,
       idpId,
     });
