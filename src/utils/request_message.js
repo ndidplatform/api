@@ -91,7 +91,7 @@ export function getRequestMessageForRevokingAccessor({
   node_name,
   accessor_id,
 }) {
-  return mustache.render(addAccessorTemplate, {
+  return mustache.render(revokeAccessorTemplate, {
     reference_id,
     namespace,
     identifier,
