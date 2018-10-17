@@ -694,6 +694,23 @@ export async function getAccessorKey(accessor_id) {
   }
 }
 
+export async function getAccessorOwner(accessor_id) {
+  try {
+    const owner = await tendermint.query('GetAccessorOwner', {
+      accessor_id,
+    });
+    if (owner == null) {
+      return null;
+    }
+    return owner.node_id;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get owner of accessor from blockchain',
+      cause: error,
+    });
+  }
+}
+
 export async function checkExistingIdentity(hash_id) {
   try {
     const result = await tendermint.query('CheckExistingIdentity', {

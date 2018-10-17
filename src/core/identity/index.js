@@ -324,6 +324,15 @@ export async function revokeAccessorMethodForAssociatedIdp(
   }
 
   //check is accessor_id created by this idp?
+  const accessorOwner = await tendermintNdid.getAccessorOwner(accessor_id);
+  if(accessorOwner !== node_id) {
+    throw new CustomError({
+      errorType: errorType.NOT_OWNER_OF_ACCESSOR,
+      details: {
+        accessor_id,
+      },
+    });
+  }
 
   const result = await revokeIdentity(
     {

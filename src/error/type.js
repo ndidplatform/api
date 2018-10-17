@@ -508,6 +508,11 @@ export default {
     message: 'Revoking accessor mismatch with responding accessor',
     clientError: true,
   },
+  NOT_OWNER_OF_ACCESSOR: {
+    code: 20062,
+    message: 'Cannot revoke accessor of other IDP',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
