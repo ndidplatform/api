@@ -180,6 +180,12 @@ export function getFunction(fnName) {
       return identity.addAccessorAfterConsentAfterAddAccessorMethod;
     case 'identity.addAccessorAfterConsentAfterRegisterMqDest':
       return identity.addAccessorAfterConsentAfterRegisterMqDest;
+    case 'identity.notifyResultOfCreateRequestToRevokeIdentity':
+      return identity.notifyResultOfCreateRequestToRevokeIdentity;
+    case 'identity.notifyRevokeAccessorAfterConsent':
+      return identity.notifyRevokeAccessorAfterConsent;
+    case 'idp.processIdpResponseAfterRevokeAccessor':
+      return idp.processIdpResponseAfterRevokeAccessor;
     default:
       throw new CustomError({
         message: 'Unknown function name',
