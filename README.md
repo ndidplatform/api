@@ -13,7 +13,9 @@
 1.  Install dependencies
 
     ```sh
-    npm install
+    cd ndid-logger && npm install
+    cd mq-server && npm install
+    cd main-server && npm install
     ```
 
 2.  Run smart contract (tendermint ABCI app) server in `smart-contract` repository and wait for first commit to show up in an output.
@@ -21,6 +23,8 @@
 3.  Add development keys to the system (for development mode only)
 
     ```sh
+    cd main-server
+
     TENDERMINT_IP=$TENDERMINT_IP \
     TENDERMINT_PORT=$TENDERMINT_PORT \
     NODE_ID=ndid1 \
@@ -30,9 +34,11 @@
 4.  Run a MQ service server
 
     ```sh
+    cd mq-server
+
     NODE_ID=$NODE_ID \
     MQ_BINDING_PORT=$MQ_BINDING_PORT \
-    npm run start-mq
+    npm run start
     ```
 
 **Environment variable options**
@@ -44,6 +50,8 @@
 5.  Run a server
 
     ```sh
+    cd main-server
+
     NODE_ID=$NODE_ID \
     MQ_CONTACT_IP=$MQ_CONTACT_IP \
     npm start

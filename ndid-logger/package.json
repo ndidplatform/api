@@ -1,0 +1,31 @@
+{
+  "name": "ndid-logger",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/logger.js",
+  "scripts": {
+    "build": "rm -rf build/ && npx babel src -d ./build/ --source-maps inline --verbose",
+    "dist": "rm -rf dist/ && npx babel src -d ./dist/ --source-maps inline --verbose",
+    "test": "npm run build && NODE_ID=unit-test npx mocha build/**/*.test.js",
+    "test:es6": "mocha src/**/*.test.js --require @babel/register --require source-map-support/register"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.1.2",
+    "winston": "^3.0.0",
+    "winston-daily-rotate-file": "^3.3.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.1.2",
+    "@babel/core": "^7.1.2",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+    "@babel/plugin-transform-runtime": "^7.1.0",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/register": "^7.0.0",
+    "babel-eslint": "^8.2.2",
+    "chai": "^4.1.2",
+    "eslint": "^4.19.1",
+    "eslint-plugin-babel": "^5.0.0",
+    "mocha": "^5.0.5",
+    "source-map-support": "^0.5.6"
+  }
+}

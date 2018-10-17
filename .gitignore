@@ -1,13 +1,15 @@
-/data
-/log
+main-server/data
+main-server/log
+
+mq-server/log
 
 .env
 
 # production
-/build
+*/build
 
 # dependencies
-/node_modules
+*/node_modules
 
 npm-debug.log*
 yarn-debug.log*

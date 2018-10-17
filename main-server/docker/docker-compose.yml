@@ -1,0 +1,104 @@
+version: '3'
+services:
+  api-ndid:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=ndid
+      - NODE_ID=ndid1
+      - NDID_IP=api-ndid
+      - TENDERMINT_IP=tm-ndid
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+      - SKIP_GET_ROLE=true
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8080:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-idp-1:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=idp
+      - NODE_ID=idp1
+      - NDID_IP=api-ndid
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-idp-1
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-idp-1
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8100:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-idp-2:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=idp
+      - NODE_ID=idp2
+      - NDID_IP=api-ndid
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-idp-2
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-idp-2
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8101:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-rp:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=rp
+      - NODE_ID=rp1
+      - NDID_IP=api-ndid
+      - TENDERMINT_IP=tm-rp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-rp
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-rp
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8200:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-as:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=as
+      - NODE_ID=as1
+      - NDID_IP=api-ndid
+      - TENDERMINT_IP=tm-as
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-as
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-as
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8300:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-redis:
+    image: redis:4-alpine
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+      
+networks:
+  ndidplatform:

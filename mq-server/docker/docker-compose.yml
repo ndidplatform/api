@@ -1,0 +1,45 @@
+version: '3'
+services:
+  mq-idp-1:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=idp1
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${MQ_SERVER_PORT:-50051}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  mq-idp-2:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=idp2
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${MQ_SERVER_PORT:-50051}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  mq-rp:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=rp1
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${MQ_SERVER_PORT:-50051}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  mq-as:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=as1
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${MQ_SERVER_PORT:-50051}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+      
+networks:
+  ndidplatform:

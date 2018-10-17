@@ -1,0 +1,10 @@
+version: "3.3"
+services: 
+  mq:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+      labels:
+        build.commit: ${BUILD_COMMIT}
+        build.date: ${BUILD_DATE}
+    image: ${REPO_NAME:-ndidplatform}/mq:${DOCKER_TAG:-latest}

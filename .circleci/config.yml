@@ -24,6 +24,7 @@ jobs:
       - run:
           name: Install node modules
           command: |
+            cd main-server
             npm install
       - save_cache:
           paths:
@@ -32,6 +33,7 @@ jobs:
       - run:
           name: Set up Development Key
           command: |
+            cd main-server
             TENDERMINT_IP=localhost \
             TENDERMINT_PORT=45000 \
             NODE_ID=ndid1 \
@@ -40,6 +42,7 @@ jobs:
       - run:
           name: Start service
           command: |
+            cd main-server
             NODE_ID=ndid1 \
             SKIP_GET_ROLE=true \
             npm start
@@ -60,7 +63,7 @@ jobs:
       - run:
           name: Build docker images
           command: |
-            cd docker
+            cd main-server/docker
             REPO_NAME=${REPO_NAME:-$DOCKER_USER}
             DOCKER_TAG=${DOCKER_TAG:-latest}
             ./build.sh
