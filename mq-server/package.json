@@ -6,7 +6,10 @@
     "build": "rm -rf build/ && npx babel src -d ./build/ --source-maps inline --verbose",
     "start": "npm run build && node build/server.js",
     "test": "npm run build && NODE_ID=unit-test npx mocha build/**/*.test.js",
-    "test:es6": "NODE_ID=unit-test mocha src/**/*.test.js --require @babel/register --require source-map-support/register"
+    "test:es6": "NODE_ID=unit-test mocha src/**/*.test.js --require @babel/register --require source-map-support/register",
+    "docker-build": "./docker/build.sh",
+    "docker-up": "docker-compose -f docker/docker-compose.yml up",
+    "docker-down": "docker-compose -f docker/docker-compose.yml down"
   },
   "dependencies": {
     "@babel/runtime": "^7.1.2",

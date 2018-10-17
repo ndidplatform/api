@@ -4,11 +4,10 @@
   "description": "",
   "scripts": {
     "build": "rm -rf build/ && npx babel src -d ./build/ --source-maps inline --verbose",
-    "start": "npm run build && node build/main_server/server.js",
-    "start-mq": "npm run build && node build/mq_server/server.js",
+    "start": "npm run build && node build/server.js",
     "test": "npm run build && NODE_ID=unit-test npx mocha build/**/*.test.js",
     "test:es6": "NODE_ID=unit-test mocha src/**/*.test.js --require @babel/register --require source-map-support/register",
-    "initDevKey": "npm run build && ROLE=ndid node build/main_server/dev_key_init.js && npm run delete-local-data-cache",
+    "initDevKey": "npm run build && ROLE=ndid node build/dev_key_init.js && npm run delete-local-data-cache",
     "delete-local-data-cache": "rm -rf data",
     "docker-build": "./docker/build.sh",
     "docker-up": "docker-compose -f docker/docker-compose.yml up",
