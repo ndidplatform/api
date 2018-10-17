@@ -35,6 +35,7 @@ import * as cacheDb from '../../db/cache';
 import privateMessageType from '../private_message_type';
 
 import * as config from '../../config';
+import * as tendermintNdid from '../../tendermint/ndid';
 
 const requestIdLocks = {};
 
@@ -185,7 +186,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
           nodeId,
           message.request_id
         );
-        if (request) {
+        if (!request) return; //request not found
           await cacheDb.addPrivateProofObjectInRequest(nodeId, message.request_id, {
             idp_id: message.idp_id,
             privateProofObject: {
@@ -194,7 +195,6 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
               padding: message.padding,
             },
           });
-        }
 
         const latestBlockHeight = tendermint.latestBlockHeight;
         if (latestBlockHeight <= message.height) {
@@ -301,6 +301,20 @@ async function processMessageExptectedInBlocks(fromHeight, toHeight, nodeId) {
   cacheDb.removeRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight);
 }
 
+async function isCreateIdentityRequestValid(requestId) {
+  const requestDetail = await tendermintNdid.getRequestDetail({ requestId });
+
+  if(requestDetail.response_list.length !== requestDetail.min_idp) {
+    return false;
+  }
+
+  return requestDetail.response_list.map(({ valid_proof, valid_ial, valid_signature }) => {
+    return valid_proof && valid_ial && valid_signature;
+  }).reduce((accum, pilot) => {
+    return accum && pilot;
+  }, true);
+}
+
 async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
   const transactionsInBlocksToProcess = parsedTransactionsInBlocks.filter(
     ({ transactions }) => transactions.length >= 0
@@ -312,18 +326,24 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
       const requestIdsToCleanUpSet = new Set();
       const closedRequestIds = new Set();
       const timedOutRequestIds = new Set();
-      transactions.forEach((transaction) => {
+      const validResponseRequestIds = new Set();
+      for(let i = 0 ; i < transactions.length ; i++) {
+        const transaction = transactions[i];
         const requestId = transaction.args.request_id;
         if (requestId == null) return;
         if (transaction.fnName === 'CloseRequest') {
           requestIdsToCleanUpSet.add(requestId);
           closedRequestIds.add(requestId);
+          //check validResponse
+          if(await isCreateIdentityRequestValid(requestId)) {
+            validResponseRequestIds.add(requestId);
+          }
         }
         if (transaction.fnName === 'TimeOutRequest') {
           requestIdsToCleanUpSet.add(requestId);
           timedOutRequestIds.add(requestId);
         }
-      });
+      }
       const requestIdsToCleanUp = [...requestIdsToCleanUpSet];
 
       await Promise.all(
@@ -346,6 +366,7 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
             if (createIdentityCallbackUrl != null) {
               let createIdentityError;
               if (closedRequestIds.has(requestId)) {
+                if(validResponseRequestIds.has(requestId)) return;
                 createIdentityError = new CustomError({
                   errorType: errorType.REQUEST_IS_CLOSED,
                 });
