@@ -24,6 +24,11 @@ jobs:
       - run:
           name: Install node modules
           command: |
+            cd ndid-logger
+            npm install
+      - run:
+          name: Install node modules
+          command: |
             cd main-server
             npm install
       - save_cache:
