@@ -8,8 +8,10 @@ RUN apk update && apk add --no-cache --virtual .build-deps \
   make \
   git
 
-COPY package*.json /tmp/api/mq-server/
+COPY ./ndid-logger/package*.json /tmp/api/ndid-logger/
+COPY ./mq-server/package*.json /tmp/api/mq-server/
 
+RUN cd api/ndid-logger && npm install
 RUN cd api/mq-server && npm install
 RUN apk del .build-deps
 
@@ -24,15 +26,28 @@ RUN umask 027 && echo "umask 0027" >> /etc/profile
 COPY --from=build /var/cache/apk /var/cache/apk
 RUN apk add --no-cache jq bash openssl curl && rm -rf /var/cache/apk
 
-COPY . /api/mq-server
+COPY ./ndid-error /api/ndid-error
+
+COPY ./ndid-logger /api/ndid-logger
+COPY --from=build /tmp/api/ndid-logger/node_modules /api/ndid-logger/node_modules
+
+WORKDIR /api/ndid-logger
+
+RUN npm prune --production
+
+COPY ./mq-server /api/mq-server
 COPY --from=build /tmp/api/mq-server/node_modules /api/mq-server/node_modules
 
 WORKDIR /api/mq-server
 
 RUN npm run build && npm prune --production
 
-# Change owner to nobodoy:nogroup and permission to 640
-RUN chown -R nobody:nogroup /api/mq-server
-RUN chmod -R 640 /api/mq-server
+COPY ./protos /api/protos
+COPY COPYING /api/
+COPY VERSION /api/
 
-ENTRYPOINT [ "node", "/api/mq-server/build/mq_server/server.js" ]
+# Change owner to nobodoy:nogroup and permission to 640
+RUN chown -R nobody:nogroup /api
+RUN chmod -R 640 /api
+
+ENTRYPOINT [ "node", "/api/mq-server/build/server.js" ]
