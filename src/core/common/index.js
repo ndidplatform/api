@@ -626,59 +626,71 @@ export async function checkIdpResponse({
     privateProofObject.accessor_id
   );
 
-  const response_list = (await tendermintNdid.getRequestDetail({
-    requestId: requestStatus.request_id,
-  })).response_list;
-  const response = response_list.find((response) => response.idp_id === idpId);
+  let validProof, signatureValid;
+  if(accessor_public_key) {
+    const response_list = (await tendermintNdid.getRequestDetail({
+      requestId: requestStatus.request_id,
+    })).response_list;
+    const response = response_list.find((response) => response.idp_id === idpId);
 
-  // Check ZK Proof
-  const challenge = (await cacheDb.getRequestData(
-    nodeId,
-    requestStatus.request_id
-  )).challenge[idpId];
-  const validProof = await verifyZKProof({
-    request_id: requestStatus.request_id,
-    idp_id: idpId,
-    requestData,
-    response,
-    accessor_public_key,
-    privateProofObject,
-    challenge,
-    mode: requestStatus.mode,
-    nodeId,
-  });
-
-  logger.debug({
-    message: 'Checked ZK proof and IAL',
-    requestId,
-    idpId,
-    validProof,
-    validIal,
-  });
-
-  // Check signature
-  let signatureValid;
-  if (requestStatus.mode === 1) {
-    signatureValid = null; // Cannot check in mode 1
-  } else if (requestStatus.mode === 3) {
-    const { request_message, initial_salt, request_id } = requestData;
-    const signature = response.signature;
-
-    logger.debug({
-      message: 'Verifying signature',
-      request_message,
-      initial_salt,
+    // Check ZK Proof
+    const challenge = (await cacheDb.getRequestData(
+      nodeId,
+      requestStatus.request_id
+    )).challenge[idpId];
+    validProof = await verifyZKProof({
+      request_id: requestStatus.request_id,
+      idp_id: idpId,
+      requestData,
+      response,
       accessor_public_key,
-      signature,
+      privateProofObject,
+      challenge,
+      mode: requestStatus.mode,
+      nodeId,
     });
 
-    signatureValid = utils.verifyResponseSignature(
-      signature,
-      accessor_public_key,
-      request_message,
-      initial_salt,
-      request_id
-    );
+    logger.debug({
+      message: 'Checked ZK proof and IAL',
+      requestId,
+      idpId,
+      validProof,
+      validIal,
+    });
+
+    // Check signature
+    if (requestStatus.mode === 1) {
+      signatureValid = null; // Cannot check in mode 1
+    } else if (requestStatus.mode === 3) {
+      const { request_message, initial_salt, request_id } = requestData;
+      const signature = response.signature;
+
+      logger.debug({
+        message: 'Verifying signature',
+        request_message,
+        initial_salt,
+        accessor_public_key,
+        signature,
+      });
+
+      signatureValid = utils.verifyResponseSignature(
+        signature,
+        accessor_public_key,
+        request_message,
+        initial_salt,
+        request_id
+      );
+    }
+  } else {
+    
+    logger.debug({
+      message: 'Accessor key not found or in active',
+      accessorId: privateProofObject.accessor_id,
+      idpId,
+    });
+
+    validProof = false;
+    signatureValid = false;
   }
 
   const responseValid = {

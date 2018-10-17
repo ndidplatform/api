@@ -45,7 +45,7 @@ export async function revokeAccessorAfterConsent(
   await tendermintNdid.revokeAccessorMethod(
     {
       request_id,
-      revoking_accessor_id,
+      accessor_id: revoking_accessor_id,
     },
     nodeId,
     'identity.notifyRevokeAccessorAfterConsent',
