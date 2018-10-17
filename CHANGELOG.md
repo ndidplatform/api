@@ -4,11 +4,11 @@
 
 IMPROVEMENTS:
 
-- Check ial at API when IDP response
+- Check IAL when IdP creating a response.
 
 BUG FIXES:
 
-- Fix check validity of secret at create response (if invalid, the response will not store in blockchain).
+- Fix check validity of secret at create response (if invalid, the response will not be stored in blockchain).
 - Fix wrong callback result for create identity.
 
 ## 0.10.1 (October 9, 2018)
