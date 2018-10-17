@@ -208,7 +208,7 @@ export async function revokeAccessorMethod(
       fnName: 'RevokeAccessorMethod',
       params: {
         request_id,
-        accessor_id,
+        accessor_id_list: [accessor_id],
       },
       callbackFnName,
       callbackAdditionalArgs,
