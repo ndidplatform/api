@@ -685,6 +685,7 @@ export async function getAccessorKey(accessor_id) {
     if (accessorPubKeyObj == null) {
       return null;
     }
+    if (!accessorPubKeyObj.active) return false;
     return accessorPubKeyObj.accessor_public_key;
   } catch (error) {
     throw new CustomError({
