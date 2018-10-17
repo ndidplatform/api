@@ -627,7 +627,7 @@ export async function checkIdpResponse({
   );
 
   let validProof, signatureValid;
-  if(accessor_public_key) {
+  if(accessor_public_key || requestStatus.mode === 1) {
     const response_list = (await tendermintNdid.getRequestDetail({
       requestId: requestStatus.request_id,
     })).response_list;
