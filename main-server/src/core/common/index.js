@@ -180,8 +180,8 @@ export function getFunction(fnName) {
       return identity.addAccessorAfterConsentAfterAddAccessorMethod;
     case 'identity.addAccessorAfterConsentAfterRegisterMqDest':
       return identity.addAccessorAfterConsentAfterRegisterMqDest;
-    case 'identity.notifyResultOfCreateRequestToRevokeIdentity':
-      return identity.notifyResultOfCreateRequestToRevokeIdentity;
+    case 'identity.notifyResultOfCreateRequestToRevokeAccessor':
+      return identity.notifyResultOfCreateRequestToRevokeAccessor;
     case 'identity.notifyRevokeAccessorAfterConsent':
       return identity.notifyRevokeAccessorAfterConsent;
     case 'idp.processIdpResponseAfterRevokeAccessor':

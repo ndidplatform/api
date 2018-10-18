@@ -318,7 +318,7 @@ export async function processMessage(nodeId, message) {
       //reponse for revoke identity
       const revoking_accessor_id = await cacheDb.getAccessorIdToRevokeFromRequestId(nodeId, message.request_id);
 
-      if (await checkRevokeIdentityResponse(nodeId, message, requestDetail, revoking_accessor_id)) {
+      if (await checkRevokeAccessorResponse(nodeId, message, requestDetail, revoking_accessor_id)) {
         //TODO what if revoke identity request need more than 1 min_idp
         await identity.revokeAccessorAfterConsent(
           {
@@ -634,7 +634,7 @@ export async function processIdpResponseAfterRevokeAccessor(
   }
 }
 
-async function checkRevokeIdentityResponse(nodeId, message, requestDetail, revoking_accessor_id) {
+async function checkRevokeAccessorResponse(nodeId, message, requestDetail, revoking_accessor_id) {
   try {
     const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
@@ -718,7 +718,7 @@ async function checkRevokeIdentityResponse(nodeId, message, requestDetail, revok
       true
     );
     cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
-    cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);
+    cacheDb.removeRevokeAccessorDataByReferenceId(nodeId, reference_id);
     await common.closeRequest(
       {
         node_id: nodeId,

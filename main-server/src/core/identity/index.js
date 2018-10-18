@@ -21,7 +21,7 @@
  */
 
 import { createIdentity } from './create_identity';
-import { revokeIdentity } from './revoke_identity';
+import { revokeAccessor } from './revoke_accessor';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import { getFunction } from '../common';
@@ -39,7 +39,7 @@ import { role } from '../../node';
 export * from './create_identity';
 export * from './update_ial';
 export * from './add_accessor_after_consent';
-export * from './revoke_identity';
+export * from './revoke_accessor';
 export * from './revoke_accessor_after_consent';
 
 export async function checkAssociated({ node_id, namespace, identifier }) {
@@ -335,7 +335,7 @@ export async function revokeAccessorMethodForAssociatedIdp(
     });
   }
 
-  const result = await revokeIdentity(
+  const result = await revokeAccessor(
     {
       node_id,
       reference_id,
