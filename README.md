@@ -13,9 +13,8 @@
 1.  Install dependencies
 
     ```sh
-    cd ndid-logger && npm install
-    cd mq-server && npm install
-    cd main-server && npm install
+    # from repository root directory
+    ./scripts/install_deps.sh
     ```
 
 2.  Run smart contract (tendermint ABCI app) server in `smart-contract` repository and wait for first commit to show up in an output.
@@ -23,6 +22,7 @@
 3.  Add development keys to the system (for development mode only)
 
     ```sh
+    # from repository root directory
     cd main-server
 
     TENDERMINT_IP=$TENDERMINT_IP \
@@ -34,11 +34,12 @@
 4.  Run a MQ service server
 
     ```sh
+    # from repository root directory
     cd mq-server
 
     NODE_ID=$NODE_ID \
     MQ_BINDING_PORT=$MQ_BINDING_PORT \
-    npm run start
+    npm start
     ```
 
 **Environment variable options**
@@ -50,6 +51,7 @@
 5.  Run a server
 
     ```sh
+    # from repository root directory
     cd main-server
 
     NODE_ID=$NODE_ID \
@@ -157,22 +159,10 @@ Required
 ### Build
 
 ```
-npm run docker-build
-```
-
-or
-
-```
 ./docker/build.sh
 ```
 
 ### Run
-
-```
-npm run docker-up
-```
-
-or
 
 ```
 docker-compose -f docker/docker-compose.yml up
@@ -181,7 +171,7 @@ docker-compose -f docker/docker-compose.yml up
 ### Note
 
 - To run docker container without building image, run command show in **Run** section (no building required). It will run docker container with image from Dockerhub (https://hub.docker.com/r/ndidplatform/api/).
-- To pull latest image from Dockerhub, run `docker pull ndidplatform/api`
+- To pull latest image from Dockerhub, run `docker pull ndidplatform/api` and `docker pull ndidplatform/mq`
 
 ## Note
 

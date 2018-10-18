@@ -77,7 +77,7 @@ jobs:
       - run:
           name: Build docker images
           command: |
-            cd main-server/docker
+            cd docker
             REPO_NAME=${REPO_NAME:-$DOCKER_USER}
             DOCKER_TAG=${DOCKER_TAG:-latest}
             ./build.sh
@@ -95,6 +95,7 @@ jobs:
             DOCKER_TAG=${DOCKER_TAG:-latest}
             docker login -u $DOCKER_USER -p $DOCKER_PASS
             docker push $REPO_NAME/api:$DOCKER_TAG
+            docker push $REPO_NAME/mq:$DOCKER_TAG
 
 workflows:
   version: 2
