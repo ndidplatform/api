@@ -249,6 +249,30 @@ export async function getCreateIdentityDataByReferenceId(nodeId, referenceId) {
   }
 }
 
+export async function getRevokeAccessorDataByReferenceId(nodeId, referenceId) {
+  try {
+    if (role === 'proxy') {
+      if (nodeId == null) {
+        throw new CustomError({
+          errorType: errorType.MISSING_NODE_ID,
+        });
+      }
+    } else {
+      nodeId = config.nodeId;
+    }
+
+    return await cacheDb.getRevokeAccessorDataByReferenceId(
+      nodeId,
+      referenceId
+    );
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get revoke accessor data by reference ID',
+      cause: error,
+    });
+  }
+}
+
 export async function getIdentityInfo({ nodeId, namespace, identifier }) {
   try {
     if (role === 'proxy') {

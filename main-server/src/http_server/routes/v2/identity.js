@@ -81,10 +81,20 @@ router.get(
         node_id,
         reference_id
       );
+      const revokeIdentityData = await identity.getRevokeAccessorDataByReferenceId(
+        node_id,
+        reference_id
+      );
+
       if (createIdentityData != null) {
         res.status(200).json({
           request_id: createIdentityData.request_id,
           accessor_id: createIdentityData.accessor_id,
+        });
+      } else if (revokeIdentityData != null) {
+        res.status(200).json({
+          request_id: revokeIdentityData.request_id,
+          accessor_id: revokeIdentityData.accessor_id,
         });
       } else {
         res.status(404).end();

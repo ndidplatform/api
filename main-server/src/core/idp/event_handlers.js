@@ -370,6 +370,21 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
             );
 
             let identityPromise, type;
+            
+            //check type
+            if(await cacheDb.getCreateIdentityDataByReferenceId(nodeId, referenceId)) {
+              type = 'create_identity_result';
+              identityPromise = cacheDb.removeCreateIdentityDataByReferenceId(
+                nodeId,
+                referenceId
+              );
+            } else if(await cacheDb.getRevokeAccessorDataByReferenceId(nodeId, referenceId)) {
+              type = 'revoke_accessor_result';
+              identityPromise = cacheDb.removeRevokeAccessorDataByReferenceId(
+                nodeId,
+                referenceId
+              );
+            }
 
             if (identityCallbackUrl != null) {
               let identityError;
@@ -382,21 +397,6 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
                 identityError = new CustomError({
                   errorType: errorType.REQUEST_IS_TIMED_OUT,
                 });
-              }
-
-              //check type
-              if(await cacheDb.getCreateIdentityDataByReferenceId(nodeId, referenceId)) {
-                type = 'create_identity_result';
-                identityPromise = cacheDb.removeCreateIdentityDataByReferenceId(
-                  nodeId,
-                  referenceId
-                );
-              } else if(await cacheDb.getRevokeAccessorDataByReferenceId(nodeId, referenceId)) {
-                type = 'revoke_accessor_result';
-                identityPromise = cacheDb.removeRevokeAccessorDataByReferenceId(
-                  nodeId,
-                  referenceId
-                );
               }
 
               await callbackToClient(
