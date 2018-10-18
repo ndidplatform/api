@@ -39,29 +39,29 @@ import { role } from '../../node';
  * Revoke identity
  * Use in mode 3
  *
- * @param {Object} revokeIdentityParams
- * @param {string} revokeIdentityParams.node_id
- * @param {string} revokeIdentityParams.reference_id
- * @param {string} revokeIdentityParams.callback_url
- * @param {string} revokeIdentityParams.namespace
- * @param {string} revokeIdentityParams.identifier
- * @param {string} revokeIdentityParams.accessor_id
- * @param {string} revokeIdentityParams.request_message
+ * @param {Object} revokeAccessorParams
+ * @param {string} revokeAccessorParams.node_id
+ * @param {string} revokeAccessorParams.reference_id
+ * @param {string} revokeAccessorParams.callback_url
+ * @param {string} revokeAccessorParams.namespace
+ * @param {string} revokeAccessorParams.identifier
+ * @param {string} revokeAccessorParams.accessor_id
+ * @param {string} revokeAccessorParams.request_message
  * @param {Object} options
  * @param {boolean} options.synchronous
  * @param {number} options.apiVersion
  *
  * @returns {{ request_id: string }}
  */
-export async function revokeIdentity(revokeIdentityParams) {
-  let { node_id } = revokeIdentityParams;
+export async function revokeAccessor(revokeAccessorParams) {
+  let { node_id } = revokeAccessorParams;
   const {
     accessor_id,
     reference_id,
     callback_url,
     namespace,
     identifier,
-  } = revokeIdentityParams;
+  } = revokeAccessorParams;
 
   if (role === 'proxy') {
     if (node_id == null) {
@@ -74,11 +74,11 @@ export async function revokeIdentity(revokeIdentityParams) {
   }
 
   try {
-    const revokeIdentityData = await cacheDb.getRevokeIdentityDataByReferenceId(
+    const revokeAccessorData = await cacheDb.getRevokeAccessorDataByReferenceId(
       node_id,
       reference_id
     );
-    if (revokeIdentityData) {
+    if (revokeAccessorData) {
       throw new CustomError({
         errorType: errorType.DUPLICATE_REFERENCE_ID,
       });
@@ -86,7 +86,7 @@ export async function revokeIdentity(revokeIdentityParams) {
 
     const request_id = utils.createRequestId();
 
-    await cacheDb.setRevokeIdentityDataByReferenceId(node_id, reference_id, {
+    await cacheDb.setRevokeAccessorDataByReferenceId(node_id, reference_id, {
       request_id,
       accessor_id,
       namespace,
@@ -100,7 +100,7 @@ export async function revokeIdentity(revokeIdentityParams) {
       reference_id,
       callback_url
     );
-    createRequestToRevokeIdentity(...arguments, {
+    createRequestToRevokeAccessor(...arguments, {
       nodeId: node_id,
       request_id,
     });
@@ -119,7 +119,7 @@ export async function revokeIdentity(revokeIdentityParams) {
       )
     ) {
       await Promise.all([
-        cacheDb.removeRevokeIdentityDataByReferenceId(node_id, reference_id),
+        cacheDb.removeRevokeAccessorDataByReferenceId(node_id, reference_id),
         cacheDb.removeCallbackUrlByReferenceId(node_id, reference_id),
       ]);
     }
@@ -128,7 +128,7 @@ export async function revokeIdentity(revokeIdentityParams) {
   }
 }
 
-export async function createRequestToRevokeIdentity(
+export async function createRequestToRevokeAccessor(
   {
     reference_id,
     callback_url,
@@ -171,7 +171,7 @@ export async function createRequestToRevokeIdentity(
         synchronous: false,
         sendCallbackToClient: false,
         callbackFnName:
-          'identity.notifyResultOfCreateRequestToRevokeIdentity',
+          'identity.notifyResultOfCreateRequestToRevokeAccessor',
         callbackAdditionalArgs: [
           {
             reference_id,
@@ -209,7 +209,7 @@ export async function createRequestToRevokeIdentity(
       true
     );
 
-    await revokeIdentityCleanUpOnError({
+    await revokeAccessorCleanUpOnError({
       nodeId,
       requestId: request_id,
       referenceId: reference_id,
@@ -219,7 +219,7 @@ export async function createRequestToRevokeIdentity(
   }
 }
 
-export async function notifyResultOfCreateRequestToRevokeIdentity(
+export async function notifyResultOfCreateRequestToRevokeAccessor(
   { height, error },
   {
     reference_id,
@@ -271,7 +271,7 @@ export async function notifyResultOfCreateRequestToRevokeIdentity(
       true
     );
 
-    await revokeIdentityCleanUpOnError({
+    await revokeAccessorCleanUpOnError({
       nodeId,
       requestId: request_id,
       referenceId: reference_id,
@@ -283,7 +283,7 @@ export async function notifyResultOfCreateRequestToRevokeIdentity(
 
 //=============================================================================
 
-async function revokeIdentityCleanUpOnError({
+async function revokeAccessorCleanUpOnError({
   nodeId,
   requestId,
   referenceId,
@@ -291,7 +291,7 @@ async function revokeIdentityCleanUpOnError({
   await Promise.all([
     cacheDb.removeCallbackUrlByReferenceId(nodeId, referenceId),
     cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
-    cacheDb.removeRevokeIdentityDataByReferenceId(nodeId, referenceId),
+    cacheDb.removeRevokeAccessorDataByReferenceId(nodeId, referenceId),
     cacheDb.removeAccessorIdToRevokeFromRequestId(nodeId, requestId),
   ]);
 }

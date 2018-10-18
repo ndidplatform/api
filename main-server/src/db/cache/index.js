@@ -1122,38 +1122,38 @@ export function removeCreateIdentityDataByReferenceId(nodeId, referenceId) {
   });
 }
 
-export function getRevokeIdentityDataByReferenceId(nodeId, referenceId) {
+export function getRevokeAccessorDataByReferenceId(nodeId, referenceId) {
   return db.get({
     nodeId,
     dbName,
-    name: 'createRevokeDataReferenceIdMapping',
+    name: 'revokeAccessorDataReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
-    valueName: 'revokeIdentityData',
+    valueName: 'revokeAccessorData',
   });
 }
 
-export function setRevokeIdentityDataByReferenceId(
+export function setRevokeAccessorDataByReferenceId(
   nodeId,
   referenceId,
-  revokeIdentityData
+  revokeAccessorData
 ) {
   return db.set({
     nodeId,
     dbName,
-    name: 'revokeIdentityDataReferenceIdMapping',
+    name: 'revokeAccessorDataReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
-    valueName: 'revokeIdentityData',
-    value: revokeIdentityData,
+    valueName: 'revokeAccessorData',
+    value: revokeAccessorData,
   });
 }
 
-export function removeRevokeIdentityDataByReferenceId(nodeId, referenceId) {
+export function removeRevokeAccessorDataByReferenceId(nodeId, referenceId) {
   return db.remove({
     nodeId,
     dbName,
-    name: 'revokeIdentityDataReferenceIdMapping',
+    name: 'revokeAccessorDataReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
   });

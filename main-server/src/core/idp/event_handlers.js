@@ -364,33 +364,50 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
               nodeId,
               requestId
             );
-            const createIdentityCallbackUrl = await cacheDb.getCallbackUrlByReferenceId(
+            const identityCallbackUrl = await cacheDb.getCallbackUrlByReferenceId(
               nodeId,
               referenceId
             );
 
-            if (createIdentityCallbackUrl != null) {
-              let createIdentityError;
+            let identityPromise, type;
+
+            if (identityCallbackUrl != null) {
+              let identityError;
               if (closedRequestIds.has(requestId)) {
                 if (validResponseRequestIds.has(requestId)) return;
-                createIdentityError = new CustomError({
+                identityError = new CustomError({
                   errorType: errorType.REQUEST_IS_CLOSED,
                 });
               } else if (timedOutRequestIds.has(requestId)) {
-                createIdentityError = new CustomError({
+                identityError = new CustomError({
                   errorType: errorType.REQUEST_IS_TIMED_OUT,
                 });
               }
 
+              //check type
+              if(await cacheDb.getCreateIdentityDataByReferenceId(nodeId, referenceId)) {
+                type = 'create_identity_result';
+                identityPromise = cacheDb.removeCreateIdentityDataByReferenceId(
+                  nodeId,
+                  referenceId
+                );
+              } else if(await cacheDb.getRevokeAccessorDataByReferenceId(nodeId, referenceId)) {
+                type = 'revoke_accessor_result';
+                identityPromise = cacheDb.removeRevokeAccessorDataByReferenceId(
+                  nodeId,
+                  referenceId
+                );
+              }
+
               await callbackToClient(
-                createIdentityCallbackUrl,
+                identityCallbackUrl,
                 {
                   node_id: nodeId,
-                  type: 'create_identity_result',
+                  type,
                   success: false,
                   reference_id: referenceId,
                   request_id: requestId,
-                  error: getErrorObjectForClient(createIdentityError),
+                  error: getErrorObjectForClient(identityError),
                 },
                 true
               );
@@ -404,10 +421,7 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
               cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
               cacheDb.removeIdpResponseValidList(nodeId, requestId),
               cacheDb.removeTimeoutScheduler(nodeId, requestId),
-              cacheDb.removeCreateIdentityDataByReferenceId(
-                nodeId,
-                referenceId
-              ),
+              identityPromise,
               cacheDb.removeIdentityFromRequestId(nodeId, requestId),
             ]);
           }
