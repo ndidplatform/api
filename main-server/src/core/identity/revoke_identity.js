@@ -25,9 +25,9 @@ import * as common from '../common';
 import * as cacheDb from '../../db/cache';
 import { getRequestMessageForRevokingAccessor } from '../../utils/request_message';
 
-import CustomError from '../../error/custom_error';
-import errorType from '../../error/type';
-import { getErrorObjectForClient } from '../../error/helpers';
+import CustomError from 'ndid-error/custom_error';
+import errorType from 'ndid-error/type';
+import { getErrorObjectForClient } from '../../utils/error';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
 import logger from '../../logger';

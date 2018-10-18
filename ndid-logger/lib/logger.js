@@ -20,10 +20,10 @@
  *
  */
 
-import path from 'path';
-import util from 'util';
-import winston from 'winston';
-import 'winston-daily-rotate-file';
+const path = require('path');
+const util = require('util');
+const winston = require('winston');
+require('winston-daily-rotate-file');
 
 const removePrintErrStackProp = winston.format((info) => {
   if (info._printErrStack != null) {
@@ -81,7 +81,7 @@ function filterTooLongMessage(logMessage, depth = 0, options) {
  * @param {number} config.logLengthThreshold
  * @returns {Object} logger
  */
-export function initLogger(config) {
+function initLogger(config) {
   const utilInspectOptions = {
     depth: null,
     colors: config.logColor,
@@ -213,3 +213,5 @@ export function initLogger(config) {
 
   return logger;
 }
+
+module.exports.initLogger = initLogger;
