@@ -104,6 +104,45 @@ function waitForReady(client) {
   });
 }
 
+export function getInfo() {
+  if (client == null) {
+    throw new CustomError({
+      message: 'gRPC client is not initialized yet',
+    });
+  }
+  return new Promise((resolve, reject) => {
+    const call = client.getInfo(null, (error, serverServiceInfo) => {
+      if (error) {
+        const errorTypeObj = Object.entries(errorType).find(([key, value]) => {
+          return value.code === error.code;
+        });
+        if (errorTypeObj == null) {
+          reject(
+            new CustomError({
+              errorType: errorType.UNKNOWN_ERROR,
+              details: {
+                module: 'mq_service',
+                function: 'getInfo',
+              },
+              cause: error,
+            })
+          );
+          return;
+        }
+        const _errorType = errorType[errorTypeObj[0]];
+        reject(
+          new CustomError({
+            errorType: _errorType,
+          })
+        );
+        return;
+      }
+      resolve(serverServiceInfo);
+    });
+    calls.push(call);
+  });
+}
+
 export function subscribeToRecvMessages() {
   if (client == null) {
     throw new CustomError({

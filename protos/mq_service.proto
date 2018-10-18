@@ -4,6 +4,7 @@ service MessageQueue {
   rpc subscribeToRecvMessages(Empty) returns (stream InboundMessage){}
   rpc sendAckForRecvMessage(InboundMessageAck) returns(Empty){}
   rpc sendMessage(OutboundMessage) returns (Empty){}
+  rpc getInfo(Empty) returns (ServiceServerInfo){}
 }
  
 message InboundMessage {
@@ -31,6 +32,11 @@ message MqAddress {
 message Error {
   int32 code = 1;
   string message = 2;
+}
+
+message ServiceServerInfo {
+  string node_id = 1;
+  int32 mq_binding_port = 2;
 }
 
 message Empty {
