@@ -317,7 +317,7 @@ export async function revokeAccessorMethodForAssociatedIdp(
   );
   if (accessor_public_key == null) {
     throw new CustomError({
-      errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND,
+      errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE,
       details: {
         accessor_id,
       },
