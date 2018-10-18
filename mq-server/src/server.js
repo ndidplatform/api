@@ -72,6 +72,16 @@ function subscribeToRecvMessages(call) {
     message: 'subscribeToRecvMessages',
   });
   recvSubscriberConnections.push(call);
+
+  call.on('cancelled', () => {
+    logger.debug({
+      message: 'subscribeToRecvMessages subscriber/client call cancelled',
+    });
+    recvSubscriberConnections.splice(
+      recvSubscriberConnections.indexOf(call),
+      1
+    );
+  });
 }
 
 function sendAckForRecvMessage(call, callback) {
