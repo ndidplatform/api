@@ -889,6 +889,11 @@ export default {
     message: 'One or more node IDs in requested service AS list are not active',
     clientError: true,
   },
+  ABCI_NOT_AS: {
+    code: 25053,
+    message: 'This node ID does not belong to AS',
+    clientError: true,
+  },
 
   ABCI_UNAUTHORIZED: {
     code: 35001,

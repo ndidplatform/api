@@ -185,6 +185,7 @@ const codeMapping = {
   77: errorType.ABCI_PROXY_NODE_IS_NOT_ACTIVE,
   78: errorType.ABCI_NODE_ID_IN_IDP_LIST_IS_NOT_ACTIVE,
   79: errorType.ABCI_NODE_ID_IN_AS_LIST_IS_NOT_ACTIVE,
+  80: errorType.ABCI_NOT_AS,
   999: errorType.UNKNOWN_ERROR,
 };
 
