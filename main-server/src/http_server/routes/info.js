@@ -44,6 +44,7 @@ export default async function getInfo(req, res, next) {
     } catch (error) {
       logger.warn({
         message: 'Cannot get MQ service server info',
+        error,
       });
     }
 
