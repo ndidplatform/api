@@ -449,7 +449,6 @@ export async function processIdpResponseAfterAddAccessor(
         cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
       }
     }
-    cacheDb.removeReferenceIdByRequestId(nodeId, message.request_id);
   } catch (error) {
     const err = new CustomError({
       message: 'Error processing IdP response for creating identity',
@@ -617,7 +616,6 @@ export async function processIdpResponseAfterRevokeAccessor(
       true
     );
     cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
-    cacheDb.removeReferenceIdByRequestId(nodeId, message.request_id);
   } catch (error) {
     const err = new CustomError({
       message: 'Error processing IdP response for revoke identity',
