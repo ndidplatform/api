@@ -38,6 +38,9 @@ MASTER_KEY_PATH=${MASTER_PRIVATE_KEY_PATH:-/api/keys/master.pem}
 PUBLIC_KEY_PATH=${PUBLIC_KEY_PATH:-/api/keys/node.pub}
 MASTER_PUBLIC_KEY_PATH=${MASTER_PUBLIC_KEY_PATH:-/api/keys/master.pub}
 
+NODE_BEHIND_PROXY_PUBLIC_KEY_PATH=${NODE_BEHIND_PROXY_PUBLIC_KEY_PATH:-/api/main-server/dev_key/behind_proxy/keys/}
+NODE_BEHIND_PROXY_MASTER_PUBLIC_KEY_PATH=${NODE_BEHIND_PROXY_MASTER_PUBLIC_KEY_PATH:-/api/main-server/dev_key/behind_proxy/master_keys/}
+
 tendermint_wait_for_sync_complete() {
   echo "Waiting for tendermint at ${TENDERMINT_IP}:${TENDERMINT_PORT} to be ready..."
   while true; do 
@@ -139,8 +142,80 @@ register_node_id() {
   fi
 }
 
+register_node_id_behind_proxy() {
+  local NODE_ID=$1
+  local ROLE=$2
+  echo "Registering ${NODE_ID} node..."
+  
+  local PUBLIC_KEY=$(tr '\n' '#' < ${NODE_BEHIND_PROXY_PUBLIC_KEY_PATH}${NODE_ID}.pub | sed 's/#/\\n/g')
+  local MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${NODE_BEHIND_PROXY_MASTER_PUBLIC_KEY_PATH}${NODE_ID}_master.pub | sed 's/#/\\n/g')
+  local NODE_NAME=${NODE_NAME:-"This is name: ${NODE_ID}"}
+  local REQUEST_BODY
+  if [ "${ROLE}" = "idp" ]; then
+    REQUEST_BODY="{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3}}"
+  else
+    REQUEST_BODY="{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\"}"
+  fi
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/registerNode \
+    -H "Content-Type: application/json" \
+    -d "${REQUEST_BODY}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "201" ]; then
+    echo "Registering ${NODE_ID} node succeeded"
+    return 0
+  else
+    echo "Registering ${NODE_ID} node failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
+add_node_to_proxy_node() {
+  local NODE_ID=$1
+  local PROXY_NODE_ID=$2
+  echo "Add ${NODE_ID} node to proxy ${PROXY_NODE_ID} node..."
+
+  local REQUEST_BODY
+  REQUEST_BODY="{\"node_id\":\"${NODE_ID}\",\"proxy_node_id\":\"${PROXY_NODE_ID}\",\"config\":\"KEY_ON_PROXY\"}"
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/addNodeToProxyNode \
+    -H "Content-Type: application/json" \
+    -d "${REQUEST_BODY}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Add ${NODE_ID} node to proxy ${PROXY_NODE_ID} node succeeded"
+    return 0
+  else
+    echo "Add ${NODE_ID} node to proxy ${PROXY_NODE_ID} node failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
 set_token_for_node_id() {
   local AMOUNT=$1
+  echo "Giving ${AMOUNT} tokens to ${NODE_ID} node..."
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/addNodeToken \
+    -H "Content-Type: application/json" \
+    -d "{\"node_id\":\"${NODE_ID}\",\"amount\":${AMOUNT}}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Giving ${AMOUNT} tokens to ${NODE_ID} node succeeded"
+    return 0
+  else
+    echo "Giving ${AMOUNT} tokens to ${NODE_ID} node failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
+set_token_for_node_id_behind_proxy() {
+  local NODE_ID=$1
+  local AMOUNT=$2
   echo "Giving ${AMOUNT} tokens to ${NODE_ID} node..."
 
   local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/addNodeToken \
@@ -200,6 +275,26 @@ register_service() {
 
 approve_service() {
   local SERVICE_ID=$1
+  echo "Approving service ${SERVICE_ID} for node ${NODE_ID}..."
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/approveService \
+    -H "Content-Type: application/json" \
+    -d "{\"service_id\":\"${SERVICE_ID}\",\"node_id\":\"${NODE_ID}\"}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Approving service ${SERVICE_ID} for node ${NODE_ID} succeeded"
+    return 0
+  else
+    echo "Approving service ${SERVICE_ID} for node ${NODE_ID} failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
+approve_service_node_behind_proxy() {
+  local SERVICE_ID=$1
+  local NODE_ID=$2
   echo "Approving service ${SERVICE_ID} for node ${NODE_ID}..."
 
   local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/approveService \
@@ -287,6 +382,34 @@ wait_until_service_exist() {
   until did_service_exist $1; do sleep 1; done;
 }
 
+register_nodes_behind_proxy(){
+  if [ "${NODE_ID}" = "proxy1" ]; then
+    until register_node_id_behind_proxy "proxy1_rp4" "rp"; do sleep 1; done
+    until register_node_id_behind_proxy "proxy1_idp4" "idp"; do sleep 1; done
+    until register_node_id_behind_proxy "proxy1_as4" "as"; do sleep 1; done
+    until set_token_for_node_id_behind_proxy "proxy1_rp4" 10000; do sleep 1; done
+    until set_token_for_node_id_behind_proxy "proxy1_idp4" 10000; do sleep 1; done
+    until set_token_for_node_id_behind_proxy "proxy1_as4" 10000; do sleep 1; done
+    until add_node_to_proxy_node "proxy1_rp4" ${NODE_ID}; do sleep 1; done
+    until add_node_to_proxy_node "proxy1_idp4" ${NODE_ID}; do sleep 1; done
+    until add_node_to_proxy_node "proxy1_as4" ${NODE_ID}; do sleep 1; done
+    until approve_service_node_behind_proxy "bank_statement" "proxy1_as4"; do sleep 1; done
+    until approve_service_node_behind_proxy "customer_info" "proxy1_as4"; do sleep 1; done
+  elif [ "${NODE_ID}" = "proxy2" ]; then
+    until register_node_id_behind_proxy "proxy2_rp5" "rp"; do sleep 1; done
+    until register_node_id_behind_proxy "proxy2_idp5" "idp"; do sleep 1; done
+    until register_node_id_behind_proxy "proxy2_as5" "as"; do sleep 1; done
+    until set_token_for_node_id_behind_proxy "proxy2_rp5" 10000; do sleep 1; done
+    until set_token_for_node_id_behind_proxy "proxy2_idp5" 10000; do sleep 1; done
+    until set_token_for_node_id_behind_proxy "proxy2_as5" 10000; do sleep 1; done
+    until add_node_to_proxy_node "proxy2_rp5" ${NODE_ID}; do sleep 1; done
+    until add_node_to_proxy_node "proxy2_idp5" ${NODE_ID}; do sleep 1; done
+    until add_node_to_proxy_node "proxy2_as5" ${NODE_ID}; do sleep 1; done
+    until approve_service_node_behind_proxy "bank_statement" "proxy1_as4"; do sleep 1; done
+    until approve_service_node_behind_proxy "customer_info" "proxy1_as4"; do sleep 1; done
+  fi
+}
+
 case ${ROLE} in
   ndid)
     tendermint_wait_for_sync_complete
@@ -330,6 +453,9 @@ case ${ROLE} in
       if [ "${ROLE}" = "as" ]; then
         until approve_service "bank_statement"; do sleep 1; done
         until approve_service "customer_info"; do sleep 1; done
+      fi
+      if [ "${ROLE}" = "proxy" ]; then
+        register_nodes_behind_proxy
       fi
     fi
     ;;

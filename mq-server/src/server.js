@@ -72,6 +72,16 @@ function subscribeToRecvMessages(call) {
     message: 'subscribeToRecvMessages',
   });
   recvSubscriberConnections.push(call);
+
+  call.on('cancelled', () => {
+    logger.debug({
+      message: 'subscribeToRecvMessages subscriber/client call cancelled',
+    });
+    recvSubscriberConnections.splice(
+      recvSubscriberConnections.indexOf(call),
+      1
+    );
+  });
 }
 
 function sendAckForRecvMessage(call, callback) {
@@ -151,6 +161,13 @@ function sendMessage(call, callback) {
   });
 }
 
+function getInfo(call, callback) {
+  callback(null, {
+    node_id: config.nodeId,
+    mq_binding_port: config.mqPort,
+  });
+}
+
 function initialize() {
   mqSend = new MQSend({
     senderId: config.nodeId,
@@ -209,6 +226,7 @@ function initialize() {
     subscribeToRecvMessages,
     sendAckForRecvMessage,
     sendMessage,
+    getInfo,
   });
 
   server.bind(SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
