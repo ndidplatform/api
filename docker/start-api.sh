@@ -309,7 +309,7 @@ case ${ROLE} in
       done &
     fi
     ;;
-  idp|rp|as)
+  idp|rp|as|proxy)
     tendermint_wait_for_sync_complete
     
     if ! does_node_id_exist; then
