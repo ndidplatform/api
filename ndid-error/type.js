@@ -255,9 +255,9 @@ module.exports = {
       'External service: Decrypt with node key test failed. Node public key could not be found. This node may have not been registered with NDID.',
     clientError: true,
   },
-  ACCESSOR_PUBLIC_KEY_NOT_FOUND: {
+  ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE: {
     code: 20011,
-    message: 'Accessor public key for the input accessor ID could not be found',
+    message: 'Accessor public key for the input accessor ID could not be found or inactive',
     clientError: true,
   },
   REQUEST_NOT_FOUND: {
@@ -521,6 +521,16 @@ module.exports = {
   WRONG_IAL: {
     code: 20060,
     message: 'Mismatched ial between response and identity info',
+    clientError: true,
+  },
+  INVALID_ACCESSOR_RESPONSE: {
+    code: 20061,
+    message: 'Revoking accessor mismatch with responding accessor',
+    clientError: true,
+  },
+  NOT_OWNER_OF_ACCESSOR: {
+    code: 20062,
+    message: 'Cannot revoke accessor of other IDP',
     clientError: true,
   },
 

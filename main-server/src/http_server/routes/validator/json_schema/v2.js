@@ -415,6 +415,22 @@ export default {
         ],
       },
     },
+    '/identity/:namespace/:identifier/revoke': {
+      body: {
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+          callback_url: { $ref: 'defs#/definitions/url' },
+          accessor_id: { type: 'string', minLength: 1 },
+          request_message: { type: 'string' },
+        },
+        required: [
+          'reference_id',
+          'callback_url',
+          'accessor_id',
+        ],
+      },
+    },
     '/identity/:namespace/:identifier/endorsement': {
       body: {
         properties: {

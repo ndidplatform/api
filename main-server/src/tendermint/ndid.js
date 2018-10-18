@@ -193,6 +193,34 @@ export async function addAccessorMethod(
   }
 }
 
+export async function revokeAccessorMethod(
+  {
+    request_id,
+    accessor_id,
+  },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs
+) {
+  try {
+    return await tendermint.transact({
+      nodeId,
+      fnName: 'RevokeAccessorMethod',
+      params: {
+        request_id,
+        accessor_id_list: [accessor_id],
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot revoke accessor method from blockchain',
+      cause: error,
+    });
+  }
+}
+
 export async function createRequest(
   requestDataToBlockchain,
   nodeId,
@@ -654,13 +682,30 @@ export async function getAccessorKey(accessor_id) {
     const accessorPubKeyObj = await tendermint.query('GetAccessorKey', {
       accessor_id,
     });
-    if (accessorPubKeyObj == null) {
+    if (accessorPubKeyObj == null || !accessorPubKeyObj.active) {
       return null;
     }
     return accessorPubKeyObj.accessor_public_key;
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get accessor public key from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function getAccessorOwner(accessor_id) {
+  try {
+    const owner = await tendermint.query('GetAccessorOwner', {
+      accessor_id,
+    });
+    if (owner == null) {
+      return null;
+    }
+    return owner.node_id;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get owner of accessor from blockchain',
       cause: error,
     });
   }

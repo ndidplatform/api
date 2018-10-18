@@ -21,6 +21,7 @@
  */
 
 import { createIdentity } from './create_identity';
+import { revokeIdentity } from './revoke_identity';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import { getFunction } from '../common';
@@ -38,6 +39,8 @@ import { role } from '../../node';
 export * from './create_identity';
 export * from './update_ial';
 export * from './add_accessor_after_consent';
+export * from './revoke_identity';
+export * from './revoke_accessor_after_consent';
 
 export async function checkAssociated({ node_id, namespace, identifier }) {
   let idpList = await tendermintNdid.getIdpNodes({
@@ -270,4 +273,78 @@ export async function getIdentityInfo({ nodeId, namespace, identifier }) {
       cause: error,
     });
   }
+}
+
+export async function revokeAccessorMethodForAssociatedIdp(
+  {
+    node_id,
+    reference_id,
+    callback_url,
+    namespace,
+    identifier,
+    accessor_id,
+    request_message,
+  },
+) {
+  if (role === 'proxy') {
+    if (node_id == null) {
+      throw new CustomError({
+        errorType: errorType.MISSING_NODE_ID,
+      });
+    }
+  } else {
+    node_id = config.nodeId;
+  }
+
+  const associated = await checkAssociated({
+    node_id,
+    namespace,
+    identifier,
+  });
+
+  if (!associated) {
+    throw new CustomError({
+      errorType: errorType.IDENTITY_NOT_FOUND,
+      details: {
+        namespace,
+        identifier,
+      },
+    });
+  }
+
+  let accessor_public_key = await tendermintNdid.getAccessorKey(
+    accessor_id
+  );
+  if (accessor_public_key == null) {
+    throw new CustomError({
+      errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND,
+      details: {
+        accessor_id,
+      },
+    });
+  }
+
+  //check is accessor_id created by this idp?
+  const accessorOwner = await tendermintNdid.getAccessorOwner(accessor_id);
+  if(accessorOwner !== node_id) {
+    throw new CustomError({
+      errorType: errorType.NOT_OWNER_OF_ACCESSOR,
+      details: {
+        accessor_id,
+      },
+    });
+  }
+
+  const result = await revokeIdentity(
+    {
+      node_id,
+      reference_id,
+      callback_url,
+      namespace,
+      identifier,
+      accessor_id,
+      request_message,
+    },
+  );
+  return result;
 }
