@@ -101,6 +101,13 @@ function sendAckForRecvMessage(call, callback) {
 }
 
 function onRecvMessage({ message, msgId, senderId }) {
+  if (recvSubscriberConnections.length === 0) {
+    logger.warn({
+      message: 'Got inbound message but no subscribers/recipients',
+      msgId,
+      senderId,
+    });
+  }
   recvSubscriberConnections.forEach((connection) => {
     connection.write({ message, message_id: msgId, sender_id: senderId });
   });
