@@ -38,7 +38,14 @@ export default async function getInfo(req, res, next) {
       nodeInfo = await tendermintNdid.getNodeInfo(config.nodeId);
     }
 
-    const mqServiceServerInfo = await mqServiceFunctions.getInfo();
+    let mqServiceServerInfo;
+    try {
+      mqServiceServerInfo = await mqServiceFunctions.getInfo();
+    } catch (error) {
+      logger.warn({
+        message: 'Cannot get MQ service server info',
+      });
+    }
 
     res.status(200).json({
       env: config.env,
@@ -56,10 +63,13 @@ export default async function getInfo(req, res, next) {
       messageQueueServiceServer: {
         ip: config.mqServiceServerIp,
         port: config.mqServiceServerPort,
-        serverInfo: {
-          nodeId: mqServiceServerInfo.node_id,
-          messageQueuePort: mqServiceServerInfo.mq_binding_port,
-        },
+        serverInfo:
+          mqServiceServerInfo != null
+            ? {
+                nodeId: mqServiceServerInfo.node_id,
+                messageQueuePort: mqServiceServerInfo.mq_binding_port,
+              }
+            : null,
       },
       tendermintAddress: config.tendermintAddress,
       tendermintWebSocketConnected: tendermint.connected,
