@@ -10,6 +10,7 @@ BREAKING CHANGES:
 IMPROVEMENTS:
 
 - Check IAL when IdP creating a response.
+- Check new key when update dpki key.
 
 BUG FIXES:
 
