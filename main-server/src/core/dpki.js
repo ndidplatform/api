@@ -50,12 +50,21 @@ export async function updateNode(
   // Validate public keys
   if (public_key != null) {
     validateKey(public_key, public_key_type);
-    verifyNewKey(signed_check_string, public_key, check_string);
+    if (check_string != null) {
+      verifyNewKey(signed_check_string, public_key, check_string);
+    }
   }
 
   if (master_public_key != null) {
     validateKey(master_public_key, master_public_key_type);
-    verifyNewKey(master_signed_check_string, master_public_key, check_string, true);
+    if (check_string != null) {
+      verifyNewKey(
+        master_signed_check_string,
+        master_public_key,
+        check_string,
+        true
+      );
+    }
   }
 
   if (synchronous) {

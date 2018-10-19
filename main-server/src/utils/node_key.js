@@ -252,14 +252,12 @@ export async function initialize() {
 }
 
 export function verifyNewKey(signature, publicKey, plainText, isMaster) {
-  if(plainText) {
-    if(!verifySignature(signature, publicKey, plainText)) {
-      throw new CustomError({
-        errorType: isMaster ?
-          errorType.UPDATE_MASTER_KEY_CHECK_FAILED :
-          errorType.UPDATE_NODE_KEY_CHECK_FAILED
-      });
-    }
+  if (!verifySignature(signature, publicKey, plainText)) {
+    throw new CustomError({
+      errorType: isMaster
+        ? errorType.UPDATE_MASTER_KEY_CHECK_FAILED
+        : errorType.UPDATE_NODE_KEY_CHECK_FAILED,
+    });
   }
 }
 

@@ -288,6 +288,9 @@ export default {
           node_master_key: { type: 'string', minLength: 1 },
           node_master_key_type: { $ref: 'defs#/definitions/keyType' },
           node_master_sign_method: { $ref: 'defs#/definitions/signMethod' },
+          check_string: { type: 'string', minLength: 1 },
+          signed_check_string: { type: 'string', minLength: 1 },
+          master_signed_check_string: { type: 'string', minLength: 1 },
         },
         anyOf: [
           {
@@ -424,11 +427,7 @@ export default {
           accessor_id: { type: 'string', minLength: 1 },
           request_message: { type: 'string' },
         },
-        required: [
-          'reference_id',
-          'callback_url',
-          'accessor_id',
-        ],
+        required: ['reference_id', 'callback_url', 'accessor_id'],
       },
     },
     '/identity/:namespace/:identifier/endorsement': {
