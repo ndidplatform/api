@@ -1,0 +1,29 @@
+version: '3'
+services:
+  api-redis:
+    image: redis:4-alpine
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "6379:${REDIS_PORT:-6379}"
+    # networks:
+    #   - ndidplatform
+  api-redis-proxy-1:
+    image: redis:4-alpine
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "6380:${REDIS_PORT:-6379}"
+    # networks:
+    #   - ndidplatform
+  api-redis-proxy-2:
+    image: redis:4-alpine
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "6381:${REDIS_PORT:-6379}"
+    # networks:
+    #   - ndidplatform
+
+# networks:
+#   ndidplatform:

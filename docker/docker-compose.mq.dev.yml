@@ -1,0 +1,101 @@
+version: '3'
+services:
+  mq-idp-1:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=idp1
+      - MQ_BINDING_PORT=5555
+      - SERVER_PORT=50051
+    security_opt:
+      - no-new-privileges
+    network_mode: "host"
+  mq-idp-2:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=idp2
+      - MQ_BINDING_PORT=5556
+      - SERVER_PORT=50052
+    security_opt:
+      - no-new-privileges
+    network_mode: "host"
+  mq-idp-3:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=idp3
+      - MQ_BINDING_PORT=5557
+      - SERVER_PORT=50053
+    security_opt:
+      - no-new-privileges
+    network_mode: "host"
+  mq-rp-1:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=rp1
+      - MQ_BINDING_PORT=5565
+      - SERVER_PORT=50061
+    security_opt:
+      - no-new-privileges
+    network_mode: "host"
+  mq-rp-2:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=rp2
+      - MQ_BINDING_PORT=5566
+      - SERVER_PORT=50062
+    security_opt:
+      - no-new-privileges
+    network_mode: "host"
+  mq-rp-3:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=rp3
+      - MQ_BINDING_PORT=5567
+      - SERVER_PORT=50063
+    security_opt:
+      - no-new-privileges
+    network_mode: "host"
+  mq-as-1:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=as1
+      - MQ_BINDING_PORT=5575
+      - SERVER_PORT=50071
+    security_opt:
+      - no-new-privileges
+    network_mode: "host"
+  mq-as-2:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=as2
+      - MQ_BINDING_PORT=5576
+      - SERVER_PORT=50072
+    security_opt:
+      - no-new-privileges
+    network_mode: "host"
+  mq-as-3:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=as3
+      - MQ_BINDING_PORT=5577
+      - SERVER_PORT=50073
+    security_opt:
+      - no-new-privileges
+    network_mode: "host"
+  mq-proxy-1:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=proxy1
+      - MQ_BINDING_PORT=5585
+      - SERVER_PORT=50081
+    security_opt:
+      - no-new-privileges
+    network_mode: "host"
+  mq-proxy-2:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=proxy2
+      - MQ_BINDING_PORT=5586
+      - SERVER_PORT=50082
+    security_opt:
+      - no-new-privileges
+    network_mode: "host"
