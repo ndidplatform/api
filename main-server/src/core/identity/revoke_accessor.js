@@ -20,7 +20,6 @@
  *
  */
 
-
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
 import { getRequestMessageForRevokingAccessor } from '../../utils/request_message';
@@ -93,7 +92,11 @@ export async function revokeAccessor(revokeAccessorParams) {
       identifier,
     });
 
-    await cacheDb.setAccessorIdToRevokeFromRequestId(node_id, request_id, accessor_id);
+    await cacheDb.setAccessorIdToRevokeFromRequestId(
+      node_id,
+      request_id,
+      accessor_id
+    );
 
     await cacheDb.setCallbackUrlByReferenceId(
       node_id,
@@ -157,7 +160,7 @@ export async function createRequestToRevokeAccessor(
                 identifier,
                 reference_id,
                 node_id: config.nodeId,
-                accessor_id
+                accessor_id,
               }),
         //WHAT SHOULD IT BE?
         min_ial: 1.1,
@@ -170,8 +173,7 @@ export async function createRequestToRevokeAccessor(
       {
         synchronous: false,
         sendCallbackToClient: false,
-        callbackFnName:
-          'identity.notifyResultOfCreateRequestToRevokeAccessor',
+        callbackFnName: 'identity.notifyResultOfCreateRequestToRevokeAccessor',
         callbackAdditionalArgs: [
           {
             reference_id,
@@ -188,8 +190,7 @@ export async function createRequestToRevokeAccessor(
     );
   } catch (error) {
     logger.error({
-      message:
-        'Revoke identity internal async error',
+      message: 'Revoke identity internal async error',
       originalArgs: arguments[0],
       additionalArgs: arguments[1],
       error,
@@ -221,15 +222,8 @@ export async function createRequestToRevokeAccessor(
 
 export async function notifyResultOfCreateRequestToRevokeAccessor(
   { height, error },
-  {
-    reference_id,
-    callback_url,
-    accessor_id,
-  },
-  {
-    nodeId,
-    request_id,
-  }
+  { reference_id, callback_url, accessor_id },
+  { nodeId, request_id }
 ) {
   try {
     if (error) throw error;

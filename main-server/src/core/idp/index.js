@@ -297,7 +297,7 @@ export async function processMessage(nodeId, message) {
       requestId: message.request_id,
     });
 
-    if(requestDetail.purpose === 'AddAccessor') {
+    if (requestDetail.purpose === 'AddAccessor') {
       //reponse for create identity
       if (await checkCreateIdentityResponse(nodeId, message, requestDetail)) {
         //TODO what if create identity request need more than 1 min_idp
@@ -313,12 +313,21 @@ export async function processMessage(nodeId, message) {
           }
         );
       }
-    }
-    else if(requestDetail.purpose === 'RevokeAccessor') {
+    } else if (requestDetail.purpose === 'RevokeAccessor') {
       //reponse for revoke identity
-      const revoking_accessor_id = await cacheDb.getAccessorIdToRevokeFromRequestId(nodeId, message.request_id);
+      const revoking_accessor_id = await cacheDb.getAccessorIdToRevokeFromRequestId(
+        nodeId,
+        message.request_id
+      );
 
-      if (await checkRevokeAccessorResponse(nodeId, message, requestDetail, revoking_accessor_id)) {
+      if (
+        await checkRevokeAccessorResponse(
+          nodeId,
+          message,
+          requestDetail,
+          revoking_accessor_id
+        )
+      ) {
         //TODO what if revoke identity request need more than 1 min_idp
         await identity.revokeAccessorAfterConsent(
           {
@@ -334,7 +343,6 @@ export async function processMessage(nodeId, message) {
         );
       }
     }
-
   } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
     //const responseId = message.request_id + ':' + message.idp_id;
     await common.handleChallengeRequest({
@@ -632,7 +640,12 @@ export async function processIdpResponseAfterRevokeAccessor(
   }
 }
 
-async function checkRevokeAccessorResponse(nodeId, message, requestDetail, revoking_accessor_id) {
+async function checkRevokeAccessorResponse(
+  nodeId,
+  message,
+  requestDetail,
+  revoking_accessor_id
+) {
   try {
     const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
@@ -647,8 +660,12 @@ async function checkRevokeAccessorResponse(nodeId, message, requestDetail, revok
     });
 
     //accessor_group_id must be same as group revoking accessor_id
-    const revoking_group = await tendermintNdid.getAccessorGroupId(revoking_accessor_id);
-    const responding_group = await tendermintNdid.getAccessorGroupId(message.accessor_id);
+    const revoking_group = await tendermintNdid.getAccessorGroupId(
+      revoking_accessor_id
+    );
+    const responding_group = await tendermintNdid.getAccessorGroupId(
+      message.accessor_id
+    );
 
     logger.debug({
       message: 'Check response for revoke accessor',
@@ -658,7 +675,7 @@ async function checkRevokeAccessorResponse(nodeId, message, requestDetail, revok
       responding_group,
     });
 
-    if(revoking_group !== responding_group) {
+    if (revoking_group !== responding_group) {
       throw new CustomError({
         errorType: errorType.INVALID_ACCESSOR_RESPONSE,
       });
@@ -702,7 +719,7 @@ async function checkRevokeAccessorResponse(nodeId, message, requestDetail, revok
       nodeId,
       reference_id
     );
-    
+
     await callbackToClient(
       callbackUrl,
       {

@@ -627,11 +627,13 @@ export async function checkIdpResponse({
   );
 
   let validProof, signatureValid;
-  if(accessor_public_key || requestStatus.mode === 1) {
+  if (accessor_public_key || requestStatus.mode === 1) {
     const response_list = (await tendermintNdid.getRequestDetail({
       requestId: requestStatus.request_id,
     })).response_list;
-    const response = response_list.find((response) => response.idp_id === idpId);
+    const response = response_list.find(
+      (response) => response.idp_id === idpId
+    );
 
     // Check ZK Proof
     const challenge = (await cacheDb.getRequestData(
@@ -682,7 +684,6 @@ export async function checkIdpResponse({
       );
     }
   } else {
-
     logger.debug({
       message: 'Accessor key not found or inactive',
       accessorId: privateProofObject.accessor_id,

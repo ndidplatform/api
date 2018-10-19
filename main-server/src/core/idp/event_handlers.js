@@ -370,15 +370,25 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
             );
 
             let identityPromise, type;
-            
+
             //check type
-            if(await cacheDb.getCreateIdentityDataByReferenceId(nodeId, referenceId)) {
+            if (
+              await cacheDb.getCreateIdentityDataByReferenceId(
+                nodeId,
+                referenceId
+              )
+            ) {
               type = 'create_identity_result';
               identityPromise = cacheDb.removeCreateIdentityDataByReferenceId(
                 nodeId,
                 referenceId
               );
-            } else if(await cacheDb.getRevokeAccessorDataByReferenceId(nodeId, referenceId)) {
+            } else if (
+              await cacheDb.getRevokeAccessorDataByReferenceId(
+                nodeId,
+                referenceId
+              )
+            ) {
               type = 'revoke_accessor_result';
               identityPromise = cacheDb.removeRevokeAccessorDataByReferenceId(
                 nodeId,

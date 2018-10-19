@@ -299,17 +299,15 @@ export async function getIdentityInfo({ nodeId, namespace, identifier }) {
   }
 }
 
-export async function revokeAccessorMethodForAssociatedIdp(
-  {
-    node_id,
-    reference_id,
-    callback_url,
-    namespace,
-    identifier,
-    accessor_id,
-    request_message,
-  },
-) {
+export async function revokeAccessorMethodForAssociatedIdp({
+  node_id,
+  reference_id,
+  callback_url,
+  namespace,
+  identifier,
+  accessor_id,
+  request_message,
+}) {
   if (role === 'proxy') {
     if (node_id == null) {
       throw new CustomError({
@@ -336,9 +334,7 @@ export async function revokeAccessorMethodForAssociatedIdp(
     });
   }
 
-  let accessor_public_key = await tendermintNdid.getAccessorKey(
-    accessor_id
-  );
+  let accessor_public_key = await tendermintNdid.getAccessorKey(accessor_id);
   if (accessor_public_key == null) {
     throw new CustomError({
       errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE,
@@ -350,7 +346,7 @@ export async function revokeAccessorMethodForAssociatedIdp(
 
   //check is accessor_id created by this idp?
   const accessorOwner = await tendermintNdid.getAccessorOwner(accessor_id);
-  if(accessorOwner !== node_id) {
+  if (accessorOwner !== node_id) {
     throw new CustomError({
       errorType: errorType.NOT_OWNER_OF_ACCESSOR,
       details: {
@@ -359,16 +355,14 @@ export async function revokeAccessorMethodForAssociatedIdp(
     });
   }
 
-  const result = await revokeAccessor(
-    {
-      node_id,
-      reference_id,
-      callback_url,
-      namespace,
-      identifier,
-      accessor_id,
-      request_message,
-    },
-  );
+  const result = await revokeAccessor({
+    node_id,
+    reference_id,
+    callback_url,
+    namespace,
+    identifier,
+    accessor_id,
+    request_message,
+  });
   return result;
 }

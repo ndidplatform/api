@@ -69,17 +69,13 @@ export async function notifyRevokeAccessorAfterConsent(
 
     await cacheDb.removeAccessorIdToRevokeFromRequestId(nodeId, request_id);
     if (callbackAdditionalArgs != null) {
-      getFunction(callbackFnName)(
-        {},
-        ...callbackAdditionalArgs
-      );
+      getFunction(callbackFnName)({}, ...callbackAdditionalArgs);
     } else {
       getFunction(callbackFnName)();
     }
   } catch (error) {
     logger.error({
-      message:
-        'Revoke accessor after consent error',
+      message: 'Revoke accessor after consent error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
