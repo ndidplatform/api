@@ -29,6 +29,7 @@ import * as node from '../node';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../logger';
+import { verifySignature } from '../utils';
 
 import * as config from '../config';
 
@@ -248,6 +249,18 @@ export async function initialize() {
 
   privateKey = newPrivateKey;
   masterPrivateKey = newMasterPrivateKey;
+}
+
+export function verifyNewKey(signature, publicKey, plainText, isMaster) {
+  if(plainText) {
+    if(!verifySignature(signature, publicKey, plainText)) {
+      throw new CustomError({
+        errorType: isMaster ?
+          errorType.UPDATE_MASTER_KEY_CHECK_FAILED :
+          errorType.UPDATE_NODE_KEY_CHECK_FAILED
+      });
+    }
+  }
 }
 
 export function validateKey(key, keyType, passphrase) {
