@@ -378,7 +378,11 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
                 referenceId
               )
             ) {
-              type = 'create_identity_result';
+              const { associated } = await cacheDb.getIdentityFromRequestId(
+                nodeId,
+                requestId,
+              );
+              type = associated ? 'add_accessor_result' : 'create_identity_result';
               identityPromise = cacheDb.removeCreateIdentityDataByReferenceId(
                 nodeId,
                 referenceId
