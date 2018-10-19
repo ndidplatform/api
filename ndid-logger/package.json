@@ -2,6 +2,7 @@
   "name": "ndid-logger",
   "version": "0.10.1",
   "description": "",
+  "license": "AGPL-3.0-or-later",
   "main": "lib/logger.js",
   "scripts": {
     "test": "npm run build && NODE_ID=unit-test npx mocha build/**/*.test.js",
