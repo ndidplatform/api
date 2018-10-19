@@ -533,6 +533,16 @@ module.exports = {
     message: 'Cannot revoke accessor of other IDP',
     clientError: true,
   },
+  UPDATE_NODE_KEY_CHECK_FAILED: {
+    code: 20063,
+    message: 'Signed check string mismatched',
+    clientError: true,
+  },
+  UPDATE_MASTER_KEY_CHECK_FAILED: {
+    code: 20064,
+    message: 'Master signed check string mismatched',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

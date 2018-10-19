@@ -88,6 +88,9 @@ router.post('/node/update', validateBody, async (req, res, next) => {
       node_master_key,
       node_master_key_type,
       // node_master_sign_method,
+      check_string,
+      signed_check_string,
+      master_signed_check_string,
     } = req.body;
 
     //should we allow organization to update their node's name?
@@ -100,6 +103,9 @@ router.post('/node/update', validateBody, async (req, res, next) => {
         public_key_type: node_key_type,
         master_public_key: node_master_key,
         master_public_key_type: node_master_key_type,
+        check_string,
+        signed_check_string,
+        master_signed_check_string,
       },
       { synchronous: false }
     );

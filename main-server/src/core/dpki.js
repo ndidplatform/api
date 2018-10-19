@@ -22,7 +22,7 @@
 
 import * as tendermintNdid from '../tendermint/ndid';
 import { getErrorObjectForClient } from '../utils/error';
-import { validateKey } from '../utils/node_key';
+import { validateKey, verifyNewKey } from '../utils/node_key';
 import { callbackToClient } from '../utils/callback';
 import logger from '../logger';
 
@@ -37,6 +37,9 @@ export async function updateNode(
     public_key_type,
     master_public_key,
     master_public_key_type,
+    check_string,
+    signed_check_string,
+    master_signed_check_string,
   },
   { synchronous = false } = {}
 ) {
@@ -47,10 +50,12 @@ export async function updateNode(
   // Validate public keys
   if (public_key != null) {
     validateKey(public_key, public_key_type);
+    verifyNewKey(signed_check_string, public_key, check_string);
   }
 
   if (master_public_key != null) {
     validateKey(master_public_key, master_public_key_type);
+    verifyNewKey(master_signed_check_string, master_public_key, check_string, true);
   }
 
   if (synchronous) {
