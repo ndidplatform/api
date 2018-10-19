@@ -175,6 +175,7 @@ export async function createIdentity(
     await cacheDb.setCreateIdentityDataByReferenceId(node_id, reference_id, {
       request_id,
       accessor_id,
+      associated,
     });
 
     if (synchronous) {

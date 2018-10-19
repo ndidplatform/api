@@ -352,6 +352,11 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
       }
       const requestIdsToCleanUp = [...requestIdsToCleanUpSet];
 
+      logger.debug({
+        message: 'Request id list to cleanup',
+        requestIdsToCleanUp,
+      });
+
       await Promise.all(
         requestIdsToCleanUp.map(async (requestId) => {
           // When IdP act as an RP (create identity)
@@ -371,28 +376,32 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
             let identityPromise, type;
 
+            logger.debug({
+              message: 'Cleanup associated requestId',
+              requestId,
+              referenceId,
+            });
+
             //check type
-            if (
-              await cacheDb.getCreateIdentityDataByReferenceId(
-                nodeId,
-                referenceId
-              )
-            ) {
-              const { associated } = await cacheDb.getIdentityFromRequestId(
-                nodeId,
-                requestId,
-              );
-              type = associated ? 'add_accessor_result' : 'create_identity_result';
+            const createIdentityData = await cacheDb.getCreateIdentityDataByReferenceId(
+              nodeId,
+              referenceId
+            );
+            const revokeAccessorData = await cacheDb.getRevokeAccessorDataByReferenceId(
+              nodeId,
+              referenceId
+            );
+
+            if (createIdentityData) {
+              type = createIdentityData.associated ? 
+                'add_accessor_result' : 
+                'create_identity_result';
+
               identityPromise = cacheDb.removeCreateIdentityDataByReferenceId(
                 nodeId,
                 referenceId
               );
-            } else if (
-              await cacheDb.getRevokeAccessorDataByReferenceId(
-                nodeId,
-                referenceId
-              )
-            ) {
+            } else if (revokeAccessorData) {
               type = 'revoke_accessor_result';
               identityPromise = cacheDb.removeRevokeAccessorDataByReferenceId(
                 nodeId,
