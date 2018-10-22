@@ -336,7 +336,7 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
       for (let i = 0; i < transactions.length; i++) {
         const transaction = transactions[i];
         const requestId = transaction.args.request_id;
-        if (requestId == null) return;
+        if (requestId == null) continue;
         if (transaction.fnName === 'CloseRequest') {
           requestIdsToCleanUpSet.add(requestId);
           closedRequestIds.add(requestId);
