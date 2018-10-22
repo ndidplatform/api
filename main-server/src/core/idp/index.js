@@ -52,6 +52,10 @@ const callbackUrlFilesPrefix = path.join(
 export function readCallbackUrlsFromFiles() {
   [
     { key: 'incoming_request_url', fileSuffix: 'incoming_request' },
+    {
+      key: 'incoming_request_status_update_url',
+      fileSuffix: 'incoming_request_status_update',
+    },
     { key: 'identity_result_url', fileSuffix: 'identity_result' },
     { key: 'accessor_sign_url', fileSuffix: 'accessor_sign' },
     { key: 'error_url', fileSuffix: 'error' },
@@ -93,6 +97,7 @@ function writeCallbackUrlToFile(fileSuffix, url) {
 
 export function setCallbackUrls({
   incoming_request_url,
+  incoming_request_status_update_url,
   identity_result_url,
   accessor_sign_url,
   error_url,
@@ -100,6 +105,13 @@ export function setCallbackUrls({
   if (incoming_request_url != null) {
     callbackUrls.incoming_request_url = incoming_request_url;
     writeCallbackUrlToFile('incoming_request', incoming_request_url);
+  }
+  if (incoming_request_status_update_url != null) {
+    callbackUrls.incoming_request_status_update_url = incoming_request_status_update_url;
+    writeCallbackUrlToFile(
+      'incoming_request_status_update',
+      incoming_request_status_update_url
+    );
   }
   if (identity_result_url != null) {
     callbackUrls.identity_result_url = identity_result_url;
@@ -457,6 +469,7 @@ export async function processIdpResponseAfterAddAccessor(
         cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
       }
     }
+    cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);
   } catch (error) {
     const err = new CustomError({
       message: 'Error processing IdP response for creating identity',
@@ -624,6 +637,7 @@ export async function processIdpResponseAfterRevokeAccessor(
       true
     );
     cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
+    cacheDb.removeRevokeAccessorDataByReferenceId(nodeId, reference_id);
   } catch (error) {
     const err = new CustomError({
       message: 'Error processing IdP response for revoke identity',

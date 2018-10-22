@@ -121,9 +121,10 @@ router.get('/callback', async (req, res, next) => {
 
 router.post('/callback', validateBody, async (req, res, next) => {
   try {
-    const { error_url } = req.body;
+    const { incoming_request_status_update_url, error_url } = req.body;
 
     as.setCallbackUrls({
+      incoming_request_status_update_url,
       error_url,
     });
 

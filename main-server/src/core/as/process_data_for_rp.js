@@ -294,7 +294,6 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
 
     const dataRequestId = requestId + ':' + serviceId;
     cacheDb.removeRpIdFromDataRequestId(nodeId, dataRequestId);
-    cacheDb.removeInitialSalt(nodeId, requestId);
   } catch (error) {
     logger.error({
       message: 'Send data to RP internal async after blockchain error',

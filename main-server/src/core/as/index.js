@@ -51,7 +51,13 @@ const callbackUrlFilesPrefix = path.join(
 );
 
 export function readCallbackUrlsFromFiles() {
-  [{ key: 'error_url', fileSuffix: 'error' }].forEach(({ key, fileSuffix }) => {
+  [
+    {
+      key: 'incoming_request_status_update_url',
+      fileSuffix: 'incoming_request_status_update',
+    },
+    { key: 'error_url', fileSuffix: 'error' },
+  ].forEach(({ key, fileSuffix }) => {
     try {
       callbackUrls[key] = fs.readFileSync(
         callbackUrlFilesPrefix + config.nodeId + '-' + fileSuffix,
@@ -91,7 +97,17 @@ function writeCallbackUrlToFile(fileSuffix, url) {
   );
 }
 
-export function setCallbackUrls({ error_url }) {
+export function setCallbackUrls({
+  incoming_request_status_update_url,
+  error_url,
+}) {
+  if (incoming_request_status_update_url != null) {
+    callbackUrls.incoming_request_status_update_url = incoming_request_status_update_url;
+    writeCallbackUrlToFile(
+      'incoming_request_status_update',
+      incoming_request_status_update_url
+    );
+  }
   if (error_url != null) {
     callbackUrls.error_url = error_url;
     writeCallbackUrlToFile('error', error_url);

@@ -31,6 +31,8 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../private_message_type';
+import * as utils from '../../utils';
+import { callbackToClient } from '../../utils/callback';
 
 import * as config from '../../config';
 
@@ -153,52 +155,82 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
   );
 
   await Promise.all(
-    transactionsInBlocksToProcess.map(async ({ transactions }) => {
-      const requestIdsToCleanUpSet = new Set();
+    transactionsInBlocksToProcess.map(async ({ height, transactions }) => {
+      const incomingRequestsToProcessUpdate = {};
 
-      transactions.forEach((transaction) => {
-        const requestId = transaction.args.request_id;
-        if (requestId != null) {
-          if (
-            transaction.fnName === 'CloseRequest' ||
-            transaction.fnName === 'TimeOutRequest'
-          ) {
-            requestIdsToCleanUpSet.add(requestId);
-          }
-        }
-
+      for (let i = 0; i < transactions.length; i++) {
+        const transaction = transactions[i];
         if (transaction.fnName === 'UpdateService') {
           invalidateDataSchemaCache(transaction.args.service_id);
+          continue;
         }
-      });
 
-      // Clean up closed or timed out create identity requests
-      const requestIdsToCleanUp = [...requestIdsToCleanUpSet];
+        const requestId = transaction.args.request_id;
+        if (requestId == null) continue;
+        if (transaction.fnName === 'DeclareIdentityProof') continue;
+
+        const initialSalt = await cacheDb.getInitialSalt(nodeId, requestId);
+        if (initialSalt != null) {
+          incomingRequestsToProcessUpdate[requestId] = {
+            requestId,
+            cleanUp:
+              transaction.fnName === 'CloseRequest' ||
+              transaction.fnName === 'TimeOutRequest',
+          };
+        }
+      }
 
       await Promise.all(
-        requestIdsToCleanUp.map(async (requestId) => {
-          // Clean up when request is timed out or closed before AS response
-          const initialSalt = await cacheDb.getInitialSalt(nodeId, requestId);
-          if (initialSalt != null) {
-            const requestDetail = await tendermintNdid.getRequestDetail({
-              requestId,
-            });
-            const serviceIds = requestDetail.data_request_list.map(
-              (dataRequest) => dataRequest.service_id
-            );
-            await Promise.all([
-              ...serviceIds.map(async (serviceId) => {
-                const dataRequestId = requestId + ':' + serviceId;
-                await cacheDb.removeRpIdFromDataRequestId(
-                  nodeId,
-                  dataRequestId
-                );
-              }),
-              cacheDb.removeInitialSalt(nodeId, requestId),
-            ]);
-          }
-        })
+        Object.values(incomingRequestsToProcessUpdate).map(
+          ({ requestId, cleanUp }) =>
+            processRequestUpdate(nodeId, requestId, height, cleanUp)
+        )
       );
     })
   );
+}
+
+async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
+  const requestDetail = await tendermintNdid.getRequestDetail({
+    requestId: requestId,
+    height,
+  });
+
+  const callbackUrl = callbackUrls.incoming_request_status_update_url;
+  if (callbackUrl != null) {
+    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+
+    const eventDataForCallback = {
+      node_id: nodeId,
+      type: 'request_status',
+      ...requestStatus,
+      response_valid_list: requestDetail.response_list.map(
+        ({ idp_id, valid_signature, valid_proof, valid_ial }) => {
+          return {
+            idp_id,
+            valid_signature,
+            valid_proof,
+            valid_ial,
+          };
+        }
+      ),
+      block_height: height,
+    };
+
+    await callbackToClient(callbackUrl, eventDataForCallback, true);
+  }
+
+  // Clean up when request is timed out or closed before AS response
+  if (cleanUp) {
+    const serviceIds = requestDetail.data_request_list.map(
+      (dataRequest) => dataRequest.service_id
+    );
+    await Promise.all([
+      ...serviceIds.map(async (serviceId) => {
+        const dataRequestId = requestId + ':' + serviceId;
+        await cacheDb.removeRpIdFromDataRequestId(nodeId, dataRequestId);
+      }),
+      cacheDb.removeInitialSalt(nodeId, requestId),
+    ]);
+  }
 }

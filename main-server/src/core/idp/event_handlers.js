@@ -23,6 +23,7 @@
 import { callbackUrls, processMessage } from '.';
 import { createResponse } from './create_response';
 
+import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -327,142 +328,205 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
   );
 
   await Promise.all(
-    transactionsInBlocksToProcess.map(async ({ transactions }) => {
-      // Clean up closed or timed out create identity requests
-      const requestIdsToCleanUpSet = new Set();
-      const closedRequestIds = new Set();
-      const timedOutRequestIds = new Set();
-      const validResponseRequestIds = new Set();
+    transactionsInBlocksToProcess.map(async ({ height, transactions }) => {
+      const requestToCleanUp = {}; // For clean up closed or timed out create identity requests
+      const incomingRequestsToProcessUpdate = {};
+
       for (let i = 0; i < transactions.length; i++) {
         const transaction = transactions[i];
         const requestId = transaction.args.request_id;
         if (requestId == null) continue;
         if (transaction.fnName === 'CloseRequest') {
-          requestIdsToCleanUpSet.add(requestId);
-          closedRequestIds.add(requestId);
-          //check validResponse
-          if (await isCreateIdentityRequestValid(requestId)) {
-            validResponseRequestIds.add(requestId);
-          }
-        }
-        if (transaction.fnName === 'TimeOutRequest') {
-          requestIdsToCleanUpSet.add(requestId);
-          timedOutRequestIds.add(requestId);
-        }
-      }
-      const requestIdsToCleanUp = [...requestIdsToCleanUpSet];
-
-      logger.debug({
-        message: 'Request id list to cleanup',
-        requestIdsToCleanUp,
-      });
-
-      await Promise.all(
-        requestIdsToCleanUp.map(async (requestId) => {
           // When IdP act as an RP (create identity)
           const callbackUrl = await cacheDb.getRequestCallbackUrl(
             nodeId,
             requestId
           );
           if (callbackUrl != null) {
-            const referenceId = await cacheDb.getReferenceIdByRequestId(
-              nodeId,
-              requestId
-            );
-            const identityCallbackUrl = await cacheDb.getCallbackUrlByReferenceId(
-              nodeId,
-              referenceId
-            );
-
-            let identityPromise, type;
-
-            logger.debug({
-              message: 'Cleanup associated requestId',
-              requestId,
-              referenceId,
-            });
-
-            //check type
-            const createIdentityData = await cacheDb.getCreateIdentityDataByReferenceId(
-              nodeId,
-              referenceId
-            );
-            const revokeAccessorData = await cacheDb.getRevokeAccessorDataByReferenceId(
-              nodeId,
-              referenceId
-            );
-
-            if (createIdentityData) {
-              type = createIdentityData.associated ? 
-                'add_accessor_result' : 
-                'create_identity_result';
-
-              identityPromise = cacheDb.removeCreateIdentityDataByReferenceId(
-                nodeId,
-                referenceId
-              );
-            } else if (revokeAccessorData) {
-              type = 'revoke_accessor_result';
-              identityPromise = cacheDb.removeRevokeAccessorDataByReferenceId(
-                nodeId,
-                referenceId
-              );
+            //check validResponse
+            if (await isCreateIdentityRequestValid(requestId)) {
+              // Exclude completed and valid request since it should have been closed
+              // by the platform and a new accessor is about to be created
+              continue;
             }
 
-            if (identityCallbackUrl != null) {
-              let identityError;
-              if (closedRequestIds.has(requestId)) {
-                if (validResponseRequestIds.has(requestId)) return;
-                identityError = new CustomError({
-                  errorType: errorType.REQUEST_IS_CLOSED,
-                });
-              } else if (timedOutRequestIds.has(requestId)) {
-                identityError = new CustomError({
-                  errorType: errorType.REQUEST_IS_TIMED_OUT,
-                });
-              }
-
-              await callbackToClient(
-                identityCallbackUrl,
-                {
-                  node_id: nodeId,
-                  type,
-                  success: false,
-                  reference_id: referenceId,
-                  request_id: requestId,
-                  error: getErrorObjectForClient(identityError),
-                },
-                true
-              );
-            }
-
-            await Promise.all([
-              cacheDb.removeRequestCallbackUrl(nodeId, requestId),
-              cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
-              cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
-              cacheDb.removeRequestData(nodeId, requestId),
-              cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
-              cacheDb.removeIdpResponseValidList(nodeId, requestId),
-              cacheDb.removeTimeoutScheduler(nodeId, requestId),
-              identityPromise,
-              cacheDb.removeIdentityFromRequestId(nodeId, requestId),
-            ]);
+            requestToCleanUp[requestId] = { requestId, action: 'close' };
+            continue;
           }
-
-          // Clean up when request is timed out or closed before IdP response
-          const requestReceivedFromMQ = await cacheDb.getRequestReceivedFromMQ(
+        }
+        if (transaction.fnName === 'TimeOutRequest') {
+          // When IdP act as an RP (create identity)
+          const callbackUrl = await cacheDb.getRequestCallbackUrl(
             nodeId,
             requestId
           );
-          if (requestReceivedFromMQ != null) {
-            await Promise.all([
-              cacheDb.removeRequestReceivedFromMQ(nodeId, requestId),
-              cacheDb.removeRPIdFromRequestId(nodeId, requestId),
-              cacheDb.removeRequestMessage(nodeId, requestId),
-            ]);
+
+          if (callbackUrl != null) {
+            requestToCleanUp[requestId] = { requestId, action: 'timeout' };
+            continue;
           }
-        })
-      );
+        }
+
+        if (transaction.fnName === 'DeclareIdentityProof') continue;
+
+        const requestReceivedFromMQ = await cacheDb.getRequestReceivedFromMQ(
+          nodeId,
+          requestId
+        );
+
+        if (requestReceivedFromMQ != null) {
+          incomingRequestsToProcessUpdate[requestId] = {
+            requestId,
+            cleanUp:
+              transaction.fnName === 'CloseRequest' ||
+              transaction.fnName === 'TimeOutRequest',
+          };
+        }
+      }
+
+      logger.debug({
+        message: 'Create identity requests to process',
+        requestToCleanUp,
+      });
+
+      logger.debug({
+        message: "Inbound requests' update to process",
+        incomingRequestsToProcessUpdate,
+      });
+
+      await Promise.all([
+        ...Object.values(requestToCleanUp).map(({ requestId, action }) =>
+          processCreateIdentityRequest(nodeId, requestId, action)
+        ),
+        ...Object.values(incomingRequestsToProcessUpdate).map(
+          ({ requestId, cleanUp }) =>
+            processRequestUpdate(nodeId, requestId, height, cleanUp)
+        ),
+      ]);
     })
   );
+}
+
+async function processCreateIdentityRequest(nodeId, requestId, action) {
+  const referenceId = await cacheDb.getReferenceIdByRequestId(
+    nodeId,
+    requestId
+  );
+  const identityCallbackUrl = await cacheDb.getCallbackUrlByReferenceId(
+    nodeId,
+    referenceId
+  );
+
+  let identityPromise, type;
+
+  logger.debug({
+    message: 'Cleanup associated requestId',
+    requestId,
+    referenceId,
+  });
+
+  //check type
+  const createIdentityData = await cacheDb.getCreateIdentityDataByReferenceId(
+    nodeId,
+    referenceId
+  );
+  const revokeAccessorData = await cacheDb.getRevokeAccessorDataByReferenceId(
+    nodeId,
+    referenceId
+  );
+
+  if (createIdentityData) {
+    type = createIdentityData.associated
+      ? 'add_accessor_result'
+      : 'create_identity_result';
+
+    identityPromise = cacheDb.removeCreateIdentityDataByReferenceId(
+      nodeId,
+      referenceId
+    );
+  } else if (revokeAccessorData) {
+    type = 'revoke_accessor_result';
+    identityPromise = cacheDb.removeRevokeAccessorDataByReferenceId(
+      nodeId,
+      referenceId
+    );
+  }
+
+  if (identityCallbackUrl != null) {
+    let identityError;
+    if (action === 'close') {
+      identityError = new CustomError({
+        errorType: errorType.REQUEST_IS_CLOSED,
+      });
+    } else if (action === 'timeout') {
+      identityError = new CustomError({
+        errorType: errorType.REQUEST_IS_TIMED_OUT,
+      });
+    }
+
+    await callbackToClient(
+      identityCallbackUrl,
+      {
+        node_id: nodeId,
+        type,
+        success: false,
+        reference_id: referenceId,
+        request_id: requestId,
+        error: getErrorObjectForClient(identityError),
+      },
+      true
+    );
+  }
+
+  await Promise.all([
+    cacheDb.removeRequestCallbackUrl(nodeId, requestId),
+    cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
+    cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
+    cacheDb.removeRequestData(nodeId, requestId),
+    cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
+    cacheDb.removeIdpResponseValidList(nodeId, requestId),
+    cacheDb.removeTimeoutScheduler(nodeId, requestId),
+    identityPromise,
+    cacheDb.removeIdentityFromRequestId(nodeId, requestId),
+  ]);
+}
+
+async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
+  const callbackUrl = callbackUrls.incoming_request_status_update_url;
+  if (callbackUrl != null) {
+    const requestDetail = await tendermintNdid.getRequestDetail({
+      requestId: requestId,
+      height,
+    });
+
+    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+
+    const eventDataForCallback = {
+      node_id: nodeId,
+      type: 'request_status',
+      ...requestStatus,
+      response_valid_list: requestDetail.response_list.map(
+        ({ idp_id, valid_signature, valid_proof, valid_ial }) => {
+          return {
+            idp_id,
+            valid_signature,
+            valid_proof,
+            valid_ial,
+          };
+        }
+      ),
+      block_height: height,
+    };
+
+    await callbackToClient(callbackUrl, eventDataForCallback, true);
+  }
+
+  // Clean up when request is timed out or closed before IdP response
+  if (cleanUp) {
+    await Promise.all([
+      cacheDb.removeRequestReceivedFromMQ(nodeId, requestId),
+      cacheDb.removeRPIdFromRequestId(nodeId, requestId),
+      cacheDb.removeRequestMessage(nodeId, requestId),
+    ]);
+  }
 }

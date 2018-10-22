@@ -46,10 +46,16 @@ router.get('/callback', async (req, res, next) => {
 
 router.post('/callback', validateBody, async (req, res, next) => {
   try {
-    const { incoming_request_url, accessor_sign_url, error_url } = req.body;
+    const {
+      incoming_request_url,
+      incoming_request_status_update_url,
+      accessor_sign_url,
+      error_url,
+    } = req.body;
 
     idp.setCallbackUrls({
       incoming_request_url,
+      incoming_request_status_update_url,
       accessor_sign_url,
       error_url,
     });

@@ -222,7 +222,6 @@ async function requestChallengeAndCreateResponseInternalAsync(
     } else if (request.mode === 1) {
       await createResponse(createResponseParams, { nodeId });
     }
-    cacheDb.removeRequestMessage(nodeId, request_id);
   } catch (error) {
     await callbackToClient(
       callback_url,
@@ -333,11 +332,6 @@ export async function createResponse(
         signature,
       };
     }
-
-    await Promise.all([
-      cacheDb.removeRequestReceivedFromMQ(nodeId, request_id),
-      cacheDb.removeResponseFromRequestId(nodeId, request_id),
-    ]);
 
     await tendermintNdid.createIdpResponse(
       dataToBlockchain,
