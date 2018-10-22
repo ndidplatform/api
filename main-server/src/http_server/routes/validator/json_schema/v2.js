@@ -418,7 +418,7 @@ export default {
         ],
       },
     },
-    '/identity/:namespace/:identifier/revoke': {
+    '/identity/:namespace/:identifier/accessors_revoke': {
       body: {
         properties: {
           node_id: { type: 'string', minLength: 1 },
