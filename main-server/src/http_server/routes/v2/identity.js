@@ -296,30 +296,8 @@ router.post(
   }
 );
 
-router.post('/secret', idpOnlyHandler, async (req, res, next) => {
-  try {
-    const {
-      node_id,
-      accessor_id,
-      namespace,
-      identifier,
-      reference_id,
-    } = req.body;
-    const secret = await identity.calculateSecret({
-      node_id,
-      accessor_id,
-      namespace,
-      identifier,
-      reference_id,
-    });
-    res.status(200).json({ secret });
-  } catch (error) {
-    next(error);
-  }
-});
-
 router.post(
-  '/:namespace/:identifier/revoke',
+  '/:namespace/:identifier/accessors_revoke',
   validateBody,
   async (req, res, next) => {
     try {
@@ -353,5 +331,27 @@ router.post(
     }
   }
 );
+
+router.post('/secret', idpOnlyHandler, async (req, res, next) => {
+  try {
+    const {
+      node_id,
+      accessor_id,
+      namespace,
+      identifier,
+      reference_id,
+    } = req.body;
+    const secret = await identity.calculateSecret({
+      node_id,
+      accessor_id,
+      namespace,
+      identifier,
+      reference_id,
+    });
+    res.status(200).json({ secret });
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;
