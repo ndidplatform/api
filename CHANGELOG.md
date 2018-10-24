@@ -9,6 +9,8 @@ BREAKING CHANGES:
 
 IMPROVEMENTS:
 
+- API version 2.4
+  - Add `incoming_request_status_update_url` optional property to POST `/idp/callback` and POST `/as/callback` for setting callback URL for receiving related request status updates.
 - Check IAL when IdP creating a response.
 - Check new key when update dpki key.
 
