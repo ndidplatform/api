@@ -13,6 +13,7 @@ IMPROVEMENTS:
   - Add `incoming_request_status_update_url` optional property to POST `/idp/callback` and POST `/as/callback` for setting callback URL for receiving related request status updates.
 - Check IAL when IdP creating a response.
 - Check new key when update dpki key.
+- Save pending outbound messages for MQ to cache DB on server graceful shutdown. The server will try to send on next start if the messages do not exceed MQ send total timeout.
 
 BUG FIXES:
 
@@ -20,10 +21,6 @@ BUG FIXES:
 - Fix wrong callback result for create identity.
 
 ## 0.10.1 (October 9, 2018)
-
-IMPROVEMENTS:
-
-- Save pending outbound messages for MQ to cache DB on server graceful shutdown. The server will try to send on next start if the messages do not exceed MQ send total timeout.
 
 BUG FIXES:
 
