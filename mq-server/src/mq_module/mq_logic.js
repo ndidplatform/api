@@ -84,6 +84,11 @@ export default class MQLogic extends EventEmitter {
           msgId: msgId,
         });
       } else {
+        this.emit('RetrySend', {
+          id: this.id,
+          msgId: msgId,
+          retryCount,
+        });
         this._performSend(dest, payload, msgId, retryCount);
       }
     }

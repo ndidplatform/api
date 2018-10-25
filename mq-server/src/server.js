@@ -212,6 +212,13 @@ function initialize() {
       delete sendCalls[msgId];
     }
   });
+  mqSend.on('retry_send', (msgId, retryCount) => {
+    logger.info({
+      message: 'MQ send retry',
+      msgId,
+      retryCount,
+    });
+  });
 
   mqRecv.on('error', (error) => {
     logger.error(error.getInfoForLog());

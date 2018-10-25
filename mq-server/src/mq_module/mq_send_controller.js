@@ -66,6 +66,13 @@ export default class MQSend extends EventEmitter {
     );
 
     this.logic.on(
+      'RetrySend',
+      function({ msgId, retryCount }) {
+        this.emit('retry_send', msgId, retryCount);
+      }.bind(this)
+    );
+
+    this.logic.on(
       'PerformTotalTimeout',
       function({ msgId }) {
         this.emit(
