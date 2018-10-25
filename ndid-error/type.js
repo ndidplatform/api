@@ -257,7 +257,8 @@ module.exports = {
   },
   ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE: {
     code: 20011,
-    message: 'Accessor public key for the input accessor ID could not be found or inactive',
+    message:
+      'Accessor public key for the input accessor ID could not be found or inactive',
     clientError: true,
   },
   REQUEST_NOT_FOUND: {
@@ -654,6 +655,10 @@ module.exports = {
   ABCI_PROXY_NODE_IS_NOT_ACTIVE: {
     code: 15026,
     message: 'Proxy node is disabled',
+  },
+  ABCI_REQUEST_IS_NOT_CLOSED: {
+    code: 15027,
+    message: 'Request is not closed',
   },
 
   // Client errors
