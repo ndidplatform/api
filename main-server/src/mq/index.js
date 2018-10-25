@@ -551,6 +551,11 @@ export async function send(receivers, message, senderNodeId) {
         sendTime: Date.now(),
       };
 
+      logger.debug({
+        message: 'Sending message to message queue service server',
+        msgId,
+        mqDestAddress,
+      });
       mqServiceFunctions
         .sendMessage(
           mqDestAddress,
