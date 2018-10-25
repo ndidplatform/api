@@ -119,8 +119,7 @@ export default class MQSend extends EventEmitter {
       this.emit(
         'error',
         new CustomError({
-          code: 'MQERR_CLEANUPERR',
-          message: 'Message queue clean up error',
+          errorType: errorType.MQ_SEND_CLEANUP_ERROR,
           cause: error,
         })
       );
