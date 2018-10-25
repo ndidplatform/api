@@ -187,7 +187,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
           nodeId,
           message.request_id
         );
-        if (!request) return; //request not found
+        if (request == null) return; //request not found
         await cacheDb.addPrivateProofObjectInRequest(
           nodeId,
           message.request_id,
@@ -329,7 +329,7 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
   await Promise.all(
     transactionsInBlocksToProcess.map(async ({ height, transactions }) => {
-      const requestToCleanUp = {}; // For clean up closed or timed out create identity requests
+      const createIdentityRequestsToProcess = {}; // For clean up closed or timed out create identity requests
       const incomingRequestsToProcessUpdate = {};
 
       for (let i = 0; i < transactions.length; i++) {
@@ -338,11 +338,8 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         if (requestId == null) continue;
         if (transaction.fnName === 'CloseRequest') {
           // When IdP act as an RP (create identity)
-          const callbackUrl = await cacheDb.getRequestCallbackUrl(
-            nodeId,
-            requestId
-          );
-          if (callbackUrl != null) {
+          const requestData = await cacheDb.getRequestData(nodeId, requestId);
+          if (requestData != null) {
             //check validResponse
             if (await isCreateIdentityRequestValid(requestId)) {
               // Exclude completed and valid request since it should have been closed
@@ -350,19 +347,22 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
               continue;
             }
 
-            requestToCleanUp[requestId] = { requestId, action: 'close' };
+            createIdentityRequestsToProcess[requestId] = {
+              requestId,
+              action: 'close',
+            };
             continue;
           }
         }
         if (transaction.fnName === 'TimeOutRequest') {
           // When IdP act as an RP (create identity)
-          const callbackUrl = await cacheDb.getRequestCallbackUrl(
-            nodeId,
-            requestId
-          );
+          const requestData = await cacheDb.getRequestData(nodeId, requestId);
 
-          if (callbackUrl != null) {
-            requestToCleanUp[requestId] = { requestId, action: 'timeout' };
+          if (requestData != null) {
+            createIdentityRequestsToProcess[requestId] = {
+              requestId,
+              action: 'timeout',
+            };
             continue;
           }
         }
@@ -386,7 +386,7 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
       logger.debug({
         message: 'Create identity requests to process',
-        requestToCleanUp,
+        createIdentityRequestsToProcess,
       });
 
       logger.debug({
@@ -395,8 +395,9 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
       });
 
       await Promise.all([
-        ...Object.values(requestToCleanUp).map(({ requestId, action }) =>
-          processCreateIdentityRequest(nodeId, requestId, action)
+        ...Object.values(createIdentityRequestsToProcess).map(
+          ({ requestId, action }) =>
+            processCreateIdentityRequest(nodeId, requestId, action)
         ),
         ...Object.values(incomingRequestsToProcessUpdate).map(
           ({ requestId, cleanUp }) =>
@@ -408,10 +409,8 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 }
 
 async function processCreateIdentityRequest(nodeId, requestId, action) {
-  const referenceId = await cacheDb.getReferenceIdByRequestId(
-    nodeId,
-    requestId
-  );
+  const requestData = await cacheDb.getRequestData(nodeId, requestId);
+  const referenceId = requestData.reference_id;
   const identityCallbackUrl = await cacheDb.getCallbackUrlByReferenceId(
     nodeId,
     referenceId
@@ -426,14 +425,10 @@ async function processCreateIdentityRequest(nodeId, requestId, action) {
   });
 
   //check type
-  const createIdentityData = await cacheDb.getCreateIdentityDataByReferenceId(
-    nodeId,
-    referenceId
-  );
-  const revokeAccessorData = await cacheDb.getRevokeAccessorDataByReferenceId(
-    nodeId,
-    referenceId
-  );
+  const [createIdentityData, revokeAccessorData] = await Promise.all([
+    cacheDb.getCreateIdentityDataByReferenceId(nodeId, referenceId),
+    cacheDb.getRevokeAccessorDataByReferenceId(nodeId, referenceId),
+  ]);
 
   if (createIdentityData) {
     type = createIdentityData.associated
@@ -479,9 +474,7 @@ async function processCreateIdentityRequest(nodeId, requestId, action) {
   }
 
   await Promise.all([
-    cacheDb.removeRequestCallbackUrl(nodeId, requestId),
     cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
-    cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
     cacheDb.removeRequestData(nodeId, requestId),
     cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
     cacheDb.removeIdpResponseValidList(nodeId, requestId),

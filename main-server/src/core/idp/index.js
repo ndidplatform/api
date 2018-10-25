@@ -422,10 +422,11 @@ export async function processIdpResponseAfterAddAccessor(
   try {
     if (error) throw error;
 
-    const reference_id = await cacheDb.getReferenceIdByRequestId(
+    const requestData = await cacheDb.getRequestData(
       nodeId,
       message.request_id
     );
+    const reference_id = requestData.reference_id;
     const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
       nodeId,
       reference_id
@@ -530,15 +531,11 @@ async function checkCreateIdentityResponse(nodeId, message, requestDetail) {
     );
     return true;
   } catch (error) {
-    const { associated } = await cacheDb.getIdentityFromRequestId(
-      nodeId,
-      message.request_id
-    );
-
-    const reference_id = await cacheDb.getReferenceIdByRequestId(
-      nodeId,
-      message.request_id
-    );
+    const [{ associated }, requestData] = await Promise.all([
+      cacheDb.getIdentityFromRequestId(nodeId, message.request_id),
+      cacheDb.getRequestData(nodeId, message.request_id),
+    ]);
+    const reference_id = requestData.reference_id;
     const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
       nodeId,
       reference_id
@@ -614,10 +611,11 @@ export async function processIdpResponseAfterRevokeAccessor(
   try {
     if (error) throw error;
 
-    const reference_id = await cacheDb.getReferenceIdByRequestId(
+    const requestData = await cacheDb.getRequestData(
       nodeId,
       message.request_id
     );
+    const reference_id = requestData.reference_id;
     const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
       nodeId,
       reference_id
@@ -725,10 +723,11 @@ async function checkRevokeAccessorResponse(
     );
     return true;
   } catch (error) {
-    const reference_id = await cacheDb.getReferenceIdByRequestId(
+    const requestData = await cacheDb.getRequestData(
       nodeId,
       message.request_id
     );
+    const reference_id = requestData.reference_id;
     const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
       nodeId,
       reference_id

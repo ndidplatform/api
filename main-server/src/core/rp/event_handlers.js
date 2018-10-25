@@ -93,11 +93,11 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
       });
       delete challengeRequestProcessLocks[responseId];
     } else if (message.type === privateMessageType.IDP_RESPONSE) {
-      const callbackUrl = await cacheDb.getRequestCallbackUrl(
+      const requestData = await cacheDb.getRequestData(
         nodeId,
         message.request_id
       );
-      if (!callbackUrl) return;
+      if (requestData == null) return;
 
       // "accessor_id" and private proof are present only in mode 3
       if (message.mode === 3) {
@@ -107,7 +107,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
           message.request_id
         );
         //AS involve
-        if (request) {
+        if (request != null) {
           await cacheDb.addPrivateProofObjectInRequest(
             nodeId,
             message.request_id,
@@ -181,6 +181,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         block_height: message.height,
       };
 
+      const callbackUrl = requestData.callback_url;
       await callbackToClient(callbackUrl, eventDataForCallback, true);
 
       if (isAllIdpRespondedAndValid({ requestStatus, responseValidList })) {
@@ -365,8 +366,8 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
  * @param {integer} height
  */
 async function processRequestUpdate(nodeId, requestId, height) {
-  const callbackUrl = await cacheDb.getRequestCallbackUrl(nodeId, requestId);
-  if (!callbackUrl) return; // This RP does not concern this request
+  const requestData = await cacheDb.getRequestData(nodeId, requestId);
+  if (requestData == null) return; // This RP does not concern this request
 
   logger.debug({
     message: 'Processing request update',
@@ -449,6 +450,7 @@ async function processRequestUpdate(nodeId, requestId, height) {
     block_height: height,
   };
 
+  const callbackUrl = requestData.callback_url;
   await callbackToClient(callbackUrl, eventDataForCallback, true);
 
   if (isAllIdpRespondedAndValid({ requestStatus, responseValidList })) {
@@ -492,14 +494,13 @@ async function processRequestUpdate(nodeId, requestId, height) {
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
     // since the request is no longer going to have further events
     // (the request has reached its end state)
-    const referenceId = await cacheDb.getReferenceIdByRequestId(
+    const requestData = await cacheDb.getRequestData(
       nodeId,
       requestId
     );
+    const referenceId = requestData.reference_id;
     await Promise.all([
-      cacheDb.removeRequestCallbackUrl(nodeId, requestId),
       cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
-      cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
       cacheDb.removeRequestData(nodeId, requestId),
       cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
       cacheDb.removeIdpResponseValidList(nodeId, requestId),

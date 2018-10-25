@@ -362,6 +362,8 @@ export async function createRequest(
       rp_id: node_id,
       request_message_salt,
       initial_salt,
+      reference_id,
+      callback_url,
     };
 
     // save request data to DB to send to AS via mq when authen complete
@@ -369,8 +371,6 @@ export async function createRequest(
     await Promise.all([
       cacheDb.setRequestData(node_id, request_id, requestData),
       cacheDb.setRequestIdByReferenceId(node_id, reference_id, request_id),
-      cacheDb.setReferenceIdByRequestId(node_id, request_id, reference_id),
-      cacheDb.setRequestCallbackUrl(node_id, request_id, callback_url),
     ]);
 
     if (synchronous) {
@@ -599,8 +599,13 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
     await setTimeoutScheduler(node_id, request_id, request_timeout);
 
+    const {
+      reference_id: _1, // eslint-disable-line no-unused-vars
+      callback_url: _2, // eslint-disable-line no-unused-vars
+      ...requestDataWithoutLocalSpecificProps
+    } = requestData;
     const requestDataWithoutDataRequestParams = {
-      ...requestData,
+      ...requestDataWithoutLocalSpecificProps,
       data_request_list: requestData.data_request_list.map((dataRequest) => {
         const { request_params, ...dataRequestWithoutParams } = dataRequest; // eslint-disable-line no-unused-vars
         return {
@@ -695,8 +700,6 @@ async function createRequestCleanUpOnError({ nodeId, requestId, referenceId }) {
     cacheDb.removeRequestData(nodeId, requestId),
     cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
     cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
-    cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
-    cacheDb.removeRequestCallbackUrl(nodeId, requestId),
     cacheDb.removeRequestCreationMetadata(nodeId, requestId),
   ]);
 }

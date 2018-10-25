@@ -228,7 +228,6 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
   try {
     if (error) throw error;
 
-    await cacheDb.setReferenceIdByRequestId(nodeId, request_id, reference_id);
     await callbackToClient(
       callback_url,
       {
@@ -284,7 +283,6 @@ async function revokeAccessorCleanUpOnError({
 }) {
   await Promise.all([
     cacheDb.removeCallbackUrlByReferenceId(nodeId, referenceId),
-    cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
     cacheDb.removeRevokeAccessorDataByReferenceId(nodeId, referenceId),
     cacheDb.removeAccessorIdToRevokeFromRequestId(nodeId, requestId),
   ]);

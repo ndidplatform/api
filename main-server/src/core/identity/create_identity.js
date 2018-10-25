@@ -597,8 +597,6 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
   try {
     if (error) throw error;
 
-    await cacheDb.setReferenceIdByRequestId(nodeId, request_id, reference_id);
-
     if (exist) {
       if (!synchronous) {
         await callbackToClient(
@@ -952,7 +950,6 @@ async function createIdentityCleanUpOnError({
 }) {
   await Promise.all([
     cacheDb.removeCallbackUrlByReferenceId(nodeId, referenceId),
-    cacheDb.removeReferenceIdByRequestId(nodeId, requestId),
     cacheDb.removeCreateIdentityDataByReferenceId(nodeId, referenceId),
     cacheDb.removeIdentityFromRequestId(nodeId, requestId),
   ]);
