@@ -6,6 +6,8 @@ import zmq from 'zeromq';
 import MQSend from './mq_send_controller';
 import MQRecv from './mq_recv_controller';
 
+import errorType from 'ndid-error/type';
+
 const expect = chai.expect;
 chai.use(chaiHttp);
 
@@ -155,7 +157,7 @@ describe('Functional Test for MQ Sender with real sockets', function() {
       timeout: 2000,
       totalTimeout: 16000,
     });
-    mqNode.on('error', function(error) {
+    mqNode.on('error', function(msgId, error) {
       assert.fail('this one should not fire error, but it fired: ' + error);
     });
 
@@ -198,7 +200,7 @@ describe('Functional Test for MQ Sender with real sockets', function() {
     // first timenode will die;
     let nodetoDie = new MQRecvDieFirst({ port: ports[0] });
     let mqNode = new MQSend({ timeout: 2000, totalTimeout: 16000 });
-    mqNode.on('error', function(error) {
+    mqNode.on('error', function(msgId, error) {
       assert.fail('this one should not fire error');
     });
     mqNode.send({ ip: '127.0.0.1', port: ports[0] }, Buffer.from('test'));
@@ -239,8 +241,8 @@ describe('Functional Test for MQ Sender with real sockets', function() {
 
     let recv = new MQRecvClose({ port: ports[0] });
     let mqNode = new MQSend({ timeout: 500, totalTimeout: 1500 });
-    mqNode.on('error', function(err) {
-      expect(err.code).to.equal('MQERR_TIMEOUT');
+    mqNode.on('error', function(msgId, err) {
+      expect(err.code).to.equal(errorType.MQ_SEND_TIMEOUT.code);
       done();
     });
 
@@ -253,8 +255,8 @@ describe('Functional Test for MQ Sender with real sockets', function() {
 
     let mqRecvSmallSize = new MQRecv({ port: ports[0], maxMsgSize: 10 });
     let mqNode = new MQSend({ timeout: 500, totalTimeout: 1500 });
-    mqNode.on('error', function(err) {
-      expect(err.code).to.equal('MQERR_TIMEOUT');
+    mqNode.on('error', function(msgId, err) {
+      expect(err.code).to.equal(errorType.MQ_SEND_TIMEOUT.code);
       mqRecvSmallSize.close();
       done();
     });
@@ -287,8 +289,8 @@ describe('Functional Test for MQ Sender with real sockets', function() {
     // first timenode will die;
     let nodetoDie = new MQRecvDieFirst({ port: ports[0] });
     let mqNode = new MQSend({ id: 'test3', timeout: 1000, totalTimeout: 3000 });
-    mqNode.on('error', function(err) {
-      expect(err.code).to.equal('MQERR_TIMEOUT');
+    mqNode.on('error', function(msgId, err) {
+      expect(err.code).to.equal(errorType.MQ_SEND_TIMEOUT.code);
       alreadyTimeout = true;
     });
 
@@ -349,7 +351,7 @@ describe.skip('mq extreme case. Keep it there but dont run by default', function
     const ports = getPort(1);
     let hasDone = false;
     let sendNode = new MQSend({});
-    sendNode.on('error', function(err) {
+    sendNode.on('error', function(msgId, err) {
       assert.fail(
         'there should be no error from emit. However, this threw ' + err
       );
@@ -377,7 +379,7 @@ describe.skip('mq extreme case. Keep it there but dont run by default', function
     const ports = getPort(1);
 
     let sendNode = new MQSend({});
-    sendNode.on('error', function(err) {
+    sendNode.on('error', function(msgId, err) {
       assert.fail('there should be no error but it fired:' + err.code);
     });
 
