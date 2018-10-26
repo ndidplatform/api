@@ -904,6 +904,9 @@ export async function createIdentityInternalAsyncAfterClearRegisterIdentityTimeo
       );
     }
     cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);
+    cacheDb.removeRequestIdByReferenceId(nodeId, reference_id);
+    cacheDb.removeRequestData(nodeId, request_id);
+    cacheDb.removeRequestCreationMetadata(nodeId, request_id);
   } catch (error) {
     logger.error({
       message:

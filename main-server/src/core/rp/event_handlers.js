@@ -505,7 +505,6 @@ async function processRequestUpdate(nodeId, requestId, height) {
       cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
       cacheDb.removeIdpResponseValidList(nodeId, requestId),
       cacheDb.removeRequestCreationMetadata(nodeId, requestId),
-      common.removeTimeoutScheduler(nodeId, requestId),
     ]);
   }
 }

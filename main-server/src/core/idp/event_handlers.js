@@ -478,7 +478,7 @@ async function processCreateIdentityRequest(nodeId, requestId, action) {
     cacheDb.removeRequestData(nodeId, requestId),
     cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
     cacheDb.removeIdpResponseValidList(nodeId, requestId),
-    cacheDb.removeTimeoutScheduler(nodeId, requestId),
+    cacheDb.removeRequestCreationMetadata(nodeId, requestId),
     identityPromise,
     cacheDb.removeIdentityFromRequestId(nodeId, requestId),
   ]);

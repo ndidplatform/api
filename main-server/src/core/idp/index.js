@@ -356,13 +356,14 @@ export async function processMessage(nodeId, message) {
       }
     }
   } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
-    //const responseId = message.request_id + ':' + message.idp_id;
+    const responseId = nodeId + ':' + message.request_id + ':' + message.idp_id;
     await common.handleChallengeRequest({
       nodeId,
       request_id: message.request_id,
       idp_id: message.idp_id,
       public_proof: message.public_proof,
     });
+    await cacheDb.removePublicProofReceivedFromMQ(nodeId, responseId);
   } else if (message.type === privateMessageType.CONSENT_REQUEST) {
     const requestDetail = await tendermintNdid.getRequestDetail({
       requestId: message.request_id,
@@ -422,10 +423,8 @@ export async function processIdpResponseAfterAddAccessor(
   try {
     if (error) throw error;
 
-    const requestData = await cacheDb.getRequestData(
-      nodeId,
-      message.request_id
-    );
+    const requestId = message.request_id;
+    const requestData = await cacheDb.getRequestData(nodeId, requestId);
     const reference_id = requestData.reference_id;
     const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
       nodeId,
@@ -434,7 +433,7 @@ export async function processIdpResponseAfterAddAccessor(
     const notifyData = {
       success: true,
       reference_id,
-      request_id: message.request_id,
+      request_id: requestId,
       secret,
     };
     if (associated) {
@@ -470,8 +469,8 @@ export async function processIdpResponseAfterAddAccessor(
         cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
       }
     }
+    cleanUpRequestData(nodeId, requestId, reference_id);
     cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);
-    // TODO: clean up all request data
   } catch (error) {
     const err = new CustomError({
       message: 'Error processing IdP response for creating identity',
@@ -612,10 +611,8 @@ export async function processIdpResponseAfterRevokeAccessor(
   try {
     if (error) throw error;
 
-    const requestData = await cacheDb.getRequestData(
-      nodeId,
-      message.request_id
-    );
+    const requestId = message.request_id;
+    const requestData = await cacheDb.getRequestData(nodeId, requestId);
     const reference_id = requestData.reference_id;
     const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
       nodeId,
@@ -624,7 +621,7 @@ export async function processIdpResponseAfterRevokeAccessor(
     const notifyData = {
       success: true,
       reference_id,
-      request_id: message.request_id,
+      request_id: requestId,
     };
     await callbackToClient(
       callbackUrl,
@@ -636,8 +633,8 @@ export async function processIdpResponseAfterRevokeAccessor(
       true
     );
     cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
+    cleanUpRequestData(nodeId, requestId, reference_id);
     cacheDb.removeRevokeAccessorDataByReferenceId(nodeId, reference_id);
-     // TODO: clean up all request data
   } catch (error) {
     const err = new CustomError({
       message: 'Error processing IdP response for revoke identity',
@@ -763,4 +760,14 @@ async function checkRevokeAccessorResponse(
     });
     return false;
   }
+}
+
+async function cleanUpRequestData(nodeId, requestId, referenceId) {
+  return Promise.all([
+    cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
+    cacheDb.removeRequestData(nodeId, requestId),
+    cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
+    cacheDb.removeIdpResponseValidList(nodeId, requestId),
+    cacheDb.removeRequestCreationMetadata(nodeId, requestId),
+  ]);
 }
