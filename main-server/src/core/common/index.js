@@ -49,6 +49,8 @@ import { getErrorObjectForClient } from '../../utils/error';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../private_message_type';
 
+import * as node from '../../node';
+
 export * from './create_request';
 export * from './close_request';
 
@@ -112,14 +114,14 @@ export async function initialize() {
     tendermint.setTendermintNewBlockEventHandler(rp.handleTendermintNewBlock);
     setShouldRetryFnGetter(getFunction);
     setResponseCallbackFnGetter(getFunction);
-    resumeTimeoutScheduler();
+    resumeTimeoutScheduler([config.nodeId]);
     resumeCallbackToClient();
   } else if (role === 'idp') {
     handleMessageFromQueue = idp.handleMessageFromQueue;
     tendermint.setTendermintNewBlockEventHandler(idp.handleTendermintNewBlock);
     setShouldRetryFnGetter(getFunction);
     setResponseCallbackFnGetter(getFunction);
-    resumeTimeoutScheduler();
+    resumeTimeoutScheduler([config.nodeId]);
     resumeCallbackToClient();
   } else if (role === 'as') {
     handleMessageFromQueue = as.handleMessageFromQueue;
@@ -134,7 +136,9 @@ export async function initialize() {
     );
     setShouldRetryFnGetter(getFunction);
     setResponseCallbackFnGetter(getFunction);
-    resumeTimeoutScheduler();
+    const nodesBehindProxy = await node.getNodesBehindProxyFromBlockchain();
+    const nodeIds = nodesBehindProxy.map((node) => node.node_id); 
+    resumeTimeoutScheduler(nodeIds);
     resumeCallbackToClient();
   }
 
@@ -196,11 +200,19 @@ export function getFunction(fnName) {
   }
 }
 
-async function resumeTimeoutScheduler() {
-  let scheduler = await cacheDb.getAllTimeoutScheduler();
-  scheduler.forEach(({ requestId, unixTimeout }) =>
-    runTimeoutScheduler(requestId, (unixTimeout - Date.now()) / 1000)
-  );
+async function resumeTimeoutScheduler(nodeIds) {
+  nodeIds.forEach(async (nodeId) => {
+    let scheduler = await cacheDb.getAllTimeoutScheduler(nodeId);
+    scheduler.forEach(({ requestId, unixTimeout }) => {
+      logger.info({
+        message: 'Resume timeout scheduler after start server',
+        nodeId,
+        requestId,
+        timoutInSeconds: (unixTimeout - Date.now()) / 1000,
+      });
+      runTimeoutScheduler(nodeId ,requestId, (unixTimeout - Date.now()) / 1000);
+    });
+  });
 }
 
 export function checkRequestMessageIntegrity(

@@ -19,6 +19,7 @@ BUG FIXES:
 
 - Fix check validity of secret at create response (if invalid, the response will not be stored in blockchain).
 - Fix wrong callback result for create identity.
+- Fix bug resumeTimeoutScheduler on server restart
 
 ## 0.10.1 (October 9, 2018)
 
