@@ -136,7 +136,7 @@ export async function initialize() {
     );
     setShouldRetryFnGetter(getFunction);
     setResponseCallbackFnGetter(getFunction);
-    const nodesBehindProxy = await node.getNodesBehindProxyFromBlockchain();
+    const nodesBehindProxy = await node.getNodesBehindProxyWithKeyOnProxy();
     const nodeIds = nodesBehindProxy.map((node) => node.node_id); 
     resumeTimeoutScheduler(nodeIds);
     resumeCallbackToClient();
@@ -202,10 +202,10 @@ export function getFunction(fnName) {
 
 async function resumeTimeoutScheduler(nodeIds) {
   nodeIds.forEach(async (nodeId) => {
-    let scheduler = await cacheDb.getAllTimeoutScheduler(nodeId);
-    scheduler.forEach(({ requestId, unixTimeout }) => {
+    const schedulers = await cacheDb.getAllTimeoutScheduler(nodeId);
+    schedulers.forEach(({ requestId, unixTimeout }) => {
       logger.info({
-        message: 'Resume timeout scheduler after start server',
+        message: 'Resuming timeout schedulers',
         nodeId,
         requestId,
         timoutInSeconds: (unixTimeout - Date.now()) / 1000,
