@@ -14,6 +14,7 @@ IMPROVEMENTS:
 - Check IAL when IdP creating a response.
 - Check new key when update dpki key.
 - Save pending outbound messages for MQ to cache DB on server graceful shutdown. The server will try to send on next start if the messages do not exceed MQ send total timeout.
+- Store ack of mq to longterm cache.
 
 BUG FIXES:
 
