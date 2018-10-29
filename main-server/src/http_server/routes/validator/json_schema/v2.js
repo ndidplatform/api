@@ -51,6 +51,7 @@ export default {
   GET: {
     '/utility/idp': {
       query: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           min_ial: {
             $ref: 'defs#/definitions/ialString',
@@ -63,6 +64,7 @@ export default {
     },
     '/utility/idp/:namespace/:identifier': {
       query: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           min_ial: {
             $ref: 'defs#/definitions/ialString',
@@ -77,6 +79,7 @@ export default {
   POST: {
     '/rp/requests/:namespace/:identifier': {
       params: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },
@@ -84,6 +87,7 @@ export default {
         required: ['namespace', 'identifier'],
       },
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -143,6 +147,7 @@ export default {
     },
     '/rp/requests/close': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -154,6 +159,7 @@ export default {
     },
     '/rp/callback': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           error_url: {
@@ -164,6 +170,7 @@ export default {
     },
     '/idp/callback': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           incoming_request_url: {
@@ -180,6 +187,7 @@ export default {
     },
     '/idp/response': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -210,6 +218,7 @@ export default {
     },
     '/as/service/:service_id': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -225,6 +234,7 @@ export default {
     },
     '/as/data/:request_id/:service_id': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -236,6 +246,7 @@ export default {
     },
     '/as/callback': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           error_url: {
@@ -246,6 +257,7 @@ export default {
     },
     '/dpki/node/create': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
@@ -278,6 +290,7 @@ export default {
     },
     '/dpki/node/update': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -316,6 +329,7 @@ export default {
     },
     '/dpki/node/callback': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           sign_url: {
@@ -343,6 +357,7 @@ export default {
     },
     '/identity/': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -369,6 +384,7 @@ export default {
     },
     '/identity/:namespace/:identifier': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -390,6 +406,7 @@ export default {
     },
     '/identity/:namespace/:identifier/ial': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -401,6 +418,7 @@ export default {
     },
     '/identity/:namespace/:identifier/accessors': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -420,6 +438,7 @@ export default {
     },
     '/identity/:namespace/:identifier/accessors_revoke': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -432,6 +451,7 @@ export default {
     },
     '/identity/:namespace/:identifier/endorsement': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           // TODO: After v1.0
@@ -440,6 +460,7 @@ export default {
     },
     '/identity/requests/close': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -451,6 +472,7 @@ export default {
     },
     '/identity/secret': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },

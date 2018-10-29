@@ -51,6 +51,7 @@ export default {
   GET: {
     '/utility/idp': {
       query: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           min_ial: {
             $ref: 'defs#/definitions/ialString',
@@ -63,6 +64,7 @@ export default {
     },
     '/utility/idp/:namespace/:identifier': {
       query: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           min_ial: {
             $ref: 'defs#/definitions/ialString',
@@ -77,6 +79,7 @@ export default {
   POST: {
     '/rp/requests/:namespace/:identifier': {
       params: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },
@@ -84,6 +87,7 @@ export default {
         required: ['namespace', 'identifier'],
       },
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           reference_id: { type: 'string', minLength: 1 },
           mode: { type: 'number', enum: [1, 3] },
@@ -144,6 +148,7 @@ export default {
     },
     '/rp/requests/close': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           request_id: { type: 'string', minLength: 1 },
         },
@@ -152,6 +157,7 @@ export default {
     },
     '/identity/requests/close': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           request_id: { type: 'string', minLength: 1 },
         },
@@ -160,6 +166,7 @@ export default {
     },
     '/rp/callback': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           error_url: {
             $ref: 'defs#/definitions/url',
@@ -169,6 +176,7 @@ export default {
     },
     '/idp/callback': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           incoming_request_url: {
             $ref: 'defs#/definitions/url',
@@ -187,6 +195,7 @@ export default {
     },
     '/idp/response': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           request_id: { type: 'string', minimum: 1 },
           ial: { $ref: 'defs#/definitions/ial' },
@@ -214,6 +223,7 @@ export default {
     },
     '/as/service/:service_id': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           min_ial: { $ref: 'defs#/definitions/ial' },
           min_aal: { $ref: 'defs#/definitions/aal' },
@@ -226,6 +236,7 @@ export default {
     },
     '/as/data/:request_id/:service_id': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           data: { type: 'string', minLength: 1 },
         },
@@ -234,6 +245,7 @@ export default {
     },
     '/as/callback': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           error_url: {
             $ref: 'defs#/definitions/url',
@@ -243,6 +255,7 @@ export default {
     },
     '/dpki/node/create': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           node_name: { type: 'string', minLength: 1 },
@@ -271,6 +284,7 @@ export default {
     },
     '/dpki/node/update': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           node_key: { type: 'string', minLength: 1 },
           node_key_type: { $ref: 'defs#/definitions/keyType' },
@@ -299,6 +313,7 @@ export default {
     },
     '/dpki/node/register_callback': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           sign_url: {
             $ref: 'defs#/definitions/url',
@@ -319,6 +334,7 @@ export default {
     },
     '/dpki/node/register_callback_master': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           url: {
             $ref: 'defs#/definitions/url',
@@ -329,6 +345,7 @@ export default {
     },
     '/identity/': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           reference_id: { type: 'string', minLength: 1 },
           namespace: { type: 'string', minLength: 1 },
@@ -351,6 +368,7 @@ export default {
     },
     '/identity/:namespace/:identifier': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         type: 'array',
         items: {
           type: 'object',
@@ -364,6 +382,7 @@ export default {
     },
     '/identity/:namespace/:identifier/ial': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           ial: { $ref: 'defs#/definitions/ial' },
         },
@@ -372,6 +391,7 @@ export default {
     },
     '/identity/:namespace/:identifier/accessors': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           reference_id: { type: 'string', minLength: 1 },
           accessor_type: { $ref: 'defs#/definitions/keyType' },
@@ -383,6 +403,7 @@ export default {
     },
     '/identity/:namespace/:identifier/endorsement': {
       body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           // TODO: After v1.0
         },
