@@ -1,6 +1,6 @@
 # Changelog
 
-## TBD
+## 0.10.2 (October 29, 2018)
 
 BUG FIXES:
 - Fix bug resumeTimeoutScheduler on server restart
