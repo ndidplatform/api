@@ -123,6 +123,19 @@ function onRecvMessage({ message, msgId, senderId }) {
   });
 }
 
+function onRecvAck({ message, msgId, senderId }) {
+  if (recvSubscriberConnections.length === 0) {
+    logger.warn({
+      message: 'Got ack message but no subscribers/recipients',
+      msgId,
+      senderId,
+    });
+  }
+  recvSubscriberConnections.forEach((connection) => {
+    connection.write({ message, message_id: msgId, sender_id: senderId, isAck: true });
+  });
+}
+
 function onRecvError({ error }) {
   recvSubscriberConnections.forEach((connection) => {
     connection.write({ error });
@@ -201,7 +214,7 @@ function initialize() {
       delete sendCalls[msgId];
     }
   });
-  mqSend.on('ack_received', (msgId) => {
+  mqSend.on('ack_received', (msgId, msg) => {
     logger.debug({
       message: 'MQ send socket ACK received',
       msgId,
@@ -211,6 +224,11 @@ function initialize() {
       callback(null);
       delete sendCalls[msgId];
     }
+    onRecvAck({ 
+      message: msg.message,
+      senderId: msg.senderId,
+      msgId,
+    });
   });
   mqSend.on('retry_send', (msgId, retryCount) => {
     logger.info({

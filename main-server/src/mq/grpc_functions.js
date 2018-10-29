@@ -374,9 +374,17 @@ function onRecvMessage(message) {
     );
     return;
   }
-  eventEmitter.emit('message', {
-    message: messageBuffer,
-    msgId,
-    senderId,
-  });
+  if(message.isAck) {
+    eventEmitter.emit('ack_received', {
+      message: messageBuffer,
+      msgId,
+      senderId,
+    });
+  } else {
+    eventEmitter.emit('message', {
+      message: messageBuffer,
+      msgId,
+      senderId,
+    });
+  }
 }

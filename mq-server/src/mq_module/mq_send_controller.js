@@ -114,7 +114,7 @@ export default class MQSend extends EventEmitter {
           'Received ACK for ' + msg.retryspec.msgId + '/' + msg.retryspec.seqId
         );
         this.logic.cleanUp(msg.retryspec.msgId);
-        this.emit('ack_received', msg.retryspec.msgId);
+        this.emit('ack_received', msg.retryspec.msgId, msg);
       }.bind(this)
     );
   }

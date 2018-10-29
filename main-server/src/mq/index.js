@@ -104,6 +104,7 @@ export async function initialize() {
   await mqServiceFunctions.initialize();
 
   mqServiceFunctions.eventEmitter.on('message', onMessage);
+  mqServiceFunctions.eventEmitter.on('ack_received', onAck);
 
   //should tell client via error callback?
   mqServiceFunctions.eventEmitter.on('error', (error) =>
@@ -150,6 +151,56 @@ export async function initialize() {
   });
 }
 
+async function onAck({ message, msgId, senderId }) {
+  const {
+    hashedMessage,
+    signedAck,
+    initiatorId,
+    ackType,
+    requestId,
+    signature
+  } = message;
+
+  const public_key = await tendermintNdid.getNodePubKey(senderId);
+  const signatureValid = utils.verifySignature(signature, public_key, {
+    hashedMessage,
+    signedAck,
+    initiatorId,
+    ackType,
+    requestId,
+  });
+
+  //query message with hash hashedMessage
+  const messages = await longTermDb.getMessages(
+    initiatorId,
+    longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
+    ackType,
+    requestId,
+  );
+  const sentMessage = messages.filter((message) => {
+    return message.hashToSignAck === hashedMessage;
+  })[0];
+
+  let signedAckValid = utils.verifySignature(signedAck, public_key, {
+    type: 'ACKNOWLEDGE_MESSAGE_FROM_MESSAGE_QUEUE',
+    message: sentMessage,
+  });
+
+  if(signatureValid && signedAckValid) {
+    longTermDb.addMessage(
+      initiatorId,
+      longTermDb.MESSAGE_DIRECTIONS.INBOUND,
+      signedAck.type,
+      requestId,
+      {
+        ackSenderId: senderId,
+        signedAck,
+        hashedMessage,
+      }
+    );
+  }
+}
+
 async function onMessage({ message, msgId, senderId }) {
   logger.info({
     message: 'Received message from message queue',
@@ -172,10 +223,6 @@ async function onMessage({ message, msgId, senderId }) {
 
   try {
     await cacheDb.setRawMessageFromMQ(config.nodeId, id, message);
-    mqServiceFunctions
-      .sendAckForRecvMessage(msgId)
-      .catch((error) => logger.error(error.getInfoForLog()));
-
     if (
       !tendermint.connected ||
       tendermint.syncing ||
@@ -184,7 +231,7 @@ async function onMessage({ message, msgId, senderId }) {
     ) {
       rawMessagesToRetry[id] = message;
     } else {
-      await processMessage(id, message, timestamp);
+      await processMessage(id, message, timestamp, msgId);
     }
   } catch (error) {
     eventEmitter.emit('error', error);
@@ -215,7 +262,7 @@ async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
   return decodedDecryptedMessage;
 }
 
-async function processMessage(messageId, messageProtobuf, timestamp) {
+async function processMessage(messageId, messageProtobuf, timestamp, msgId) {
   logger.info({
     message: 'Processing raw received message from message queue',
     messageId,
@@ -369,6 +416,24 @@ async function processMessage(messageId, messageProtobuf, timestamp) {
       }
     );
 
+    //==========================================================================
+    const ackMessage = {
+      type: 'ACKNOWLEDGE_MESSAGE_FROM_MESSAGE_QUEUE',
+      message,
+    };
+    const ackPayload = {
+      hashedMessage: utils.hash(message),
+      signedAck: await utils.createSignature(ackMessage, receiverNodeId),
+      initiatorId: nodeId, // NOT ack's sender
+      ackType: message.type,
+      requestId: message.request_id,
+    };
+    ackPayload.signature = await utils.createSignature(ackPayload, receiverNodeId);
+    mqServiceFunctions
+      .sendAckForRecvMessage(msgId, ackPayload)
+      .catch((error) => logger.error(error.getInfoForLog()));
+    //==========================================================================
+
     eventEmitter.emit('message', message, receiverNodeId);
     removeRawMessageFromCache(messageId);
   } catch (error) {
@@ -448,6 +513,7 @@ export async function send(receivers, message, senderNodeId) {
   }
   const timestamp = Date.now();
 
+  const hashToSignAck = utils.hash(message);
   const messageStr = JSON.stringify(message);
   const messageBuffer = Buffer.from(messageStr, 'utf8');
   const messageSignatureBuffer = await utils.createSignature(
@@ -598,6 +664,7 @@ export async function send(receivers, message, senderNodeId) {
         }
       }),
       timestamp,
+      hashToSignAck,
     }
   );
 }
