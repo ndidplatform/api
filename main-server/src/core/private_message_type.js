@@ -27,6 +27,7 @@ const TYPES = {
   CHALLENGE_RESPONSE: 'challenge_response',
   CONSENT_REQUEST: 'consent_request',
   DATA_REQUEST: 'data_request',
+  ACK: 'ack',
 };
 
 export default TYPES;

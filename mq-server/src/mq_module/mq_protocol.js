@@ -70,7 +70,7 @@ export function extractMsg(payload) {
   return extractRetrySpec(msg);
 }
 
-export function generateAckMsg(senderId, retryspec, signedAck) {
-  const ack = applyRetrySpec(senderId, Buffer.from(signedAck), retryspec);
+export function generateAckMsg(senderId, retryspec, ackStr) {
+  const ack = applyRetrySpec(senderId, Buffer.from(ackStr, 'utf8'), retryspec);
   return ack;
 }

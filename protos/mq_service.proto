@@ -12,10 +12,12 @@ message InboundMessage {
   int64 message_id = 2;
   string sender_id = 3;
   Error error = 4;
+  bool isAck = 5;
 }
 
 message InboundMessageAck {
   int64 message_id = 1;
+  string ackStr = 2;
 }
 
 message OutboundMessage {

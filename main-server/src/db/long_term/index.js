@@ -48,6 +48,8 @@ function getName(messageType) {
       return 'consentRequestMessage';
     case privateMessageType.DATA_REQUEST:
       return 'dataRequestMessage';
+    case privateMessageType.ACK:
+      return 'ack';
     default:
       throw new CustomError({
         message: 'Unknown message type',

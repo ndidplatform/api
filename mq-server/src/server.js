@@ -85,7 +85,7 @@ function subscribeToRecvMessages(call) {
 }
 
 function sendAckForRecvMessage(call, callback) {
-  const { message_id: msgId } = call.request;
+  const { message_id: msgId, ackStr } = call.request;
   logger.debug({
     message: 'sendAckForRecvMessage',
     args: call.request,
@@ -99,7 +99,7 @@ function sendAckForRecvMessage(call, callback) {
   });
 
   if (sendACKs[msgId]) {
-    sendACKs[msgId]();
+    sendACKs[msgId](ackStr);
     delete sendACKs[msgId];
     callback(null);
   } else {
@@ -119,7 +119,7 @@ function onRecvMessage({ message, msgId, senderId }) {
     });
   }
   recvSubscriberConnections.forEach((connection) => {
-    connection.write({ message, message_id: msgId, sender_id: senderId });
+    connection.write({ message, message_id: msgId, sender_id: senderId, isAck: false });
   });
 }
 

@@ -153,25 +153,23 @@ export async function initialize() {
 
 async function onAck({ message, msgId, senderId }) {
   const {
+    ackPayloadStr,
+    ackPayloadSignature,
+  } = JSON.parse(message.toString('utf8'));
+
+  const {
     hashedMessage,
     signedAck,
     initiatorId,
     ackType,
     requestId,
-    signature
-  } = message;
+  } = JSON.parse(ackPayloadStr);
 
   const public_key = await tendermintNdid.getNodePubKey(senderId);
-  const signatureValid = utils.verifySignature(signature, public_key, {
-    hashedMessage,
-    signedAck,
-    initiatorId,
-    ackType,
-    requestId,
-  });
+  const signatureValid = utils.verifySignature(ackPayloadSignature, public_key, ackPayloadStr);
 
   //query message with hash hashedMessage
-  const messages = await longTermDb.getMessages(
+  /*const messages = await longTermDb.getMessages(
     initiatorId,
     longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
     ackType,
@@ -179,25 +177,36 @@ async function onAck({ message, msgId, senderId }) {
   );
   const sentMessage = messages.filter((message) => {
     return message.hashToSignAck === hashedMessage;
-  })[0];
+  })[0];*/
 
-  let signedAckValid = utils.verifySignature(signedAck, public_key, {
-    type: 'ACKNOWLEDGE_MESSAGE_FROM_MESSAGE_QUEUE',
-    message: sentMessage,
-  });
+  let signedAckValid = utils.verifySignature(
+    signedAck, 
+    public_key, 
+    'ACKNOWLEDGE_MESSAGE_FROM_MESSAGE_QUEUE:' + msgId.toString() + ':' + hashedMessage
+  );
 
   if(signatureValid && signedAckValid) {
     longTermDb.addMessage(
       initiatorId,
       longTermDb.MESSAGE_DIRECTIONS.INBOUND,
-      signedAck.type,
+      'ack',
       requestId,
       {
         ackSenderId: senderId,
         signedAck,
         hashedMessage,
+        ackType,
       }
     );
+  } else {
+    logger.error({
+      message: 'Cannot save ACK',
+      rawMessage: JSON.parse(message.toString('utf8')),
+      msgId,
+      senderId,
+      signatureValid,
+      signedAckValid,
+    });
   }
 }
 
@@ -417,20 +426,23 @@ async function processMessage(messageId, messageProtobuf, timestamp, msgId) {
     );
 
     //==========================================================================
-    const ackMessage = {
-      type: 'ACKNOWLEDGE_MESSAGE_FROM_MESSAGE_QUEUE',
-      message,
-    };
-    const ackPayload = {
-      hashedMessage: utils.hash(message),
-      signedAck: await utils.createSignature(ackMessage, receiverNodeId),
+    const ackMessage = 'ACKNOWLEDGE_MESSAGE_FROM_MESSAGE_QUEUE:' + msgId.toString() + ':' + utils.hash(messageStr);
+    const ackPayloadObj = {
+      hashedMessage: utils.hash(messageStr),
       initiatorId: nodeId, // NOT ack's sender
       ackType: message.type,
       requestId: message.request_id,
     };
-    ackPayload.signature = await utils.createSignature(ackPayload, receiverNodeId);
+    ackPayloadObj.signedAck = (await utils.createSignature(ackMessage, receiverNodeId)).toString('base64');
+
+    const ackPayloadStr = JSON.stringify(ackPayloadObj);
+    const ackPayloadSignature = (await utils.createSignature(ackPayloadStr, receiverNodeId)).toString('base64');
+    const ackStr = JSON.stringify({
+      ackPayloadStr,
+      ackPayloadSignature,
+    });
     mqServiceFunctions
-      .sendAckForRecvMessage(msgId, ackPayload)
+      .sendAckForRecvMessage({ msgId, ackStr })
       .catch((error) => logger.error(error.getInfoForLog()));
     //==========================================================================
 
@@ -513,8 +525,8 @@ export async function send(receivers, message, senderNodeId) {
   }
   const timestamp = Date.now();
 
-  const hashToSignAck = utils.hash(message);
   const messageStr = JSON.stringify(message);
+  const hashToSignAck = utils.hash(messageStr);
   const messageBuffer = Buffer.from(messageStr, 'utf8');
   const messageSignatureBuffer = await utils.createSignature(
     messageStr,

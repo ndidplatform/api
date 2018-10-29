@@ -189,10 +189,13 @@ export function subscribeToRecvMessages() {
   });
 }
 
-export function sendAckForRecvMessage(msgId) {
+export function sendAckForRecvMessage({ msgId, ackStr }) {
   return new Promise((resolve, reject) => {
     const call = client.sendAckForRecvMessage(
-      { message_id: msgId },
+      { 
+        message_id: msgId, 
+        ackStr 
+      },
       (error) => {
         if (error) {
           const errorTypeObj = Object.entries(errorType).find(
@@ -208,6 +211,7 @@ export function sendAckForRecvMessage(msgId) {
                   module: 'mq_service',
                   function: 'sendAckForRecvMessage',
                   msgId,
+                  ackPayload,
                 },
                 cause: error,
               })
