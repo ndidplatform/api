@@ -30,7 +30,7 @@ import {
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
 import * as cacheDb from '../../db/cache';
-import privateMessageType from '../private_message_type';
+import privateMessageType from '../../mq/message/type';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
 import CustomError from 'ndid-error/custom_error';
@@ -600,8 +600,10 @@ export async function createRequestInternalAsyncAfterBlockchain(
     await setTimeoutScheduler(node_id, request_id, request_timeout);
 
     const {
-      reference_id: _1, // eslint-disable-line no-unused-vars
-      callback_url: _2, // eslint-disable-line no-unused-vars
+      min_idp: _1, // eslint-disable-line no-unused-vars
+      challenge: _2, // eslint-disable-line no-unused-vars
+      reference_id: _3, // eslint-disable-line no-unused-vars
+      callback_url: _4, // eslint-disable-line no-unused-vars
       ...requestDataWithoutLocalSpecificProps
     } = requestData;
     const requestDataWithoutDataRequestParams = {

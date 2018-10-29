@@ -47,7 +47,7 @@ import * as lt from '../../utils/long_timeout';
 import * as config from '../../config';
 import { getErrorObjectForClient } from '../../utils/error';
 import * as cacheDb from '../../db/cache';
-import privateMessageType from '../private_message_type';
+import privateMessageType from '../../mq/message/type';
 
 import * as node from '../../node';
 

@@ -33,7 +33,7 @@ import * as utils from '../../utils';
 import * as config from '../../config';
 import * as cacheDb from '../../db/cache';
 import { getErrorObjectForClient } from '../../utils/error';
-import privateMessageType from '../private_message_type';
+import privateMessageType from '../../mq/message/type';
 
 import { role } from '../../node';
 

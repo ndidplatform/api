@@ -23,7 +23,7 @@
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 import * as mq from '../../mq';
-import privateMessageType from '../private_message_type';
+import privateMessageType from '../../mq/message/type';
 
 import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
@@ -652,8 +652,8 @@ async function sendResponseToRP(
       request_id,
       mode,
       ...privateProofObject,
-      height,
       idp_id: nodeId,
+      height,
     },
     nodeId
   );

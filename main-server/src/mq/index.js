@@ -34,6 +34,7 @@ import * as utils from '../utils';
 import logger from '../logger';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
+import validate from './message/validator';
 
 import { role } from '../node';
 import * as config from '../config';
@@ -339,7 +340,16 @@ async function processMessage(messageId, messageProtobuf, timestamp) {
       });
     }
 
-    // TODO: validate message schema
+    const validationResult = validate({ type: message.type, message });
+    if (!validationResult.valid) {
+      throw new CustomError({
+        errorType: errorType.INVALID_MESSAGE_SCHEMA,
+        details: {
+          fromNodeId: nodeId,
+          validationResult,
+        },
+      });
+    }
 
     const source =
       nodeInfo.proxy != null

@@ -22,7 +22,7 @@
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as longTermDb from '../../db/long_term';
-import PRIVATE_MESSAGE_TYPES from '../private_message_type';
+import PRIVATE_MESSAGE_TYPES from '../../mq/message/type';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';

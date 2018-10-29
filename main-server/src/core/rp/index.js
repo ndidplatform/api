@@ -26,7 +26,7 @@ import path from 'path';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
 import * as cacheDb from '../../db/cache';
-import privateMessageType from '../private_message_type';
+import privateMessageType from '../../mq/message/type';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
@@ -254,8 +254,8 @@ export async function sendRequestToAS(nodeId, requestData, height) {
             challenge: requestData.challenge,
             privateProofObjectList,
             rp_id: requestData.rp_id,
-            height,
             initial_salt: requestData.initial_salt,
+            height,
           },
           nodeId
         )

@@ -198,6 +198,18 @@ module.exports = {
     code: 10042,
     message: 'Cannot send ACK for unknown message ID',
   },
+  INVALID_MESSAGE_TYPE: {
+    code: 10043,
+    message: 'Invalid message type',
+  },
+  INVALID_MESSAGE_SCHEMA: {
+    code: 10044,
+    message: 'Invalid message schema',
+  },
+  CANNOT_VALIDATE_MESSAGE: {
+    code: 10045,
+    message: 'Cannot validate MQ message',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {

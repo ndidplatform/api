@@ -31,7 +31,7 @@ import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
-import privateMessageType from '../private_message_type';
+import privateMessageType from '../../mq/message/type';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
 import CustomError from 'ndid-error/custom_error';

@@ -33,7 +33,7 @@ import logger from '../../logger';
 import * as tendermint from '../../tendermint';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
-import privateMessageType from '../private_message_type';
+import privateMessageType from '../../mq/message/type';
 
 import * as config from '../../config';
 import * as tendermintNdid from '../../tendermint/ndid';

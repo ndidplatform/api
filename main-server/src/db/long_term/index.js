@@ -22,7 +22,7 @@
 
 import * as db from '../redis_common';
 import redisInstance from './redis';
-import privateMessageType from '../../core/private_message_type';
+import privateMessageType from '../../mq/message/type';
 
 import logger from '../../logger';
 import CustomError from 'ndid-error/custom_error';
