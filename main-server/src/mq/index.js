@@ -165,6 +165,7 @@ async function onAck({ message, msgId, senderId }) {
     requestId,
   } = JSON.parse(ackPayloadStr);
 
+  const timestamp = Date.now();
   const public_key = await tendermintNdid.getNodePubKey(senderId);
   const signatureValid = utils.verifySignature(ackPayloadSignature, public_key, ackPayloadStr);
 
@@ -196,6 +197,7 @@ async function onAck({ message, msgId, senderId }) {
         signedAck,
         hashedMessage,
         ackType,
+        timestamp
       }
     );
     mqServiceFunctions.cleanUpAfterStoreAck(msgId);
@@ -448,6 +450,21 @@ async function processMessage(messageId, messageProtobuf, timestamp, msgId) {
     //==========================================================================
 
     eventEmitter.emit('message', message, receiverNodeId);
+
+    await longTermDb.addMessage(
+      nodeId,
+      longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
+      'ack',
+      message.request_id,
+      {
+        ackReceiverId: receiverNodeId,
+        signedAck: ackPayloadObj.signedAck,
+        hashedMessage: ackPayloadObj.hashedMessage,
+        ackType: ackPayloadObj.ackType,
+        timestamp,
+      }
+    );
+
     removeRawMessageFromCache(messageId);
   } catch (error) {
     eventEmitter.emit('error', error);
