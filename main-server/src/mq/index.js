@@ -193,6 +193,7 @@ async function onAck({ message, msgId, senderId }) {
       'ack',
       requestId,
       {
+        direction: longTermDb.MESSAGE_DIRECTIONS.INBOUND,
         ackSenderId: senderId,
         signedAck,
         hashedMessage,
@@ -452,11 +453,12 @@ async function processMessage(messageId, messageProtobuf, timestamp, msgId) {
     eventEmitter.emit('message', message, receiverNodeId);
 
     await longTermDb.addMessage(
-      nodeId,
+      receiverNodeId,
       longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
       'ack',
       message.request_id,
       {
+        direction: longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
         ackReceiverId: receiverNodeId,
         signedAck: ackPayloadObj.signedAck,
         hashedMessage: ackPayloadObj.hashedMessage,
