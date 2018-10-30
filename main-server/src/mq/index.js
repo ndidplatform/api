@@ -459,7 +459,7 @@ async function processMessage(messageId, messageProtobuf, timestamp, msgId) {
       message.request_id,
       {
         direction: longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
-        ackReceiverId: receiverNodeId,
+        ackReceiverId: nodeId,
         signedAck: ackPayloadObj.signedAck,
         hashedMessage: ackPayloadObj.hashedMessage,
         ackType: ackPayloadObj.ackType,
