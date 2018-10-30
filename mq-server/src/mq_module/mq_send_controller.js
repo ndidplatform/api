@@ -113,7 +113,6 @@ export default class MQSend extends EventEmitter {
           'debug',
           'Received ACK for ' + msg.retryspec.msgId + '/' + msg.retryspec.seqId
         );
-        this.logic.cleanUp(msg.retryspec.msgId);
         this.emit('ack_received', msg.retryspec.msgId, msg);
       }.bind(this)
     );
@@ -145,5 +144,9 @@ export default class MQSend extends EventEmitter {
   closeAll() {
     this.logic.stopAllRetries();
     return this.socket.closeAll();
+  }
+
+  cleanUpAfterStoreAck(msgId) {
+    this.logic.cleanUp(msgId);
   }
 }

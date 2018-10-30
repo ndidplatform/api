@@ -5,8 +5,13 @@ service MessageQueue {
   rpc sendAckForRecvMessage(InboundMessageAck) returns(Empty){}
   rpc sendMessage(OutboundMessage) returns (Empty){}
   rpc getInfo(Empty) returns (ServiceServerInfo){}
+  rpc cleanUpAfterStoreAck(CleanUpMessage) returns (Empty){}
 }
  
+message CleanUpMessage {
+  int64 message_id = 1;
+}
+
 message InboundMessage {
   bytes message = 1;
   int64 message_id = 2;

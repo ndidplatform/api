@@ -110,6 +110,34 @@ function sendAckForRecvMessage(call, callback) {
   }
 }
 
+function cleanUpAfterStoreAck(call, _callback) {
+  const { message_id: msgId } = call.request;
+  logger.debug({
+    message: 'cleanUpAfterStoreAck',
+    args: call.request,
+  });
+
+  call.on('cancelled', () => {
+    logger.debug({
+      message: 'cleanUpAfterStoreAck cancelled',
+      msgId,
+    });
+  });
+
+  if (sendCalls[msgId]) {
+    const { callback } = sendCalls[msgId];
+    callback(null);
+    mqSend.cleanUpAfterStoreAck(msgId);
+    delete sendCalls[msgId];
+    _callback(null);
+  } else {
+    _callback({
+      code: errorType.MQ_SEND_ACK_UNKNOWN_MESSAGE_ID.code,
+      message: errorType.MQ_SEND_ACK_UNKNOWN_MESSAGE_ID.message,
+    });
+  }
+}
+
 function onRecvMessage({ message, msgId, senderId }) {
   if (recvSubscriberConnections.length === 0) {
     logger.warn({
@@ -219,11 +247,6 @@ function initialize() {
       message: 'MQ send socket ACK received',
       msgId,
     });
-    if (sendCalls[msgId]) {
-      const { callback } = sendCalls[msgId];
-      callback(null);
-      delete sendCalls[msgId];
-    }
     onRecvAck({ 
       message: msg.message,
       senderId: msg.senderId,
@@ -252,6 +275,7 @@ function initialize() {
     sendAckForRecvMessage,
     sendMessage,
     getInfo,
+    cleanUpAfterStoreAck,
   });
 
   server.bind(SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());

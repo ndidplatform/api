@@ -211,7 +211,7 @@ export function sendAckForRecvMessage({ msgId, ackStr }) {
                   module: 'mq_service',
                   function: 'sendAckForRecvMessage',
                   msgId,
-                  ackPayload,
+                  ackStr,
                 },
                 cause: error,
               })
@@ -295,6 +295,46 @@ export async function sendMessage(
       calls.splice(calls.indexOf(call), 1);
     }
   }
+}
+
+export async function cleanUpAfterStoreAck(msgId) {
+  return new Promise((resolve, reject) => {
+    const call = client.cleanUpAfterStoreAck(
+      { message_id: msgId },
+      (error) => {
+        if (error) {
+          const errorTypeObj = Object.entries(errorType).find(
+            ([key, value]) => {
+              return value.code === error.code;
+            }
+          );
+          if (errorTypeObj == null) {
+            reject(
+              new CustomError({
+                errorType: errorType.UNKNOWN_ERROR,
+                details: {
+                  module: 'mq_service',
+                  function: 'cleanUpAfterStoreAck',
+                  msgId,
+                },
+                cause: error,
+              })
+            );
+            return;
+          }
+          const _errorType = errorType[errorTypeObj[0]];
+          reject(
+            new CustomError({
+              errorType: _errorType,
+            })
+          );
+          return;
+        }
+        resolve();
+      }
+    );
+    calls.push(call);
+  });
 }
 
 function sendMessageInternal(mqAddress, payload, msgId) {
@@ -392,3 +432,4 @@ function onRecvMessage(message) {
     });
   }
 }
+

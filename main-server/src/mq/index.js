@@ -198,6 +198,7 @@ async function onAck({ message, msgId, senderId }) {
         ackType,
       }
     );
+    mqServiceFunctions.cleanUpAfterStoreAck(msgId);
   } else {
     logger.error({
       message: 'Cannot save ACK',
