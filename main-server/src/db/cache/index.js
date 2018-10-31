@@ -43,6 +43,82 @@ export async function close() {
   });
 }
 
+export async function changeAllDataKeysWithExpectedBlockHeight(newHeight) {
+  if (!Number.isInteger(newHeight)) {
+    throw new Error('Invalid new height. Must be an integer.');
+  }
+
+  let flattenList;
+
+  flattenList = await db.getFlattenListWithRangeSupport({
+    dbName,
+    name: 'requestIdExpectedInBlock',
+    keyName: 'expectedBlockHeight',
+    valueName: 'requestId',
+  });
+  await Promise.all(
+    flattenList.map(({ nodeId, list }) =>
+      Promise.all(
+        list.map((requestId) =>
+          addRequestIdExpectedInBlock(nodeId, newHeight, requestId)
+        )
+      )
+    )
+  );
+
+  flattenList = await db.getFlattenList({
+    dbName,
+    name: 'expectedIdpResponseNodeIdInBlock',
+    keyName: 'expectedBlockHeight',
+    valueName: 'responseMetadata',
+  });
+  await Promise.all(
+    flattenList.map(({ nodeId, list }) =>
+      Promise.all(
+        list.map((responseMetadata) =>
+          addExpectedIdpResponseNodeIdInBlock(
+            nodeId,
+            newHeight,
+            responseMetadata
+          )
+        )
+      )
+    )
+  );
+
+  flattenList = await db.getFlattenListWithRangeSupport({
+    dbName,
+    name: 'expectedIdpPublicProofInBlock',
+    keyName: 'expectedBlockHeight',
+    valueName: 'responseMetadata',
+  });
+  await Promise.all(
+    flattenList.map(({ nodeId, list }) =>
+      Promise.all(
+        list.map((responseMetadata) =>
+          addExpectedIdpPublicProofInBlock(nodeId, newHeight, responseMetadata)
+        )
+      )
+    )
+  );
+
+  flattenList = await db.getFlattenList({
+    dbName,
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    valueName: 'metadata',
+  });
+  await Promise.all(
+    flattenList.map(({ nodeId, list }) =>
+      Promise.all(
+        list.map((metadata) =>
+          addExpectedDataSignInBlock(nodeId, newHeight, metadata)
+        )
+      )
+    )
+  );
+}
+
 //
 // Used by all roles
 //
@@ -898,7 +974,11 @@ export function getAccessorIdToRevokeFromRequestId(nodeId, requestId) {
   });
 }
 
-export function setAccessorIdToRevokeFromRequestId(nodeId, requestId, accessorId) {
+export function setAccessorIdToRevokeFromRequestId(
+  nodeId,
+  requestId,
+  accessorId
+) {
   return db.set({
     nodeId,
     dbName,

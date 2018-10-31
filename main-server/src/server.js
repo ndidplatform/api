@@ -62,6 +62,8 @@ process.on('unhandledRejection', function(reason, p) {
 async function initialize() {
   logger.info({ message: 'Initializing server' });
   try {
+    tendermint.loadSavedData();
+
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
 
     const tendermintReady = new Promise((resolve) =>

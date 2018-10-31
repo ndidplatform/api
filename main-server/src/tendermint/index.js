@@ -62,7 +62,7 @@ export let expectedTxsLoaded = false;
 let reconnecting = false; // Use when reconnect WS
 let pollingStatus = false;
 
-const cacheBlocks = {};
+let cacheBlocks = {};
 let lastKnownAppHash;
 
 export let syncing = null;
@@ -70,31 +70,74 @@ export let connected = false;
 
 export const eventEmitter = new EventEmitter();
 
+const chainIdFilepath = path.join(
+  config.dataDirectoryPath,
+  `chain-id-${config.nodeId}`
+);
 const latestBlockHeightFilepath = path.join(
   config.dataDirectoryPath,
   `latest-block-height-${config.nodeId}`
 );
 
+let chainId = null;
+
 export let latestBlockHeight = null;
 let latestProcessedBlockHeight = null;
-try {
-  const blockHeight = fs.readFileSync(latestBlockHeightFilepath, 'utf8');
-  latestBlockHeight = parseInt(blockHeight);
-  latestProcessedBlockHeight = parseInt(blockHeight);
-  logger.info({
-    message: 'Latest block height read from file',
-    blockHeight,
-  });
-} catch (error) {
-  if (error.code === 'ENOENT') {
-    logger.warn({
-      message: 'Latest block height file not found',
+
+export function loadSavedData() {
+  try {
+    chainId = fs.readFileSync(chainIdFilepath, 'utf8');
+    logger.info({
+      message: 'Chain ID read from file',
+      chainId,
     });
-  } else {
-    logger.error({
-      message: 'Cannot read latest block height file',
-      error,
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      logger.warn({
+        message: 'Chain ID file not found',
+      });
+    } else {
+      logger.error({
+        message: 'Cannot read chain ID file',
+        error,
+      });
+    }
+  }
+
+  try {
+    const blockHeight = fs.readFileSync(latestBlockHeightFilepath, 'utf8');
+    latestBlockHeight = parseInt(blockHeight);
+    latestProcessedBlockHeight = parseInt(blockHeight);
+    logger.info({
+      message: 'Latest block height read from file',
+      blockHeight,
     });
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      logger.warn({
+        message: 'Latest block height file not found',
+      });
+    } else {
+      logger.error({
+        message: 'Cannot read latest block height file',
+        error,
+      });
+    }
+  }
+
+  if (
+    (chainId == null && latestBlockHeight != null) ||
+    (chainId != null && latestBlockHeight == null)
+  ) {
+    const error = new CustomError({
+      message: 'Missing data file',
+      details: {
+        chainIdFileExist: chainId != null,
+        latestBlockHeightFileExist: latestBlockHeight != null,
+      },
+    });
+    logger.error(error.getInfoForLog());
+    throw error;
   }
 }
 
@@ -258,6 +301,12 @@ async function pollStatusUntilSynced() {
         logger.info({
           message: 'Tendermint blockchain synced',
         });
+
+        const currentChainId = status.node_info.network;
+        if (currentChainId !== chainId) {
+          await handleNewChain();
+        }
+
         eventEmitter.emit('ready', status);
         pollingStatus = false;
         return status;
@@ -265,6 +314,18 @@ async function pollStatusUntilSynced() {
       await utils.wait(backoff.next());
     }
   }
+}
+
+// TODO: save chain ID to file on fresh start
+
+async function handleNewChain() {
+  // TODO: save new chain ID to file and set to variable
+  lastKnownAppHash = null;
+  cacheBlocks = {};
+  latestBlockHeight = 0;
+  latestProcessedBlockHeight = 0;
+  saveLatestBlockHeight(0);
+  await cacheDb.changeAllDataKeysWithExpectedBlockHeight(1);
 }
 
 tendermintWsClient.on('connected', async () => {
