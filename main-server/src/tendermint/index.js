@@ -171,6 +171,18 @@ function saveLatestBlockHeight(height) {
   }
 }
 
+function saveChainId(chainIdToSave) {
+  fs.writeFile(chainIdFilepath, chainIdToSave, (err) => {
+    if (err) {
+      logger.error({
+        message: 'Cannot write chain ID file',
+        error: err,
+      });
+    }
+  });
+  chainId = chainIdToSave;
+}
+
 export function setTendermintNewBlockEventHandler(handler) {
   handleTendermintNewBlock = handler;
 }
@@ -303,8 +315,12 @@ async function pollStatusUntilSynced() {
         });
 
         const currentChainId = status.node_info.network;
+        if (chainId == null) {
+          // Save chain ID to file on fresh start
+          saveChainId(currentChainId);
+        }
         if (currentChainId !== chainId) {
-          await handleNewChain();
+          await handleNewChain(currentChainId);
         }
 
         eventEmitter.emit('ready', status);
@@ -316,10 +332,8 @@ async function pollStatusUntilSynced() {
   }
 }
 
-// TODO: save chain ID to file on fresh start
-
-async function handleNewChain() {
-  // TODO: save new chain ID to file and set to variable
+async function handleNewChain(newChainId) {
+  saveChainId(newChainId);
   lastKnownAppHash = null;
   cacheBlocks = {};
   latestBlockHeight = 0;
