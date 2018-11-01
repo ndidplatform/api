@@ -105,6 +105,7 @@ import errorType from 'ndid-error/type';
 // NodeIDInASListIsNotActive                 uint32 = 79
 // RoleIsNotAS                               uint32 = 80
 // RequestIsNotClosed                        uint32 = 81
+// ChainIsDisabled                           uint32 = 82
 // UnknownError                              uint32 = 999
 
 const codeMapping = {
@@ -189,6 +190,7 @@ const codeMapping = {
   79: errorType.ABCI_NODE_ID_IN_AS_LIST_IS_NOT_ACTIVE,
   80: errorType.ABCI_NOT_AS,
   81: errorType.ABCI_REQUEST_IS_NOT_CLOSED,
+  82: errorType.ABCI_CHAIN_DISABLED,
   999: errorType.UNKNOWN_ERROR,
 };
 

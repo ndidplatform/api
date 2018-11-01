@@ -672,6 +672,10 @@ module.exports = {
     code: 15027,
     message: 'Request is not closed',
   },
+  ABCI_CHAIN_DISABLED: {
+    code: 15028,
+    message: 'Blockchain is disabled',
+  },
 
   // Client errors
   ABCI_REQUEST_ID_NOT_FOUND: {
