@@ -112,7 +112,7 @@ export async function notifyRevokeAccessorAfterConsent(
     if (callbackAdditionalArgs != null) {
       getFunction(callbackFnName)({}, ...callbackAdditionalArgs);
     } else {
-      getFunction(callbackFnName)();
+      getFunction(callbackFnName)({});
     }
   } catch (error) {
     logger.error({
@@ -122,6 +122,13 @@ export async function notifyRevokeAccessorAfterConsent(
       options: arguments[2],
       error,
     });
-    getFunction(callbackFnName)({ error });
+    
+    if (callbackFnName != null) {
+      if (callbackAdditionalArgs != null) {
+        getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+      } else {
+        getFunction(callbackFnName)({ error });
+      }
+    }
   }
 }
