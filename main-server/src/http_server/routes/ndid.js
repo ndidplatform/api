@@ -423,4 +423,17 @@ router.post(
   }
 );
 
+router.post('/setLastBlock', validateBody, async (req, res, next) => {
+  try {
+    const { block_height } = req.body;
+
+    await ndid.setLastBlock({
+      block_height,
+    });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

@@ -206,6 +206,7 @@ export async function init() {
       public_key,
       master_public_key,
     });
+    await ndid.endInit();
     await Promise.all(
       nodes.map(({ nodeId, role }) => addKeyAndSetToken(nodeId, role))
     );

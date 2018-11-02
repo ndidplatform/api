@@ -70,6 +70,22 @@ export async function initNDID({
   }
 }
 
+export async function endInit() {
+  try {
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'EndInit',
+      params: {},
+    });
+  } catch (error) {
+    logger.error({
+      message: 'Cannot end init',
+      error,
+    });
+    throw error;
+  }
+}
+
 export async function approveService({ node_id, service_id }) {
   try {
     await tendermint.transact({
@@ -547,6 +563,19 @@ export async function updateNodeProxyNode({
 export async function removeNodeFromProxyNode({ node_id }) {
   try {
     await tendermintNdid.removeNodeFromProxyNode({ node_id }, config.nodeId);
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function setLastBlock({ block_height }) {
+  try {
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'SetLastBlock',
+      params: { block_height },
+    });
   } catch (error) {
     // TODO:
     throw error;
