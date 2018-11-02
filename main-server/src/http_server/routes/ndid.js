@@ -115,6 +115,34 @@ router.post('/updateNode', validateBody, async (req, res, next) => {
   }
 });
 
+router.post('/enableNode', validateBody, async (req, res, next) => {
+  try {
+    const { node_id } = req.body;
+
+    await ndid.enableNode({
+      node_id,
+    });
+
+    res.status(200).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/disableNode', validateBody, async (req, res, next) => {
+  try {
+    const { node_id } = req.body;
+
+    await ndid.disableNode({
+      node_id,
+    });
+
+    res.status(200).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/setNodeToken', validateBody, async (req, res, next) => {
   try {
     const { node_id, amount } = req.body;

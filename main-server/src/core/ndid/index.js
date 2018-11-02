@@ -315,6 +315,32 @@ async function updateNodeInternalAsync(data, { synchronous = false } = {}) {
   }
 }
 
+export async function enableNode({ node_id }) {
+  try {
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'EnableNode',
+      params: { node_id },
+    });
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function disableNode({ node_id }) {
+  try {
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'DisableNode',
+      params: { node_id },
+    });
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
 export async function addNamespace({ namespace, description }) {
   try {
     await tendermint.transact({
