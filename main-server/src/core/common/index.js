@@ -137,7 +137,7 @@ export async function initialize() {
     setShouldRetryFnGetter(getFunction);
     setResponseCallbackFnGetter(getFunction);
     const nodesBehindProxy = await node.getNodesBehindProxyWithKeyOnProxy();
-    const nodeIds = nodesBehindProxy.map((node) => node.node_id); 
+    const nodeIds = nodesBehindProxy.map((node) => node.node_id);
     resumeTimeoutScheduler(nodeIds);
     resumeCallbackToClient();
   }
@@ -180,12 +180,16 @@ export function getFunction(fnName) {
       return identity.checkForExistedIdentityAfterBlockchain;
     case 'identity.createIdentityInternalAsyncAfterClearRegisterIdentityTimeout':
       return identity.createIdentityInternalAsyncAfterClearRegisterIdentityTimeout;
+    case 'identity.addAccessorAfterCloseConsentRequest':
+      return identity.addAccessorAfterCloseConsentRequest;
     case 'identity.addAccessorAfterConsentAfterAddAccessorMethod':
       return identity.addAccessorAfterConsentAfterAddAccessorMethod;
     case 'identity.addAccessorAfterConsentAfterRegisterMqDest':
       return identity.addAccessorAfterConsentAfterRegisterMqDest;
     case 'identity.notifyResultOfCreateRequestToRevokeAccessor':
       return identity.notifyResultOfCreateRequestToRevokeAccessor;
+    case 'identity.revokeAccessorAfterCloseConsentRequest':
+      return identity.revokeAccessorAfterCloseConsentRequest;
     case 'identity.notifyRevokeAccessorAfterConsent':
       return identity.notifyRevokeAccessorAfterConsent;
     case 'idp.processIdpResponseAfterRevokeAccessor':
@@ -210,7 +214,7 @@ async function resumeTimeoutScheduler(nodeIds) {
         requestId,
         timoutInSeconds: (unixTimeout - Date.now()) / 1000,
       });
-      runTimeoutScheduler(nodeId ,requestId, (unixTimeout - Date.now()) / 1000);
+      runTimeoutScheduler(nodeId, requestId, (unixTimeout - Date.now()) / 1000);
     });
   });
 }

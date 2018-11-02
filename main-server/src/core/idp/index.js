@@ -313,7 +313,7 @@ export async function processMessage(nodeId, message) {
       //reponse for create identity
       if (await checkCreateIdentityResponse(nodeId, message, requestDetail)) {
         //TODO what if create identity request need more than 1 min_idp
-        await identity.addAccessorAfterConsent(
+        await identity.closeConsentRequestThenAddAccessor(
           {
             nodeId,
             request_id: message.request_id,
@@ -323,6 +323,14 @@ export async function processMessage(nodeId, message) {
             callbackFnName: 'idp.processIdpResponseAfterAddAccessor',
             callbackAdditionalArgs: [{ nodeId, message }],
           }
+        );
+      } else {
+        await common.closeRequest(
+          {
+            node_id: nodeId,
+            request_id: message.request_id,
+          },
+          { synchronous: true }
         );
       }
     } else if (requestDetail.purpose === 'RevokeAccessor') {
@@ -341,7 +349,7 @@ export async function processMessage(nodeId, message) {
         )
       ) {
         //TODO what if revoke identity request need more than 1 min_idp
-        await identity.revokeAccessorAfterConsent(
+        await identity.closeConsentRequestThenRevokeAccessor(
           {
             nodeId,
             request_id: message.request_id,
@@ -352,6 +360,14 @@ export async function processMessage(nodeId, message) {
             callbackFnName: 'idp.processIdpResponseAfterRevokeAccessor',
             callbackAdditionalArgs: [{ nodeId, message }],
           }
+        );
+      } else {
+        await common.closeRequest(
+          {
+            node_id: nodeId,
+            request_id: message.request_id,
+          },
+          { synchronous: true }
         );
       }
     }
@@ -522,13 +538,6 @@ async function checkCreateIdentityResponse(nodeId, message, requestDetail) {
     logger.debug({
       message: 'Create identity consented',
     });
-    await common.closeRequest(
-      {
-        node_id: nodeId,
-        request_id: message.request_id,
-      },
-      { synchronous: true }
-    );
     return true;
   } catch (error) {
     const [{ associated }, requestData] = await Promise.all([
@@ -588,13 +597,6 @@ async function checkCreateIdentityResponse(nodeId, message, requestDetail) {
       }
     }
     cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);
-    await common.closeRequest(
-      {
-        node_id: nodeId,
-        request_id: message.request_id,
-      },
-      { synchronous: true }
-    );
 
     logger.debug({
       message: 'Create identity failed',
@@ -713,13 +715,6 @@ async function checkRevokeAccessorResponse(
     logger.debug({
       message: 'Revoke identity consented',
     });
-    await common.closeRequest(
-      {
-        node_id: nodeId,
-        request_id: message.request_id,
-      },
-      { synchronous: true }
-    );
     return true;
   } catch (error) {
     const requestData = await cacheDb.getRequestData(
@@ -746,13 +741,6 @@ async function checkRevokeAccessorResponse(
     );
     cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
     cacheDb.removeRevokeAccessorDataByReferenceId(nodeId, reference_id);
-    await common.closeRequest(
-      {
-        node_id: nodeId,
-        request_id: message.request_id,
-      },
-      { synchronous: true }
-    );
 
     logger.debug({
       message: 'Revoke identity failed',
