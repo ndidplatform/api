@@ -11,6 +11,8 @@ IMPROVEMENTS:
 
 - API version 2.4
   - Add `incoming_request_status_update_url` optional property to POST `/idp/callback` and POST `/as/callback` for setting callback URL for receiving related request status updates.
+- NDID only API
+  - Add APIs for enable node and disable node.
 - Check IAL when IdP creating a response.
 - Check new key when update DPKI key.
 - Save pending outbound messages for MQ to cache DB on server graceful shutdown. The server will try to send on next start if the messages do not exceed MQ send total timeout.

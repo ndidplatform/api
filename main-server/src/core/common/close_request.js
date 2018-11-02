@@ -20,7 +20,7 @@
  *
  */
 
-import { removeTimeoutScheduler } from '.';
+import { removeTimeoutScheduler, getFunction } from '.';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
@@ -42,13 +42,16 @@ import { role } from '../../node';
  * @param {string} closeRequestParams.reference_id
  * @param {string} closeRequestParams.callback_url
  * @param {string} closeRequestParams.request_id
- * @param {Object} option
- * @param {boolean} options.synchronous
+ * @param {Object} options
+ * @param {boolean} [options.synchronous]
+ * @param {boolean} [options.sendCallbackToClient]
+ * @param {string} [options.callbackFnName]
+ * @param {Array} [options.callbackAdditionalArgs]
  */
-export async function closeRequest(
-  { node_id, reference_id, callback_url, request_id },
-  { synchronous = false } = {}
-) {
+export async function closeRequest(closeRequestParams, options = {}) {
+  let { node_id } = closeRequestParams;
+  const { reference_id, callback_url, request_id } = closeRequestParams;
+  const { synchronous = false } = options;
   if (role === 'proxy') {
     if (node_id == null) {
       throw new CustomError({
@@ -61,9 +64,9 @@ export async function closeRequest(
 
   try {
     if (synchronous) {
-      await closeRequestInternalAsync(...arguments, { node_id });
+      await closeRequestInternalAsync(closeRequestParams, options, { node_id });
     } else {
-      closeRequestInternalAsync(...arguments, { node_id });
+      closeRequestInternalAsync(closeRequestParams, options, { node_id });
     }
   } catch (error) {
     throw new CustomError({
@@ -78,10 +81,18 @@ export async function closeRequest(
 }
 
 async function closeRequestInternalAsync(
-  { reference_id, callback_url, request_id },
-  { synchronous = false } = {},
-  { node_id }
+  closeRequestParams,
+  options,
+  additionalParams
 ) {
+  const { reference_id, callback_url, request_id } = closeRequestParams;
+  const {
+    synchronous = false,
+    sendCallbackToClient = true,
+    callbackFnName,
+    callbackAdditionalArgs,
+  } = options;
+  const { node_id } = additionalParams;
   try {
     const responseValidList = await cacheDb.getIdpResponseValidList(
       node_id,
@@ -111,7 +122,15 @@ async function closeRequestInternalAsync(
         },
         node_id,
         'common.closeRequestInternalAsyncAfterBlockchain',
-        [{ node_id, reference_id, callback_url, request_id }, { synchronous }]
+        [
+          { node_id, reference_id, callback_url, request_id },
+          {
+            synchronous,
+            sendCallbackToClient,
+            callbackFnName,
+            callbackAdditionalArgs,
+          },
+        ]
       );
     } else {
       await tendermintNdid.closeRequest(
@@ -124,7 +143,12 @@ async function closeRequestInternalAsync(
       await closeRequestInternalAsyncAfterBlockchain(
         {},
         { node_id, reference_id, callback_url, request_id },
-        { synchronous }
+        {
+          synchronous,
+          sendCallbackToClient,
+          callbackFnName,
+          callbackAdditionalArgs,
+        }
       );
     }
   } catch (error) {
@@ -137,18 +161,27 @@ async function closeRequestInternalAsync(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
-          node_id,
-          type: 'close_request_result',
-          success: false,
-          reference_id,
-          request_id,
-          error: getErrorObjectForClient(error),
-        },
-        true
-      );
+      if (sendCallbackToClient) {
+        await callbackToClient(
+          callback_url,
+          {
+            node_id,
+            type: 'close_request_result',
+            success: false,
+            reference_id,
+            request_id,
+            error: getErrorObjectForClient(error),
+          },
+          true
+        );
+      }
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        } else {
+          getFunction(callbackFnName)({ error });
+        }
+      }
     }
 
     throw error;
@@ -158,7 +191,12 @@ async function closeRequestInternalAsync(
 export async function closeRequestInternalAsyncAfterBlockchain(
   { error },
   { node_id, reference_id, callback_url, request_id },
-  { synchronous = false } = {}
+  {
+    synchronous = false,
+    sendCallbackToClient = true,
+    callbackFnName,
+    callbackAdditionalArgs,
+  } = {}
 ) {
   try {
     if (error) throw error;
@@ -166,17 +204,26 @@ export async function closeRequestInternalAsyncAfterBlockchain(
     removeTimeoutScheduler(node_id, request_id);
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
-          node_id,
-          type: 'close_request_result',
-          success: true,
-          reference_id,
-          request_id,
-        },
-        true
-      );
+      if (sendCallbackToClient) {
+        await callbackToClient(
+          callback_url,
+          {
+            node_id,
+            type: 'close_request_result',
+            success: true,
+            reference_id,
+            request_id,
+          },
+          true
+        );
+      }
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)({}, ...callbackAdditionalArgs);
+        } else {
+          getFunction(callbackFnName)({});
+        }
+      }
     }
   } catch (error) {
     logger.error({
@@ -188,18 +235,27 @@ export async function closeRequestInternalAsyncAfterBlockchain(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
-          node_id,
-          type: 'close_request_result',
-          success: false,
-          reference_id,
-          request_id,
-          error: getErrorObjectForClient(error),
-        },
-        true
-      );
+      if (sendCallbackToClient) {
+        await callbackToClient(
+          callback_url,
+          {
+            node_id,
+            type: 'close_request_result',
+            success: false,
+            reference_id,
+            request_id,
+            error: getErrorObjectForClient(error),
+          },
+          true
+        );
+      }
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        } else {
+          getFunction(callbackFnName)({ error });
+        }
+      }
     } else {
       throw error;
     }

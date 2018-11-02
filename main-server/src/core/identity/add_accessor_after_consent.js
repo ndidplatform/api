@@ -20,62 +20,103 @@
  *
  */
 
-import { getFunction } from '../common';
+import { getFunction, closeRequest } from '../common';
 
 import logger from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 
-export async function addAccessorAfterConsent(
+export async function closeConsentRequestThenAddAccessor(
   { nodeId, request_id, old_accessor_id },
   { callbackFnName, callbackAdditionalArgs }
 ) {
-  //NOTE: zero knowledge proof cannot be verify by blockchain, hence,
-  //if this idp call to add their accessor it's imply that zk proof is verified by them
-  logger.debug({
-    message: 'Got consent, adding accessor',
-    nodeId,
-    request_id,
-    old_accessor_id,
-  });
-
-  const accessor_group_id = await tendermintNdid.getAccessorGroupId(
-    old_accessor_id
-  );
-  const {
-    hash_id,
-    ial,
-    accessor_type,
-    accessor_public_key,
-    accessor_id,
-    sid,
-    associated,
-    secret,
-  } = await cacheDb.getIdentityFromRequestId(nodeId, request_id);
-
-  await tendermintNdid.addAccessorMethod(
+  await closeRequest(
     {
-      request_id,
-      accessor_group_id,
-      accessor_type,
-      accessor_id,
-      accessor_public_key,
+      node_id: nodeId,
+      request_id: request_id,
     },
-    nodeId,
-    'identity.addAccessorAfterConsentAfterAddAccessorMethod',
-    [
-      {
-        nodeId,
-        request_id,
-        hash_id,
-        ial,
-        secret,
-        associated,
-      },
-      { callbackFnName, callbackAdditionalArgs },
-    ]
+    {
+      synchronous: false,
+      sendCallbackToClient: false,
+      callbackFnName: 'identity.addAccessorAfterCloseConsentRequest',
+      callbackAdditionalArgs: [
+        { nodeId, request_id, old_accessor_id },
+        { callbackFnName, callbackAdditionalArgs },
+      ],
+    }
   );
+}
+
+export async function addAccessorAfterCloseConsentRequest(
+  { error },
+  { nodeId, request_id, old_accessor_id },
+  { callbackFnName, callbackAdditionalArgs }
+) {
+  try {
+    if (error) throw error;
+    //NOTE: zero knowledge proof cannot be verify by blockchain, hence,
+    //if this idp call to add their accessor it's imply that zk proof is verified by them
+    logger.debug({
+      message: 'Got consent, adding accessor',
+      nodeId,
+      request_id,
+      old_accessor_id,
+    });
+
+    const accessor_group_id = await tendermintNdid.getAccessorGroupId(
+      old_accessor_id
+    );
+    const {
+      hash_id,
+      ial,
+      accessor_type,
+      accessor_public_key,
+      accessor_id,
+      sid,
+      associated,
+      secret,
+    } = await cacheDb.getIdentityFromRequestId(nodeId, request_id);
+
+    await tendermintNdid.addAccessorMethod(
+      {
+        request_id,
+        accessor_group_id,
+        accessor_type,
+        accessor_id,
+        accessor_public_key,
+      },
+      nodeId,
+      'identity.addAccessorAfterConsentAfterAddAccessorMethod',
+      [
+        {
+          nodeId,
+          request_id,
+          hash_id,
+          ial,
+          secret,
+          associated,
+        },
+        { callbackFnName, callbackAdditionalArgs },
+      ]
+    );
+  } catch (error) {
+    logger.error({
+      message: 'Add accessor after close consent request error',
+      tendermintResult: arguments[0],
+      additionalArgs: arguments[1],
+      options: arguments[2],
+      error,
+    });
+
+    if (callbackFnName != null) {
+      if (callbackAdditionalArgs != null) {
+        getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+      } else {
+        getFunction(callbackFnName)({ error });
+      }
+    }
+  }
 }
 
 export async function addAccessorAfterConsentAfterAddAccessorMethod(
@@ -130,7 +171,13 @@ export async function addAccessorAfterConsentAfterAddAccessorMethod(
       error,
     });
 
-    getFunction(callbackFnName)({ error });
+    if (callbackFnName != null) {
+      if (callbackAdditionalArgs != null) {
+        getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+      } else {
+        getFunction(callbackFnName)({ error });
+      }
+    }
   }
 }
 
@@ -167,6 +214,12 @@ export async function addAccessorAfterConsentAfterRegisterMqDest(
       error,
     });
 
-    getFunction(callbackFnName)({ error });
+    if (callbackFnName != null) {
+      if (callbackAdditionalArgs != null) {
+        getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+      } else {
+        getFunction(callbackFnName)({ error });
+      }
+    }
   }
 }

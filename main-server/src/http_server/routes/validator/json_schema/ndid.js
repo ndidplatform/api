@@ -112,6 +112,24 @@ export default {
         required: ['node_id'],
       },
     },
+    '/ndid/enableNode': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+        },
+        required: ['node_id'],
+      },
+    },
+    '/ndid/disableNode': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+        },
+        required: ['node_id'],
+      },
+    },
     '/ndid/setNodeToken': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
