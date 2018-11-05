@@ -25,7 +25,7 @@ import EventEmitter from 'events';
 
 import protobuf from 'protobufjs';
 
-import * as mqServiceFunctions from './grpc_functions';
+import * as mqService from './grpc_client';
 import * as tendermint from '../tendermint';
 import * as tendermintNdid from '../tendermint/ndid';
 import * as cacheDb from '../db/cache';
@@ -102,16 +102,16 @@ export async function initialize() {
     config.nodeId
   );
 
-  await mqServiceFunctions.initialize();
+  await mqService.initialize();
 
-  mqServiceFunctions.eventEmitter.on('message', onMessage);
+  mqService.eventEmitter.on('message', onMessage);
 
   //should tell client via error callback?
-  mqServiceFunctions.eventEmitter.on('error', (error) =>
+  mqService.eventEmitter.on('error', (error) =>
     logger.error(error.getInfoForLog())
   );
 
-  mqServiceFunctions.subscribeToRecvMessages();
+  mqService.subscribeToRecvMessages();
 
   // Send saved pending outbound messages
   if (savedPendingOutboundMessages.length > 0) {
@@ -131,7 +131,7 @@ export async function initialize() {
           payloadBuffer,
           sendTime,
         };
-        mqServiceFunctions
+        mqService
           .sendMessage(
             mqDestAddress,
             payloadBuffer,
@@ -173,7 +173,7 @@ async function onMessage({ message, msgId, senderId }) {
 
   try {
     await cacheDb.setRawMessageFromMQ(config.nodeId, id, message);
-    mqServiceFunctions
+    mqService
       .sendAckForRecvMessage(msgId)
       .catch((error) => logger.error(error.getInfoForLog()));
 
@@ -566,7 +566,7 @@ export async function send(receivers, message, senderNodeId) {
         msgId,
         mqDestAddress,
       });
-      mqServiceFunctions
+      mqService
         .sendMessage(
           mqDestAddress,
           payloadBuffer,
@@ -613,7 +613,7 @@ export async function send(receivers, message, senderNodeId) {
 }
 
 export async function close() {
-  mqServiceFunctions.close();
+  mqService.close();
   if (Object.keys(pendingOutboundMessages).length > 0) {
     // Save pending outbound messages
     logger.info({

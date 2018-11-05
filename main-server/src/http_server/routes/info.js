@@ -25,7 +25,7 @@ import fs from 'fs';
 
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
-import * as mqServiceFunctions from '../../mq/grpc_functions';
+import * as mqService from '../../mq/grpc_client';
 import * as config from '../../config';
 import logger from '../../logger';
 
@@ -40,7 +40,7 @@ export default async function getInfo(req, res, next) {
 
     let mqServiceServerInfo;
     try {
-      mqServiceServerInfo = await mqServiceFunctions.getInfo();
+      mqServiceServerInfo = await mqService.getInfo();
     } catch (error) {
       logger.warn({
         message: 'Cannot get MQ service server info',

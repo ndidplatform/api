@@ -56,12 +56,72 @@ const MQ_SERVICE_SERVER_ADDRESS = `${config.mqServiceServerIp}:${
 export const eventEmitter = new EventEmitter();
 
 let client;
+let connectivityState = null;
+let closing = false;
 const calls = [];
+let nodeIdMatched;
 
 let recvMessageChannel;
 
 const waitPromises = [];
 let stopSendMessageRetry = false;
+
+let subscribedToRecvMessages = false;
+
+function watchForNextConnectivityStateChange() {
+  if (client == null) {
+    throw new Error('client is not initialized');
+  }
+  client
+    .getChannel()
+    .watchConnectivityState(
+      client.getChannel().getConnectivityState(true),
+      Infinity,
+      async (error) => {
+        if (closing) return;
+        if (error) {
+          logger.error({
+            message: 'MQ service gRPC connectivity state watch error',
+            error,
+          });
+        } else {
+          const newConnectivityState = client
+            .getChannel()
+            .getConnectivityState();
+          logger.debug({
+            message: 'MQ service gRPC connectivity state changed',
+            connectivityState,
+            newConnectivityState,
+          });
+
+          // on reconnect (IF watchForNextConnectivityStateChange() this called after first waitForReady)
+          if (connectivityState === 1 && newConnectivityState === 2) {
+            logger.info({
+              message: 'MQ service gRPC reconnect',
+            });
+            try {
+              await checkNodeIdToMatch();
+            } catch (error) {
+              const err = new CustomError({
+                message: 'Node ID check failed on reconnect',
+                cause: error,
+              });
+              logger.error(err.getInfoForLog());
+            }
+            if (nodeIdMatched) {
+              if (subscribedToRecvMessages) {
+                // Subscribe on reconnect if previously subscribed
+                subscribeToRecvMessages();
+              }
+            }
+          }
+
+          connectivityState = newConnectivityState;
+        }
+        watchForNextConnectivityStateChange();
+      }
+    );
+}
 
 export async function initialize() {
   logger.info({
@@ -72,12 +132,34 @@ export async function initialize() {
     grpc.credentials.createInsecure()
   );
   await waitForReady(client);
+  await checkNodeIdToMatch();
+  watchForNextConnectivityStateChange();
   logger.info({
     message: 'Connected to MQ service server',
   });
 }
 
+async function checkNodeIdToMatch() {
+  logger.info({
+    message: 'Checking Node ID setting on MQ service server',
+  });
+  const mqServiceServerInfo = await getInfo();
+  if (mqServiceServerInfo.node_id !== config.nodeId) {
+    nodeIdMatched = false;
+    throw new CustomError({
+      message: 'MQ service server Node ID mismatch',
+      apiServerNodeId: config.nodeId,
+      mqServerNodeId: mqServiceServerInfo.node_id,
+    });
+  }
+  nodeIdMatched = true;
+  logger.info({
+    message: 'Node ID matched',
+  });
+}
+
 export function close() {
+  closing = true;
   stopSendMessageRetry = true;
   waitPromises.forEach((waitPromise) => waitPromise.stop());
   if (client) {
@@ -92,8 +174,8 @@ export function close() {
   }
 }
 
-function waitForReady(client) {
-  return new Promise((resolve, reject) => {
+async function waitForReady(client) {
+  await new Promise((resolve, reject) => {
     client.waitForReady(Infinity, (error) => {
       if (error) {
         reject(error);
@@ -101,6 +183,9 @@ function waitForReady(client) {
       }
       resolve();
     });
+  });
+  logger.info({
+    message: 'MQ service server ready',
   });
 }
 
@@ -151,6 +236,7 @@ export function subscribeToRecvMessages() {
   }
   if (recvMessageChannel != null) return;
   recvMessageChannel = client.subscribeToRecvMessages(null);
+  subscribedToRecvMessages = true;
   recvMessageChannel.on('data', onRecvMessage);
   recvMessageChannel.on('end', async function onRecvMessageChannelEnded() {
     recvMessageChannel.cancel();
@@ -159,11 +245,6 @@ export function subscribeToRecvMessages() {
       message:
         '[MQ Service] Subscription to receive messages has ended due to server close (stream ended)',
     });
-    // Subscribe on reconnect
-    try {
-      await waitForReady(client);
-      subscribeToRecvMessages();
-    } catch (error) {}
   });
   recvMessageChannel.on('error', async function onRecvMessageChannelError(
     error
@@ -180,16 +261,14 @@ export function subscribeToRecvMessages() {
         message:
           '[MQ Service] Subscription to receive messages has ended due to error',
       });
-      // Subscribe on reconnect
-      try {
-        await waitForReady(client);
-        subscribeToRecvMessages();
-      } catch (error) {}
     }
   });
 }
 
 export function sendAckForRecvMessage(msgId) {
+  if (!nodeIdMatched) {
+    throw new Error('Node ID mismatch. Will NOT send');
+  }
   return new Promise((resolve, reject) => {
     const call = client.sendAckForRecvMessage(
       { message_id: msgId },
@@ -236,6 +315,9 @@ export async function sendMessage(
   retryOnServerUnavailable,
   retryDuration
 ) {
+  if (!nodeIdMatched) {
+    throw new Error('Node ID mismatch. Will NOT send');
+  }
   if (retryOnServerUnavailable) {
     const backoff = new ExponentialBackoff({
       min: 5000,

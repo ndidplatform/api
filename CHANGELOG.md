@@ -5,7 +5,7 @@
 BREAKING CHANGES:
 
 - Separate MQ module from main server process into another process to provide more flexible deployment strategies.
-  - MQ service server must be run together with its main server pair.
+  - MQ service server must be run together with its main server pair and their `NODE_ID` config must be the same.
 
 IMPROVEMENTS:
 
