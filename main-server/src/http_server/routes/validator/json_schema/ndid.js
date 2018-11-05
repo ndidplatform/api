@@ -273,7 +273,7 @@ export default {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
-          block_height: { type: 'integer', minimum: 1 },
+          block_height: { type: 'integer', minimum: -1 },
         },
         required: ['block_height'],
       },
