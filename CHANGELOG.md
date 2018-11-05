@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix duplicate AS data signature processing and set data received on RP side.
+
 ## 0.10.2 (October 29, 2018)
 
 BUG FIXES:
