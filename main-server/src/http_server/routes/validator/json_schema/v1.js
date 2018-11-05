@@ -95,7 +95,7 @@ export default {
             type: 'array',
             items: {
               type: 'string',
-              minimum: 1,
+              minLength: 1,
             },
           },
           callback_url: {
@@ -114,7 +114,7 @@ export default {
                   type: 'array',
                   items: {
                     type: 'string',
-                    minimum: 1,
+                    minLength: 1,
                   },
                 },
                 min_as: {
@@ -197,7 +197,7 @@ export default {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
-          request_id: { type: 'string', minimum: 1 },
+          request_id: { type: 'string', minLength: 1 },
           ial: { $ref: 'defs#/definitions/ial' },
           aal: { $ref: 'defs#/definitions/aal' },
           secret: { type: 'string' },

@@ -97,7 +97,7 @@ export default {
             type: 'array',
             items: {
               type: 'string',
-              minimum: 1,
+              minLength: 1,
             },
           },
           data_request_list: {
@@ -113,7 +113,7 @@ export default {
                   type: 'array',
                   items: {
                     type: 'string',
-                    minimum: 1,
+                    minLength: 1,
                   },
                 },
                 min_as: {
@@ -192,7 +192,7 @@ export default {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
-          request_id: { type: 'string', minimum: 1 },
+          request_id: { type: 'string', minLength: 1 },
           ial: { $ref: 'defs#/definitions/ial' },
           aal: { $ref: 'defs#/definitions/aal' },
           secret: { type: 'string' },
