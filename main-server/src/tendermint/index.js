@@ -336,9 +336,9 @@ async function handleNewChain(newChainId) {
   saveChainId(newChainId);
   lastKnownAppHash = null;
   cacheBlocks = {};
-  latestBlockHeight = 0;
+  latestBlockHeight = 1;
   latestProcessedBlockHeight = 0;
-  saveLatestBlockHeight(0);
+  saveLatestBlockHeight(1);
   await cacheDb.changeAllDataKeysWithExpectedBlockHeight(1);
 }
 
