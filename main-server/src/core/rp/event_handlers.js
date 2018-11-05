@@ -465,9 +465,13 @@ async function processRequestUpdate(nodeId, requestId, height) {
     requestStatus.min_idp === requestStatus.answered_idp_count &&
     requestStatus.service_list.length > 0
   ) {
-    const metadataList = await cacheDb.getExpectedDataSignInBlockList(
+    const metadataListAllRequests = await cacheDb.getExpectedDataSignInBlockList(
       nodeId,
       height
+    );
+    // Filter out unrelated request IDs
+    const metadataList = metadataListAllRequests.filter(
+      ({ requestId: _requestId }) => _requestId === requestId
     );
     await checkAsDataSignaturesAndSetReceived(nodeId, requestId, metadataList);
   }
