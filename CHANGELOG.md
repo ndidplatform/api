@@ -26,6 +26,7 @@ BUG FIXES:
 
 - Fix check validity of secret at create response (if invalid, the response will not be stored in blockchain).
 - Fix wrong callback result for create identity.
+- Fix duplicate AS data signature processing and set data received on RP side.
 
 ## 0.10.2 (October 29, 2018)
 
