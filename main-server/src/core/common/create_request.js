@@ -27,6 +27,7 @@ import {
   getFunction,
 } from '.';
 
+import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
 import * as cacheDb from '../../db/cache';
@@ -640,16 +641,19 @@ export async function createRequestInternalAsyncAfterBlockchain(
             success: true,
             reference_id,
             request_id,
-            creation_block_height: height,
+            creation_block_height: `${tendermint.chainId}:${height}`,
           },
           true
         );
       }
       if (callbackFnName != null) {
         if (callbackAdditionalArgs != null) {
-          getFunction(callbackFnName)({ height }, ...callbackAdditionalArgs);
+          getFunction(callbackFnName)(
+            { chainId: tendermint.chainId, height },
+            ...callbackAdditionalArgs
+          );
         } else {
-          getFunction(callbackFnName)({ height });
+          getFunction(callbackFnName)({ chainId: tendermint.chainId, height });
         }
       }
     }

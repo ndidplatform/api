@@ -79,7 +79,7 @@ const latestBlockHeightFilepath = path.join(
   `latest-block-height-${config.nodeId}`
 );
 
-let chainId = null;
+export let chainId = null;
 
 export let latestBlockHeight = null;
 let latestProcessedBlockHeight = null;

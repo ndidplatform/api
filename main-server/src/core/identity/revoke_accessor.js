@@ -221,7 +221,7 @@ export async function createRequestToRevokeAccessor(
 }
 
 export async function notifyResultOfCreateRequestToRevokeAccessor(
-  { height, error },
+  { chainId, height, error },
   { reference_id, callback_url, accessor_id },
   { nodeId, request_id }
 ) {
@@ -236,7 +236,7 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
         reference_id,
         request_id,
         accessor_id,
-        creation_block_height: height,
+        creation_block_height: `${chainId}:${height}`,
         success: true,
       },
       true

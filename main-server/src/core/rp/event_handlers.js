@@ -178,7 +178,9 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         type: 'request_status',
         ...requestStatus,
         response_valid_list: responseValidList,
-        block_height: message.height,
+        block_height: `${requestDetail.creation_chain_id}:${
+          requestDetail.creation_block_height
+        }`,
       };
 
       const callbackUrl = requestData.callback_url;
@@ -447,7 +449,9 @@ async function processRequestUpdate(nodeId, requestId, height) {
     type: 'request_status',
     ...requestStatus,
     response_valid_list: responseValidList,
-    block_height: height,
+    block_height: `${requestDetail.creation_chain_id}:${
+      requestDetail.creation_block_height
+    }`,
   };
 
   const callbackUrl = requestData.callback_url;
@@ -498,10 +502,7 @@ async function processRequestUpdate(nodeId, requestId, height) {
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
     // since the request is no longer going to have further events
     // (the request has reached its end state)
-    const requestData = await cacheDb.getRequestData(
-      nodeId,
-      requestId
-    );
+    const requestData = await cacheDb.getRequestData(nodeId, requestId);
     const referenceId = requestData.reference_id;
     await Promise.all([
       cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),

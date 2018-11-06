@@ -74,6 +74,8 @@ export default async function getInfo(req, res, next) {
       },
       tendermintAddress: config.tendermintAddress,
       tendermintWebSocketConnected: tendermint.connected,
+      lastKnownChainId: tendermint.chainId,
+      lastKnownBlockHeight: tendermint.latestBlockHeight,
     });
   } catch (error) {
     next(error);

@@ -469,7 +469,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
         { request_id }
       );
     } else {
-      const { height } = await common.createRequest(
+      const { chainId, height } = await common.createRequest(
         {
           node_id: nodeId,
           namespace,
@@ -505,7 +505,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
         { request_id }
       );
       await createIdentityInternalAsyncAfterCreateRequestBlockchain(
-        { height },
+        { chainId, height },
         {
           reference_id,
           callback_url,
@@ -570,7 +570,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
 }
 
 export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
-  { height, error },
+  { chainId, height, error },
   {
     reference_id,
     callback_url,
@@ -608,7 +608,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 reference_id,
                 request_id,
                 accessor_id,
-                creation_block_height: height,
+                creation_block_height: `${chainId}:${height}`,
                 success: true,
               }
             : {
@@ -617,7 +617,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 reference_id,
                 request_id,
                 accessor_id,
-                creation_block_height: height,
+                creation_block_height: `${chainId}:${height}`,
                 success: true,
                 exist: true,
               },
@@ -647,7 +647,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 reference_id,
                 request_id,
                 accessor_id,
-                creation_block_height: height,
+                creation_block_height: `${chainId}:${height}`,
                 success: true,
               }
             : {
@@ -656,7 +656,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 reference_id,
                 request_id,
                 accessor_id,
-                creation_block_height: height,
+                creation_block_height: `${chainId}:${height}`,
                 success: true,
                 exist: false,
               },
