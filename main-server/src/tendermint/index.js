@@ -156,16 +156,10 @@ export async function loadExpectedTxFromDB() {
 }
 
 async function processMissingExpectedTxs() {
-  const txHashes = Object.keys(expectedTx).map((txHash) => {
-    return {
-      txHash,
-      txHashSum: txHash.substring(0, 40), // Get first 20 bytes of Tx hash
-    };
-  });
   await Promise.all(
-    txHashes.map(async ({ txHash, txHashSum }) => {
+    Object.keys(expectedTx).map(async (txHash) => {
       try {
-        const result = await tendermintHttpClient.tx(txHashSum);
+        const result = await tendermintHttpClient.tx(txHash);
         await processExpectedTx(txHash, result);
       } catch (error) {
         logger.warn({
