@@ -916,7 +916,7 @@ export async function transact({
         useMasterKey,
       };
       await saveTransactRequestForRetry(transactParams);
-      return { chainDisabled: true };
+      return { chainDisabledRetryLater: true };
     } else {
       throw error;
     }
