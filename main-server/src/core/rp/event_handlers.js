@@ -347,12 +347,8 @@ async function processASDataSignExpectedInBlocks(fromHeight, toHeight, nodeId) {
 }
 
 async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
-  const transactionsInBlocksToProcess = parsedTransactionsInBlocks.filter(
-    ({ transactions }) => transactions.length >= 0
-  );
-
   await Promise.all(
-    transactionsInBlocksToProcess.map(async ({ height, transactions }) => {
+    parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
       const requestIdsToProcessUpdateSet = new Set();
       transactions.forEach((transaction) => {
         const requestId = transaction.args.request_id;

@@ -150,12 +150,8 @@ async function processRequestExpectedInBlocks(fromHeight, toHeight, nodeId) {
 }
 
 async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
-  const transactionsInBlocksToProcess = parsedTransactionsInBlocks.filter(
-    ({ transactions }) => transactions.length >= 0
-  );
-
   await Promise.all(
-    transactionsInBlocksToProcess.map(async ({ height, transactions }) => {
+    parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
       const incomingRequestsToProcessUpdate = {};
 
       for (let i = 0; i < transactions.length; i++) {

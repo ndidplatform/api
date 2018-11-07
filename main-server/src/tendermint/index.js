@@ -385,6 +385,19 @@ async function loadAndRetryBacklogTransactRequests() {
   );
 }
 
+function checkForSetLastBlock(parsedTransactionsInBlocks) {
+  parsedTransactionsInBlocks.transactions.forEach((transaction) => {
+    if (transaction.fnName === 'SetLastBlock') {
+      if (
+        transaction.args.block_height === -1 ||
+        transaction.args.block_height > latestBlockHeight
+      ) {
+        loadAndRetryBacklogTransactRequests();
+      }
+    }
+  });
+}
+
 tendermintWsClient.on('connected', async () => {
   connected = true;
   if (reconnecting) {
@@ -477,7 +490,8 @@ async function processNewBlock(blockHeight, appHash) {
         const parsedTransactionsInBlocks = await getParsedTxsInBlocks(
           fromHeight,
           toHeight
-        );
+        ).filter(({ transactions }) => transactions.length >= 0);
+        checkForSetLastBlock(parsedTransactionsInBlocks);
         await handleTendermintNewBlock(
           fromHeight,
           toHeight,
