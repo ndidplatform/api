@@ -203,7 +203,10 @@ async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
         });
       }
 
-      if (as_id_list != null && potential_as_list.length != as_id_list.length) {
+      if (
+        as_id_list != null &&
+        potential_as_list.length !== as_id_list.length
+      ) {
         throw new CustomError({
           errorType: errorType.UNQUALIFIED_AS,
           details: {
@@ -216,7 +219,9 @@ async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
       }
 
       if (as_id_list == null) {
-        dataRequest.as_id_list = potential_as_list.map(node_info => node_info.node_id);
+        dataRequest.as_id_list = potential_as_list.map(
+          (node_info) => node_info.node_id
+        );
       }
     })
   );
