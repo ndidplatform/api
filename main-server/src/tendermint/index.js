@@ -377,12 +377,18 @@ async function handleNewChain(newChainId) {
 async function loadAndRetryBacklogTransactRequests() {
   await pollInitStatusUntilInitEnded();
   const transactRequests = await cacheDb.getAllTransactRequestForRetry();
-  await Promise.all(
-    transactRequests.map(async ({ id, transactParams }) => {
-      await transact(transactParams);
-      await cacheDb.removeTransactRequestForRetry(config.nodeId, id);
-    })
-  );
+  if (transactRequests.length > 0) {
+    logger.debug({
+      message: 'Backlog transact requests to retry',
+      transactRequests,
+    });
+    await Promise.all(
+      transactRequests.map(async ({ id, transactParams }) => {
+        await transact(transactParams);
+        await cacheDb.removeTransactRequestForRetry(config.nodeId, id);
+      })
+    );
+  }
 }
 
 function checkForSetLastBlock(parsedTransactionsInBlocks) {
