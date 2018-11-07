@@ -376,7 +376,9 @@ async function handleNewChain(newChainId) {
 
 async function loadAndRetryBacklogTransactRequests() {
   await pollInitStatusUntilInitEnded();
-  const transactRequests = await cacheDb.getAllTransactRequestForRetry();
+  const transactRequests = await cacheDb.getAllTransactRequestForRetry(
+    config.nodeId
+  );
   if (transactRequests.length > 0) {
     logger.debug({
       message: 'Backlog transact requests to retry',
