@@ -703,7 +703,7 @@ export async function query(fnName, params, height) {
     );
     return getQueryResult(result);
   } catch (error) {
-    if (error.type === 'JSON-RPC ERROR') {
+    if (error.message === 'JSON-RPC ERROR') {
       throw new CustomError({
         errorType: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR,
         details: error.error,
@@ -733,6 +733,7 @@ export async function transact({
   callbackFnName,
   callbackAdditionalArgs,
   useMasterKey = false,
+  saveForRetryOnChainClosed = false,
 }) {
   if (nodeId == null || nodeId == '') {
     throw new CustomError({
@@ -817,7 +818,7 @@ export async function transact({
   } catch (error) {
     delete expectedTx[txHash];
     await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
-    if (error.type === 'JSON-RPC ERROR') {
+    if (error.message === 'JSON-RPC ERROR') {
       throw new CustomError({
         errorType: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
         details: error.error,
