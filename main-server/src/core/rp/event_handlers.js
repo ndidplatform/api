@@ -287,6 +287,7 @@ export async function handleTendermintNewBlock(
   try {
     await Promise.all([
       processChallengeRequestExpectedInBlocks(fromHeight, toHeight, nodeId),
+      processASDataSignExpectedInBlocks(fromHeight, toHeight, nodeId),
       processTasksInBlocks(parsedTransactionsInBlocks, nodeId),
     ]);
   } catch (error) {
@@ -335,6 +336,16 @@ async function processChallengeRequestExpectedInBlocks(
   cacheDb.removeExpectedIdpPublicProofInBlockList(nodeId, fromHeight, toHeight);
 }
 
+async function processASDataSignExpectedInBlocks(fromHeight, toHeight, nodeId) {
+  const metadataList = await cacheDb.getExpectedDataSignsInBlockList(
+    nodeId,
+    fromHeight,
+    toHeight
+  );
+  await checkAsDataSignaturesAndSetReceived(nodeId, metadataList);
+  cacheDb.removeExpectedDataSignsInBlockList(nodeId, fromHeight, toHeight);
+}
+
 async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
   const transactionsInBlocksToProcess = parsedTransactionsInBlocks.filter(
     ({ transactions }) => transactions.length >= 0
@@ -357,7 +368,6 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         )
       );
       cacheDb.removeExpectedIdpResponseNodeIdInBlockList(nodeId, height);
-      cacheDb.removeExpectedDataSignInBlockList(nodeId, height);
     })
   );
 }
@@ -465,22 +475,6 @@ async function processRequestUpdate(nodeId, requestId, height) {
   }
 
   if (
-    requestStatus.status === 'confirmed' &&
-    requestStatus.min_idp === requestStatus.answered_idp_count &&
-    requestStatus.service_list.length > 0
-  ) {
-    const metadataListAllRequests = await cacheDb.getExpectedDataSignInBlockList(
-      nodeId,
-      height
-    );
-    // Filter out unrelated request IDs
-    const metadataList = metadataListAllRequests.filter(
-      ({ requestId: _requestId }) => _requestId === requestId
-    );
-    await checkAsDataSignaturesAndSetReceived(nodeId, requestId, metadataList);
-  }
-
-  if (
     requestStatus.status === 'completed' &&
     !requestStatus.closed &&
     !requestStatus.timed_out &&
@@ -514,15 +508,10 @@ async function processRequestUpdate(nodeId, requestId, height) {
   }
 }
 
-async function checkAsDataSignaturesAndSetReceived(
-  nodeId,
-  requestId,
-  metadataList
-) {
+async function checkAsDataSignaturesAndSetReceived(nodeId, metadataList) {
   logger.debug({
     message: 'Check AS data signatures and set received (bulk)',
     nodeId,
-    requestId,
     metadataList,
   });
 

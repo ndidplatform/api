@@ -893,8 +893,22 @@ export function removeAllDataFromAS(nodeId) {
   });
 }
 
+export function getExpectedDataSignsInBlockList(nodeId, fromHeight, toHeight) {
+  return db.getListRange({
+    nodeId,
+    dbName,
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    keyRange: {
+      gte: fromHeight, // greaterThanOrEqual
+      lte: toHeight, // lessThanOrEqual
+    },
+    valueName: 'metadata',
+  });
+}
+
 export function getExpectedDataSignInBlockList(nodeId, height) {
-  return db.getList({
+  return db.getListWithRangeSupport({
     nodeId,
     dbName,
     name: 'expectedDataSignInBlock',
@@ -905,7 +919,7 @@ export function getExpectedDataSignInBlockList(nodeId, height) {
 }
 
 export function addExpectedDataSignInBlock(nodeId, height, metadata) {
-  return db.pushToList({
+  return db.pushToListWithRangeSupport({
     nodeId,
     dbName,
     name: 'expectedDataSignInBlock',
@@ -916,13 +930,20 @@ export function addExpectedDataSignInBlock(nodeId, height, metadata) {
   });
 }
 
-export function removeExpectedDataSignInBlockList(nodeId, height) {
-  return db.removeList({
+export function removeExpectedDataSignsInBlockList(
+  nodeId,
+  fromHeight,
+  toHeight
+) {
+  return db.removeListRange({
     nodeId,
     dbName,
     name: 'expectedDataSignInBlock',
     keyName: 'expectedBlockHeight',
-    key: height,
+    keyRange: {
+      gte: fromHeight, // greaterThanOrEqual
+      lte: toHeight, // lessThanOrEqual
+    },
   });
 }
 
