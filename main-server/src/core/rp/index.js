@@ -35,6 +35,7 @@ import * as config from '../../config';
 import { role } from '../../node';
 
 export * from './event_handlers';
+export * from './process_as_data';
 
 export const callbackUrls = {};
 

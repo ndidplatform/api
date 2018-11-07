@@ -25,6 +25,7 @@ import {
   isAllIdpResponsesValid,
   isAllIdpRespondedAndValid,
   sendRequestToAS,
+  processAsData,
 } from '.';
 
 import * as tendermint from '../../tendermint';
@@ -35,7 +36,6 @@ import privateMessageType from '../../mq/message/type';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
 import CustomError from 'ndid-error/custom_error';
-import errorType from 'ndid-error/type';
 import logger from '../../logger';
 
 import * as config from '../../config';
@@ -540,145 +540,4 @@ async function checkAsDataSignaturesAndSetReceived(nodeId, metadataList) {
       });
     })
   );
-}
-
-async function processAsData({
-  nodeId,
-  requestId,
-  serviceId,
-  asNodeId,
-  signature,
-  dataSalt,
-  data,
-}) {
-  logger.debug({
-    message: 'Processing AS data response',
-    nodeId,
-    requestId,
-    serviceId,
-    asNodeId,
-    signature,
-    dataSalt,
-    data,
-  });
-
-  const asResponseId =
-    nodeId + ':' + requestId + ':' + serviceId + ':' + asNodeId;
-
-  const signatureFromBlockchain = await tendermintNdid.getDataSignature({
-    request_id: requestId,
-    service_id: serviceId,
-    node_id: asNodeId,
-  });
-
-  if (signatureFromBlockchain == null) {
-    cleanUpDataResponseFromAS(nodeId, asResponseId);
-    return;
-  }
-  if (
-    signature !== signatureFromBlockchain ||
-    !(await isDataSignatureValid(
-      asNodeId,
-      signatureFromBlockchain,
-      dataSalt,
-      data
-    ))
-  ) {
-    cleanUpDataResponseFromAS(nodeId, asResponseId);
-    const err = new CustomError({
-      errorType: errorType.INVALID_DATA_RESPONSE_SIGNATURE,
-      details: {
-        requestId,
-      },
-    });
-    logger.error(err.getInfoForLog());
-    await common.notifyError({
-      nodeId,
-      callbackUrl: callbackUrls.error_url,
-      action: 'processAsData',
-      error: err,
-      requestId,
-    });
-    return;
-  }
-
-  try {
-    await tendermintNdid.setDataReceived(
-      {
-        requestId,
-        service_id: serviceId,
-        as_id: asNodeId,
-      },
-      nodeId,
-      undefined,
-      undefined,
-      true
-    );
-  } catch (error) {
-    cleanUpDataResponseFromAS(nodeId, asResponseId);
-    const err = new CustomError({
-      message: 'Cannot set data received',
-      details: {
-        requestId,
-        serviceId,
-        asNodeId,
-      },
-      cause: error,
-    });
-    logger.error(err.getInfoForLog());
-    await common.notifyError({
-      nodeId,
-      callbackUrl: callbackUrls.error_url,
-      action: 'processAsData',
-      error: err,
-      requestId,
-    });
-    return;
-  }
-
-  await cacheDb.addDataFromAS(nodeId, requestId, {
-    source_node_id: asNodeId,
-    service_id: serviceId,
-    source_signature: signature,
-    signature_sign_method: 'RSA-SHA256',
-    data_salt: dataSalt,
-    data,
-  });
-
-  cleanUpDataResponseFromAS(nodeId, asResponseId);
-}
-
-async function cleanUpDataResponseFromAS(nodeId, asResponseId) {
-  try {
-    await cacheDb.removeDataResponseFromAS(nodeId, asResponseId);
-  } catch (error) {
-    logger.error({
-      message: 'Cannot remove data response from AS',
-      error,
-    });
-  }
-}
-
-async function isDataSignatureValid(asNodeId, signature, salt, data) {
-  const public_key = await tendermintNdid.getNodePubKey(asNodeId);
-  if (public_key == null) return;
-
-  logger.debug({
-    message: 'Verifying AS data signature',
-    asNodeId,
-    asNodePublicKey: public_key,
-    signature,
-    salt,
-    data,
-  });
-  if (!utils.verifySignature(signature, public_key, data + salt)) {
-    logger.warn({
-      message: 'Data signature from AS is not valid',
-      signature,
-      asNodeId,
-      asNodePublicKey: public_key,
-    });
-    return false;
-  }
-  return true;
 }

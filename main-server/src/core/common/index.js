@@ -194,6 +194,8 @@ export function getFunction(fnName) {
       return identity.notifyRevokeAccessorAfterConsent;
     case 'idp.processIdpResponseAfterRevokeAccessor':
       return idp.processIdpResponseAfterRevokeAccessor;
+    case 'rp.processAsDataAfterSetDataReceived':
+      return rp.processAsDataAfterSetDataReceived;
     default:
       throw new CustomError({
         message: 'Unknown function name',
