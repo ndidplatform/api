@@ -905,8 +905,7 @@ export async function transact({
     ) {
       logger.info({
         message:
-          'Saving transaction for retry when new chain is up and running',
-        // message: 'Saving transaction for retry when new chain is up and running or current chain is enabled again',
+          'Saving transaction for retry when new chain is up and running or current chain is enabled again',
       });
       const transactParams = {
         nodeId,
@@ -917,6 +916,7 @@ export async function transact({
         useMasterKey,
       };
       await saveTransactRequestForRetry(transactParams);
+      return { chainDisabled: true };
     } else {
       throw error;
     }

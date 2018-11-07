@@ -463,7 +463,7 @@ async function requestChallenge({
 }
 
 export async function requestChallengeAfterBlockchain(
-  { height, error },
+  { height, error, chainDisabled },
   {
     nodeId,
     reference_id,
@@ -475,6 +475,7 @@ export async function requestChallengeAfterBlockchain(
     rp_id,
   }
 ) {
+  if (chainDisabled) return;
   try {
     if (error) throw error;
     //send message queue with public proof
