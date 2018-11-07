@@ -340,7 +340,7 @@ async function pollStatusUntilSynced() {
 
 async function pollInitStatusUntilInitEnded() {
   logger.info({
-    message: 'Waiting for blockchain initialization to finish',
+    message: 'Waiting for blockchain initialization',
   });
 
   const backoff = new ExponentialBackoff({

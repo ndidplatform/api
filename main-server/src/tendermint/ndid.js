@@ -915,7 +915,7 @@ export async function getNodesBehindProxyNode(proxy_node_id) {
 
 export async function isInitEnded() {
   try {
-    return await tendermint.query('IsInitEnded', {});
+    return await tendermint.query('IsInitEnded');
   } catch (error) {
     throw new CustomError({
       message: 'Cannot check is init ended',
