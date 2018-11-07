@@ -457,7 +457,8 @@ async function requestChallenge({
         publicProof2,
         rp_id: request.rp_id,
       },
-    ]
+    ],
+    true
   );
 }
 
