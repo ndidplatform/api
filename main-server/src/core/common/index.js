@@ -654,10 +654,7 @@ export async function checkIdpResponse({
     );
 
     // Check ZK Proof
-    const challenge = (await cacheDb.getRequestData(
-      nodeId,
-      requestStatus.request_id
-    )).challenge[idpId];
+    const challenge = requestData.challenge[idpId];
     validProof = await verifyZKProof({
       request_id: requestStatus.request_id,
       idp_id: idpId,

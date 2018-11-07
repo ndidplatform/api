@@ -394,22 +394,24 @@ async function loadAndRetryBacklogTransactRequests() {
 }
 
 function checkForSetLastBlock(parsedTransactionsInBlocks) {
-  parsedTransactionsInBlocks
-    .reduce(
-      (flattenTransactions, { transactions }) =>
-        flattenTransactions.concat(transactions),
-      []
-    )
-    .forEach((transaction) => {
-      if (transaction.fnName === 'SetLastBlock') {
-        if (
-          transaction.args.block_height === -1 ||
-          transaction.args.block_height > latestBlockHeight
-        ) {
-          loadAndRetryBacklogTransactRequests();
-        }
-      }
-    });
+  const reversedFlattenParsedTransactions = parsedTransactionsInBlocks.reduceRight(
+    (flattenTransactions, { transactions }) =>
+      flattenTransactions.concat(transactions),
+    []
+  );
+
+  const latestSetLastBlockTransaction = reversedFlattenParsedTransactions.find(
+    (transaction) => transaction.fnName === 'SetLastBlock'
+  );
+
+  if (latestSetLastBlockTransaction != null) {
+    if (
+      latestSetLastBlockTransaction.args.block_height === -1 ||
+      latestSetLastBlockTransaction.args.block_height > latestBlockHeight
+    ) {
+      loadAndRetryBacklogTransactRequests();
+    }
+  }
 }
 
 tendermintWsClient.on('connected', async () => {
@@ -520,8 +522,10 @@ async function processNewBlock(blockHeight, appHash) {
 }
 
 async function getParsedTxsInBlocks(fromHeight, toHeight) {
-  const blocks = await getBlocks(fromHeight, toHeight);
-  const blockResults = await getBlockResults(fromHeight, toHeight);
+  const [blocks, blockResults] = await Promise.all([
+    getBlocks(fromHeight, toHeight),
+    getBlockResults(fromHeight, toHeight),
+  ]);
   const parsedTransactionsInBlocks = await Promise.all(
     blocks.map(async (block, blockIndex) => {
       const height = parseInt(block.header.height);
