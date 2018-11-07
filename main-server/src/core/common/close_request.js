@@ -47,6 +47,7 @@ import { role } from '../../node';
  * @param {boolean} [options.sendCallbackToClient]
  * @param {string} [options.callbackFnName]
  * @param {Array} [options.callbackAdditionalArgs]
+ * @param {boolean} [options.saveForRetryOnChainDisabled]
  */
 export async function closeRequest(closeRequestParams, options = {}) {
   let { node_id } = closeRequestParams;
@@ -91,6 +92,7 @@ async function closeRequestInternalAsync(
     sendCallbackToClient = true,
     callbackFnName,
     callbackAdditionalArgs,
+    saveForRetryOnChainDisabled,
   } = options;
   const { node_id } = additionalParams;
   try {
@@ -130,7 +132,8 @@ async function closeRequestInternalAsync(
             callbackFnName,
             callbackAdditionalArgs,
           },
-        ]
+        ],
+        saveForRetryOnChainDisabled
       );
     } else {
       await tendermintNdid.closeRequest(
@@ -138,7 +141,10 @@ async function closeRequestInternalAsync(
           requestId: request_id,
           responseValidList,
         },
-        node_id
+        node_id,
+        undefined,
+        undefined,
+        saveForRetryOnChainDisabled
       );
       await closeRequestInternalAsyncAfterBlockchain(
         {},

@@ -231,6 +231,38 @@ export function getAllCallbackWithRetryData(nodeId) {
   });
 }
 
+export function getAllTransactRequestForRetry(nodeId) {
+  return db.getAll({
+    nodeId,
+    dbName,
+    name: 'transactRequestForRetry',
+    keyName: 'id',
+    valueName: 'transactParams',
+  });
+}
+
+export function addTransactRequestForRetry(nodeId, id, transactParams) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'transactRequestForRetry',
+    keyName: 'id',
+    key: id,
+    valueName: 'transactParams',
+    value: transactParams,
+  });
+}
+
+export function removeTransactRequestForRetry(nodeId, id) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'transactRequestForRetry',
+    keyName: 'id',
+    key: id,
+  });
+}
+
 //
 // Used by RP, IdP, and AS
 //

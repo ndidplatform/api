@@ -210,6 +210,11 @@ module.exports = {
     code: 10045,
     message: 'Cannot validate MQ message',
   },
+  CANNOT_SAVE_TRANSACT_REQUEST_FOR_RETRY: {
+    code: 10046,
+    message:
+      'Cannot save transact request for retry later on blockchain disabled',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {

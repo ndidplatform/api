@@ -210,7 +210,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         });
         await common.closeRequest(
           { node_id: nodeId, request_id: message.request_id },
-          { synchronous: true }
+          { synchronous: true, saveForRetryOnChainDisabled: true }
         );
       }
       delete idpResponseProcessLocks[responseId];
@@ -487,7 +487,7 @@ async function processRequestUpdate(nodeId, requestId, height) {
     });
     await common.closeRequest(
       { node_id: nodeId, request_id: requestId },
-      { synchronous: true }
+      { synchronous: true, saveForRetryOnChainDisabled: true }
     );
   }
 
@@ -605,7 +605,10 @@ async function processAsData({
         service_id: serviceId,
         as_id: asNodeId,
       },
-      nodeId
+      nodeId,
+      undefined,
+      undefined,
+      true
     );
   } catch (error) {
     cleanUpDataResponseFromAS(nodeId, asResponseId);

@@ -33,10 +33,11 @@ import logger from '../logger';
 
 import * as tendermintHttpClient from './http_client';
 import TendermintWsClient from './ws_client';
+import * as tendermintNdid from './ndid';
 import { convertAbciAppCodeToErrorType } from './abci_app_code';
 import * as cacheDb from '../db/cache';
 import * as utils from '../utils';
-import { sha256 } from '../utils/crypto';
+import { sha256, randomBase64Bytes } from '../utils/crypto';
 
 import * as config from '../config';
 
@@ -67,6 +68,8 @@ let lastKnownAppHash;
 
 export let syncing = null;
 export let connected = false;
+
+export let blockchainInitialized = false;
 
 export const eventEmitter = new EventEmitter();
 
@@ -320,15 +323,44 @@ async function pollStatusUntilSynced() {
           saveChainId(currentChainId);
         }
         if (currentChainId !== chainId) {
+          logger.info({
+            message: 'New chain ID detected',
+            newChainId: currentChainId,
+            oldChainId: chainId,
+          });
           await handleNewChain(currentChainId);
         }
-
-        eventEmitter.emit('ready', status);
         pollingStatus = false;
         return status;
       }
       await utils.wait(backoff.next());
     }
+  }
+}
+
+async function pollInitStatusUntilInitEnded() {
+  logger.info({
+    message: 'Waiting for blockchain initialization to finish',
+  });
+
+  const backoff = new ExponentialBackoff({
+    min: 1000,
+    max: config.maxIntervalTendermintSyncCheck,
+    factor: 2,
+    jitter: 0,
+  });
+
+  for (;;) {
+    const { init_ended } = await tendermintNdid.isInitEnded();
+    if (init_ended) {
+      logger.info({
+        message: 'Blockchain initialized',
+      });
+
+      blockchainInitialized = init_ended;
+      return;
+    }
+    await utils.wait(backoff.next());
   }
 }
 
@@ -342,23 +374,39 @@ async function handleNewChain(newChainId) {
   await cacheDb.changeAllDataKeysWithExpectedBlockHeight(1);
 }
 
+async function loadAndRetryBacklogTransactRequests() {
+  await pollInitStatusUntilInitEnded();
+  const transactRequests = await cacheDb.getAllTransactRequestForRetry();
+  await Promise.all(
+    transactRequests.map(async ({ id, transactParams }) => {
+      await transact(transactParams);
+      await cacheDb.removeTransactRequestForRetry(config.nodeId, id);
+    })
+  );
+}
+
 tendermintWsClient.on('connected', async () => {
   connected = true;
   if (reconnecting) {
     tendermintWsClient.subscribeToNewBlockEvent();
     tendermintWsClient.subscribeToTxEvent();
     const statusOnSync = await pollStatusUntilSynced();
+    loadAndRetryBacklogTransactRequests();
+    eventEmitter.emit('ready', statusOnSync);
     processMissingBlocks(statusOnSync);
     processMissingExpectedTxs();
     reconnecting = false;
   } else {
-    pollStatusUntilSynced();
+    const statusOnSync = await pollStatusUntilSynced();
+    loadAndRetryBacklogTransactRequests();
+    eventEmitter.emit('ready', statusOnSync);
   }
 });
 
 tendermintWsClient.on('disconnected', () => {
   connected = false;
   syncing = null;
+  blockchainInitialized = false;
   reconnecting = true;
 });
 
@@ -733,7 +781,7 @@ export async function transact({
   callbackFnName,
   callbackAdditionalArgs,
   useMasterKey = false,
-  saveForRetryOnChainClosed = false,
+  saveForRetryOnChainDisabled = false,
 }) {
   if (nodeId == null || nodeId == '') {
     throw new CustomError({
@@ -823,9 +871,40 @@ export async function transact({
         errorType: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
         details: error.error,
       });
+    } else if (
+      error.type === errorType.ABCI_CHAIN_DISABLED &&
+      saveForRetryOnChainDisabled
+    ) {
+      logger.info({
+        message:
+          'Saving transaction for retry when new chain is up and running',
+        // message: 'Saving transaction for retry when new chain is up and running or current chain is enabled again',
+      });
+      const transactParams = {
+        nodeId,
+        fnName,
+        params,
+        callbackFnName,
+        callbackAdditionalArgs,
+        useMasterKey,
+      };
+      await saveTransactRequestForRetry(transactParams);
     } else {
       throw error;
     }
+  }
+}
+
+async function saveTransactRequestForRetry(transactParams) {
+  try {
+    const id = randomBase64Bytes(10);
+    await cacheDb.addTransactRequestForRetry(config.nodeId, id, transactParams);
+  } catch (error) {
+    const err = new CustomError({
+      errorType: errorType.CANNOT_SAVE_TRANSACT_REQUEST_FOR_RETRY,
+      cause: error,
+    });
+    throw err;
   }
 }
 

@@ -34,7 +34,8 @@ export async function setMqAddresses(
   addresses,
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   if (nodeId == null) {
     nodeId = config.nodeId;
@@ -48,6 +49,7 @@ export async function setMqAddresses(
       },
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
@@ -61,7 +63,8 @@ export async function updateNode(
   { public_key, master_public_key },
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     const { success } = await tendermint.transact({
@@ -74,6 +77,7 @@ export async function updateNode(
       callbackFnName,
       callbackAdditionalArgs,
       useMasterKey: true,
+      saveForRetryOnChainDisabled,
     });
     return success;
   } catch (error) {
@@ -88,7 +92,8 @@ export async function registerAccessor(
   { accessor_type, accessor_public_key, accessor_id, accessor_group_id },
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     return await tendermint.transact({
@@ -102,6 +107,7 @@ export async function registerAccessor(
       },
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
@@ -115,7 +121,8 @@ export async function clearRegisterIdentityTimeout(
   hash_id,
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     const result = await tendermint.transact({
@@ -124,6 +131,7 @@ export async function clearRegisterIdentityTimeout(
       params: { hash_id },
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
     return result;
   } catch (error) {
@@ -138,7 +146,8 @@ export async function registerIdentity(
   { users },
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     const result = await tendermint.transact({
@@ -149,6 +158,7 @@ export async function registerIdentity(
       },
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
     return result;
   } catch (error) {
@@ -169,7 +179,8 @@ export async function addAccessorMethod(
   },
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     return await tendermint.transact({
@@ -184,6 +195,7 @@ export async function addAccessorMethod(
       },
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
@@ -194,13 +206,11 @@ export async function addAccessorMethod(
 }
 
 export async function revokeAccessorMethod(
-  {
-    request_id,
-    accessor_id,
-  },
+  { request_id, accessor_id },
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     return await tendermint.transact({
@@ -212,6 +222,7 @@ export async function revokeAccessorMethod(
       },
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
@@ -225,7 +236,8 @@ export async function createRequest(
   requestDataToBlockchain,
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     return await tendermint.transact({
@@ -234,6 +246,7 @@ export async function createRequest(
       params: requestDataToBlockchain,
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
@@ -247,7 +260,8 @@ export async function closeRequest(
   { requestId, responseValidList },
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     const result = await tendermint.transact({
@@ -256,6 +270,7 @@ export async function closeRequest(
       params: { request_id: requestId, response_valid_list: responseValidList },
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
     return result;
   } catch (error) {
@@ -271,7 +286,8 @@ export async function timeoutRequest(
   { requestId, responseValidList },
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     // FIXME: should not check here?
@@ -286,6 +302,7 @@ export async function timeoutRequest(
         },
         callbackFnName,
         callbackAdditionalArgs,
+        saveForRetryOnChainDisabled,
       });
     }
   } catch (error) {
@@ -300,7 +317,8 @@ export async function setDataReceived(
   { requestId, service_id, as_id },
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     const result = await tendermint.transact({
@@ -313,6 +331,7 @@ export async function setDataReceived(
       },
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
     return result;
   } catch (error) {
@@ -330,7 +349,8 @@ export async function updateIal(
   { hash_id, ial },
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     await tendermint.transact({
@@ -342,6 +362,7 @@ export async function updateIal(
       },
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
@@ -357,7 +378,8 @@ export async function declareIdentityProof(
   { request_id, identity_proof },
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     return await tendermint.transact({
@@ -370,6 +392,7 @@ export async function declareIdentityProof(
       },
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
@@ -383,7 +406,8 @@ export async function createIdpResponse(
   responseDataToBlockchain,
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     return await tendermint.transact({
@@ -392,6 +416,7 @@ export async function createIdpResponse(
       params: responseDataToBlockchain,
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
@@ -405,7 +430,8 @@ export async function signASData(
   data,
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   const dataToBlockchain = {
     request_id: data.request_id,
@@ -419,6 +445,7 @@ export async function signASData(
       params: dataToBlockchain,
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
@@ -432,7 +459,8 @@ export async function registerServiceDestination(
   params,
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     await tendermint.transact({
@@ -441,6 +469,7 @@ export async function registerServiceDestination(
       params,
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
@@ -454,7 +483,8 @@ export async function updateServiceDestination(
   params,
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     await tendermint.transact({
@@ -463,6 +493,7 @@ export async function updateServiceDestination(
       params,
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
@@ -882,6 +913,17 @@ export async function getNodesBehindProxyNode(proxy_node_id) {
   }
 }
 
+export async function isInitEnded() {
+  try {
+    return await tendermint.query('IsInitEnded', {});
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot check is init ended',
+      cause: error,
+    });
+  }
+}
+
 //
 // NDID only
 //
@@ -890,7 +932,8 @@ export async function addNodeToProxyNode(
   { node_id, proxy_node_id, config: nodeProxyConfig },
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     await tendermint.transact({
@@ -899,6 +942,7 @@ export async function addNodeToProxyNode(
       params: { node_id, proxy_node_id, config: nodeProxyConfig },
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
@@ -912,7 +956,8 @@ export async function updateNodeProxyNode(
   { node_id, proxy_node_id, config: nodeProxyConfig },
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     await tendermint.transact({
@@ -921,6 +966,7 @@ export async function updateNodeProxyNode(
       params: { node_id, proxy_node_id, config: nodeProxyConfig },
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
@@ -934,7 +980,8 @@ export async function removeNodeFromProxyNode(
   { node_id },
   nodeId,
   callbackFnName,
-  callbackAdditionalArgs
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
 ) {
   try {
     await tendermint.transact({
@@ -943,6 +990,7 @@ export async function removeNodeFromProxyNode(
       params: { node_id },
       callbackFnName,
       callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
