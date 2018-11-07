@@ -386,16 +386,22 @@ async function loadAndRetryBacklogTransactRequests() {
 }
 
 function checkForSetLastBlock(parsedTransactionsInBlocks) {
-  parsedTransactionsInBlocks.transactions.forEach((transaction) => {
-    if (transaction.fnName === 'SetLastBlock') {
-      if (
-        transaction.args.block_height === -1 ||
-        transaction.args.block_height > latestBlockHeight
-      ) {
-        loadAndRetryBacklogTransactRequests();
+  parsedTransactionsInBlocks
+    .reduce(
+      (flattenTransactions, { transactions }) =>
+        flattenTransactions.concat(transactions),
+      []
+    )
+    .forEach((transaction) => {
+      if (transaction.fnName === 'SetLastBlock') {
+        if (
+          transaction.args.block_height === -1 ||
+          transaction.args.block_height > latestBlockHeight
+        ) {
+          loadAndRetryBacklogTransactRequests();
+        }
       }
-    }
-  });
+    });
 }
 
 tendermintWsClient.on('connected', async () => {
@@ -487,10 +493,10 @@ async function processNewBlock(blockHeight, appHash) {
         const fromHeight = blockHeight - 1 - missingBlockCount;
         const toHeight = blockHeight - 1;
 
-        const parsedTransactionsInBlocks = await getParsedTxsInBlocks(
+        const parsedTransactionsInBlocks = (await getParsedTxsInBlocks(
           fromHeight,
           toHeight
-        ).filter(({ transactions }) => transactions.length >= 0);
+        )).filter(({ transactions }) => transactions.length >= 0);
         checkForSetLastBlock(parsedTransactionsInBlocks);
         await handleTendermintNewBlock(
           fromHeight,
@@ -532,7 +538,7 @@ async function getParsedTxsInBlocks(fromHeight, toHeight) {
       };
     })
   );
-  return [].concat(...parsedTransactionsInBlocks);
+  return parsedTransactionsInBlocks;
 }
 
 /**
