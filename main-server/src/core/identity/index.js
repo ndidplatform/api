@@ -117,7 +117,7 @@ export async function addAccessorMethodForAssociatedIdp(
 
 export async function checkForExistedIdentity(
   { node_id, namespace, identifier, ial },
-  { callbackFnName, callbackAdditionalArgs } = {}
+  { callbackFnName, callbackAdditionalArgs, saveForRetryOnChainDisabled } = {}
 ) {
   const sid = namespace + ':' + identifier;
   const hash_id = utils.hash(sid);
@@ -146,7 +146,8 @@ export async function checkForExistedIdentity(
             callbackFnName,
             callbackAdditionalArgs,
           },
-        ]
+        ],
+        saveForRetryOnChainDisabled
       );
     } else {
       try {

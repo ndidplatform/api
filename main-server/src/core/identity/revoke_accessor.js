@@ -185,6 +185,7 @@ export async function createRequestToRevokeAccessor(
             request_id,
           },
         ],
+        saveForRetryOnChainDisabled: true,
       },
       { request_id }
     );

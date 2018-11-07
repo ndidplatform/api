@@ -249,6 +249,7 @@ async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
  * @param {boolean} [options.sendCallbackToClient]
  * @param {string} [options.callbackFnName]
  * @param {Array} [options.callbackAdditionalArgs]
+ * @param {boolean} [options.saveForRetryOnChainDisabled]
  * @param {Object} additionalParams
  * @param {string} [additionalParams.request_id]
  *
@@ -447,6 +448,7 @@ async function createRequestInternalAsync(
     sendCallbackToClient = true,
     callbackFnName,
     callbackAdditionalArgs,
+    saveForRetryOnChainDisabled,
   } = options;
   const {
     node_id,
@@ -505,7 +507,8 @@ async function createRequestInternalAsync(
             callbackFnName,
             callbackAdditionalArgs,
           },
-        ]
+        ],
+        saveForRetryOnChainDisabled
       );
     } else {
       const { height } = await tendermintNdid.createRequest(

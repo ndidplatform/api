@@ -46,6 +46,7 @@ export async function closeConsentRequestThenRevokeAccessor(
         { nodeId, request_id, old_accessor_id, revoking_accessor_id },
         { callbackFnName, callbackAdditionalArgs },
       ],
+      saveForRetryOnChainDisabled: true,
     }
   );
 }
@@ -79,7 +80,8 @@ export async function revokeAccessorAfterCloseConsentRequest(
           request_id,
         },
         { callbackFnName, callbackAdditionalArgs },
-      ]
+      ],
+      true
     );
   } catch (error) {
     logger.error({
@@ -122,7 +124,7 @@ export async function notifyRevokeAccessorAfterConsent(
       options: arguments[2],
       error,
     });
-    
+
     if (callbackFnName != null) {
       if (callbackAdditionalArgs != null) {
         getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);

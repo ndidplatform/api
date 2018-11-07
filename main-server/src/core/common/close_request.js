@@ -142,9 +142,6 @@ async function closeRequestInternalAsync(
           responseValidList,
         },
         node_id,
-        undefined,
-        undefined,
-        saveForRetryOnChainDisabled
       );
       await closeRequestInternalAsyncAfterBlockchain(
         {},

@@ -307,6 +307,7 @@ async function createIdentityInternalAsync(
               hash_id,
             },
           ],
+          saveForRetryOnChainDisabled: true,
         }
       );
     } else {
@@ -465,6 +466,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
               secret,
             },
           ],
+          saveForRetryOnChainDisabled: true,
         },
         { request_id }
       );
@@ -690,7 +692,8 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
               generated_accessor_id,
             },
             { synchronous, apiVersion },
-          ]
+          ],
+          true
         );
       } else {
         await tendermintNdid.registerAccessor(
@@ -798,7 +801,8 @@ export async function createIdentityInternalAsyncAfterBlockchain(
             generated_accessor_id,
           },
           { synchronous, apiVersion },
-        ]
+        ],
+        true
       );
     } else {
       await tendermintNdid.clearRegisterIdentityTimeout(hash_id, nodeId);
@@ -900,7 +904,7 @@ export async function createIdentityInternalAsyncAfterClearRegisterIdentityTimeo
           node_id: nodeId,
           request_id,
         },
-        { synchronous: true }
+        { synchronous: false, saveForRetryOnChainDisabled: true }
       );
     }
     cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);

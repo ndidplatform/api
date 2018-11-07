@@ -44,6 +44,7 @@ export async function closeConsentRequestThenAddAccessor(
         { nodeId, request_id, old_accessor_id },
         { callbackFnName, callbackAdditionalArgs },
       ],
+      saveForRetryOnChainDisabled: true,
     }
   );
 }
@@ -98,7 +99,8 @@ export async function addAccessorAfterCloseConsentRequest(
           associated,
         },
         { callbackFnName, callbackAdditionalArgs },
-      ]
+      ],
+      true
     );
   } catch (error) {
     logger.error({
@@ -147,7 +149,8 @@ export async function addAccessorAfterConsentAfterAddAccessorMethod(
             associated,
           },
           { callbackFnName, callbackAdditionalArgs },
-        ]
+        ],
+        true
       );
     } else {
       await addAccessorAfterConsentAfterRegisterMqDest(
