@@ -330,7 +330,11 @@ export async function processMessage(nodeId, message) {
             node_id: nodeId,
             request_id: message.request_id,
           },
-          { synchronous: false, saveForRetryOnChainDisabled: true }
+          {
+            synchronous: false,
+            sendCallbackToClient: false,
+            saveForRetryOnChainDisabled: true,
+          }
         );
       }
     } else if (requestDetail.purpose === 'RevokeAccessor') {
@@ -367,7 +371,11 @@ export async function processMessage(nodeId, message) {
             node_id: nodeId,
             request_id: message.request_id,
           },
-          { synchronous: false, saveForRetryOnChainDisabled: true }
+          {
+            synchronous: false,
+            sendCallbackToClient: false,
+            saveForRetryOnChainDisabled: true,
+          }
         );
       }
     }

@@ -904,7 +904,11 @@ export async function createIdentityInternalAsyncAfterClearRegisterIdentityTimeo
           node_id: nodeId,
           request_id,
         },
-        { synchronous: false, saveForRetryOnChainDisabled: true }
+        {
+          synchronous: false,
+          sendCallbackToClient: false,
+          saveForRetryOnChainDisabled: true,
+        }
       );
     }
     cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);
