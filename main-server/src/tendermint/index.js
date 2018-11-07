@@ -892,7 +892,7 @@ export async function transact({
         details: error.error,
       });
     } else if (
-      error.type === errorType.ABCI_CHAIN_DISABLED &&
+      error.code === errorType.ABCI_CHAIN_DISABLED.code &&
       saveForRetryOnChainDisabled
     ) {
       logger.info({
