@@ -296,6 +296,10 @@ wait_until_ndid_node_initialized() {
   until does_node_id_exist ndid1; do sleep 1; done;
 }
 
+wait_until_node_exist() {
+  until does_node_id_exist ${NODE_ID}; do sleep 1; done;
+}
+
 wait_until_namespace_exist() {
   until did_namespace_exist $1; do sleep 1; done;
 }
@@ -343,6 +347,7 @@ case ${ROLE} in
       wait_until_service_exist "bank_statement"
       wait_until_service_exist "customer_info"
       until register_node_id; do sleep 1; done
+      wait_until_node_exist
       until set_token_for_node_id 10000; do sleep 1; done
       until tendermint_add_validator; do sleep 1; done
       if [ "${ROLE}" = "as" ]; then
