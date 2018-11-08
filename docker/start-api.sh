@@ -111,6 +111,23 @@ init_ndid() {
   fi
 }
 
+end_init() {
+  echo "Finishing Initialization..."
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/endInit \
+    -H "Content-Type: application/json" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Finishing Initialization succeeded"
+    return 0
+  else
+    echo "Finishing Initialization failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
 register_node_id() {
   echo "Registering ${NODE_ID} node..."
   
@@ -299,6 +316,7 @@ case ${ROLE} in
       fi
       wait_for_ndid_node_to_be_ready && \
       until init_ndid; do sleep 1; done && \
+      until end_init; do sleep 1; done && \
       until 
         register_namespace "citizen_id" "Thai citizen ID" && \
         register_namespace "passport_num" "Passport Number" && \
