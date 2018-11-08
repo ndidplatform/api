@@ -12,6 +12,7 @@ IMPROVEMENTS:
 - API version 2.4
   - New API: POST `/identity/:namespace/:identifier/accessors_revoke`. Revoke identity's accessor.
   - Add `incoming_request_status_update_url` optional property to POST `/idp/callback` and POST `/as/callback` for setting callback URL for receiving related request status updates. The data schema of the callback body is the same as request update callback on RP side.
+  - Change all `block_height` and `creation_block_height` properties format from block height as integer to `<CHAIN_ID>:<BLOCK_HEIGHT>` as string.
 - NDID only API
   - Add APIs for enabling and disabling node.
   - Add API for setting last block.
