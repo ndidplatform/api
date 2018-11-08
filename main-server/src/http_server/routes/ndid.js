@@ -51,7 +51,7 @@ router.post('/initNDID', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/endInit', validateBody, async (req, res, next) => {
+router.post('/endInit', async (req, res, next) => {
   try {
     await ndid.endInit();
     res.status(204).end();
