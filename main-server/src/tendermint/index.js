@@ -394,22 +394,19 @@ async function loadAndRetryBacklogTransactRequests() {
 }
 
 function checkForSetLastBlock(parsedTransactionsInBlocks) {
-  const reversedFlattenParsedTransactions = parsedTransactionsInBlocks.reduceRight(
-    (flattenTransactions, { transactions }) =>
-      flattenTransactions.concat(transactions),
-    []
-  );
-
-  const latestSetLastBlockTransaction = reversedFlattenParsedTransactions.find(
-    (transaction) => transaction.fnName === 'SetLastBlock'
-  );
-
-  if (latestSetLastBlockTransaction != null) {
-    if (
-      latestSetLastBlockTransaction.args.block_height === -1 ||
-      latestSetLastBlockTransaction.args.block_height > latestBlockHeight
-    ) {
-      loadAndRetryBacklogTransactRequests();
+  for (let i = parsedTransactionsInBlocks.length - 1; i >= 0; i--) {
+    const transactions = parsedTransactionsInBlocks[i].transactions;
+    for (let j = transactions.length - 1; j >= 0; j--) {
+      const transaction = transactions[j];
+      if (transaction.fnName === 'SetLastBlock') {
+        if (
+          transaction.args.block_height === -1 ||
+          transaction.args.block_height > latestBlockHeight
+        ) {
+          loadAndRetryBacklogTransactRequests();
+          return;
+        }
+      }
     }
   }
 }
@@ -918,6 +915,7 @@ export async function transact({
         callbackFnName,
         callbackAdditionalArgs,
         useMasterKey,
+        saveForRetryOnChainDisabled,
       };
       await saveTransactRequestForRetry(transactParams);
       return { chainDisabledRetryLater: true };
