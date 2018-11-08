@@ -192,6 +192,7 @@ const codeMapping = {
   80: errorType.ABCI_NOT_AS,
   81: errorType.ABCI_REQUEST_IS_NOT_CLOSED,
   82: errorType.ABCI_CHAIN_DISABLED,
+  83: errorType.ABCI_CHAIN_NOT_INITIALIZED,
   999: errorType.UNKNOWN_ERROR,
 };
 
