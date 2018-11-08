@@ -681,6 +681,10 @@ module.exports = {
     code: 15028,
     message: 'Blockchain is disabled',
   },
+  ABCI_CHAIN_NOT_INITIALIZED: {
+    code: 15029,
+    message: 'Blockchain is not initialized',
+  },
 
   // Client errors
   ABCI_REQUEST_ID_NOT_FOUND: {
