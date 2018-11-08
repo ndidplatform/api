@@ -51,6 +51,15 @@ router.post('/initNDID', validateBody, async (req, res, next) => {
   }
 });
 
+router.post('/endInit', validateBody, async (req, res, next) => {
+  try {
+    await ndid.endInit();
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/registerNode', validateBody, async (req, res, next) => {
   try {
     const {
