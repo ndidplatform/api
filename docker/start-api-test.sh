@@ -114,6 +114,23 @@ init_ndid() {
   fi
 }
 
+end_init() {
+  echo "Finishing Initialization..."
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/endInit \
+    -H "Content-Type: application/json" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Finishing Initialization succeeded"
+    return 0
+  else
+    echo "Finishing Initialization failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
 register_node_id() {
   echo "Registering ${NODE_ID} node..."
   
@@ -374,6 +391,10 @@ wait_until_ndid_node_initialized() {
   until does_node_id_exist ndid1; do sleep 1; done;
 }
 
+wait_until_node_exist() {
+  until does_node_id_exist ${NODE_ID}; do sleep 1; done;
+}
+
 wait_until_namespace_exist() {
   until did_namespace_exist $1; do sleep 1; done;
 }
@@ -422,6 +443,7 @@ case ${ROLE} in
       fi
       wait_for_ndid_node_to_be_ready && \
       until init_ndid; do sleep 1; done && \
+      until end_init; do sleep 1; done && \
       until 
         register_namespace "citizen_id" "Thai citizen ID" && \
         register_namespace "passport_num" "Passport Number" && \
@@ -448,6 +470,7 @@ case ${ROLE} in
       wait_until_service_exist "bank_statement"
       wait_until_service_exist "customer_info"
       until register_node_id; do sleep 1; done
+      wait_until_node_exist
       until set_token_for_node_id 10000; do sleep 1; done
       until tendermint_add_validator; do sleep 1; done
       if [ "${ROLE}" = "as" ]; then
