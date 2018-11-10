@@ -246,32 +246,41 @@ async function processExpectedTx(txHash, result, fromEvent) {
   });
   try {
     const {
-      waitForCommit,
+      transactParams,
       callbackFnName,
       callbackAdditionalArgs,
     } = expectedTx[txHash];
     delete expectedTx[txHash];
-    const retVal = getTransactResultFromTx(result, fromEvent);
+    let retVal = getTransactResultFromTx(result, fromEvent);
+    const waitForCommit = !callbackFnName;
     if (waitForCommit) {
       txEventEmitter.emit(txHash, retVal);
+      return;
     }
-    if (callbackFnName != null) {
-      if (getTxResultCallbackFn != null) {
-        if (callbackAdditionalArgs != null) {
-          await getTxResultCallbackFn(callbackFnName)(
-            retVal,
-            ...callbackAdditionalArgs
-          );
-        } else {
-          await getTxResultCallbackFn(callbackFnName)(retVal);
-        }
-      } else {
-        logger.error({
-          message:
-            'getTxResultCallbackFn has not been set but there is a callback function to call',
-          callbackFnName,
-        });
+    if (retVal.error) {
+      if (
+        retVal.error.code === errorType.ABCI_CHAIN_DISABLED.code &&
+        transactParams.saveForRetryOnChainDisabled
+      ) {
+        await handleBlockchainDisabled(transactParams);
+        retVal = { chainDisabledRetryLater: true };
       }
+    }
+    if (getTxResultCallbackFn != null) {
+      if (callbackAdditionalArgs != null) {
+        await getTxResultCallbackFn(callbackFnName)(
+          retVal,
+          ...callbackAdditionalArgs
+        );
+      } else {
+        await getTxResultCallbackFn(callbackFnName)(retVal);
+      }
+    } else {
+      logger.error({
+        message:
+          'getTxResultCallbackFn has not been set but there is a callback function to call',
+        callbackFnName,
+      });
     }
     await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
   } catch (error) {
@@ -372,6 +381,14 @@ async function handleNewChain(newChainId) {
   latestProcessedBlockHeight = 0;
   saveLatestBlockHeight(1);
   await cacheDb.changeAllDataKeysWithExpectedBlockHeight(1);
+}
+
+async function handleBlockchainDisabled(transactParams) {
+  logger.info({
+    message:
+      'Saving transaction for retry when new chain is up and running or current chain is enabled again',
+  });
+  await saveTransactRequestForRetry(transactParams);
 }
 
 async function loadAndRetryBacklogTransactRequests() {
@@ -862,8 +879,17 @@ export async function transact({
   const txProtoBufferHex = txProtoBuffer.toString('hex');
 
   const txHash = sha256(txProtoBuffer).toString('hex');
+  const transactParams = {
+    nodeId,
+    fnName,
+    params,
+    callbackFnName,
+    callbackAdditionalArgs,
+    useMasterKey,
+    saveForRetryOnChainDisabled,
+  };
   const callbackData = {
-    waitForCommit,
+    transactParams,
     callbackFnName,
     callbackAdditionalArgs,
   };
@@ -904,20 +930,7 @@ export async function transact({
       error.code === errorType.ABCI_CHAIN_DISABLED.code &&
       saveForRetryOnChainDisabled
     ) {
-      logger.info({
-        message:
-          'Saving transaction for retry when new chain is up and running or current chain is enabled again',
-      });
-      const transactParams = {
-        nodeId,
-        fnName,
-        params,
-        callbackFnName,
-        callbackAdditionalArgs,
-        useMasterKey,
-        saveForRetryOnChainDisabled,
-      };
-      await saveTransactRequestForRetry(transactParams);
+      await handleBlockchainDisabled(transactParams);
       return { chainDisabledRetryLater: true };
     } else {
       throw error;

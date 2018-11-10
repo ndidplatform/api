@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix transactions do not get saved for retry when chain is disabled error is return after commit to blockchain.
+
 ## 0.11.0 (November 8, 2018)
 
 BREAKING CHANGES:
