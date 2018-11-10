@@ -132,6 +132,7 @@ async function initialize() {
 const {
   privateKeyPassphrase, // eslint-disable-line no-unused-vars
   masterPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
+  dbPassword, // eslint-disable-line no-unused-vars
   ...configToLog
 } = config;
 logger.info({
