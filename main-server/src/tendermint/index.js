@@ -330,6 +330,8 @@ async function pollStatusUntilSynced() {
         if (chainId == null) {
           // Save chain ID to file on fresh start
           saveChainId(currentChainId);
+          const blockHeight = parseInt(status.sync_info.latest_block_height);
+          saveLatestBlockHeight(blockHeight);
         }
         if (currentChainId !== chainId) {
           logger.info({
