@@ -5,6 +5,7 @@
 BUG FIXES:
 
 - Fix transactions do not get saved for retry when chain is disabled error is returned after commit to blockchain.
+- Retry timeout request if chain is disabled.
 - Save latest block height to file along with chain ID on fresh start.
 - Remove DB password logging on server start.
 

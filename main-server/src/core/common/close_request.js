@@ -141,7 +141,7 @@ async function closeRequestInternalAsync(
           requestId: request_id,
           responseValidList,
         },
-        node_id,
+        node_id
       );
       await closeRequestInternalAsyncAfterBlockchain(
         {},
@@ -192,7 +192,7 @@ async function closeRequestInternalAsync(
 }
 
 export async function closeRequestInternalAsyncAfterBlockchain(
-  { error },
+  { error, chainDisabledRetryLater },
   { node_id, reference_id, callback_url, request_id },
   {
     synchronous = false,
@@ -201,6 +201,7 @@ export async function closeRequestInternalAsyncAfterBlockchain(
     callbackAdditionalArgs,
   } = {}
 ) {
+  if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 

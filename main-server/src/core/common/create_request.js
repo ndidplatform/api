@@ -579,7 +579,7 @@ async function createRequestInternalAsync(
 }
 
 export async function createRequestInternalAsyncAfterBlockchain(
-  { height, error },
+  { height, error, chainDisabledRetryLater },
   {
     node_id,
     reference_id,
@@ -597,6 +597,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
     callbackAdditionalArgs,
   } = {}
 ) {
+  if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 

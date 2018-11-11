@@ -247,7 +247,7 @@ async function processDataForRPInternalAsync(
 }
 
 export async function processDataForRPInternalAsyncAfterBlockchain(
-  { height, error },
+  { height, error, chainDisabledRetryLater },
   {
     reference_id,
     callback_url,
@@ -261,6 +261,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
   { synchronous = false } = {},
   { nodeId, savedRpId }
 ) {
+  if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 

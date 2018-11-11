@@ -136,7 +136,7 @@ export async function processAsData({
 }
 
 export async function processAsDataAfterSetDataReceived(
-  { error },
+  { error, chainDisabledRetryLater },
   {
     nodeId,
     requestId,
@@ -148,6 +148,7 @@ export async function processAsDataAfterSetDataReceived(
     asResponseId,
   }
 ) {
+  if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 

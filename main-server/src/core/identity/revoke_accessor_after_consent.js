@@ -103,10 +103,11 @@ export async function revokeAccessorAfterCloseConsentRequest(
 }
 
 export async function notifyRevokeAccessorAfterConsent(
-  { error },
+  { error, chainDisabledRetryLater },
   { nodeId, request_id },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
+  if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 
