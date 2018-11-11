@@ -1,6 +1,6 @@
 {
   "name": "ndid-logger",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "",
   "license": "AGPL-3.0-or-later",
   "main": "lib/logger.js",
