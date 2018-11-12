@@ -346,7 +346,8 @@ export async function createResponse(
           mode,
           privateProofObject,
         },
-      ]
+      ],
+      true
     );
   } catch (error) {
     const err = new CustomError({
@@ -359,9 +360,10 @@ export async function createResponse(
 }
 
 export async function createResponseAfterBlockchain(
-  { height, error },
+  { height, error, chainDisabledRetryLater },
   { nodeId, reference_id, callback_url, request_id, mode, privateProofObject }
 ) {
+  if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 
@@ -457,12 +459,13 @@ async function requestChallenge({
         publicProof2,
         rp_id: request.rp_id,
       },
-    ]
+    ],
+    true
   );
 }
 
 export async function requestChallengeAfterBlockchain(
-  { height, error },
+  { height, error, chainDisabledRetryLater },
   {
     nodeId,
     reference_id,
@@ -474,6 +477,7 @@ export async function requestChallengeAfterBlockchain(
     rp_id,
   }
 ) {
+  if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
     //send message queue with public proof

@@ -323,12 +323,8 @@ async function isCreateIdentityRequestValid(requestId) {
 }
 
 async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
-  const transactionsInBlocksToProcess = parsedTransactionsInBlocks.filter(
-    ({ transactions }) => transactions.length >= 0
-  );
-
   await Promise.all(
-    transactionsInBlocksToProcess.map(async ({ height, transactions }) => {
+    parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
       const createIdentityRequestsToProcess = {}; // For clean up closed or timed out create identity requests
       const incomingRequestsToProcessUpdate = {};
 
@@ -508,7 +504,9 @@ async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
           };
         }
       ),
-      block_height: height,
+      block_height: `${requestDetail.creation_chain_id}:${
+        requestDetail.creation_block_height
+      }`,
     };
 
     await callbackToClient(callbackUrl, eventDataForCallback, true);

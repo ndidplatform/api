@@ -195,10 +195,11 @@ async function registerOrUpdateASServiceInternalAsync(
 }
 
 export async function registerOrUpdateASServiceInternalAsyncAfterBlockchain(
-  { error },
+  { error, chainDisabledRetryLater },
   { nodeId, reference_id, callback_url, service_id, url },
   { synchronous = false } = {}
 ) {
+  if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 

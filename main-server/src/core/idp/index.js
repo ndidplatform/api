@@ -330,7 +330,11 @@ export async function processMessage(nodeId, message) {
             node_id: nodeId,
             request_id: message.request_id,
           },
-          { synchronous: true }
+          {
+            synchronous: false,
+            sendCallbackToClient: false,
+            saveForRetryOnChainDisabled: true,
+          }
         );
       }
     } else if (requestDetail.purpose === 'RevokeAccessor') {
@@ -367,7 +371,11 @@ export async function processMessage(nodeId, message) {
             node_id: nodeId,
             request_id: message.request_id,
           },
-          { synchronous: true }
+          {
+            synchronous: false,
+            sendCallbackToClient: false,
+            saveForRetryOnChainDisabled: true,
+          }
         );
       }
     }
@@ -426,7 +434,9 @@ export async function processMessage(nodeId, message) {
       data_request_list: message.data_request_list,
       initial_salt: message.initial_salt,
       creation_time: message.creation_time,
-      creation_block_height: requestDetail.creation_block_height,
+      creation_block_height: `${requestDetail.creation_chain_id}:${
+        requestDetail.creation_block_height
+      }`,
       request_timeout: message.request_timeout,
     });
   }

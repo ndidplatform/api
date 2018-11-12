@@ -307,6 +307,7 @@ async function createIdentityInternalAsync(
               hash_id,
             },
           ],
+          saveForRetryOnChainDisabled: true,
         }
       );
     } else {
@@ -465,11 +466,12 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
               secret,
             },
           ],
+          saveForRetryOnChainDisabled: true,
         },
         { request_id }
       );
     } else {
-      const { height } = await common.createRequest(
+      const { chainId, height } = await common.createRequest(
         {
           node_id: nodeId,
           namespace,
@@ -505,7 +507,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
         { request_id }
       );
       await createIdentityInternalAsyncAfterCreateRequestBlockchain(
-        { height },
+        { chainId, height },
         {
           reference_id,
           callback_url,
@@ -570,7 +572,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
 }
 
 export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
-  { height, error },
+  { chainId, height, error },
   {
     reference_id,
     callback_url,
@@ -608,7 +610,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 reference_id,
                 request_id,
                 accessor_id,
-                creation_block_height: height,
+                creation_block_height: `${chainId}:${height}`,
                 success: true,
               }
             : {
@@ -617,7 +619,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 reference_id,
                 request_id,
                 accessor_id,
-                creation_block_height: height,
+                creation_block_height: `${chainId}:${height}`,
                 success: true,
                 exist: true,
               },
@@ -647,7 +649,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 reference_id,
                 request_id,
                 accessor_id,
-                creation_block_height: height,
+                creation_block_height: `${chainId}:${height}`,
                 success: true,
               }
             : {
@@ -656,7 +658,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 reference_id,
                 request_id,
                 accessor_id,
-                creation_block_height: height,
+                creation_block_height: `${chainId}:${height}`,
                 success: true,
                 exist: false,
               },
@@ -690,7 +692,8 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
               generated_accessor_id,
             },
             { synchronous, apiVersion },
-          ]
+          ],
+          true
         );
       } else {
         await tendermintNdid.registerAccessor(
@@ -798,7 +801,8 @@ export async function createIdentityInternalAsyncAfterBlockchain(
             generated_accessor_id,
           },
           { synchronous, apiVersion },
-        ]
+        ],
+        true
       );
     } else {
       await tendermintNdid.clearRegisterIdentityTimeout(hash_id, nodeId);
@@ -900,7 +904,11 @@ export async function createIdentityInternalAsyncAfterClearRegisterIdentityTimeo
           node_id: nodeId,
           request_id,
         },
-        { synchronous: true }
+        {
+          synchronous: false,
+          sendCallbackToClient: false,
+          saveForRetryOnChainDisabled: true,
+        }
       );
     }
     cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);

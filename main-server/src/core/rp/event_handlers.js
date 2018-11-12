@@ -25,6 +25,7 @@ import {
   isAllIdpResponsesValid,
   isAllIdpRespondedAndValid,
   sendRequestToAS,
+  processAsData,
 } from '.';
 
 import * as tendermint from '../../tendermint';
@@ -35,7 +36,6 @@ import privateMessageType from '../../mq/message/type';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
 import CustomError from 'ndid-error/custom_error';
-import errorType from 'ndid-error/type';
 import logger from '../../logger';
 
 import * as config from '../../config';
@@ -178,7 +178,9 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         type: 'request_status',
         ...requestStatus,
         response_valid_list: responseValidList,
-        block_height: message.height,
+        block_height: `${requestDetail.creation_chain_id}:${
+          requestDetail.creation_block_height
+        }`,
       };
 
       const callbackUrl = requestData.callback_url;
@@ -208,7 +210,11 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         });
         await common.closeRequest(
           { node_id: nodeId, request_id: message.request_id },
-          { synchronous: true }
+          {
+            synchronous: false,
+            sendCallbackToClient: false,
+            saveForRetryOnChainDisabled: true,
+          }
         );
       }
       delete idpResponseProcessLocks[responseId];
@@ -285,6 +291,7 @@ export async function handleTendermintNewBlock(
   try {
     await Promise.all([
       processChallengeRequestExpectedInBlocks(fromHeight, toHeight, nodeId),
+      processASDataSignExpectedInBlocks(fromHeight, toHeight, nodeId),
       processTasksInBlocks(parsedTransactionsInBlocks, nodeId),
     ]);
   } catch (error) {
@@ -333,13 +340,19 @@ async function processChallengeRequestExpectedInBlocks(
   cacheDb.removeExpectedIdpPublicProofInBlockList(nodeId, fromHeight, toHeight);
 }
 
-async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
-  const transactionsInBlocksToProcess = parsedTransactionsInBlocks.filter(
-    ({ transactions }) => transactions.length >= 0
+async function processASDataSignExpectedInBlocks(fromHeight, toHeight, nodeId) {
+  const metadataList = await cacheDb.getExpectedDataSignsInBlockList(
+    nodeId,
+    fromHeight,
+    toHeight
   );
+  await checkAsDataSignaturesAndSetReceived(nodeId, metadataList);
+  cacheDb.removeExpectedDataSignsInBlockList(nodeId, fromHeight, toHeight);
+}
 
+async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
   await Promise.all(
-    transactionsInBlocksToProcess.map(async ({ height, transactions }) => {
+    parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
       const requestIdsToProcessUpdateSet = new Set();
       transactions.forEach((transaction) => {
         const requestId = transaction.args.request_id;
@@ -355,7 +368,6 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         )
       );
       cacheDb.removeExpectedIdpResponseNodeIdInBlockList(nodeId, height);
-      cacheDb.removeExpectedDataSignInBlockList(nodeId, height);
     })
   );
 }
@@ -447,7 +459,9 @@ async function processRequestUpdate(nodeId, requestId, height) {
     type: 'request_status',
     ...requestStatus,
     response_valid_list: responseValidList,
-    block_height: height,
+    block_height: `${requestDetail.creation_chain_id}:${
+      requestDetail.creation_block_height
+    }`,
   };
 
   const callbackUrl = requestData.callback_url;
@@ -458,22 +472,6 @@ async function processRequestUpdate(nodeId, requestId, height) {
     if (requestData != null) {
       await sendRequestToAS(nodeId, requestData, height);
     }
-  }
-
-  if (
-    requestStatus.status === 'confirmed' &&
-    requestStatus.min_idp === requestStatus.answered_idp_count &&
-    requestStatus.service_list.length > 0
-  ) {
-    const metadataListAllRequests = await cacheDb.getExpectedDataSignInBlockList(
-      nodeId,
-      height
-    );
-    // Filter out unrelated request IDs
-    const metadataList = metadataListAllRequests.filter(
-      ({ requestId: _requestId }) => _requestId === requestId
-    );
-    await checkAsDataSignaturesAndSetReceived(nodeId, requestId, metadataList);
   }
 
   if (
@@ -489,7 +487,11 @@ async function processRequestUpdate(nodeId, requestId, height) {
     });
     await common.closeRequest(
       { node_id: nodeId, request_id: requestId },
-      { synchronous: true }
+      {
+        synchronous: false,
+        sendCallbackToClient: false,
+        saveForRetryOnChainDisabled: true,
+      }
     );
   }
 
@@ -498,10 +500,7 @@ async function processRequestUpdate(nodeId, requestId, height) {
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
     // since the request is no longer going to have further events
     // (the request has reached its end state)
-    const requestData = await cacheDb.getRequestData(
-      nodeId,
-      requestId
-    );
+    const requestData = await cacheDb.getRequestData(nodeId, requestId);
     const referenceId = requestData.reference_id;
     await Promise.all([
       cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
@@ -513,15 +512,10 @@ async function processRequestUpdate(nodeId, requestId, height) {
   }
 }
 
-async function checkAsDataSignaturesAndSetReceived(
-  nodeId,
-  requestId,
-  metadataList
-) {
+async function checkAsDataSignaturesAndSetReceived(nodeId, metadataList) {
   logger.debug({
     message: 'Check AS data signatures and set received (bulk)',
     nodeId,
-    requestId,
     metadataList,
   });
 
@@ -546,142 +540,4 @@ async function checkAsDataSignaturesAndSetReceived(
       });
     })
   );
-}
-
-async function processAsData({
-  nodeId,
-  requestId,
-  serviceId,
-  asNodeId,
-  signature,
-  dataSalt,
-  data,
-}) {
-  logger.debug({
-    message: 'Processing AS data response',
-    nodeId,
-    requestId,
-    serviceId,
-    asNodeId,
-    signature,
-    dataSalt,
-    data,
-  });
-
-  const asResponseId =
-    nodeId + ':' + requestId + ':' + serviceId + ':' + asNodeId;
-
-  const signatureFromBlockchain = await tendermintNdid.getDataSignature({
-    request_id: requestId,
-    service_id: serviceId,
-    node_id: asNodeId,
-  });
-
-  if (signatureFromBlockchain == null) {
-    cleanUpDataResponseFromAS(nodeId, asResponseId);
-    return;
-  }
-  if (
-    signature !== signatureFromBlockchain ||
-    !(await isDataSignatureValid(
-      asNodeId,
-      signatureFromBlockchain,
-      dataSalt,
-      data
-    ))
-  ) {
-    cleanUpDataResponseFromAS(nodeId, asResponseId);
-    const err = new CustomError({
-      errorType: errorType.INVALID_DATA_RESPONSE_SIGNATURE,
-      details: {
-        requestId,
-      },
-    });
-    logger.error(err.getInfoForLog());
-    await common.notifyError({
-      nodeId,
-      callbackUrl: callbackUrls.error_url,
-      action: 'processAsData',
-      error: err,
-      requestId,
-    });
-    return;
-  }
-
-  try {
-    await tendermintNdid.setDataReceived(
-      {
-        requestId,
-        service_id: serviceId,
-        as_id: asNodeId,
-      },
-      nodeId
-    );
-  } catch (error) {
-    cleanUpDataResponseFromAS(nodeId, asResponseId);
-    const err = new CustomError({
-      message: 'Cannot set data received',
-      details: {
-        requestId,
-        serviceId,
-        asNodeId,
-      },
-      cause: error,
-    });
-    logger.error(err.getInfoForLog());
-    await common.notifyError({
-      nodeId,
-      callbackUrl: callbackUrls.error_url,
-      action: 'processAsData',
-      error: err,
-      requestId,
-    });
-    return;
-  }
-
-  await cacheDb.addDataFromAS(nodeId, requestId, {
-    source_node_id: asNodeId,
-    service_id: serviceId,
-    source_signature: signature,
-    signature_sign_method: 'RSA-SHA256',
-    data_salt: dataSalt,
-    data,
-  });
-
-  cleanUpDataResponseFromAS(nodeId, asResponseId);
-}
-
-async function cleanUpDataResponseFromAS(nodeId, asResponseId) {
-  try {
-    await cacheDb.removeDataResponseFromAS(nodeId, asResponseId);
-  } catch (error) {
-    logger.error({
-      message: 'Cannot remove data response from AS',
-      error,
-    });
-  }
-}
-
-async function isDataSignatureValid(asNodeId, signature, salt, data) {
-  const public_key = await tendermintNdid.getNodePubKey(asNodeId);
-  if (public_key == null) return;
-
-  logger.debug({
-    message: 'Verifying AS data signature',
-    asNodeId,
-    asNodePublicKey: public_key,
-    signature,
-    salt,
-    data,
-  });
-  if (!utils.verifySignature(signature, public_key, data + salt)) {
-    logger.warn({
-      message: 'Data signature from AS is not valid',
-      signature,
-      asNodeId,
-      asNodePublicKey: public_key,
-    });
-    return false;
-  }
-  return true;
 }

@@ -249,3 +249,77 @@ export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
     });
   }
 }
+
+//
+
+export async function getFlattenList({ dbName, name }) {
+  try {
+    const redis = getRedis(dbName);
+    const keys = await redis.keys(`*:${dbName}:${name}:*`);
+    const lists = await Promise.all(
+      keys.map(async (key) => {
+        const nodeId = key.substring(0, key.indexOf(':'));
+        return {
+          nodeId,
+          list: await getList({ nodeId, dbName, name, key }),
+        };
+      })
+    );
+
+    const listsByNodeId = lists.reduce((obj, { nodeId, list }) => {
+      if (obj[nodeId]) {
+        obj[nodeId].list.push(...list);
+      } else {
+        obj[nodeId] = {
+          nodeId,
+          list,
+        };
+      }
+      return obj;
+    }, {});
+
+    return Object.values(listsByNodeId);
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation: 'getFlattenList', dbName, name },
+    });
+  }
+}
+
+export async function getFlattenListWithRangeSupport({ dbName, name }) {
+  try {
+    const redis = getRedis(dbName);
+    const keys = await redis.keys(`*:${dbName}:${name}`);
+    const lists = await Promise.all(
+      keys.map(async (key) => {
+        const nodeId = key.substring(0, key.indexOf(':'));
+        return {
+          nodeId,
+          list: await redis.zrangebyscore(key, '-inf', '+inf'),
+        };
+      })
+    );
+
+    const listsByNodeId = lists.reduce((obj, { nodeId, list }) => {
+      if (obj[nodeId]) {
+        obj[nodeId].list.push(...list);
+      } else {
+        obj[nodeId] = {
+          nodeId,
+          list,
+        };
+      }
+      return obj;
+    }, {});
+
+    return Object.values(listsByNodeId);
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation: 'getFlattenListWithRangeSupport', dbName, name },
+    });
+  }
+}

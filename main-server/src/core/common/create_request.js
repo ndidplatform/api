@@ -27,6 +27,7 @@ import {
   getFunction,
 } from '.';
 
+import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
 import * as cacheDb from '../../db/cache';
@@ -202,7 +203,10 @@ async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
         });
       }
 
-      if (as_id_list != null && potential_as_list.length != as_id_list.length) {
+      if (
+        as_id_list != null &&
+        potential_as_list.length !== as_id_list.length
+      ) {
         throw new CustomError({
           errorType: errorType.UNQUALIFIED_AS,
           details: {
@@ -215,7 +219,9 @@ async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
       }
 
       if (as_id_list == null) {
-        dataRequest.as_id_list = potential_as_list;
+        dataRequest.as_id_list = potential_as_list.map(
+          (node_info) => node_info.node_id
+        );
       }
     })
   );
@@ -243,6 +249,7 @@ async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
  * @param {boolean} [options.sendCallbackToClient]
  * @param {string} [options.callbackFnName]
  * @param {Array} [options.callbackAdditionalArgs]
+ * @param {boolean} [options.saveForRetryOnChainDisabled]
  * @param {Object} additionalParams
  * @param {string} [additionalParams.request_id]
  *
@@ -441,6 +448,7 @@ async function createRequestInternalAsync(
     sendCallbackToClient = true,
     callbackFnName,
     callbackAdditionalArgs,
+    saveForRetryOnChainDisabled,
   } = options;
   const {
     node_id,
@@ -499,7 +507,8 @@ async function createRequestInternalAsync(
             callbackFnName,
             callbackAdditionalArgs,
           },
-        ]
+        ],
+        saveForRetryOnChainDisabled
       );
     } else {
       const { height } = await tendermintNdid.createRequest(
@@ -570,7 +579,7 @@ async function createRequestInternalAsync(
 }
 
 export async function createRequestInternalAsyncAfterBlockchain(
-  { height, error },
+  { height, error, chainDisabledRetryLater },
   {
     node_id,
     reference_id,
@@ -588,6 +597,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
     callbackAdditionalArgs,
   } = {}
 ) {
+  if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 
@@ -640,16 +650,19 @@ export async function createRequestInternalAsyncAfterBlockchain(
             success: true,
             reference_id,
             request_id,
-            creation_block_height: height,
+            creation_block_height: `${tendermint.chainId}:${height}`,
           },
           true
         );
       }
       if (callbackFnName != null) {
         if (callbackAdditionalArgs != null) {
-          getFunction(callbackFnName)({ height }, ...callbackAdditionalArgs);
+          getFunction(callbackFnName)(
+            { chainId: tendermint.chainId, height },
+            ...callbackAdditionalArgs
+          );
         } else {
-          getFunction(callbackFnName)({ height });
+          getFunction(callbackFnName)({ chainId: tendermint.chainId, height });
         }
       }
     }

@@ -149,3 +149,7 @@ export function tx(hash, prove) {
 export function status() {
   return httpUriCall('status');
 }
+
+export function genesis() {
+  return httpUriCall('genesis');
+}

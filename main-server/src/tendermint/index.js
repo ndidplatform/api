@@ -33,10 +33,11 @@ import logger from '../logger';
 
 import * as tendermintHttpClient from './http_client';
 import TendermintWsClient from './ws_client';
+import * as tendermintNdid from './ndid';
 import { convertAbciAppCodeToErrorType } from './abci_app_code';
 import * as cacheDb from '../db/cache';
 import * as utils from '../utils';
-import { sha256 } from '../utils/crypto';
+import { sha256, randomBase64Bytes } from '../utils/crypto';
 
 import * as config from '../config';
 
@@ -62,39 +63,84 @@ export let expectedTxsLoaded = false;
 let reconnecting = false; // Use when reconnect WS
 let pollingStatus = false;
 
-const cacheBlocks = {};
+let cacheBlocks = {};
 let lastKnownAppHash;
 
 export let syncing = null;
 export let connected = false;
 
+export let blockchainInitialized = false;
+
 export const eventEmitter = new EventEmitter();
 
+const chainIdFilepath = path.join(
+  config.dataDirectoryPath,
+  `chain-id-${config.nodeId}`
+);
 const latestBlockHeightFilepath = path.join(
   config.dataDirectoryPath,
   `latest-block-height-${config.nodeId}`
 );
 
+export let chainId = null;
+
 export let latestBlockHeight = null;
 let latestProcessedBlockHeight = null;
-try {
-  const blockHeight = fs.readFileSync(latestBlockHeightFilepath, 'utf8');
-  latestBlockHeight = parseInt(blockHeight);
-  latestProcessedBlockHeight = parseInt(blockHeight);
-  logger.info({
-    message: 'Latest block height read from file',
-    blockHeight,
-  });
-} catch (error) {
-  if (error.code === 'ENOENT') {
-    logger.warn({
-      message: 'Latest block height file not found',
+
+export function loadSavedData() {
+  try {
+    chainId = fs.readFileSync(chainIdFilepath, 'utf8');
+    logger.info({
+      message: 'Chain ID read from file',
+      chainId,
     });
-  } else {
-    logger.error({
-      message: 'Cannot read latest block height file',
-      error,
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      logger.warn({
+        message: 'Chain ID file not found',
+      });
+    } else {
+      logger.error({
+        message: 'Cannot read chain ID file',
+        error,
+      });
+    }
+  }
+
+  try {
+    const blockHeight = fs.readFileSync(latestBlockHeightFilepath, 'utf8');
+    latestBlockHeight = parseInt(blockHeight);
+    latestProcessedBlockHeight = parseInt(blockHeight);
+    logger.info({
+      message: 'Latest block height read from file',
+      blockHeight,
     });
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      logger.warn({
+        message: 'Latest block height file not found',
+      });
+    } else {
+      logger.error({
+        message: 'Cannot read latest block height file',
+        error,
+      });
+    }
+  }
+
+  if (
+    (chainId == null && latestBlockHeight != null) ||
+    (chainId != null && latestBlockHeight == null)
+  ) {
+    const error = new CustomError({
+      message: 'Missing data file',
+      details: {
+        chainIdFileExist: chainId != null,
+        latestBlockHeightFileExist: latestBlockHeight != null,
+      },
+    });
+    logger.error(error.getInfoForLog());
+    throw error;
   }
 }
 
@@ -126,6 +172,18 @@ function saveLatestBlockHeight(height) {
     });
     latestProcessedBlockHeight = height;
   }
+}
+
+function saveChainId(chainIdToSave) {
+  fs.writeFile(chainIdFilepath, chainIdToSave, (err) => {
+    if (err) {
+      logger.error({
+        message: 'Cannot write chain ID file',
+        error: err,
+      });
+    }
+  });
+  chainId = chainIdToSave;
 }
 
 export function setTendermintNewBlockEventHandler(handler) {
@@ -182,32 +240,41 @@ async function processExpectedTx(txHash, result, fromEvent) {
   });
   try {
     const {
-      waitForCommit,
+      transactParams,
       callbackFnName,
       callbackAdditionalArgs,
     } = expectedTx[txHash];
     delete expectedTx[txHash];
-    const retVal = getTransactResultFromTx(result, fromEvent);
+    let retVal = getTransactResultFromTx(result, fromEvent);
+    const waitForCommit = !callbackFnName;
     if (waitForCommit) {
       txEventEmitter.emit(txHash, retVal);
+      return;
     }
-    if (callbackFnName != null) {
-      if (getTxResultCallbackFn != null) {
-        if (callbackAdditionalArgs != null) {
-          await getTxResultCallbackFn(callbackFnName)(
-            retVal,
-            ...callbackAdditionalArgs
-          );
-        } else {
-          await getTxResultCallbackFn(callbackFnName)(retVal);
-        }
-      } else {
-        logger.error({
-          message:
-            'getTxResultCallbackFn has not been set but there is a callback function to call',
-          callbackFnName,
-        });
+    if (retVal.error) {
+      if (
+        retVal.error.code === errorType.ABCI_CHAIN_DISABLED.code &&
+        transactParams.saveForRetryOnChainDisabled
+      ) {
+        await handleBlockchainDisabled(transactParams);
+        retVal = { chainDisabledRetryLater: true };
       }
+    }
+    if (getTxResultCallbackFn != null) {
+      if (callbackAdditionalArgs != null) {
+        await getTxResultCallbackFn(callbackFnName)(
+          retVal,
+          ...callbackAdditionalArgs
+        );
+      } else {
+        await getTxResultCallbackFn(callbackFnName)(retVal);
+      }
+    } else {
+      logger.error({
+        message:
+          'getTxResultCallbackFn has not been set but there is a callback function to call',
+        callbackFnName,
+      });
     }
     await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
   } catch (error) {
@@ -252,11 +319,107 @@ async function pollStatusUntilSynced() {
         logger.info({
           message: 'Tendermint blockchain synced',
         });
-        eventEmitter.emit('ready', status);
+
+        const currentChainId = status.node_info.network;
+        if (chainId == null) {
+          // Save chain ID to file on fresh start
+          saveChainId(currentChainId);
+          const blockHeight = parseInt(status.sync_info.latest_block_height);
+          saveLatestBlockHeight(blockHeight);
+        }
+        if (currentChainId !== chainId) {
+          logger.info({
+            message: 'New chain ID detected',
+            newChainId: currentChainId,
+            oldChainId: chainId,
+          });
+          await handleNewChain(currentChainId);
+        }
         pollingStatus = false;
         return status;
       }
       await utils.wait(backoff.next());
+    }
+  }
+}
+
+async function pollInitStatusUntilInitEnded() {
+  logger.info({
+    message: 'Waiting for blockchain initialization',
+  });
+
+  const backoff = new ExponentialBackoff({
+    min: 1000,
+    max: config.maxIntervalTendermintSyncCheck,
+    factor: 2,
+    jitter: 0,
+  });
+
+  for (;;) {
+    const { init_ended } = await tendermintNdid.isInitEnded();
+    if (init_ended) {
+      logger.info({
+        message: 'Blockchain initialized',
+      });
+
+      blockchainInitialized = init_ended;
+      return;
+    }
+    await utils.wait(backoff.next());
+  }
+}
+
+async function handleNewChain(newChainId) {
+  saveChainId(newChainId);
+  lastKnownAppHash = null;
+  cacheBlocks = {};
+  latestBlockHeight = 1;
+  latestProcessedBlockHeight = 0;
+  saveLatestBlockHeight(1);
+  await cacheDb.changeAllDataKeysWithExpectedBlockHeight(1);
+}
+
+async function handleBlockchainDisabled(transactParams) {
+  logger.info({
+    message:
+      'Saving transaction for retry when new chain is up and running or current chain is enabled again',
+  });
+  await saveTransactRequestForRetry(transactParams);
+}
+
+async function loadAndRetryBacklogTransactRequests() {
+  await pollInitStatusUntilInitEnded();
+  const transactRequests = await cacheDb.getAllTransactRequestForRetry(
+    config.nodeId
+  );
+  if (transactRequests.length > 0) {
+    logger.debug({
+      message: 'Backlog transact requests to retry',
+      transactRequests,
+    });
+    await Promise.all(
+      transactRequests.map(async ({ id, transactParams }) => {
+        await transact(transactParams);
+        await cacheDb.removeTransactRequestForRetry(config.nodeId, id);
+      })
+    );
+  }
+}
+
+function checkForSetLastBlock(parsedTransactionsInBlocks) {
+  for (let i = parsedTransactionsInBlocks.length - 1; i >= 0; i--) {
+    const transactions = parsedTransactionsInBlocks[i].transactions;
+    for (let j = transactions.length - 1; j >= 0; j--) {
+      const transaction = transactions[j];
+      if (transaction.fnName === 'SetLastBlock') {
+        if (
+          transaction.args.block_height === -1 ||
+          transaction.args.block_height > latestBlockHeight
+        ) {
+          loadAndRetryBacklogTransactRequests();
+          return;
+        }
+      }
     }
   }
 }
@@ -267,17 +430,22 @@ tendermintWsClient.on('connected', async () => {
     tendermintWsClient.subscribeToNewBlockEvent();
     tendermintWsClient.subscribeToTxEvent();
     const statusOnSync = await pollStatusUntilSynced();
+    loadAndRetryBacklogTransactRequests();
+    eventEmitter.emit('ready', statusOnSync);
     processMissingBlocks(statusOnSync);
     processMissingExpectedTxs();
     reconnecting = false;
   } else {
-    pollStatusUntilSynced();
+    const statusOnSync = await pollStatusUntilSynced();
+    loadAndRetryBacklogTransactRequests();
+    eventEmitter.emit('ready', statusOnSync);
   }
 });
 
 tendermintWsClient.on('disconnected', () => {
   connected = false;
   syncing = null;
+  blockchainInitialized = false;
   reconnecting = true;
 });
 
@@ -345,10 +513,11 @@ async function processNewBlock(blockHeight, appHash) {
         const fromHeight = blockHeight - 1 - missingBlockCount;
         const toHeight = blockHeight - 1;
 
-        const parsedTransactionsInBlocks = await getParsedTxsInBlocks(
+        const parsedTransactionsInBlocks = (await getParsedTxsInBlocks(
           fromHeight,
           toHeight
-        );
+        )).filter(({ transactions }) => transactions.length >= 0);
+        checkForSetLastBlock(parsedTransactionsInBlocks);
         await handleTendermintNewBlock(
           fromHeight,
           toHeight,
@@ -363,8 +532,10 @@ async function processNewBlock(blockHeight, appHash) {
 }
 
 async function getParsedTxsInBlocks(fromHeight, toHeight) {
-  const blocks = await getBlocks(fromHeight, toHeight);
-  const blockResults = await getBlockResults(fromHeight, toHeight);
+  const [blocks, blockResults] = await Promise.all([
+    getBlocks(fromHeight, toHeight),
+    getBlockResults(fromHeight, toHeight),
+  ]);
   const parsedTransactionsInBlocks = await Promise.all(
     blocks.map(async (block, blockIndex) => {
       const height = parseInt(block.header.height);
@@ -389,7 +560,7 @@ async function getParsedTxsInBlocks(fromHeight, toHeight) {
       };
     })
   );
-  return [].concat(...parsedTransactionsInBlocks);
+  return parsedTransactionsInBlocks;
 }
 
 /**
@@ -622,7 +793,7 @@ export async function query(fnName, params, height) {
     );
     return getQueryResult(result);
   } catch (error) {
-    if (error.type === 'JSON-RPC ERROR') {
+    if (error.message === 'JSON-RPC ERROR') {
       throw new CustomError({
         errorType: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR,
         details: error.error,
@@ -652,6 +823,7 @@ export async function transact({
   callbackFnName,
   callbackAdditionalArgs,
   useMasterKey = false,
+  saveForRetryOnChainDisabled = false,
 }) {
   if (nodeId == null || nodeId == '') {
     throw new CustomError({
@@ -703,8 +875,17 @@ export async function transact({
   const txProtoBufferHex = txProtoBuffer.toString('hex');
 
   const txHash = sha256(txProtoBuffer).toString('hex');
+  const transactParams = {
+    nodeId,
+    fnName,
+    params,
+    callbackFnName,
+    callbackAdditionalArgs,
+    useMasterKey,
+    saveForRetryOnChainDisabled,
+  };
   const callbackData = {
-    waitForCommit,
+    transactParams,
     callbackFnName,
     callbackAdditionalArgs,
   };
@@ -736,14 +917,33 @@ export async function transact({
   } catch (error) {
     delete expectedTx[txHash];
     await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
-    if (error.type === 'JSON-RPC ERROR') {
+    if (error.message === 'JSON-RPC ERROR') {
       throw new CustomError({
         errorType: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
         details: error.error,
       });
+    } else if (
+      error.code === errorType.ABCI_CHAIN_DISABLED.code &&
+      saveForRetryOnChainDisabled
+    ) {
+      await handleBlockchainDisabled(transactParams);
+      return { chainDisabledRetryLater: true };
     } else {
       throw error;
     }
+  }
+}
+
+async function saveTransactRequestForRetry(transactParams) {
+  try {
+    const id = randomBase64Bytes(10);
+    await cacheDb.addTransactRequestForRetry(config.nodeId, id, transactParams);
+  } catch (error) {
+    const err = new CustomError({
+      errorType: errorType.CANNOT_SAVE_TRANSACT_REQUEST_FOR_RETRY,
+      cause: error,
+    });
+    throw err;
   }
 }
 

@@ -87,13 +87,9 @@ export async function handleTendermintNewBlock(
 }
 
 async function processTasksInBlocks(parsedTransactionsInBlocks) {
-  const transactionsInBlocksToProcess = parsedTransactionsInBlocks.filter(
-    ({ transactions }) => transactions.length >= 0
-  );
-
   const nodesBehindProxyWithKeyOnProxy = await getNodesBehindProxyWithKeyOnProxy();
 
-  transactionsInBlocksToProcess.forEach(({ transactions }) => {
+  parsedTransactionsInBlocks.forEach(({ transactions }) => {
     transactions.forEach((transaction) => {
       if (transaction.fnName === 'UpdateNode') {
         const childNode = nodesBehindProxyWithKeyOnProxy.find(

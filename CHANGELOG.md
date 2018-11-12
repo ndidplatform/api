@@ -1,6 +1,15 @@
 # Changelog
 
-## TBD
+## 0.11.1 (November 11, 2018)
+
+BUG FIXES:
+
+- Fix transactions do not get saved for retry when chain is disabled error is returned after commit to blockchain.
+- Retry timeout request if chain is disabled.
+- Save latest block height to file along with chain ID on fresh start.
+- Remove DB password logging on server start.
+
+## 0.11.0 (November 8, 2018)
 
 BREAKING CHANGES:
 
@@ -12,18 +21,23 @@ IMPROVEMENTS:
 - API version 2.4
   - New API: POST `/identity/:namespace/:identifier/accessors_revoke`. Revoke identity's accessor.
   - Add `incoming_request_status_update_url` optional property to POST `/idp/callback` and POST `/as/callback` for setting callback URL for receiving related request status updates. The data schema of the callback body is the same as request update callback on RP side.
+  - Change all `block_height` and `creation_block_height` properties format from block height as integer to `<CHAIN_ID>:<BLOCK_HEIGHT>` as string.
 - NDID only API
-  - Add APIs for enable node and disable node.
+  - Add APIs for enabling and disabling node.
+  - Add API for setting last block.
 - Check IAL when IdP creating a response.
 - Check new key when update DPKI key.
 - Save pending outbound messages for MQ to cache DB on server graceful shutdown. The server will try to send on next start if the messages do not exceed MQ send total timeout.
 - Validate data schema of inbound messages from message queue.
+- Chain ID aware
+  - Reset last known block height to 0 and update cached data on chain ID change.
 
 BUG FIXES:
 
 - Fix check validity of secret at create response (if invalid, the response will not be stored in blockchain).
 - Fix wrong callback result for create identity.
 - Fix duplicate AS data signature processing and set data received on RP side.
+- Fix bug when `as_id_list` is not provided when creating a request.
 
 ## 0.10.2 (October 29, 2018)
 

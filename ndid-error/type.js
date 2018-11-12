@@ -210,6 +210,11 @@ module.exports = {
     code: 10045,
     message: 'Cannot validate MQ message',
   },
+  CANNOT_SAVE_TRANSACT_REQUEST_FOR_RETRY: {
+    code: 10046,
+    message:
+      'Cannot save transact request for retry later on blockchain disabled',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
@@ -671,6 +676,14 @@ module.exports = {
   ABCI_REQUEST_IS_NOT_CLOSED: {
     code: 15027,
     message: 'Request is not closed',
+  },
+  ABCI_CHAIN_DISABLED: {
+    code: 15028,
+    message: 'Blockchain is disabled',
+  },
+  ABCI_CHAIN_NOT_INITIALIZED: {
+    code: 15029,
+    message: 'Blockchain is not initialized',
   },
 
   // Client errors

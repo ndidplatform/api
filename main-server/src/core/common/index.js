@@ -156,6 +156,8 @@ export function getFunction(fnName) {
       return closeRequestInternalAsyncAfterBlockchain;
     case 'common.isRequestClosedOrTimedOut':
       return isRequestClosedOrTimedOut;
+    case 'common.timeoutRequestAfterBlockchain':
+      return timeoutRequestAfterBlockchain;
     case 'idp.requestChallengeAfterBlockchain':
       return idp.requestChallengeAfterBlockchain;
     case 'idp.createResponseAfterBlockchain':
@@ -194,6 +196,8 @@ export function getFunction(fnName) {
       return identity.notifyRevokeAccessorAfterConsent;
     case 'idp.processIdpResponseAfterRevokeAccessor':
       return idp.processIdpResponseAfterRevokeAccessor;
+    case 'rp.processAsDataAfterSetDataReceived':
+      return rp.processAsDataAfterSetDataReceived;
     default:
       throw new CustomError({
         message: 'Unknown function name',
@@ -351,17 +355,42 @@ export async function timeoutRequest(nodeId, requestId) {
 
     await tendermintNdid.timeoutRequest(
       { requestId, responseValidList },
-      nodeId
+      nodeId,
+      'common.timeoutRequestAfterBlockchain',
+      [
+        {
+          nodeId,
+          requestId,
+        },
+      ],
+      true
     );
   } catch (error) {
     logger.error({
-      message: 'Cannot set timed out',
+      message: 'Cannot set timeout request',
       requestId,
       error,
     });
     throw error;
   }
-  cacheDb.removeTimeoutScheduler(nodeId, requestId);
+}
+
+function timeoutRequestAfterBlockchain(
+  { error, chainDisabledRetryLater },
+  { nodeId, requestId }
+) {
+  if (chainDisabledRetryLater) return;
+  try {
+    if (error) throw error;
+    cacheDb.removeTimeoutScheduler(nodeId, requestId);
+  } catch (error) {
+    logger.error({
+      message: 'Timeout request after blockchain error',
+      tendermintResult: arguments[0],
+      additionalArgs: arguments[1],
+      error,
+    });
+  }
 }
 
 export function runTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
@@ -652,10 +681,7 @@ export async function checkIdpResponse({
     );
 
     // Check ZK Proof
-    const challenge = (await cacheDb.getRequestData(
-      nodeId,
-      requestStatus.request_id
-    )).challenge[idpId];
+    const challenge = requestData.challenge[idpId];
     validProof = await verifyZKProof({
       request_id: requestStatus.request_id,
       idp_id: idpId,

@@ -405,7 +405,9 @@ async function getDataAndSendBackToRP(
           max_aal: responseDetails.max_aal,
           max_ial: responseDetails.max_ial,
           creation_time: request.creation_time,
-          creation_block_height: requestDetail.creation_block_height,
+          creation_block_height: `${requestDetail.creation_chain_id}:${
+            requestDetail.creation_block_height
+          }`,
           request_timeout: request.request_timeout,
         },
         true,

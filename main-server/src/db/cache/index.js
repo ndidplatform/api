@@ -43,6 +43,82 @@ export async function close() {
   });
 }
 
+export async function changeAllDataKeysWithExpectedBlockHeight(newHeight) {
+  if (!Number.isInteger(newHeight)) {
+    throw new Error('Invalid new height. Must be an integer.');
+  }
+
+  let flattenList;
+
+  flattenList = await db.getFlattenListWithRangeSupport({
+    dbName,
+    name: 'requestIdExpectedInBlock',
+    keyName: 'expectedBlockHeight',
+    valueName: 'requestId',
+  });
+  await Promise.all(
+    flattenList.map(({ nodeId, list }) =>
+      Promise.all(
+        list.map((requestId) =>
+          addRequestIdExpectedInBlock(nodeId, newHeight, requestId)
+        )
+      )
+    )
+  );
+
+  flattenList = await db.getFlattenList({
+    dbName,
+    name: 'expectedIdpResponseNodeIdInBlock',
+    keyName: 'expectedBlockHeight',
+    valueName: 'responseMetadata',
+  });
+  await Promise.all(
+    flattenList.map(({ nodeId, list }) =>
+      Promise.all(
+        list.map((responseMetadata) =>
+          addExpectedIdpResponseNodeIdInBlock(
+            nodeId,
+            newHeight,
+            responseMetadata
+          )
+        )
+      )
+    )
+  );
+
+  flattenList = await db.getFlattenListWithRangeSupport({
+    dbName,
+    name: 'expectedIdpPublicProofInBlock',
+    keyName: 'expectedBlockHeight',
+    valueName: 'responseMetadata',
+  });
+  await Promise.all(
+    flattenList.map(({ nodeId, list }) =>
+      Promise.all(
+        list.map((responseMetadata) =>
+          addExpectedIdpPublicProofInBlock(nodeId, newHeight, responseMetadata)
+        )
+      )
+    )
+  );
+
+  flattenList = await db.getFlattenList({
+    dbName,
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    valueName: 'metadata',
+  });
+  await Promise.all(
+    flattenList.map(({ nodeId, list }) =>
+      Promise.all(
+        list.map((metadata) =>
+          addExpectedDataSignInBlock(nodeId, newHeight, metadata)
+        )
+      )
+    )
+  );
+}
+
 //
 // Used by all roles
 //
@@ -152,6 +228,38 @@ export function getAllCallbackWithRetryData(nodeId) {
     name: 'callbackWithRetry',
     keyName: 'cbId',
     valueName: 'data',
+  });
+}
+
+export function getAllTransactRequestForRetry(nodeId) {
+  return db.getAll({
+    nodeId,
+    dbName,
+    name: 'transactRequestForRetry',
+    keyName: 'id',
+    valueName: 'transactParams',
+  });
+}
+
+export function addTransactRequestForRetry(nodeId, id, transactParams) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'transactRequestForRetry',
+    keyName: 'id',
+    key: id,
+    valueName: 'transactParams',
+    value: transactParams,
+  });
+}
+
+export function removeTransactRequestForRetry(nodeId, id) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'transactRequestForRetry',
+    keyName: 'id',
+    key: id,
   });
 }
 
@@ -817,8 +925,22 @@ export function removeAllDataFromAS(nodeId) {
   });
 }
 
+export function getExpectedDataSignsInBlockList(nodeId, fromHeight, toHeight) {
+  return db.getListRange({
+    nodeId,
+    dbName,
+    name: 'expectedDataSignInBlock',
+    keyName: 'expectedBlockHeight',
+    keyRange: {
+      gte: fromHeight, // greaterThanOrEqual
+      lte: toHeight, // lessThanOrEqual
+    },
+    valueName: 'metadata',
+  });
+}
+
 export function getExpectedDataSignInBlockList(nodeId, height) {
-  return db.getList({
+  return db.getListWithRangeSupport({
     nodeId,
     dbName,
     name: 'expectedDataSignInBlock',
@@ -829,7 +951,7 @@ export function getExpectedDataSignInBlockList(nodeId, height) {
 }
 
 export function addExpectedDataSignInBlock(nodeId, height, metadata) {
-  return db.pushToList({
+  return db.pushToListWithRangeSupport({
     nodeId,
     dbName,
     name: 'expectedDataSignInBlock',
@@ -840,13 +962,20 @@ export function addExpectedDataSignInBlock(nodeId, height, metadata) {
   });
 }
 
-export function removeExpectedDataSignInBlockList(nodeId, height) {
-  return db.removeList({
+export function removeExpectedDataSignsInBlockList(
+  nodeId,
+  fromHeight,
+  toHeight
+) {
+  return db.removeListRange({
     nodeId,
     dbName,
     name: 'expectedDataSignInBlock',
     keyName: 'expectedBlockHeight',
-    key: height,
+    keyRange: {
+      gte: fromHeight, // greaterThanOrEqual
+      lte: toHeight, // lessThanOrEqual
+    },
   });
 }
 
@@ -898,7 +1027,11 @@ export function getAccessorIdToRevokeFromRequestId(nodeId, requestId) {
   });
 }
 
-export function setAccessorIdToRevokeFromRequestId(nodeId, requestId, accessorId) {
+export function setAccessorIdToRevokeFromRequestId(
+  nodeId,
+  requestId,
+  accessorId
+) {
   return db.set({
     nodeId,
     dbName,

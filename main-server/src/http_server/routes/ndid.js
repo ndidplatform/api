@@ -51,6 +51,15 @@ router.post('/initNDID', validateBody, async (req, res, next) => {
   }
 });
 
+router.post('/endInit', async (req, res, next) => {
+  try {
+    await ndid.endInit();
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/registerNode', validateBody, async (req, res, next) => {
   try {
     const {
@@ -422,5 +431,18 @@ router.post(
     }
   }
 );
+
+router.post('/setLastBlock', validateBody, async (req, res, next) => {
+  try {
+    const { block_height } = req.body;
+
+    await ndid.setLastBlock({
+      block_height,
+    });
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

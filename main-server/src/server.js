@@ -62,6 +62,8 @@ process.on('unhandledRejection', function(reason, p) {
 async function initialize() {
   logger.info({ message: 'Initializing server' });
   try {
+    tendermint.loadSavedData();
+
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
 
     const tendermintReady = new Promise((resolve) =>
@@ -130,6 +132,7 @@ async function initialize() {
 const {
   privateKeyPassphrase, // eslint-disable-line no-unused-vars
   masterPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
+  dbPassword, // eslint-disable-line no-unused-vars
   ...configToLog
 } = config;
 logger.info({
