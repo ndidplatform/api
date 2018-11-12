@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.4 (November 12, 2018)
+
+BUG FIXES:
+
+- Remove constraint minLength for request_params in mq.
+- Fix block_height in request status update to current block height instead of creation block height.
+
 ## 0.11.3 (November 12, 2018)
 
 IMPROVEMENTS:

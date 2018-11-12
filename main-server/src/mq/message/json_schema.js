@@ -165,7 +165,7 @@ export default {
           type: 'object',
           properties: {
             service_id: { type: 'string', minLength: 1 },
-            request_params: { type: 'string', minLength: 1 },
+            request_params: { type: 'string' },
             request_params_salt: { type: 'string', minLength: 1 },
           },
           required: ['service_id', 'request_params_salt'],

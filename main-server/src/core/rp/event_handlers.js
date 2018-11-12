@@ -459,9 +459,7 @@ async function processRequestUpdate(nodeId, requestId, height) {
     type: 'request_status',
     ...requestStatus,
     response_valid_list: responseValidList,
-    block_height: `${requestDetail.creation_chain_id}:${
-      requestDetail.creation_block_height
-    }`,
+    block_height: `${requestDetail.creation_chain_id}:${height}`,
   };
 
   const callbackUrl = requestData.callback_url;
