@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.2 (November 12, 2018)
+
+BUG FIXES:
+
+- Fix wrong data schema returned from calling GET `/utility/requests/:request_id`. (`creation_block_height` type and format, Remove `creation_chain_id`)
+
 ## 0.11.1 (November 11, 2018)
 
 BUG FIXES:

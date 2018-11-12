@@ -91,16 +91,28 @@ router.get('/requests/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    const requestWithSpecialTag = await tendermintNdid.getRequestDetail({
+    const requestDetail = await tendermintNdid.getRequestDetail({
       requestId: request_id,
     });
 
-    if (requestWithSpecialTag != null) {
-      const { purpose, ...request } = requestWithSpecialTag;
-      res.status(200).json(request);
-    } else {
+    if (requestDetail == null) {
       res.status(404).end();
+      return;
     }
+
+    const {
+      purpose, // eslint-disable-line no-unused-vars
+      creation_chain_id,
+      creation_block_height,
+      ...filteredRequestDetail
+    } = requestDetail;
+
+    const request = {
+      ...filteredRequestDetail,
+      creation_block_height: `${creation_chain_id}:${creation_block_height}`,
+    };
+
+    res.status(200).json(request);
   } catch (error) {
     next(error);
   }
