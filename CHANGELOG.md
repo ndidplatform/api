@@ -2,6 +2,11 @@
 
 ## TBD
 
+IMPROVEMENTS:
+
+- API version 2.4
+  - New API: GET `/utility/services/:service_id`. Get service info including its data schema and data schema version.
+
 BUG FIXES:
 
 - Fix unable to receive MQ message type `data_request` without `request_params` in `service_data_request_list`. (Fix wrong message schema)

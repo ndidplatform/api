@@ -166,6 +166,29 @@ router.get('/services', async (req, res, next) => {
   }
 });
 
+router.get('/services/:service_id', async (req, res, next) => {
+  try {
+    const { service_id } = req.params;
+
+    const serviceDetail = await tendermintNdid.getServiceDetail(service_id);
+
+    if (serviceDetail.data_schema === 'n/a') {
+      delete serviceDetail.data_schema;
+    }
+    if (serviceDetail.data_schema_version === 'n/a') {
+      delete serviceDetail.data_schema_version;
+    }
+
+    if (serviceDetail == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(serviceDetail);
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
 // NOTE: Should not be able to get all since it might run into trouble
 // and crash the server if the number of messages are too much to handle
 // (e.g. run out of memory)
