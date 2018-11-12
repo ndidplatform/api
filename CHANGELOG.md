@@ -4,8 +4,8 @@
 
 BUG FIXES:
 
-- Remove constraint minLength for request_params in mq.
-- Fix block_height in request status update to current block height instead of creation block height.
+- Remove constraint `minLength` for `request_params` in `service_data_request_list` in inbound MQ message type `data_request` schema.
+- Fix `block_height` in request status update to current block height instead of creation block height.
 
 ## 0.11.3 (November 12, 2018)
 

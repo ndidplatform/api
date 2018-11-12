@@ -178,9 +178,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         type: 'request_status',
         ...requestStatus,
         response_valid_list: responseValidList,
-        block_height: `${requestDetail.creation_chain_id}:${
-          requestDetail.creation_block_height
-        }`,
+        block_height: `${requestDetail.creation_chain_id}:${message.height}`,
       };
 
       const callbackUrl = requestData.callback_url;
