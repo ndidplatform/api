@@ -1,6 +1,6 @@
 # Changelog
 
-## TBD
+## 0.11.3 (November 12, 2018)
 
 IMPROVEMENTS:
 
