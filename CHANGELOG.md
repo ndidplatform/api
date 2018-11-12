@@ -4,6 +4,8 @@
 
 BUG FIXES:
 
+- Fix unable to receive MQ message types `consent_request` and `data_request` when `request_message` is an empty string. (Fix wrong message schema validation)
+- Fix wrong `request_params_hash` calculation when `request_params` is not provided.
 - Remove constraint `minLength` for `request_params` in `service_data_request_list` in inbound MQ message type `data_request` schema.
 - Fix `block_height` in request status update to current block height instead of creation block height.
 
@@ -16,7 +18,7 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
-- Fix unable to receive MQ message type `data_request` without `request_params` in `service_data_request_list`. (Fix wrong message schema)
+- Fix unable to receive MQ message type `data_request` without `request_params` in `service_data_request_list`. (Fix wrong message schema validation)
 
 ## 0.11.2 (November 12, 2018)
 
