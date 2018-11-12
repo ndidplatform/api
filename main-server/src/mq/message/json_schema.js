@@ -168,7 +168,7 @@ export default {
             request_params: { type: 'string', minLength: 1 },
             request_params_salt: { type: 'string', minLength: 1 },
           },
-          required: ['service_id', 'request_params', 'request_params_salt'],
+          required: ['service_id', 'request_params_salt'],
         },
       },
       request_message: { type: 'string', minLength: 1 },

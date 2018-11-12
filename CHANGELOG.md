@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix unable to receive MQ message type `data_request` without `request_params` in `service_data_request_list`. (Fix wrong message schema)
+
 ## 0.11.2 (November 12, 2018)
 
 BUG FIXES:
