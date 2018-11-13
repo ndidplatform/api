@@ -172,16 +172,16 @@ router.get('/services/:service_id', async (req, res, next) => {
 
     const serviceDetail = await tendermintNdid.getServiceDetail(service_id);
 
-    if (serviceDetail.data_schema === 'n/a') {
-      delete serviceDetail.data_schema;
-    }
-    if (serviceDetail.data_schema_version === 'n/a') {
-      delete serviceDetail.data_schema_version;
-    }
-
     if (serviceDetail == null) {
       res.status(404).end();
     } else {
+      if (serviceDetail.data_schema === 'n/a') {
+        delete serviceDetail.data_schema;
+      }
+      if (serviceDetail.data_schema_version === 'n/a') {
+        delete serviceDetail.data_schema_version;
+      }
+
       res.status(200).json(serviceDetail);
     }
   } catch (error) {

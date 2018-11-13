@@ -8,6 +8,7 @@ BUG FIXES:
 - Fix wrong `request_params_hash` calculation when `request_params` is not provided.
 - Remove constraint `minLength` for `request_params` in `service_data_request_list` in inbound MQ message type `data_request` schema.
 - Fix `block_height` in request status update to current block height instead of creation block height.
+- Fix GET `/utility/services/:service_id` error when requested `service_id` does not exist.
 
 ## 0.11.3 (November 12, 2018)
 
