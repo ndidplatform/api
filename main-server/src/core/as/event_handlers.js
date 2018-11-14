@@ -24,6 +24,7 @@ import { callbackUrls, processRequest } from '.';
 import { invalidateDataSchemaCache } from './data_validator';
 
 import CustomError from 'ndid-error/custom_error';
+import errorType from 'ndid-error/type';
 import logger from '../../logger';
 
 import * as tendermint from '../../tendermint';
@@ -57,7 +58,14 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         message.initial_salt
       );
       const latestBlockHeight = tendermint.latestBlockHeight;
-      if (latestBlockHeight <= message.height) {
+      if (tendermint.chainId !== message.chainId) {
+        if(!utils.hasSeenChain(message.chainId)) {
+          throw new CustomError(
+            errorType.UNRECOGNIZED_CHAIN_ID
+          );
+        }
+      }
+      else if (latestBlockHeight <= message.height) {
         logger.debug({
           message: 'Saving message from MQ',
           tendermintLatestBlockHeight: latestBlockHeight,

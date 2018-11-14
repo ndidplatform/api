@@ -257,7 +257,7 @@ export async function sendRequestToAS(nodeId, requestData, height) {
             privateProofObjectList,
             rp_id: requestData.rp_id,
             initial_salt: requestData.initial_salt,
-            chain_id: tendermint.chainId,
+            chainId: tendermint.chainId,
             height,
           },
           nodeId

@@ -617,7 +617,7 @@ export async function handleChallengeRequest({
       challenge,
       request_id,
       ...nodeIdObj,
-      chain_id: tendermint.chainId,
+      chainId: tendermint.chainId,
       height: tendermint.latestBlockHeight,
     },
     nodeId

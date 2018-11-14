@@ -215,6 +215,10 @@ module.exports = {
     message:
       'Cannot save transact request for retry later on blockchain disabled',
   },
+  UNRECOGNIZED_CHAIN_ID: {
+    code: 10047,
+    message: 'Receive message from MQ with unrecognized chainId',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
