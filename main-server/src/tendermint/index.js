@@ -349,7 +349,7 @@ async function pollStatusUntilSynced() {
   }
 }
 
-async function pollInitStatusUntilInitEnded() {
+export async function pollInitStatusUntilInitEnded() {
   logger.info({
     message: 'Waiting for blockchain initialization',
   });
@@ -394,7 +394,6 @@ async function handleBlockchainDisabled(transactParams) {
 }
 
 export async function loadAndRetryBacklogTransactRequests() {
-  await pollInitStatusUntilInitEnded();
   const transactRequests = await cacheDb.getAllTransactRequestForRetry(
     config.nodeId
   );
@@ -409,6 +408,10 @@ export async function loadAndRetryBacklogTransactRequests() {
         await cacheDb.removeTransactRequestForRetry(config.nodeId, id);
       })
     );
+  } else {
+    logger.info({
+      message: 'No backlog transact request to retry',
+    });
   }
 }
 
@@ -436,6 +439,7 @@ tendermintWsClient.on('connected', async () => {
     tendermintWsClient.subscribeToNewBlockEvent();
     tendermintWsClient.subscribeToTxEvent();
     const statusOnSync = await pollStatusUntilSynced();
+    await pollInitStatusUntilInitEnded();
     loadAndRetryBacklogTransactRequests();
     eventEmitter.emit('ready', statusOnSync);
     processMissingBlocks(statusOnSync);

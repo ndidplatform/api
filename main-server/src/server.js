@@ -73,6 +73,8 @@ async function initialize() {
     await tendermint.connectWS();
     const tendermintStatusOnSync = await tendermintReady;
 
+    await tendermint.pollInitStatusUntilInitEnded();
+
     let role;
     if (!config.skipGetRole) {
       logger.info({ message: 'Getting node role' });
