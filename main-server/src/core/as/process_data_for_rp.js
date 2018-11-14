@@ -21,6 +21,7 @@
  */
 
 import validateData from './data_validator';
+import * as tendermint from '../../tendermint';
 
 import { callbackToClient } from '../../utils/callback';
 import CustomError from 'ndid-error/custom_error';
@@ -387,6 +388,7 @@ async function sendDataToRP(nodeId, rpId, data) {
       signature: data.signature,
       data_salt: data.data_salt,
       data: data.data,
+      chain_id: tendermint.chainId,
       height: data.height,
     },
     nodeId

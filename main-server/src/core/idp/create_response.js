@@ -21,6 +21,7 @@
  */
 
 import * as tendermintNdid from '../../tendermint/ndid';
+import * as tendermint from '../../tendermint';
 import * as cacheDb from '../../db/cache';
 import * as mq from '../../mq';
 import privateMessageType from '../../mq/message/type';
@@ -547,6 +548,7 @@ export async function requestChallengeAfterBlockchain(
         request_id: request_id,
         idp_id: nodeId,
         public_proof: [publicProof1, publicProof2],
+        chain_id: tendermint.chainId,
         height,
       },
       nodeId
@@ -657,6 +659,7 @@ async function sendResponseToRP(
       mode,
       ...privateProofObject,
       idp_id: nodeId,
+      chain_id: tendermint.chainId,
       height,
     },
     nodeId

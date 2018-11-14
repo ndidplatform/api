@@ -24,6 +24,7 @@ import fs from 'fs';
 import path from 'path';
 
 import * as tendermintNdid from '../../tendermint/ndid';
+import * as tendermint from '../../tendermint';
 import * as mq from '../../mq';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../../mq/message/type';
@@ -256,6 +257,7 @@ export async function sendRequestToAS(nodeId, requestData, height) {
             privateProofObjectList,
             rp_id: requestData.rp_id,
             initial_salt: requestData.initial_salt,
+            chain_id: tendermint.chainId,
             height,
           },
           nodeId

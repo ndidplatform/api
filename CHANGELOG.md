@@ -1,5 +1,10 @@
 # Changelog
 
+##TBD
+
+IMPROVEMENTS:
+- Add `chain_id` in message_queue.
+
 ## 0.11.4 (November 12, 2018)
 
 BUG FIXES:
