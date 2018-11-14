@@ -1,5 +1,12 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix load and retry backlog transact requests is called when server initialization failed.
+- Wait for blockchain initialization to end on server start.
+
 ## 0.11.4 (November 12, 2018)
 
 BUG FIXES:
