@@ -113,7 +113,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
 
         const latestBlockHeight = tendermint.latestBlockHeight;
         if (tendermint.chainId !== message.chainId) {
-          if(!utils.hasSeenChain(message.chainId)) {
+          if(!(await utils.hasSeenChain(message.chainId))) {
             throw new CustomError(
               errorType.UNRECOGNIZED_CHAIN_ID
             );
@@ -151,7 +151,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
       } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
         const latestBlockHeight = tendermint.latestBlockHeight;
         if (tendermint.chainId !== message.chainId) {
-          if(!utils.hasSeenChain(message.chainId)) {
+          if(!(await utils.hasSeenChain(message.chainId))) {
             throw new CustomError(
               errorType.UNRECOGNIZED_CHAIN_ID
             );
@@ -217,7 +217,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
 
         const latestBlockHeight = tendermint.latestBlockHeight;
         if (tendermint.chainId !== message.chainId) {
-          if(!utils.hasSeenChain(message.chainId)) {
+          if(!(await utils.hasSeenChain(message.chainId))) {
             throw new CustomError(
               errorType.UNRECOGNIZED_CHAIN_ID
             );

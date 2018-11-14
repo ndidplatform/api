@@ -35,8 +35,15 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
 import logger from '../logger';
+import * as tendermintNdid from '../tendermint/ndid';
 
 import * as config from '../config';
+
+export async function hasSeenChain(chainIdToCheck) {
+  let chainHistory = await tendermintNdid.getChainHistory();
+  let chainIdList = chainHistory.map(({chainId}) => chainId);
+  return (chainIdList.indexOf(chainIdToCheck) !== -1);
+}
 
 export function wait(ms, stoppable) {
   let setTimeoutFn;

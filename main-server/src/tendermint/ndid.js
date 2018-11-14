@@ -507,6 +507,21 @@ export async function updateServiceDestination(
 // Query
 //
 
+export async function getChainHistory() {
+  try {
+    const result = await tendermint.query('GetChainHistory');
+    if (result == null) {
+      return null;
+    }
+    return JSON.parse(result);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get chain history',
+      cause: error,
+    });
+  }
+}
+
 export async function getNodePubKey(node_id) {
   try {
     const result = await tendermint.query('GetNodePublicKey', { node_id });
