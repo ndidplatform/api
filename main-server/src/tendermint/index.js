@@ -393,7 +393,7 @@ async function handleBlockchainDisabled(transactParams) {
   await saveTransactRequestForRetry(transactParams);
 }
 
-async function loadAndRetryBacklogTransactRequests() {
+export async function loadAndRetryBacklogTransactRequests() {
   await pollInitStatusUntilInitEnded();
   const transactRequests = await cacheDb.getAllTransactRequestForRetry(
     config.nodeId
@@ -443,7 +443,6 @@ tendermintWsClient.on('connected', async () => {
     reconnecting = false;
   } else {
     const statusOnSync = await pollStatusUntilSynced();
-    loadAndRetryBacklogTransactRequests();
     eventEmitter.emit('ready', statusOnSync);
   }
 });
