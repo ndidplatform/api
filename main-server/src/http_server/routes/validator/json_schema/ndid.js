@@ -62,6 +62,7 @@ export default {
           public_key_type: { $ref: 'defs#/definitions/keyType' },
           master_public_key: { type: 'string', minLength: 1 },
           master_public_key_type: { $ref: 'defs#/definitions/keyType' },
+          chain_history_info: { type: 'string' },
         },
         required: [
           'public_key',

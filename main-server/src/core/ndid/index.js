@@ -40,6 +40,7 @@ export async function initNDID({
   public_key_type,
   master_public_key,
   master_public_key_type,
+  chain_history_info,
 }) {
   if (init) {
     logger.error({
@@ -59,7 +60,12 @@ export async function initNDID({
     await tendermint.transact({
       nodeId: config.nodeId,
       fnName: 'InitNDID',
-      params: { node_id: 'ndid1', public_key, master_public_key },
+      params: { 
+        node_id: 'ndid1', 
+        public_key, 
+        master_public_key, 
+        chain_history_info: JSON.stringify(chain_history_info),
+      },
     });
   } catch (error) {
     logger.error({

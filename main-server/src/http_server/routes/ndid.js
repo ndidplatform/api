@@ -37,6 +37,7 @@ router.post('/initNDID', validateBody, async (req, res, next) => {
       public_key_type,
       master_public_key,
       master_public_key_type,
+      chain_history_info,
     } = req.body;
 
     await ndid.initNDID({
@@ -44,6 +45,7 @@ router.post('/initNDID', validateBody, async (req, res, next) => {
       public_key_type,
       master_public_key,
       master_public_key_type,
+      chain_history_info,
     });
     res.status(204).end();
   } catch (error) {

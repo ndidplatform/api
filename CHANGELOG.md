@@ -3,7 +3,9 @@
 ##TBD
 
 IMPROVEMENTS:
-- Add `chain_id` in message_queue.
+- Add `chain_id` in `MQ`.
+- Check `chain_id` when receive message from `MQ`.
+- Add `chain_history_info` in `initNDID`.
 
 ## 0.11.4 (November 12, 2018)
 
