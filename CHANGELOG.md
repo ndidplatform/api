@@ -6,6 +6,7 @@ BUG FIXES:
 
 - Fix load and retry backlog transact requests is called when server initialization failed.
 - Wait for blockchain initialization to end on server start.
+- Fix request timeout is called before blockchain initialization ended while migrating to a new chain.
 
 ## 0.11.4 (November 12, 2018)
 

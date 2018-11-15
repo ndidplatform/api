@@ -70,6 +70,7 @@ export let syncing = null;
 export let connected = false;
 
 export let blockchainInitialized = false;
+let waitForInitEndedBeforeReady = true;
 
 export const eventEmitter = new EventEmitter();
 
@@ -375,6 +376,10 @@ export async function pollInitStatusUntilInitEnded() {
   }
 }
 
+export function setWaitForInitEndedBeforeReady(wait) {
+  waitForInitEndedBeforeReady = wait;
+}
+
 async function handleNewChain(newChainId) {
   saveChainId(newChainId);
   lastKnownAppHash = null;
@@ -439,14 +444,19 @@ tendermintWsClient.on('connected', async () => {
     tendermintWsClient.subscribeToNewBlockEvent();
     tendermintWsClient.subscribeToTxEvent();
     const statusOnSync = await pollStatusUntilSynced();
-    await pollInitStatusUntilInitEnded();
-    loadAndRetryBacklogTransactRequests();
+    if (waitForInitEndedBeforeReady) {
+      await pollInitStatusUntilInitEnded();
+    }
     eventEmitter.emit('ready', statusOnSync);
     processMissingBlocks(statusOnSync);
     processMissingExpectedTxs();
+    loadAndRetryBacklogTransactRequests();
     reconnecting = false;
   } else {
     const statusOnSync = await pollStatusUntilSynced();
+    if (waitForInitEndedBeforeReady) {
+      await pollInitStatusUntilInitEnded();
+    }
     eventEmitter.emit('ready', statusOnSync);
   }
 });

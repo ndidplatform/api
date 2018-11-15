@@ -333,6 +333,12 @@ export function stopAllTimeoutScheduler() {
 
 export async function timeoutRequest(nodeId, requestId) {
   try {
+    if (!tendermint.blockchainInitialized) {
+      await new Promise((resolve) =>
+        tendermint.eventEmitter.once('ready', (status) => resolve(status))
+      );
+    }
+
     const responseValidList = await cacheDb.getIdpResponseValidList(
       nodeId,
       requestId
