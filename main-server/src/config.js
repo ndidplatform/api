@@ -84,7 +84,7 @@ export const tendermintBaseWsUrl = `ws://${tendermintIp}:${tendermintPort}`;
 
 export const nodeId = process.env.NODE_ID;
 
-export const skipGetRole = process.env.SKIP_GET_ROLE === 'true';
+export const ndidNode = process.env.NDID_NODE === 'true';
 
 const defaultMqBindingPort = 5555;
 
