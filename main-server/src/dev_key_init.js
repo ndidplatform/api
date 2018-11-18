@@ -170,6 +170,8 @@ function addNodeToProxyNode(nodeId, proxyNodeId, nodeProxyConfig) {
 }
 
 export async function init() {
+  tendermint.setWaitForInitEndedBeforeReady(false);
+
   const tendermintReady = new Promise((resolve) =>
     tendermint.eventEmitter.once('ready', () => resolve())
   );

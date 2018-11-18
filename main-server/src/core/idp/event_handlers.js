@@ -504,9 +504,7 @@ async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
           };
         }
       ),
-      block_height: `${requestDetail.creation_chain_id}:${
-        requestDetail.creation_block_height
-      }`,
+      block_height: `${requestDetail.creation_chain_id}:${height}`,
     };
 
     await callbackToClient(callbackUrl, eventDataForCallback, true);

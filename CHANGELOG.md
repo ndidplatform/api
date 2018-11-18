@@ -1,5 +1,40 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix load and retry backlog transact requests is called when server initialization failed.
+- Wait for blockchain initialization to end on server start.
+- Fix request timeout is called before blockchain initialization ended while migrating to a new chain.
+
+## 0.11.4 (November 12, 2018)
+
+BUG FIXES:
+
+- Fix unable to receive MQ message types `consent_request` and `data_request` when `request_message` is an empty string. (Fix wrong message schema validation)
+- Fix wrong `request_params_hash` calculation when `request_params` is not provided.
+- Remove constraint `minLength` for `request_params` in `service_data_request_list` in inbound MQ message type `data_request` schema.
+- Fix `block_height` in request status update to current block height instead of creation block height.
+- Fix GET `/utility/services/:service_id` error when requested `service_id` does not exist.
+
+## 0.11.3 (November 12, 2018)
+
+IMPROVEMENTS:
+
+- API version 2.4
+  - New API: GET `/utility/services/:service_id`. Get service info including its data schema and data schema version.
+
+BUG FIXES:
+
+- Fix unable to receive MQ message type `data_request` without `request_params` in `service_data_request_list`. (Fix wrong message schema validation)
+
+## 0.11.2 (November 12, 2018)
+
+BUG FIXES:
+
+- Fix wrong data schema returned from calling GET `/utility/requests/:request_id`. (`creation_block_height` type and format, Remove `creation_chain_id`)
+
 ## 0.11.1 (November 11, 2018)
 
 BUG FIXES:

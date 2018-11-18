@@ -277,7 +277,7 @@ router.post('/services/:service_id', validateBody, async (req, res, next) => {
       data_schema,
       data_schema_version,
     });
-    res.status(201).end();
+    res.status(204).end();
   } catch (error) {
     next(error);
   }

@@ -460,7 +460,9 @@ function checkServiceRequestParamsIntegrity(requestId, request, requestDetail) {
       (dataRequest) => dataRequest.service_id === service_id
     );
 
-    const requestParamsHash = utils.hash(request_params + request_params_salt);
+    const requestParamsHash = utils.hash(
+      request_params != null ? request_params : '' + request_params_salt
+    );
     const dataRequestParamsValid =
       dataRequest.request_params_hash === requestParamsHash;
     if (!dataRequestParamsValid) {

@@ -118,6 +118,7 @@ async function initialize() {
 
     tendermint.processMissingBlocks(tendermintStatusOnSync);
     await tendermint.loadExpectedTxFromDB();
+    tendermint.loadAndRetryBacklogTransactRequests();
 
     logger.info({ message: 'Server initialized' });
   } catch (error) {
