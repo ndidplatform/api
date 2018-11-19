@@ -59,7 +59,7 @@ export async function initNDID({
     await tendermint.transact({
       nodeId: config.nodeId,
       fnName: 'InitNDID',
-      params: { node_id: 'ndid1', public_key, master_public_key },
+      params: { node_id: config.nodeId, public_key, master_public_key },
     });
   } catch (error) {
     logger.error({
