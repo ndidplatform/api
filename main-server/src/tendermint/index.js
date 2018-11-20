@@ -320,7 +320,15 @@ async function pollStatusUntilSynced() {
 
     for (;;) {
       const status = await tendermintHttpClient.status();
-      syncing = status.sync_info.catching_up;
+      if(status.sync_info) {
+        syncing = status.sync_info.catching_up;
+      } else {
+        //syncing not changed
+        logger.error({
+          message: 'Tendermint /status return unexpected result',
+          result: status
+        });
+      }
       if (syncing === false) {
         logger.info({
           message: 'Tendermint blockchain synced',
