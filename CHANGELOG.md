@@ -4,10 +4,12 @@
 
 BREAKING CHANGES:
 
+- Support Tendermint 0.26 (Tx hash spec change).
 - Remove `SKIP_GET_ROLE` environment variable option. Add `NDID_NODE` environment variable option for skipping get role and wait for blockchain initialization to end.
 
 IMPROVEMENTS:
 
+- Support Node.js 10.
 - Add `chain_id` in every message sending through message queue.
 - Check `chain_id` when receiving message from message queue.
 - Add `chain_history_info` in `initNDID`.
