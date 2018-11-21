@@ -59,13 +59,12 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
       );
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (tendermint.chainId !== message.chainId) {
-        if(!(await utils.hasSeenChain(message.chainId))) {
-          throw new CustomError(
-            errorType.UNRECOGNIZED_CHAIN_ID
-          );
+        if (!(await utils.hasSeenChain(message.chainId))) {
+          throw new CustomError({
+            errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
+          });
         }
-      }
-      else if (latestBlockHeight <= message.height) {
+      } else if (latestBlockHeight <= message.height) {
         logger.debug({
           message: 'Saving message from MQ',
           tendermintLatestBlockHeight: latestBlockHeight,

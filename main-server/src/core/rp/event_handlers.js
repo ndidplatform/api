@@ -62,13 +62,12 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         nodeId + ':' + message.request_id + ':' + message.idp_id;
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (tendermint.chainId !== message.chainId) {
-        if(!(await utils.hasSeenChain(message.chainId))) {
-          throw new CustomError(
-            errorType.UNRECOGNIZED_CHAIN_ID
-          );
+        if (!(await utils.hasSeenChain(message.chainId))) {
+          throw new CustomError({
+            errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
+          });
         }
-      }
-      else if (latestBlockHeight <= message.height) {
+      } else if (latestBlockHeight <= message.height) {
         logger.debug({
           message: 'Saving expected public proof from MQ',
           responseId,
@@ -136,13 +135,12 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
       //must wait for height
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (tendermint.chainId !== message.chainId) {
-        if(!(await utils.hasSeenChain(message.chainId))) {
-          throw new CustomError(
-            errorType.UNRECOGNIZED_CHAIN_ID
-          );
+        if (!(await utils.hasSeenChain(message.chainId))) {
+          throw new CustomError({
+            errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
+          });
         }
-      }
-      else if (latestBlockHeight <= message.height) {
+      } else if (latestBlockHeight <= message.height) {
         logger.debug({
           message: 'Saving message from MQ',
           tendermintLatestBlockHeight: latestBlockHeight,
@@ -245,13 +243,12 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
 
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (tendermint.chainId !== message.chainId) {
-        if(!(await utils.hasSeenChain(message.chainId))) {
-          throw new CustomError(
-            errorType.UNRECOGNIZED_CHAIN_ID
-          );
+        if (!(await utils.hasSeenChain(message.chainId))) {
+          throw new CustomError({
+            errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
+          });
         }
-      }
-      else if (latestBlockHeight <= message.height) {
+      } else if (latestBlockHeight <= message.height) {
         logger.debug({
           message: 'Saving expected data signature',
           tendermintLatestBlockHeight: latestBlockHeight,

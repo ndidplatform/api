@@ -113,13 +113,12 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
 
         const latestBlockHeight = tendermint.latestBlockHeight;
         if (tendermint.chainId !== message.chainId) {
-          if(!(await utils.hasSeenChain(message.chainId))) {
-            throw new CustomError(
-              errorType.UNRECOGNIZED_CHAIN_ID
-            );
+          if (!(await utils.hasSeenChain(message.chainId))) {
+            throw new CustomError({
+              errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
+            });
           }
-        }
-        else if (latestBlockHeight <= message.height) {
+        } else if (latestBlockHeight <= message.height) {
           logger.debug({
             message: 'Saving consent request message from MQ',
             tendermintLatestBlockHeight: latestBlockHeight,
@@ -151,13 +150,12 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
       } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
         const latestBlockHeight = tendermint.latestBlockHeight;
         if (tendermint.chainId !== message.chainId) {
-          if(!(await utils.hasSeenChain(message.chainId))) {
-            throw new CustomError(
-              errorType.UNRECOGNIZED_CHAIN_ID
-            );
+          if (!(await utils.hasSeenChain(message.chainId))) {
+            throw new CustomError({
+              errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
+            });
           }
-        }
-        else if (latestBlockHeight <= message.height) {
+        } else if (latestBlockHeight <= message.height) {
           logger.debug({
             message: 'Saving challege request message from MQ',
             tendermintLatestBlockHeight: latestBlockHeight,
@@ -217,13 +215,12 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
 
         const latestBlockHeight = tendermint.latestBlockHeight;
         if (tendermint.chainId !== message.chainId) {
-          if(!(await utils.hasSeenChain(message.chainId))) {
-            throw new CustomError(
-              errorType.UNRECOGNIZED_CHAIN_ID
-            );
+          if (!(await utils.hasSeenChain(message.chainId))) {
+            throw new CustomError({
+              errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
+            });
           }
-        }
-        else if (latestBlockHeight <= message.height) {
+        } else if (latestBlockHeight <= message.height) {
           logger.debug({
             message: 'Saving IdP response message from MQ',
             tendermintLatestBlockHeight: latestBlockHeight,

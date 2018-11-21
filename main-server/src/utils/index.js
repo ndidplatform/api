@@ -41,8 +41,8 @@ import * as config from '../config';
 
 export async function hasSeenChain(chainIdToCheck) {
   let chainHistory = await tendermintNdid.getChainHistory();
-  let chainIdList = chainHistory.map(({chainId}) => chainId);
-  return (chainIdList.indexOf(chainIdToCheck) !== -1);
+  let chainIdList = chainHistory.map(({ chainId }) => chainId);
+  return chainIdList.indexOf(chainIdToCheck) !== -1;
 }
 
 export function wait(ms, stoppable) {
