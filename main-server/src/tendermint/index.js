@@ -335,14 +335,15 @@ async function pollStatusUntilSynced() {
           saveChainId(currentChainId);
           const blockHeight = parseInt(status.sync_info.latest_block_height);
           saveLatestBlockHeight(blockHeight);
-        }
-        if (currentChainId !== chainId) {
-          logger.info({
-            message: 'New chain ID detected',
-            newChainId: currentChainId,
-            oldChainId: chainId,
-          });
-          await handleNewChain(currentChainId);
+        } else if (currentChainId !== chainId) {
+          if (!(await utils.hasSeenChain(currentChainId))) {
+            logger.info({
+              message: 'New chain ID detected',
+              newChainId: currentChainId,
+              oldChainId: chainId,
+            });
+            await handleNewChain(currentChainId);
+          }
         }
         pollingStatus = false;
         return status;
