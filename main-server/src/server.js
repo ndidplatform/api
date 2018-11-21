@@ -66,6 +66,10 @@ async function initialize() {
 
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
 
+    if (config.ndidNode) {
+      tendermint.setWaitForInitEndedBeforeReady(false);
+    }
+
     const tendermintReady = new Promise((resolve) =>
       tendermint.eventEmitter.once('ready', (status) => resolve(status))
     );
@@ -74,7 +78,7 @@ async function initialize() {
     const tendermintStatusOnSync = await tendermintReady;
 
     let role;
-    if (!config.skipGetRole) {
+    if (!config.ndidNode) {
       logger.info({ message: 'Getting node role' });
       role = await node.getNodeRoleFromBlockchain();
       logger.info({ message: 'Node role', role });
@@ -118,6 +122,7 @@ async function initialize() {
 
     tendermint.processMissingBlocks(tendermintStatusOnSync);
     await tendermint.loadExpectedTxFromDB();
+    tendermint.loadAndRetryBacklogTransactRequests();
 
     logger.info({ message: 'Server initialized' });
   } catch (error) {

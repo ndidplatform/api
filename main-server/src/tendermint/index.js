@@ -70,6 +70,7 @@ export let syncing = null;
 export let connected = false;
 
 export let blockchainInitialized = false;
+let waitForInitEndedBeforeReady = true;
 
 export const eventEmitter = new EventEmitter();
 
@@ -349,7 +350,7 @@ async function pollStatusUntilSynced() {
   }
 }
 
-async function pollInitStatusUntilInitEnded() {
+export async function pollInitStatusUntilInitEnded() {
   logger.info({
     message: 'Waiting for blockchain initialization',
   });
@@ -375,6 +376,10 @@ async function pollInitStatusUntilInitEnded() {
   }
 }
 
+export function setWaitForInitEndedBeforeReady(wait) {
+  waitForInitEndedBeforeReady = wait;
+}
+
 async function handleNewChain(newChainId) {
   saveChainId(newChainId);
   lastKnownAppHash = null;
@@ -393,8 +398,7 @@ async function handleBlockchainDisabled(transactParams) {
   await saveTransactRequestForRetry(transactParams);
 }
 
-async function loadAndRetryBacklogTransactRequests() {
-  await pollInitStatusUntilInitEnded();
+export async function loadAndRetryBacklogTransactRequests() {
   const transactRequests = await cacheDb.getAllTransactRequestForRetry(
     config.nodeId
   );
@@ -409,6 +413,10 @@ async function loadAndRetryBacklogTransactRequests() {
         await cacheDb.removeTransactRequestForRetry(config.nodeId, id);
       })
     );
+  } else {
+    logger.info({
+      message: 'No backlog transact request to retry',
+    });
   }
 }
 
@@ -436,14 +444,19 @@ tendermintWsClient.on('connected', async () => {
     tendermintWsClient.subscribeToNewBlockEvent();
     tendermintWsClient.subscribeToTxEvent();
     const statusOnSync = await pollStatusUntilSynced();
-    loadAndRetryBacklogTransactRequests();
+    if (waitForInitEndedBeforeReady) {
+      await pollInitStatusUntilInitEnded();
+    }
     eventEmitter.emit('ready', statusOnSync);
     processMissingBlocks(statusOnSync);
     processMissingExpectedTxs();
+    loadAndRetryBacklogTransactRequests();
     reconnecting = false;
   } else {
     const statusOnSync = await pollStatusUntilSynced();
-    loadAndRetryBacklogTransactRequests();
+    if (waitForInitEndedBeforeReady) {
+      await pollInitStatusUntilInitEnded();
+    }
     eventEmitter.emit('ready', statusOnSync);
   }
 });

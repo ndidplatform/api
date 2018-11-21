@@ -1,11 +1,23 @@
 # Changelog
 
-##TBD
+## TBD
+
+BREAKING CHANGES:
+
+- Remove `SKIP_GET_ROLE` environment variable option. Add `NDID_NODE` environment variable option for skipping get role and wait for blockchain initialization to end.
 
 IMPROVEMENTS:
-- Add `chain_id` in `MQ`.
-- Check `chain_id` when receive message from `MQ`.
+
+- Add `chain_id` in every message sending through message queue.
+- Check `chain_id` when receiving message from message queue.
 - Add `chain_history_info` in `initNDID`.
+
+BUG FIXES:
+
+- Fix load and retry backlog transact requests is called when server initialization failed.
+- Wait for blockchain initialization to end on server start.
+- Fix request timeout is called before blockchain initialization ended while migrating to a new chain.
+- Fix NDID node cannot be started if blockchain initialization is not ended.
 
 ## 0.11.4 (November 12, 2018)
 
