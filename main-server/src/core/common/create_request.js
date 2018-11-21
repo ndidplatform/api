@@ -636,7 +636,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
           type: privateMessageType.CONSENT_REQUEST,
           ...requestDataWithoutDataRequestParams,
           creation_time,
-          chainId: tendermint.chainId,
+          chain_id: tendermint.chainId,
           height,
         },
         node_id

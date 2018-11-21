@@ -388,7 +388,7 @@ async function sendDataToRP(nodeId, rpId, data) {
       signature: data.signature,
       data_salt: data.data_salt,
       data: data.data,
-      chainId: tendermint.chainId,
+      chain_id: tendermint.chainId,
       height: data.height,
     },
     nodeId

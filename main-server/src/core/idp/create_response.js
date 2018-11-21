@@ -548,7 +548,7 @@ export async function requestChallengeAfterBlockchain(
         request_id: request_id,
         idp_id: nodeId,
         public_proof: [publicProof1, publicProof2],
-        chainId: tendermint.chainId,
+        chain_id: tendermint.chainId,
         height,
       },
       nodeId
@@ -659,7 +659,7 @@ async function sendResponseToRP(
       mode,
       ...privateProofObject,
       idp_id: nodeId,
-      chainId: tendermint.chainId,
+      chain_id: tendermint.chainId,
       height,
     },
     nodeId

@@ -38,6 +38,7 @@ export default {
       signature: { type: 'string', minLength: 1 },
       data_salt: { type: 'string', minLength: 1 },
       data: { type: 'string', minLength: 1 },
+      chain_id: { type: 'string', minLength: 1 },
       height: { type: 'integer', minimum: 1 },
     },
     required: [
@@ -47,6 +48,7 @@ export default {
       'signature',
       'data_salt',
       'data',
+      'chain_id',
       'height',
     ],
   },
@@ -61,9 +63,10 @@ export default {
         minItems: 2,
         maxItems: 2,
       },
+      chain_id: { type: 'string', minLength: 1 },
       height: { type: 'integer', minimum: 1 },
     },
-    required: ['request_id', 'idp_id', 'public_proof', 'height'],
+    required: ['request_id', 'idp_id', 'public_proof', 'chain_id', 'height'],
   },
   [messageTypes.CHALLENGE_RESPONSE]: {
     $schema: 'http://json-schema.org/draft-07/schema#',
@@ -75,14 +78,15 @@ export default {
       request_id: { type: 'string', minLength: 1 },
       rp_id: { type: 'string', minLength: 1 },
       idp_id: { type: 'string', minLength: 1 },
+      chain_id: { type: 'string', minLength: 1 },
       height: { type: 'integer', minimum: 1 },
     },
     anyOf: [
       {
-        required: ['challenge', 'request_id', 'rp_id', 'height'],
+        required: ['challenge', 'request_id', 'rp_id', 'chain_id', 'height'],
       },
       {
-        required: ['challenge', 'request_id', 'idp_id', 'height'],
+        required: ['challenge', 'request_id', 'idp_id', 'chain_id', 'height'],
       },
     ],
   },
@@ -132,6 +136,7 @@ export default {
       request_message_salt: { type: 'string', minLength: 1 },
       initial_salt: { type: 'string', minLength: 1 },
       creation_time: { type: 'integer', minimum: 1 },
+      chain_id: { type: 'string', minLength: 1 },
       height: { type: 'integer', minimum: 1 },
     },
     required: [
@@ -149,6 +154,7 @@ export default {
       'request_message_salt',
       'initial_salt',
       'creation_time',
+      'chain_id',
       'height',
     ],
   },
@@ -211,6 +217,7 @@ export default {
       },
       rp_id: { type: 'string', minLength: 1 },
       initial_salt: { type: 'string', minLength: 1 },
+      chain_id: { type: 'string', minLength: 1 },
       height: { type: 'integer', minimum: 1 },
     },
     required: [
@@ -227,6 +234,7 @@ export default {
       'privateProofObjectList',
       'rp_id',
       'initial_salt',
+      'chain_id',
       'height',
     ],
   },
@@ -239,9 +247,10 @@ export default {
           request_id: { type: 'string', minLength: 1 },
           mode: { type: 'number', enum: [1] },
           idp_id: { type: 'string', minLength: 1 },
+          chain_id: { type: 'string', minLength: 1 },
           height: { type: 'integer', minimum: 1 },
         },
-        required: ['request_id', 'mode', 'idp_id', 'height'],
+        required: ['request_id', 'mode', 'idp_id', 'chain_id', 'height'],
       },
       // Mode 3
       {
@@ -255,6 +264,7 @@ export default {
           accessor_id: { type: 'string', minLength: 1 },
           padding: { type: 'string', minLength: 1 },
           idp_id: { type: 'string', minLength: 1 },
+          chain_id: { type: 'string', minLength: 1 },
           height: { type: 'integer', minimum: 1 },
         },
         required: [
@@ -264,6 +274,7 @@ export default {
           'accessor_id',
           'padding',
           'idp_id',
+          'chain_id',
           'height',
         ],
       },
