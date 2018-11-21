@@ -46,6 +46,9 @@ export default class MQRecv extends EventEmitter {
             'error',
             new CustomError({
               errorType: errorType.WRONG_MESSAGE_QUEUE_PROTOCOL,
+              details: {
+                messageBuffer: messageBuffer.toString('base64'),
+              },
               cause: error,
             })
           );
