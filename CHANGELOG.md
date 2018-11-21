@@ -2,6 +2,8 @@
 
 ## TBD
 
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v0.13.0_
+
 BREAKING CHANGES:
 
 - Support Tendermint 0.26 (Tx hash spec change).
