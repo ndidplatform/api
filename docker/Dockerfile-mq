@@ -1,4 +1,4 @@
-FROM node:8-alpine as build
+FROM node:10-alpine as build
 
 WORKDIR /tmp
 
@@ -16,7 +16,7 @@ RUN cd api/mq-server && npm install
 RUN apk del .build-deps
 
 
-FROM node:8-alpine
+FROM node:10-alpine
 LABEL maintainer="NDID IT Team <it@ndid.co.th>"
 ENV TERM=xterm-256color
 

@@ -10,6 +10,7 @@ BREAKING CHANGES:
 IMPROVEMENTS:
 
 - Support Node.js 10.
+- [Docker] Change Node.js version used in images from 8 to 10.
 - Add `chain_id` in every message sending through message queue.
 - Check `chain_id` when receiving message from message queue.
 - Add `chain_history_info` in `initNDID`.
