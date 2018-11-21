@@ -33,7 +33,7 @@
     "node-fetch": "^2.1.2",
     "protobufjs": "^6.8.8",
     "simple-backoff": "^1.1.0",
-    "source-map-support": "^0.5.6",
+    "source-map-support": "^0.5.9",
     "ws": "^5.2.2"
   },
   "devDependencies": {
