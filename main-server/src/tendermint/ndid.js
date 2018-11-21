@@ -510,10 +510,10 @@ export async function updateServiceDestination(
 export async function getChainHistory() {
   try {
     const result = await tendermint.query('GetChainHistory');
-    if (result == null) {
+    /*if (result == null) {
       return null;
-    }
-    return JSON.parse(result);
+    }*/
+    return result;
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get chain history',
