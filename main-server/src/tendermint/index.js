@@ -314,16 +314,16 @@ async function pollStatusUntilSynced() {
     });
 
     for (;;) {
-      const status = await tendermintHttpClient.status();
-      if(status.sync_info) {
-        syncing = status.sync_info.catching_up;
-      } else {
-        //syncing not changed
+      let status;
+      try {
+        status = await tendermintHttpClient.status();
+      } catch (error) {
         logger.error({
-          message: 'Tendermint /status return unexpected result',
-          result: status
+          message: 'Cannot get Tendermint status',
+          result: status,
         });
       }
+      syncing = status.sync_info.catching_up;
       if (syncing === false) {
         logger.info({
           message: 'Tendermint blockchain synced',

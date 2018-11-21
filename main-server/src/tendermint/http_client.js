@@ -56,6 +56,17 @@ async function httpUriCall(method, params) {
     const response = await fetch(uri);
     const responseJson = await response.json();
 
+    if (!response.ok) {
+      throw new CustomError({
+        errorType: errorType.TENDERMINT_HTTP_CALL_ERROR,
+        details: {
+          uri,
+          response,
+          responseJson,
+        },
+      });
+    }
+
     if (responseJson.error) {
       throw new CustomError({
         message: 'JSON-RPC ERROR',

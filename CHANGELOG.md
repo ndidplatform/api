@@ -21,6 +21,8 @@ BUG FIXES:
 - Wait for blockchain initialization to end on server start.
 - Fix request timeout is called before blockchain initialization ended while migrating to a new chain.
 - Fix NDID node cannot be started if blockchain initialization is not ended.
+- Fix Tendermint status polling stops when there is an error.
+- Handle HTTP response status other than 2xx from Tendermint HTTP RPC call.
 
 ## 0.11.4 (November 12, 2018)
 

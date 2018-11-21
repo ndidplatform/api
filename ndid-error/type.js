@@ -28,7 +28,7 @@ module.exports = {
   },
   TENDERMINT_HTTP_CALL_ERROR: {
     code: 10001,
-    message: 'Cannot connect to tendermint HTTP endpoint',
+    message: 'Tendermint HTTP RPC call failed',
   },
   TENDERMINT_QUERY_JSON_RPC_ERROR: {
     code: 10002,
