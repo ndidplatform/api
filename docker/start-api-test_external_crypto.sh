@@ -33,10 +33,10 @@ if [ -z ${NDID_IP} ]; then exit_missing_env NDID_IP; fi
 
 if [ -z ${NDID_PORT} ]; then NDID_PORT=${SERVER_PORT}; fi
 
-KEY_PATH=${PRIVATE_KEY_PATH:-/api/keys/node.pem}
-MASTER_KEY_PATH=${MASTER_PRIVATE_KEY_PATH:-/api/keys/master.pem}
-PUBLIC_KEY_PATH=${PUBLIC_KEY_PATH:-/api/keys/node.pub}
-MASTER_PUBLIC_KEY_PATH=${MASTER_PUBLIC_KEY_PATH:-/api/keys/master.pub}
+KEY_PATH=${PRIVATE_KEY_PATH:-/api/main-server/dev_key/keys/${NODE_ID}}
+MASTER_KEY_PATH=${MASTER_PRIVATE_KEY_PATH:-/api/main-server/dev_key/master_keys/${NODE_ID}_master}
+PUBLIC_KEY_PATH=${PUBLIC_KEY_PATH:-/api/main-server/dev_key/keys/${NODE_ID}.pub}
+MASTER_PUBLIC_KEY_PATH=${MASTER_PUBLIC_KEY_PATH:-/api/main-server/dev_key/master_keys/${NODE_ID}_master.pub}
 
 NODE_BEHIND_PROXY_PUBLIC_KEY_PATH=${NODE_BEHIND_PROXY_PUBLIC_KEY_PATH:-/api/main-server/dev_key/behind_proxy/keys/}
 NODE_BEHIND_PROXY_MASTER_PUBLIC_KEY_PATH=${NODE_BEHIND_PROXY_MASTER_PUBLIC_KEY_PATH:-/api/main-server/dev_key/behind_proxy/master_keys/}
