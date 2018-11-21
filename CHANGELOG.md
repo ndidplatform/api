@@ -7,6 +7,7 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 BUG FIXES:
 
 - Fix check `chain_id` logic when recieve MQ
+- Fix error from checking chain history when new chain ID is detected.
 
 ## 0.12.0 (November 21, 2018)
 

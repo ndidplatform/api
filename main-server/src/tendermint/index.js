@@ -336,14 +336,17 @@ async function pollStatusUntilSynced() {
           const blockHeight = parseInt(status.sync_info.latest_block_height);
           saveLatestBlockHeight(blockHeight);
         } else if (currentChainId !== chainId) {
-          if (!(await utils.hasSeenChain(currentChainId))) {
-            logger.info({
-              message: 'New chain ID detected',
-              newChainId: currentChainId,
-              oldChainId: chainId,
-            });
-            await handleNewChain(currentChainId);
-          }
+          // TODO: Find a better way to get chain history
+          // Currently, the check code below will error when connect to a new chain
+          // before InitNDID Tx is present on the chain
+          // if (!(await utils.hasSeenChain(currentChainId))) {
+          logger.info({
+            message: 'New chain ID detected',
+            newChainId: currentChainId,
+            oldChainId: chainId,
+          });
+          await handleNewChain(currentChainId);
+          // }
         }
         pollingStatus = false;
         return status;
