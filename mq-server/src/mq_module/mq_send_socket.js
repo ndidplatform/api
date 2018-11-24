@@ -24,20 +24,54 @@ import EventEmitter from 'events';
 
 import zmq from 'zeromq';
 
+const maxConnectionPerSocket = 5;
+
 export default class MQSendSocket extends EventEmitter {
   constructor() {
     super();
     this.socketMap = new Map();
+    this.socketUsedBy = {};
+    this.socketListByDest = {};
   }
 
   send(dest, payload, msgId, seqId) {
-    const newSocket = this._init(dest, msgId);
-    this.socketMap.set(seqId, newSocket);
-    newSocket.send(payload);
+    const destKey = dest.ip + ':' + dest.port;
+    let currentSocket = null;
+    if(!this.socketListByDest[destKey]) {
+      this.socketListByDest[destKey] = [];
+    }
+
+    for(let i = 0 ; i < this.socketListByDest[destKey].length ; i++) {
+      let socket = this.socketListByDest[destKey][i];
+      if(this.socketUsedBy[socket.id].length < maxConnectionPerSocket) {
+        currentSocket = socket;
+        break;
+      }
+    }
+    if(currentSocket == null) {
+      const newSocket = this._init(dest, msgId);
+      this.socketListByDest[destKey].push(newSocket);
+      currentSocket = newSocket;
+    }
+    
+    if(!this.socketUsedBy[currentSocket.id]) {
+      this.socketUsedBy[currentSocket.id] = [];
+    }
+    this.socketUsedBy[currentSocket.id].push(seqId);
+    this.socketMap.set(seqId, currentSocket);
+    currentSocket.send(payload);
   }
 
   cleanUp(seqId) {
-    this.socketMap.get(seqId).close();
+    let socketId = this.socketMap.get(seqId).id;
+    let index = this.socketUsedBy[socketId].indexOf(seqId);
+    if(index !== -1) {
+      this.socketUsedBy[socketId].splice(index,1);
+      if(this.socketUsedBy[socketId].length === 0) {
+        this.socketMap.get(seqId).close();
+        delete this.socketUsedBy[socketId];
+      }
+    }
     this.socketMap.delete(seqId);
   }
 
