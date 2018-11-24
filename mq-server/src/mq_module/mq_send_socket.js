@@ -28,7 +28,7 @@ import EventEmitter from 'events';
 import zmq from 'zeromq';
 import crypto from 'crypto';
 
-const maxConnectionPerSocket = 5;
+import { maxConnectionPerSocket } from '../config';
 
 export default class MQSendSocket extends EventEmitter {
   constructor() {
