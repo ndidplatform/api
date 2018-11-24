@@ -60,7 +60,7 @@ export default class MQSendSocket extends EventEmitter {
         console.log(count);
         maxConn = count;
       }
-      this.socketListByDest[destKey].push(newSocket.id);
+      this.socketListByDest[destKey].push(newSocket);
       currentSocket = newSocket;
     }
     
@@ -81,7 +81,9 @@ export default class MQSendSocket extends EventEmitter {
         this.socketMap.get(seqId).close();
         delete this.socketUsedBy[socketId];
         let destKey = this.socketDestMap[socketId];
-        let index = this.socketListByDest[destKey].indexOf(socketId);
+        let index = this.socketListByDest[destKey].filter((socket) => {
+          return socket.id === socketId;
+        })[0];
         if(index === -1) { throw 'Something is wrong'; }
         this.socketListByDest[destKey].splice(index,1);
       }
