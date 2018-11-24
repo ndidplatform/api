@@ -20,6 +20,9 @@
  *
  */
 
+let maxConn = 0;
+let count = 0;
+
 import EventEmitter from 'events';
 
 import zmq from 'zeromq';
@@ -31,6 +34,7 @@ export default class MQSendSocket extends EventEmitter {
     super();
     this.socketMap = new Map();
     this.socketUsedBy = {};
+    this.socketDestMap = {};
     this.socketListByDest = {};
   }
 
@@ -50,7 +54,13 @@ export default class MQSendSocket extends EventEmitter {
     }
     if(currentSocket == null) {
       const newSocket = this._init(dest, msgId);
-      this.socketListByDest[destKey].push(newSocket);
+      this.socketDestMap[newSocket.id] = destKey;
+      count++;
+      if(count > maxConn) {
+        console.log(count);
+        maxConn = count;
+      }
+      this.socketListByDest[destKey].push(newSocket.id);
       currentSocket = newSocket;
     }
     
@@ -70,6 +80,10 @@ export default class MQSendSocket extends EventEmitter {
       if(this.socketUsedBy[socketId].length === 0) {
         this.socketMap.get(seqId).close();
         delete this.socketUsedBy[socketId];
+        let destKey = this.socketDestMap[socketId];
+        let index = this.socketListByDest[destKey].indexOf(socketId);
+        if(index === -1) { throw 'Something is wrong'; }
+        this.socketListByDest[destKey].splice(index,1);
       }
     }
     this.socketMap.delete(seqId);
