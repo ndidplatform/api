@@ -83,6 +83,7 @@ export default class MQSendSocket extends EventEmitter {
       this.socketUsedBy[socketId].splice(index,1);
       if(this.socketUsedBy[socketId].length === 0) {
         this.socketMap.get(seqId).close();
+        count--;
         delete this.socketUsedBy[socketId];
         let destKey = this.socketDestMap[socketId];
         let index = this.socketListByDest[destKey].filter((socket) => {
