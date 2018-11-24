@@ -26,6 +26,7 @@ let count = 0;
 import EventEmitter from 'events';
 
 import zmq from 'zeromq';
+import crypto from 'crypto';
 
 const maxConnectionPerSocket = 5;
 
@@ -47,7 +48,10 @@ export default class MQSendSocket extends EventEmitter {
 
     for(let i = 0 ; i < this.socketListByDest[destKey].length - 1 ; i++) {
       let socket = this.socketListByDest[destKey][i];
-      if(this.socketUsedBy[socket.id].length < maxConnectionPerSocket) {
+      if(
+        this.socketUsedBy[socket.id] &&
+        this.socketUsedBy[socket.id].length < maxConnectionPerSocket
+      ) {
         currentSocket = socket;
         break;
       }
@@ -131,6 +135,7 @@ export default class MQSendSocket extends EventEmitter {
 
     const destUri = `tcp://${dest.ip}:${dest.port}`;
     sendingSocket.connect(destUri);
+    sendingSocket.id = crypto.randomBytes(16).toString('base64');
     return sendingSocket;
   }
 }
