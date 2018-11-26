@@ -46,7 +46,7 @@ export default class MQSendSocket extends EventEmitter {
       this.socketListByDest[destKey] = [];
     }
 
-    for(let i = 0 ; i < this.socketListByDest[destKey].length - 1 ; i++) {
+    for(let i = 0 ; i < this.socketListByDest[destKey].length ; i++) {
       let socket = this.socketListByDest[destKey][i];
       if(
         this.socketUsedBy[socket.id] &&
