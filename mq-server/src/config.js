@@ -48,3 +48,6 @@ export const logColor =
 export const logOneLine = process.env.LOG_ONE_LINE === 'true';
 export const logDirectoryPath =
   process.env.LOG_DIRECTORY_PATH || path.join(__dirname, '..', 'log');
+
+export const maxConnectionPerSocket = 
+  process.env.MAX_CONNECTION_PER_SOCKET || 16;
