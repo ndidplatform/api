@@ -107,7 +107,7 @@ jobs:
           command: |
             cd docker
             REPO_NAME=${REPO_NAME:-$DOCKER_USER}
-            DOCKER_TAG=${DOCKER_TAG:-development}
+            DOCKER_TAG=${DOCKER_TAG_DEV:-development}
             ./build.sh
       - run:
           name: Push to docker hub
@@ -120,10 +120,10 @@ jobs:
               exit 1
             fi
             REPO_NAME=${REPO_NAME:-$DOCKER_USER}
-            DOCKER_TAG=${DOCKER_TAG:-development}
+            DOCKER_TAG=${DOCKER_TAG_DEV:-development}
             docker login -u $DOCKER_USER -p $DOCKER_PASS
-            docker push $REPO_NAME/api:$DOCKER_TAG
-            docker push $REPO_NAME/mq:$DOCKER_TAG
+            docker push $REPO_NAME/api:$DOCKER_TAG_DEV
+            docker push $REPO_NAME/mq:$DOCKER_TAG_DEV
 
 workflows:
   version: 2
