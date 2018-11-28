@@ -122,8 +122,8 @@ jobs:
             REPO_NAME=${REPO_NAME:-$DOCKER_USER}
             DOCKER_TAG=${DOCKER_TAG_DEV:-development}
             docker login -u $DOCKER_USER -p $DOCKER_PASS
-            docker push $REPO_NAME/api:$DOCKER_TAG_DEV
-            docker push $REPO_NAME/mq:$DOCKER_TAG_DEV
+            docker push $REPO_NAME/api:$DOCKER_TAG
+            docker push $REPO_NAME/mq:$DOCKER_TAG
 
 workflows:
   version: 2
