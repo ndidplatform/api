@@ -219,6 +219,10 @@ module.exports = {
     code: 10047,
     message: 'Received message from MQ with unrecognized chain ID',
   },
+  TENDERMINT_HTTP_CALL_UNEXPECTED_RESULT: {
+    code: 10048,
+    message: 'Tendermint HTTP RPC call got unexpected result',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {

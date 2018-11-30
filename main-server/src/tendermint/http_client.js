@@ -77,6 +77,16 @@ async function httpUriCall(method, params) {
       });
     }
 
+    if (responseJson.result == null) {
+      throw new CustomError({
+        errorType: errorType.TENDERMINT_HTTP_CALL_UNEXPECTED_RESULT,
+        details: {
+          uri,
+          responseJson,
+        },
+      });
+    }
+
     return responseJson.result;
   } catch (error) {
     throw new CustomError({
