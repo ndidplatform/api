@@ -10,6 +10,7 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+- Fix Tendermint sync/catch up status polling does not continue when got no result from HTTP RPC call.
 - Remove both chain ID and latest block height files first when handling new chain function is called to prevent invalid value in latest block height file in case the server stops before it is able to write a block height of a new chain.
 
 ## 0.12.1 (November 21, 2018)

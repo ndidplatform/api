@@ -342,10 +342,16 @@ async function pollStatusUntilSynced() {
       try {
         status = await tendermintHttpClient.status();
       } catch (error) {
-        logger.error({
+        const err = new CustomError({
           message: 'Cannot get Tendermint status',
-          result: status,
+          cause: error,
+          details: {
+            result: status,
+          },
         });
+        logger.error(err.getInfoForLog());
+        await utils.wait(backoff.next());
+        continue;
       }
       syncing = status.sync_info.catching_up;
       if (syncing === false) {
