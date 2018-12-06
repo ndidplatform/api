@@ -187,6 +187,30 @@ function saveChainId(chainIdToSave) {
   chainId = chainIdToSave;
 }
 
+function removeChainIdAndLatestBlockHeightFiles() {
+  try {
+    fs.unlinkSync(chainIdFilepath);
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      logger.error({
+        message: 'Cannot unlink chain ID file',
+        error,
+      });
+    }
+  }
+
+  try {
+    fs.unlinkSync(latestBlockHeightFilepath);
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      logger.error({
+        message: 'Cannot unlink latest block height files',
+        error,
+      });
+    }
+  }
+}
+
 export function setTendermintNewBlockEventHandler(handler) {
   handleTendermintNewBlock = handler;
 }
@@ -387,6 +411,7 @@ export function setWaitForInitEndedBeforeReady(wait) {
 }
 
 async function handleNewChain(newChainId) {
+  removeChainIdAndLatestBlockHeightFiles();
   saveChainId(newChainId);
   lastKnownAppHash = null;
   cacheBlocks = {};
