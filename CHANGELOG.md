@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix resumeTimeoutScheduler on server initialization being called too early.
+
 ## 1.0.0 (December 7, 2018)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_

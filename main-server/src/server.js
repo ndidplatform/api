@@ -115,6 +115,8 @@ async function initialize() {
 
     await tendermint.initialize();
 
+    await core.resumeTimeoutScheduler();
+
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
       await core.setMessageQueueAddress();
       await mq.loadAndProcessBacklogMessages();

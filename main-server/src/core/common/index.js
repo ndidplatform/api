@@ -114,14 +114,12 @@ export async function initialize() {
     tendermint.setTendermintNewBlockEventHandler(rp.handleTendermintNewBlock);
     setShouldRetryFnGetter(getFunction);
     setResponseCallbackFnGetter(getFunction);
-    resumeTimeoutScheduler([config.nodeId]);
     resumeCallbackToClient();
   } else if (role === 'idp') {
     handleMessageFromQueue = idp.handleMessageFromQueue;
     tendermint.setTendermintNewBlockEventHandler(idp.handleTendermintNewBlock);
     setShouldRetryFnGetter(getFunction);
     setResponseCallbackFnGetter(getFunction);
-    resumeTimeoutScheduler([config.nodeId]);
     resumeCallbackToClient();
   } else if (role === 'as') {
     handleMessageFromQueue = as.handleMessageFromQueue;
@@ -136,9 +134,6 @@ export async function initialize() {
     );
     setShouldRetryFnGetter(getFunction);
     setResponseCallbackFnGetter(getFunction);
-    const nodesBehindProxy = await node.getNodesBehindProxyWithKeyOnProxy();
-    const nodeIds = nodesBehindProxy.map((node) => node.node_id);
-    resumeTimeoutScheduler(nodeIds);
     resumeCallbackToClient();
   }
 
@@ -208,7 +203,17 @@ export function getFunction(fnName) {
   }
 }
 
-async function resumeTimeoutScheduler(nodeIds) {
+export async function resumeTimeoutScheduler() {
+  let nodeIds;
+  if (role === 'rp') {
+    nodeIds = [config.nodeId];
+  } else if (role === 'idp') {
+    nodeIds = [config.nodeId];
+  } else if (role === 'proxy') {
+    const nodesBehindProxy = await node.getNodesBehindProxyWithKeyOnProxy();
+    nodeIds = nodesBehindProxy.map((node) => node.node_id);
+  }
+  if (nodeIds == null) return;
   nodeIds.forEach(async (nodeId) => {
     const schedulers = await cacheDb.getAllTimeoutScheduler(nodeId);
     schedulers.forEach(({ requestId, unixTimeout }) => {
