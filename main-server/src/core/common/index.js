@@ -64,6 +64,9 @@ export function isMqAddressesSet() {
 
 export async function setMessageQueueAddress() {
   if (!messageQueueAddressesSet) {
+    // FIXME: must retry on error (except some errors e.g. node disabled) or server init will fail
+    // and http API will always return 503
+
     //query current self msq
     const selfMqAddress = await tendermintNdid.getMqAddresses(config.nodeId);
     if (selfMqAddress) {

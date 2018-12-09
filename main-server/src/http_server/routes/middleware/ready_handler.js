@@ -32,6 +32,8 @@ import logger from '../../../logger';
 import * as config from '../../../config';
 
 export default function readyHandler(req, res, next) {
+  // TODO: Return 503 with server init failed error if server init failed
+
   if (req.url.endsWith('/dpki/node/callback')) {
     next();
     return;
