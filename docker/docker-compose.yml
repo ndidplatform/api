@@ -111,6 +111,10 @@ services:
       - no-new-privileges
     networks:
       - ndidplatform
+    ulimits:
+      nofile: 
+        soft: 30000
+        hard: 30000
   mq-idp-2:
     image: ndidplatform/mq:latest
     environment: 
@@ -121,6 +125,10 @@ services:
       - no-new-privileges
     networks:
       - ndidplatform
+    ulimits:
+      nofile: 
+        soft: 30000
+        hard: 30000
   mq-rp:
     image: ndidplatform/mq:latest
     environment: 
@@ -131,6 +139,10 @@ services:
       - no-new-privileges
     networks:
       - ndidplatform
+    ulimits:
+      nofile: 
+        soft: 30000
+        hard: 30000
   mq-as:
     image: ndidplatform/mq:latest
     environment: 
@@ -141,6 +153,10 @@ services:
       - no-new-privileges
     networks:
       - ndidplatform
+    ulimits:
+      nofile: 
+        soft: 30000
+        hard: 30000
       
 networks:
   ndidplatform:
