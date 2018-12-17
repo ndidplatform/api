@@ -28,7 +28,7 @@ import EventEmitter from 'events';
 import zmq from 'zeromq';
 import crypto from 'crypto';
 
-import { maxConnectionPerSocket } from '../config';
+import { maxConnectionPerSocket, maxSocket } from '../config';
 
 export default class MQSendSocket extends EventEmitter {
   constructor() {
@@ -37,6 +37,7 @@ export default class MQSendSocket extends EventEmitter {
     this.socketUsedBy = {};
     this.socketDestMap = {};
     this.socketListByDest = {};
+    zmq.Context.setMaxSockets(maxSocket);
   }
 
   send(dest, payload, msgId, seqId) {

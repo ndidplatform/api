@@ -51,3 +51,6 @@ export const logDirectoryPath =
 
 export const maxConnectionPerSocket = 
   process.env.MAX_CONNECTION_PER_SOCKET || 16;
+
+export const maxSocket = 
+  process.env.MAX_SOCKET || 10000;

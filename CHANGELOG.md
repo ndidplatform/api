@@ -6,6 +6,10 @@ BUG FIXES:
 
 - Fix resumeTimeoutScheduler on server initialization being called too early.
 
+IMPROVEMENTS:
+
+- Configurable `maxSocket` for MQ (mitigate `No file descriptors available` error).
+
 ## 1.0.0 (December 7, 2018)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
