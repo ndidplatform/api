@@ -121,7 +121,7 @@ export default class MQSend extends EventEmitter {
 
   _cleanUp(msgId, seqId) {
     try {
-      this.socket.cleanUp(seqId);
+      this.socket.cleanUp(msgId, seqId);
     } catch (error) {
       this.emit(
         'error',

@@ -37,10 +37,15 @@ export default class MQSendSocket extends EventEmitter {
     this.socketUsedBy = {};
     this.socketDestMap = {};
     this.socketListByDest = {};
+    this.seqIdList = {};
     zmq.Context.setMaxSockets(maxSocket);
   }
 
   send(dest, payload, msgId, seqId) {
+    if(!this.seqIdList[msgId]) {
+      this.seqIdList[msgId] = [];
+    }
+    this.seqIdList[msgId].push(seqId);
     const destKey = dest.ip + ':' + dest.port;
     let currentSocket = null;
     if(!this.socketListByDest[destKey]) {
@@ -77,7 +82,15 @@ export default class MQSendSocket extends EventEmitter {
     currentSocket.send([Buffer.alloc(0), payload]);
   }
 
-  cleanUp(seqId) {
+  cleanUp(msgId, ackSeqId) {
+    if(!this.seqIdList[msgId]) return; //ack for same msgId
+    this.seqIdList[msgId].forEach((seqId) => {
+      this._cleanUp(seqId);
+    });
+    delete this.seqIdList[msgId];
+  }
+
+  _cleanUp(seqId) {
     let socketId = this.socketMap.get(seqId).id;
     let index = this.socketUsedBy[socketId].indexOf(seqId);
     if(index !== -1) {
