@@ -147,7 +147,7 @@ export default class MQSendSocket extends EventEmitter {
 
     sendingSocket.on(
       'message',
-      function(identity, messageBuffer) {
+      function(emptyDelimiter, messageBuffer) {
         this.emit('message', messageBuffer);
       }.bind(this)
     );
