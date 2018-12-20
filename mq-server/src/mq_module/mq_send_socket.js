@@ -87,13 +87,17 @@ export default class MQSendSocket extends EventEmitter {
         count--;
         delete this.socketUsedBy[socketId];
         let destKey = this.socketDestMap[socketId];
-        let index = this.socketListByDest[destKey].filter((socket) => {
+        let index = this.socketListByDest[destKey].findIndex((socket) => {
           return socket.id === socketId;
-        })[0];
+        });
         if(index === -1) { throw 'Something is wrong'; }
         this.socketListByDest[destKey].splice(index,1);
+        if(this.socketListByDest[destKey].length === 0) {
+          delete this.socketListByDest[destKey];
+        }
       }
     }
+    else { throw 'Something is wrong'; }
     this.socketMap.delete(seqId);
   }
 

@@ -6,6 +6,7 @@ BUG FIXES:
 
 - Fix resumeTimeoutScheduler on server initialization being called too early.
 - Change `zmq` type from `req` to `dealer`.
+- Fix cleanup method for mapping (socket, socket-destination) in MQ.
 
 IMPROVEMENTS:
 
