@@ -6,7 +6,8 @@ RUN apk update && apk add --no-cache --virtual .build-deps \
   python \
   g++ \
   make \
-  git
+  git \
+  file
 
 COPY ./ndid-logger/package*.json /tmp/api/ndid-logger/
 COPY ./mq-server/package*.json /tmp/api/mq-server/
