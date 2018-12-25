@@ -103,7 +103,7 @@ export function abciQuery(data, height) {
   return httpUriCall('abci_query', [
     {
       key: 'data',
-      value: `0x${data}`,
+      value: `0x${data.toString('hex')}`,
     },
     {
       key: 'height',
@@ -116,7 +116,7 @@ export function broadcastTxCommit(tx) {
   return httpUriCall('broadcast_tx_commit', [
     {
       key: 'tx',
-      value: `0x${tx}`,
+      value: `0x${tx.toString('hex')}`,
     },
   ]);
 }
@@ -125,7 +125,7 @@ export function broadcastTxSync(tx) {
   return httpUriCall('broadcast_tx_sync', [
     {
       key: 'tx',
-      value: `0x${tx}`,
+      value: `0x${tx.toString('hex')}`,
     },
   ]);
 }
@@ -158,7 +158,7 @@ export function tx(hash, prove) {
   return httpUriCall('tx', [
     {
       key: 'hash',
-      value: `0x${hash}`,
+      value: `0x${hash.toString('hex')}`,
     },
     {
       key: 'prove',

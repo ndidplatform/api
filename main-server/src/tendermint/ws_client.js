@@ -33,9 +33,10 @@ import CustomError from 'ndid-error/custom_error';
 const PING_INTERVAL = 30000;
 
 export default class TendermintWsClient extends EventEmitter {
-  constructor(connect) {
+  constructor(name = '', connect) {
     super();
-    this.wsConnected = false;
+    this.name = name;
+    this.connected = false;
     this.isAlive = false;
     this.reconnect = true;
     this.rpcId = 0;
@@ -54,17 +55,19 @@ export default class TendermintWsClient extends EventEmitter {
   connect() {
     logger.info({
       message: 'Tendermint WS connecting',
+      name: this.name,
     });
     this.ws = new WebSocket(`ws://${tendermintAddress}/websocket`);
     this.ws.on('open', () => {
       logger.info({
         message: 'Tendermint WS connected',
+        name: this.name,
       });
       // Reset backoff interval
       this.backoff.reset();
       this.reconnectTimeoutFn = null;
 
-      this.wsConnected = true;
+      this.connected = true;
       this.isAlive = true;
 
       this.emit('connected');
@@ -78,17 +81,20 @@ export default class TendermintWsClient extends EventEmitter {
     });
 
     this.ws.on('close', (code, reason) => {
-      if (this.wsConnected === true) {
+      if (this.connected === true) {
         logger.info({
           message: 'Tendermint WS disconnected',
+          name: this.name,
           code,
           reason,
         });
 
+        // TODO: Reject all `_call` promises here?
+
         this.emit('disconnected');
       }
 
-      this.wsConnected = false;
+      this.connected = false;
       this.isAlive = false;
       clearInterval(this.pingIntervalFn);
       this.pingIntervalFn = null;
@@ -98,6 +104,7 @@ export default class TendermintWsClient extends EventEmitter {
         const backoffTime = this.backoff.next();
         logger.debug({
           message: `Tendermint WS try reconnect in ${backoffTime} ms`,
+          name: this.name,
         });
         this.reconnectTimeoutFn = setTimeout(() => this.connect(), backoffTime);
       }
@@ -106,6 +113,7 @@ export default class TendermintWsClient extends EventEmitter {
     this.ws.on('error', (error) => {
       logger.error({
         message: 'Tendermint WS error',
+        name: this.name,
         error,
       });
       // this.emit('error', error);
@@ -114,6 +122,7 @@ export default class TendermintWsClient extends EventEmitter {
     this.ws.on('message', (message) => {
       // logger.debug({
       //   message: 'Data received from tendermint WS',
+      //   name: this.name,
       //   data: message,
       // });
       try {
@@ -121,6 +130,7 @@ export default class TendermintWsClient extends EventEmitter {
       } catch (error) {
         logger.warn({
           message: 'Error JSON parsing message received from tendermint',
+          name: this.name,
           data: message,
           error,
         });
@@ -158,7 +168,7 @@ export default class TendermintWsClient extends EventEmitter {
    *
    * @returns {Promise<Object>}
    */
-  getStatus() {
+  status() {
     return this._call('status', []);
   }
 
@@ -167,38 +177,32 @@ export default class TendermintWsClient extends EventEmitter {
    * @param {number} height Block height to query
    * @returns {Promise<Object>}
    */
-  getBlock(height) {
+  block(height) {
     return this._call('block', [`${height}`]);
   }
 
-  getBlockResults(height) {
+  blockResults(height) {
     return this._call('block_results', [`${height}`]);
   }
 
-  // NOT WORKING - Can't figure out params format. No docs on tendermint.
-  // abciQuery(data) {
-  //   return this._call('abci_query', [
-  //     '',
-  //     Buffer.from(data).toString('base64'),
-  //     '',
-  //     '',
-  //   ]);
-  // }
+  tx(hash, prove) {
+    return this._call('tx', { hash: hash.toString('base64'), prove });
+  }
 
-  // broadcastTxCommit(tx) {
-  //   return this._call('broadcast_tx_commit', [
-  //     Buffer.from(tx).toString('base64'),
-  //   ]);
-  // }
+  abciQuery(data) {
+    return this._call('abci_query', { data: data.toString('hex') });
+  }
 
-  // broadcastTxSync(tx) {
-  //   return this._call('broadcast_tx_sync', [
-  //     Buffer.from(tx).toString('base64'),
-  //   ]);
-  // }
+  broadcastTxCommit(tx) {
+    return this._call('broadcast_tx_commit', { tx: tx.toString('base64') });
+  }
+
+  broadcastTxSync(tx) {
+    return this._call('broadcast_tx_sync', { tx: tx.toString('base64') });
+  }
 
   subscribeToNewBlockHeaderEvent() {
-    if (this.wsConnected) {
+    if (this.connected) {
       this.ws.send(
         JSON.stringify({
           jsonrpc: '2.0',
@@ -211,7 +215,7 @@ export default class TendermintWsClient extends EventEmitter {
   }
 
   subscribeToNewBlockEvent() {
-    if (this.wsConnected) {
+    if (this.connected) {
       this.ws.send(
         JSON.stringify({
           jsonrpc: '2.0',
@@ -224,7 +228,7 @@ export default class TendermintWsClient extends EventEmitter {
   }
 
   subscribeToTxEvent() {
-    if (this.wsConnected) {
+    if (this.connected) {
       this.ws.send(
         JSON.stringify({
           jsonrpc: '2.0',
@@ -246,7 +250,7 @@ export default class TendermintWsClient extends EventEmitter {
 
   _call(method, params, wsOpts) {
     return new Promise((resolve, reject) => {
-      if (!this.wsConnected) {
+      if (!this.connected) {
         return reject(new Error('socket is not connected'));
       }
 
@@ -260,6 +264,7 @@ export default class TendermintWsClient extends EventEmitter {
 
       logger.debug({
         message: 'Calling Tendermint through WS',
+        name: this.name,
         payload: message,
       });
       this.ws.send(JSON.stringify(message), wsOpts, (error) => {

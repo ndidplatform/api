@@ -12,6 +12,8 @@ BUG FIXES:
 IMPROVEMENTS:
 
 - Configurable `maxSocket` for MQ (mitigate `No file descriptors available` error).
+- Changed all RPC calls from using HTTP to WebSocket for better performance (decreases response time).
+- Add new environment variable option `TENDERMINT_WS_CONNECTIONS` for configuring number of Tendermint RPC WebSocket connections in connection pool.
 
 ## 1.0.0 (December 7, 2018)
 

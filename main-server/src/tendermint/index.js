@@ -31,8 +31,9 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../logger';
 
-import * as tendermintHttpClient from './http_client';
+// import * as tendermintHttpClient from './http_client';
 import TendermintWsClient from './ws_client';
+import * as tendermintWsPool from './ws_pool';
 import * as tendermintNdid from './ndid';
 import { convertAbciAppCodeToErrorType } from './abci_app_code';
 import * as cacheDb from '../db/cache';
@@ -52,7 +53,7 @@ const TendermintQuery = tendermintProtobufRoot.lookupType('Query');
 const successBase64 = Buffer.from('success').toString('base64');
 const trueBase64 = Buffer.from('true').toString('base64');
 
-export const tendermintWsClient = new TendermintWsClient(false);
+export const tendermintWsClient = new TendermintWsClient('main', false);
 
 let handleTendermintNewBlock;
 
@@ -150,8 +151,9 @@ export async function initialize() {
   tendermintWsClient.subscribeToTxEvent();
 }
 
-export function connectWS() {
-  return new Promise((resolve, reject) => {
+export async function connectWS() {
+  await tendermintWsPool.initialize();
+  await new Promise((resolve) => {
     tendermintWsClient.once('connected', () => resolve());
     tendermintWsClient.connect();
   });
@@ -242,7 +244,9 @@ async function processMissingExpectedTxs() {
   await Promise.all(
     Object.keys(expectedTx).map(async (txHash) => {
       try {
-        const result = await tendermintHttpClient.tx(txHash);
+        const result = await tendermintWsPool
+          .getConnection()
+          .tx(Buffer.from(txHash, 'hex'));
         await processExpectedTx(txHash, result);
       } catch (error) {
         logger.warn({
@@ -340,7 +344,7 @@ async function pollStatusUntilSynced() {
     for (;;) {
       let status;
       try {
-        status = await tendermintHttpClient.status();
+        status = await tendermintWsPool.getConnection().status();
       } catch (error) {
         const err = new CustomError({
           message: 'Cannot get Tendermint status',
@@ -640,7 +644,7 @@ export async function getBlocks(fromHeight, toHeight) {
       if (cacheBlocks[height]) {
         return cacheBlocks[height];
       } else {
-        const result = await tendermintHttpClient.block(height);
+        const result = await tendermintWsPool.getConnection().block(height);
         return result.block;
       }
     })
@@ -665,7 +669,9 @@ export async function getBlockResults(fromHeight, toHeight) {
     (v, i) => i + fromHeight
   );
   const results = await Promise.all(
-    heights.map((height) => tendermintHttpClient.blockResults(height))
+    heights.map((height) =>
+      tendermintWsPool.getConnection().blockResults(height)
+    )
   );
   return results;
 }
@@ -840,19 +846,17 @@ export async function query(fnName, params, height) {
   };
   const queryProto = TendermintQuery.create(queryObject);
   const queryProtoBuffer = TendermintQuery.encode(queryProto).finish();
-  const queryProtoBufferHex = queryProtoBuffer.toString('hex');
 
   try {
-    const result = await tendermintHttpClient.abciQuery(
-      queryProtoBufferHex,
-      height
-    );
+    const result = await tendermintWsPool
+      .getConnection()
+      .abciQuery(queryProtoBuffer, height);
     return getQueryResult(result);
   } catch (error) {
     if (error.message === 'JSON-RPC ERROR') {
       throw new CustomError({
         errorType: errorType.TENDERMINT_QUERY_JSON_RPC_ERROR,
-        details: error.error,
+        details: error.details,
       });
     } else {
       throw error;
@@ -928,7 +932,6 @@ export async function transact({
   };
   const txProto = TendermintTx.create(txObject);
   const txProtoBuffer = TendermintTx.encode(txProto).finish();
-  const txProtoBufferHex = txProtoBuffer.toString('hex');
 
   const txHash = sha256(txProtoBuffer).toString('hex');
   const transactParams = {
@@ -961,9 +964,9 @@ export async function transact({
         })
       );
     }
-    const responseResult = await tendermintHttpClient.broadcastTxSync(
-      txProtoBufferHex
-    );
+    const responseResult = await tendermintWsPool
+      .getConnection()
+      .broadcastTxSync(txProtoBuffer);
     const broadcastTxSyncResult = getBroadcastTxSyncResult(responseResult);
     if (waitForCommit) {
       const result = await promise;
@@ -976,7 +979,7 @@ export async function transact({
     if (error.message === 'JSON-RPC ERROR') {
       throw new CustomError({
         errorType: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
-        details: error.error,
+        details: error.details,
       });
     } else if (
       error.code === errorType.ABCI_CHAIN_DISABLED.code &&

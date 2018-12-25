@@ -35,6 +35,7 @@ import * as nodeKey from './utils/node_key';
 import * as cacheDb from './db/cache';
 import * as longTermDb from './db/long_term';
 import * as tendermint from './tendermint';
+import * as tendermintWsPool from './tendermint/ws_pool';
 import * as mq from './mq';
 import { stopAllCallbackRetries } from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
@@ -173,6 +174,7 @@ async function shutDown() {
   externalCryptoService.stopAllCallbackRetries();
   await mq.close();
   tendermint.tendermintWsClient.close();
+  tendermintWsPool.closeAllConnections();
   // TODO: wait for async operations which going to use DB to finish before closing
   // a connection to DB
   // Possible solution: Have those async operations append a queue to use DB and

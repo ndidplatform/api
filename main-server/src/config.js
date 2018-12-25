@@ -82,6 +82,11 @@ export const tendermintBaseHttpUrl = `http://${tendermintIp}:${tendermintPort}`;
 
 export const tendermintBaseWsUrl = `ws://${tendermintIp}:${tendermintPort}`;
 
+export const tendermintWsConnections =
+  process.env.TENDERMINT_WS_CONNECTIONS == null
+    ? 10
+    : parseInt(process.env.TENDERMINT_WS_CONNECTIONS);
+
 export const nodeId = process.env.NODE_ID;
 
 export const ndidNode = process.env.NDID_NODE === 'true';
@@ -111,8 +116,8 @@ export const useExternalCryptoService =
 export const privateKeyPath = useExternalCryptoService
   ? null
   : process.env.PRIVATE_KEY_PATH == null && env === 'development'
-    ? path.join(__dirname, '..', 'dev_key', 'keys', nodeId)
-    : process.env.PRIVATE_KEY_PATH;
+  ? path.join(__dirname, '..', 'dev_key', 'keys', nodeId)
+  : process.env.PRIVATE_KEY_PATH;
 export const privateKeyPassphrase = useExternalCryptoService
   ? null
   : process.env.PRIVATE_KEY_PASSPHRASE;
@@ -120,8 +125,8 @@ export const privateKeyPassphrase = useExternalCryptoService
 export const masterPrivateKeyPath = useExternalCryptoService
   ? null
   : process.env.MASTER_PRIVATE_KEY_PATH == null && env === 'development'
-    ? path.join(__dirname, '..', 'dev_key', 'master_keys', nodeId + '_master')
-    : process.env.MASTER_PRIVATE_KEY_PATH;
+  ? path.join(__dirname, '..', 'dev_key', 'master_keys', nodeId + '_master')
+  : process.env.MASTER_PRIVATE_KEY_PATH;
 export const masterPrivateKeyPassphrase = useExternalCryptoService
   ? null
   : process.env.MASTER_PRIVATE_KEY_PASSPHRASE;
@@ -130,14 +135,14 @@ export const nodeBehindProxyPrivateKeyDirectoryPath = useExternalCryptoService
   ? null
   : process.env.NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH == null &&
     env === 'development'
-    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'keys')
-    : process.env.NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH;
+  ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'keys')
+  : process.env.NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH;
 export const nodeBehindProxyMasterPrivateKeyDirectoryPath = useExternalCryptoService
   ? null
   : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH == null &&
     env === 'development'
-    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
-    : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH;
+  ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
+  : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH;
 
 //in byte
 export const challengeLength = 2;
