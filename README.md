@@ -64,7 +64,7 @@
 - `NODE_ID`: Node ID ties to public key, in dev mode we have `rp1`, `rp2`, `rp3`, `idp1`, `idp2`, `idp3`, `as1`, `as2`, `as3` [Required]
 - `NDID_NODE`: Set to `true` to skip getting role from blockchain and skip waiting for blockchain initialization ended. [Default: `false`]
 - `TENDERMINT_IP`: IP Address to contact tendermint RPC [Default: `localhost`]
-- `TENDERMINT_PORT`: Port to contact tendermint RPC [Default: `45000` for IDP, `45001` for RP, and `45002` for AS]
+- `TENDERMINT_PORT`: Port to contact tendermint RPC [Default: `45000`]
 - `TENDERMINT_WS_CONNECTIONS`: Number of Tendermint RPC WebSocket connections in connection pool. [Default: `10`]
 - `MQ_CONTACT_IP`: An IP address where this NDID node message queue can be contacted [Required when role is set to `idp`, `rp`, or `as`]
 - `MQ_BINDING_PORT`: A port to bind message queue [Default: `5555`]
