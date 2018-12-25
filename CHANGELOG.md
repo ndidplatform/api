@@ -4,10 +4,11 @@
 
 BUG FIXES:
 
-- Fix resumeTimeoutScheduler on server initialization being called too early.
-- Change `zmq` type from `req` to `dealer`.
-- Fix cleanup method for mapping (socket, socket-destination) in MQ.
-- Cleanup for all socket with same `msgId` when receive ack for one `seqId`.
+- Fix `resumeTimeoutScheduler` on server initialization being called too early.
+- Change ZeroMQ socket type on sender side from `req` to `dealer`.
+- Fix clean up method for mapping (socket, socket-destination) in MQ.
+- Clean up for all socket with same `msgId` when receive ack for one `seqId`.
+- Rollback ZeroMQ JS library from 5.1 to 4.6 since 5.1 causes segmentation fault error in C binding.
 
 IMPROVEMENTS:
 

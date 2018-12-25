@@ -20,7 +20,7 @@
     "ndid-error": "file:../ndid-error",
     "ndid-logger": "file:../ndid-logger",
     "source-map-support": "^0.5.9",
-    "zeromq": "^5.1.0"
+    "zeromq": "^4.6.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.1.2",
