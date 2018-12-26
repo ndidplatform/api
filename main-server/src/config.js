@@ -45,7 +45,9 @@ export const clientHttpErrorCode = process.env.CLIENT_HTTP_ERROR_CODE || 400;
 export const serverHttpErrorCode = process.env.SERVER_HTTP_ERROR_CODE || 500;
 
 export const dbIp = process.env.DB_IP || 'localhost';
-export const dbPort = process.env.DB_PORT || 6379;
+export const dbPort = process.env.DB_PORT
+  ? parseInt(process.env.DB_PORT)
+  : 6379;
 export const dbPassword = process.env.DB_PASSWORD;
 
 export const dataDirectoryPath =
@@ -82,10 +84,9 @@ export const tendermintBaseHttpUrl = `http://${tendermintIp}:${tendermintPort}`;
 
 export const tendermintBaseWsUrl = `ws://${tendermintIp}:${tendermintPort}`;
 
-export const tendermintWsConnections =
-  process.env.TENDERMINT_WS_CONNECTIONS == null
-    ? 10
-    : parseInt(process.env.TENDERMINT_WS_CONNECTIONS);
+export const tendermintWsConnections = process.env.TENDERMINT_WS_CONNECTIONS
+  ? parseInt(process.env.TENDERMINT_WS_CONNECTIONS)
+  : 10;
 
 export const nodeId = process.env.NODE_ID;
 
@@ -94,10 +95,9 @@ export const ndidNode = process.env.NDID_NODE === 'true';
 const defaultMqBindingPort = 5555;
 
 export const mqIp = process.env.MQ_CONTACT_IP || 'localhost';
-export const mqPort =
-  process.env.MQ_BINDING_PORT == null
-    ? defaultMqBindingPort
-    : parseInt(process.env.MQ_BINDING_PORT);
+export const mqPort = process.env.MQ_BINDING_PORT
+  ? parseInt(process.env.MQ_BINDING_PORT)
+  : defaultMqBindingPort;
 
 export const mqServiceServerIp =
   process.env.MQ_SERVICE_SERVER_IP || 'localhost';
@@ -177,10 +177,9 @@ export const revokeAccessorRequestMessageTemplateFilepath =
   );
 
 // Callback retry timeout in seconds
-export const callbackRetryTimeout =
-  process.env.CALLBACK_RETRY_TIMEOUT == null
-    ? 600
-    : parseInt(process.env.CALLBACK_RETRY_TIMEOUT);
+export const callbackRetryTimeout = process.env.CALLBACK_RETRY_TIMEOUT
+  ? parseInt(process.env.CALLBACK_RETRY_TIMEOUT)
+  : 600;
 
 export const maxIntervalTendermintSyncCheck = process.env
   .MAX_INTERVAL_TENDERMINT_SYNC_CHECK
