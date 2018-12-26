@@ -57,7 +57,11 @@ export const tendermintWsClient = new TendermintWsClient('main', false);
 
 let handleTendermintNewBlock;
 
+let processingBlocks = {};
+let processingBlocksCount = 0;
+
 const expectedTx = {};
+let expectedTxsCount = 0;
 let getTxResultCallbackFn;
 const txEventEmitter = new EventEmitter();
 export let expectedTxsLoaded = false;
@@ -230,6 +234,7 @@ export async function loadExpectedTxFromDB() {
     }
     savedExpectedTxs.forEach(({ tx: txHash, metadata }) => {
       expectedTx[txHash] = metadata;
+      expectedTxsCount++;
     });
     expectedTxsLoaded = true;
     processMissingExpectedTxs();
@@ -274,6 +279,7 @@ async function processExpectedTx(txHash, result, fromEvent) {
       callbackAdditionalArgs,
     } = expectedTx[txHash];
     delete expectedTx[txHash];
+    expectedTxsCount--;
     let retVal = getTransactResultFromTx(result, fromEvent);
     const waitForCommit = !callbackFnName;
     if (waitForCommit) {
@@ -527,6 +533,7 @@ tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(
   const appHash = getAppHashFromNewBlockEvent(result);
 
   await processNewBlock(blockHeight, appHash);
+  delete cacheBlocks[blockHeight - 1];
 });
 
 tendermintWsClient.on('tx#event', async function handleTxEvent(error, result) {
@@ -573,6 +580,16 @@ async function processNewBlock(blockHeight, appHash) {
         const fromHeight = blockHeight - 1 - missingBlockCount;
         const toHeight = blockHeight - 1;
 
+        let processingBlocksStr;
+        if (fromHeight === toHeight) {
+          processingBlocksStr = `${fromHeight}`;
+        } else {
+          processingBlocksStr = `${fromHeight}-${toHeight}`;
+        }
+        processingBlocks[processingBlocksStr] = null;
+        const blocksToProcess = toHeight - fromHeight + 1;
+        processingBlocksCount += blocksToProcess;
+
         const parsedTransactionsInBlocks = (await getParsedTxsInBlocks(
           fromHeight,
           toHeight
@@ -583,10 +600,11 @@ async function processNewBlock(blockHeight, appHash) {
           toHeight,
           parsedTransactionsInBlocks
         );
+        delete processingBlocks[processingBlocksStr];
+        processingBlocksCount -= blocksToProcess;
       }
     }
     lastKnownAppHash = appHash;
-    delete cacheBlocks[blockHeight - 1];
     saveLatestBlockHeight(blockHeight);
   }
 }
@@ -949,6 +967,7 @@ export async function transact({
     callbackAdditionalArgs,
   };
   expectedTx[txHash] = callbackData;
+  expectedTxsCount++;
   await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, callbackData);
 
   try {
@@ -975,6 +994,7 @@ export async function transact({
     return broadcastTxSyncResult;
   } catch (error) {
     delete expectedTx[txHash];
+    expectedTxsCount--;
     await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
     if (error.message === 'JSON-RPC ERROR') {
       throw new CustomError({
@@ -1038,4 +1058,20 @@ export function getBlockHeightFromNewBlockEvent(result) {
 
 export function getAppHashFromNewBlockEvent(result) {
   return result.data.value.block.header.app_hash;
+}
+
+export function getExpectedTxsCount() {
+  return expectedTxsCount;
+}
+
+export function getExpectedTxHashes() {
+  return Object.keys(expectedTx);
+}
+
+export function getProcessingBlocksCount() {
+  return processingBlocksCount;
+}
+
+export function getProcessingBlocks() {
+  return Object.keys(processingBlocks);
 }

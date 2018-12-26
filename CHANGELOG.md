@@ -15,6 +15,15 @@ IMPROVEMENTS:
 - Configurable `maxSocket` for MQ (mitigate `No file descriptors available` error).
 - Changed all RPC calls from using HTTP to WebSocket for better performance (decreases response time).
 - Add new environment variable option `TENDERMINT_WS_CONNECTIONS` for configuring number of Tendermint RPC WebSocket connections in connection pool.
+- Add APIs for getting server metrics.
+  - `/num_expected_txs`: Number of expected Txs (waiting to be included in a block)
+  - `/expected_txs`: Array of hashes of expected Tx
+  - `/num_pending_outbound_mq_messages`: Number of outbound MQ messages that have not been ACKed by destinations
+  - `/num_pending_client_callbacks`: Number of callbacks to client waiting to be sent (includes retries)
+  - `/num_pending_external_crypto_callbacks`: Number of callbacks to external crypto service waiting to be sent (includes retries)
+  - `/num_processing_blocks`: Number of processing blocks
+  - `/processing_blocks`: Array of processing block heights in string (e.g. `51-63`, `99`)
+  - `/num_processing_inbound_messages`: Number of processing inbound MQ messages
 
 ## 1.0.0 (December 7, 2018)
 

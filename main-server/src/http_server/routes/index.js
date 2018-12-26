@@ -31,7 +31,7 @@ import errorHandler from './middleware/error_handler';
 import ndidRouter from './ndid';
 import apiV1Router from './v1';
 import apiV2Router from './v2';
-import getInfo from './info';
+import serverInfo from './server_info';
 import reinitNodeKeys from './reinit_node_keys';
 import debugRouter from './debug';
 
@@ -98,7 +98,7 @@ router.get('/source', (req, res) => {
   res.status(200).send('https://github.com/ndidplatform/api');
 });
 
-router.get('/info', getInfo);
+router.use(serverInfo);
 router.get('/reinit_node_keys', reinitNodeKeys);
 
 router.use(readyHandler);

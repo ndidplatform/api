@@ -51,6 +51,8 @@ const callbackUrlFilesPrefix = path.join(
 const waitPromises = [];
 let stopCallbackRetry = false;
 
+let pendingCallbacksCount = 0;
+
 export const eventEmitter = new EventEmitter();
 
 export function readCallbackUrlsFromFiles() {
@@ -323,6 +325,8 @@ export async function setDpkiCallback({
 }
 
 async function callbackWithRetry(url, body, logPrefix) {
+  pendingCallbacksCount++;
+
   const cbId = randomBase64Bytes(10);
   logger.info({
     message: `[${logPrefix}] Calling callback`,
@@ -358,6 +362,7 @@ async function callbackWithRetry(url, body, logPrefix) {
         cbId,
         httpStatusCode: response.status,
       });
+      pendingCallbacksCount--;
       if (response.status !== 200) {
         throw new CustomError({
           message: `[${logPrefix}] Got response status other than 200`,
@@ -385,6 +390,7 @@ async function callbackWithRetry(url, body, logPrefix) {
         Date.now() - startTime + nextRetry >
         config.callbackRetryTimeout * 1000
       ) {
+        pendingCallbacksCount--;
         throw new CustomError({
           message: `[${logPrefix}] callback retry timed out`,
           details: {
@@ -573,4 +579,8 @@ export function stopAllCallbackRetries() {
   logger.info({
     message: 'Stopped all external crypto service callback retries',
   });
+}
+
+export function getPendingCallbacksCount() {
+  return pendingCallbacksCount;
 }

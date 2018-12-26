@@ -50,6 +50,8 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
     messageJSON: message,
   });
 
+  common.incrementProcessingInboundMessagesCount();
+
   const requestId = message.request_id;
   try {
     //if message is challenge for response, no need to wait for blockchain
@@ -267,6 +269,8 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
       error: err,
       requestId,
     });
+  } finally {
+    common.decrementProcessingInboundMessagesCount();
   }
 }
 

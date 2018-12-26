@@ -65,6 +65,7 @@ const EncryptedMqMessage = encryptedMqMessageProtobufRoot.lookupType(
 
 let outboundMessageId = Date.now();
 const pendingOutboundMessages = {};
+let pendingOutboundMessagesCount = 0;
 const timer = {};
 
 const rawMessagesToRetry = [];
@@ -131,6 +132,7 @@ export async function initialize() {
           payloadBuffer,
           sendTime,
         };
+        pendingOutboundMessagesCount++;
         mqService
           .sendMessage(
             mqDestAddress,
@@ -139,7 +141,10 @@ export async function initialize() {
             true,
             MQ_SEND_TOTAL_TIMEOUT
           )
-          .then(() => delete pendingOutboundMessages[msgId])
+          .then(() => {
+            delete pendingOutboundMessages[msgId];
+            pendingOutboundMessagesCount--;
+          })
           .catch((error) => logger.error(error.getInfoForLog()));
       }
       await cacheDb.removePendingOutboundMessage(config.nodeId, msgId);
@@ -560,6 +565,7 @@ export async function send(receivers, message, senderNodeId) {
         payloadBuffer,
         sendTime: Date.now(),
       };
+      pendingOutboundMessagesCount++;
 
       logger.debug({
         message: 'Sending message to message queue service server',
@@ -574,7 +580,10 @@ export async function send(receivers, message, senderNodeId) {
           true,
           MQ_SEND_TOTAL_TIMEOUT
         )
-        .then(() => delete pendingOutboundMessages[msgId])
+        .then(() => {
+          delete pendingOutboundMessages[msgId];
+          pendingOutboundMessagesCount--;
+        })
         .catch((error) => logger.error(error.getInfoForLog()));
     })
   );
@@ -629,6 +638,10 @@ export async function close() {
   for (let id in timer) {
     clearTimeout(timer[id]);
   }
+}
+
+export function getPendingOutboundMessagesCount() {
+  return pendingOutboundMessagesCount;
 }
 
 tendermint.eventEmitter.on('ready', retryProcessMessages);

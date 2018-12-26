@@ -54,6 +54,8 @@ import * as node from '../../node';
 export * from './create_request';
 export * from './close_request';
 
+let processingInboundMessagesCount = 0;
+
 let messageQueueAddressesSet = !config.registerMqAtStartup;
 
 tendermint.setTxResultCallbackFnGetter(getFunction);
@@ -810,4 +812,16 @@ export async function notifyError({
     },
     false
   );
+}
+
+export function incrementProcessingInboundMessagesCount() {
+  processingInboundMessagesCount++;
+}
+
+export function decrementProcessingInboundMessagesCount() {
+  processingInboundMessagesCount--;
+}
+
+export function getProcessingInboundMessagesCount() {
+  return processingInboundMessagesCount;
 }

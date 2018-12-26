@@ -55,6 +55,8 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
     messageJSON: message,
   });
 
+  common.incrementProcessingInboundMessagesCount();
+
   const requestId = message.request_id;
   try {
     if (message.type === privateMessageType.CHALLENGE_REQUEST) {
@@ -289,6 +291,8 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
       error: err,
       requestId,
     });
+  } finally {
+    common.decrementProcessingInboundMessagesCount();
   }
 }
 

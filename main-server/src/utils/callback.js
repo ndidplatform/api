@@ -40,6 +40,8 @@ let stopCallbackRetry = false;
 let getShouldRetryFn;
 let getResponseCallbackFn;
 
+let pendingCallbacksCount = 0;
+
 export function setShouldRetryFnGetter(fn) {
   if (typeof fn !== 'function') {
     throw new Error('Invalid argument type. Must be function.');
@@ -98,6 +100,8 @@ async function callbackWithRetry(
   responseCallbackFnName,
   dataForResponseCallback
 ) {
+  pendingCallbacksCount++;
+
   const backoff = new ExponentialBackoff({
     min: 5000,
     max: 180000,
@@ -122,6 +126,7 @@ async function callbackWithRetry(
     try {
       const responseObj = await httpPost(cbId, callbackUrl, body);
 
+      pendingCallbacksCount--;
       cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
       if (responseCallbackFnName) {
         getResponseCallbackFn(responseCallbackFnName)(
@@ -140,6 +145,7 @@ async function callbackWithRetry(
       });
 
       if (error.name === 'FetchError' && error.type === 'max-size') {
+        pendingCallbacksCount--;
         cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
         if (responseCallbackFnName) {
           getResponseCallbackFn(responseCallbackFnName)(
@@ -169,6 +175,7 @@ async function callbackWithRetry(
           shouldRetry = true;
         }
         if (!shouldRetry) {
+          pendingCallbacksCount--;
           cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
           return;
         }
@@ -182,6 +189,7 @@ async function callbackWithRetry(
             url: callbackUrl,
             cbId,
           });
+          pendingCallbacksCount--;
           cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
           return;
         }
@@ -314,4 +322,8 @@ export function stopAllCallbackRetries() {
   logger.info({
     message: 'Stopped all callback retries',
   });
+}
+
+export function getPendingCallbacksCount() {
+  return pendingCallbacksCount;
 }
