@@ -20,6 +20,8 @@
  *
  */
 
+import EventEmitter from 'events';
+
 import { createRequestInternalAsyncAfterBlockchain } from './create_request';
 import { closeRequestInternalAsyncAfterBlockchain } from './close_request';
 
@@ -59,6 +61,8 @@ let processingInboundMessagesCount = 0;
 let messageQueueAddressesSet = !config.registerMqAtStartup;
 
 tendermint.setTxResultCallbackFnGetter(getFunction);
+
+export const metricsEventEmitter = new EventEmitter();
 
 export function isMqAddressesSet() {
   return messageQueueAddressesSet;
@@ -816,10 +820,18 @@ export async function notifyError({
 
 export function incrementProcessingInboundMessagesCount() {
   processingInboundMessagesCount++;
+  metricsEventEmitter.emit(
+    'processingInboundMessagesCount',
+    processingInboundMessagesCount
+  );
 }
 
 export function decrementProcessingInboundMessagesCount() {
   processingInboundMessagesCount--;
+  metricsEventEmitter.emit(
+    'processingInboundMessagesCount',
+    processingInboundMessagesCount
+  );
 }
 
 export function getProcessingInboundMessagesCount() {

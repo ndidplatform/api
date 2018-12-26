@@ -72,6 +72,8 @@ const rawMessagesToRetry = [];
 
 export const eventEmitter = new EventEmitter();
 
+export const metricsEventEmitter = new EventEmitter();
+
 export async function initialize() {
   logger.info({
     message: 'Initializing message queue',
@@ -132,7 +134,7 @@ export async function initialize() {
           payloadBuffer,
           sendTime,
         };
-        pendingOutboundMessagesCount++;
+        incrementPendingOutboundMessagesCount();
         mqService
           .sendMessage(
             mqDestAddress,
@@ -143,7 +145,7 @@ export async function initialize() {
           )
           .then(() => {
             delete pendingOutboundMessages[msgId];
-            pendingOutboundMessagesCount--;
+            decrementPendingOutboundMessagesCount();
           })
           .catch((error) => logger.error(error.getInfoForLog()));
       }
@@ -565,7 +567,7 @@ export async function send(receivers, message, senderNodeId) {
         payloadBuffer,
         sendTime: Date.now(),
       };
-      pendingOutboundMessagesCount++;
+      incrementPendingOutboundMessagesCount();
 
       logger.debug({
         message: 'Sending message to message queue service server',
@@ -582,7 +584,7 @@ export async function send(receivers, message, senderNodeId) {
         )
         .then(() => {
           delete pendingOutboundMessages[msgId];
-          pendingOutboundMessagesCount--;
+          decrementPendingOutboundMessagesCount();
         })
         .catch((error) => logger.error(error.getInfoForLog()));
     })
@@ -638,6 +640,22 @@ export async function close() {
   for (let id in timer) {
     clearTimeout(timer[id]);
   }
+}
+
+function incrementPendingOutboundMessagesCount() {
+  pendingOutboundMessagesCount++;
+  metricsEventEmitter.emit(
+    'pendingOutboundMessagesCount',
+    pendingOutboundMessagesCount
+  );
+}
+
+function decrementPendingOutboundMessagesCount() {
+  pendingOutboundMessagesCount--;
+  metricsEventEmitter.emit(
+    'pendingOutboundMessagesCount',
+    pendingOutboundMessagesCount
+  );
 }
 
 export function getPendingOutboundMessagesCount() {

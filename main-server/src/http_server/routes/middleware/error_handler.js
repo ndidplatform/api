@@ -71,6 +71,7 @@ export default function errorHandler(err, req, res, next) {
       responseBody,
     });
   }
+  next();
 }
 
 export function bodyParserErrorHandler(err, req, res, next) {
@@ -122,4 +123,5 @@ export function bodyParserErrorHandler(err, req, res, next) {
       });
     }
   }
+  next();
 }

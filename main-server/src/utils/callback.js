@@ -20,6 +20,8 @@
  *
  */
 
+import EventEmitter from 'events';
+
 import fetch from 'node-fetch';
 import { ExponentialBackoff } from 'simple-backoff';
 
@@ -41,6 +43,8 @@ let getShouldRetryFn;
 let getResponseCallbackFn;
 
 let pendingCallbacksCount = 0;
+
+export const metricsEventEmitter = new EventEmitter();
 
 export function setShouldRetryFnGetter(fn) {
   if (typeof fn !== 'function') {
@@ -100,7 +104,7 @@ async function callbackWithRetry(
   responseCallbackFnName,
   dataForResponseCallback
 ) {
-  pendingCallbacksCount++;
+  incrementPendingCallbacksCount();
 
   const backoff = new ExponentialBackoff({
     min: 5000,
@@ -126,7 +130,7 @@ async function callbackWithRetry(
     try {
       const responseObj = await httpPost(cbId, callbackUrl, body);
 
-      pendingCallbacksCount--;
+      decrementPendingCallbacksCount();
       cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
       if (responseCallbackFnName) {
         getResponseCallbackFn(responseCallbackFnName)(
@@ -145,7 +149,7 @@ async function callbackWithRetry(
       });
 
       if (error.name === 'FetchError' && error.type === 'max-size') {
-        pendingCallbacksCount--;
+        decrementPendingCallbacksCount();
         cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
         if (responseCallbackFnName) {
           getResponseCallbackFn(responseCallbackFnName)(
@@ -175,7 +179,7 @@ async function callbackWithRetry(
           shouldRetry = true;
         }
         if (!shouldRetry) {
-          pendingCallbacksCount--;
+          decrementPendingCallbacksCount();
           cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
           return;
         }
@@ -189,7 +193,7 @@ async function callbackWithRetry(
             url: callbackUrl,
             cbId,
           });
-          pendingCallbacksCount--;
+          decrementPendingCallbacksCount();
           cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
           return;
         }
@@ -322,6 +326,16 @@ export function stopAllCallbackRetries() {
   logger.info({
     message: 'Stopped all callback retries',
   });
+}
+
+function incrementPendingCallbacksCount() {
+  pendingCallbacksCount++;
+  metricsEventEmitter.emit('pendingCallbacksCount', pendingCallbacksCount);
+}
+
+function decrementPendingCallbacksCount() {
+  pendingCallbacksCount--;
+  metricsEventEmitter.emit('pendingCallbacksCount', pendingCallbacksCount);
 }
 
 export function getPendingCallbacksCount() {

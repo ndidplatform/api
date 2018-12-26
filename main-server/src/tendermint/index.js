@@ -78,6 +78,7 @@ export let blockchainInitialized = false;
 let waitForInitEndedBeforeReady = true;
 
 export const eventEmitter = new EventEmitter();
+export const metricsEventEmitter = new EventEmitter();
 
 const chainIdFilepath = path.join(
   config.dataDirectoryPath,
@@ -234,7 +235,7 @@ export async function loadExpectedTxFromDB() {
     }
     savedExpectedTxs.forEach(({ tx: txHash, metadata }) => {
       expectedTx[txHash] = metadata;
-      expectedTxsCount++;
+      incrementExpectedTxsCount();
     });
     expectedTxsLoaded = true;
     processMissingExpectedTxs();
@@ -279,7 +280,7 @@ async function processExpectedTx(txHash, result, fromEvent) {
       callbackAdditionalArgs,
     } = expectedTx[txHash];
     delete expectedTx[txHash];
-    expectedTxsCount--;
+    decrementExpectedTxsCount();
     let retVal = getTransactResultFromTx(result, fromEvent);
     const waitForCommit = !callbackFnName;
     if (waitForCommit) {
@@ -588,7 +589,7 @@ async function processNewBlock(blockHeight, appHash) {
         }
         processingBlocks[processingBlocksStr] = null;
         const blocksToProcess = toHeight - fromHeight + 1;
-        processingBlocksCount += blocksToProcess;
+        addProcessingBlocksCount(blocksToProcess);
 
         const parsedTransactionsInBlocks = (await getParsedTxsInBlocks(
           fromHeight,
@@ -601,7 +602,7 @@ async function processNewBlock(blockHeight, appHash) {
           parsedTransactionsInBlocks
         );
         delete processingBlocks[processingBlocksStr];
-        processingBlocksCount -= blocksToProcess;
+        subtractProcessingBlocksCount(blocksToProcess);
       }
     }
     lastKnownAppHash = appHash;
@@ -967,7 +968,7 @@ export async function transact({
     callbackAdditionalArgs,
   };
   expectedTx[txHash] = callbackData;
-  expectedTxsCount++;
+  incrementExpectedTxsCount();
   await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, callbackData);
 
   try {
@@ -994,7 +995,7 @@ export async function transact({
     return broadcastTxSyncResult;
   } catch (error) {
     delete expectedTx[txHash];
-    expectedTxsCount--;
+    decrementExpectedTxsCount();
     await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
     if (error.message === 'JSON-RPC ERROR') {
       throw new CustomError({
@@ -1060,12 +1061,32 @@ export function getAppHashFromNewBlockEvent(result) {
   return result.data.value.block.header.app_hash;
 }
 
+function incrementExpectedTxsCount() {
+  expectedTxsCount++;
+  metricsEventEmitter.emit('expectedTxsCount', expectedTxsCount);
+}
+
+function decrementExpectedTxsCount() {
+  expectedTxsCount--;
+  metricsEventEmitter.emit('expectedTxsCount', expectedTxsCount);
+}
+
 export function getExpectedTxsCount() {
   return expectedTxsCount;
 }
 
 export function getExpectedTxHashes() {
   return Object.keys(expectedTx);
+}
+
+function addProcessingBlocksCount(valueToAdd) {
+  processingBlocksCount += valueToAdd;
+  metricsEventEmitter.emit('processingBlocksCount', processingBlocksCount);
+}
+
+function subtractProcessingBlocksCount(valueToSubtract) {
+  processingBlocksCount -= valueToSubtract;
+  metricsEventEmitter.emit('processingBlocksCount', processingBlocksCount);
 }
 
 export function getProcessingBlocksCount() {

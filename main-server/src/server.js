@@ -39,6 +39,7 @@ import * as tendermintWsPool from './tendermint/ws_pool';
 import * as mq from './mq';
 import { stopAllCallbackRetries } from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
+import { stopCollectDefaultMetrics } from './prometheus';
 
 import logger from './logger';
 
@@ -169,6 +170,7 @@ async function shutDown() {
   });
   console.log('(Ctrl+C again to force shutdown)');
 
+  stopCollectDefaultMetrics();
   await httpServer.close();
   stopAllCallbackRetries();
   externalCryptoService.stopAllCallbackRetries();
