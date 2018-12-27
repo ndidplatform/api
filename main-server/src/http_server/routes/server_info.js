@@ -82,6 +82,7 @@ router.get('/info', async function getInfo(req, res, next) {
       lastKnownChainId: tendermint.chainId,
       lastKnownBlockHeight: tendermint.latestBlockHeight,
     });
+    next();
   } catch (error) {
     next(error);
   }

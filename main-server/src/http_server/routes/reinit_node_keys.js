@@ -33,6 +33,7 @@ export default async function reinitNodeKeys(req, res, next) {
       });
     }
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }

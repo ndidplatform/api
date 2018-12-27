@@ -40,6 +40,7 @@ router.post(
 
       await rp.removeDataFromAS(node_id, request_id);
       res.status(204).end();
+      next();
     } catch (error) {
       next(error);
     }
@@ -51,6 +52,7 @@ router.post('/requests/housekeeping/data', async (req, res, next) => {
     const { node_id } = req.body;
     await rp.removeAllDataFromAS(node_id);
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -96,6 +98,7 @@ router.post(
       );
 
       res.status(202).json(result);
+      next();
     } catch (error) {
       next(error);
     }
@@ -113,6 +116,7 @@ router.get('/requests/reference/:reference_id', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -129,6 +133,7 @@ router.get('/requests/data/:request_id', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -148,6 +153,7 @@ router.post('/requests/close', validateBody, async (req, res, next) => {
       { synchronous: false }
     );
     res.status(202).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -162,6 +168,7 @@ router.get('/callback', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -176,6 +183,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
     });
 
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }

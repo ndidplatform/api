@@ -56,6 +56,7 @@ router.post('/service/:service_id', validateBody, async (req, res, next) => {
     );
 
     res.status(202).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -73,6 +74,7 @@ router.get('/service/:service_id', async (req, res, next) => {
     } else {
       res.status(200).json(result);
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -99,6 +101,7 @@ router.post(
       );
 
       res.status(202).end();
+      next();
     } catch (error) {
       next(error);
     }
@@ -114,6 +117,7 @@ router.get('/callback', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -129,6 +133,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
     });
 
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }

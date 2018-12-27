@@ -64,6 +64,7 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
     );
 
     res.status(202).json(result);
+    next();
   } catch (error) {
     next(error);
   }
@@ -99,6 +100,7 @@ router.get(
       } else {
         res.status(404).end();
       }
+      next();
     } catch (error) {
       next(error);
     }
@@ -118,6 +120,7 @@ router.post(
         { synchronous: false }
       );
       res.status(202).end();
+      next();
     } catch (error) {
       next(error);
     }
@@ -140,6 +143,7 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -158,6 +162,7 @@ router.post(
       // TODO
 
       res.status(501).end();
+      next();
     } catch (error) {
       next(error);
     }
@@ -182,6 +187,7 @@ router.get('/:namespace/:identifier/ial', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -207,6 +213,7 @@ router.post(
         { synchronous: false }
       );
       res.status(202).end();
+      next();
     } catch (error) {
       next(error);
     }
@@ -222,6 +229,7 @@ router.get('/:namespace/:identifier/endorsement', async (req, res, next) => {
     // TODO
 
     res.status(501).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -246,6 +254,7 @@ router.post(
       // TODO
 
       res.status(501).end();
+      next();
     } catch (error) {
       next(error);
     }
@@ -286,9 +295,11 @@ router.post(
       );
 
       res.status(202).json(result);
+      next();
     } catch (error) {
       if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
         res.status(404).end();
+        next();
         return;
       }
       next(error);
@@ -322,9 +333,11 @@ router.post(
       });
 
       res.status(202).json(result);
+      next();
     } catch (error) {
       if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
         res.status(404).end();
+        next();
         return;
       }
       next(error);
@@ -349,6 +362,7 @@ router.post('/secret', idpOnlyHandler, async (req, res, next) => {
       reference_id,
     });
     res.status(200).json({ secret });
+    next();
   } catch (error) {
     next(error);
   }
