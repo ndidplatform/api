@@ -53,6 +53,7 @@ import * as node from '../../node';
 
 export * from './create_request';
 export * from './close_request';
+export * from './private_message';
 
 let processingInboundMessagesCount = 0;
 

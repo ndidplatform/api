@@ -27,7 +27,7 @@ import fs from 'fs';
 import path from 'path';
 import mkdirp from 'mkdirp';
 
-import * as ndid from './core/ndid';
+import { ndid } from './core';
 import * as tendermint from './tendermint';
 import * as nodeKey from './utils/node_key';
 

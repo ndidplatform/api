@@ -24,7 +24,7 @@ import express from 'express';
 
 import { validateBody } from '../middleware/validation';
 import { asOnlyHandler } from '../middleware/role_handler';
-import * as as from '../../../core/as';
+import { as } from '../../../core';
 
 const router = express.Router();
 

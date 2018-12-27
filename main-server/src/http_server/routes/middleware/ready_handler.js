@@ -21,7 +21,7 @@
  */
 
 import * as tendermint from '../../../tendermint';
-import { isMqAddressesSet } from '../../../core/common';
+import { common } from '../../../core';
 import { isCallbackUrlsSet } from '../../../utils/external_crypto_service';
 import { role } from '../../../node';
 
@@ -30,6 +30,8 @@ import errorType from 'ndid-error/type';
 import logger from '../../../logger';
 
 import * as config from '../../../config';
+
+const { isMqAddressesSet } = common;
 
 export default function readyHandler(req, res, next) {
   // TODO: Return 503 with server init failed error if server init failed

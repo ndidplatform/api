@@ -24,8 +24,7 @@ import express from 'express';
 
 import { validateBody } from '../middleware/validation';
 import { idpOnlyHandler } from '../middleware/role_handler';
-import * as identity from '../../../core/identity';
-import * as common from '../../../core/common';
+import { identity, common } from '../../../core';
 import * as tendermintNdid from '../../../tendermint/ndid';
 
 import errorType from 'ndid-error/type';

@@ -24,7 +24,7 @@ import express from 'express';
 
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
-import * as common from '../../core/common';
+import { common } from '../../core';
 import * as mq from '../../mq';
 import * as mqService from '../../mq/grpc_client';
 import * as callbackUtil from '../../utils/callback';

@@ -24,7 +24,9 @@ import express from 'express';
 
 import { validateQuery } from '../middleware/validation';
 import * as tendermintNdid from '../../../tendermint/ndid';
-import * as privateMessage from '../../../core/common/private_message';
+import { common } from '../../../core';
+
+const { privateMessage } = common;
 
 const router = express.Router();
 

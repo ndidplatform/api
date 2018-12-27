@@ -29,7 +29,7 @@ import './env_var_validate';
 
 import * as httpServer from './http_server';
 import * as node from './node';
-import * as core from './core/common';
+import { common } from './core';
 import * as nodeKey from './utils/node_key';
 
 import * as cacheDb from './db/cache';
@@ -43,6 +43,8 @@ import * as externalCryptoService from './utils/external_crypto_service';
 import logger from './logger';
 
 import * as config from './config';
+
+const { core } = common;
 
 process.on('unhandledRejection', function(reason, p) {
   if (reason && reason.name === 'CustomError') {

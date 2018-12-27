@@ -185,3 +185,5 @@ export const maxIntervalTendermintSyncCheck = process.env
   .MAX_INTERVAL_TENDERMINT_SYNC_CHECK
   ? parseInt(process.env.MAX_INTERVAL_TENDERMINT_SYNC_CHECK)
   : 15000;
+
+export const isMaster = process.env.IS_MASTER === 'true';
