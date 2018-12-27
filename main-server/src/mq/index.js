@@ -141,11 +141,12 @@ export async function initialize() {
             true,
             MQ_SEND_TOTAL_TIMEOUT
           )
+          .catch((error) => logger.error(error.getInfoForLog()))
           .then(() => {
+            // finally
             delete pendingOutboundMessages[msgId];
             pendingOutboundMessagesCount--;
-          })
-          .catch((error) => logger.error(error.getInfoForLog()));
+          });
       }
       await cacheDb.removePendingOutboundMessage(config.nodeId, msgId);
     })
@@ -579,12 +580,13 @@ export async function send(receivers, message, senderNodeId) {
           msgId,
           true,
           MQ_SEND_TOTAL_TIMEOUT
-        )
+        )        
+        .catch((error) => logger.error(error.getInfoForLog()))
         .then(() => {
+          // finally
           delete pendingOutboundMessages[msgId];
           pendingOutboundMessagesCount--;
-        })
-        .catch((error) => logger.error(error.getInfoForLog()));
+        });
     })
   );
 
