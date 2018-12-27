@@ -38,6 +38,65 @@ let exportElement = {
 };
 
 if(config.isMaster) {
+  // some function cannot be delegated (it set internal memory)
+  // eg. isMqAddressesSet, setMessageQueueAddress in common
+  let commonKeys = [
+    'isMqAddressesSet',
+    'setMessageQueueAddress',
+    'readCallbackUrlsFromFiles',
+    'initialize',
+    'getFunction',
+    'resumeTimeoutScheduler',
+    'stopAllTimeoutScheduler',
+    'timeoutRequest',
+    'runTimeoutScheduler',
+    'setTimeoutScheduler',
+    'removeTimeoutScheduler',
+    'incrementProcessingInboundMessagesCount',
+    'decrementProcessingInboundMessagesCount',
+    'getProcessingInboundMessagesCount'
+  ];
+
+  let asKeys = [
+    'readCallbackUrlsFromFiles',
+    'setCallbackUrls',
+    'getCallbackUrls',
+    'getErrorCallbackUrl',
+    'setServiceCallbackUrl',
+    'getServiceCallbackUrl',
+  ];
+
+  let idpKeys = [
+    'readCallbackUrlsFromFiles',
+    'setCallbackUrls',
+    'getCallbackUrls',
+    'getErrorCallbackUrl',
+    'isAccessorSignUrlSet',
+  ];
+
+  let rpKeys = [
+    'readCallbackUrlsFromFiles',
+    'setCallbackUrls',
+    'getCallbackUrls',
+    'getErrorCallbackUrl',
+  ];
+
+  commonKeys.forEach((key) => {
+    coreMaster.common[key] = commonWorker[key];
+  });
+
+  asKeys.forEach((key) => {
+    coreMaster.as[key] = asWorker[key];
+  });
+
+  idpKeys.forEach((key) => {
+    coreMaster.idp[key] = idpWorker[key];
+  });
+
+  rpKeys.forEach((key) => {
+    coreMaster.rp[key] = rpWorker[key];
+  });
+
   exportElement = {
     ...coreMaster,
     ...exportElement

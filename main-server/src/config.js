@@ -187,3 +187,6 @@ export const maxIntervalTendermintSyncCheck = process.env
   : 15000;
 
 export const isMaster = process.env.IS_MASTER === 'true';
+
+export const masterServerIp = process.env.MASTER_SERVER_IP || 'localhost';
+export const masterServerPort = process.env.MASTER_SERVER_PORT || 10000;

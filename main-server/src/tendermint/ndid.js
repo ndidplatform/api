@@ -23,6 +23,7 @@
 import * as tendermint from '.';
 import * as utils from '../utils';
 import * as config from '../config';
+import client from '../master-worker-interface/client';
 
 import CustomError from 'ndid-error/custom_error';
 
@@ -37,6 +38,13 @@ export async function setMqAddresses(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   if (nodeId == null) {
     nodeId = config.nodeId;
   }
@@ -66,6 +74,13 @@ export async function updateNode(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const { success } = await tendermint.transact({
       nodeId,
@@ -95,6 +110,13 @@ export async function registerAccessor(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     return await tendermint.transact({
       nodeId,
@@ -124,6 +146,13 @@ export async function clearRegisterIdentityTimeout(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.transact({
       nodeId,
@@ -149,6 +178,13 @@ export async function registerIdentity(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.transact({
       nodeId,
@@ -182,6 +218,13 @@ export async function addAccessorMethod(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     return await tendermint.transact({
       nodeId,
@@ -212,6 +255,13 @@ export async function revokeAccessorMethod(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     return await tendermint.transact({
       nodeId,
@@ -239,6 +289,13 @@ export async function createRequest(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     return await tendermint.transact({
       nodeId,
@@ -263,6 +320,13 @@ export async function closeRequest(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.transact({
       nodeId,
@@ -289,6 +353,13 @@ export async function timeoutRequest(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     // FIXME: should not check here?
     const request = await getRequest({ requestId });
@@ -320,6 +391,13 @@ export async function setDataReceived(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.transact({
       nodeId,
@@ -352,6 +430,13 @@ export async function updateIal(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     await tendermint.transact({
       nodeId,
@@ -381,6 +466,13 @@ export async function declareIdentityProof(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     return await tendermint.transact({
       nodeId,
@@ -409,6 +501,13 @@ export async function createIdpResponse(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     return await tendermint.transact({
       nodeId,
@@ -433,6 +532,13 @@ export async function signASData(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   const dataToBlockchain = {
     request_id: data.request_id,
     signature: data.signature,
@@ -462,6 +568,13 @@ export async function registerServiceDestination(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     await tendermint.transact({
       nodeId,
@@ -486,6 +599,13 @@ export async function updateServiceDestination(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     await tendermint.transact({
       nodeId,
@@ -508,6 +628,13 @@ export async function updateServiceDestination(
 //
 
 export async function getChainHistory() {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('GetChainHistory');
     return result;
@@ -520,6 +647,13 @@ export async function getChainHistory() {
 }
 
 export async function getNodePubKey(node_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('GetNodePublicKey', { node_id });
     if (result == null) {
@@ -535,6 +669,13 @@ export async function getNodePubKey(node_id) {
 }
 
 export async function getNodeMasterPubKey(node_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('GetNodeMasterPublicKey', {
       node_id,
@@ -552,6 +693,13 @@ export async function getNodeMasterPubKey(node_id) {
 }
 
 export async function getMqAddresses(node_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     return await tendermint.query('GetMqAddresses', { node_id });
   } catch (error) {
@@ -563,6 +711,13 @@ export async function getMqAddresses(node_id) {
 }
 
 export async function getNodeToken(node_id = config.nodeId) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('GetNodeToken', { node_id });
     if (result == null) {
@@ -578,6 +733,13 @@ export async function getNodeToken(node_id = config.nodeId) {
 }
 
 export async function getRequest({ requestId }) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     return await tendermint.query('GetRequest', { request_id: requestId });
   } catch (error) {
@@ -589,6 +751,13 @@ export async function getRequest({ requestId }) {
 }
 
 export async function getRequestDetail({ requestId, height }) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const requestDetail = await tendermint.query(
       'GetRequestDetail',
@@ -612,6 +781,13 @@ export async function getRequestDetail({ requestId, height }) {
 }
 
 export async function getIdpNodes({ namespace, identifier, min_ial, min_aal }) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('GetIdpNodes', {
       hash_id:
@@ -637,6 +813,13 @@ export async function getIdpNodesInfo({
   min_aal,
   node_id_list,
 }) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('GetIdpNodesInfo', {
       hash_id:
@@ -657,6 +840,13 @@ export async function getIdpNodesInfo({
 }
 
 export async function getAsNodesByServiceId({ service_id }) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('GetAsNodesByServiceId', {
       service_id,
@@ -671,6 +861,13 @@ export async function getAsNodesByServiceId({ service_id }) {
 }
 
 export async function getAsNodesInfoByServiceId({ service_id, node_id_list }) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('GetAsNodesInfoByServiceId', {
       service_id,
@@ -686,6 +883,13 @@ export async function getAsNodesInfoByServiceId({ service_id, node_id_list }) {
 }
 
 export async function getServicesByAsID({ as_id }) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('GetServicesByAsID', {
       as_id,
@@ -704,6 +908,13 @@ export async function getServicesByAsID({ as_id }) {
 }
 
 export async function getAccessorGroupId(accessor_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('GetAccessorGroupID', {
       accessor_id,
@@ -721,6 +932,13 @@ export async function getAccessorGroupId(accessor_id) {
 }
 
 export async function getAccessorKey(accessor_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const accessorPubKeyObj = await tendermint.query('GetAccessorKey', {
       accessor_id,
@@ -738,6 +956,13 @@ export async function getAccessorKey(accessor_id) {
 }
 
 export async function getAccessorOwner(accessor_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const owner = await tendermint.query('GetAccessorOwner', {
       accessor_id,
@@ -755,6 +980,13 @@ export async function getAccessorOwner(accessor_id) {
 }
 
 export async function checkExistingIdentity(hash_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('CheckExistingIdentity', {
       hash_id,
@@ -772,6 +1004,13 @@ export async function checkExistingIdentity(hash_id) {
 }
 
 export async function getIdentityInfo(namespace, identifier, node_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const sid = namespace + ':' + identifier;
     const hash_id = utils.hash(sid);
@@ -789,6 +1028,13 @@ export async function getIdentityInfo(namespace, identifier, node_id) {
 }
 
 export async function getIdentityProof(request_id, idp_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('GetIdentityProof', {
       request_id,
@@ -807,6 +1053,13 @@ export async function getIdentityProof(request_id, idp_id) {
 }
 
 export async function getDataSignature({ node_id, request_id, service_id }) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('GetDataSignature', {
       node_id,
@@ -829,6 +1082,13 @@ export async function getDataSignature({ node_id, request_id, service_id }) {
 }
 
 export async function getServiceDetail(service_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     return await tendermint.query('GetServiceDetail', {
       service_id,
@@ -843,6 +1103,13 @@ export async function getServiceDetail(service_id) {
 }
 
 export async function getNamespaceList() {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     return (await tendermint.query('GetNamespaceList')) || [];
   } catch (error) {
@@ -854,6 +1121,13 @@ export async function getNamespaceList() {
 }
 
 export async function getServiceList() {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     return (await tendermint.query('GetServiceList')) || [];
   } catch (error) {
@@ -865,6 +1139,13 @@ export async function getServiceList() {
 }
 
 export async function getNodeInfo(node_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     return await tendermint.query('GetNodeInfo', {
       node_id,
@@ -878,6 +1159,13 @@ export async function getNodeInfo(node_id) {
 }
 
 export async function checkExistingAccessorID(accessor_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('CheckExistingAccessorID', {
       accessor_id,
@@ -895,6 +1183,13 @@ export async function checkExistingAccessorID(accessor_id) {
 }
 
 export async function checkExistingAccessorGroupID(accessor_group_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('CheckExistingAccessorGroupID', {
       accessor_group_id,
@@ -912,6 +1207,13 @@ export async function checkExistingAccessorGroupID(accessor_group_id) {
 }
 
 export async function getNodesBehindProxyNode(proxy_node_id) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     const result = await tendermint.query('GetNodesBehindProxyNode', {
       proxy_node_id,
@@ -926,6 +1228,13 @@ export async function getNodesBehindProxyNode(proxy_node_id) {
 }
 
 export async function isInitEnded() {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     return await tendermint.query('IsInitEnded');
   } catch (error) {
@@ -947,6 +1256,13 @@ export async function addNodeToProxyNode(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     await tendermint.transact({
       nodeId,
@@ -971,6 +1287,13 @@ export async function updateNodeProxyNode(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     await tendermint.transact({
       nodeId,
@@ -995,6 +1318,13 @@ export async function removeNodeFromProxyNode(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if(!config.isMaster) {
+    client.tendermint({
+      fnName: arguments.callee.name,
+      args: arguments
+    });
+    return;
+  }
   try {
     await tendermint.transact({
       nodeId,

@@ -1,0 +1,23 @@
+syntax = "proto3";
+ 
+service MasterWorker {
+  rpc subscribe(Empty) returns (stream InboundMessage){}
+  rpc tendermint(OutboundMessage) returns(Empty){}
+  rpc callback(OutboundMessage) returns(Empty){}
+}
+ 
+message InboundMessage {
+  string type = 1;
+  string namespace = 2;
+  string fnName = 3;
+  string args = 4;
+}
+
+message OutboundMessage {
+  string fnName = 1;
+  string args = 2;
+}
+
+message Empty {
+
+}

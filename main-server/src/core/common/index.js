@@ -59,7 +59,17 @@ let processingInboundMessagesCount = 0;
 
 let messageQueueAddressesSet = !config.registerMqAtStartup;
 
-tendermint.setTxResultCallbackFnGetter(getFunction);
+let client = 'gRPC-Client'; //TODO, should import
+if(config.isMaster) {
+  tendermint.setTxResultCallbackFnGetter((fnName, retVal, callbackAdditionalArgs) => {
+    client.send({
+      type: 'callbackAfterBlockchain',
+      fnName,
+      args: [retVal, callbackAdditionalArgs]
+    });
+  });
+}
+else tendermint.setTxResultCallbackFnGetter(getFunction);
 
 export function isMqAddressesSet() {
   return messageQueueAddressesSet;

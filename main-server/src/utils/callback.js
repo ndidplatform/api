@@ -31,6 +31,7 @@ import logger from '../logger';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import * as config from '../config';
+import client from '../master-worker-interface/client';
 
 const RESPONSE_BODY_SIZE_LIMIT = 3 * 1024 * 1024; // 3MB
 
@@ -228,6 +229,12 @@ export async function callbackToClient(
   responseCallbackFnName,
   dataForResponseCallback
 ) {
+  if(!config.isMaster) {
+    client.callback({
+      args: arguments
+    });
+    return;
+  }
   const cbId = randomBase64Bytes(10);
   if (retry) {
     logger.info({
