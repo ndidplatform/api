@@ -43,7 +43,7 @@ const packageDefinition = protoLoader.loadSync(
 const proto = grpc.loadPackageDefinition(packageDefinition);
 
 const server = new grpc.Server();
-const SERVER_ADDRESS = `0.0.0.0:${config.serverPort}`;
+const MASTER_SERVER_ADDRESS = `0.0.0.0:${config.masterServerPort}`;
 
 let workerList = [];
 let counter = 0;
@@ -54,7 +54,7 @@ server.addService(proto.MasterWorker.service, {
   callback
 });
 
-server.bind(SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
+server.bind(MASTER_SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
 server.start();
 
 function subscribe(call) {

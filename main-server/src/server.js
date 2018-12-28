@@ -44,7 +44,7 @@ import logger from './logger';
 
 import * as config from './config';
 
-const { core } = common;
+const core = common;
 
 process.on('unhandledRejection', function(reason, p) {
   if (reason && reason.name === 'CustomError') {
@@ -63,6 +63,25 @@ process.on('unhandledRejection', function(reason, p) {
 });
 
 async function initialize() {
+  if(config.isMaster) initializeMaster();
+  else initializeWorker();
+}
+
+async function initializeWorker() {
+  logger.info({ message: 'Initializing worker' });
+  try {
+    await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
+    logger.info({ message: 'Worker initialized' });
+  } catch (error) {
+    logger.error({
+      message: 'Cannot initialize worker',
+      error,
+    });
+    // shutDown();
+  }
+}
+
+async function initializeMaster() {
   logger.info({ message: 'Initializing server' });
   try {
     tendermint.loadSavedData();
