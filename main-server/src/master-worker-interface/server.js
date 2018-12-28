@@ -41,20 +41,22 @@ const packageDefinition = protoLoader.loadSync(
 );
 const proto = grpc.loadPackageDefinition(packageDefinition);
 
-const server = new grpc.Server();
-const MASTER_SERVER_ADDRESS = `0.0.0.0:${config.masterServerPort}`;
-
 let workerList = [];
 let counter = 0;
 
-server.addService(proto.MasterWorker.service, {
-  subscribe,
-  tendermint,
-  callback
-});
+export function initialize() {
+  const server = new grpc.Server();
+  const MASTER_SERVER_ADDRESS = `0.0.0.0:${config.masterServerPort}`;
 
-server.bind(MASTER_SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
-server.start();
+  server.addService(proto.MasterWorker.service, {
+    subscribe,
+    tendermint,
+    callback
+  });
+
+  server.bind(MASTER_SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
+  server.start();
+}
 
 export const eventEmitter = new EventEmitter();
 

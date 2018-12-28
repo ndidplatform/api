@@ -44,8 +44,14 @@ import * as externalCryptoService from './utils/external_crypto_service';
 import logger from './logger';
 
 import * as config from './config';
-import { eventEmitter as masterEventEmitter } from './master-worker-interface';
-import { eventEmitter as workerEventEmitter } from './master-worker-interface/client';
+import { 
+  eventEmitter as masterEventEmitter, 
+  initialize as masterInitialize 
+} from './master-worker-interface';
+import { 
+  eventEmitter as workerEventEmitter,
+  initialize as workerInitialize
+} from './master-worker-interface/client';
 
 const common = core.common;
 
@@ -74,6 +80,7 @@ async function initializeWorker() {
   logger.info({ message: 'Initializing worker' });
   try {
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
+    workerInitialize();
     workerEventEmitter.on('callbackAfterBlockchain', ({ fnName, argArray }) => {
       common.getFunction(fnName)(...argArray);
     });
@@ -157,6 +164,7 @@ async function initializeMaster() {
     await tendermint.loadExpectedTxFromDB();
     tendermint.loadAndRetryBacklogTransactRequests();
 
+    masterInitialize();
     masterEventEmitter.on('tendermintCallByWorker', ({ fnName, argArray }) => {
       tendermintNdid[fnName](...argArray);
     });

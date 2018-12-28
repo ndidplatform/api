@@ -23,7 +23,7 @@
 import * as tendermint from '.';
 import * as utils from '../utils';
 import * as config from '../config';
-import client from '../master-worker-interface/client';
+import getClient from '../master-worker-interface/client';
 
 import CustomError from 'ndid-error/custom_error';
 
@@ -39,7 +39,7 @@ export async function setMqAddresses(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -75,7 +75,7 @@ export async function updateNode(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -111,7 +111,7 @@ export async function registerAccessor(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -147,7 +147,7 @@ export async function clearRegisterIdentityTimeout(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -179,7 +179,7 @@ export async function registerIdentity(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -219,7 +219,7 @@ export async function addAccessorMethod(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -256,7 +256,7 @@ export async function revokeAccessorMethod(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -290,7 +290,7 @@ export async function createRequest(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -321,7 +321,7 @@ export async function closeRequest(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -354,7 +354,7 @@ export async function timeoutRequest(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -392,7 +392,7 @@ export async function setDataReceived(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -431,7 +431,7 @@ export async function updateIal(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -467,7 +467,7 @@ export async function declareIdentityProof(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -502,7 +502,7 @@ export async function createIdpResponse(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -533,7 +533,7 @@ export async function signASData(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -569,7 +569,7 @@ export async function registerServiceDestination(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -600,7 +600,7 @@ export async function updateServiceDestination(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -629,7 +629,7 @@ export async function updateServiceDestination(
 
 export async function getChainHistory() {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -648,7 +648,7 @@ export async function getChainHistory() {
 
 export async function getNodePubKey(node_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -670,7 +670,7 @@ export async function getNodePubKey(node_id) {
 
 export async function getNodeMasterPubKey(node_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -694,7 +694,7 @@ export async function getNodeMasterPubKey(node_id) {
 
 export async function getMqAddresses(node_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -712,7 +712,7 @@ export async function getMqAddresses(node_id) {
 
 export async function getNodeToken(node_id = config.nodeId) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -734,7 +734,7 @@ export async function getNodeToken(node_id = config.nodeId) {
 
 export async function getRequest({ requestId }) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -752,7 +752,7 @@ export async function getRequest({ requestId }) {
 
 export async function getRequestDetail({ requestId, height }) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -782,7 +782,7 @@ export async function getRequestDetail({ requestId, height }) {
 
 export async function getIdpNodes({ namespace, identifier, min_ial, min_aal }) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -814,7 +814,7 @@ export async function getIdpNodesInfo({
   node_id_list,
 }) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -841,7 +841,7 @@ export async function getIdpNodesInfo({
 
 export async function getAsNodesByServiceId({ service_id }) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -862,7 +862,7 @@ export async function getAsNodesByServiceId({ service_id }) {
 
 export async function getAsNodesInfoByServiceId({ service_id, node_id_list }) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -884,7 +884,7 @@ export async function getAsNodesInfoByServiceId({ service_id, node_id_list }) {
 
 export async function getServicesByAsID({ as_id }) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -909,7 +909,7 @@ export async function getServicesByAsID({ as_id }) {
 
 export async function getAccessorGroupId(accessor_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -933,7 +933,7 @@ export async function getAccessorGroupId(accessor_id) {
 
 export async function getAccessorKey(accessor_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -957,7 +957,7 @@ export async function getAccessorKey(accessor_id) {
 
 export async function getAccessorOwner(accessor_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -981,7 +981,7 @@ export async function getAccessorOwner(accessor_id) {
 
 export async function checkExistingIdentity(hash_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1005,7 +1005,7 @@ export async function checkExistingIdentity(hash_id) {
 
 export async function getIdentityInfo(namespace, identifier, node_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1029,7 +1029,7 @@ export async function getIdentityInfo(namespace, identifier, node_id) {
 
 export async function getIdentityProof(request_id, idp_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1054,7 +1054,7 @@ export async function getIdentityProof(request_id, idp_id) {
 
 export async function getDataSignature({ node_id, request_id, service_id }) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1083,7 +1083,7 @@ export async function getDataSignature({ node_id, request_id, service_id }) {
 
 export async function getServiceDetail(service_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1104,7 +1104,7 @@ export async function getServiceDetail(service_id) {
 
 export async function getNamespaceList() {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1122,7 +1122,7 @@ export async function getNamespaceList() {
 
 export async function getServiceList() {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1140,7 +1140,7 @@ export async function getServiceList() {
 
 export async function getNodeInfo(node_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1160,7 +1160,7 @@ export async function getNodeInfo(node_id) {
 
 export async function checkExistingAccessorID(accessor_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1184,7 +1184,7 @@ export async function checkExistingAccessorID(accessor_id) {
 
 export async function checkExistingAccessorGroupID(accessor_group_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1208,7 +1208,7 @@ export async function checkExistingAccessorGroupID(accessor_group_id) {
 
 export async function getNodesBehindProxyNode(proxy_node_id) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1229,7 +1229,7 @@ export async function getNodesBehindProxyNode(proxy_node_id) {
 
 export async function isInitEnded() {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1257,7 +1257,7 @@ export async function addNodeToProxyNode(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1288,7 +1288,7 @@ export async function updateNodeProxyNode(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });
@@ -1319,7 +1319,7 @@ export async function removeNodeFromProxyNode(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    client.tendermint({
+    getClient().tendermint({
       fnName: arguments.callee.name,
       args: arguments
     });

@@ -40,15 +40,18 @@ const packageDefinition = protoLoader.loadSync(
 );
 const proto = grpc.loadPackageDefinition(packageDefinition);
 const MASTER_SERVER_ADDRESS = `${config.masterServerIp}:${config.masterServerPort}`;
+let client = false;
 
 export const eventEmitter = new EventEmitter();
 
-const client = new proto.MasterWorker(
-  MASTER_SERVER_ADDRESS,
-  grpc.credentials.createInsecure()
-);
-let workerSubscribeChannel = client.subscribe(null);
-workerSubscribeChannel.on('data', onRecvData);
+export function initialize() {
+  client = new proto.MasterWorker(
+    MASTER_SERVER_ADDRESS,
+    grpc.credentials.createInsecure()
+  );
+  let workerSubscribeChannel = client.subscribe(null);
+  workerSubscribeChannel.on('data', onRecvData);
+}
 
 function onRecvData(data) {
   const {
@@ -63,4 +66,6 @@ function onRecvData(data) {
   });
 }
 
-export default client;
+export default function() {
+  return client;
+}
