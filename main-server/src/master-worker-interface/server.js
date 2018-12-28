@@ -25,13 +25,12 @@ import path from 'path';
 import grpc from 'grpc';
 import * as protoLoader from '@grpc/proto-loader';
 
-import * as tendermintNdid from '../tendermint/ndid';
 import * as config from '../config';
-import { callbackToClient } from '../utils/callback';
+import { EventEmitter } from 'events';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
-  path.join(__dirname, '..', '..', 'protos', 'master_worker.proto'),
+  path.join(__dirname, '..', '..', '..', 'protos', 'master_worker.proto'),
   {
     keepCase: true,
     longs: Number,
@@ -57,6 +56,8 @@ server.addService(proto.MasterWorker.service, {
 server.bind(MASTER_SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
 server.start();
 
+export const eventEmitter = new EventEmitter();
+
 function subscribe(call) {
   workerList.push(call);
 }
@@ -66,13 +67,17 @@ function tendermint(call) {
     fnName, args
   } = call.request;
   let argArray = JSON.parse(args);
-  tendermintNdid[fnName](...argArray);
+  eventEmitter.emit('tendermintCallByWorker', {
+    fnName, argArray
+  });
 }
 
 function callback(call) {
   const { args } = call.request;
   let argArray = JSON.parse(args);
-  callbackToClient(...argArray);
+  eventEmitter.emit('callbackToClientByWorker', {
+    argArray
+  });
 }
 
 function delegateToWorker(args, workerIndex) {
@@ -85,37 +90,78 @@ function delegateToWorker(args, workerIndex) {
   workerList[index].write(args);
 }
 
-export default {
+const exportElement = {
   as: {
-    registerOrUpdateASService: function() {
-      delegateToWorker({
-        type: 'functionCall',
-        namespace: 'as',
-        fnName: 'registerOrUpdateASService',
-        args: arguments
-      });
-    },
-    getServiceDetail: function() {
-      delegateToWorker({
-        type: 'functionCall',
-        namespace: 'as',
-        fnName: 'getServiceDetail',
-        args: arguments
-      });
-    },
-    processDataForRP: function() {
-      delegateToWorker({
-        type: 'functionCall',
-        namespace: 'as',
-        fnName: 'processDataForRP',
-        args: arguments
-      });
-    },
+    registerOrUpdateASService: false,
+    getServiceDetail: false,
+    processDataForRP: false,
   },
-  rp: {},
-  idp: {},
-  ndid: {},
-  proxy: {},
-  common: {},
-  identity: {},
+  rp: {
+    removeDataFromAS: false,
+    removeAllDataFromAS: false,
+    getRequestIdByReferenceId: false,
+    getDataFromAS: false,
+  },
+  idp: {
+    requestChallengeAndCreateResponse: false,
+  },
+  ndid: {
+    registerNode: false,
+    initNDID: false,
+    endInit: false,
+    updateNode: false,
+    enableNode: false,
+    disableNode: false,
+    setNodeToken: false,
+    addNodeToken: false,
+    reduceNodeToken: false,
+    addNamespace: false,
+    enableNamespace: false,
+    disableNamespace: false,
+    addService: false,
+    updateService: false,
+    enableService: false,
+    setValidator: false,
+    setTimeoutBlockRegisterIdentity: false,
+    approveService: false,
+    enableServiceDestination: false,
+    disableServiceDestination: false,
+    addNodeToProxyNode: false,
+    updateNodeProxyNode: false,
+    removeNodeFromProxyNode: false,
+    setLastBlock: false,
+  },
+  proxy: {
+    handleMessageFromQueue: false,
+    handleTendermintNewBlock: false,
+  },
+  common: {
+    closeRequest: false,
+    createRequest: false,
+  },
+  identity: {
+    createIdentity: false,
+    getCreateIdentityDataByReferenceId: false,
+    getRevokeAccessorDataByReferenceId: false,
+    getIdentityInfo: false,
+    updateIal: false,
+    addAccessorMethodForAssociatedIdp: false,
+    revokeAccessorMethodForAssociatedIdp: false,
+    calculateSecret: false,
+  },
 };
+
+for(let namespace in exportElement) {
+  for(let fnName in exportElement[namespace]) {
+    exportElement[namespace][fnName] = function() {
+      delegateToWorker({
+        type: 'functionCall',
+        namespace,
+        fnName,
+        args: arguments
+      });
+    };
+  }
+}
+
+export default exportElement;

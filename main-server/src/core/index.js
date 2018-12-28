@@ -31,7 +31,7 @@ import * as debug from './debug';
 import * as dpki from './dpki';
 
 import * as config from '../config';
-import * as coreMaster from './master-worker-interface';
+import coreMaster from '../master-worker-interface';
 
 let exportElement = {
   debug, dpki
@@ -116,3 +116,10 @@ else {
 }
 
 export default exportElement;
+export const as = exportElement.as;
+export const rp = exportElement.rp;
+export const idp = exportElement.idp;
+export const ndid = exportElement.ndid;
+export const identity = exportElement.identity;
+export const proxy = exportElement.proxy;
+export const common = exportElement.common;

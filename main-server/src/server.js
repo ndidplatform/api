@@ -29,22 +29,25 @@ import './env_var_validate';
 
 import * as httpServer from './http_server';
 import * as node from './node';
-import { common } from './core';
+import * as core from './core';
 import * as nodeKey from './utils/node_key';
 
 import * as cacheDb from './db/cache';
 import * as longTermDb from './db/long_term';
 import * as tendermint from './tendermint';
+import * as tendermintNdid from './tendermint/ndid';
 import * as tendermintWsPool from './tendermint/ws_pool';
 import * as mq from './mq';
-import { stopAllCallbackRetries } from './utils/callback';
+import { stopAllCallbackRetries, callbackToClient } from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
 
 import logger from './logger';
 
 import * as config from './config';
+import { eventEmitter as masterEventEmitter } from './master-worker-interface';
+import { eventEmitter as workerEventEmitter } from './master-worker-interface/client';
 
-const core = common;
+const common = core.common;
 
 process.on('unhandledRejection', function(reason, p) {
   if (reason && reason.name === 'CustomError') {
@@ -71,6 +74,12 @@ async function initializeWorker() {
   logger.info({ message: 'Initializing worker' });
   try {
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
+    workerEventEmitter.on('callbackAfterBlockchain', ({ fnName, argArray }) => {
+      common.getFunction(fnName)(...argArray);
+    });
+    workerEventEmitter.on('functionCall', ({ namespace, fnName, argArray }) => {
+      core[namespace][fnName](...argArray);
+    });
     logger.info({ message: 'Worker initialized' });
   } catch (error) {
     logger.error({
@@ -106,7 +115,7 @@ async function initializeMaster() {
       logger.info({ message: 'Node role', role });
     }
 
-    core.readCallbackUrlsFromFiles();
+    common.readCallbackUrlsFromFiles();
 
     let externalCryptoServiceReady;
     if (config.useExternalCryptoService) {
@@ -129,7 +138,7 @@ async function initializeMaster() {
       await externalCryptoServiceReady;
     }
 
-    await core.initialize();
+    await common.initialize();
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
       await mq.initialize();
@@ -137,16 +146,24 @@ async function initializeMaster() {
 
     await tendermint.initialize();
 
-    await core.resumeTimeoutScheduler();
+    await common.resumeTimeoutScheduler();
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
-      await core.setMessageQueueAddress();
+      await common.setMessageQueueAddress();
       await mq.loadAndProcessBacklogMessages();
     }
 
     tendermint.processMissingBlocks(tendermintStatusOnSync);
     await tendermint.loadExpectedTxFromDB();
     tendermint.loadAndRetryBacklogTransactRequests();
+
+    masterEventEmitter.on('tendermintCallByWorker', ({ fnName, argArray }) => {
+      tendermintNdid[fnName](...argArray);
+    });
+
+    masterEventEmitter.on('callbackToClientByWorker', ({ argArray }) => {
+      callbackToClient(...argArray);
+    });
 
     logger.info({ message: 'Server initialized' });
   } catch (error) {
@@ -202,7 +219,7 @@ async function shutDown() {
   // remove after finish using DB
   // => Wait here until a queue to use DB is empty
   await Promise.all([cacheDb.close(), longTermDb.close()]);
-  core.stopAllTimeoutScheduler();
+  common.stopAllTimeoutScheduler();
 }
 
 process.on('SIGTERM', shutDown);

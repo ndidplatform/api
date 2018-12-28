@@ -20,6 +20,6 @@
  *
  */
 
-import * as server from './server';
+import server from './server';
 
 export default server;

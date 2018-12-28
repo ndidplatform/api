@@ -24,8 +24,8 @@ import grpc from 'grpc';
 import path from 'path';
 import * as protoLoader from '@grpc/proto-loader';
 
-import * as core from '../core';
 import * as config from '../config';
+import { EventEmitter } from 'events';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -40,6 +40,8 @@ const packageDefinition = protoLoader.loadSync(
 );
 const proto = grpc.loadPackageDefinition(packageDefinition);
 const MASTER_SERVER_ADDRESS = `${config.masterServerIp}:${config.masterServerPort}`;
+
+export const eventEmitter = new EventEmitter();
 
 const client = new proto.MasterWorker(
   MASTER_SERVER_ADDRESS,
@@ -56,16 +58,9 @@ function onRecvData(data) {
     args
   } = data;
   let argArray = JSON.parse(args);
-  switch(type) {
-    case 'callbackAfterBlockchain':
-      core.common.getFunction(fnName)(...argArray);
-      break;
-    case 'functionCall':
-      core[namespace][fnName](...argArray);
-      break;
-    default:
-      throw 'Unrecognized type';
-  }
+  eventEmitter.emit(type, {
+    namespace, fnName, argArray
+  });
 }
 
 export default client;
