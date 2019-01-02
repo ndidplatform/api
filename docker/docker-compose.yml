@@ -50,6 +50,7 @@ services:
   api-idp-1-worker:
     image: ndidplatform/api:latest
     environment:
+      - NODE_ID=idp1
       - MASTER_SERVER_IP=api-idp-1-master
       - DB_IP=api-redis
     security_opt:
@@ -79,6 +80,7 @@ services:
   api-idp-2-worker:
     image: ndidplatform/api:latest
     environment:
+      - NODE_ID=idp2
       - MASTER_SERVER_IP=api-idp-2-master
       - DB_IP=api-redis
     security_opt:
@@ -108,6 +110,7 @@ services:
   api-rp-worker:
     image: ndidplatform/api:latest
     environment:
+      - NODE_ID=rp1
       - MASTER_SERVER_IP=api-rp-master
       - DB_IP=api-redis
     security_opt:
@@ -137,6 +140,7 @@ services:
   api-as-worker:
     image: ndidplatform/api:latest
     environment:
+      - NODE_ID=as1
       - MASTER_SERVER_IP=api-as-master
       - DB_IP=api-redis
     security_opt:

@@ -117,9 +117,9 @@ function onRecvData(data) {
     fnName,
     args
   } = data;
-  //let argArray = JSON.parse(args);
+  let argArray = JSON.parse(args);
   eventEmitter.emit(type, {
-    namespace, fnName, argArray: args
+    namespace, fnName, argArray
   });
 }
 

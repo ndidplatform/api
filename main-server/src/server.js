@@ -96,7 +96,10 @@ async function initializeWorker() {
         fnName,
         argArray
       });
-      core[namespace][fnName](...argArray);
+      /*console.log('1',core);
+      console.log('2',core[namespace]);
+      console.log('3',core[namespace][fnName]);*/
+      core[namespace][fnName].apply(null, argArray);
     });
     logger.info({ message: 'Worker initialized' });
   } catch (error) {

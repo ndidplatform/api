@@ -172,7 +172,7 @@ for(let namespace in exportElement) {
         type: 'functionCall',
         namespace,
         fnName,
-        args: arguments
+        args: JSON.stringify(arguments)
       });
     };
   }
