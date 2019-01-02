@@ -47,7 +47,7 @@ import * as config from './config';
 import { 
   eventEmitter as masterEventEmitter, 
   initialize as masterInitialize 
-} from './master-worker-interface';
+} from './master-worker-interface/server';
 import { 
   eventEmitter as workerEventEmitter,
   initialize as workerInitialize
@@ -80,11 +80,22 @@ async function initializeWorker() {
   logger.info({ message: 'Initializing worker' });
   try {
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
-    workerInitialize();
+    await workerInitialize();
     workerEventEmitter.on('callbackAfterBlockchain', ({ fnName, argArray }) => {
+      logger.debug({
+        message: 'callbackAfterBlockchain',
+        fnName,
+        argArray
+      });
       common.getFunction(fnName)(...argArray);
     });
     workerEventEmitter.on('functionCall', ({ namespace, fnName, argArray }) => {
+      logger.debug({
+        message: 'functionCall',
+        namespace,
+        fnName,
+        argArray
+      });
       core[namespace][fnName](...argArray);
     });
     logger.info({ message: 'Worker initialized' });
@@ -145,6 +156,14 @@ async function initializeMaster() {
       await externalCryptoServiceReady;
     }
 
+    masterInitialize();
+    masterEventEmitter.on('tendermintCallByWorker', ({ fnName, argArray }) => {
+      tendermintNdid[fnName](...argArray);
+    });
+
+    masterEventEmitter.on('callbackToClientByWorker', ({ argArray }) => {
+      callbackToClient(...argArray);
+    });
     await common.initialize();
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
@@ -163,15 +182,6 @@ async function initializeMaster() {
     tendermint.processMissingBlocks(tendermintStatusOnSync);
     await tendermint.loadExpectedTxFromDB();
     tendermint.loadAndRetryBacklogTransactRequests();
-
-    masterInitialize();
-    masterEventEmitter.on('tendermintCallByWorker', ({ fnName, argArray }) => {
-      tendermintNdid[fnName](...argArray);
-    });
-
-    masterEventEmitter.on('callbackToClientByWorker', ({ argArray }) => {
-      callbackToClient(...argArray);
-    });
 
     logger.info({ message: 'Server initialized' });
   } catch (error) {

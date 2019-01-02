@@ -18,15 +18,15 @@ services:
       - "8080:${API_PORT:-8080}"
     networks:
       - ndidplatform
-  api-ndid-worker:
-    image: ndidplatform/api:latest
-    environment:
-      - MASTER_SERVER_IP=api-ndid-master
-      - DB_IP=api-redis
-    security_opt:
-      - no-new-privileges
-    networks:
-      - ndidplatform
+  #api-ndid-worker:
+  #  image: ndidplatform/api:latest
+  #  environment:
+  #    - MASTER_SERVER_IP=api-ndid-master
+  #    - DB_IP=api-redis
+  #  security_opt:
+  #    - no-new-privileges
+  #  networks:
+  #    - ndidplatform
   api-idp-1-master:
     image: ndidplatform/api:latest
     environment:

@@ -9,6 +9,7 @@ const Sequelize = require('sequelize');
 const defaultDataDirectoryPath = path.join(__dirname, '..', '..', 'data');
 
 const nodeId = process.env.NODE_ID;
+const isMaster = process.env.IS_MASTER;
 const dataDirectoryPath =
   process.env.DATA_DIRECTORY_PATH || defaultDataDirectoryPath;
 
@@ -63,7 +64,7 @@ function setServiceCallbackUrl(serviceId, url) {
 }
 
 async function main() {
-  if (nodeId == null || nodeId === '') {
+  if (isMaster === 'true' && (nodeId == null || nodeId === '')) {
     console.error('NODE_ID env var must be set');
     process.exit(1);
   }

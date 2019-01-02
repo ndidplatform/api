@@ -27,6 +27,7 @@ import * as protoLoader from '@grpc/proto-loader';
 
 import * as config from '../config';
 import { EventEmitter } from 'events';
+import logger from '../logger';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -56,6 +57,9 @@ export function initialize() {
 
   server.bind(MASTER_SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
   server.start();
+  logger.info({
+    message: 'Master gRPC server initialzed'
+  });
 }
 
 export const eventEmitter = new EventEmitter();
@@ -82,14 +86,22 @@ function callback(call) {
   });
 }
 
-function delegateToWorker(args, workerIndex) {
+export function delegateToWorker(args, workerIndex) {
   let index;
   if(!workerIndex) {
     index = counter;
     counter = (counter + 1)%workerList.length;
   }
   else index = workerIndex;
-  workerList[index].write(args);
+  if(workerList.length === 0) {
+    logger.info({
+      message: 'No worker connected, waiting...'
+    });
+    setTimeout(() => {
+      delegateToWorker(args, workerIndex);
+    }, 2000);
+  }
+  else workerList[index].write(args);
 }
 
 const exportElement = {

@@ -25,6 +25,7 @@ import path from 'path';
 import * as protoLoader from '@grpc/proto-loader';
 
 import * as config from '../config';
+import logger from '../logger';
 import { EventEmitter } from 'events';
 
 // Load protobuf
@@ -40,17 +41,73 @@ const packageDefinition = protoLoader.loadSync(
 );
 const proto = grpc.loadPackageDefinition(packageDefinition);
 const MASTER_SERVER_ADDRESS = `${config.masterServerIp}:${config.masterServerPort}`;
-let client = false;
+let client = null;
+let connectivityState = null;
+let workerSubscribeChannel = null;
 
 export const eventEmitter = new EventEmitter();
 
-export function initialize() {
+function watchForNextConnectivityStateChange() {
+  if (client == null) {
+    throw new Error('client is not initialized');
+  }
+  client
+    .getChannel()
+    .watchConnectivityState(
+      client.getChannel().getConnectivityState(true),
+      Infinity,
+      async (error) => {
+        if (error) {
+          logger.error({
+            message: 'Worker service gRPC connectivity state watch error',
+            error,
+          });
+        } else {
+          const newConnectivityState = client
+            .getChannel()
+            .getConnectivityState();
+          logger.debug({
+            message: 'Worker service gRPC connectivity state changed',
+            connectivityState,
+            newConnectivityState,
+          });
+
+          // on reconnect (IF watchForNextConnectivityStateChange() this called after first waitForReady)
+          if (connectivityState === 1 && newConnectivityState === 2) {
+            logger.info({
+              message: 'Worker service gRPC reconnect',
+            });
+            workerSubscribeChannel = client.subscribe(null);
+            workerSubscribeChannel.on('data', onRecvData); 
+          }
+          connectivityState = newConnectivityState;
+        }
+        watchForNextConnectivityStateChange();
+      }
+    );
+}
+
+async function waitForReady(client) {
+  await new Promise((resolve, reject) => {
+    client.waitForReady(Infinity, (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+export async function initialize() {
   client = new proto.MasterWorker(
     MASTER_SERVER_ADDRESS,
     grpc.credentials.createInsecure()
   );
-  let workerSubscribeChannel = client.subscribe(null);
-  workerSubscribeChannel.on('data', onRecvData);
+  watchForNextConnectivityStateChange();
+  await waitForReady(client);
+  //workerSubscribeChannel = client.subscribe(null);
+  //workerSubscribeChannel.on('data', onRecvData);
 }
 
 function onRecvData(data) {
@@ -60,9 +117,9 @@ function onRecvData(data) {
     fnName,
     args
   } = data;
-  let argArray = JSON.parse(args);
+  //let argArray = JSON.parse(args);
   eventEmitter.emit(type, {
-    namespace, fnName, argArray
+    namespace, fnName, argArray: args
   });
 }
 

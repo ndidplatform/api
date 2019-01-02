@@ -50,6 +50,7 @@ import * as cacheDb from '../../db/cache';
 import privateMessageType from '../../mq/message/type';
 
 import * as node from '../../node';
+import { delegateToWorker } from '../../master-worker-interface/server';
 
 export * from './create_request';
 export * from './close_request';
@@ -59,10 +60,9 @@ let processingInboundMessagesCount = 0;
 
 let messageQueueAddressesSet = !config.registerMqAtStartup;
 
-let client = 'gRPC-Client'; //TODO, should import
 if(config.isMaster) {
   tendermint.setTxResultCallbackFnGetter((fnName, retVal, callbackAdditionalArgs) => {
-    client.send({
+    delegateToWorker({
       type: 'callbackAfterBlockchain',
       fnName,
       args: [retVal, callbackAdditionalArgs]

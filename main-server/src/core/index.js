@@ -31,7 +31,7 @@ import * as debug from './debug';
 import * as dpki from './dpki';
 
 import * as config from '../config';
-import coreMaster from '../master-worker-interface';
+import coreMaster from '../master-worker-interface/server';
 
 let exportElement = {
   debug, dpki
@@ -96,6 +96,11 @@ if(config.isMaster) {
   rpKeys.forEach((key) => {
     coreMaster.rp[key] = rpWorker[key];
   });
+
+  //All NDID operation is done by master
+  for(let key in coreMaster.ndid) {
+    coreMaster.ndid[key] = ndidWorker[key];
+  }
 
   exportElement = {
     ...coreMaster,

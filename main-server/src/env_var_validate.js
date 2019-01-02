@@ -40,24 +40,26 @@ if (process.env.NODE_ENV == null || process.env.NODE_ENV === '') {
   }
 }
 
-if (process.env.NODE_ID == null || process.env.NODE_ID === '') {
-  console.error(
-    'ERROR:',
-    '"NODE_ID" environment variable is not set. Process will now exit.'
-  );
-  process.exit(1);
-}
+if (process.env.IS_MASTER === 'true') {
+  if (process.env.NODE_ID == null || process.env.NODE_ID === '') {
+    console.error(
+      'ERROR:',
+      '"NODE_ID" environment variable is not set. Process will now exit.'
+    );
+    process.exit(1);
+  }
 
-if (process.env.TENDERMINT_IP == null) {
-  console.warn(
-    '"TENDERMINT_IP" environment variable is not set. Default to "localhost"'
-  );
-}
+  if (process.env.TENDERMINT_IP == null) {
+    console.warn(
+      '"TENDERMINT_IP" environment variable is not set. Default to "localhost"'
+    );
+  }
 
-if (process.env.MQ_CONTACT_IP == null) {
-  console.warn(
-    '"MQ_CONTACT_IP" environment variable is not set. Default to "localhost"'
-  );
+  if (process.env.MQ_CONTACT_IP == null) {
+    console.warn(
+      '"MQ_CONTACT_IP" environment variable is not set. Default to "localhost"'
+    );
+  }
 }
 
 if (
