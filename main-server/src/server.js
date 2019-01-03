@@ -53,6 +53,8 @@ import {
   initialize as workerInitialize
 } from './master-worker-interface/client';
 
+import getClient from './master-worker-interface/client';
+
 const common = core.common;
 
 process.on('unhandledRejection', function(reason, p) {
@@ -99,16 +101,32 @@ async function initializeWorker() {
       });
       common.getFunction(fnName)(...argArray);
     });
-    workerEventEmitter.on('functionCall', ({ namespace, fnName, argArray }) => {
+    workerEventEmitter.on('functionCall', async ({ namespace, fnName, argArray, gRPCRef }) => {
       logger.debug({
         message: 'functionCall',
         namespace,
         fnName,
-        argArray
+        argArray,
+        gRPCRef
       });
-      //TODO: need to return result in case of query...
-      //any other case??
-      core[namespace][fnName].apply(null, argArray);
+      try {
+        let result = await core[namespace][fnName].apply(null, argArray);
+        if(gRPCRef !== '') {
+          getClient().returnResult({
+            gRPCRef,
+            result: JSON.stringify(result),
+            error: null,
+          });
+        }
+      } catch(error) {
+        if(gRPCRef !== '') {
+          getClient().returnResult({
+            gRPCRef,
+            result: null,
+            error: JSON.stringify(error),
+          });
+        }
+      }
     });
     logger.info({ message: 'Worker initialized' });
   } catch (error) {

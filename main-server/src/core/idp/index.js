@@ -39,6 +39,8 @@ import * as cacheDb from '../../db/cache';
 import * as identity from '../identity';
 import privateMessageType from '../../mq/message/type';
 
+import { eventEmitter } from '../../master-worker-interface/server';
+
 export * from './create_response';
 export * from './event_handlers';
 
@@ -48,6 +50,11 @@ const callbackUrlFilesPrefix = path.join(
   config.dataDirectoryPath,
   'idp-callback-url-' + config.nodeId
 );
+
+export function changeAccessorUrlForWorker(newUrl) {
+  callbackUrls.accessor_sign_url = newUrl;
+  writeCallbackUrlToFile('accessor_sign', newUrl);
+}
 
 export function readCallbackUrlsFromFiles() {
   [
@@ -65,6 +72,9 @@ export function readCallbackUrlsFromFiles() {
         callbackUrlFilesPrefix + '-' + fileSuffix,
         'utf8'
       );
+      if(fileSuffix === 'accessor_sign' && config.isMaster) {
+        eventEmitter.emit('accessor_sign_changed', callbackUrls[key]);
+      }
       logger.info({
         message: `[IdP] ${fileSuffix} callback url read from file`,
         callbackUrl: callbackUrls[key],
@@ -120,6 +130,7 @@ export function setCallbackUrls({
   if (accessor_sign_url != null) {
     callbackUrls.accessor_sign_url = accessor_sign_url;
     writeCallbackUrlToFile('accessor_sign', accessor_sign_url);
+    if(config.isMaster) eventEmitter.emit('accessor_sign_changed', accessor_sign_url);
   }
   if (error_url != null) {
     callbackUrls.error_url = error_url;

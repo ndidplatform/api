@@ -28,6 +28,7 @@ import * as protoLoader from '@grpc/proto-loader';
 import * as config from '../config';
 import { EventEmitter } from 'events';
 import logger from '../logger';
+import { randomBase64Bytes } from '../utils';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -44,6 +45,31 @@ const proto = grpc.loadPackageDefinition(packageDefinition);
 
 let workerList = [];
 let counter = 0;
+let accessor_sign_url = '';
+let dpki_url = {};
+
+export const eventEmitter = new EventEmitter();
+export const internalEmitter = new EventEmitter();
+
+eventEmitter.on('accessor_sign_changed', (newUrl) => {
+  accessor_sign_url = newUrl;
+  workerList.forEach((connection) => {
+    connection.write({
+      type: 'accessor_sign_changed',
+      args: newUrl,
+    });
+  });
+});
+
+eventEmitter.on('dpki_callback_url_changed', (newUrlObject) => {
+  dpki_url = newUrlObject;
+  workerList.forEach((connection) => {
+    connection.write({
+      type: 'dpki_callback_url_changed',
+      args: JSON.stringify(newUrlObject),
+    });
+  });
+});
 
 export function initialize() {
   const server = new grpc.Server();
@@ -52,20 +78,56 @@ export function initialize() {
   server.addService(proto.MasterWorker.service, {
     subscribe,
     tendermintCall,
-    callbackCall
+    callbackCall,
+    returnResultCall,
   });
 
   server.bind(MASTER_SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
   server.start();
+
   logger.info({
     message: 'Master gRPC server initialzed'
   });
 }
 
-export const eventEmitter = new EventEmitter();
+function returnResultCall(call) {
+  const {
+    gRPCRef,
+    result,
+  } = call.request;
+  internalEmitter.emit('result', {
+    gRPCRef, 
+    result: JSON.parse(result)
+  });
+}
+
+async function waitForResult(waitForRef) {
+  return new Promise((resolve, reject) => {
+    internalEmitter.on('result', ({ gRPCRef, result, error }) => {
+      logger.debug({
+        message: 'Master received result',
+        gRPCRef,
+        result,
+        error,
+      });
+      if(gRPCRef === waitForRef) {
+        if(error == null) resolve(result);
+        else reject(error);
+      }
+    });
+  });
+}
 
 function subscribe(call) {
   workerList.push(call);
+  call.write({
+    type: 'accessor_sign_changed',
+    args: accessor_sign_url,
+  });
+  call.write({
+    type: 'dpki_callback_url_changed',
+    args: JSON.stringify(dpki_url),
+  });
 }
 
 function tendermintCall(call) {
@@ -87,14 +149,14 @@ function callbackCall(call) {
 }
 
 export function delegateToWorker({
-  type, namespace, fnName, args
+  type, namespace, fnName, args, needResult,
 }, workerIndex) {
   logger.debug({
     message: 'Master delegate',
     args,
     workerIndex,
   });
-  let index;
+  let index, gRPCRef = '';
   if(!workerIndex) {
     index = counter;
     counter = (counter + 1)%workerList.length;
@@ -108,23 +170,31 @@ export function delegateToWorker({
       delegateToWorker(args, workerIndex);
     }, 2000);
   }
-  else workerList[index].write({
-    type, namespace, fnName,
-    args: JSON.stringify(args)
-  });
+  else {
+    if(needResult) {
+      gRPCRef = randomBase64Bytes(16); //random
+    }
+    workerList[index].write({
+      type, namespace, fnName, gRPCRef,
+      args: JSON.stringify(args)
+    });
+    if(needResult) {
+      return waitForResult(gRPCRef);
+    }
+  }
 }
 
 const exportElement = {
   as: {
     registerOrUpdateASService: false,
-    getServiceDetail: false,
+    getServiceDetail: true,
     processDataForRP: false,
   },
   rp: {
     removeDataFromAS: false,
     removeAllDataFromAS: false,
-    getRequestIdByReferenceId: false,
-    getDataFromAS: false,
+    getRequestIdByReferenceId: true,
+    getDataFromAS: true,
   },
   idp: {
     requestChallengeAndCreateResponse: false,
@@ -165,24 +235,26 @@ const exportElement = {
   },
   identity: {
     createIdentity: false,
-    getCreateIdentityDataByReferenceId: false,
-    getRevokeAccessorDataByReferenceId: false,
-    getIdentityInfo: false,
+    getCreateIdentityDataByReferenceId: true,
+    getRevokeAccessorDataByReferenceId: true,
+    getIdentityInfo: true,
     updateIal: false,
     addAccessorMethodForAssociatedIdp: false,
     revokeAccessorMethodForAssociatedIdp: false,
-    calculateSecret: false,
+    calculateSecret: true,
   },
 };
 
 for(let namespace in exportElement) {
   for(let fnName in exportElement[namespace]) {
+    let needResult = exportElement[namespace][fnName]; 
     exportElement[namespace][fnName] = function() {
-      delegateToWorker({
+      return delegateToWorker({
         type: 'functionCall',
         namespace,
         fnName,
-        args: arguments
+        args: arguments,
+        needResult,
       });
     };
   }

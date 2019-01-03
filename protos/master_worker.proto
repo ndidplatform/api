@@ -4,6 +4,7 @@ service MasterWorker {
   rpc subscribe(Empty) returns (stream InboundMessage){}
   rpc tendermintCall(OutboundMessage) returns(Empty){}
   rpc callbackCall(OutboundMessage) returns(Empty){}
+  rpc returnResultCall(Result) returns(Empty){}
 }
  
 message InboundMessage {
@@ -11,11 +12,18 @@ message InboundMessage {
   string namespace = 2;
   string fnName = 3;
   string args = 4;
+  string gRPCRef = 5;
 }
 
 message OutboundMessage {
   string fnName = 1;
   string args = 2;
+}
+
+message Result {
+  string gRPCRef = 1;
+  string result = 2;
+  string error = 3;
 }
 
 message Empty {

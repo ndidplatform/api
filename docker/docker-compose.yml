@@ -55,6 +55,7 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_SERVICE_SERVER_IP=mq-idp-1
     security_opt:
       - no-new-privileges
     networks:
@@ -87,6 +88,7 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_SERVICE_SERVER_IP=mq-idp-2
     security_opt:
       - no-new-privileges
     networks:
@@ -119,6 +121,7 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-rp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_SERVICE_SERVER_IP=mq-rp
     security_opt:
       - no-new-privileges
     networks:
@@ -151,6 +154,7 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-as
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_SERVICE_SERVER_IP=mq-as
     security_opt:
       - no-new-privileges
     networks:

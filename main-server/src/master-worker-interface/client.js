@@ -27,6 +27,8 @@ import * as protoLoader from '@grpc/proto-loader';
 import * as config from '../config';
 import logger from '../logger';
 import { EventEmitter } from 'events';
+import { changeAccessorUrlForWorker } from '../core/idp/index';
+import { changeDpkiCallbackForWorker } from '../utils/external_crypto_service';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -108,6 +110,7 @@ export async function initialize() {
   await waitForReady(client);
   client.tendermint = tendermint;
   client.callback = callback;
+  client.returnResult = returnResult;
   //workerSubscribeChannel = client.subscribe(null);
   //workerSubscribeChannel.on('data', onRecvData);
 }
@@ -122,6 +125,25 @@ function tendermint({ fnName, args }) {
     client.tendermintCall({ 
       fnName, 
       args: JSON.stringify(parseArgsToArray(args)) 
+    }, (error) => {
+      if(error) reject(error);
+      else resolve();
+    });
+  });
+}
+
+function returnResult({ gRPCRef, result, error }) {
+  logger.debug({
+    message: 'Worker return result',
+    gRPCRef,
+    result,
+    error,
+  });
+  return new Promise((resolve, reject) => {
+    client.returnResultCall({ 
+      gRPCRef,
+      result,
+      error, 
     }, (error) => {
       if(error) reject(error);
       else resolve();
@@ -162,19 +184,34 @@ function onRecvData(data) {
     type,
     namespace,
     fnName,
-    args
+    args,
+    gRPCRef
   } = data;
+  let argsJson;
   logger.debug({
     message: 'Worker received data',
     data,
     type,
     namespace,
     fnName,
-    args
+    args,
+    gRPCRef,
   });
+  switch(type) {
+    case 'accessor_sign_changed':
+      //do something
+      changeAccessorUrlForWorker(args);
+      return;
+    case 'dpki_callback_url_changed':
+      //do something
+      argsJson = JSON.parse(args);
+      changeDpkiCallbackForWorker(argsJson);
+      return;
+    default: break;
+  }
   let argArray = parseArgsToArray(args);
   eventEmitter.emit(type, {
-    namespace, fnName, argArray
+    namespace, fnName, argArray, gRPCRef
   });
 }
 

@@ -37,6 +37,7 @@ import errorType from 'ndid-error/type';
 import logger from '../logger';
 
 import * as config from '../config';
+import { eventEmitter as masterEventEmitter } from '../master-worker-interface/server'; 
 
 const TEST_MESSAGE = 'test';
 const TEST_MESSAGE_BASE_64 = Buffer.from(TEST_MESSAGE).toString('base64');
@@ -55,6 +56,30 @@ let pendingCallbacksCount = 0;
 
 export const eventEmitter = new EventEmitter();
 
+export function changeDpkiCallbackForWorker(dpkiCallbackObject) {
+  [
+    { key: 'sign_url', fileSuffix: 'signature' },
+    { key: 'master_sign_url', fileSuffix: 'masterSignature' },
+    { key: 'decrypt_url', fileSuffix: 'decrypt' },
+  ].forEach(({ key, fileSuffix }) => {
+    if(dpkiCallbackObject[key]) {
+      callbackUrls[key] = dpkiCallbackObject[key];
+      fs.writeFile(
+        callbackUrlFilesPrefix + fileSuffix,
+        dpkiCallbackObject[key],
+        (err) => {
+          if (err) {
+            logger.error({
+              message: '[DPKI] Cannot write ' + fileSuffix + ' callback url file',
+              error: err,
+            });
+          }
+        }
+      );
+    }
+  });
+}
+
 export function readCallbackUrlsFromFiles() {
   [
     { key: 'sign_url', fileSuffix: 'signature' },
@@ -69,6 +94,9 @@ export function readCallbackUrlsFromFiles() {
       logger.info({
         message: `[DPKI] ${fileSuffix} callback url read from file`,
         callbackUrl: callbackUrls[key],
+      });
+      masterEventEmitter.emit('dpki_callback_url_changed', {
+        [key]: callbackUrls[key],
       });
     } catch (error) {
       if (error.code === 'ENOENT') {
@@ -270,6 +298,9 @@ export async function setDpkiCallback({
         }
       }
     );
+    masterEventEmitter.emit('dpki_callback_url_changed', {
+      sign_url: signCallbackUrl,
+    });
   }
   if (masterSignCallbackUrl) {
     const master_public_key = await tendermintNdid.getNodeMasterPubKey(
@@ -295,6 +326,9 @@ export async function setDpkiCallback({
         }
       }
     );
+    masterEventEmitter.emit('dpki_callback_url_changed', {
+      master_sign_url: masterSignCallbackUrl,
+    });
   }
   if (decryptCallbackUrl) {
     if (public_key == null) {
@@ -320,6 +354,9 @@ export async function setDpkiCallback({
         }
       }
     );
+    masterEventEmitter.emit('dpki_callback_url_changed', {
+      decrypt_url: decryptCallbackUrl,
+    });
   }
   checkAndEmitAllCallbacksSet();
 }
