@@ -86,7 +86,14 @@ function callbackCall(call) {
   });
 }
 
-export function delegateToWorker(args, workerIndex) {
+export function delegateToWorker({
+  type, namespace, fnName, args
+}, workerIndex) {
+  logger.debug({
+    message: 'Master delegate',
+    args,
+    workerIndex,
+  });
   let index;
   if(!workerIndex) {
     index = counter;
@@ -101,7 +108,10 @@ export function delegateToWorker(args, workerIndex) {
       delegateToWorker(args, workerIndex);
     }, 2000);
   }
-  else workerList[index].write(args);
+  else workerList[index].write({
+    type, namespace, fnName,
+    args: JSON.stringify(args)
+  });
 }
 
 const exportElement = {
@@ -172,7 +182,7 @@ for(let namespace in exportElement) {
         type: 'functionCall',
         namespace,
         fnName,
-        args: JSON.stringify(arguments)
+        args: arguments
       });
     };
   }

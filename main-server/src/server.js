@@ -88,7 +88,7 @@ async function initializeWorker() {
     );
     await tendermint.connectWS();
     await tendermintReady;
-    
+
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
     await workerInitialize();
     workerEventEmitter.on('callbackAfterBlockchain', ({ fnName, argArray }) => {
@@ -106,9 +106,8 @@ async function initializeWorker() {
         fnName,
         argArray
       });
-      /*console.log('1',core);
-      console.log('2',core[namespace]);
-      console.log('3',core[namespace][fnName]);*/
+      //TODO: need to return result in case of query...
+      //any other case??
       core[namespace][fnName].apply(null, argArray);
     });
     logger.info({ message: 'Worker initialized' });

@@ -65,7 +65,7 @@ if(config.isMaster) {
     delegateToWorker({
       type: 'callbackAfterBlockchain',
       fnName,
-      args: [retVal, callbackAdditionalArgs]
+      args: [retVal].concat(callbackAdditionalArgs),
     });
   });
 }

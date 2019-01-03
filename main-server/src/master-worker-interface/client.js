@@ -113,6 +113,11 @@ export async function initialize() {
 }
 
 function tendermint({ fnName, args }) {
+  logger.debug({
+    message: 'Worker calling tendermint transact',
+    fnName,
+    args
+  });
   return new Promise((resolve, reject) => {
     client.tendermintCall({ 
       fnName, 
@@ -125,6 +130,10 @@ function tendermint({ fnName, args }) {
 }
 
 function callback({ args }) {
+  logger.debug({
+    message: 'Worker calling callback',
+    args
+  });
   return new Promise((resolve, reject) => {
     client.callbackCall({ 
       args: JSON.stringify(parseArgsToArray(args)) 
@@ -135,10 +144,8 @@ function callback({ args }) {
   });
 }
 
-function parseArgsToArray(args, shouldParseBefore) {
-  let argJson = shouldParseBefore ? 
-    JSON.parse(args) :
-    args;
+function parseArgsToArray(args) {
+  let argJson = JSON.parse(args);
   let length = Object.keys(argJson).reduce((accum, current) => 
     Math.max(parseInt(current),accum)
   );
@@ -157,7 +164,15 @@ function onRecvData(data) {
     fnName,
     args
   } = data;
-  let argArray = parseArgsToArray(args, true);
+  logger.debug({
+    message: 'Worker received data',
+    data,
+    type,
+    namespace,
+    fnName,
+    args
+  });
+  let argArray = parseArgsToArray(args);
   eventEmitter.emit(type, {
     namespace, fnName, argArray
   });

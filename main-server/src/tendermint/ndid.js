@@ -39,7 +39,7 @@ export async function setMqAddresses(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'setMqAddresses',
       args: JSON.stringify(arguments)
     });
@@ -75,7 +75,7 @@ export async function updateNode(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'updateNode',
       args: JSON.stringify(arguments)
     });
@@ -111,7 +111,7 @@ export async function registerAccessor(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'registerAccessor',
       args: JSON.stringify(arguments)
     });
@@ -147,7 +147,7 @@ export async function clearRegisterIdentityTimeout(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'clearRegisterIdentityTimeout',
       args: JSON.stringify(arguments)
     });
@@ -179,7 +179,7 @@ export async function registerIdentity(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'registerIdentity',
       args: JSON.stringify(arguments)
     });
@@ -219,7 +219,7 @@ export async function addAccessorMethod(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'addAccessorMethod',
       args: JSON.stringify(arguments)
     });
@@ -256,7 +256,7 @@ export async function revokeAccessorMethod(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'revokeAccessorMethod',
       args: JSON.stringify(arguments)
     });
@@ -290,7 +290,7 @@ export async function createRequest(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'createRequest',
       args: JSON.stringify(arguments)
     });
@@ -321,7 +321,7 @@ export async function closeRequest(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'closeRequest',
       args: JSON.stringify(arguments)
     });
@@ -354,7 +354,7 @@ export async function timeoutRequest(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'timeoutRequest',
       args: JSON.stringify(arguments)
     });
@@ -392,7 +392,7 @@ export async function setDataReceived(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'setDataReceived',
       args: JSON.stringify(arguments)
     });
@@ -431,7 +431,7 @@ export async function updateIal(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'updateIal',
       args: JSON.stringify(arguments)
     });
@@ -467,7 +467,7 @@ export async function declareIdentityProof(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'declareIdentityProof',
       args: JSON.stringify(arguments)
     });
@@ -502,7 +502,7 @@ export async function createIdpResponse(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'createIdpResponse',
       args: JSON.stringify(arguments)
     });
@@ -533,7 +533,7 @@ export async function signASData(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'signASData',
       args: JSON.stringify(arguments)
     });
@@ -569,7 +569,7 @@ export async function registerServiceDestination(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'registerServiceDestination',
       args: JSON.stringify(arguments)
     });
@@ -600,7 +600,7 @@ export async function updateServiceDestination(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'updateServiceDestination',
       args: JSON.stringify(arguments)
     });
@@ -1068,7 +1068,7 @@ export async function addNodeToProxyNode(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'addNodeToProxyNode',
       args: JSON.stringify(arguments)
     });
@@ -1099,7 +1099,7 @@ export async function updateNodeProxyNode(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'updateNodeProxyNode',
       args: JSON.stringify(arguments)
     });
@@ -1130,7 +1130,7 @@ export async function removeNodeFromProxyNode(
   saveForRetryOnChainDisabled
 ) {
   if(!config.isMaster) {
-    getClient().tendermint({
+    await getClient().tendermint({
       fnName: 'removeNodeFromProxyNode',
       args: JSON.stringify(arguments)
     });
