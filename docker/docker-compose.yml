@@ -53,6 +53,8 @@ services:
       - NODE_ID=idp1
       - MASTER_SERVER_IP=api-idp-1-master
       - DB_IP=api-redis
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
     security_opt:
       - no-new-privileges
     networks:
@@ -83,6 +85,8 @@ services:
       - NODE_ID=idp2
       - MASTER_SERVER_IP=api-idp-2-master
       - DB_IP=api-redis
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
     security_opt:
       - no-new-privileges
     networks:
@@ -113,6 +117,8 @@ services:
       - NODE_ID=rp1
       - MASTER_SERVER_IP=api-rp-master
       - DB_IP=api-redis
+      - TENDERMINT_IP=tm-rp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
     security_opt:
       - no-new-privileges
     networks:
@@ -143,6 +149,8 @@ services:
       - NODE_ID=as1
       - MASTER_SERVER_IP=api-as-master
       - DB_IP=api-redis
+      - TENDERMINT_IP=tm-as
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
     security_opt:
       - no-new-privileges
     networks:

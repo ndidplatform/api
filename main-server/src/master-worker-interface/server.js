@@ -51,8 +51,8 @@ export function initialize() {
 
   server.addService(proto.MasterWorker.service, {
     subscribe,
-    tendermint,
-    callback
+    tendermintCall,
+    callbackCall
   });
 
   server.bind(MASTER_SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
@@ -68,7 +68,7 @@ function subscribe(call) {
   workerList.push(call);
 }
 
-function tendermint(call) {
+function tendermintCall(call) {
   const {
     fnName, args
   } = call.request;
@@ -78,7 +78,7 @@ function tendermint(call) {
   });
 }
 
-function callback(call) {
+function callbackCall(call) {
   const { args } = call.request;
   let argArray = JSON.parse(args);
   eventEmitter.emit('callbackToClientByWorker', {

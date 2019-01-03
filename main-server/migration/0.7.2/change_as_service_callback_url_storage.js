@@ -64,7 +64,7 @@ function setServiceCallbackUrl(serviceId, url) {
 }
 
 async function main() {
-  if (isMaster === 'true' && (nodeId == null || nodeId === '')) {
+  if (nodeId == null || nodeId === '') {
     console.error('NODE_ID env var must be set');
     process.exit(1);
   }

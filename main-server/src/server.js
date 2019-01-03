@@ -79,6 +79,16 @@ async function initialize() {
 async function initializeWorker() {
   logger.info({ message: 'Initializing worker' });
   try {
+    //connect to tendermint for query only
+    if (config.ndidNode) {
+      tendermint.setWaitForInitEndedBeforeReady(false);
+    }
+    const tendermintReady = new Promise((resolve) =>
+      tendermint.eventEmitter.once('ready', (status) => resolve(status))
+    );
+    await tendermint.connectWS();
+    await tendermintReady;
+    
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
     await workerInitialize();
     workerEventEmitter.on('callbackAfterBlockchain', ({ fnName, argArray }) => {

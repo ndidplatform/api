@@ -135,14 +135,16 @@ function callback({ args }) {
   });
 }
 
-function parseArgsToArray(args) {
-  let argJson = JSON.parse(args);
+function parseArgsToArray(args, shouldParseBefore) {
+  let argJson = shouldParseBefore ? 
+    JSON.parse(args) :
+    args;
   let length = Object.keys(argJson).reduce((accum, current) => 
     Math.max(parseInt(current),accum)
   );
   let argArray = [];
   //convert to array (some arg is missing key zero)
-  for(let i = 0 ; argArray.length < length ; i++) {
+  for(let i = 0 ; argArray.length <= length ; i++) {
     argArray.push(argJson[i.toString()]);
   }
   return argArray;
@@ -155,7 +157,7 @@ function onRecvData(data) {
     fnName,
     args
   } = data;
-  let argArray = parseArgsToArray(args);
+  let argArray = parseArgsToArray(args, true);
   eventEmitter.emit(type, {
     namespace, fnName, argArray
   });
