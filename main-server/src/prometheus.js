@@ -27,6 +27,7 @@ import * as common from './core/common';
 import * as mq from './mq';
 import * as callbackUtil from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
+import * as redis from './db/redis_common';
 
 const defaultMetricsInterval = Prometheus.collectDefaultMetrics();
 
@@ -146,6 +147,14 @@ const inboundMqMessageProcessDurationMilliseconds = new Prometheus.Histogram({
   buckets: [0.1, 5, 15, 50, 100, 200, 300, 400, 500], // buckets for response time from 0.1ms to 500ms
 });
 
+const redisOperationDurationMilliseconds = new Prometheus.Histogram({
+  name: 'redis_operation_duration_ms',
+  help: 'Duration of redis operations in ms',
+  labelNames: ['operation'],
+  buckets: [0.1, 5, 15, 50, 100, 200, 300, 400, 500], // buckets for response time from 0.1ms to 500ms
+});
+
+// Metrics event listeners
 tendermint.metricsEventEmitter.on('expectedTxsCount', (expectedTxsCount) =>
   expectedTxsTotal.set(expectedTxsCount)
 );
@@ -221,6 +230,9 @@ common.metricsEventEmitter.on(
     inboundMqMessageProcessDurationMilliseconds
       .labels(type)
       .observe(timeUsedInMs)
+);
+redis.metricsEventEmitter.on('operationTime', (operation, timeUsedInMs) =>
+  redisOperationDurationMilliseconds.labels(operation).observe(timeUsedInMs)
 );
 
 export function stopCollectDefaultMetrics() {
