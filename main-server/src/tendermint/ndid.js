@@ -41,7 +41,7 @@ export async function setMqAddresses(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'setMqAddresses',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -77,7 +77,7 @@ export async function updateNode(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'updateNode',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -113,7 +113,7 @@ export async function registerAccessor(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'registerAccessor',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -149,7 +149,7 @@ export async function clearRegisterIdentityTimeout(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'clearRegisterIdentityTimeout',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -181,7 +181,7 @@ export async function registerIdentity(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'registerIdentity',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -221,7 +221,7 @@ export async function addAccessorMethod(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'addAccessorMethod',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -258,7 +258,7 @@ export async function revokeAccessorMethod(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'revokeAccessorMethod',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -292,7 +292,7 @@ export async function createRequest(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'createRequest',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -323,7 +323,7 @@ export async function closeRequest(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'closeRequest',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -356,7 +356,7 @@ export async function timeoutRequest(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'timeoutRequest',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -394,7 +394,7 @@ export async function setDataReceived(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'setDataReceived',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -433,7 +433,7 @@ export async function updateIal(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'updateIal',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -469,7 +469,7 @@ export async function declareIdentityProof(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'declareIdentityProof',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -504,7 +504,7 @@ export async function createIdpResponse(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'createIdpResponse',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -535,7 +535,7 @@ export async function signASData(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'signASData',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -571,7 +571,7 @@ export async function registerServiceDestination(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'registerServiceDestination',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -602,7 +602,7 @@ export async function updateServiceDestination(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'updateServiceDestination',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -631,7 +631,7 @@ export async function getChainHistory() {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getChainHistory',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -650,7 +650,7 @@ export async function getNodePubKey(node_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getNodePubKey',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -672,7 +672,7 @@ export async function getNodeMasterPubKey(node_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getNodeMasterPubKey',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -696,7 +696,7 @@ export async function getMqAddresses(node_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getMqAddresses',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -714,7 +714,7 @@ export async function getNodeToken(node_id = config.nodeId) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getNodeToken',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -736,7 +736,7 @@ export async function getRequest({ requestId }) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getRequest',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -754,7 +754,7 @@ export async function getRequestDetail({ requestId, height }) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getRequestDetail',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -784,7 +784,7 @@ export async function getIdpNodes({ namespace, identifier, min_ial, min_aal }) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getIdpNodes',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -816,7 +816,7 @@ export async function getIdpNodesInfo({
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getIdpNodesInfo',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -841,9 +841,13 @@ export async function getIdpNodesInfo({
 
 export async function getAsNodesByServiceId({ service_id }) {
   if(!config.isMaster) {
+    //console.log(getClient());
+    //console.log(getClient().tendermint);
+    //console.log('>>',arguments);
+    //console.log('->',JSON.stringify(arguments));
     getClient().tendermint({
       fnName: 'getAsNodesByServiceId',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -864,7 +868,7 @@ export async function getAsNodesInfoByServiceId({ service_id, node_id_list }) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getAsNodesInfoByServiceId',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -886,7 +890,7 @@ export async function getServicesByAsID({ as_id }) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getServicesByAsID',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -911,7 +915,7 @@ export async function getAccessorGroupId(accessor_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getAccessorGroupId',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -935,7 +939,7 @@ export async function getAccessorKey(accessor_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getAccessorKey',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -959,7 +963,7 @@ export async function getAccessorOwner(accessor_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getAccessorOwner',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -983,7 +987,7 @@ export async function checkExistingIdentity(hash_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'checkExistingIdentity',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1007,7 +1011,7 @@ export async function getIdentityInfo(namespace, identifier, node_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getIdentityInfo',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1031,7 +1035,7 @@ export async function getIdentityProof(request_id, idp_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getIdentityProof',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1056,7 +1060,7 @@ export async function getDataSignature({ node_id, request_id, service_id }) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getDataSignature',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1085,7 +1089,7 @@ export async function getServiceDetail(service_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getServiceDetail',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1106,7 +1110,7 @@ export async function getNamespaceList() {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getNamespaceList',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1124,7 +1128,7 @@ export async function getServiceList() {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getServiceList',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1142,7 +1146,7 @@ export async function getNodeInfo(node_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getNodeInfo',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1162,7 +1166,7 @@ export async function checkExistingAccessorID(accessor_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'checkExistingAccessorID',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1186,7 +1190,7 @@ export async function checkExistingAccessorGroupID(accessor_group_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'checkExistingAccessorGroupID',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1210,7 +1214,7 @@ export async function getNodesBehindProxyNode(proxy_node_id) {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'getNodesBehindProxyNode',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1231,7 +1235,7 @@ export async function isInitEnded() {
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'isInitEnded',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1259,7 +1263,7 @@ export async function addNodeToProxyNode(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'addNodeToProxyNode',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1290,7 +1294,7 @@ export async function updateNodeProxyNode(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'updateNodeProxyNode',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }
@@ -1321,7 +1325,7 @@ export async function removeNodeFromProxyNode(
   if(!config.isMaster) {
     getClient().tendermint({
       fnName: 'removeNodeFromProxyNode',
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }

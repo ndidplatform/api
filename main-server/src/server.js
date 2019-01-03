@@ -161,11 +161,20 @@ async function initializeMaster() {
 
     masterInitialize();
     masterEventEmitter.on('tendermintCallByWorker', ({ fnName, argArray }) => {
-      tendermintNdid[fnName](...argArray);
+      logger.debug({
+        message: 'tendermintCallByWorker',
+        fnName,
+        argArray
+      });
+      tendermintNdid[fnName].apply(null, argArray);
     });
 
     masterEventEmitter.on('callbackToClientByWorker', ({ argArray }) => {
-      callbackToClient(...argArray);
+      logger.debug({
+        message: 'callbackToClientByWorker',
+        argArray
+      });
+      callbackToClient.apply(null, argArray);
     });
     await common.initialize();
 

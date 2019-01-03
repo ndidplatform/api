@@ -231,7 +231,7 @@ export async function callbackToClient(
 ) {
   if(!config.isMaster) {
     getClient().callback({
-      args: arguments
+      args: JSON.stringify(arguments)
     });
     return;
   }

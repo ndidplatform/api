@@ -106,8 +106,46 @@ export async function initialize() {
   );
   watchForNextConnectivityStateChange();
   await waitForReady(client);
+  client.tendermint = tendermint;
+  client.callback = callback;
   //workerSubscribeChannel = client.subscribe(null);
   //workerSubscribeChannel.on('data', onRecvData);
+}
+
+function tendermint({ fnName, args }) {
+  return new Promise((resolve, reject) => {
+    client.tendermintCall({ 
+      fnName, 
+      args: JSON.stringify(parseArgsToArray(args)) 
+    }, (error) => {
+      if(error) reject(error);
+      else resolve();
+    });
+  });
+}
+
+function callback({ args }) {
+  return new Promise((resolve, reject) => {
+    client.callbackCall({ 
+      args: JSON.stringify(parseArgsToArray(args)) 
+    }, (error) => {
+      if(error) reject(error);
+      else resolve();
+    });
+  });
+}
+
+function parseArgsToArray(args) {
+  let argJson = JSON.parse(args);
+  let length = Object.keys(argJson).reduce((accum, current) => 
+    Math.max(parseInt(current),accum)
+  );
+  let argArray = [];
+  //convert to array (some arg is missing key zero)
+  for(let i = 0 ; argArray.length < length ; i++) {
+    argArray.push(argJson[i.toString()]);
+  }
+  return argArray;
 }
 
 function onRecvData(data) {
@@ -117,7 +155,7 @@ function onRecvData(data) {
     fnName,
     args
   } = data;
-  let argArray = JSON.parse(args);
+  let argArray = parseArgsToArray(args);
   eventEmitter.emit(type, {
     namespace, fnName, argArray
   });

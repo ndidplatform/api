@@ -2,8 +2,8 @@ syntax = "proto3";
  
 service MasterWorker {
   rpc subscribe(Empty) returns (stream InboundMessage){}
-  rpc tendermint(OutboundMessage) returns(Empty){}
-  rpc callback(OutboundMessage) returns(Empty){}
+  rpc tendermintCall(OutboundMessage) returns(Empty){}
+  rpc callbackCall(OutboundMessage) returns(Empty){}
 }
  
 message InboundMessage {
