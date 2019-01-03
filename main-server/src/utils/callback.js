@@ -33,6 +33,7 @@ import logger from '../logger';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import * as config from '../config';
+import { start } from 'repl';
 
 const RESPONSE_BODY_SIZE_LIMIT = 3 * 1024 * 1024; // 3MB
 
@@ -138,6 +139,12 @@ async function callbackWithRetry(
           dataForResponseCallback
         );
       }
+      metricsEventEmitter.emit(
+        'callbackTime',
+        callbackUrl,
+        responseObj.response.status,
+        Date.now() - startTime
+      );
       return;
     } catch (error) {
       const nextRetry = backoff.next();
@@ -161,6 +168,7 @@ async function callbackWithRetry(
             dataForResponseCallback
           );
         }
+        metricsEventEmitter.emit('callbackFail');
         return;
       }
 
@@ -181,6 +189,7 @@ async function callbackWithRetry(
         if (!shouldRetry) {
           decrementPendingCallbacksCount();
           cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
+          metricsEventEmitter.emit('callbackFail');
           return;
         }
       } else {
@@ -195,6 +204,7 @@ async function callbackWithRetry(
           });
           decrementPendingCallbacksCount();
           cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
+          metricsEventEmitter.emit('callbackTimedOut');
           return;
         }
       }
@@ -267,6 +277,7 @@ export async function callbackToClient(
       body,
       cbId,
     });
+    const startTime = Date.now();
     try {
       const responseObj = await httpPost(cbId, callbackUrl, body);
       if (responseCallbackFnName) {
@@ -275,11 +286,19 @@ export async function callbackToClient(
           dataForResponseCallback
         );
       }
+      metricsEventEmitter.emit(
+        'callbackTime',
+        callbackUrl,
+        responseObj.response.status,
+        Date.now() - startTime
+      );
     } catch (error) {
       logger.error({
         message: 'Cannot send callback to client application',
         error,
       });
+
+      metricsEventEmitter.emit('callbackFail');
 
       if (error.name === 'FetchError' && error.type === 'max-size') {
         if (responseCallbackFnName) {

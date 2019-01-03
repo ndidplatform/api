@@ -365,6 +365,12 @@ async function callbackWithRetry(url, body, logPrefix) {
         httpStatusCode: response.status,
       });
       decrementPendingCallbacksCount();
+      metricsEventEmitter.emit(
+        'callbackTime',
+        url,
+        response.status,
+        Date.now() - startTime
+      );
       if (response.status !== 200) {
         throw new CustomError({
           message: `[${logPrefix}] Got response status other than 200`,
@@ -393,6 +399,7 @@ async function callbackWithRetry(url, body, logPrefix) {
         config.callbackRetryTimeout * 1000
       ) {
         decrementPendingCallbacksCount();
+        metricsEventEmitter.emit('callbackTimedOut');
         throw new CustomError({
           message: `[${logPrefix}] callback retry timed out`,
           details: {

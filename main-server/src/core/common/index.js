@@ -834,6 +834,26 @@ export function decrementProcessingInboundMessagesCount() {
   );
 }
 
+export function notifyMetricsFailInboundMessageProcess() {
+  metricsEventEmitter.emit('inboundMessageProcessFail');
+}
+
+export function notifyMetricsInboundMessageProcessTime(type, startTime) {
+  metricsEventEmitter.emit(
+    'inboundMessageProcessTime',
+    type,
+    Date.now() - startTime
+  );
+}
+
+export function notifyMetricsFailedBlockProcess(fromHeight, toHeight) {
+  metricsEventEmitter.emit('blockProcessFail', fromHeight, toHeight);
+}
+
+export function notifyMetricsBlockProcessTime(startTime) {
+  metricsEventEmitter.emit('blockProcessTime', Date.now() - startTime);
+}
+
 export function getProcessingInboundMessagesCount() {
   return processingInboundMessagesCount;
 }

@@ -23,7 +23,7 @@
 import express from 'express';
 
 import Prometheus from 'prom-client';
-import { httpRequestDurationMicroseconds } from '../../prometheus';
+import { httpRequestDurationMilliseconds } from '../../prometheus';
 
 const router = express.Router();
 
@@ -40,7 +40,7 @@ export function setHttpRequestStartTime(req, res, next) {
 export function collectHttpRequestDuration(req, res, next) {
   const responseTimeInMs = Date.now() - res.locals.startEpoch;
 
-  httpRequestDurationMicroseconds
+  httpRequestDurationMilliseconds
     .labels(req.method, req.route.path, res.statusCode)
     .observe(responseTimeInMs);
 

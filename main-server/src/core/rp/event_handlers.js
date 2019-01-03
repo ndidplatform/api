@@ -56,6 +56,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
   });
 
   common.incrementProcessingInboundMessagesCount();
+  const startTime = Date.now();
 
   const requestId = message.request_id;
   try {
@@ -89,6 +90,10 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         ]);
         if (tendermint.latestBlockHeight <= message.height) {
           delete challengeRequestProcessLocks[responseId];
+          common.notifyMetricsInboundMessageProcessTime(
+            'wait_for_block',
+            startTime
+          );
           return;
         } else {
           await cacheDb.removePublicProofReceivedFromMQ(nodeId, responseId);
@@ -158,6 +163,10 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         ]);
         if (tendermint.latestBlockHeight <= message.height) {
           delete idpResponseProcessLocks[responseId];
+          common.notifyMetricsInboundMessageProcessTime(
+            'wait_for_block',
+            startTime
+          );
           return;
         } else {
           await cacheDb.removePrivateProofReceivedFromMQ(nodeId, responseId);
@@ -264,6 +273,10 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         });
         if (tendermint.latestBlockHeight <= message.height) {
           delete asDataResponseProcessLocks[asResponseId];
+          common.notifyMetricsInboundMessageProcessTime(
+            'wait_for_block',
+            startTime
+          );
           return;
         }
       }
@@ -278,12 +291,17 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
       });
       delete asDataResponseProcessLocks[asResponseId];
     }
+    common.notifyMetricsInboundMessageProcessTime(
+      'does_not_wait_for_block',
+      startTime
+    );
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling message from message queue',
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    common.notifyMetricsFailInboundMessageProcess();
     await common.notifyError({
       nodeId,
       callbackUrl: callbackUrls.error_url,
@@ -309,18 +327,21 @@ export async function handleTendermintNewBlock(
     toHeight,
   });
 
+  const startTime = Date.now();
   try {
     await Promise.all([
       processChallengeRequestExpectedInBlocks(fromHeight, toHeight, nodeId),
       processASDataSignExpectedInBlocks(fromHeight, toHeight, nodeId),
       processTasksInBlocks(parsedTransactionsInBlocks, nodeId),
     ]);
+    common.notifyMetricsBlockProcessTime(startTime);
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling Tendermint NewBlock event',
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    common.notifyMetricsFailedBlockProcess();
     await common.notifyError({
       nodeId,
       callbackUrl: callbackUrls.error_url,

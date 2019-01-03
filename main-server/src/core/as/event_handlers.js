@@ -50,6 +50,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
   });
 
   common.incrementProcessingInboundMessagesCount();
+  const startTime = Date.now();
 
   const requestId = message.request_id;
   try {
@@ -83,6 +84,10 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         ]);
         if (tendermint.latestBlockHeight <= message.height) {
           delete requestIdLocks[nodeId + ':' + message.request_id];
+          common.notifyMetricsInboundMessageProcessTime(
+            'wait_for_block',
+            startTime
+          );
           return;
         } else {
           await cacheDb.removeRequestReceivedFromMQ(nodeId, requestId);
@@ -92,12 +97,17 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
       await processRequest(nodeId, message);
       delete requestIdLocks[nodeId + ':' + message.request_id];
     }
+    common.notifyMetricsInboundMessageProcessTime(
+      'does_not_wait_for_block',
+      startTime
+    );
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling message from message queue',
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    common.notifyMetricsFailInboundMessageProcess();
     await common.notifyError({
       nodeId,
       callbackUrl: callbackUrls.error_url,
@@ -122,17 +132,21 @@ export async function handleTendermintNewBlock(
     fromHeight,
     toHeight,
   });
+
+  const startTime = Date.now();
   try {
     await Promise.all([
       processRequestExpectedInBlocks(fromHeight, toHeight, nodeId),
       processTasksInBlocks(parsedTransactionsInBlocks, nodeId),
     ]);
+    common.notifyMetricsBlockProcessTime(startTime);
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling Tendermint NewBlock event',
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    common.notifyMetricsFailedBlockProcess();
     await common.notifyError({
       nodeId,
       callbackUrl: callbackUrls.error_url,

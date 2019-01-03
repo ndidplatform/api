@@ -143,7 +143,10 @@ export async function initialize() {
             true,
             MQ_SEND_TOTAL_TIMEOUT
           )
-          .catch((error) => logger.error(error.getInfoForLog()))
+          .catch((error) => {
+            logger.error(error.getInfoForLog());
+            metricsEventEmitter.emit('mqSendMessageFail');
+          })
           .then(() => {
             // finally
             delete pendingOutboundMessages[msgId];
@@ -583,7 +586,16 @@ export async function send(receivers, message, senderNodeId) {
           true,
           MQ_SEND_TOTAL_TIMEOUT
         )
-        .catch((error) => logger.error(error.getInfoForLog()))
+        .then(() => {
+          metricsEventEmitter.emit(
+            'mqSendMessageTime',
+            Date.now() - pendingOutboundMessages[msgId].sendTime
+          );
+        })
+        .catch((error) => {
+          logger.error(error.getInfoForLog());
+          metricsEventEmitter.emit('mqSendMessageFail');
+        })
         .then(() => {
           // finally
           delete pendingOutboundMessages[msgId];

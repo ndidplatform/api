@@ -61,6 +61,7 @@ let processingBlocks = {};
 let processingBlocksCount = 0;
 
 const expectedTx = {};
+const expectedTxMetricsData = {};
 let expectedTxsCount = 0;
 let getTxResultCallbackFn;
 const txEventEmitter = new EventEmitter();
@@ -273,6 +274,15 @@ async function processExpectedTx(txHash, result, fromEvent) {
     message: 'Expected Tx is included in the block. Processing.',
     txHash,
   });
+
+  // Metrics
+  metricsEventEmitter.emit(
+    'txDuration',
+    expectedTxMetricsData[txHash].functionName,
+    Date.now() - expectedTxMetricsData[txHash].startTime
+  );
+  delete expectedTxMetricsData[txHash];
+
   try {
     const {
       transactParams,
@@ -970,6 +980,10 @@ export async function transact({
   expectedTx[txHash] = callbackData;
   incrementExpectedTxsCount();
   await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, callbackData);
+  expectedTxMetricsData[txHash] = {
+    startTime: Date.now(),
+    functionName: fnName,
+  };
 
   try {
     let promise;
@@ -995,7 +1009,9 @@ export async function transact({
     return broadcastTxSyncResult;
   } catch (error) {
     delete expectedTx[txHash];
+    delete expectedTxMetricsData[txHash];
     decrementExpectedTxsCount();
+    metricsEventEmitter.emit('txTransactFail');
     await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
     if (error.message === 'JSON-RPC ERROR') {
       throw new CustomError({
