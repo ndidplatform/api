@@ -212,6 +212,7 @@ export function getInfo() {
               cause: error,
             })
           );
+          calls.splice(calls.indexOf(call), 1);
           return;
         }
         const _errorType = errorType[errorTypeObj[0]];
@@ -220,9 +221,11 @@ export function getInfo() {
             errorType: _errorType,
           })
         );
+        calls.splice(calls.indexOf(call), 1);
         return;
       }
       resolve(serverServiceInfo);
+      calls.splice(calls.indexOf(call), 1);
     });
     calls.push(call);
   });
@@ -291,6 +294,7 @@ export function sendAckForRecvMessage(msgId) {
                 cause: error,
               })
             );
+            calls.splice(calls.indexOf(call), 1);
             return;
           }
           const _errorType = errorType[errorTypeObj[0]];
@@ -299,9 +303,11 @@ export function sendAckForRecvMessage(msgId) {
               errorType: _errorType,
             })
           );
+          calls.splice(calls.indexOf(call), 1);
           return;
         }
         resolve();
+        calls.splice(calls.indexOf(call), 1);
       }
     );
     calls.push(call);
@@ -330,15 +336,10 @@ export async function sendMessage(
 
     for (;;) {
       if (stopSendMessageRetry) return;
-      const { promise, call } = sendMessageInternal(mqAddress, payload, msgId);
-      calls.push(call);
       try {
-        await promise;
-        calls.splice(calls.indexOf(call), 1);
+        await sendMessageInternal(mqAddress, payload, msgId);
         return;
       } catch (error) {
-        calls.splice(calls.indexOf(call), 1);
-
         logger.error(error.getInfoForLog());
 
         if (error.cause && error.cause.code === grpc.status.CANCELLED) {
@@ -363,14 +364,10 @@ export async function sendMessage(
       }
     }
   } else {
-    const { promise, call } = sendMessageInternal(mqAddress, payload, msgId);
-    calls.push(call);
     try {
-      await promise;
+      await sendMessageInternal(mqAddress, payload, msgId);
     } catch (error) {
       throw error;
-    } finally {
-      calls.splice(calls.indexOf(call), 1);
     }
   }
 }
@@ -381,9 +378,8 @@ function sendMessageInternal(mqAddress, payload, msgId) {
       message: 'gRPC client is not initialized yet',
     });
   }
-  let call;
-  const promise = new Promise((resolve, reject) => {
-    call = client.sendMessage(
+  return new Promise((resolve, reject) => {
+    const call = client.sendMessage(
       { mq_address: mqAddress, payload, message_id: msgId },
       (error) => {
         if (error) {
@@ -404,6 +400,7 @@ function sendMessageInternal(mqAddress, payload, msgId) {
                 cause: error,
               })
             );
+            calls.splice(calls.indexOf(call), 1);
             return;
           }
           const _errorType = errorType[errorTypeObj[0]];
@@ -412,13 +409,15 @@ function sendMessageInternal(mqAddress, payload, msgId) {
               errorType: _errorType,
             })
           );
+          calls.splice(calls.indexOf(call), 1);
           return;
         }
         resolve();
+        calls.splice(calls.indexOf(call), 1);
       }
     );
+    calls.push(call);
   });
-  return { promise, call };
 }
 
 //When server send a message
