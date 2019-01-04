@@ -27,8 +27,6 @@ import * as protoLoader from '@grpc/proto-loader';
 import * as config from '../config';
 import logger from '../logger';
 import { EventEmitter } from 'events';
-import { changeAccessorUrlForWorker } from '../core/idp/index';
-import { changeDpkiCallbackForWorker } from '../utils/external_crypto_service';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -199,13 +197,19 @@ function onRecvData(data) {
   });
   switch(type) {
     case 'accessor_sign_changed':
-      //do something
-      changeAccessorUrlForWorker(args);
+      logger.debug({
+        message: 'worker change accessor sign url',
+        args,
+      });
+      eventEmitter.emit('accessor_sign_changed', args);
       return;
     case 'dpki_callback_url_changed':
-      //do something
+      logger.debug({
+        message: 'worker change dpki callback',
+        args,
+      });
       argsJson = JSON.parse(args);
-      changeDpkiCallbackForWorker(argsJson);
+      eventEmitter.emit('dpki_callback_url_changed', argsJson);
       return;
     default: break;
   }

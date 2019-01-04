@@ -51,7 +51,11 @@ let dpki_url = {};
 export const eventEmitter = new EventEmitter();
 export const internalEmitter = new EventEmitter();
 
-eventEmitter.on('accessor_sign_changed', (newUrl) => {
+internalEmitter.on('accessor_sign_changed', (newUrl) => {
+  logger.debug({
+    message: 'Master change accessor url',
+    newUrl,
+  });
   accessor_sign_url = newUrl;
   workerList.forEach((connection) => {
     connection.write({
@@ -61,7 +65,11 @@ eventEmitter.on('accessor_sign_changed', (newUrl) => {
   });
 });
 
-eventEmitter.on('dpki_callback_url_changed', (newUrlObject) => {
+internalEmitter.on('dpki_callback_url_changed', (newUrlObject) => {
+  logger.debug({
+    message: 'Master change dpki url',
+    newUrlObject,
+  });
   dpki_url = newUrlObject;
   workerList.forEach((connection) => {
     connection.write({
@@ -90,7 +98,7 @@ export function initialize() {
   });
 }
 
-function returnResultCall(call) {
+function returnResultCall(call, done) {
   const {
     gRPCRef,
     result,
@@ -99,6 +107,7 @@ function returnResultCall(call) {
     gRPCRef, 
     result: JSON.parse(result)
   });
+  done();
 }
 
 async function waitForResult(waitForRef) {
@@ -130,7 +139,7 @@ function subscribe(call) {
   });
 }
 
-function tendermintCall(call) {
+function tendermintCall(call, done) {
   const {
     fnName, args
   } = call.request;
@@ -138,14 +147,16 @@ function tendermintCall(call) {
   eventEmitter.emit('tendermintCallByWorker', {
     fnName, argArray
   });
+  done();
 }
 
-function callbackCall(call) {
+function callbackCall(call, done) {
   const { args } = call.request;
   let argArray = JSON.parse(args);
   eventEmitter.emit('callbackToClientByWorker', {
     argArray
   });
+  done();
 }
 
 export function delegateToWorker({
@@ -231,16 +242,16 @@ const exportElement = {
   },
   common: {
     closeRequest: false,
-    createRequest: false,
+    createRequest: true,
   },
   identity: {
-    createIdentity: false,
+    createIdentity: true,
     getCreateIdentityDataByReferenceId: true,
     getRevokeAccessorDataByReferenceId: true,
     getIdentityInfo: true,
     updateIal: false,
-    addAccessorMethodForAssociatedIdp: false,
-    revokeAccessorMethodForAssociatedIdp: false,
+    addAccessorMethodForAssociatedIdp: true,
+    revokeAccessorMethodForAssociatedIdp: true,
     calculateSecret: true,
   },
 };

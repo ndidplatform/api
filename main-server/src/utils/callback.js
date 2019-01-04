@@ -230,9 +230,12 @@ export async function callbackToClient(
   dataForResponseCallback
 ) {
   if(!config.isMaster) {
-    await getClient().callback({
+    let callbackPromise = getClient().callback({
       args: JSON.stringify(arguments)
     });
+    console.log('callback');
+    await callbackPromise;
+    console.log('return callback');
     return;
   }
   const cbId = randomBase64Bytes(10);

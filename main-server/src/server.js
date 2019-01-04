@@ -41,6 +41,8 @@ import * as mq from './mq';
 import { stopAllCallbackRetries, callbackToClient } from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
 
+import { changeAccessorUrlForWorker } from './core/idp/index';
+
 import logger from './logger';
 
 import * as config from './config';
@@ -93,6 +95,12 @@ async function initializeWorker() {
 
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
     await workerInitialize();
+    workerEventEmitter.on('accessor_sign_changed', (newUrl) => {
+      changeAccessorUrlForWorker(newUrl);
+    });
+    workerEventEmitter.on('dpki_callback_url_changed', (dpkiObject) => {
+      externalCryptoService.changeDpkiCallbackForWorker(dpkiObject);
+    });
     workerEventEmitter.on('callbackAfterBlockchain', ({ fnName, argArray }) => {
       logger.debug({
         message: 'callbackAfterBlockchain',
@@ -100,6 +108,7 @@ async function initializeWorker() {
         argArray
       });
       common.getFunction(fnName)(...argArray);
+      console.log('Also delete this line');
     });
     workerEventEmitter.on('functionCall', async ({ namespace, fnName, argArray, gRPCRef }) => {
       logger.debug({
