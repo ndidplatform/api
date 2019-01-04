@@ -277,7 +277,7 @@ async function processExpectedTx(txHash, result, fromEvent) {
 
   // Metrics
   metricsEventEmitter.emit(
-    'txDuration',
+    'txCommitDuration',
     expectedTxMetricsData[txHash].functionName,
     Date.now() - expectedTxMetricsData[txHash].startTime
   );
