@@ -665,7 +665,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
           true
         );
       }
-console.log('DELETE this line');
+      
       const accessor_group_id = utils.randomBase64Bytes(32);
 
       if (!synchronous) {

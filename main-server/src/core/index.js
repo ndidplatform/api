@@ -27,14 +27,15 @@ import * as ndidWorker from './ndid';
 import * as proxyWorker from './proxy';
 import * as idpWorker from './idp';
 import * as rpWorker from './rp';
-import * as debug from './debug';
-import * as dpki from './dpki';
+import * as debugWorker from './debug';
+import * as dpkiWoker from './dpki';
 
 import * as config from '../config';
 import coreMaster from '../master-worker-interface/server';
 
 let exportElement = {
-  debug, dpki
+  debug: debugWorker, 
+  dpki: dpkiWoker
 };
 
 if(config.isMaster) {
@@ -128,3 +129,5 @@ export const ndid = exportElement.ndid;
 export const identity = exportElement.identity;
 export const proxy = exportElement.proxy;
 export const common = exportElement.common;
+export const debug = exportElement.debug;
+export const dpki = exportElement.dpki;

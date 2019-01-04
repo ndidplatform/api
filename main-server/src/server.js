@@ -108,7 +108,6 @@ async function initializeWorker() {
         argArray
       });
       common.getFunction(fnName)(...argArray);
-      console.log('Also delete this line');
     });
     workerEventEmitter.on('functionCall', async ({ namespace, fnName, argArray, gRPCRef }) => {
       logger.debug({
@@ -121,20 +120,39 @@ async function initializeWorker() {
       try {
         let result = await core[namespace][fnName].apply(null, argArray);
         if(gRPCRef !== '') {
-          getClient().returnResult({
+          await getClient().returnResult({
             gRPCRef,
-            result: JSON.stringify(result),
-            error: null,
+            result: JSON.stringify(result || null),
+            error: JSON.stringify(null),
           });
         }
       } catch(error) {
-        if(gRPCRef !== '') {
-          getClient().returnResult({
-            gRPCRef,
-            result: null,
-            error: JSON.stringify(error),
-          });
+        logger.error({
+          message: 'functionCall error',
+          namespace,
+          fnName,
+          error,
+        });
+        let errorSend = {};
+        if(error.name === 'CustomError') {
+          errorSend = {
+            message: error.getMessageWithCode(), 
+            code: error.getCode(), 
+            clientError: error.isRootCauseClientError(),
+            //errorType: error.errorType,
+            details: error.getDetailsOfErrorWithCode(),
+            cause: error.cause,
+            name: 'CustomError',
+          };
         }
+        else errorSend = error;
+        if(gRPCRef !== '') {
+          await getClient().returnResult({
+            gRPCRef,
+            result: JSON.stringify(null),
+            error: JSON.stringify(errorSend),
+          });
+        } else throw error;
       }
     });
     logger.info({ message: 'Worker initialized' });

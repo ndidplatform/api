@@ -233,9 +233,7 @@ export async function callbackToClient(
     let callbackPromise = getClient().callback({
       args: JSON.stringify(arguments)
     });
-    console.log('callback');
     await callbackPromise;
-    console.log('return callback');
     return;
   }
   const cbId = randomBase64Bytes(10);

@@ -29,6 +29,7 @@ import * as config from '../config';
 import { EventEmitter } from 'events';
 import logger from '../logger';
 import { randomBase64Bytes } from '../utils';
+import CustomError from 'ndid-error/custom_error';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -102,10 +103,12 @@ function returnResultCall(call, done) {
   const {
     gRPCRef,
     result,
+    error,
   } = call.request;
   internalEmitter.emit('result', {
     gRPCRef, 
-    result: JSON.parse(result)
+    result: JSON.parse(result),
+    error: JSON.parse(error),
   });
   done();
 }
@@ -121,7 +124,12 @@ async function waitForResult(waitForRef) {
       });
       if(gRPCRef === waitForRef) {
         if(error == null) resolve(result);
-        else reject(error);
+        else {
+          if(error.name === 'CustomError') {
+            error = new CustomError(error);
+          }
+          reject(error);
+        }
       }
     });
   });
@@ -241,7 +249,7 @@ const exportElement = {
     handleTendermintNewBlock: false,
   },
   common: {
-    closeRequest: false,
+    closeRequest: true,
     createRequest: true,
   },
   identity: {
@@ -249,7 +257,7 @@ const exportElement = {
     getCreateIdentityDataByReferenceId: true,
     getRevokeAccessorDataByReferenceId: true,
     getIdentityInfo: true,
-    updateIal: false,
+    updateIal: true,
     addAccessorMethodForAssociatedIdp: true,
     revokeAccessorMethodForAssociatedIdp: true,
     calculateSecret: true,

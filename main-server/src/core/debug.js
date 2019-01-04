@@ -20,7 +20,6 @@
  *
  */
 
-import * as utils from '../utils';
 import * as tendermint from '../tendermint';
 import logger from '../logger';
 import { callbackToClient } from '../utils/callback';
