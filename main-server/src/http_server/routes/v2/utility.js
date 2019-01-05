@@ -26,8 +26,6 @@ import { validateQuery } from '../middleware/validation';
 import * as tendermintNdid from '../../../tendermint/ndid';
 import { common } from '../../../core';
 
-const { privateMessage } = common;
-
 const router = express.Router();
 
 router.get('/idp', validateQuery, async (req, res, next) => {
@@ -208,7 +206,7 @@ router.get('/private_messages/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
     const { node_id, type } = req.query;
-    const messages = await privateMessage.getPrivateMessages({
+    const messages = await common.getPrivateMessages({
       nodeId: node_id,
       requestId: request_id,
       type,
@@ -227,7 +225,7 @@ router.post('/private_messages/housekeeping', async (req, res, next) => {
   try {
     const { type } = req.query;
     const { node_id } = req.body;
-    await privateMessage.removePrivateMessages({ nodeId: node_id, type });
+    await common.removePrivateMessages({ nodeId: node_id, type });
     res.status(204).end();
   } catch (error) {
     next(error);
@@ -241,7 +239,7 @@ router.post(
       const { request_id } = req.params;
       const { type } = req.query;
       const { node_id } = req.body;
-      await privateMessage.removePrivateMessages({
+      await common.removePrivateMessages({
         nodeId: node_id,
         requestId: request_id,
         type,
