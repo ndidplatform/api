@@ -303,7 +303,8 @@ const functionList = {
 
 for(let namespace in functionList) {
   exportElement[namespace] = {};
-  for(let fnName in functionList[namespace]) {
+  for(let i = 0 ; i < functionList[namespace].length ; i++) {
+    let fnName = functionList[namespace][i];
     exportElement[namespace][fnName] = function() {
       return delegateToWorker({
         type: 'functionCall',
