@@ -26,6 +26,7 @@ import * as protoLoader from '@grpc/proto-loader';
 
 import * as config from '../config';
 import logger from '../logger';
+import CustomError from 'ndid-error/custom_error';
 import { EventEmitter } from 'events';
 
 // Load protobuf
@@ -189,6 +190,13 @@ function parseArgsToArray(args) {
   //convert to array (some arg is missing key zero)
   for(let i = 0 ; argArray.length <= length ; i++) {
     argArray.push(argJson[i.toString()]);
+  }
+  //parse to custom error
+  for(let i = 0 ; i < argArray.length ; i++) {
+    let obj = argArray[i];
+    if(obj && obj.error && obj.error.code) {
+      argArray[i] = new CustomError(obj);
+    }
   }
   return argArray;
 }
