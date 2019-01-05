@@ -20,6 +20,7 @@ services:
       - ndidplatform
     volumes:
       - ./keys/ndid/:/api/keys/
+      - ./data/ndid/:/api/main-server/data/
   #api-ndid-worker:
   #  image: ndidplatform/api:latest
   #  environment:
@@ -51,6 +52,7 @@ services:
       - ndidplatform
     volumes:
       - ./keys/idp-1/:/api/keys/
+      - ./data/idp-1/:/api/main-server/data/
   api-idp-1-worker:
     image: ndidplatform/api:latest
     environment:
@@ -65,6 +67,7 @@ services:
       - ndidplatform
     volumes:
       - ./keys/idp-1/:/api/keys/
+      - ./data/idp-1/:/api/main-server/data/
   #api-idp-2-master:
   #  image: ndidplatform/api:latest
   #  environment:
@@ -120,6 +123,7 @@ services:
       - ndidplatform
     volumes:
       - ./keys/rp/:/api/keys/
+      - ./data/rp/:/api/main-server/data/
   api-rp-worker:
     image: ndidplatform/api:latest
     environment:
@@ -134,6 +138,7 @@ services:
       - ndidplatform
     volumes:
       - ./keys/rp/:/api/keys/
+      - ./data/rp/:/api/main-server/data/
   api-as-master:
     image: ndidplatform/api:latest
     environment:
@@ -156,6 +161,7 @@ services:
       - ndidplatform
     volumes:
       - ./keys/as/:/api/keys/
+      - ./data/as/:/api/main-server/data/
   api-as-worker:
     image: ndidplatform/api:latest
     environment:
@@ -170,6 +176,7 @@ services:
       - ndidplatform
     volumes:
       - ./keys/as/:/api/keys/
+      - ./data/as/:/api/main-server/data/
   api-redis:
     image: redis:4-alpine
     security_opt:

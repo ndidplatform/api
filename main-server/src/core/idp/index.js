@@ -53,7 +53,7 @@ const callbackUrlFilesPrefix = path.join(
 
 export function changeAccessorUrlForWorker(newUrl) {
   callbackUrls.accessor_sign_url = newUrl;
-  writeCallbackUrlToFile('accessor_sign', newUrl);
+  //writeCallbackUrlToFile('accessor_sign', newUrl);
 }
 
 export function readCallbackUrlsFromFiles() {

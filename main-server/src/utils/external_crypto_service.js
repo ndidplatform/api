@@ -64,7 +64,7 @@ export function changeDpkiCallbackForWorker(dpkiCallbackObject) {
   ].forEach(({ key, fileSuffix }) => {
     if(dpkiCallbackObject[key]) {
       callbackUrls[key] = dpkiCallbackObject[key];
-      fs.writeFile(
+      /*fs.writeFile(
         callbackUrlFilesPrefix + fileSuffix,
         dpkiCallbackObject[key],
         (err) => {
@@ -75,7 +75,7 @@ export function changeDpkiCallbackForWorker(dpkiCallbackObject) {
             });
           }
         }
-      );
+      );*/
     }
   });
 }
