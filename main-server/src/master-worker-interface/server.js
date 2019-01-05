@@ -228,9 +228,9 @@ export function delegateToWorker({
 
 const exportElement = {
   as: {
-    registerOrUpdateASService: false,
+    registerOrUpdateASService: true,
     getServiceDetail: true,
-    processDataForRP: false,
+    processDataForRP: true,
   },
   rp: {
     removeDataFromAS: false,
