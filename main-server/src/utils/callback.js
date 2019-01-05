@@ -133,8 +133,8 @@ async function callbackWithRetry(
       decrementPendingCallbacksCount();
       metricsEventEmitter.emit(
         'callbackTime',
-        callbackUrl,
         responseObj.response.status,
+        responseObj.body !== '',
         Date.now() - startTime
       );
       cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
@@ -281,8 +281,8 @@ export async function callbackToClient(
       const responseObj = await httpPost(cbId, callbackUrl, body);
       metricsEventEmitter.emit(
         'callbackTime',
-        callbackUrl,
         responseObj.response.status,
+        responseObj.body !== '',
         Date.now() - startTime
       );
       if (responseCallbackFnName) {

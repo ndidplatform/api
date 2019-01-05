@@ -326,7 +326,7 @@ export async function setDpkiCallback({
   checkAndEmitAllCallbacksSet();
 }
 
-async function callbackWithRetry(url, body, logPrefix) {
+async function callbackWithRetry(url, body, logPrefix, type) {
   incrementPendingCallbacksCount();
 
   const cbId = randomBase64Bytes(10);
@@ -367,7 +367,7 @@ async function callbackWithRetry(url, body, logPrefix) {
       decrementPendingCallbacksCount();
       metricsEventEmitter.emit(
         'callbackTime',
-        url,
+        type,
         response.status,
         Date.now() - startTime
       );
@@ -439,7 +439,8 @@ export async function decryptAsymetricKey(nodeId, encryptedMessage) {
     const responseBody = await callbackWithRetry(
       url,
       body,
-      'External decrypt with node key'
+      'External decrypt with node key',
+      'decrypt'
     );
 
     let result;
@@ -528,7 +529,8 @@ export async function createSignature(
     const responseBody = await callbackWithRetry(
       url,
       body,
-      'External sign with node key'
+      'External sign with node key',
+      'sign'
     );
 
     let result;

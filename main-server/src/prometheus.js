@@ -91,7 +91,7 @@ const clientCallbackTimeoutsTotal = new Prometheus.Counter({
 const clientCallbackDurationMilliseconds = new Prometheus.Histogram({
   name: 'client_callback_duration_ms',
   help: 'Duration of client callbacks (from call to got response) in ms',
-  labelNames: ['url', 'code'],
+  labelNames: ['code', 'with_response_body'],
   buckets: [0.1, 5, 15, 50, 100, 200, 300, 400, 500], // buckets for response time from 0.1ms to 500ms
 });
 
@@ -110,7 +110,7 @@ const externalCryptoCallbackDurationMilliseconds = new Prometheus.Histogram({
   name: 'external_crypto_callback_duration_ms',
   help:
     'Duration of external crypto callbacks (from call to got response) in ms',
-  labelNames: ['url', 'code'],
+  labelNames: ['type', 'code'],
   buckets: [0.1, 5, 15, 50, 100, 200, 300, 400, 500], // buckets for response time from 0.1ms to 500ms
 });
 
@@ -188,8 +188,12 @@ callbackUtil.metricsEventEmitter.on('callbackFail', () =>
 callbackUtil.metricsEventEmitter.on('callbackTimedOut', () =>
   clientCallbackTimeoutsTotal.inc()
 );
-callbackUtil.metricsEventEmitter.on('callbackTime', (url, code, timeUsedInMs) =>
-  clientCallbackDurationMilliseconds.labels(url, code).observe(timeUsedInMs)
+callbackUtil.metricsEventEmitter.on(
+  'callbackTime',
+  (code, withResponseBody, timeUsedInMs) =>
+    clientCallbackDurationMilliseconds
+      .labels(code, withResponseBody ? 'true' : 'false')
+      .observe(timeUsedInMs)
 );
 externalCryptoService.metricsEventEmitter.on(
   'pendingCallbacksCount',
@@ -201,9 +205,9 @@ externalCryptoService.metricsEventEmitter.on('callbackTimedOut', () =>
 );
 externalCryptoService.metricsEventEmitter.on(
   'callbackTime',
-  (url, code, timeUsedInMs) =>
+  (type, code, timeUsedInMs) =>
     externalCryptoCallbackDurationMilliseconds
-      .labels(url, code)
+      .labels(type, code)
       .observe(timeUsedInMs)
 );
 tendermint.metricsEventEmitter.on(
