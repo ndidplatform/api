@@ -27,7 +27,6 @@ import * as protoLoader from '@grpc/proto-loader';
 import * as config from '../config';
 import logger from '../logger';
 import { EventEmitter } from 'events';
-import { initialize as initNodeKey } from '../utils/node_key';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -232,7 +231,13 @@ async function onRecvData(data) {
       logger.debug({
         message: 'worker re-init key',
       }); 
-      await initNodeKey();
+      eventEmitter.emit('reInitKey');
+      return;
+    case 'invalidateDataSchemaCache':
+      logger.debug({
+        message: 'worker invalidate data schema cache',
+      }); 
+      eventEmitter.emit('invalidateDataSchemaCache', args);
       return;
     default: break;
   }

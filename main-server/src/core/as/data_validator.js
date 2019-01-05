@@ -25,6 +25,8 @@ import Ajv from 'ajv';
 import * as tendermintNdid from '../../tendermint/ndid';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
+import * as config from '../../config';
+import { internalEmitter as masterEmitter } from '../../master-worker-interface/server';
 
 const ajvOptions = {
   allErrors: true,
@@ -94,6 +96,9 @@ async function validate({ serviceId, data }) {
 }
 
 export function invalidateDataSchemaCache(serviceId) {
+  if(config.isMaster) {
+    masterEmitter.emit('invalidateDataSchemaCache', { serviceId });
+  }
   delete dataSchemaCache[serviceId];
 }
 

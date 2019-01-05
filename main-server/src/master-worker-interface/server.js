@@ -91,6 +91,19 @@ internalEmitter.on('reInitKey', () => {
   });
 });
 
+internalEmitter.on('invalidateDataSchemaCache', ({ serviceId }) => {
+  logger.debug({
+    message: 'Invalidate data schema cache',
+    serviceId,
+  });
+  workerList.forEach((connection) => {
+    connection.write({
+      type: 'invalidateDataSchemaCache',
+      args: serviceId
+    });
+  }); 
+});
+
 export function initialize() {
   const server = new grpc.Server();
   const MASTER_SERVER_ADDRESS = `0.0.0.0:${config.masterServerPort}`;

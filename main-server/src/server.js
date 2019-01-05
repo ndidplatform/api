@@ -42,6 +42,7 @@ import { stopAllCallbackRetries, callbackToClient } from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
 
 import { changeAccessorUrlForWorker } from './core/idp/index';
+import { invalidateDataSchemaCache } from './core/as/data_validator';
 
 import logger from './logger';
 
@@ -101,6 +102,13 @@ async function initializeWorker() {
     workerEventEmitter.on('dpki_callback_url_changed', (dpkiObject) => {
       externalCryptoService.changeDpkiCallbackForWorker(dpkiObject);
     });
+    workerEventEmitter.on('invalidateDataSchemaCache', (serviceId) => {
+      invalidateDataSchemaCache(serviceId);
+    });
+    workerEventEmitter.on('reInitKey', async () => {
+      await nodeKey.initialize();
+    });
+
     workerEventEmitter.on('callbackAfterBlockchain', ({ fnName, argArray }) => {
       logger.debug({
         message: 'callbackAfterBlockchain',
