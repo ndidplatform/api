@@ -302,14 +302,14 @@ const exportElement = {
 
 for(let namespace in exportElement) {
   for(let fnName in exportElement[namespace]) {
-    let needResult = exportElement[namespace][fnName]; 
+    //let needResult = exportElement[namespace][fnName]; 
     exportElement[namespace][fnName] = function() {
       return delegateToWorker({
         type: 'functionCall',
         namespace,
         fnName,
         args: arguments,
-        needResult,
+        needResult: true,
       });
     };
   }
