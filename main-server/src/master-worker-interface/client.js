@@ -195,7 +195,9 @@ function parseArgsToArray(args) {
   for(let i = 0 ; i < argArray.length ; i++) {
     let obj = argArray[i];
     if(obj && obj.error && obj.error.code) {
-      argArray[i] = new CustomError(obj);
+      argArray[i] = { 
+        error: new CustomError(obj) 
+      };
     }
   }
   return argArray;
