@@ -31,6 +31,8 @@ import logger from '../logger';
 import { randomBase64Bytes } from '../utils';
 import CustomError from 'ndid-error/custom_error';
 
+let exportElement = {};
+
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
   path.join(__dirname, '..', '..', '..', 'protos', 'master_worker.proto'),
@@ -202,7 +204,7 @@ function callbackCall(call, done) {
 }
 
 export function delegateToWorker({
-  type, namespace, fnName, args, needResult,
+  type, namespace, fnName, args,
 }, workerIndex) {
   logger.debug({
     message: 'Master delegate',
@@ -226,90 +228,88 @@ export function delegateToWorker({
     }, 2000);
   }
   else {
-    if(needResult) {
-      gRPCRef = randomBase64Bytes(16); //random
-    }
+    gRPCRef = randomBase64Bytes(16); //random
     workerList[index].write({
       type, namespace, fnName, gRPCRef,
       args: JSON.stringify(args)
     });
-    if(needResult) {
-      return waitForResult(gRPCRef);
-    }
+    return waitForResult(gRPCRef);
   }
 }
 
-const exportElement = {
-  as: {
-    registerOrUpdateASService: true,
-    getServiceDetail: true,
-    processDataForRP: true,
-  },
-  rp: {
-    removeDataFromAS: false,
-    removeAllDataFromAS: false,
-    getRequestIdByReferenceId: true,
-    getDataFromAS: true,
-  },
-  idp: {
-    requestChallengeAndCreateResponse: false,
-  },
-  ndid: {
-    registerNode: false,
-    initNDID: false,
-    endInit: false,
-    updateNode: false,
-    enableNode: false,
-    disableNode: false,
-    setNodeToken: false,
-    addNodeToken: false,
-    reduceNodeToken: false,
-    addNamespace: false,
-    enableNamespace: false,
-    disableNamespace: false,
-    addService: false,
-    updateService: false,
-    enableService: false,
-    setValidator: false,
-    setTimeoutBlockRegisterIdentity: false,
-    approveService: false,
-    enableServiceDestination: false,
-    disableServiceDestination: false,
-    addNodeToProxyNode: false,
-    updateNodeProxyNode: false,
-    removeNodeFromProxyNode: false,
-    setLastBlock: false,
-  },
-  proxy: {
-    handleMessageFromQueue: false,
-    handleTendermintNewBlock: false,
-  },
-  common: {
-    closeRequest: true,
-    createRequest: true,
-  },
-  identity: {
-    createIdentity: true,
-    getCreateIdentityDataByReferenceId: true,
-    getRevokeAccessorDataByReferenceId: true,
-    getIdentityInfo: true,
-    updateIal: true,
-    addAccessorMethodForAssociatedIdp: true,
-    revokeAccessorMethodForAssociatedIdp: true,
-    calculateSecret: true,
-  },
+const functionList = {
+  as: [
+    'registerOrUpdateASService',
+    'getServiceDetail',
+    'processDataForRP',
+  ],
+  rp: [
+    'removeDataFromAS',
+    'removeAllDataFromAS',
+    'getRequestIdByReferenceId',
+    'getDataFromAS',
+  ],
+  idp: [
+    'requestChallengeAndCreateResponse'
+  ],
+  ndid: [
+    'registerNode',
+    'initNDID',
+    'endInit',
+    'updateNode',
+    'enableNode',
+    'disableNode',
+    'setNodeToken',
+    'addNodeToken',
+    'reduceNodeToken',
+    'addNamespace',
+    'enableNamespace',
+    'disableNamespace',
+    'addService',
+    'updateService',
+    'enableService',
+    'setValidator',
+    'setTimeoutBlockRegisterIdentity',
+    'approveService',
+    'enableServiceDestination',
+    'disableServiceDestination',
+    'addNodeToProxyNode',
+    'updateNodeProxyNode',
+    'removeNodeFromProxyNode',
+    'setLastBlock',
+  ],
+  proxy: [
+    'handleMessageFromQueue',
+    'handleTendermintNewBlock',
+  ],
+  common: [
+    'closeRequest',
+    'createRequest',
+    'getPrivateMessages',
+    'removePrivateMessages',
+  ],
+  identity: [
+    'createIdentity',
+    'getCreateIdentityDataByReferenceId',
+    'getRevokeAccessorDataByReferenceId',
+    'getIdentityInfo',
+    'updateIal',
+    'addAccessorMethodForAssociatedIdp',
+    'revokeAccessorMethodForAssociatedIdp',
+    'calculateSecret',
+  ],
 };
 
-for(let namespace in exportElement) {
-  for(let fnName in exportElement[namespace]) {
-    //let needResult = exportElement[namespace][fnName]; 
+
+for(let namespace in functionList) {
+  exportElement[namespace] = {};
+  for(let fnName in functionList[namespace]) {
     exportElement[namespace][fnName] = function() {
       return delegateToWorker({
         type: 'functionCall',
         namespace,
         fnName,
         args: arguments,
-        needResult: true,
       });
     };
   }
