@@ -80,6 +80,17 @@ internalEmitter.on('dpki_callback_url_changed', (newUrlObject) => {
   });
 });
 
+internalEmitter.on('reInitKey', () => {
+  logger.debug({
+    message: 'Master re-init key',
+  });
+  workerList.forEach((connection) => {
+    connection.write({
+      type: 'reInitKey',
+    });
+  });
+});
+
 export function initialize() {
   const server = new grpc.Server();
   const MASTER_SERVER_ADDRESS = `0.0.0.0:${config.masterServerPort}`;
@@ -89,6 +100,7 @@ export function initialize() {
     tendermintCall,
     callbackCall,
     returnResultCall,
+    messageQueueCall,
   });
 
   server.bind(MASTER_SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
@@ -97,6 +109,15 @@ export function initialize() {
   logger.info({
     message: 'Master gRPC server initialzed'
   });
+}
+
+function messageQueueCall(call, done) {
+  const { args } = call.request;
+  let argArray = JSON.parse(args);
+  eventEmitter.emit('mqCallByWorker', {
+    argArray
+  });
+  done();
 }
 
 function returnResultCall(call, done) {
@@ -115,14 +136,14 @@ function returnResultCall(call, done) {
 
 async function waitForResult(waitForRef) {
   return new Promise((resolve, reject) => {
-    internalEmitter.on('result', ({ gRPCRef, result, error }) => {
-      logger.debug({
-        message: 'Master received result',
-        gRPCRef,
-        result,
-        error,
-      });
+    internalEmitter.once('result', ({ gRPCRef, result, error }) => {
       if(gRPCRef === waitForRef) {
+        logger.debug({
+          message: 'Master received result',
+          gRPCRef,
+          result,
+          error,
+        });
         if(error == null) resolve(result);
         else {
           if(error.name === 'CustomError') {
@@ -172,6 +193,8 @@ export function delegateToWorker({
 }, workerIndex) {
   logger.debug({
     message: 'Master delegate',
+    namespace,
+    fnName,
     args,
     workerIndex,
   });

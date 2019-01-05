@@ -18,6 +18,8 @@ services:
       - "8080:${API_PORT:-8080}"
     networks:
       - ndidplatform
+    volumes:
+      - ./keys/ndid/:/api/keys/
   #api-ndid-worker:
   #  image: ndidplatform/api:latest
   #  environment:
@@ -47,6 +49,8 @@ services:
       - "8100:${API_PORT:-8080}"
     networks:
       - ndidplatform
+    volumes:
+      - ./keys/idp-1/:/api/keys/
   api-idp-1-worker:
     image: ndidplatform/api:latest
     environment:
@@ -55,11 +59,12 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - MQ_SERVICE_SERVER_IP=mq-idp-1
     security_opt:
       - no-new-privileges
     networks:
       - ndidplatform
+    volumes:
+      - ./keys/idp-1/:/api/keys/
   #api-idp-2-master:
   #  image: ndidplatform/api:latest
   #  environment:
@@ -113,6 +118,8 @@ services:
       - "8200:${API_PORT:-8080}"
     networks:
       - ndidplatform
+    volumes:
+      - ./keys/rp/:/api/keys/
   api-rp-worker:
     image: ndidplatform/api:latest
     environment:
@@ -121,11 +128,12 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-rp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - MQ_SERVICE_SERVER_IP=mq-rp
     security_opt:
       - no-new-privileges
     networks:
       - ndidplatform
+    volumes:
+      - ./keys/rp/:/api/keys/
   api-as-master:
     image: ndidplatform/api:latest
     environment:
@@ -146,6 +154,8 @@ services:
       - "8300:${API_PORT:-8080}"
     networks:
       - ndidplatform
+    volumes:
+      - ./keys/as/:/api/keys/
   api-as-worker:
     image: ndidplatform/api:latest
     environment:
@@ -154,11 +164,12 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-as
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - MQ_SERVICE_SERVER_IP=mq-as
     security_opt:
       - no-new-privileges
     networks:
       - ndidplatform
+    volumes:
+      - ./keys/as/:/api/keys/
   api-redis:
     image: redis:4-alpine
     security_opt:

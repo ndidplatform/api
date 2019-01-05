@@ -4,6 +4,7 @@ service MasterWorker {
   rpc subscribe(Empty) returns (stream InboundMessage){}
   rpc tendermintCall(OutboundMessage) returns(Empty){}
   rpc callbackCall(OutboundMessage) returns(Empty){}
+  rpc messageQueueCall(OutboundMessage) returns(Empty){}
   rpc returnResultCall(Result) returns(Empty){}
 }
  

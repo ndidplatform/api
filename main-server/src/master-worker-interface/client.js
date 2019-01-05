@@ -27,6 +27,7 @@ import * as protoLoader from '@grpc/proto-loader';
 import * as config from '../config';
 import logger from '../logger';
 import { EventEmitter } from 'events';
+import { initialize as initNodeKey } from '../utils/node_key';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -109,6 +110,7 @@ export async function initialize() {
   client.tendermint = tendermint;
   client.callback = callback;
   client.returnResult = returnResult;
+  client.messageQueue = messageQueue;
   //workerSubscribeChannel = client.subscribe(null);
   //workerSubscribeChannel.on('data', onRecvData);
 }
@@ -164,6 +166,21 @@ function callback({ args }) {
   });
 }
 
+function messageQueue({ args }) {
+  logger.debug({
+    message: 'Worker calling mq',
+    args
+  });
+  return new Promise((resolve, reject) => {
+    client.messageQueueCall({ 
+      args: JSON.stringify(parseArgsToArray(args)) 
+    }, (error) => {
+      if(error) reject(error);
+      else resolve();
+    });
+  });
+}
+
 function parseArgsToArray(args) {
   let argJson = JSON.parse(args);
   let length = Object.keys(argJson).reduce((accum, current) => 
@@ -177,7 +194,7 @@ function parseArgsToArray(args) {
   return argArray;
 }
 
-function onRecvData(data) {
+async function onRecvData(data) {
   const {
     type,
     namespace,
@@ -210,6 +227,12 @@ function onRecvData(data) {
       });
       argsJson = JSON.parse(args);
       eventEmitter.emit('dpki_callback_url_changed', argsJson);
+      return;
+    case 'reInitKey':
+      logger.debug({
+        message: 'worker re-init key',
+      }); 
+      await initNodeKey();
       return;
     default: break;
   }

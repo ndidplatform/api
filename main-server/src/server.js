@@ -155,6 +155,25 @@ async function initializeWorker() {
         } else throw error;
       }
     });
+
+    let externalCryptoServiceReady;
+    if (config.useExternalCryptoService) {
+      externalCryptoService.readCallbackUrlsFromFiles();
+      if (!externalCryptoService.isCallbackUrlsSet()) {
+        externalCryptoServiceReady = new Promise((resolve) =>
+          externalCryptoService.eventEmitter.once('allCallbacksSet', () =>
+            resolve()
+          )
+        );
+      }
+    } else {
+      await nodeKey.initialize();
+    }
+
+    if (externalCryptoServiceReady != null) {
+      logger.info({ message: 'Waiting for DPKI callback URLs to be set' });
+      await externalCryptoServiceReady;
+    }
     logger.info({ message: 'Worker initialized' });
   } catch (error) {
     logger.error({
@@ -230,6 +249,15 @@ async function initializeMaster() {
       });
       callbackToClient.apply(null, argArray);
     });
+
+    masterEventEmitter.on('mqCallByWorker', ({ argArray }) => {
+      logger.debug({
+        message: 'mqCallByWorker',
+        argArray
+      });
+      mq.send.apply(null, argArray);
+    });
+
     await common.initialize();
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {

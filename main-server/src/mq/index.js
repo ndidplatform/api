@@ -38,6 +38,7 @@ import validate from './message/validator';
 
 import { role } from '../node';
 import * as config from '../config';
+import getClient from '../master-worker-interface/client';
 
 const MQ_SEND_TOTAL_TIMEOUT = 600000;
 
@@ -453,6 +454,12 @@ export async function loadAndProcessBacklogMessages() {
 }
 
 export async function send(receivers, message, senderNodeId) {
+  if (!config.isMaster) {
+    await getClient().messageQueue({
+      args: JSON.stringify(arguments)
+    });
+    return;
+  }
   if (receivers.length === 0) {
     logger.debug({
       message: 'No receivers for message queue to send to',

@@ -9,7 +9,6 @@ const Sequelize = require('sequelize');
 const defaultDataDirectoryPath = path.join(__dirname, '..', '..', 'data');
 
 const nodeId = process.env.NODE_ID;
-const isMaster = process.env.IS_MASTER;
 const dataDirectoryPath =
   process.env.DATA_DIRECTORY_PATH || defaultDataDirectoryPath;
 

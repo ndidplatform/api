@@ -65,6 +65,7 @@ if(config.isMaster) {
     'getErrorCallbackUrl',
     'setServiceCallbackUrl',
     'getServiceCallbackUrl',
+    'registerOrUpdateASService',
   ];
 
   let idpKeys = [
