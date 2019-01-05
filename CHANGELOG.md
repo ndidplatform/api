@@ -9,6 +9,7 @@ BUG FIXES:
 - Fix clean up method for mapping (socket, socket-destination) in MQ.
 - Clean up for all socket with same `msgId` when receive ack for one `seqId`.
 - Rollback ZeroMQ JS library from 5.1 to 4.6 since 5.1 causes segmentation fault error in C binding.
+- Fix memory leak when making a gRPC call to MQ service server.
 
 IMPROVEMENTS:
 
