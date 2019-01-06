@@ -229,6 +229,24 @@ export function delegateToWorker({
   }
   else {
     gRPCRef = randomBase64Bytes(16); //random
+    for(let key in args) {
+      if(
+        args[key] && 
+        args[key].error && 
+        args[key].error.name === 'CustomError'
+      ) {
+        let obj = args[key];
+        args[key].error = {
+          message: obj.error.getMessageWithCode(), 
+          code: obj.error.getCode(), 
+          clientError: obj.error.isRootCauseClientError(),
+          //errorType: error.errorType,
+          details: obj.error.getDetailsOfErrorWithCode(),
+          cause: obj.error.cause,
+          name: 'CustomError',
+        };
+      }
+    }
     workerList[index].write({
       type, namespace, fnName, gRPCRef,
       args: JSON.stringify(args)
