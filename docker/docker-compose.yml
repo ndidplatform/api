@@ -68,39 +68,41 @@ services:
     volumes:
       - ./keys/idp-1/:/api/keys/
       - ./data/idp-1/:/api/main-server/data/
-  #api-idp-2-master:
-  #  image: ndidplatform/api:latest
-  #  environment:
-  #    - ROLE=idp
-  #    - NODE_ID=idp2
-  #    - NDID_IP=api-ndid-master
-  #    - TENDERMINT_IP=tm-idp
-  #    - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-  #    - MQ_CONTACT_IP=mq-idp-2
-  #    - MQ_BINDING_PORT=${MQ_PORT:-5555}
-  #    - MQ_SERVICE_SERVER_IP=mq-idp-2
-  #    - DB_IP=api-redis
-  #    - SERVER_PORT=${API_PORT:-8080}
-  #    - IS_MASTER=true
-  #  security_opt:
-  #    - no-new-privileges
-  #  ports:
-  #    - "8101:${API_PORT:-8080}"
-  #  networks:
-  #    - ndidplatform
-  #api-idp-2-worker:
-  #  image: ndidplatform/api:latest
-  #  environment:
-  #    - NODE_ID=idp2
-  #    - MASTER_SERVER_IP=api-idp-2-master
-  #    - DB_IP=api-redis
-  #    - TENDERMINT_IP=tm-idp
-  #    - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-  #    - MQ_SERVICE_SERVER_IP=mq-idp-2
-  #  security_opt:
-  #    - no-new-privileges
-  #  networks:
-  #    - ndidplatform
+  api-idp-2-master:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=idp
+      - NODE_ID=idp2
+      - NDID_IP=api-ndid-master
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-idp-2
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-idp-2
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+      - IS_MASTER=true
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8101:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-idp-2-worker:
+    image: ndidplatform/api:latest
+    environment:
+      - NODE_ID=idp2
+      - MASTER_SERVER_IP=api-idp-2-master
+      - DB_IP=api-redis
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+    volumes:
+      - ./keys/idp-2/:/api/keys/
+      - ./data/idp-2/:/api/main-server/data/
   api-rp-master:
     image: ndidplatform/api:latest
     environment:
