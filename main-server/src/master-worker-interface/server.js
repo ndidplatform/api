@@ -300,6 +300,7 @@ const functionList = {
     'addService',
     'updateService',
     'enableService',
+    'disableService',
     'setValidator',
     'setTimeoutBlockRegisterIdentity',
     'approveService',
