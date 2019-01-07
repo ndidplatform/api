@@ -27,6 +27,7 @@ import * as protoLoader from '@grpc/proto-loader';
 import * as config from '../config';
 import logger from '../logger';
 import CustomError from 'ndid-error/custom_error';
+import { randomBase64Bytes } from '../utils';
 import { EventEmitter } from 'events';
 
 // Load protobuf
@@ -47,6 +48,7 @@ let connectivityState = null;
 let workerSubscribeChannel = null;
 
 export const eventEmitter = new EventEmitter();
+export const internalEmitter = new EventEmitter();
 
 function watchForNextConnectivityStateChange() {
   if (client == null) {
@@ -115,6 +117,17 @@ export async function initialize() {
   //workerSubscribeChannel.on('data', onRecvData);
 }
 
+function waitForTendermintResult(gRPCRef, resolve) {
+  internalEmitter.once('tendermintResult:' + gRPCRef, ({ result, error }) => {
+    result = JSON.parse(result);
+    error = JSON.parse(error);
+    if(error && error.name === 'CustomError') {
+      error = new CustomError(error);
+    }
+    resolve({ result, error });
+  });
+}
+
 function tendermint({ fnName, args }) {
   logger.debug({
     message: 'Worker calling tendermint transact',
@@ -122,12 +135,14 @@ function tendermint({ fnName, args }) {
     args
   });
   return new Promise((resolve, reject) => {
+    let gRPCRef = randomBase64Bytes(16);
     client.tendermintCall({ 
       fnName, 
+      gRPCRef,
       args: JSON.stringify(parseArgsToArray(args)) 
     }, (error) => {
       if(error) reject(error);
-      else resolve();
+      else waitForTendermintResult(gRPCRef,resolve);
     });
   });
 }
@@ -207,17 +222,21 @@ async function onRecvData(data) {
     namespace,
     fnName,
     args,
-    gRPCRef
+    gRPCRef,
+    result,
+    error,
   } = data;
   let argsJson;
   logger.debug({
     message: 'Worker received data',
-    data,
+    //data,
     type,
     namespace,
     fnName,
     args,
     gRPCRef,
+    result,
+    error,
   });
   switch(type) {
     case 'accessor_sign_changed':
@@ -246,6 +265,15 @@ async function onRecvData(data) {
         message: 'worker invalidate data schema cache',
       }); 
       eventEmitter.emit('invalidateDataSchemaCache', args);
+      return;
+    case 'tendermintResult':
+      logger.debug({
+        message: 'worker received tendermint result',
+        gRPCRef,
+        result,
+        error,
+      }); 
+      internalEmitter.emit('tendermintResult:' + gRPCRef, { result, error });
       return;
     default: break;
   }

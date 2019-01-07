@@ -14,11 +14,14 @@ message InboundMessage {
   string fnName = 3;
   string args = 4;
   string gRPCRef = 5;
+  string result = 6;
+  string error = 7;
 }
 
 message OutboundMessage {
   string fnName = 1;
   string args = 2;
+  string gRPCRef = 3;
 }
 
 message Result {

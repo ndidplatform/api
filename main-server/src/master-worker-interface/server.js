@@ -141,8 +141,7 @@ function returnResultCall(call, done) {
     result,
     error,
   } = call.request;
-  internalEmitter.emit('result', {
-    gRPCRef, 
+  internalEmitter.emit('result:' + gRPCRef, {
     result: JSON.parse(result),
     error: JSON.parse(error),
   });
@@ -151,21 +150,19 @@ function returnResultCall(call, done) {
 
 async function waitForResult(waitForRef) {
   return new Promise((resolve, reject) => {
-    internalEmitter.once('result', ({ gRPCRef, result, error }) => {
-      if(gRPCRef === waitForRef) {
-        logger.debug({
-          message: 'Master received result',
-          gRPCRef,
-          result,
-          error,
-        });
-        if(error == null) resolve(result);
-        else {
-          if(error.name === 'CustomError') {
-            error = new CustomError(error);
-          }
-          reject(error);
+    internalEmitter.once('result:' + waitForRef, ({ result, error }) => {
+      logger.debug({
+        message: 'Master received result',
+        waitForRef,
+        result,
+        error,
+      });
+      if(error == null) resolve(result);
+      else {
+        if(error.name === 'CustomError') {
+          error = new CustomError(error);
         }
+        reject(error);
       }
     });
   });
@@ -185,11 +182,11 @@ function subscribe(call) {
 
 function tendermintCall(call, done) {
   const {
-    fnName, args
+    fnName, args, gRPCRef
   } = call.request;
   let argArray = JSON.parse(args);
   eventEmitter.emit('tendermintCallByWorker', {
-    fnName, argArray
+    fnName, argArray, gRPCRef
   });
   done();
 }
@@ -253,6 +250,23 @@ export function delegateToWorker({
     });
     return waitForResult(gRPCRef);
   }
+}
+
+export function tendermintReturnResult({
+  gRPCRef, result, error
+}) {
+  logger.debug({
+    message: 'Master return tendermint result',
+    gRPCRef,
+    result,
+    error
+  });
+  workerList.forEach((connection) => {
+    connection.write({
+      type: 'tendermintResult',
+      gRPCRef, result, error,
+    });
+  });
 }
 
 const functionList = {

@@ -49,7 +49,8 @@ import logger from './logger';
 import * as config from './config';
 import { 
   eventEmitter as masterEventEmitter, 
-  initialize as masterInitialize 
+  initialize as masterInitialize,
+  tendermintReturnResult, 
 } from './master-worker-interface/server';
 import { 
   eventEmitter as workerEventEmitter,
@@ -241,13 +242,50 @@ async function initializeMaster() {
     }
 
     masterInitialize();
-    masterEventEmitter.on('tendermintCallByWorker', ({ fnName, argArray }) => {
+    masterEventEmitter.on('tendermintCallByWorker', async ({ fnName, argArray, gRPCRef }) => {
       logger.debug({
         message: 'tendermintCallByWorker',
         fnName,
-        argArray
+        argArray,
+        gRPCRef,
       });
-      tendermintNdid[fnName].apply(null, argArray);
+      try {
+        let result = await tendermintNdid[fnName].apply(null, argArray);
+        if(gRPCRef !== '') {
+          await tendermintReturnResult({
+            gRPCRef,
+            result: JSON.stringify(result || null),
+            error: JSON.stringify(null),
+          });
+        }
+      } catch(error) {
+        logger.error({
+          message: 'tendermintCall error',
+          fnName,
+          error,
+          gRPCRef,
+        });
+        let errorSend = {};
+        if(error.name === 'CustomError') {
+          errorSend = {
+            message: error.getMessageWithCode(), 
+            code: error.getCode(), 
+            clientError: error.isRootCauseClientError(),
+            //errorType: error.errorType,
+            details: error.getDetailsOfErrorWithCode(),
+            cause: error.cause,
+            name: 'CustomError',
+          };
+        }
+        else errorSend = error;
+        if(gRPCRef !== '') {
+          await tendermintReturnResult({
+            gRPCRef,
+            result: JSON.stringify(null),
+            error: JSON.stringify(errorSend),
+          });
+        } else throw error;
+      }
     });
 
     masterEventEmitter.on('callbackToClientByWorker', ({ argArray }) => {
