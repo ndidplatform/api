@@ -33,11 +33,6 @@ import CustomError from 'ndid-error/custom_error';
 
 let exportElement = {};
 
-let requestIdQueue = [];
-
-let requestIdToGRPCRef = {};
-let gRPCRefToRequestId = {};
-
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
   path.join(__dirname, '..', '..', '..', 'protos', 'master_worker.proto'),
@@ -150,10 +145,6 @@ function returnResultCall(call, done) {
     result: JSON.parse(result),
     error: JSON.parse(error),
   });
-  let requestId = gRPCRefToRequestId[gRPCRef];
-  delete gRPCRefToRequestId[gRPCRef];
-  delete requestIdToGRPCRef[requestId];
-  resumeQueue(requestId);
   done();
 }
 
@@ -209,51 +200,9 @@ function callbackCall(call, done) {
   done();
 }
 
-function addToQueue({ delegateData, workerIndex, requestId }) {
-  if(!requestIdQueue[requestId]) {
-    requestIdQueue[requestId] = [];
-  }
-  requestIdQueue[requestId].push({
-    delegateData, workerIndex
-  });
-}
-
-function resumeQueue(requestId) {
-  if(requestIdQueue[requestId].length > 0) {
-    let { delegateData, workerIndex } = requestIdQueue[requestId].splice(0,1);
-    delegateToWorker(delegateData, workerIndex);
-  } else {
-    delete requestIdQueue[requestId];
-  }
-}
-
-function getRequestIdFromDelegateData(args) {
-  for(let key in args) {
-    if(key === 'requestId' || key === 'request_id') return args[key];
-    if(typeof args[key] === 'object') {
-      let requestId = getRequestIdFromDelegateData(args[key]);
-      if(requestId) return requestId;
-    }
-  }
-  return false;
-}
-
 export function delegateToWorker({
   type, namespace, fnName, args,
 }, workerIndex) {
-  //Check requestId and queue here
-  let requestId = getRequestIdFromDelegateData(args); //something
-  if(requestId && requestIdToGRPCRef[requestId]) {
-    addToQueue({
-      delegateData: {
-        type, namespace, fnName, args,
-      },
-      workerIndex,
-      requestId,
-    });
-    return;
-  }
-
   logger.debug({
     message: 'Master delegate',
     namespace,
@@ -277,9 +226,6 @@ export function delegateToWorker({
   }
   else {
     gRPCRef = randomBase64Bytes(16); //random
-    requestIdToGRPCRef[requestId] = gRPCRef;
-    gRPCRefToRequestId[gRPCRef] = requestId;
-
     for(let key in args) {
       if(
         args[key] && 
