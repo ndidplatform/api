@@ -189,8 +189,14 @@ export default class TendermintWsClient extends EventEmitter {
     return this._call('tx', { hash: hash.toString('base64'), prove });
   }
 
-  abciQuery(data) {
-    return this._call('abci_query', { data: data.toString('hex') });
+  abciQuery(data, height) {
+    const params = {
+      data: data.toString('hex'),
+    };
+    if (height) {
+      params.height = `${height}`;
+    }
+    return this._call('abci_query', params);
   }
 
   broadcastTxCommit(tx) {
