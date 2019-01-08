@@ -95,6 +95,13 @@ async function initializeWorker() {
     await tendermint.connectWS();
     await tendermintReady;
 
+    let role;
+    if (!config.ndidNode) {
+      logger.info({ message: 'Getting node role' });
+      role = await node.getNodeRoleFromBlockchain();
+      logger.info({ message: 'Node role', role });
+    }
+
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
     await workerInitialize();
     workerEventEmitter.on('accessor_sign_changed', (newUrl) => {

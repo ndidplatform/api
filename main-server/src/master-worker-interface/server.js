@@ -221,7 +221,9 @@ export function delegateToWorker({
       message: 'No worker connected, waiting...'
     });
     setTimeout(() => {
-      delegateToWorker(args, workerIndex);
+      delegateToWorker({ 
+        type, namespace, fnName, args 
+      }, workerIndex);
     }, 2000);
   }
   else {

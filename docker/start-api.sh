@@ -25,13 +25,13 @@ exit_path_not_exist() {
   exit 1
 }
 
+if [ -z ${TENDERMINT_IP} ]; then exit_missing_env TENDERMINT_IP; fi
+if [ -z ${NODE_ID} ]; then exit_missing_env NODE_ID; fi
+if [ -z ${ROLE} ]; then exit_missing_env ROLE; fi
+
 if [ "${IS_MASTER}" == "true" ]; then
   if [ -z ${SERVER_PORT} ]; then exit_missing_env SERVER_PORT; fi
-  if [ -z ${TENDERMINT_IP} ]; then exit_missing_env TENDERMINT_IP; fi
-  if [ -z ${NODE_ID} ]; then exit_missing_env NODE_ID; fi
-  if [ -z ${ROLE} ]; then exit_missing_env ROLE; fi
   if [ -z ${NDID_IP} ]; then exit_missing_env NDID_IP; fi
-
   if [ -z ${NDID_PORT} ]; then NDID_PORT=${SERVER_PORT}; fi
 fi
 
@@ -381,6 +381,8 @@ if [ "${IS_MASTER}" == "true" ]; then
       exit_invalid_role 
       ;;
   esac
+else 
+  wait_until_node_exist
 fi
 
 export PRIVATE_KEY_PATH=${KEY_PATH} 
