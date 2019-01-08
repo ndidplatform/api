@@ -83,6 +83,21 @@ async function initialize() {
   else initializeWorker();
 }
 
+function waitForCallbackUrlFiles() {
+  return new Promise((resolve) => {
+    let intervalId = setInterval(() => {
+      logger.debug({
+        message: 'Checking callback files...'
+      });
+      externalCryptoService.readCallbackUrlsFromFiles();
+      if(externalCryptoService.isCallbackUrlsSet()) {
+        clearInterval(intervalId);
+        resolve();
+      }
+    }, 2000);
+  });
+}
+
 async function initializeWorker() {
   logger.info({ message: 'Initializing worker' });
   try {
@@ -176,24 +191,13 @@ async function initializeWorker() {
       }
     });
 
-    let externalCryptoServiceReady;
     if (config.useExternalCryptoService) {
-      externalCryptoService.readCallbackUrlsFromFiles();
-      if (!externalCryptoService.isCallbackUrlsSet()) {
-        externalCryptoServiceReady = new Promise((resolve) =>
-          externalCryptoService.eventEmitter.once('allCallbacksSet', () =>
-            resolve()
-          )
-        );
-      }
+      logger.info({ message: 'Waiting for DPKI callback URLs to be set' });
+      await waitForCallbackUrlFiles();
     } else {
       await nodeKey.initialize();
     }
 
-    if (externalCryptoServiceReady != null) {
-      logger.info({ message: 'Waiting for DPKI callback URLs to be set' });
-      await externalCryptoServiceReady;
-    }
     logger.info({ message: 'Worker initialized' });
   } catch (error) {
     logger.error({
