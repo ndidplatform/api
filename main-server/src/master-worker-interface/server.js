@@ -280,11 +280,6 @@ export function delegateToWorker({
     return;
   }
   let index, gRPCRef = '';
-  if(!workerIndex) {
-    index = counter;
-    counter = (counter + 1)%workerList.length;
-  }
-  else index = workerIndex;
   if(workerList.length === 0) {
     logger.info({
       message: 'No worker connected, waiting...'
@@ -296,6 +291,11 @@ export function delegateToWorker({
     }, 2000);
   }
   else {
+    if(!workerIndex) {
+      index = counter;
+      counter = (counter + 1)%workerList.length;
+    }
+    else index = workerIndex;
     gRPCRef = randomBase64Bytes(16); //random
     requestIdToGRPCRef[requestId] = gRPCRef;
     gRPCRefToRequestId[gRPCRef] = requestId;
