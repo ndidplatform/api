@@ -43,6 +43,7 @@ import * as externalCryptoService from './utils/external_crypto_service';
 
 import { changeAccessorUrlForWorker } from './core/idp/index';
 import { invalidateDataSchemaCache } from './core/as/data_validator';
+import { invalidateNodesBehindProxyWithKeyOnProxyCache } from './node';
 
 import logger from './logger';
 
@@ -112,6 +113,9 @@ async function initializeWorker() {
     });
     workerEventEmitter.on('invalidateDataSchemaCache', (serviceId) => {
       invalidateDataSchemaCache(serviceId);
+    });
+    workerEventEmitter.on('invalidateNodesBehindProxyWithKeyOnProxyCache', () => {
+      invalidateNodesBehindProxyWithKeyOnProxyCache();
     });
     workerEventEmitter.on('reInitKey', async () => {
       await nodeKey.initialize();

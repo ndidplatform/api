@@ -106,6 +106,17 @@ internalEmitter.on('invalidateDataSchemaCache', ({ serviceId }) => {
   }); 
 });
 
+internalEmitter.on('invalidateNodesBehindProxyWithKeyOnProxyCache', () => {
+  logger.debug({
+    message: 'Invalidate node on proxy',
+  });
+  workerList.forEach((connection) => {
+    connection.write({
+      type: 'invalidateNodesBehindProxyWithKeyOnProxyCache',
+    });
+  }); 
+});
+
 export function initialize() {
   const server = new grpc.Server();
   const MASTER_SERVER_ADDRESS = `0.0.0.0:${config.masterServerPort}`;

@@ -287,6 +287,7 @@ services:
       - ./start-api-test.sh:/api/start-api-test.sh
       - ./keys/proxy-1/:/api/keys/
       - ./data/proxy-1/:/api/main-server/data/
+      - ./data/proxy-1/behind/:/api/main-server/dev_key/behind_proxy/
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
@@ -306,6 +307,7 @@ services:
     volumes:
       - ./keys/proxy-1/:/api/keys/
       - ./data/proxy-1/:/api/main-server/data/
+      - ./data/proxy-1/behind/:/api/main-server/dev_key/behind_proxy/
     security_opt:
       - no-new-privileges
     networks:
@@ -328,6 +330,7 @@ services:
       - ./start-api-test.sh:/api/start-api-test.sh
       - ./keys/proxy-2/:/api/keys/
       - ./data/proxy-2/:/api/main-server/data/
+      - ./data/proxy-2/behind/:/api/main-server/dev_key/behind_proxy/
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
@@ -347,6 +350,7 @@ services:
     volumes:
       - ./keys/proxy-2/:/api/keys/
       - ./data/proxy-2/:/api/main-server/data/
+      - ./data/proxy-2/behind/:/api/main-server/dev_key/behind_proxy/
     security_opt:
       - no-new-privileges
     networks:

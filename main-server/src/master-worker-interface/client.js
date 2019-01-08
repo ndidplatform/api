@@ -266,6 +266,12 @@ async function onRecvData(data) {
       }); 
       eventEmitter.emit('invalidateDataSchemaCache', args);
       return;
+    case 'invalidateNodesBehindProxyWithKeyOnProxyCache':
+      logger.debug({
+        message: 'worker invalidate node behind proxy',
+      }); 
+      eventEmitter.emit('invalidateNodesBehindProxyWithKeyOnProxyCache');
+      return;
     case 'tendermintResult':
       logger.debug({
         message: 'worker received tendermint result',
