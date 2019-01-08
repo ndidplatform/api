@@ -23,7 +23,7 @@
 import * as tendermintNdid from './tendermint/ndid';
 
 import CustomError from 'ndid-error/custom_error';
-import { internalEmitter as masterEmitter } from '../../master-worker-interface/server';
+import { internalEmitter as masterEmitter } from './master-worker-interface/server';
 
 import * as config from './config';
 
