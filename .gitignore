@@ -2,6 +2,8 @@ main-server/data
 main-server/log
 
 mq-server/log
+docker/data
+docker/keys
 
 .env
 

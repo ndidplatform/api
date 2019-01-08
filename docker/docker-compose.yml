@@ -56,6 +56,7 @@ services:
   api-idp-1-worker:
     image: ndidplatform/api:latest
     environment:
+      - ROLE=idp
       - NODE_ID=idp1
       - MASTER_SERVER_IP=api-idp-1-master
       - DB_IP=api-redis
@@ -91,6 +92,7 @@ services:
   api-idp-2-worker:
     image: ndidplatform/api:latest
     environment:
+      - ROLE=idp
       - NODE_ID=idp2
       - MASTER_SERVER_IP=api-idp-2-master
       - DB_IP=api-redis
@@ -124,11 +126,12 @@ services:
     networks:
       - ndidplatform
     volumes:
-      - ./keys/rp/:/api/keys/
-      - ./data/rp/:/api/main-server/data/
+      - ./keys/rp-1/:/api/keys/
+      - ./data/rp-1/:/api/main-server/data/
   api-rp-worker:
     image: ndidplatform/api:latest
     environment:
+      - ROLE=rp
       - NODE_ID=rp1
       - MASTER_SERVER_IP=api-rp-master
       - DB_IP=api-redis
@@ -139,8 +142,8 @@ services:
     networks:
       - ndidplatform
     volumes:
-      - ./keys/rp/:/api/keys/
-      - ./data/rp/:/api/main-server/data/
+      - ./keys/rp-1/:/api/keys/
+      - ./data/rp-1/:/api/main-server/data/
   api-as-master:
     image: ndidplatform/api:latest
     environment:
@@ -162,11 +165,12 @@ services:
     networks:
       - ndidplatform
     volumes:
-      - ./keys/as/:/api/keys/
-      - ./data/as/:/api/main-server/data/
+      - ./keys/as-1/:/api/keys/
+      - ./data/as-1/:/api/main-server/data/
   api-as-worker:
     image: ndidplatform/api:latest
     environment:
+      - ROLE=as
       - NODE_ID=as1
       - MASTER_SERVER_IP=api-as-master
       - DB_IP=api-redis
@@ -177,8 +181,8 @@ services:
     networks:
       - ndidplatform
     volumes:
-      - ./keys/as/:/api/keys/
-      - ./data/as/:/api/main-server/data/
+      - ./keys/as-1/:/api/keys/
+      - ./data/as-1/:/api/main-server/data/
   api-redis:
     image: redis:4-alpine
     security_opt:

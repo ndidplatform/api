@@ -214,6 +214,11 @@ export async function initialize() {
     const nodesBehindProxyWithKeyOnProxy = await node.getNodesBehindProxyWithKeyOnProxy();
     const nodeIds = nodesBehindProxyWithKeyOnProxy.map((node) => node.node_id);
 
+    logger.debug({
+      message: 'List nodes behind proxy',
+      nodeIds
+    });
+
     const newNodeBehindProxyPrivateKeys = {};
     const newNodeBehindProxyPrivateKeyPassphrases = {};
 
@@ -248,6 +253,11 @@ export async function initialize() {
 
     nodeBehindProxyMasterPrivateKeys = newNodeBehindProxyMasterPrivateKeys;
     nodeBehindProxyMasterPrivateKeyPassphrases = newNodeBehindProxyMasterPrivateKeyPassphrases;
+
+    logger.debug({
+      message: 'New node behind proxy object',
+      list: Object.keys(nodeBehindProxyPrivateKeys)
+    });
   }
 
   privateKey = newPrivateKey;
