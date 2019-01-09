@@ -238,10 +238,11 @@ function addToQueue({ delegateData, workerIndex, requestId }) {
 function resumeQueue(requestId) {
   logger.debug({
     message: 'Resume request queue',
-    requestId
+    requestId,
+    queue: requestIdQueue[requestId],
   });
   if(requestIdQueue[requestId] && requestIdQueue[requestId].length > 0) {
-    let { delegateData, workerIndex } = requestIdQueue[requestId].splice(0,1);
+    let { delegateData, workerIndex } = requestIdQueue[requestId].splice(0,1)[0];
     delegateToWorker(delegateData, workerIndex);
   } else {
     delete requestIdQueue[requestId];
