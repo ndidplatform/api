@@ -113,12 +113,16 @@ export async function initialize() {
   client.callback = callback;
   client.returnResult = returnResult;
   client.messageQueue = messageQueue;
-  //workerSubscribeChannel = client.subscribe(null);
-  //workerSubscribeChannel.on('data', onRecvData);
 }
 
 function waitForTendermintResult(gRPCRef, resolve) {
   internalEmitter.once('tendermintResult:' + gRPCRef, ({ result, error }) => {
+    logger.debug({
+      message: 'worker received tendermint result',
+      gRPCRef,
+      result,
+      error,
+    });
     result = JSON.parse(result);
     error = JSON.parse(error);
     if(error && error.name === 'CustomError') {
@@ -142,7 +146,7 @@ function tendermint({ fnName, args }) {
       args: JSON.stringify(parseArgsToArray(args)) 
     }, (error) => {
       if(error) reject(error);
-      else waitForTendermintResult(gRPCRef,resolve);
+      else waitForTendermintResult(gRPCRef, resolve);
     });
   });
 }
@@ -227,17 +231,6 @@ async function onRecvData(data) {
     error,
   } = data;
   let argsJson;
-  logger.debug({
-    message: 'Worker received data',
-    //data,
-    type,
-    namespace,
-    fnName,
-    args,
-    gRPCRef,
-    result,
-    error,
-  });
   switch(type) {
     case 'accessor_sign_changed':
       logger.debug({
@@ -273,15 +266,21 @@ async function onRecvData(data) {
       eventEmitter.emit('invalidateNodesBehindProxyWithKeyOnProxyCache');
       return;
     case 'tendermintResult':
+      internalEmitter.emit('tendermintResult:' + gRPCRef, { result, error });
+      return;
+    default:
       logger.debug({
-        message: 'worker received tendermint result',
+        message: 'Worker received call from master',
+        //data,
+        type,
+        namespace,
+        fnName,
+        args,
         gRPCRef,
         result,
         error,
-      }); 
-      internalEmitter.emit('tendermintResult:' + gRPCRef, { result, error });
-      return;
-    default: break;
+      });
+      break;
   }
   let argArray = parseArgsToArray(args);
   eventEmitter.emit(type, {

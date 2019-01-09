@@ -162,9 +162,11 @@ function returnResultCall(call, done) {
     error: JSON.parse(error),
   });
   let requestId = gRPCRefToRequestId[gRPCRef];
-  delete gRPCRefToRequestId[gRPCRef];
-  delete requestIdToGRPCRef[requestId];
-  resumeQueue(requestId);
+  if(requestId) {
+    delete gRPCRefToRequestId[gRPCRef];
+    delete requestIdToGRPCRef[requestId];
+    resumeQueue(requestId);
+  }
   done();
 }
 
@@ -238,7 +240,7 @@ function resumeQueue(requestId) {
     message: 'Resume request queue',
     requestId
   });
-  if(requestIdQueue[requestId].length > 0) {
+  if(requestIdQueue[requestId] && requestIdQueue[requestId].length > 0) {
     let { delegateData, workerIndex } = requestIdQueue[requestId].splice(0,1);
     delegateToWorker(delegateData, workerIndex);
   } else {
@@ -271,12 +273,15 @@ function waitForWorker() {
 export async function delegateToWorker({
   type, namespace, fnName, args,
 }, workerIndex) {
+  let gRPCRef = randomBase64Bytes(16); //random
+
   logger.debug({
     message: 'Master delegate',
     namespace,
     fnName,
     args,
     workerIndex,
+    gRPCRef,
   });
   //Check requestId and queue here
   let requestId = getRequestIdFromDelegateData(args); //something
@@ -290,7 +295,7 @@ export async function delegateToWorker({
     });
     return;
   }
-  let index, gRPCRef = '';
+  let index;
   if(workerList.length === 0) {
     logger.info({
       message: 'No worker connected, waiting...'
@@ -302,7 +307,11 @@ export async function delegateToWorker({
     counter = (counter + 1)%workerList.length;
   }
   else index = workerIndex;
-  gRPCRef = randomBase64Bytes(16); //random
+  if(requestId) {
+    requestIdToGRPCRef[requestId] = gRPCRef;
+    gRPCRefToRequestId[gRPCRef] = requestId;
+  }
+
   for(let key in args) {
     if(
       args[key] && 

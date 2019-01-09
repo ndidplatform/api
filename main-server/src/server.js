@@ -121,13 +121,18 @@ async function initializeWorker() {
       await nodeKey.initialize();
     });
 
-    workerEventEmitter.on('callbackAfterBlockchain', ({ fnName, argArray }) => {
+    workerEventEmitter.on('callbackAfterBlockchain', async ({ fnName, argArray, gRPCRef }) => {
       logger.debug({
         message: 'callbackAfterBlockchain',
         fnName,
         argArray
       });
-      common.getFunction(fnName)(...argArray);
+      await common.getFunction(fnName)(...argArray);
+      await getClient().returnResult({
+        gRPCRef,
+        result: JSON.stringify(null),
+        error: JSON.stringify(null),
+      });
     });
     workerEventEmitter.on('functionCall', async ({ namespace, fnName, argArray, gRPCRef }) => {
       logger.debug({
