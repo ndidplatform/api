@@ -216,6 +216,7 @@ async function initializeMaster() {
     }
 
     common.readCallbackUrlsFromFiles();
+    masterInitialize();
 
     let externalCryptoServiceReady;
     if (config.useExternalCryptoService) {
@@ -238,7 +239,6 @@ async function initializeMaster() {
       await externalCryptoServiceReady;
     }
 
-    masterInitialize();
     masterEventEmitter.on('tendermintCallByWorker', async ({ fnName, argArray, gRPCRef }) => {
       logger.debug({
         message: 'tendermintCallByWorker',

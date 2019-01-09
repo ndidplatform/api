@@ -211,7 +211,18 @@ function callbackCall(call, done) {
   done();
 }
 
-export function delegateToWorker({
+function waitForWorker() {
+  return new Promise((resolve) => {
+    let id = setInterval(() => {
+      if(workerList.length > 0) {
+        clearInterval(id);
+        resolve();
+      }
+    },2000);
+  });
+}
+
+export async function delegateToWorker({
   type, namespace, fnName, args,
 }, workerIndex) {
   logger.debug({
@@ -226,43 +237,37 @@ export function delegateToWorker({
     logger.info({
       message: 'No worker connected, waiting...'
     });
-    setTimeout(() => {
-      delegateToWorker({ 
-        type, namespace, fnName, args 
-      }, workerIndex);
-    }, 2000);
+    await waitForWorker();
   }
-  else {
-    if(!workerIndex) {
-      index = counter;
-      counter = (counter + 1)%workerList.length;
-    }
-    else index = workerIndex;
-    gRPCRef = randomBase64Bytes(16); //random
-    for(let key in args) {
-      if(
-        args[key] && 
-        args[key].error && 
-        args[key].error.name === 'CustomError'
-      ) {
-        let obj = args[key];
-        args[key].error = {
-          message: obj.error.getMessageWithCode(), 
-          code: obj.error.getCode(), 
-          clientError: obj.error.isRootCauseClientError(),
-          //errorType: error.errorType,
-          details: obj.error.getDetailsOfErrorWithCode(),
-          cause: obj.error.cause,
-          name: 'CustomError',
-        };
-      }
-    }
-    workerList[index].write({
-      type, namespace, fnName, gRPCRef,
-      args: JSON.stringify(args)
-    });
-    return waitForResult(gRPCRef);
+  if(!workerIndex) {
+    index = counter;
+    counter = (counter + 1)%workerList.length;
   }
+  else index = workerIndex;
+  gRPCRef = randomBase64Bytes(16); //random
+  for(let key in args) {
+    if(
+      args[key] && 
+      args[key].error && 
+      args[key].error.name === 'CustomError'
+    ) {
+      let obj = args[key];
+      args[key].error = {
+        message: obj.error.getMessageWithCode(), 
+        code: obj.error.getCode(), 
+        clientError: obj.error.isRootCauseClientError(),
+        //errorType: error.errorType,
+        details: obj.error.getDetailsOfErrorWithCode(),
+        cause: obj.error.cause,
+        name: 'CustomError',
+      };
+    }
+  }
+  workerList[index].write({
+    type, namespace, fnName, gRPCRef,
+    args: JSON.stringify(args)
+  });
+  return waitForResult(gRPCRef);
 }
 
 export function tendermintReturnResult({

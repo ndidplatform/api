@@ -57,26 +57,12 @@ let pendingCallbacksCount = 0;
 export const eventEmitter = new EventEmitter();
 
 export function changeDpkiCallbackForWorker(dpkiCallbackObject) {
-  [
-    { key: 'sign_url', fileSuffix: 'signature' },
-    { key: 'master_sign_url', fileSuffix: 'masterSignature' },
-    { key: 'decrypt_url', fileSuffix: 'decrypt' },
-  ].forEach(({ key, fileSuffix }) => {
-    if(dpkiCallbackObject[key]) {
-      callbackUrls[key] = dpkiCallbackObject[key];
-      /*fs.writeFile(
-        callbackUrlFilesPrefix + fileSuffix,
-        dpkiCallbackObject[key],
-        (err) => {
-          if (err) {
-            logger.error({
-              message: '[DPKI] Cannot write ' + fileSuffix + ' callback url file',
-              error: err,
-            });
-          }
-        }
-      );*/
-    }
+  for(let key in dpkiCallbackObject) {
+    callbackUrls[key] = dpkiCallbackObject[key];
+  }
+  logger.debug({
+    message: 'DPKI worker changed',
+    callbackUrls,
   });
 }
 
@@ -262,6 +248,10 @@ export function isCallbackUrlsSet() {
 }
 
 function checkAndEmitAllCallbacksSet() {
+  logger.debug({
+    message: 'DPKI UPDATE',
+    callbackUrls,
+  });
   if (isCallbackUrlsSet()) {
     eventEmitter.emit('allCallbacksSet');
   }
