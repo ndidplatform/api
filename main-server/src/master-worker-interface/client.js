@@ -270,6 +270,7 @@ async function onRecvData(data) {
 
     case 'functionCall':
     case 'callbackAfterBlockchain':
+      argArray = parseArgsToArray(args);
       logger.debug({
         message: 'Worker received delegated work',
         type,
@@ -278,7 +279,6 @@ async function onRecvData(data) {
         argArray,
         gRPCRef
       });
-      argArray = parseArgsToArray(args);
       eventEmitter.emit(type, {
         namespace, fnName, argArray, gRPCRef
       });
