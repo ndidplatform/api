@@ -1,0 +1,539 @@
+version: '3'
+services:
+  api-ndid-master:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=ndid
+      - NODE_ID=ndid1
+      - NDID_IP=api-ndid-master
+      - TENDERMINT_IP=tm-ndid
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+      - NDID_NODE=true
+      - IS_MASTER=true
+      - IS_STANDALONE=false
+      #- USE_EXTERNAL_CRYPTO_SERVICE=true
+    volumes:
+      - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ./keys/ndid/:/api/keys/
+      - ./data/ndid/:/api/main-server/data/
+    entrypoint: /api/start-api-test_external_crypto.sh
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8080:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-idp-1-master:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=idp
+      - NODE_ID=idp1
+      - NDID_IP=api-ndid-master
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-idp-1
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-idp-1
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+      - IS_MASTER=true
+      - IS_STANDALONE=false
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    volumes:
+      - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ./keys/idp-1/:/api/keys/
+      - ./data/idp-1/:/api/main-server/data/
+    entrypoint: /api/start-api-test_external_crypto.sh
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8100:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-idp-1-worker-1:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=idp
+      - NODE_ID=idp1
+      - MASTER_SERVER_IP=api-idp-1-master
+      - DB_IP=api-redis
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+    volumes:
+      - ./keys/idp-1/:/api/keys/
+      - ./data/idp-1/:/api/main-server/data/
+  api-idp-1-worker-2:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=idp
+      - NODE_ID=idp1
+      - MASTER_SERVER_IP=api-idp-1-master
+      - DB_IP=api-redis
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+    volumes:
+      - ./keys/idp-1/:/api/keys/
+      - ./data/idp-1/:/api/main-server/data/
+  api-idp-2-master:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=idp
+      - NODE_ID=idp2
+      - NDID_IP=api-ndid-master
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-idp-2
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-idp-2
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+      - IS_MASTER=true
+      - IS_STANDALONE=false
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    volumes:
+      - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ./keys/idp-2/:/api/keys/
+      - ./data/idp-2/:/api/main-server/data/
+    entrypoint: /api/start-api-test_external_crypto.sh
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8101:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-idp-2-worker:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=idp
+      - NODE_ID=idp2
+      - MASTER_SERVER_IP=api-idp-2-master
+      - DB_IP=api-redis
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+    volumes:
+      - ./keys/idp-2/:/api/keys/
+      - ./data/idp-2/:/api/main-server/data/
+  api-idp-3-master:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=idp
+      - NODE_ID=idp3
+      - NDID_IP=api-ndid-master
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-idp-3
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-idp-3
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+      - IS_MASTER=true
+      - IS_STANDALONE=false
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    volumes:
+      - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ./keys/idp-3/:/api/keys/
+      - ./data/idp-3/:/api/main-server/data/
+    entrypoint: /api/start-api-test_external_crypto.sh
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8102:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-idp-3-worker:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=idp
+      - NODE_ID=idp3
+      - MASTER_SERVER_IP=api-idp-3-master
+      - DB_IP=api-redis
+      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+    volumes:
+      - ./keys/idp-3/:/api/keys/
+      - ./data/idp-3/:/api/main-server/data/
+  api-rp-1-master:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=rp
+      - NODE_ID=rp1
+      - NDID_IP=api-ndid-master
+      - TENDERMINT_IP=tm-rp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-rp-1
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-rp-1
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+      - IS_MASTER=true
+      - IS_STANDALONE=false
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    volumes:
+      - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ./keys/rp-1/:/api/keys/
+      - ./data/rp-1/:/api/main-server/data/
+    entrypoint: /api/start-api-test_external_crypto.sh
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8200:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-rp-1-worker-1:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=rp
+      - NODE_ID=rp1
+      - MASTER_SERVER_IP=api-rp-1-master
+      - DB_IP=api-redis
+      - TENDERMINT_IP=tm-rp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+    volumes:
+      - ./keys/rp-1/:/api/keys/
+      - ./data/rp-1/:/api/main-server/data/
+  api-rp-1-worker-2:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=rp
+      - NODE_ID=rp1
+      - MASTER_SERVER_IP=api-rp-1-master
+      - DB_IP=api-redis
+      - TENDERMINT_IP=tm-rp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+    volumes:
+      - ./keys/rp-1/:/api/keys/
+      - ./data/rp-1/:/api/main-server/data/
+  api-as-1-master:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=as
+      - NODE_ID=as1
+      - NDID_IP=api-ndid-master
+      - TENDERMINT_IP=tm-as
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-as-1
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-as-1
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+      - IS_MASTER=true
+      - IS_STANDALONE=false
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    volumes:
+      - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ./keys/as-1/:/api/keys/
+      - ./data/as-1/:/api/main-server/data/
+    entrypoint: /api/start-api-test_external_crypto.sh
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8300:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-as-1-worker-1:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=as
+      - NODE_ID=as1
+      - MASTER_SERVER_IP=api-as-1-master
+      - DB_IP=api-redis
+      - TENDERMINT_IP=tm-as
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+    volumes:
+      - ./keys/as-1/:/api/keys/
+      - ./data/as-1/:/api/main-server/data/
+  api-as-1-worker-2:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=as
+      - NODE_ID=as1
+      - MASTER_SERVER_IP=api-as-1-master
+      - DB_IP=api-redis
+      - TENDERMINT_IP=tm-as
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+    volumes:
+      - ./keys/as-1/:/api/keys/
+      - ./data/as-1/:/api/main-server/data/
+  api-as-2-master:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=as
+      - NODE_ID=as2
+      - NDID_IP=api-ndid-master
+      - TENDERMINT_IP=tm-as
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-as-2
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-as-2
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+      - IS_MASTER=true
+      - IS_STANDALONE=false
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    volumes:
+      - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ./keys/as-2/:/api/keys/
+      - ./data/as-2/:/api/main-server/data/
+    entrypoint: /api/start-api-test_external_crypto.sh
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8301:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-as-2-worker:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=as
+      - NODE_ID=as2
+      - MASTER_SERVER_IP=api-as-2-master
+      - DB_IP=api-redis
+      - TENDERMINT_IP=tm-as
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+    volumes:
+      - ./keys/as-2/:/api/keys/
+      - ./data/as-2/:/api/main-server/data/
+  api-proxy-1-master:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=proxy
+      - NODE_ID=proxy1
+      - NDID_IP=api-ndid-master
+      - TENDERMINT_IP=tm-ndid
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-proxy-1
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-proxy-1
+      - DB_IP=api-redis-proxy-1
+      - SERVER_PORT=${API_PORT:-8080}
+      - IS_MASTER=true
+      - IS_STANDALONE=false
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    volumes:
+      - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ./keys/proxy-1/:/api/keys/
+      - ./data/proxy-1/:/api/main-server/data/
+      - ./data/proxy-1/behind/:/api/main-server/dev_key/behind_proxy/
+    entrypoint: /api/start-api-test_external_crypto.sh
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8400:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-proxy-1-worker:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=proxy
+      - NODE_ID=proxy1
+      - TENDERMINT_IP=tm-ndid
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - DB_IP=api-redis-proxy-1
+      - MASTER_SERVER_IP=api-proxy-1-master
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    volumes:
+      - ./keys/proxy-1/:/api/keys/
+      - ./data/proxy-1/:/api/main-server/data/
+      - ./data/proxy-1/behind/:/api/main-server/dev_key/behind_proxy/
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  api-proxy-2-master:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=proxy
+      - NODE_ID=proxy2
+      - NDID_IP=api-ndid-master
+      - TENDERMINT_IP=tm-ndid
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-proxy-2
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-proxy-2
+      - DB_IP=api-redis-proxy-2
+      - SERVER_PORT=${API_PORT:-8080}
+      - IS_MASTER=true
+      - IS_STANDALONE=false
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    volumes:
+      - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ./keys/proxy-2/:/api/keys/
+      - ./data/proxy-2/:/api/main-server/data/
+      - ./data/proxy-2/behind/:/api/main-server/dev_key/behind_proxy/
+    entrypoint: /api/start-api-test_external_crypto.sh
+    security_opt:
+      - no-new-privileges
+    ports:
+      - "8401:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
+  api-proxy-2-worker:
+    image: ndidplatform/api:latest
+    environment:
+      - ROLE=proxy
+      - NODE_ID=proxy2
+      - TENDERMINT_IP=tm-ndid
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - DB_IP=api-redis-proxy-2
+      - MASTER_SERVER_IP=api-proxy-2-master
+      - USE_EXTERNAL_CRYPTO_SERVICE=true
+    volumes:
+      - ./keys/proxy-2/:/api/keys/
+      - ./data/proxy-2/:/api/main-server/data/
+      - ./data/proxy-2/behind/:/api/main-server/dev_key/behind_proxy/
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+
+  # redis
+  api-redis:
+    image: redis:4-alpine
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  api-redis-proxy-1:
+    image: redis:4-alpine
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  api-redis-proxy-2:
+    image: redis:4-alpine
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+
+  # MQ service server containers
+  mq-idp-1:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=idp1
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${MQ_SERVER_PORT:-50051}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  mq-idp-2:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=idp2
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${MQ_SERVER_PORT:-50051}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  mq-idp-3:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=idp3
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${MQ_SERVER_PORT:-50051}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  mq-rp-1:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=rp1
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${MQ_SERVER_PORT:-50051}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  mq-as-1:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=as1
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${MQ_SERVER_PORT:-50051}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  mq-as-2:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=as2
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${MQ_SERVER_PORT:-50051}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  mq-proxy-1:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=proxy1
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${MQ_SERVER_PORT:-50051}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  mq-proxy-2:
+    image: ndidplatform/mq:latest
+    environment: 
+      - NODE_ID=proxy2
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${MQ_SERVER_PORT:-50051}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+      
+networks:
+  ndidplatform:
