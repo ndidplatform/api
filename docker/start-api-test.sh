@@ -29,7 +29,7 @@ if [ -z ${NODE_ID} ]; then exit_missing_env NODE_ID; fi
 if [ -z ${ROLE} ]; then exit_missing_env ROLE; fi
 if [ -z ${TENDERMINT_IP} ]; then exit_missing_env TENDERMINT_IP; fi
 
-if [ "${IS_MASTER}" == "true" || "${IS_STANDALONE}" == "true" ]; then
+if [ "${IS_MASTER}" == "true" ] || [ "${IS_STANDALONE}" == "true" ]; then
   if [ -z ${SERVER_PORT} ]; then exit_missing_env SERVER_PORT; fi
   if [ -z ${NDID_IP} ]; then exit_missing_env NDID_IP; fi
   if [ -z ${NDID_PORT} ]; then NDID_PORT=${SERVER_PORT}; fi
@@ -450,7 +450,7 @@ register_nodes_behind_proxy(){
   fi
 }
 
-if [ "${IS_MASTER}" == "true" || "${IS_STANDALONE}" == "true" ]; then
+if [ "${IS_MASTER}" == "true" ] || [ "${IS_STANDALONE}" == "true" ]; then
   case ${ROLE} in
     ndid)
       tendermint_wait_for_sync_complete
