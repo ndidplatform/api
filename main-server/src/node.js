@@ -23,7 +23,7 @@
 import * as tendermintNdid from './tendermint/ndid';
 
 import CustomError from 'ndid-error/custom_error';
-import { internalEmitter as masterEmitter } from './master-worker-interface/server';
+import { internalEventEmitter as masterEventEmitter } from './master-worker-interface/server';
 
 import * as config from './config';
 
@@ -97,7 +97,7 @@ export async function getNodesBehindProxyWithKeyOnProxy() {
 
 export function invalidateNodesBehindProxyWithKeyOnProxyCache() {
   if(config.isMaster) {
-    masterEmitter.emit('invalidateNodesBehindProxyWithKeyOnProxyCache');
+    masterEventEmitter.emit('invalidateNodesBehindProxyWithKeyOnProxyCache');
   }
   nodesBehindProxyWithKeyOnProxy = null;
 }

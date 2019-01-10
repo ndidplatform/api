@@ -78,6 +78,53 @@ process.on('unhandledRejection', function(reason, p) {
   }
 });
 
+async function processCallAndReturn({
+  type, namespace, fnName, argArray, gRPCRef,
+  processFunction, returnResultFunction,
+}) {
+  logger.debug({
+    message: type,
+    namespace,
+    fnName,
+    argArray,
+    gRPCRef,
+  });
+  try {
+    let result = await processFunction.apply(null, argArray);
+    await returnResultFunction({
+      gRPCRef,
+      result: JSON.stringify(result || null), //if undefined, convert to null
+      error: JSON.stringify(null),
+    });
+  } 
+  catch(error) {
+    logger.error({
+      message: type + ' error',
+      namespace,
+      fnName,
+      error,
+      gRPCRef,
+    });
+    let errorSend = false;
+    if(error.name === 'CustomError') {
+      errorSend = {
+        message: error.getMessageWithCode(), 
+        code: error.getCode(), 
+        clientError: error.isRootCauseClientError(),
+        //errorType: error.errorType,
+        details: error.getDetailsOfErrorWithCode(),
+        cause: error.cause,
+        name: 'CustomError',
+      };
+    }
+    await returnResultFunction({
+      gRPCRef,
+      result: JSON.stringify(null),
+      error: JSON.stringify(errorSend || error),
+    });
+  }
+}
+
 async function initialize() {
   if(config.isMaster) initializeMaster();
   else initializeWorker();
@@ -105,6 +152,7 @@ async function initializeWorker() {
 
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
     await workerInitialize();
+
     workerEventEmitter.on('accessor_sign_changed', (newUrl) => {
       changeAccessorUrlForWorker(newUrl);
     });
@@ -122,70 +170,28 @@ async function initializeWorker() {
     });
 
     workerEventEmitter.on('callbackAfterBlockchain', async ({ fnName, argArray, gRPCRef }) => {
-      logger.debug({
-        message: 'callbackAfterBlockchain',
-        fnName,
-        argArray
-      });
-      await common.getFunction(fnName)(...argArray);
-      await getClient().returnResult({
-        gRPCRef,
-        result: JSON.stringify(null),
-        error: JSON.stringify(null),
+      processCallAndReturn({
+        type: 'callbackAfterBlockchain', 
+        fnName, argArray, gRPCRef,
+        processFunction: common.getFunction(fnName),
+        returnResultFunction: getClient().returnResult,
       });
     });
+    
     workerEventEmitter.on('functionCall', async ({ namespace, fnName, argArray, gRPCRef }) => {
-      logger.debug({
-        message: 'functionCall',
-        namespace,
-        fnName,
-        argArray,
-        gRPCRef
+      processCallAndReturn({
+        type: 'functionCall', 
+        namespace, fnName, argArray, gRPCRef,
+        processFunction: core[namespace][fnName],
+        returnResultFunction: getClient().returnResult,
       });
-      try {
-        let result = await core[namespace][fnName].apply(null, argArray);
-        if(gRPCRef !== '') {
-          await getClient().returnResult({
-            gRPCRef,
-            result: JSON.stringify(result || null),
-            error: JSON.stringify(null),
-          });
-        }
-      } catch(error) {
-        logger.error({
-          message: 'functionCall error',
-          namespace,
-          fnName,
-          error,
-        });
-        let errorSend = {};
-        if(error.name === 'CustomError') {
-          errorSend = {
-            message: error.getMessageWithCode(), 
-            code: error.getCode(), 
-            clientError: error.isRootCauseClientError(),
-            //errorType: error.errorType,
-            details: error.getDetailsOfErrorWithCode(),
-            cause: error.cause,
-            name: 'CustomError',
-          };
-        }
-        else errorSend = error;
-        if(gRPCRef !== '') {
-          await getClient().returnResult({
-            gRPCRef,
-            result: JSON.stringify(null),
-            error: JSON.stringify(errorSend),
-          });
-        } else throw error;
-      }
     });
 
     if(!config.useExternalCryptoService) {
       await nodeKey.initialize();
     }
-
     logger.info({ message: 'Worker initialized' });
+
   } catch (error) {
     logger.error({
       message: 'Cannot initialize worker',
@@ -245,49 +251,12 @@ async function initializeMaster() {
     }
 
     masterEventEmitter.on('tendermintCallByWorker', async ({ fnName, argArray, gRPCRef }) => {
-      logger.debug({
-        message: 'tendermintCallByWorker',
-        fnName,
-        argArray,
-        gRPCRef,
+      processCallAndReturn({
+        type: 'tendermintCallByWorker', 
+        fnName, argArray, gRPCRef,
+        processFunction: tendermintNdid[fnName],
+        returnResultFunction: tendermintReturnResult,
       });
-      try {
-        let result = await tendermintNdid[fnName].apply(null, argArray);
-        if(gRPCRef !== '') {
-          await tendermintReturnResult({
-            gRPCRef,
-            result: JSON.stringify(result || null),
-            error: JSON.stringify(null),
-          });
-        }
-      } catch(error) {
-        logger.error({
-          message: 'tendermintCall error',
-          fnName,
-          error,
-          gRPCRef,
-        });
-        let errorSend = {};
-        if(error.name === 'CustomError') {
-          errorSend = {
-            message: error.getMessageWithCode(), 
-            code: error.getCode(), 
-            clientError: error.isRootCauseClientError(),
-            //errorType: error.errorType,
-            details: error.getDetailsOfErrorWithCode(),
-            cause: error.cause,
-            name: 'CustomError',
-          };
-        }
-        else errorSend = error;
-        if(gRPCRef !== '') {
-          await tendermintReturnResult({
-            gRPCRef,
-            result: JSON.stringify(null),
-            error: JSON.stringify(errorSend),
-          });
-        } else throw error;
-      }
     });
 
     masterEventEmitter.on('callbackToClientByWorker', ({ argArray }) => {
@@ -307,13 +276,10 @@ async function initializeMaster() {
     });
 
     await common.initialize();
-
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
       await mq.initialize();
     }
-
     await tendermint.initialize();
-
     await common.resumeTimeoutScheduler();
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
@@ -324,8 +290,8 @@ async function initializeMaster() {
     tendermint.processMissingBlocks(tendermintStatusOnSync);
     await tendermint.loadExpectedTxFromDB();
     tendermint.loadAndRetryBacklogTransactRequests();
-
     logger.info({ message: 'Server initialized' });
+
   } catch (error) {
     logger.error({
       message: 'Cannot initialize server',

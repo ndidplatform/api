@@ -39,7 +39,7 @@ import * as cacheDb from '../../db/cache';
 import * as identity from '../identity';
 import privateMessageType from '../../mq/message/type';
 
-import { internalEmitter as masterEventEmitter } from '../../master-worker-interface/server';
+import { internalEventEmitter as masterEventEmitter } from '../../master-worker-interface/server';
 
 export * from './create_response';
 export * from './event_handlers';

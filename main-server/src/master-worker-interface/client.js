@@ -48,7 +48,6 @@ let connectivityState = null;
 let workerSubscribeChannel = null;
 
 export const eventEmitter = new EventEmitter();
-export const internalEmitter = new EventEmitter();
 
 function watchForNextConnectivityStateChange() {
   if (client == null) {
@@ -116,7 +115,7 @@ export async function initialize() {
 }
 
 function waitForTendermintResult(gRPCRef, resolve) {
-  internalEmitter.once('tendermintResult:' + gRPCRef, ({ result, error }) => {
+  eventEmitter.once('tendermintResult:' + gRPCRef, ({ result, error }) => {
     logger.debug({
       message: 'worker received tendermint result',
       gRPCRef,
@@ -230,62 +229,67 @@ async function onRecvData(data) {
     result,
     error,
   } = data;
-  let argsJson;
+  let argsJson = JSON.parse(args);
+  let argArray = parseArgsToArray(args);
   switch(type) {
-    case 'accessor_sign_changed':
-      logger.debug({
-        message: 'worker change accessor sign url',
-        args,
-      });
-      eventEmitter.emit('accessor_sign_changed', args);
-      return;
-    case 'dpki_callback_url_changed':
-      logger.debug({
-        message: 'worker change dpki callback',
-        args,
-      });
-      argsJson = JSON.parse(args);
-      eventEmitter.emit('dpki_callback_url_changed', argsJson);
-      return;
+
     case 'reInitKey':
-      logger.debug({
-        message: 'worker re-init key',
-      }); 
-      eventEmitter.emit('reInitKey');
-      return;
-    case 'invalidateDataSchemaCache':
-      logger.debug({
-        message: 'worker invalidate data schema cache',
-      }); 
-      eventEmitter.emit('invalidateDataSchemaCache', args);
-      return;
     case 'invalidateNodesBehindProxyWithKeyOnProxyCache':
       logger.debug({
-        message: 'worker invalidate node behind proxy',
+        message: 'worker received event that need no argument, type:' + type,
       }); 
-      eventEmitter.emit('invalidateNodesBehindProxyWithKeyOnProxyCache');
+      eventEmitter.emit(type);
       return;
-    case 'tendermintResult':
-      internalEmitter.emit('tendermintResult:' + gRPCRef, { result, error });
-      return;
-    default:
+
+    case 'dpki_callback_url_changed':
       logger.debug({
-        message: 'Worker received call from master',
-        //data,
+        message: 'worker received event to change dpki callback',
+        args,
+      });
+      eventEmitter.emit(type, argsJson);
+      return;
+
+    case 'accessor_sign_changed':
+      logger.debug({
+        message: 'worker received event to change accessor sign url',
+        args,
+      });
+      eventEmitter.emit(type, args);
+      return;
+
+    case 'invalidateDataSchemaCache':
+      logger.debug({
+        message: 'worker received event to invalidate data schema cache',
+      }); 
+      eventEmitter.emit(type, args);
+      return;
+
+    case 'tendermintResult':
+      eventEmitter.emit('tendermintResult:' + gRPCRef, { result, error });
+      return;
+
+    case 'functionCall':
+    case 'callbackAfterBlockchain':
+      logger.debug({
+        message: 'Worker received delegated work',
         type,
         namespace,
         fnName,
-        args,
-        gRPCRef,
-        result,
-        error,
+        argArray,
+        gRPCRef
+      });
+      eventEmitter.emit(type, {
+        namespace, fnName, argArray, gRPCRef
+      });
+      return;
+
+    default:
+      logger.debug({
+        message: 'Worker received unrecognized event from master',
+        data,
       });
       break;
   }
-  let argArray = parseArgsToArray(args);
-  eventEmitter.emit(type, {
-    namespace, fnName, argArray, gRPCRef
-  });
 }
 
 export default function() {

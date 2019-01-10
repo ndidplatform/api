@@ -37,7 +37,7 @@ import errorType from 'ndid-error/type';
 import logger from '../logger';
 
 import * as config from '../config';
-import { internalEmitter as masterEventEmitter } from '../master-worker-interface/server'; 
+import { internalEventEmitter as masterEventEmitter } from '../master-worker-interface/server'; 
 
 const TEST_MESSAGE = 'test';
 const TEST_MESSAGE_BASE_64 = Buffer.from(TEST_MESSAGE).toString('base64');

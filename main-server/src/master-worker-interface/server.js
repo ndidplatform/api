@@ -57,9 +57,9 @@ let accessor_sign_url = '';
 let dpki_url = {};
 
 export const eventEmitter = new EventEmitter();
-export const internalEmitter = new EventEmitter();
+export const internalEventEmitter = new EventEmitter();
 
-internalEmitter.on('accessor_sign_changed', (newUrl) => {
+internalEventEmitter.on('accessor_sign_changed', (newUrl) => {
   logger.debug({
     message: 'Master change accessor url',
     newUrl,
@@ -73,7 +73,7 @@ internalEmitter.on('accessor_sign_changed', (newUrl) => {
   });
 });
 
-internalEmitter.on('dpki_callback_url_changed', (newUrlObject) => {
+internalEventEmitter.on('dpki_callback_url_changed', (newUrlObject) => {
   logger.debug({
     message: 'Master change dpki url',
     newUrlObject,
@@ -87,7 +87,7 @@ internalEmitter.on('dpki_callback_url_changed', (newUrlObject) => {
   });
 });
 
-internalEmitter.on('reInitKey', () => {
+internalEventEmitter.on('reInitKey', () => {
   logger.debug({
     message: 'Master re-init key',
   });
@@ -98,7 +98,7 @@ internalEmitter.on('reInitKey', () => {
   });
 });
 
-internalEmitter.on('invalidateDataSchemaCache', ({ serviceId }) => {
+internalEventEmitter.on('invalidateDataSchemaCache', ({ serviceId }) => {
   logger.debug({
     message: 'Invalidate data schema cache',
     serviceId,
@@ -111,7 +111,7 @@ internalEmitter.on('invalidateDataSchemaCache', ({ serviceId }) => {
   }); 
 });
 
-internalEmitter.on('invalidateNodesBehindProxyWithKeyOnProxyCache', () => {
+internalEventEmitter.on('invalidateNodesBehindProxyWithKeyOnProxyCache', () => {
   logger.debug({
     message: 'Invalidate node on proxy',
   });
@@ -157,7 +157,7 @@ function returnResultCall(call, done) {
     result,
     error,
   } = call.request;
-  internalEmitter.emit('result:' + gRPCRef, {
+  eventEmitter.emit('result:' + gRPCRef, {
     result: JSON.parse(result),
     error: JSON.parse(error),
   });
@@ -172,7 +172,7 @@ function returnResultCall(call, done) {
 
 async function waitForResult(waitForRef) {
   return new Promise((resolve, reject) => {
-    internalEmitter.once('result:' + waitForRef, ({ result, error }) => {
+    eventEmitter.once('result:' + waitForRef, ({ result, error }) => {
       logger.debug({
         message: 'Master received result',
         waitForRef,

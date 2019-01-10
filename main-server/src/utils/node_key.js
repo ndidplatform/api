@@ -32,7 +32,7 @@ import logger from '../logger';
 import { verifySignature } from '../utils';
 
 import * as config from '../config';
-import { internalEmitter } from '../master-worker-interface/server';
+import { internalEventEmitter as masterEventEmitter } from '../master-worker-interface/server';
 
 let privateKey;
 let masterPrivateKey;
@@ -201,7 +201,7 @@ async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
 
 export async function initialize() {
 
-  if(config.isMaster) internalEmitter.emit('reInitKey');
+  if(config.isMaster) masterEventEmitter.emit('reInitKey');
   logger.info({
     message: 'Reading node keys from files',
   });
