@@ -295,18 +295,7 @@ async function processExpectedTx(txHash, result, fromEvent) {
         }
       }
       if (getTxResultCallbackFn != null) {
-        //if(config.isMaster) {
           await getTxResultCallbackFn(callbackFnName, retVal, callbackAdditionalArgs);
-        /*} else {
-          if (callbackAdditionalArgs != null) {
-            await getTxResultCallbackFn(callbackFnName)(
-              retVal,
-              ...callbackAdditionalArgs
-            );
-          } else {
-            await getTxResultCallbackFn(callbackFnName)(retVal);
-          }
-        }*/
       } else {
         logger.error({
           message:

@@ -60,16 +60,18 @@ let processingInboundMessagesCount = 0;
 
 let messageQueueAddressesSet = !config.registerMqAtStartup;
 
-if(config.isMaster) {
-  tendermint.setTxResultCallbackFnGetter((fnName, retVal, callbackAdditionalArgs) => {
+tendermint.setTxResultCallbackFnGetter((fnName, retVal, callbackAdditionalArgs) => {
+  let args = [retVal].concat(callbackAdditionalArgs);
+  if(config.isMaster) {
     delegateToWorker({
       type: 'callbackAfterBlockchain',
       fnName,
-      args: [retVal].concat(callbackAdditionalArgs),
+      args,
     });
-  });
-}
-else tendermint.setTxResultCallbackFnGetter(getFunction);
+  } else {
+    getFunction(fnName).apply(null, args);
+  }
+});
 
 export function isMqAddressesSet() {
   return messageQueueAddressesSet;
