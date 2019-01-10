@@ -63,13 +63,13 @@ let messageQueueAddressesSet = !config.registerMqAtStartup;
 tendermint.setTxResultCallbackFnGetter((fnName, retVal, callbackAdditionalArgs) => {
   let args = [retVal].concat(callbackAdditionalArgs);
   if(config.isMaster) {
-    delegateToWorker({
+    return delegateToWorker({
       type: 'callbackAfterBlockchain',
       fnName,
       args,
     });
   } else {
-    getFunction(fnName).apply(null, args);
+    return getFunction(fnName).apply(null, args);
   }
 });
 
