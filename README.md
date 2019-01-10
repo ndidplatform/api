@@ -98,6 +98,10 @@
 - `CALLBACK_RETRY_TIMEOUT`: Callback retry timeout in seconds. Only applies to some callbacks (that do not have shouldRetry function check e.g. request status update callback to RP client) [Default: `600`]
 - `REGISTER_MQ_AT_STARTUP`: Flag to tell API node whether to register message queue address when start (will override previously registered address) [Default: `true` for RP, IdP, and AS roles, `false` for NDID role]
 - `MAX_INTERVAL_TENDERMINT_SYNC_CHECK`: Maximum time interval in milliseconds for polling Tendermint syncing status on server start [Default: `15000`]
+- `IS_STANDALONE`: Select operation mode, `true` for backward-compatibility, `false` for master-worker architecture [Default: `true`]
+- `IS_MASTER`: Only when `IS_STANDALONE` is `false`, master is the process that listen to `tendermint` event and `message_queue` then delegate tasks to workers. Multiple workers are allowed for one master, task is assigned by round-robin algorithm. [Default: `false`]
+- `MASTER_SERVER_IP`: Address of master for worker to connect (Due to the need to share internal files, it should always be `localhost` for now) [Default: `localhost`]
+- `MASTER_SERVER_PORT`: For master, the port of gRPC server to listen. For worker the port of gRPC server to connect to. [Default: `10000`]
 
 Debug APIs (Only in development mode)
 

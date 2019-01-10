@@ -25,6 +25,7 @@ IMPROVEMENTS:
   - `/num_processing_blocks`: Number of processing blocks
   - `/processing_blocks`: Array of processing block heights in string (e.g. `51-63`, `99`)
   - `/num_processing_inbound_messages`: Number of processing inbound MQ messages
+- Introduce master-worker architecture with backward-compatible option to be standalone.
 
 ## 1.0.0 (December 7, 2018)
 
