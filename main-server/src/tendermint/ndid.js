@@ -38,7 +38,7 @@ export async function setMqAddresses(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'setMqAddresses',
       args: JSON.stringify(arguments)
@@ -75,7 +75,7 @@ export async function updateNode(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'updateNode',
       args: JSON.stringify(arguments)
@@ -112,7 +112,7 @@ export async function registerAccessor(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'registerAccessor',
       args: JSON.stringify(arguments)
@@ -149,7 +149,7 @@ export async function clearRegisterIdentityTimeout(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'clearRegisterIdentityTimeout',
       args: JSON.stringify(arguments)
@@ -182,7 +182,7 @@ export async function registerIdentity(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'registerIdentity',
       args: JSON.stringify(arguments)
@@ -223,7 +223,7 @@ export async function addAccessorMethod(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'addAccessorMethod',
       args: JSON.stringify(arguments)
@@ -261,7 +261,7 @@ export async function revokeAccessorMethod(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'revokeAccessorMethod',
       args: JSON.stringify(arguments)
@@ -296,7 +296,7 @@ export async function createRequest(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'createRequest',
       args: JSON.stringify(arguments)
@@ -328,7 +328,7 @@ export async function closeRequest(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'closeRequest',
       args: JSON.stringify(arguments)
@@ -362,7 +362,7 @@ export async function timeoutRequest(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'timeoutRequest',
       args: JSON.stringify(arguments)
@@ -401,7 +401,7 @@ export async function setDataReceived(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'setDataReceived',
       args: JSON.stringify(arguments)
@@ -441,7 +441,7 @@ export async function updateIal(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'updateIal',
       args: JSON.stringify(arguments)
@@ -478,7 +478,7 @@ export async function declareIdentityProof(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'declareIdentityProof',
       args: JSON.stringify(arguments)
@@ -514,7 +514,7 @@ export async function createIdpResponse(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'createIdpResponse',
       args: JSON.stringify(arguments)
@@ -546,7 +546,7 @@ export async function signASData(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'signASData',
       args: JSON.stringify(arguments)
@@ -583,7 +583,7 @@ export async function registerServiceDestination(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'registerServiceDestination',
       args: JSON.stringify(arguments)
@@ -615,7 +615,7 @@ export async function updateServiceDestination(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'updateServiceDestination',
       args: JSON.stringify(arguments)
@@ -1084,7 +1084,7 @@ export async function addNodeToProxyNode(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'addNodeToProxyNode',
       args: JSON.stringify(arguments)
@@ -1116,7 +1116,7 @@ export async function updateNodeProxyNode(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'updateNodeProxyNode',
       args: JSON.stringify(arguments)
@@ -1148,7 +1148,7 @@ export async function removeNodeFromProxyNode(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let { result, error } = await getClient().tendermint({
       fnName: 'removeNodeFromProxyNode',
       args: JSON.stringify(arguments)

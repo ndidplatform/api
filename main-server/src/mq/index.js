@@ -455,7 +455,7 @@ export async function loadAndProcessBacklogMessages() {
 }
 
 export async function send(receivers, message, senderNodeId) {
-  if (!config.isMaster) {
+  if (!config.isMaster && !config.isStandAlone) {
     await getClient().messageQueue({
       args: JSON.stringify(arguments)
     });

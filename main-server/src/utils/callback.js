@@ -229,7 +229,7 @@ export async function callbackToClient(
   responseCallbackFnName,
   dataForResponseCallback
 ) {
-  if(!config.isMaster) {
+  if(!config.isMaster && !config.isStandAlone) {
     let callbackPromise = getClient().callback({
       args: JSON.stringify(arguments)
     });

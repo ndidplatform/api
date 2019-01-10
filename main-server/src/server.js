@@ -126,7 +126,7 @@ async function processCallAndReturn({
 }
 
 async function initialize() {
-  if(config.isMaster) initializeMaster();
+  if(config.isMaster) initializeMaster(config.isStandAlone);
   else initializeWorker();
 }
 
@@ -201,7 +201,7 @@ async function initializeWorker() {
   }
 }
 
-async function initializeMaster() {
+async function initializeMaster(standAlone) {
   logger.info({ message: 'Initializing server' });
   try {
     tendermint.loadSavedData();
@@ -227,7 +227,7 @@ async function initializeMaster() {
     }
 
     common.readCallbackUrlsFromFiles();
-    masterInitialize();
+    if(!standAlone) masterInitialize();
 
     let externalCryptoServiceReady;
     if (config.useExternalCryptoService) {
@@ -250,30 +250,32 @@ async function initializeMaster() {
       await externalCryptoServiceReady;
     }
 
-    masterEventEmitter.on('tendermintCallByWorker', async ({ fnName, argArray, gRPCRef }) => {
-      processCallAndReturn({
-        type: 'tendermintCallByWorker', 
-        fnName, argArray, gRPCRef,
-        processFunction: tendermintNdid[fnName],
-        returnResultFunction: tendermintReturnResult,
+    if(!standAlone) {
+      masterEventEmitter.on('tendermintCallByWorker', async ({ fnName, argArray, gRPCRef }) => {
+        processCallAndReturn({
+          type: 'tendermintCallByWorker', 
+          fnName, argArray, gRPCRef,
+          processFunction: tendermintNdid[fnName],
+          returnResultFunction: tendermintReturnResult,
+        });
       });
-    });
 
-    masterEventEmitter.on('callbackToClientByWorker', ({ argArray }) => {
-      logger.debug({
-        message: 'callbackToClientByWorker',
-        argArray
+      masterEventEmitter.on('callbackToClientByWorker', ({ argArray }) => {
+        logger.debug({
+          message: 'callbackToClientByWorker',
+          argArray
+        });
+        callbackToClient.apply(null, argArray);
       });
-      callbackToClient.apply(null, argArray);
-    });
 
-    masterEventEmitter.on('mqCallByWorker', ({ argArray }) => {
-      logger.debug({
-        message: 'mqCallByWorker',
-        argArray
+      masterEventEmitter.on('mqCallByWorker', ({ argArray }) => {
+        logger.debug({
+          message: 'mqCallByWorker',
+          argArray
+        });
+        mq.send.apply(null, argArray);
       });
-      mq.send.apply(null, argArray);
-    });
+    }
 
     await common.initialize();
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
