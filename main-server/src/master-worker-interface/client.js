@@ -229,8 +229,7 @@ async function onRecvData(data) {
     result,
     error,
   } = data;
-  let argsJson = JSON.parse(args);
-  let argArray = parseArgsToArray(args);
+  let argsJson, argArray;
   switch(type) {
 
     case 'reInitKey':
@@ -246,6 +245,7 @@ async function onRecvData(data) {
         message: 'worker received event to change dpki callback',
         args,
       });
+      argsJson = JSON.parse(args);
       eventEmitter.emit(type, argsJson);
       return;
 
@@ -278,6 +278,7 @@ async function onRecvData(data) {
         argArray,
         gRPCRef
       });
+      argArray = parseArgsToArray(args);
       eventEmitter.emit(type, {
         namespace, fnName, argArray, gRPCRef
       });
