@@ -126,7 +126,8 @@ async function processCallAndReturn({
 }
 
 async function initialize() {
-  if(config.isMaster) initializeMaster(config.isStandAlone);
+  if(config.standAlone) initializeMaster(true);
+  else if(config.isMaster) initializeMaster(false);
   else initializeWorker();
 }
 
