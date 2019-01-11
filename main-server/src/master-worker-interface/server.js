@@ -398,8 +398,8 @@ const functionList = {
     'setLastBlock',
   ],
   proxy: [
-    'handleMessageFromQueue',
-    'handleTendermintNewBlock',
+    //'handleMessageFromQueue',
+    //'handleTendermintNewBlock',
   ],
   common: [
     'closeRequest',
