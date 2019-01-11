@@ -252,12 +252,13 @@ async function initializeMaster(standAlone) {
     }
 
     if(!standAlone) {
-      masterEventEmitter.on('tendermintCallByWorker', async ({ fnName, argArray, gRPCRef }) => {
+      masterEventEmitter.on('tendermintCallByWorker', async ({ fnName, argArray, gRPCRef, workerId }) => {
         processCallAndReturn({
           type: 'tendermintCallByWorker', 
           fnName, argArray, gRPCRef,
           processFunction: tendermintNdid[fnName],
           returnResultFunction: tendermintReturnResult,
+          workerId,
         });
       });
 

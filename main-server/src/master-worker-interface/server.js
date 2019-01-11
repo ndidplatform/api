@@ -51,7 +51,15 @@ const packageDefinition = protoLoader.loadSync(
 );
 const proto = grpc.loadPackageDefinition(packageDefinition);
 
-let workerList = [];
+const workerList = [];
+const workerIdToJobRefMapping = {};
+const jobRefToWorkerIdMapping = {};
+
+const tendermintRefToWorkerId = {};
+
+const workerTimeoutId = {};
+const delegatedData = {};
+
 let counter = 0;
 let accessor_sign_url = '';
 let dpki_url = {};
@@ -65,7 +73,7 @@ internalEventEmitter.on('accessor_sign_changed', (newUrl) => {
     newUrl,
   });
   accessor_sign_url = newUrl;
-  workerList.forEach((connection) => {
+  workerList.forEach(({ connection }) => {
     connection.write({
       type: 'accessor_sign_changed',
       args: newUrl,
@@ -79,7 +87,7 @@ internalEventEmitter.on('dpki_callback_url_changed', (newUrlObject) => {
     newUrlObject,
   });
   dpki_url = newUrlObject;
-  workerList.forEach((connection) => {
+  workerList.forEach(({ connection }) => {
     connection.write({
       type: 'dpki_callback_url_changed',
       args: JSON.stringify(newUrlObject),
@@ -91,7 +99,7 @@ internalEventEmitter.on('reInitKey', () => {
   logger.debug({
     message: 'Master re-init key',
   });
-  workerList.forEach((connection) => {
+  workerList.forEach(({ connection }) => {
     connection.write({
       type: 'reInitKey',
     });
@@ -103,7 +111,7 @@ internalEventEmitter.on('invalidateDataSchemaCache', ({ serviceId }) => {
     message: 'Invalidate data schema cache',
     serviceId,
   });
-  workerList.forEach((connection) => {
+  workerList.forEach(({ connection }) => {
     connection.write({
       type: 'invalidateDataSchemaCache',
       args: serviceId
@@ -115,7 +123,7 @@ internalEventEmitter.on('invalidateNodesBehindProxyWithKeyOnProxyCache', () => {
   logger.debug({
     message: 'Invalidate node on proxy',
   });
-  workerList.forEach((connection) => {
+  workerList.forEach(({ connection }) => {
     connection.write({
       type: 'invalidateNodesBehindProxyWithKeyOnProxyCache',
     });
@@ -161,6 +169,16 @@ function returnResultCall(call, done) {
     result: JSON.parse(result),
     error: JSON.parse(error),
   });
+
+  const workerId = jobRefToWorkerIdMapping[gRPCRef];
+  delete jobRefToWorkerIdMapping[gRPCRef];
+  for(let i = 0 ; i < workerIdToJobRefMapping[workerId].length ; i++) {
+    if(workerIdToJobRefMapping[workerId][i] === gRPCRef) {
+      workerIdToJobRefMapping[workerId].splice(i,1);
+    }
+  }
+  delete delegatedData[gRPCRef];
+
   let requestId = gRPCRefToRequestId[gRPCRef];
   if(requestId) {
     delete gRPCRefToRequestId[gRPCRef];
@@ -191,7 +209,37 @@ async function waitForResult(waitForRef) {
 }
 
 function subscribe(call) {
-  workerList.push(call);
+  const { workerId } = call.request;
+  workerList.push({
+    connection: call,
+    workerId,
+  });
+
+  if(!workerIdToJobRefMapping[workerId]) {
+    workerIdToJobRefMapping[workerId] = [];
+  }
+  if(workerTimeoutId[workerId]) {
+    clearTimeout(workerTimeoutId[workerId]);
+    delete workerTimeoutId[workerId];
+  }
+
+  call.on('cancelled', () => {
+    for(let i = 0 ; i < workerList.length ; i++) {
+      if(workerList[i].workerId === workerId) workerList.splice(i,1);
+    }
+    //wait for some time to clear job mapping and re-delegate?
+    workerTimeoutId[workerId] = setTimeout(() => {
+      delete workerTimeoutId[workerId];
+      workerIdToJobRefMapping[workerId].forEach((gRPCRef) => {
+        let { data, specificWorkerId } = delegatedData[gRPCRef];
+        delegateToWorker(data, specificWorkerId);
+        delete jobRefToWorkerIdMapping[gRPCRef];
+        delete delegatedData[gRPCRef];
+      });
+      delete workerIdToJobRefMapping[workerId];
+    }, config.workerDisconnectedTimeout);
+  });
+
   call.write({
     type: 'accessor_sign_changed',
     args: accessor_sign_url,
@@ -204,11 +252,12 @@ function subscribe(call) {
 
 function tendermintCall(call, done) {
   const {
-    fnName, args, gRPCRef
+    fnName, args, gRPCRef, workerId
   } = call.request;
   let argArray = JSON.parse(args);
+  tendermintRefToWorkerId[gRPCRef] = workerId;
   eventEmitter.emit('tendermintCallByWorker', {
-    fnName, argArray, gRPCRef
+    fnName, argArray, gRPCRef, workerId
   });
   done();
 }
@@ -222,16 +271,16 @@ function callbackCall(call, done) {
   done();
 }
 
-function addToQueue({ delegateData, workerIndex, requestId }) {
+function addToQueue({ delegateData, specificWorkerId, requestId }) {
   logger.debug({
     message: 'Add to request queue',
-    delegateData, workerIndex, requestId
+    delegateData, specificWorkerId, requestId
   });
   if(!requestIdQueue[requestId]) {
     requestIdQueue[requestId] = [];
   }
   requestIdQueue[requestId].push({
-    delegateData, workerIndex
+    delegateData, specificWorkerId
   });
 }
 
@@ -242,8 +291,8 @@ function resumeQueue(requestId) {
     queue: requestIdQueue[requestId],
   });
   if(requestIdQueue[requestId] && requestIdQueue[requestId].length > 0) {
-    let { delegateData, workerIndex } = requestIdQueue[requestId].splice(0,1)[0];
-    delegateToWorker(delegateData, workerIndex);
+    let { delegateData, specificWorkerId } = requestIdQueue[requestId].splice(0,1)[0];
+    delegateToWorker(delegateData, specificWorkerId);
   } else {
     delete requestIdQueue[requestId];
   }
@@ -273,7 +322,7 @@ function waitForWorker() {
 
 export async function delegateToWorker({
   type, namespace, fnName, args,
-}, workerIndex) {
+}, specificWorkerId) {
   let gRPCRef = randomBase64Bytes(16); //random
 
   logger.debug({
@@ -281,7 +330,7 @@ export async function delegateToWorker({
     namespace,
     fnName,
     args,
-    workerIndex,
+    specificWorkerId,
     gRPCRef,
   });
   //Check requestId and queue here
@@ -291,11 +340,12 @@ export async function delegateToWorker({
       delegateData: {
         type, namespace, fnName, args,
       },
-      workerIndex,
+      specificWorkerId,
       requestId,
     });
     return;
   }
+  
   let index;
   if(workerList.length === 0) {
     logger.info({
@@ -303,11 +353,19 @@ export async function delegateToWorker({
     });
     await waitForWorker();
   }
-  if(!workerIndex) {
-    index = counter;
+  if(!specificWorkerId) {
     counter = (counter + 1)%workerList.length;
+    index = counter;
   }
-  else index = workerIndex;
+  else {
+    for(let i = 0 ; i < workerList.length ; i++) {
+      if(workerList[i].workerId === specificWorkerId) {
+        index = i;
+        break;
+      }
+    }
+    if(!index) throw 'Worker not found';
+  }
   if(requestId) {
     requestIdToGRPCRef[requestId] = gRPCRef;
     gRPCRefToRequestId[gRPCRef] = requestId;
@@ -331,10 +389,16 @@ export async function delegateToWorker({
       };
     }
   }
-  workerList[index].write({
+  let { connection, workerId } = workerList[index];
+  connection.write({
     type, namespace, fnName, gRPCRef,
     args: JSON.stringify(args)
   });
+  workerIdToJobRefMapping[workerId].push(gRPCRef);
+  jobRefToWorkerIdMapping[gRPCRef] = workerId;
+  delegatedData[gRPCRef] = [{
+    type, namespace, fnName, args,
+  }, specificWorkerId];
   return waitForResult(gRPCRef);
 }
 
@@ -347,11 +411,14 @@ export function tendermintReturnResult({
     result,
     error
   });
-  workerList.forEach((connection) => {
-    connection.write({
-      type: 'tendermintResult',
-      gRPCRef, result, error,
-    });
+  workerList.forEach(({ connection, workerId }) => {
+    if(workerId === tendermintRefToWorkerId[gRPCRef]) {
+      connection.write({
+        type: 'tendermintResult',
+        gRPCRef, result, error,
+      });
+      delete tendermintRefToWorkerId[gRPCRef];
+    }
   });
 }
 

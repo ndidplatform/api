@@ -1,14 +1,14 @@
 syntax = "proto3";
  
 service MasterWorker {
-  rpc subscribe(Empty) returns (stream InboundMessage){}
-  rpc tendermintCall(OutboundMessage) returns(Empty){}
-  rpc callbackCall(OutboundMessage) returns(Empty){}
-  rpc messageQueueCall(OutboundMessage) returns(Empty){}
+  rpc subscribe(WorkerId) returns (stream OutboundMessage){}
+  rpc tendermintCall(InboundMessage) returns(Empty){}
+  rpc callbackCall(InboundMessage) returns(Empty){}
+  rpc messageQueueCall(InboundMessage) returns(Empty){}
   rpc returnResultCall(Result) returns(Empty){}
 }
  
-message InboundMessage {
+message OutboundMessage {
   string type = 1;
   string namespace = 2;
   string fnName = 3;
@@ -18,16 +18,21 @@ message InboundMessage {
   string error = 7;
 }
 
-message OutboundMessage {
+message InboundMessage {
   string fnName = 1;
   string args = 2;
   string gRPCRef = 3;
+  string workerId = 4;
 }
 
 message Result {
   string gRPCRef = 1;
   string result = 2;
   string error = 3;
+}
+
+message WorkerId {
+  string workerId = 1;
 }
 
 message Empty {

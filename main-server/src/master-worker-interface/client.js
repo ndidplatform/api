@@ -43,6 +43,8 @@ const packageDefinition = protoLoader.loadSync(
 );
 const proto = grpc.loadPackageDefinition(packageDefinition);
 const MASTER_SERVER_ADDRESS = `${config.masterServerIp}:${config.masterServerPort}`;
+const workerId = randomBase64Bytes(8);
+
 let client = null;
 let connectivityState = null;
 let workerSubscribeChannel = null;
@@ -78,8 +80,9 @@ function watchForNextConnectivityStateChange() {
           if (connectivityState === 1 && newConnectivityState === 2) {
             logger.info({
               message: 'Worker service gRPC reconnect',
+              workerId,
             });
-            workerSubscribeChannel = client.subscribe(null);
+            workerSubscribeChannel = client.subscribe({ workerId });
             workerSubscribeChannel.on('data', onRecvData); 
           }
           connectivityState = newConnectivityState;
@@ -142,6 +145,7 @@ function tendermint({ fnName, args }) {
     client.tendermintCall({ 
       fnName, 
       gRPCRef,
+      workerId,
       args: JSON.stringify(parseArgsToArray(args)) 
     }, (error) => {
       if(error) reject(error);

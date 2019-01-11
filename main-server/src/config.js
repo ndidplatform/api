@@ -193,3 +193,5 @@ export const isMaster = !isStandAlone && process.env.IS_MASTER === 'true';
 
 export const masterServerIp = process.env.MASTER_SERVER_IP || 'localhost';
 export const masterServerPort = process.env.MASTER_SERVER_PORT || 10000;
+
+export const workerDisconnectedTimeout = 60*1000;
