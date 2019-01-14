@@ -362,8 +362,8 @@ function resumeQueue(requestId) {
     queue: requestIdQueue[requestId],
   });
   if(requestIdQueue[requestId] && requestIdQueue[requestId].length > 0) {
-    let { delegateData, specificWorkerId } = requestIdQueue[requestId].splice(0,1)[0];
-    delegateToWorker(delegateData, specificWorkerId);
+    let { delegateData, specificWorkerId, gRPCRef } = requestIdQueue[requestId].splice(0,1)[0];
+    delegateToWorker(delegateData, specificWorkerId, gRPCRef, true);
   } else {
     delete requestIdQueue[requestId];
   }
@@ -393,8 +393,10 @@ function waitForWorker() {
 
 export async function delegateToWorker({
   type, namespace, fnName, args,
-}, specificWorkerId) {
-  let gRPCRef = randomBase64Bytes(16); //random
+}, specificWorkerId, gRPCRef = false, resume = false) {
+  if(!gRPCRef) {
+    gRPCRef = randomBase64Bytes(16); //random
+  }
 
   logger.debug({
     message: 'Master delegate',
@@ -413,8 +415,9 @@ export async function delegateToWorker({
       },
       specificWorkerId,
       requestId,
+      gRPCRef,
     });
-    return;
+    return waitForResult(gRPCRef);
   }
   
   let index;
@@ -470,7 +473,7 @@ export async function delegateToWorker({
   delegatedData[gRPCRef] = [{
     type, namespace, fnName, args,
   }, specificWorkerId];
-  return waitForResult(gRPCRef);
+  if(!resume) return waitForResult(gRPCRef);
 }
 
 export function tendermintReturnResult({
