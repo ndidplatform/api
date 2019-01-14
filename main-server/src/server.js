@@ -137,6 +137,7 @@ async function initialize() {
 async function initializeWorker() {
   logger.info({ message: 'Initializing worker' });
   try {
+    tendermint.loadSavedData();
     //connect to tendermint for query only
     if (config.ndidNode) {
       tendermint.setWaitForInitEndedBeforeReady(false);

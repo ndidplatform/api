@@ -156,6 +156,32 @@ internalEventEmitter.on('invalidateDataSchemaCache', ({ serviceId }) => {
   }); 
 });
 
+internalEventEmitter.on('changeChainId', (newChainId) => {
+  logger.debug({
+    message: 'Master change chainId',
+    newChainId,
+  });
+  workerList.forEach(({ connection }) => {
+    connection.write({
+      type: 'changeChainId',
+      args: newChainId
+    });
+  }); 
+});
+
+internalEventEmitter.on('changeLatestBlockHeight', (newBlockHeight) => {
+  logger.debug({
+    message: 'Master change latest block height',
+    newBlockHeight,
+  });
+  workerList.forEach(({ connection }) => {
+    connection.write({
+      type: 'changeLatestBlockHeight',
+      args: newBlockHeight
+    });
+  }); 
+});
+
 internalEventEmitter.on('invalidateNodesBehindProxyWithKeyOnProxyCache', () => {
   logger.debug({
     message: 'Invalidate node on proxy',

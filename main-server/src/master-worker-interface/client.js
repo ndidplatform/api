@@ -29,6 +29,7 @@ import logger from '../logger';
 import CustomError from 'ndid-error/custom_error';
 import { randomBase64Bytes } from '../utils';
 import { EventEmitter } from 'events';
+import { changeChainId, changeLatestBlockHeight } from '../tendermint';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -281,6 +282,22 @@ async function onRecvData(data) {
       eventEmitter.emit(type, {
         namespace, fnName, argArray, gRPCRef
       });
+      return;
+    
+    case 'changeChainId':
+      logger.debug({
+        message: 'Worker received chainId change',
+        args,
+      });
+      changeChainId(args);
+      return;
+    
+    case 'changeLatestBlockHeight':
+      logger.debug({
+        message: 'Worker received latest block height change',
+        args,
+      });
+      changeLatestBlockHeight(args);
       return;
 
     default:

@@ -41,6 +41,7 @@ import * as utils from '../utils';
 import { sha256, randomBase64Bytes } from '../utils/crypto';
 
 import * as config from '../config';
+import { internalEventEmitter as masterEventEmitter } from '../master-worker-interface/server';
 
 const tendermintProtobufRootInstance = new protobuf.Root();
 const tendermintProtobufRoot = tendermintProtobufRootInstance.loadSync(
@@ -181,6 +182,20 @@ function saveLatestBlockHeight(height) {
   }
 }
 
+export function changeChainId(chainIdToSave) {
+  if(config.isMaster) {
+    masterEventEmitter.emit('changeChainId', chainIdToSave);
+  }
+  chainId = chainIdToSave;
+}
+
+export function changeLatestBlockHeight(blockHeight) {
+  if(config.isMaster) {
+    masterEventEmitter.emit('changeLatestBlockHeight', blockHeight);
+  }
+  latestBlockHeight = blockHeight;
+}
+
 function saveChainId(chainIdToSave) {
   fs.writeFile(chainIdFilepath, chainIdToSave, (err) => {
     if (err) {
@@ -190,7 +205,7 @@ function saveChainId(chainIdToSave) {
       });
     }
   });
-  chainId = chainIdToSave;
+  changeChainId(chainIdToSave);
 }
 
 function removeChainIdAndLatestBlockHeightFiles() {
@@ -424,7 +439,7 @@ async function handleNewChain(newChainId) {
   saveChainId(newChainId);
   lastKnownAppHash = null;
   cacheBlocks = {};
-  latestBlockHeight = 1;
+  changeLatestBlockHeight(1);
   latestProcessedBlockHeight = 0;
   saveLatestBlockHeight(1);
   await cacheDb.changeAllDataKeysWithExpectedBlockHeight(1);
@@ -549,7 +564,7 @@ export async function processMissingBlocks(statusOnSync) {
 async function processNewBlock(blockHeight, appHash) {
   if (latestBlockHeight == null || latestBlockHeight < blockHeight) {
     const lastKnownBlockHeight = latestBlockHeight;
-    latestBlockHeight = blockHeight;
+    changeLatestBlockHeight(blockHeight);
 
     const missingBlockCount =
       lastKnownBlockHeight == null
