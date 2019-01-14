@@ -61,22 +61,57 @@ const workerTimeoutId = {};
 const delegatedData = {};
 
 let counter = 0;
-let accessor_sign_url = '';
-let dpki_url = {};
+let idp_callback_urls = {};
+let as_callback_urls = {};
+let as_service_callback_urls = {};
+let dpki_urls = {};
 
 export const eventEmitter = new EventEmitter();
 export const internalEventEmitter = new EventEmitter();
 
-internalEventEmitter.on('accessor_sign_changed', (newUrl) => {
+internalEventEmitter.on('idp_callback_url_changed', (newUrlObject) => {
   logger.debug({
-    message: 'Master change accessor url',
-    newUrl,
+    message: 'Master change idp callback url',
+    newUrlObject,
   });
-  accessor_sign_url = newUrl;
+  for(let key in newUrlObject) {
+    if(newUrlObject[key]) idp_callback_urls[key] = newUrlObject[key];
+  }
   workerList.forEach(({ connection }) => {
     connection.write({
-      type: 'accessor_sign_changed',
-      args: newUrl,
+      type: 'idp_callback_url_changed',
+      args: JSON.stringify(newUrlObject),
+    });
+  });
+});
+
+internalEventEmitter.on('as_callback_url_changed', (newUrlObject) => {
+  logger.debug({
+    message: 'Master change as callback url',
+    newUrlObject,
+  });
+  for(let key in newUrlObject) {
+    if(newUrlObject[key]) as_callback_urls[key] = newUrlObject[key];
+  }
+  workerList.forEach(({ connection }) => {
+    connection.write({
+      type: 'as_callback_url_changed',
+      args: JSON.stringify(newUrlObject),
+    });
+  });
+});
+
+internalEventEmitter.on('service_callback_url_changed', (newUrlObject) => {
+  logger.debug({
+    message: 'Master change as service callback url',
+    newUrlObject,
+  });
+  const { nodeId, serviceId, url } = newUrlObject;
+  as_service_callback_urls[`${nodeId}:${serviceId}`] = url;
+  workerList.forEach(({ connection }) => {
+    connection.write({
+      type: 'service_callback_url_changed',
+      args: JSON.stringify(newUrlObject),
     });
   });
 });
@@ -86,7 +121,9 @@ internalEventEmitter.on('dpki_callback_url_changed', (newUrlObject) => {
     message: 'Master change dpki url',
     newUrlObject,
   });
-  dpki_url = newUrlObject;
+  for(let key in newUrlObject) {
+    if(newUrlObject[key]) dpki_urls[key] = newUrlObject[key];
+  }
   workerList.forEach(({ connection }) => {
     connection.write({
       type: 'dpki_callback_url_changed',
@@ -241,12 +278,20 @@ function subscribe(call) {
   });
 
   call.write({
-    type: 'accessor_sign_changed',
-    args: accessor_sign_url,
+    type: 'idp_callback_url_changed',
+    args: JSON.stringify(idp_callback_urls),
+  });
+  call.write({
+    type: 'as_callback_url_changed',
+    args: JSON.stringify(as_callback_urls),
   });
   call.write({
     type: 'dpki_callback_url_changed',
-    args: JSON.stringify(dpki_url),
+    args: JSON.stringify(dpki_urls),
+  });
+  call.write({
+    type: 'service_callback_url_changed',
+    args: JSON.stringify(as_service_callback_urls),
   });
 }
 
@@ -427,15 +472,19 @@ const functionList = {
     'registerOrUpdateASService',
     'getServiceDetail',
     'processDataForRP',
+    'processRequest',
   ],
   rp: [
     'removeDataFromAS',
     'removeAllDataFromAS',
     'getRequestIdByReferenceId',
     'getDataFromAS',
+    'sendRequestToAS',
+    'processAsData',
   ],
   idp: [
-    'requestChallengeAndCreateResponse'
+    'requestChallengeAndCreateResponse',
+    'processMessage',
   ],
   ndid: [
     'registerNode',
@@ -500,6 +549,10 @@ for(let namespace in functionList) {
       });
     };
   }
+}
+
+export function getCoreFunction(namespace, fnName) {
+  return exportElement[namespace][fnName];
 }
 
 export default exportElement;

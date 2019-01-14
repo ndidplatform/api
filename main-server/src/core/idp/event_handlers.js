@@ -20,7 +20,8 @@
  *
  */
 
-import { callbackUrls, processMessage } from '.';
+import { callbackUrls } from '.';
+import { getCoreFunction } from '../../master-worker-interface/server';
 import { createResponse } from './create_response';
 
 import * as utils from '../../utils';
@@ -39,6 +40,9 @@ import * as config from '../../config';
 import * as tendermintNdid from '../../tendermint/ndid';
 
 const requestIdLocks = {};
+const processMessage = async function() {
+  return getCoreFunction('idp','processMessage')(...arguments);
+};
 
 export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
   logger.info({

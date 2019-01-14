@@ -24,9 +24,8 @@ import {
   callbackUrls,
   isAllIdpResponsesValid,
   isAllIdpRespondedAndValid,
-  sendRequestToAS,
-  processAsData,
 } from '.';
+import { getCoreFunction } from '../../master-worker-interface/server';
 
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
@@ -44,6 +43,13 @@ import * as config from '../../config';
 const challengeRequestProcessLocks = {};
 const idpResponseProcessLocks = {};
 const asDataResponseProcessLocks = {};
+
+const sendRequestToAS = async function() {
+  return getCoreFunction('rp','sendRequestToAS')(...arguments);
+};
+const processAsData = async function() {
+  return getCoreFunction('rp','processAsData')(...arguments);
+};
 
 export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
   logger.info({

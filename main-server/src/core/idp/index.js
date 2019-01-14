@@ -51,9 +51,10 @@ const callbackUrlFilesPrefix = path.join(
   'idp-callback-url-' + config.nodeId
 );
 
-export function changeAccessorUrlForWorker(newUrl) {
-  callbackUrls.accessor_sign_url = newUrl;
-  //writeCallbackUrlToFile('accessor_sign', newUrl);
+export function changeCallbackUrlForWorker(newUrlObject) {
+  for(let key in newUrlObject) {
+    if(newUrlObject[key]) callbackUrls[key] = newUrlObject[key];
+  }
 }
 
 export function readCallbackUrlsFromFiles() {
@@ -130,11 +131,19 @@ export function setCallbackUrls({
   if (accessor_sign_url != null) {
     callbackUrls.accessor_sign_url = accessor_sign_url;
     writeCallbackUrlToFile('accessor_sign', accessor_sign_url);
-    if(config.isMaster) masterEventEmitter.emit('accessor_sign_changed', accessor_sign_url);
   }
   if (error_url != null) {
     callbackUrls.error_url = error_url;
     writeCallbackUrlToFile('error', error_url);
+  }
+  if(config.isMaster) {
+    masterEventEmitter.emit('idp_callback_url_changed', {
+      incoming_request_url,
+      incoming_request_status_update_url,
+      identity_result_url,
+      accessor_sign_url,
+      error_url,
+    });
   }
 }
 

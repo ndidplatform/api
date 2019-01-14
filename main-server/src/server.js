@@ -41,7 +41,10 @@ import * as mq from './mq';
 import { stopAllCallbackRetries, callbackToClient } from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
 
-import { changeAccessorUrlForWorker } from './core/idp/index';
+import { changeCallbackUrlForWorker as changeIdpCallbackUrlForWorker } from './core/idp/index';
+import { changeCallbackUrlForWorker as changeAsCallbackUrlForWorker, 
+  changeServiceCallbackUrlForWorker 
+} from './core/as/index';
 import { invalidateDataSchemaCache } from './core/as/data_validator';
 import { invalidateNodesBehindProxyWithKeyOnProxyCache } from './node';
 
@@ -154,8 +157,14 @@ async function initializeWorker() {
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
     await workerInitialize();
 
-    workerEventEmitter.on('accessor_sign_changed', (newUrl) => {
-      changeAccessorUrlForWorker(newUrl);
+    workerEventEmitter.on('service_callback_url_changed', (newUrlObject) => {
+      changeServiceCallbackUrlForWorker(newUrlObject);
+    });
+    workerEventEmitter.on('as_callback_url_changed', (newUrlObject) => {
+      changeAsCallbackUrlForWorker(newUrlObject);
+    });
+    workerEventEmitter.on('idp_callback_url_changed', (newUrlObject) => {
+      changeIdpCallbackUrlForWorker(newUrlObject);
     });
     workerEventEmitter.on('dpki_callback_url_changed', (dpkiObject) => {
       externalCryptoService.changeDpkiCallbackForWorker(dpkiObject);

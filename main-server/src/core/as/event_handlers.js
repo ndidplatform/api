@@ -20,7 +20,8 @@
  *
  */
 
-import { callbackUrls, processRequest } from '.';
+import { callbackUrls } from '.';
+import { getCoreFunction } from '../../master-worker-interface/server';
 import { invalidateDataSchemaCache } from './data_validator';
 
 import CustomError from 'ndid-error/custom_error';
@@ -38,6 +39,9 @@ import { callbackToClient } from '../../utils/callback';
 import * as config from '../../config';
 
 const requestIdLocks = {};
+const processRequest = async function() {
+  return getCoreFunction('as','processRequest')(...arguments);
+};
 
 export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
   logger.info({

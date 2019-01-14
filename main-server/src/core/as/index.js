@@ -37,6 +37,7 @@ import logger from '../../logger';
 
 import * as config from '../../config';
 import { role } from '../../node';
+import { internalEventEmitter as masterEventEmitter } from '../../master-worker-interface/server';
 
 export * from './register_or_update_as_service';
 export * from './process_data_for_rp';
@@ -49,6 +50,16 @@ const callbackUrlFilesPrefix = path.join(
   config.dataDirectoryPath,
   'as-callback-url-'
 );
+
+export function changeCallbackUrlForWorker(newUrlObject) {
+  for(let key in newUrlObject) {
+    if(newUrlObject[key]) callbackUrls[key] = newUrlObject[key];
+  }
+}
+
+export function changeServiceCallbackUrlForWorker({ nodeId, serviceId, url }) {
+  seviceCallbackUrls[`${nodeId}:${serviceId}`] = url;
+}
 
 export function readCallbackUrlsFromFiles() {
   [
@@ -112,6 +123,12 @@ export function setCallbackUrls({
     callbackUrls.error_url = error_url;
     writeCallbackUrlToFile('error', error_url);
   }
+  if(config.isMaster) {
+    masterEventEmitter.emit('as_callback_url_changed', {
+      incoming_request_status_update_url,
+      error_url,
+    });
+  }
 }
 
 export function getCallbackUrls() {
@@ -144,6 +161,9 @@ export function setServiceCallbackUrl(nodeId, serviceId, url) {
         resolve();
       }
     );
+    masterEventEmitter.emit('service_callback_url_changed', {
+      nodeId, serviceId, url
+    });
   });
 }
 

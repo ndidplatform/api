@@ -245,20 +245,15 @@ async function onRecvData(data) {
       return;
 
     case 'dpki_callback_url_changed':
+    case 'idp_callback_url_changed':
+    case 'as_callback_url_changed':
+    case 'service_callback_url_changed':
       logger.debug({
-        message: 'worker received event to change dpki callback',
+        message: 'worker received event to change callback for: ' + type,
         args,
       });
       argsJson = JSON.parse(args);
       eventEmitter.emit(type, argsJson);
-      return;
-
-    case 'accessor_sign_changed':
-      logger.debug({
-        message: 'worker received event to change accessor sign url',
-        args,
-      });
-      eventEmitter.emit(type, args);
       return;
 
     case 'invalidateDataSchemaCache':
