@@ -58,6 +58,7 @@ export function initialize() {
     const httpsOptions = {
       key: fs.readFileSync(config.httpsKeyPath),
       cert: fs.readFileSync(config.httpsCertPath),
+      timeout: 30*1000,
     };
     server = https.createServer(httpsOptions, app);
   } else {
