@@ -193,7 +193,7 @@ export function changeLatestBlockHeight(blockHeight) {
   if(config.isMaster) {
     masterEventEmitter.emit('changeLatestBlockHeight', blockHeight);
   }
-  latestBlockHeight = blockHeight;
+  latestBlockHeight = parseInt(blockHeight);
 }
 
 function saveChainId(chainIdToSave) {
