@@ -408,7 +408,7 @@ export async function delegateToWorker({
   });
   //Check requestId and queue here
   let requestId = getRequestIdFromDelegateData(args); //something
-  if(requestId && requestIdToGRPCRef[requestId]) {
+  if(requestId && requestIdToGRPCRef[requestId] && type === 'functionCall') {
     addToQueue({
       delegateData: {
         type, namespace, fnName, args,
