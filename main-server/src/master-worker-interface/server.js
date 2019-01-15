@@ -342,16 +342,16 @@ function callbackCall(call, done) {
   done();
 }
 
-function addToQueue({ delegateData, specificWorkerId, requestId }) {
+function addToQueue({ delegateData, specificWorkerId, requestId, gRPCRef }) {
   logger.debug({
     message: 'Add to request queue',
-    delegateData, specificWorkerId, requestId
+    delegateData, specificWorkerId, requestId, gRPCRef
   });
   if(!requestIdQueue[requestId]) {
     requestIdQueue[requestId] = [];
   }
   requestIdQueue[requestId].push({
-    delegateData, specificWorkerId
+    delegateData, specificWorkerId, gRPCRef
   });
 }
 
