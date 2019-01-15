@@ -479,6 +479,7 @@ export async function delegateToWorker({
 export function tendermintReturnResult({
   gRPCRef, result, error
 }) {
+  let foundWorker = false;
   logger.debug({
     message: 'Master return tendermint result',
     gRPCRef,
@@ -492,8 +493,21 @@ export function tendermintReturnResult({
         gRPCRef, result, error,
       });
       delete tendermintRefToWorkerId[gRPCRef];
+      foundWorker = true;
+      logger.debug({
+        message: 'Worker found for tm result',
+        workerId,
+        gRPCRef,
+      });
     }
   });
+  if(!foundWorker) {
+    logger.debug({
+      message: 'Tm transact but not found worker',
+      gRPCRef,
+      tendermintRefToWorkerId,
+    });
+  }
 }
 
 const functionList = {
