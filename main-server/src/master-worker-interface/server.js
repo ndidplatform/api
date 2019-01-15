@@ -440,7 +440,7 @@ export async function delegateToWorker({
     }
     if(!index) throw 'Worker not found';
   }
-  if(requestId) {
+  if(requestId && type === 'functionCall') {
     requestIdToGRPCRef[requestId] = gRPCRef;
     gRPCRefToRequestId[gRPCRef] = requestId;
   }
