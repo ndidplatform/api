@@ -71,6 +71,7 @@ async function httpPost(cbId, callbackUrl, body) {
     },
     body: JSON.stringify(body),
     size: RESPONSE_BODY_SIZE_LIMIT,
+    timeout: 30*1000,
   });
 
   const responseBody = await response.text();

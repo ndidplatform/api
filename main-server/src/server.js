@@ -54,11 +54,13 @@ import * as config from './config';
 import { 
   eventEmitter as masterEventEmitter, 
   initialize as masterInitialize,
-  tendermintReturnResult, 
+  tendermintReturnResult,
+  shutdown as masterShutdown,
 } from './master-worker-interface/server';
 import { 
   eventEmitter as workerEventEmitter,
-  initialize as workerInitialize
+  initialize as workerInitialize,
+  shutdown as workerShutdown,
 } from './master-worker-interface/client';
 
 import getClient from './master-worker-interface/client';
@@ -360,6 +362,8 @@ async function shutDown() {
   // => Wait here until a queue to use DB is empty
   await Promise.all([cacheDb.close(), longTermDb.close()]);
   common.stopAllTimeoutScheduler();
+  if(config.isMaster) masterShutdown();
+  else workerShutdown();
 }
 
 process.on('SIGTERM', shutDown);

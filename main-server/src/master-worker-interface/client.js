@@ -310,6 +310,11 @@ async function onRecvData(data) {
   }
 }
 
+export function shutdown() {
+  client.cancel();
+  workerSubscribeChannel.cancel();
+}
+
 export default function() {
   return client;
 }

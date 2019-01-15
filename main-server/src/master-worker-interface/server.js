@@ -598,4 +598,10 @@ export function getCoreFunction(namespace, fnName) {
   return exportElement[namespace][fnName];
 }
 
+export function shutdown() {
+  workerList.forEach(({ connection }) => {
+    connection.close();
+  });
+}
+
 export default exportElement;
