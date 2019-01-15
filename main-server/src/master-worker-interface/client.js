@@ -30,6 +30,8 @@ import CustomError from 'ndid-error/custom_error';
 import { randomBase64Bytes } from '../utils';
 import { EventEmitter } from 'events';
 import { changeChainId, changeLatestBlockHeight } from '../tendermint';
+import { ExponentialBackoff } from 'simple-backoff';
+import { wait } from '../utils';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -105,6 +107,29 @@ async function waitForReady(client) {
   });
 }
 
+function gRPCRetry(fn) {
+  const backoff = new ExponentialBackoff({
+    min: 2000,
+    max: 10000,
+    factor: 2,
+    jitter: 0.2,
+  });
+  let startTime = Date.now();
+  let retry = async function () {
+    if(Date.now() - startTime < config.workerCallTimeout) {
+      try {
+        await fn(...arguments);
+      }
+      catch(error) {
+        await wait(backoff.next());
+        await retry(...arguments);
+      }
+    }
+    else return fn(...arguments); //retry for the last time
+  };
+  return retry;
+}
+
 export async function initialize() {
   client = new proto.MasterWorker(
     MASTER_SERVER_ADDRESS,
@@ -112,10 +137,10 @@ export async function initialize() {
   );
   watchForNextConnectivityStateChange();
   await waitForReady(client);
-  client.tendermint = tendermint;
-  client.callback = callback;
-  client.returnResult = returnResult;
-  client.messageQueue = messageQueue;
+  client.tendermint = gRPCRetry(tendermint);
+  client.callback = gRPCRetry(callback);
+  client.returnResult = gRPCRetry(returnResult);
+  client.messageQueue = gRPCRetry(messageQueue);
 }
 
 function waitForTendermintResult(gRPCRef, resolve) {

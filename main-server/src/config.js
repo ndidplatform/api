@@ -195,3 +195,5 @@ export const masterServerIp = process.env.MASTER_SERVER_IP || 'localhost';
 export const masterServerPort = process.env.MASTER_SERVER_PORT || 10000;
 
 export const workerDisconnectedTimeout = 60*1000;
+
+export const workerCallTimeout = 30*1000;
