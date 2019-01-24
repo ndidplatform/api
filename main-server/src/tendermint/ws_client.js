@@ -30,14 +30,15 @@ import logger from '../logger';
 import { tendermintAddress } from '../config';
 import CustomError from 'ndid-error/custom_error';
 
-const PING_INTERVAL = 30000;
+// const PING_INTERVAL = 30000;
+const PING_TIMEOUT_MS = 60000;
 
 export default class TendermintWsClient extends EventEmitter {
   constructor(name = '', connect) {
     super();
     this.name = name;
     this.connected = false;
-    this.isAlive = false;
+    // this.isAlive = false;
     this.reconnect = true;
     this.rpcId = 0;
     this.queue = [];
@@ -68,16 +69,20 @@ export default class TendermintWsClient extends EventEmitter {
       this.reconnectTimeoutFn = null;
 
       this.connected = true;
-      this.isAlive = true;
+      // this.isAlive = true;
 
       this.emit('connected');
 
-      this.pingIntervalFn = setInterval(() => {
-        if (this.isAlive === false) return this.ws.terminate();
+      // this.pingIntervalFn = setInterval(() => {
+      //   if (this.isAlive === false) return this.ws.terminate();
 
-        this.isAlive = false;
-        this.ws.ping();
-      }, PING_INTERVAL);
+      //   this.isAlive = false;
+      //   this.ws.ping();
+      // }, PING_INTERVAL);
+
+      this.pingTimeoutFn = setTimeout(() => {
+        this.pingTimeout();
+      }, PING_TIMEOUT_MS);
     });
 
     this.ws.on('close', (code, reason) => {
@@ -89,15 +94,27 @@ export default class TendermintWsClient extends EventEmitter {
           reason,
         });
 
-        // TODO: Reject all `_call` promises here?
+        // Reject all `_call` promises
+        for (let rpcId in this.queue) {
+          const error = new CustomError({
+            message: 'Connection closed',
+            details: {
+              rpcId,
+            },
+          });
+          this.queue[rpcId].promise[1](error);
+          delete this.queue[rpcId];
+        }
 
         this.emit('disconnected');
       }
 
       this.connected = false;
-      this.isAlive = false;
-      clearInterval(this.pingIntervalFn);
-      this.pingIntervalFn = null;
+      // this.isAlive = false;
+      // clearInterval(this.pingIntervalFn);
+      // this.pingIntervalFn = null;
+      clearTimeout(this.pingTimeoutFn);
+      this.pingTimeoutFn = null;
 
       if (this.reconnect) {
         // Try reconnect
@@ -159,9 +176,26 @@ export default class TendermintWsClient extends EventEmitter {
       this.emit(message.id, message.error, message.result);
     });
 
-    this.ws.on('pong', () => {
-      this.isAlive = true;
+    // this.ws.on('pong', () => {
+    //   this.isAlive = true;
+    // });
+
+    this.ws.on('ping', () => {
+      // console.log('>>>RECEIVED PING<<<', Date.now())
+      clearTimeout(this.pingTimeoutFn);
+      this.pingTimeoutFn = setTimeout(() => {
+        this.pingTimeout();
+      }, PING_TIMEOUT_MS);
     });
+  }
+
+  pingTimeout() {
+    logger.debug({
+      message:
+        'Tendermint WS ping timed out (did not receive ping from server). Terminating conenction.',
+      name: this.name,
+    });
+    this.ws.terminate();
   }
 
   /**
