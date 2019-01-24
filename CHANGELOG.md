@@ -2,20 +2,13 @@
 
 ## TBD
 
-BUG FIXES:
-
-- Fix `resumeTimeoutScheduler` on server initialization being called too early.
-- Change ZeroMQ socket type on sender side from `req` to `dealer`.
-- Fix clean up method for mapping (socket, socket-destination) in MQ.
-- Clean up for all socket with same `msgId` when receive ack for one `seqId`.
-- Rollback ZeroMQ JS library from 5.1 to 4.6 since 5.1 causes segmentation fault error in C binding.
-- Fix memory leak when making a gRPC call to MQ service server.
-
 IMPROVEMENTS:
 
-- Configurable `maxSocket` for MQ (mitigate `No file descriptors available` error).
+- [MQ Service] Add new environment variable option
+  - `MAX_CONCURRENT_MESSAGES_PER_MQ_SOCKET`: Maximum concurrent messages for each MQ sending socket
+  - `MAX_MQ_SOCKET`: Configurable maximum sockets for MQ (mitigate `No file descriptors available` error).
 - Changed all RPC calls from using HTTP to WebSocket for better performance (decreases response time).
-- Add new environment variable option `TENDERMINT_WS_CONNECTIONS` for configuring number of Tendermint RPC WebSocket connections in connection pool.
+- [Main] Add new environment variable option `TENDERMINT_WS_CONNECTIONS` for configuring number of Tendermint RPC WebSocket connections in connection pool.
 - Add APIs for getting server metrics.
   - `/num_expected_txs`: Number of expected Txs (waiting to be included in a block)
   - `/expected_txs`: Array of hashes of expected Tx
@@ -25,6 +18,15 @@ IMPROVEMENTS:
   - `/num_processing_blocks`: Number of processing blocks
   - `/processing_blocks`: Array of processing block heights in string (e.g. `51-63`, `99`)
   - `/num_processing_inbound_messages`: Number of processing inbound MQ messages
+
+BUG FIXES:
+
+- Fix `resumeTimeoutScheduler` on server initialization being called too early.
+- Change ZeroMQ socket type on sender side from `req` to `dealer`.
+- Fix clean up method for mapping (socket, socket-destination) in MQ.
+- Clean up for all socket with same `msgId` when receive ack for one `seqId`.
+- Rollback ZeroMQ JS library from 5.1 to 4.6 since 5.1 causes segmentation fault error in C binding.
+- Fix memory leak when making a gRPC call to MQ service server.
 
 ## 1.0.0 (December 7, 2018)
 

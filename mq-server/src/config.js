@@ -49,8 +49,7 @@ export const logOneLine = process.env.LOG_ONE_LINE === 'true';
 export const logDirectoryPath =
   process.env.LOG_DIRECTORY_PATH || path.join(__dirname, '..', 'log');
 
-export const maxConnectionPerSocket = 
-  process.env.MAX_CONNECTION_PER_SOCKET || 16;
+export const maxConcurrentMessagesPerMqSocket =
+  process.env.MAX_CONCURRENT_MESSAGES_PER_MQ_SOCKET || 16;
 
-export const maxSocket = 
-  process.env.MAX_SOCKET || 10000;
+export const maxMqSockets = process.env.MAX_MQ_SOCKETS || 10000;
