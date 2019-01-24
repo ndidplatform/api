@@ -28,7 +28,7 @@ import EventEmitter from 'events';
 import zmq from 'zeromq';
 import crypto from 'crypto';
 
-import { maxConnectionPerSocket, maxSocket } from '../config';
+import { maxConcurrentMessagesPerMqSocket, maxMqSockets } from '../config';
 
 export default class MQSendSocket extends EventEmitter {
   constructor() {
@@ -38,43 +38,43 @@ export default class MQSendSocket extends EventEmitter {
     this.socketDestMap = {};
     this.socketListByDest = {};
     this.seqIdList = {};
-    zmq.Context.setMaxSockets(maxSocket);
+    zmq.Context.setMaxSockets(maxMqSockets);
   }
 
   send(dest, payload, msgId, seqId) {
-    if(!this.seqIdList[msgId]) {
+    if (!this.seqIdList[msgId]) {
       this.seqIdList[msgId] = [];
     }
     this.seqIdList[msgId].push(seqId);
     const destKey = dest.ip + ':' + dest.port;
     let currentSocket = null;
-    if(!this.socketListByDest[destKey]) {
+    if (!this.socketListByDest[destKey]) {
       this.socketListByDest[destKey] = [];
     }
 
-    for(let i = 0 ; i < this.socketListByDest[destKey].length ; i++) {
+    for (let i = 0; i < this.socketListByDest[destKey].length; i++) {
       let socket = this.socketListByDest[destKey][i];
-      if(
+      if (
         this.socketUsedBy[socket.id] &&
-        this.socketUsedBy[socket.id].length < maxConnectionPerSocket
+        this.socketUsedBy[socket.id].length < maxConcurrentMessagesPerMqSocket
       ) {
         currentSocket = socket;
         break;
       }
     }
-    if(currentSocket == null) {
+    if (currentSocket == null) {
       const newSocket = this._init(dest, msgId);
       this.socketDestMap[newSocket.id] = destKey;
       count++;
-      if(count > maxConn) {
+      if (count > maxConn) {
         console.log(count);
         maxConn = count;
       }
       this.socketListByDest[destKey].push(newSocket);
       currentSocket = newSocket;
     }
-    
-    if(!this.socketUsedBy[currentSocket.id]) {
+
+    if (!this.socketUsedBy[currentSocket.id]) {
       this.socketUsedBy[currentSocket.id] = [];
     }
     this.socketUsedBy[currentSocket.id].push(seqId);
@@ -83,7 +83,7 @@ export default class MQSendSocket extends EventEmitter {
   }
 
   cleanUp(msgId, ackSeqId) {
-    if(!this.seqIdList[msgId]) return; //ack for same msgId
+    if (!this.seqIdList[msgId]) return; //ack for same msgId
     this.seqIdList[msgId].forEach((seqId) => {
       this._cleanUp(seqId);
     });
@@ -93,9 +93,9 @@ export default class MQSendSocket extends EventEmitter {
   _cleanUp(seqId) {
     let socketId = this.socketMap.get(seqId).id;
     let index = this.socketUsedBy[socketId].indexOf(seqId);
-    if(index !== -1) {
-      this.socketUsedBy[socketId].splice(index,1);
-      if(this.socketUsedBy[socketId].length === 0) {
+    if (index !== -1) {
+      this.socketUsedBy[socketId].splice(index, 1);
+      if (this.socketUsedBy[socketId].length === 0) {
         this.socketMap.get(seqId).close();
         count--;
         delete this.socketUsedBy[socketId];
@@ -103,14 +103,17 @@ export default class MQSendSocket extends EventEmitter {
         let index = this.socketListByDest[destKey].findIndex((socket) => {
           return socket.id === socketId;
         });
-        if(index === -1) { throw 'Something is wrong'; }
-        this.socketListByDest[destKey].splice(index,1);
-        if(this.socketListByDest[destKey].length === 0) {
+        if (index === -1) {
+          throw 'Something is wrong';
+        }
+        this.socketListByDest[destKey].splice(index, 1);
+        if (this.socketListByDest[destKey].length === 0) {
           delete this.socketListByDest[destKey];
         }
       }
+    } else {
+      throw 'Something is wrong';
     }
-    else { throw 'Something is wrong'; }
     this.socketMap.delete(seqId);
   }
 

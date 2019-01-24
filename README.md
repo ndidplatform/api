@@ -47,6 +47,8 @@
 - `NODE_ID`: (Must be the same as its server pair) *Description below* [Required]
 - `MQ_BINDING_PORT`: (Must be the same as its server pair) *Description below* [Required]
 - `SERVER_PORT`: gRPC server port [Default: `50051`]
+- `MAX_CONCURRENT_MESSAGES_PER_MQ_SOCKET`: Maximum concurrent messages for each MQ sending socket [Default: `16`]
+- `MAX_MQ_SOCKET`: Maximum limit for MQ sending sockets [Default: `10000`]
 
 5.  Run a server
 
