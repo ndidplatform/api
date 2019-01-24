@@ -13,9 +13,11 @@ BUG FIXES:
 
 IMPROVEMENTS:
 
-- Configurable `maxSocket` for MQ (mitigate `No file descriptors available` error).
+- [MQ Service] Add new environment variable option
+  - `MAX_CONCURRENT_MESSAGES_PER_MQ_SOCKET`: Maximum concurrent messages for each MQ sending socket
+  - `MAX_MQ_SOCKET`: Configurable maximum sockets for MQ (mitigate `No file descriptors available` error).
 - Changed all RPC calls from using HTTP to WebSocket for better performance (decreases response time).
-- Add new environment variable option `TENDERMINT_WS_CONNECTIONS` for configuring number of Tendermint RPC WebSocket connections in connection pool.
+- [Main] Add new environment variable option `TENDERMINT_WS_CONNECTIONS` for configuring number of Tendermint RPC WebSocket connections in connection pool.
 - Add APIs for getting server metrics.
   - `/num_expected_txs`: Number of expected Txs (waiting to be included in a block)
   - `/expected_txs`: Array of hashes of expected Tx
