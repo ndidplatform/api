@@ -1,6 +1,6 @@
 # Changelog
 
-## TBD
+## 1.0.1 (January 24, 2019)
 
 BUG FIXES:
 
@@ -13,7 +13,7 @@ BUG FIXES:
 
 IMPROVEMENTS:
 
-- [MQ Service] Add new environment variable option
+- [MQ Service] Add new environment variable options
   - `MAX_CONCURRENT_MESSAGES_PER_MQ_SOCKET`: Maximum concurrent messages for each MQ sending socket
   - `MAX_MQ_SOCKET`: Configurable maximum sockets for MQ (mitigate `No file descriptors available` error).
 - Changed all RPC calls from using HTTP to WebSocket for better performance (decreases response time).
