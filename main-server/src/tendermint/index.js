@@ -972,14 +972,14 @@ export async function transact({
     useMasterKey,
     saveForRetryOnChainDisabled,
   };
-  const callbackData = {
+  const metadata = {
     transactParams,
     callbackFnName,
     callbackAdditionalArgs,
   };
-  expectedTx[txHash] = callbackData;
+  expectedTx[txHash] = metadata;
   incrementExpectedTxsCount();
-  await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, callbackData);
+  await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, metadata);
   expectedTxMetricsData[txHash] = {
     startTime: Date.now(),
     functionName: fnName,
