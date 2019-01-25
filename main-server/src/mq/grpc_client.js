@@ -381,6 +381,7 @@ function sendMessageInternal(mqAddress, payload, msgId) {
   return new Promise((resolve, reject) => {
     const call = client.sendMessage(
       { mq_address: mqAddress, payload, message_id: msgId },
+      { deadline: Date.now() + config.apiToMqTimeout },
       (error) => {
         if (error) {
           const errorTypeObj = Object.entries(errorType).find(

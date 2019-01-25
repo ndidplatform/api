@@ -5,6 +5,7 @@
 IMPROVEMENTS:
 
 - Introduce master-worker architecture with backward-compatible option to be standalone.
+- Add `apiToMqTimeout` to limit time `API` use to call `MQ`
 
 ## 1.0.1 (January 24, 2019)
 
