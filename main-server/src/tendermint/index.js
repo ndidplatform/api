@@ -961,14 +961,14 @@ export async function transact({
     useMasterKey,
     saveForRetryOnChainDisabled,
   };
-  const callbackData = {
+  const metadata = {
     transactParams,
     callbackFnName,
     callbackAdditionalArgs,
   };
-  expectedTx[txHash] = callbackData;
+  expectedTx[txHash] = metadata;
   expectedTxsCount++;
-  await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, callbackData);
+  await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, metadata);
 
   try {
     let promise;
