@@ -139,7 +139,7 @@ function sendMessage(call, callback) {
   const { ip, port } = mqAddress;
 
   logger.debug({
-    message: 'sendMessage',
+    message: 'sending message',
     args: call.request,
   });
 
@@ -156,7 +156,7 @@ function sendMessage(call, callback) {
   });
 
   logger.debug({
-    message: 'send',
+    message: 'sent',
     msgId,
   });
 }
