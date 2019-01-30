@@ -192,7 +192,7 @@ export default class TendermintWsClient extends EventEmitter {
   pingTimeout() {
     logger.debug({
       message:
-        'Tendermint WS ping timed out (did not receive ping from server). Terminating conenction.',
+        'Tendermint WS ping timed out (did not receive ping from server). Terminating connection.',
       name: this.name,
     });
     this.ws.terminate();
