@@ -24,6 +24,7 @@ import express from 'express';
 
 import { validateBody } from '../middleware/validation';
 import { idpOnlyHandler } from '../middleware/role_handler';
+import { routeCollisionStopper } from '../middleware/helpers';
 import * as identity from '../../../core/identity';
 import * as common from '../../../core/common';
 import * as tendermintNdid from '../../../tendermint/ndid';
@@ -151,6 +152,7 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
 
 router.post(
   '/:namespace/:identifier',
+  routeCollisionStopper, // collide with "/requests/close"
   idpOnlyHandler,
   validateBody,
   async (req, res, next) => {

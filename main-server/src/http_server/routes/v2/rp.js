@@ -24,6 +24,7 @@ import express from 'express';
 
 import { validateBody } from '../middleware/validation';
 import { rpOnlyHandler } from '../middleware/role_handler';
+import { routeCollisionStopper } from '../middleware/helpers';
 import * as rp from '../../../core/rp';
 import * as common from '../../../core/common';
 
@@ -60,6 +61,7 @@ router.post('/requests/housekeeping/data', async (req, res, next) => {
 
 router.post(
   '/requests/:namespace/:identifier',
+  routeCollisionStopper,  // collide with "/requests/housekeeping/data"
   validateBody,
   async (req, res, next) => {
     try {

@@ -20,36 +20,9 @@
  *
  */
 
-import express from 'express';
-
-import Prometheus from 'prom-client';
-import { httpRequestDurationMilliseconds } from '../../prometheus';
-import logger from '../../logger';
-
-const router = express.Router();
-
-router.get('/metrics', (req, res) => {
-  res.set('Content-Type', Prometheus.register.contentType);
-  res.end(Prometheus.register.metrics());
-});
-
-export function setHttpRequestStartTime(req, res, next) {
-  res.locals.startEpoch = Date.now();
-  next();
-}
-
-export function collectHttpRequestDuration(req, res, next) {
-  const responseTimeInMs = Date.now() - res.locals.startEpoch;
-
-  if (req.route == null) {
-    return next();
+export function routeCollisionStopper(req, res, next) {
+  if (res.headersSent) {
+    return next('route');
   }
-
-  httpRequestDurationMilliseconds
-    .labels(req.method, req.route.path, res.statusCode)
-    .observe(responseTimeInMs);
-
   next();
 }
-
-export default router;
