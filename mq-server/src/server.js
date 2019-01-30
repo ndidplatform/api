@@ -60,7 +60,14 @@ const packageDefinition = protoLoader.loadSync(
 );
 const proto = grpc.loadPackageDefinition(packageDefinition);
 
-const server = new grpc.Server();
+const server = new grpc.Server({
+  'grpc.keepalive_time_ms': config.grpcPingInterval,
+  'grpc.keepalive_timeout_ms': config.grpcPingTimeout,
+  // 'grpc.keepalive_permit_without_calls': 1,
+  'grpc.http2.max_pings_without_data': 0,
+  'grpc.http2.min_ping_interval_without_data_ms': config.grpcExpectedClientPingInterval,
+  'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
+});
 const SERVER_ADDRESS = `0.0.0.0:${config.serverPort}`;
 
 let recvSubscriberConnections = [];

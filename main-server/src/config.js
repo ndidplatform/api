@@ -185,3 +185,11 @@ export const maxIntervalTendermintSyncCheck = process.env
   .MAX_INTERVAL_TENDERMINT_SYNC_CHECK
   ? parseInt(process.env.MAX_INTERVAL_TENDERMINT_SYNC_CHECK)
   : 15000;
+
+export const grpcPingInterval = process.env.GRPC_PING_INTERVAL_MS
+  ? parseInt(process.env.GRPC_PING_INTERVAL_MS)
+  : 60000;
+
+export const grpcPingTimeout = process.env.GRPC_PING_TIMEOUT_MS
+  ? parseInt(process.env.GRPC_PING_TIMEOUT_MS)
+  : 20000;
