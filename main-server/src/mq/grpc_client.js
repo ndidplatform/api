@@ -36,6 +36,8 @@ import logger from '../logger';
 
 import * as config from '../config';
 
+const MQ_SEND_TOTAL_TIMEOUT = 600000; // 10 min
+
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
   path.join(__dirname, '..', '..', '..', 'protos', 'mq_service.proto'),
@@ -282,6 +284,7 @@ export function sendAckForRecvMessage(msgId) {
   return new Promise((resolve, reject) => {
     const call = client.sendAckForRecvMessage(
       { message_id: msgId },
+      { deadline: Date.now() + 5000 },
       (error) => {
         if (error) {
           const errorTypeObj = Object.entries(errorType).find(
@@ -388,6 +391,7 @@ function sendMessageInternal(mqAddress, payload, msgId) {
   return new Promise((resolve, reject) => {
     const call = client.sendMessage(
       { mq_address: mqAddress, payload, message_id: msgId },
+      { deadline: Date.now() + MQ_SEND_TOTAL_TIMEOUT + 5000 },
       (error) => {
         if (error) {
           const errorTypeObj = Object.entries(errorType).find(
