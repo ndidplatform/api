@@ -1,5 +1,17 @@
 # Changelog
 
+## TBD
+
+IMPROVEMENTS:
+
+- [Main] Add new environment variable options
+  - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds
+  - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds
+- [MQ Service] Add new environment variable options
+  - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds
+  - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds
+  - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than or equal to `GRPC_PING_INTERVAL_MS` config on API main server pair.
+
 ## 1.0.1 (January 24, 2019)
 
 IMPROVEMENTS:

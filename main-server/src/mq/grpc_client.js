@@ -129,7 +129,14 @@ export async function initialize() {
   });
   client = new proto.MessageQueue(
     MQ_SERVICE_SERVER_ADDRESS,
-    grpc.credentials.createInsecure()
+    grpc.credentials.createInsecure(),
+    {
+      'grpc.keepalive_time_ms': config.grpcPingInterval,
+      'grpc.keepalive_timeout_ms': config.grpcPingTimeout,
+      // 'grpc.keepalive_permit_without_calls': 1,
+      'grpc.http2.max_pings_without_data': 0,
+      'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
+    }
   );
   await waitForReady(client);
   await checkNodeIdToMatch();

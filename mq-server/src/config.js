@@ -35,6 +35,19 @@ export const serverPort = process.env.SERVER_PORT
   ? parseInt(process.env.SERVER_PORT)
   : 50051;
 
+export const grpcPingInterval = process.env.GRPC_PING_INTERVAL_MS
+  ? parseInt(process.env.GRPC_PING_INTERVAL_MS)
+  : 120000;
+
+export const grpcPingTimeout = process.env.GRPC_PING_TIMEOUT_MS
+  ? parseInt(process.env.GRPC_PING_TIMEOUT_MS)
+  : 20000;
+
+export const grpcExpectedClientPingInterval = process.env
+  .GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS
+  ? parseInt(process.env.GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS)
+  : 60000;
+
 export const nodeId = process.env.NODE_ID;
 
 export const logLevel =
