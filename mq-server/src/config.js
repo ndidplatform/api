@@ -37,7 +37,7 @@ export const serverPort = process.env.SERVER_PORT
 
 export const grpcPingInterval = process.env.GRPC_PING_INTERVAL_MS
   ? parseInt(process.env.GRPC_PING_INTERVAL_MS)
-  : 120000;
+  : 300000;
 
 export const grpcPingTimeout = process.env.GRPC_PING_TIMEOUT_MS
   ? parseInt(process.env.GRPC_PING_TIMEOUT_MS)
