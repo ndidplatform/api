@@ -1,6 +1,6 @@
 # Changelog
 
-## TBD
+## 1.0.2 (January 30, 2019)
 
 IMPROVEMENTS:
 
