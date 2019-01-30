@@ -186,16 +186,23 @@ export const maxIntervalTendermintSyncCheck = process.env
   ? parseInt(process.env.MAX_INTERVAL_TENDERMINT_SYNC_CHECK)
   : 15000;
 
-export const isStandAlone = process.env.IS_STANDALONE === '' 
-  ? true
-  : process.env.IS_STANDALONE === 'true';
+export const grpcPingInterval = process.env.GRPC_PING_INTERVAL_MS
+  ? parseInt(process.env.GRPC_PING_INTERVAL_MS)
+  : 60000;
+
+export const grpcPingTimeout = process.env.GRPC_PING_TIMEOUT_MS
+  ? parseInt(process.env.GRPC_PING_TIMEOUT_MS)
+  : 20000;
+
+export const isStandAlone =
+  process.env.IS_STANDALONE === ''
+    ? true
+    : process.env.IS_STANDALONE === 'true';
 export const isMaster = !isStandAlone && process.env.IS_MASTER === 'true';
 
 export const masterServerIp = process.env.MASTER_SERVER_IP || 'localhost';
 export const masterServerPort = process.env.MASTER_SERVER_PORT || 10000;
 
-export const workerDisconnectedTimeout = 60*1000;
+export const workerDisconnectedTimeout = 60 * 1000;
 
-export const workerCallTimeout = 30*1000;
-
-export const apiToMqTimeout = 5*1000;
+export const workerCallTimeout = 30 * 1000;
