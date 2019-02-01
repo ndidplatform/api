@@ -20,7 +20,7 @@
  *
  */
 
-import { callbackUrls } from '.';
+import { callbackUrls, processMessage as processMessageStandalone } from '.';
 import { getCoreFunction } from '../../master-worker-interface/server';
 import { createResponse } from './create_response';
 
@@ -41,7 +41,10 @@ import * as tendermintNdid from '../../tendermint/ndid';
 
 const requestIdLocks = {};
 const processMessage = async function() {
-  return getCoreFunction('idp','processMessage')(...arguments);
+  if(config.isMaster) {
+    return getCoreFunction('idp','processMessage')(...arguments);
+  }
+  return processMessageStandalone(...arguments);
 };
 
 export async function handleMessageFromQueue(message, nodeId = config.nodeId) {

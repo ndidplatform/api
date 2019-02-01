@@ -24,6 +24,8 @@ import {
   callbackUrls,
   isAllIdpResponsesValid,
   isAllIdpRespondedAndValid,
+  processAsData as processAsDataStandalone,
+  sendRequestToAS as sendRequestToASStandalone,
 } from '.';
 import { getCoreFunction } from '../../master-worker-interface/server';
 
@@ -45,10 +47,16 @@ const idpResponseProcessLocks = {};
 const asDataResponseProcessLocks = {};
 
 const sendRequestToAS = async function() {
-  return getCoreFunction('rp','sendRequestToAS')(...arguments);
+  if(config.isMaster) {
+    return getCoreFunction('rp','sendRequestToAS')(...arguments);
+  }
+  return sendRequestToASStandalone(...arguments);
 };
 const processAsData = async function() {
-  return getCoreFunction('rp','processAsData')(...arguments);
+  if(config.isMaster) {
+    return getCoreFunction('rp','processAsData')(...arguments);
+  }
+  return processAsDataStandalone(...arguments);
 };
 
 export async function handleMessageFromQueue(message, nodeId = config.nodeId) {

@@ -20,7 +20,7 @@
  *
  */
 
-import { callbackUrls } from '.';
+import { callbackUrls, processRequest as processRequestStandalone } from '.';
 import { getCoreFunction } from '../../master-worker-interface/server';
 import { invalidateDataSchemaCache } from './data_validator';
 
@@ -40,7 +40,10 @@ import * as config from '../../config';
 
 const requestIdLocks = {};
 const processRequest = async function() {
-  return getCoreFunction('as','processRequest')(...arguments);
+  if(config.isMaster) {
+    return getCoreFunction('as','processRequest')(...arguments);
+  }
+  return processRequestStandalone(...arguments);
 };
 
 export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
