@@ -105,6 +105,7 @@
 - `MAX_INTERVAL_TENDERMINT_SYNC_CHECK`: Maximum time interval in milliseconds for polling Tendermint syncing status on server start [Default: `15000`]
 - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds [Default: `60000`]
 - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds [Default: `20000`]
+- `GRPC_CALL_TIMEOUT_MS`: gRPC call timeout in milliseconds [Default: `60000`]
 
 Debug APIs (Only in development mode)
 
