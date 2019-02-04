@@ -517,6 +517,7 @@ tendermintWsClient.on('connected', async () => {
     }
     eventEmitter.emit('ready', statusOnSync);
   }
+  metricsEventEmitter.emit('mainWSConnected');
 });
 
 tendermintWsClient.on('disconnected', () => {
@@ -524,6 +525,7 @@ tendermintWsClient.on('disconnected', () => {
   syncing = null;
   blockchainInitialized = false;
   reconnecting = true;
+  metricsEventEmitter.emit('mainWSDisconnected');
 });
 
 tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(

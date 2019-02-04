@@ -28,6 +28,7 @@ import * as mq from './mq';
 import * as callbackUtil from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
 import * as redis from './db/redis_common';
+import * as tendermintWsPool from './tendermint/ws_pool';
 
 const defaultMetricsInterval = Prometheus.collectDefaultMetrics();
 
@@ -154,6 +155,17 @@ const redisOperationDurationMilliseconds = new Prometheus.Histogram({
   buckets: [0.1, 5, 15, 50, 100, 200, 300, 400, 500], // buckets for response time from 0.1ms to 500ms
 });
 
+const mainWebSocketConnectionStatus = new Prometheus.Gauge({
+  name: 'main_websocket_connection_status',
+  help:
+    'Main WebSockets connection status - either 0 (disconnected) or 1 (connected)',
+});
+
+const connectedWebSocketsInConnectionPoolTotal = new Prometheus.Gauge({
+  name: 'connected_websockets_in_connection_pool_total',
+  help: 'Number of connected WebSockets in connection pool',
+});
+
 // Metrics event listeners
 tendermint.metricsEventEmitter.on('expectedTxsCount', (expectedTxsCount) =>
   expectedTxsTotal.set(expectedTxsCount)
@@ -237,6 +249,17 @@ common.metricsEventEmitter.on(
 );
 redis.metricsEventEmitter.on('operationTime', (operation, timeUsedInMs) =>
   redisOperationDurationMilliseconds.labels(operation).observe(timeUsedInMs)
+);
+tendermint.metricsEventEmitter.on('mainWSConnected', () =>
+  mainWebSocketConnectionStatus.inc()
+);
+tendermint.metricsEventEmitter.on('mainWSDisconnected', () =>
+  mainWebSocketConnectionStatus.dec()
+);
+tendermintWsPool.metricsEventEmitter.on(
+  'connectedConnectionCount',
+  (connectedWsCount) =>
+    connectedWebSocketsInConnectionPoolTotal.set(connectedWsCount)
 );
 
 export function stopCollectDefaultMetrics() {
