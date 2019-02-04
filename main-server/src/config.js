@@ -194,6 +194,10 @@ export const grpcPingTimeout = process.env.GRPC_PING_TIMEOUT_MS
   ? parseInt(process.env.GRPC_PING_TIMEOUT_MS)
   : 20000;
 
+export const grpcCallTimeout = process.env.GRPC_CALL_TIMEOUT_MS
+  ? parseInt(process.env.GRPC_CALL_TIMEOUT_MS)
+  : 60000;
+
 export const isStandAlone =
   process.env.IS_STANDALONE === ''
     ? true

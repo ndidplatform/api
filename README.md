@@ -105,6 +105,7 @@
 - `MAX_INTERVAL_TENDERMINT_SYNC_CHECK`: Maximum time interval in milliseconds for polling Tendermint syncing status on server start [Default: `15000`]
 - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds [Default: `60000`]
 - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds [Default: `20000`]
+- `GRPC_CALL_TIMEOUT_MS`: gRPC call timeout in milliseconds [Default: `60000`]
 - `IS_STANDALONE`: Select operation mode, `true` for backward-compatibility, `false` for master-worker architecture [Default: `true`]
 - `IS_MASTER`: Only when `IS_STANDALONE` is `false`, master is the process that listen to `tendermint` event and `message_queue` then delegate tasks to workers. Multiple workers are allowed for one master, task is assigned by round-robin algorithm. [Default: `false`]
 - `MASTER_SERVER_IP`: Address of master for worker to connect (Due to the need to share internal files, it should always be `localhost` for now) [Default: `localhost`]

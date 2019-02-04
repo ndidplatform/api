@@ -284,7 +284,7 @@ export function sendAckForRecvMessage(msgId) {
   return new Promise((resolve, reject) => {
     const call = client.sendAckForRecvMessage(
       { message_id: msgId },
-      { deadline: Date.now() + 5000 },
+      { deadline: Date.now() + config.grpcCallTimeout },
       (error) => {
         if (error) {
           const errorTypeObj = Object.entries(errorType).find(
@@ -391,7 +391,7 @@ function sendMessageInternal(mqAddress, payload, msgId) {
   return new Promise((resolve, reject) => {
     const call = client.sendMessage(
       { mq_address: mqAddress, payload, message_id: msgId },
-      { deadline: Date.now() + MQ_SEND_TOTAL_TIMEOUT + 5000 },
+      { deadline: Date.now() + MQ_SEND_TOTAL_TIMEOUT + config.grpcCallTimeout },
       (error) => {
         if (error) {
           const errorTypeObj = Object.entries(errorType).find(
