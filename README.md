@@ -51,7 +51,7 @@
 - `MAX_MQ_SOCKET`: Maximum limit for MQ sending sockets [Default: `10000`]
 - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds [Default: `300000`]
 - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds [Default: `20000`]
-- `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than `GRPC_PING_INTERVAL_MS` config on API server pair. [Default: `60000`]
+- `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than `GRPC_PING_INTERVAL_MS` config on API server pair. [Default: `30000`]
 
 5.  Run a server
 
