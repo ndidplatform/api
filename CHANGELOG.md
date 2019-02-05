@@ -6,7 +6,9 @@ IMPROVEMENTS:
 
 - Add Prometheus support.
 
-## 1.0.2 (January 30, 2019)
+## 1.0.2 (February 5, 2019)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
 
 IMPROVEMENTS:
 
@@ -17,21 +19,14 @@ IMPROVEMENTS:
 - [MQ Service] Add new environment variable options
   - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds
   - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds
-  - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than or equal to `GRPC_PING_INTERVAL_MS` config on API main server pair.
+  - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than `GRPC_PING_INTERVAL_MS` config on API main server pair.
 - Set time limit (deadline) for gRPC function calls
   - 10 minutes + 1 minute (default) for `sendMessage()` (equals to total retry timeout for MQ message sending with additional 5 seconds)
   - 1 minute (default) for `sendAckForRecvMessage()`
 
 ## 1.0.1 (January 24, 2019)
 
-BUG FIXES:
-
-- Fix `resumeTimeoutScheduler` on server initialization being called too early.
-- Change ZeroMQ socket type on sender side from `req` to `dealer`.
-- Fix clean up method for mapping (socket, socket-destination) in MQ.
-- Clean up for all socket with same `msgId` when receive ack for one `seqId`.
-- Rollback ZeroMQ JS library from 5.1 to 4.6 since 5.1 causes segmentation fault error in C binding.
-- Fix memory leak when making a gRPC call to MQ service server.
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
 
 IMPROVEMENTS:
 
@@ -49,6 +44,15 @@ IMPROVEMENTS:
   - `/num_processing_blocks`: Number of processing blocks
   - `/processing_blocks`: Array of processing block heights in string (e.g. `51-63`, `99`)
   - `/num_processing_inbound_messages`: Number of processing inbound MQ messages
+
+BUG FIXES:
+
+- Fix `resumeTimeoutScheduler` on server initialization being called too early.
+- Change ZeroMQ socket type on sender side from `req` to `dealer`.
+- Fix clean up method for mapping (socket, socket-destination) in MQ.
+- Clean up for all socket with same `msgId` when receive ack for one `seqId`.
+- Rollback ZeroMQ JS library from 5.1 to 4.6 since 5.1 causes segmentation fault error in C binding.
+- Fix memory leak when making a gRPC call to MQ service server.
 
 ## 1.0.0 (December 7, 2018)
 
