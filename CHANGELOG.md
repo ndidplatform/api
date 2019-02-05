@@ -24,6 +24,10 @@ IMPROVEMENTS:
   - 10 minutes + 1 minute (default) for `sendMessage()` (equals to total retry timeout for MQ message sending with additional 5 seconds)
   - 1 minute (default) for `sendAckForRecvMessage()`
 
+BUG FIXES:
+
+- Fix duplicate AS data response from MQ handling on RP side when a handling happens without waiting for block.
+
 ## 1.0.1 (January 24, 2019)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_

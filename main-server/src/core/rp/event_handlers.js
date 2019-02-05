@@ -250,7 +250,6 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
         message.service_id +
         ':' +
         message.as_id;
-      await cacheDb.setDataResponseFromAS(nodeId, asResponseId, message);
 
       const latestBlockHeight = tendermint.latestBlockHeight;
       if (tendermint.chainId !== message.chain_id) {
@@ -266,11 +265,14 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
           messageBlockHeight: message.height,
         });
         asDataResponseProcessLocks[asResponseId] = true;
-        await cacheDb.addExpectedDataSignInBlock(nodeId, message.height, {
-          requestId: message.request_id,
-          serviceId: message.service_id,
-          asId: message.as_id,
-        });
+        await Promise.all([
+          cacheDb.setDataResponseFromAS(nodeId, asResponseId, message),
+          cacheDb.addExpectedDataSignInBlock(nodeId, message.height, {
+            requestId: message.request_id,
+            serviceId: message.service_id,
+            asId: message.as_id,
+          }),
+        ]);
         if (tendermint.latestBlockHeight <= message.height) {
           delete asDataResponseProcessLocks[asResponseId];
           common.notifyMetricsInboundMessageProcessTime(
@@ -278,6 +280,8 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
             startTime
           );
           return;
+        } else {
+          await cacheDb.removeDataResponseFromAS(nodeId, asResponseId);
         }
       }
       await processAsData({
@@ -568,7 +572,7 @@ async function checkAsDataSignaturesAndSetReceived(nodeId, metadataList) {
         nodeId,
         asResponseId
       );
-      if (dataResponseFromAS == null) return; // Have not received data from AS through message queue yet
+      if (dataResponseFromAS == null) return; // Have not received data from AS through message queue yet or it is being process from MQ handle function
       await processAsData({
         nodeId,
         requestId,
