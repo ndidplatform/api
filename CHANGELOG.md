@@ -1,6 +1,8 @@
 # Changelog
 
-## 1.0.2 (January 30, 2019)
+## 1.0.2 (February 5, 2019)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
 
 IMPROVEMENTS:
 
@@ -10,12 +12,14 @@ IMPROVEMENTS:
 - [MQ Service] Add new environment variable options
   - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds
   - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds
-  - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than or equal to `GRPC_PING_INTERVAL_MS` config on API main server pair.
+  - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than `GRPC_PING_INTERVAL_MS` config on API main server pair.
 - Set time limit (deadline) for gRPC function calls
   - 10 minutes and 5 seconds for `sendMessage()` (equals to total retry timeout for MQ message sending with additional 5 seconds)
   - 5 seconds for `sendAckForRecvMessage()`
 
 ## 1.0.1 (January 24, 2019)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
 
 IMPROVEMENTS:
 

@@ -46,7 +46,7 @@ export const grpcPingTimeout = process.env.GRPC_PING_TIMEOUT_MS
 export const grpcExpectedClientPingInterval = process.env
   .GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS
   ? parseInt(process.env.GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS)
-  : 60000;
+  : 30000;
 
 export const nodeId = process.env.NODE_ID;
 
