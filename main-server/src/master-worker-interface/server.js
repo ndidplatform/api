@@ -600,7 +600,7 @@ export function getCoreFunction(namespace, fnName) {
 
 export function shutdown() {
   workerList.forEach(({ connection }) => {
-    connection.close();
+    connection.end();
   });
 }
 
