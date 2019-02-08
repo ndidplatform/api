@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.2 (February 5, 2019)
+## 1.0.2 (February 8, 2019)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
 
