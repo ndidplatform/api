@@ -21,7 +21,7 @@ IMPROVEMENTS:
   - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds
   - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than `GRPC_PING_INTERVAL_MS` config on API main server pair.
 - Set time limit (deadline) for gRPC function calls
-  - 10 minutes + 1 minute (default) for `sendMessage()` (equals to total retry timeout for MQ message sending with additional 5 seconds)
+  - 10 minutes + 1 minute (default) for `sendMessage()` (equals to total retry timeout for MQ message sending with additional 1 minute)
   - 1 minute (default) for `sendAckForRecvMessage()`
 
 BUG FIXES:
