@@ -125,7 +125,9 @@ router.use(collectHttpRequestDuration);
 
 // All other paths besides stated above are invalid
 router.use('*', function(req, res) {
-  res.status(404).end();
+  if (!res.headersSent) {
+    res.status(404).end();
+  }
 });
 
 export default router;
