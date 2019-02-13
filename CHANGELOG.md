@@ -5,6 +5,12 @@
 IMPROVEMENTS:
 
 - Add Prometheus support.
+- Use `scan` stream instead of `keys` for redis oprations.
+
+BUG FIXES:
+
+- Fix redis function wrappers logic.
+- Fix cache data manipulation on detecting new chain (migrate).
 
 ## 1.0.2 (February 8, 2019)
 

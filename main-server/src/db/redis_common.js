@@ -229,15 +229,51 @@ export async function removeListRange({ nodeId, dbName, name, keyRange }) {
   }
 }
 
+export async function removeListWithRangeSupport({ nodeId, dbName, name }) {
+  const operation = 'removeListWithRangeSupport';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+    await redis.del(`${nodeId}:${dbName}:${name}`);
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
 export async function removeAllLists({ nodeId, dbName, name }) {
   const operation = 'removeAllLists';
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
-    const keys = await redis.keys(`${nodeId}:${dbName}:${name}:*`);
-    if (keys.length > 0) {
-      await redis.del(...keys);
-    }
+    await new Promise((resolve, reject) => {
+      const stream = redis.scanStream({
+        match: `${nodeId}:${dbName}:${name}:*`,
+        count: 100,
+      });
+      const pipeline = redis.pipeline();
+      stream.on('data', (keys) => {
+        if (keys.length) {
+          keys.forEach((key) => pipeline.del(key));
+        }
+      });
+      stream.on('end', async () => {
+        try {
+          await pipeline.exec();
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
     metricsEventEmitter.emit(
       'operationTime',
       operation,
@@ -319,19 +355,32 @@ export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
-    const keys = await redis.keys(`${nodeId}:${dbName}:${name}:*`);
-    let retVal;
-    if (keys.length > 0) {
-      const result = await redis.mget(...keys);
-      retVal = result.map((item, index) => {
-        return {
-          [keyName]: keys[index].replace(`${nodeId}:${dbName}:${name}:`, ''),
-          [valueName]: JSON.parse(item),
-        };
+    const retVal = await new Promise((resolve) => {
+      let result = [];
+      const stream = redis.scanStream({
+        match: `${nodeId}:${dbName}:${name}:*`,
+        count: 100,
       });
-    } else {
-      retVal = [];
-    }
+      stream.on('data', (keys) => {
+        if (keys.length) {
+          stream.pause();
+          redis.mget(...keys).then((resultPart) => {
+            const resultPartParsed = resultPart.map((item, index) => {
+              return {
+                [keyName]: keys[index].replace(
+                  `${nodeId}:${dbName}:${name}:`,
+                  ''
+                ),
+                [valueName]: JSON.parse(item),
+              };
+            });
+            result = result.concat(resultPartParsed);
+            stream.resume();
+          });
+        }
+      });
+      stream.on('end', () => resolve(result));
+    });
     metricsEventEmitter.emit(
       'operationTime',
       operation,
@@ -349,41 +398,42 @@ export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
 
 //
 
-export async function getFlattenList({ dbName, name }) {
+export async function getFlattenList({ nodeId, dbName, name }) {
   const operation = 'getFlattenList';
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
-    const keys = await redis.keys(`*:${dbName}:${name}:*`);
-    const lists = await Promise.all(
-      keys.map(async (key) => {
-        const nodeId = key.substring(0, key.indexOf(':'));
-        return {
-          nodeId,
-          list: await getList({ nodeId, dbName, name, key }),
-        };
-      })
-    );
+    const lists = await new Promise((resolve) => {
+      const result = [];
+      const stream = redis.scanStream({
+        match: `${nodeId}:${dbName}:${name}:*`,
+        count: 100,
+      });
+      stream.on('data', (keys) => {
+        if (keys.length) {
+          stream.pause();
 
-    const listsByNodeId = lists.reduce((obj, { nodeId, list }) => {
-      if (obj[nodeId]) {
-        obj[nodeId].list.push(...list);
-      } else {
-        obj[nodeId] = {
-          nodeId,
-          list,
-        };
-      }
-      return obj;
-    }, {});
-
+          Promise.all(
+            keys.map(async (key) => {
+              const _key = key.substring(key.lastIndexOf(':') + 1);
+              result.push({
+                list: await getList({ nodeId, dbName, name, key: _key }),
+                key: _key,
+              });
+            })
+          ).then(() => {
+            stream.resume();
+          });
+        }
+      });
+      stream.on('end', () => resolve(result));
+    });
     metricsEventEmitter.emit(
       'operationTime',
       operation,
       Date.now() - startTime
     );
-
-    return Object.values(listsByNodeId);
+    return lists;
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,
@@ -393,41 +443,22 @@ export async function getFlattenList({ dbName, name }) {
   }
 }
 
-export async function getFlattenListWithRangeSupport({ dbName, name }) {
+export async function getFlattenListWithRangeSupport({ nodeId, dbName, name }) {
   const operation = 'getFlattenListWithRangeSupport';
   const startTime = Date.now();
   try {
-    const redis = getRedis(dbName);
-    const keys = await redis.keys(`*:${dbName}:${name}`);
-    const lists = await Promise.all(
-      keys.map(async (key) => {
-        const nodeId = key.substring(0, key.indexOf(':'));
-        return {
-          nodeId,
-          list: await redis.zrangebyscore(key, '-inf', '+inf'),
-        };
-      })
-    );
-
-    const listsByNodeId = lists.reduce((obj, { nodeId, list }) => {
-      if (obj[nodeId]) {
-        obj[nodeId].list.push(...list);
-      } else {
-        obj[nodeId] = {
-          nodeId,
-          list,
-        };
-      }
-      return obj;
-    }, {});
-
+    const list = await getListRange({
+      nodeId,
+      dbName,
+      name,
+      keyRange: { gte: '-inf', lte: '+inf' },
+    });
     metricsEventEmitter.emit(
       'operationTime',
       operation,
       Date.now() - startTime
     );
-
-    return Object.values(listsByNodeId);
+    return list;
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,
