@@ -1043,7 +1043,7 @@ export async function transact({
     callbackFnName,
     callbackAdditionalArgs,
   };
-  await transactInternal({
+  return await transactInternal({
     txObject, 
     metadata, 
     waitForCommit, 
