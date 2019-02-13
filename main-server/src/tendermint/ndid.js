@@ -23,7 +23,6 @@
 import * as tendermint from '.';
 import * as utils from '../utils';
 import * as config from '../config';
-import getClient from '../master-worker-interface/client';
 
 import CustomError from 'ndid-error/custom_error';
 
@@ -38,14 +37,6 @@ export async function setMqAddresses(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'setMqAddresses',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   if (nodeId == null) {
     nodeId = config.nodeId;
   }
@@ -75,14 +66,6 @@ export async function updateNode(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'updateNode',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     const { success } = await tendermint.transact({
       nodeId,
@@ -112,14 +95,6 @@ export async function registerAccessor(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'registerAccessor',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     return await tendermint.transact({
       nodeId,
@@ -149,14 +124,6 @@ export async function clearRegisterIdentityTimeout(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'clearRegisterIdentityTimeout',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     const result = await tendermint.transact({
       nodeId,
@@ -182,14 +149,6 @@ export async function registerIdentity(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'registerIdentity',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     const result = await tendermint.transact({
       nodeId,
@@ -223,14 +182,6 @@ export async function addAccessorMethod(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'addAccessorMethod',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     return await tendermint.transact({
       nodeId,
@@ -261,14 +212,6 @@ export async function revokeAccessorMethod(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'revokeAccessorMethod',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     return await tendermint.transact({
       nodeId,
@@ -296,14 +239,6 @@ export async function createRequest(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'createRequest',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     return await tendermint.transact({
       nodeId,
@@ -328,14 +263,6 @@ export async function closeRequest(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'closeRequest',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     const result = await tendermint.transact({
       nodeId,
@@ -362,14 +289,6 @@ export async function timeoutRequest(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'timeoutRequest',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     // FIXME: should not check here?
     const request = await getRequest({ requestId });
@@ -401,14 +320,6 @@ export async function setDataReceived(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'setDataReceived',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     const result = await tendermint.transact({
       nodeId,
@@ -441,14 +352,6 @@ export async function updateIal(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'updateIal',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     await tendermint.transact({
       nodeId,
@@ -478,14 +381,6 @@ export async function declareIdentityProof(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'declareIdentityProof',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     return await tendermint.transact({
       nodeId,
@@ -514,14 +409,6 @@ export async function createIdpResponse(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'createIdpResponse',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     return await tendermint.transact({
       nodeId,
@@ -546,14 +433,6 @@ export async function signASData(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'signASData',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   const dataToBlockchain = {
     request_id: data.request_id,
     signature: data.signature,
@@ -583,14 +462,6 @@ export async function registerServiceDestination(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'registerServiceDestination',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     await tendermint.transact({
       nodeId,
@@ -615,14 +486,6 @@ export async function updateServiceDestination(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'updateServiceDestination',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     await tendermint.transact({
       nodeId,
@@ -1084,14 +947,6 @@ export async function addNodeToProxyNode(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'addNodeToProxyNode',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     await tendermint.transact({
       nodeId,
@@ -1116,14 +971,6 @@ export async function updateNodeProxyNode(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'updateNodeProxyNode',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     await tendermint.transact({
       nodeId,
@@ -1148,14 +995,6 @@ export async function removeNodeFromProxyNode(
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  if(!config.isMaster && !config.isStandAlone) {
-    let { result, error } = await getClient().tendermint({
-      fnName: 'removeNodeFromProxyNode',
-      args: JSON.stringify(arguments)
-    });
-    if(error) throw error;
-    return result;
-  }
   try {
     await tendermint.transact({
       nodeId,

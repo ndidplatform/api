@@ -160,17 +160,15 @@ function waitForTendermintResult(gRPCRef, resolve) {
   });
 }
 
-function tendermint({ fnName, args }) {
+function tendermint({ args }) {
   let gRPCRef = randomBase64Bytes(16);
   logger.debug({
     message: 'Worker calling tendermint transact',
-    fnName,
     args,
     gRPCRef,
   });
   return new Promise((resolve, reject) => {
     client.tendermintCall({ 
-      fnName, 
       gRPCRef,
       workerId,
       args: JSON.stringify(parseArgsToArray(args)) 

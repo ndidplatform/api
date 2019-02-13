@@ -35,7 +35,6 @@ import * as nodeKey from './utils/node_key';
 import * as cacheDb from './db/cache';
 import * as longTermDb from './db/long_term';
 import * as tendermint from './tendermint';
-import * as tendermintNdid from './tendermint/ndid';
 import * as tendermintWsPool from './tendermint/ws_pool';
 import * as mq from './mq';
 import { stopAllCallbackRetries, callbackToClient } from './utils/callback';
@@ -264,11 +263,12 @@ async function initializeMaster(standAlone) {
     }
 
     if(!standAlone) {
-      masterEventEmitter.on('tendermintCallByWorker', async ({ fnName, argArray, gRPCRef, workerId }) => {
+      masterEventEmitter.on('tendermintCallByWorker', async ({ argArray, gRPCRef, workerId }) => {
         processCallAndReturn({
           type: 'tendermintCallByWorker', 
-          fnName, argArray, gRPCRef,
-          processFunction: tendermintNdid[fnName],
+          fnName: null,
+          argArray, gRPCRef,
+          processFunction: tendermint.transactInternal,
           returnResultFunction: tendermintReturnResult,
           workerId,
         });

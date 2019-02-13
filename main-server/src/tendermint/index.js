@@ -42,6 +42,7 @@ import { sha256, randomBase64Bytes } from '../utils/crypto';
 
 import * as config from '../config';
 import { internalEventEmitter as masterEventEmitter } from '../master-worker-interface/server';
+import getClient from '../master-worker-interface/client';
 
 const tendermintProtobufRootInstance = new protobuf.Root();
 const tendermintProtobufRoot = tendermintProtobufRootInstance.loadSync(
@@ -890,6 +891,77 @@ export async function query(fnName, params, height) {
   }
 }
 
+export async function transactInternal({
+  txObject, 
+  metadata, 
+  waitForCommit,
+  transactParams,
+  saveForRetryOnChainDisabled,
+}) {
+
+  if(!config.isMaster && !config.isStandAlone) {
+    let { result, error } = await getClient().tendermint({
+      args: JSON.stringify(arguments)
+    });
+    if(error) throw error;
+    return result;
+  }
+
+  txObject.signature = Buffer.from(txObject.signature, 'hex');
+  txObject.nonce = Buffer.from(txObject.nonce, 'hex');
+
+  const txProto = TendermintTx.create(txObject);
+  const txProtoBuffer = TendermintTx.encode(txProto).finish();
+  const txHash = sha256(txProtoBuffer).toString('hex');
+
+  expectedTx[txHash] = metadata;
+  expectedTxsCount++;
+  await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, metadata);
+
+
+  try {
+    let promise;
+    if (waitForCommit) {
+      promise = new Promise((resolve, reject) =>
+        txEventEmitter.once(txHash, ({ error, ...rest }) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve(rest);
+        })
+      );
+    }
+    const responseResult = await tendermintWsPool
+      .getConnection()
+      .broadcastTxSync(txProtoBuffer);
+    const broadcastTxSyncResult = getBroadcastTxSyncResult(responseResult);
+    if (waitForCommit) {
+      const result = await promise;
+      return result;
+    }
+    return broadcastTxSyncResult;
+  } catch (error) {
+    delete expectedTx[txHash];
+    expectedTxsCount--;
+    await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
+    if (error.message === 'JSON-RPC ERROR') {
+      throw new CustomError({
+        errorType: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
+        details: error.details,
+      });
+    } else if (
+      error.code === errorType.ABCI_CHAIN_DISABLED.code &&
+      saveForRetryOnChainDisabled
+    ) {
+      await handleBlockchainDisabled(transactParams);
+      return { chainDisabledRetryLater: true };
+    } else {
+      throw error;
+    }
+  }
+}
+
 /**
  *
  * @param {Object} transactParams
@@ -944,8 +1016,8 @@ export async function transact({
   const txObject = {
     method: fnName,
     params: paramsJsonString,
-    nonce,
-    signature: await utils.createSignature(
+    nonce: nonce.toString('hex'),
+    signature: (await utils.createSignature(
       Buffer.concat([
         Buffer.from(fnName, 'utf8'),
         Buffer.from(paramsJsonString, 'utf8'),
@@ -953,13 +1025,10 @@ export async function transact({
       ]).toString('base64'),
       nodeId,
       useMasterKey
-    ),
+    )).toString('hex'),
     node_id: nodeId,
   };
-  const txProto = TendermintTx.create(txObject);
-  const txProtoBuffer = TendermintTx.encode(txProto).finish();
-
-  const txHash = sha256(txProtoBuffer).toString('hex');
+  
   const transactParams = {
     nodeId,
     fnName,
@@ -974,51 +1043,13 @@ export async function transact({
     callbackFnName,
     callbackAdditionalArgs,
   };
-  expectedTx[txHash] = metadata;
-  expectedTxsCount++;
-  await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, metadata);
-
-  try {
-    let promise;
-    if (waitForCommit) {
-      promise = new Promise((resolve, reject) =>
-        txEventEmitter.once(txHash, ({ error, ...rest }) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve(rest);
-        })
-      );
-    }
-    const responseResult = await tendermintWsPool
-      .getConnection()
-      .broadcastTxSync(txProtoBuffer);
-    const broadcastTxSyncResult = getBroadcastTxSyncResult(responseResult);
-    if (waitForCommit) {
-      const result = await promise;
-      return result;
-    }
-    return broadcastTxSyncResult;
-  } catch (error) {
-    delete expectedTx[txHash];
-    expectedTxsCount--;
-    await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
-    if (error.message === 'JSON-RPC ERROR') {
-      throw new CustomError({
-        errorType: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
-        details: error.details,
-      });
-    } else if (
-      error.code === errorType.ABCI_CHAIN_DISABLED.code &&
-      saveForRetryOnChainDisabled
-    ) {
-      await handleBlockchainDisabled(transactParams);
-      return { chainDisabledRetryLater: true };
-    } else {
-      throw error;
-    }
-  }
+  await transactInternal({
+    txObject, 
+    metadata, 
+    waitForCommit, 
+    transactParams,
+    saveForRetryOnChainDisabled,
+  });
 }
 
 async function saveTransactRequestForRetry(transactParams) {
