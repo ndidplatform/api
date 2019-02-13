@@ -1,5 +1,16 @@
 # Changelog
 
+## TBD
+
+IMPROVEMENTS:
+
+- Use `scan` stream instead of `keys` for redis oprations.
+
+BUG FIXES:
+
+- Fix redis function wrappers logic.
+- Fix cache data manipulation on detecting new chain (migrate).
+
 ## 1.0.2 (February 8, 2019)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_

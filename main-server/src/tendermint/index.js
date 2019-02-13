@@ -40,6 +40,8 @@ import * as cacheDb from '../db/cache';
 import * as utils from '../utils';
 import { sha256, randomBase64Bytes } from '../utils/crypto';
 
+import * as node from '../node';
+
 import * as config from '../config';
 
 const tendermintProtobufRootInstance = new protobuf.Root();
@@ -434,7 +436,18 @@ async function handleNewChain(newChainId) {
   latestBlockHeight = 1;
   latestProcessedBlockHeight = 0;
   saveLatestBlockHeight(1);
-  await cacheDb.changeAllDataKeysWithExpectedBlockHeight(1);
+
+  if (node.role === 'proxy') {
+    const nodesBehindProxy = await node.getNodesBehindProxyWithKeyOnProxy();
+    const nodeIds = nodesBehindProxy.map((node) => node.node_id);
+    await Promise.all(
+      nodeIds.map((nodeId) =>
+        cacheDb.changeAllDataKeysWithExpectedBlockHeight(nodeId, 1)
+      )
+    );
+  } else {
+    await cacheDb.changeAllDataKeysWithExpectedBlockHeight(config.nodeId, 1);
+  }
 }
 
 async function handleBlockchainDisabled(transactParams) {
