@@ -190,15 +190,15 @@ export async function removeAllLists({ nodeId, dbName, name }) {
         match: `${nodeId}:${dbName}:${name}:*`,
         count: 100,
       });
-      const pipeline = redis.pipeline();
+      const promises = [];
       stream.on('data', (keys) => {
         if (keys.length) {
-          pipeline.del(...keys);
+          promises.push(redis.del(...keys));
         }
       });
       stream.on('end', async () => {
         try {
-          await pipeline.exec();
+          await Promise.all(promises);
           resolve();
         } catch (error) {
           reject(error);
