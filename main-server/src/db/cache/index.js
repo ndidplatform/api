@@ -43,7 +43,10 @@ export async function close() {
   });
 }
 
-export async function changeAllDataKeysWithExpectedBlockHeight(newHeight) {
+export async function changeAllDataKeysWithExpectedBlockHeight(
+  nodeId,
+  newHeight
+) {
   if (!Number.isInteger(newHeight)) {
     throw new Error('Invalid new height. Must be an integer.');
   }
@@ -51,30 +54,39 @@ export async function changeAllDataKeysWithExpectedBlockHeight(newHeight) {
   let flattenList;
 
   flattenList = await db.getFlattenListWithRangeSupport({
+    nodeId,
     dbName,
     name: 'requestIdExpectedInBlock',
     keyName: 'expectedBlockHeight',
     valueName: 'requestId',
   });
+  await db.removeListWithRangeSupport({
+    nodeId,
+    dbName,
+    name: 'requestIdExpectedInBlock',
+  });
   await Promise.all(
-    flattenList.map(({ nodeId, list }) =>
-      Promise.all(
-        list.map((requestId) =>
-          addRequestIdExpectedInBlock(nodeId, newHeight, requestId)
-        )
-      )
+    flattenList.map((requestId) =>
+      addRequestIdExpectedInBlock(nodeId, newHeight, requestId)
     )
   );
 
   flattenList = await db.getFlattenList({
+    nodeId,
     dbName,
     name: 'expectedIdpResponseNodeIdInBlock',
     keyName: 'expectedBlockHeight',
     valueName: 'responseMetadata',
   });
   await Promise.all(
-    flattenList.map(({ nodeId, list }) =>
-      Promise.all(
+    flattenList.map(async ({ list, key }) => {
+      await db.removeList({
+        nodeId,
+        dbName,
+        name: 'expectedIdpResponseNodeIdInBlock',
+        key,
+      });
+      await Promise.all(
         list.map((responseMetadata) =>
           addExpectedIdpResponseNodeIdInBlock(
             nodeId,
@@ -82,40 +94,49 @@ export async function changeAllDataKeysWithExpectedBlockHeight(newHeight) {
             responseMetadata
           )
         )
-      )
-    )
+      );
+    })
   );
 
   flattenList = await db.getFlattenListWithRangeSupport({
+    nodeId,
     dbName,
     name: 'expectedIdpPublicProofInBlock',
     keyName: 'expectedBlockHeight',
     valueName: 'responseMetadata',
   });
+  await db.removeListWithRangeSupport({
+    nodeId,
+    dbName,
+    name: 'expectedIdpPublicProofInBlock',
+  });
   await Promise.all(
-    flattenList.map(({ nodeId, list }) =>
-      Promise.all(
-        list.map((responseMetadata) =>
-          addExpectedIdpPublicProofInBlock(nodeId, newHeight, responseMetadata)
-        )
-      )
+    flattenList.map((responseMetadata) =>
+      addExpectedIdpPublicProofInBlock(nodeId, newHeight, responseMetadata)
     )
   );
 
   flattenList = await db.getFlattenList({
+    nodeId,
     dbName,
     name: 'expectedDataSignInBlock',
     keyName: 'expectedBlockHeight',
     valueName: 'metadata',
   });
   await Promise.all(
-    flattenList.map(({ nodeId, list }) =>
-      Promise.all(
+    flattenList.map(async ({ list, key }) => {
+      await db.removeList({
+        nodeId,
+        dbName,
+        name: 'expectedDataSignInBlock',
+        key,
+      });
+      await Promise.all(
         list.map((metadata) =>
           addExpectedDataSignInBlock(nodeId, newHeight, metadata)
         )
-      )
-    )
+      );
+    })
   );
 }
 
