@@ -100,10 +100,6 @@ export async function processMessageInBlocks(
   );
 }
 
-function releaseLock(messageId) {
-  delete messageProcessLock[messageId];
-}
-
 async function cleanUpMessage(nodeId, messageId) {
   try {
     await Promise.all([
@@ -180,7 +176,7 @@ async function executeTaskInQueue(requestId) {
   } catch (error) {
     logger.error({ message: 'Error executing task in queue', requestId });
   }
-  releaseLock(messageId);
+  delete messageProcessLock[messageId];
   if (onMessageProcessFinished) {
     onMessageProcessFinished(nodeId, messageId);
   }
