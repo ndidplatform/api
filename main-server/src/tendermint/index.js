@@ -1028,12 +1028,7 @@ export async function transact({
     decrementExpectedTxsCount();
     metricsEventEmitter.emit('txTransactFail');
     await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
-    if (error.message === 'JSON-RPC ERROR') {
-      throw new CustomError({
-        errorType: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
-        details: error.details,
-      });
-    } else if (
+    if (
       error.code === errorType.ABCI_CHAIN_DISABLED.code &&
       saveForRetryOnChainDisabled
     ) {

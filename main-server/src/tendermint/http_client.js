@@ -69,7 +69,7 @@ async function httpUriCall(method, params) {
 
     if (responseJson.error) {
       throw new CustomError({
-        message: 'JSON-RPC ERROR',
+        errorType: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
         details: {
           uri,
           error: responseJson.error,
