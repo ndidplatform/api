@@ -21,7 +21,6 @@
  */
 
 import path from 'path';
-import EventEmitter from 'events';
 
 import protobuf from 'protobufjs';
 
@@ -70,7 +69,16 @@ const timer = {};
 
 const rawMessagesToRetry = [];
 
-export const eventEmitter = new EventEmitter();
+let messageHandlerFunction;
+let errorHandlerFunction;
+
+export function setMessageHandlerFunction(handler) {
+  messageHandlerFunction = handler;
+}
+
+export function setErrorHandlerFunction(handler) {
+  errorHandlerFunction = handler;
+}
 
 export async function initialize() {
   logger.info({
@@ -194,7 +202,9 @@ async function onMessage({ message, msgId, senderId }) {
       await processMessage(id, message, timestamp);
     }
   } catch (error) {
-    eventEmitter.emit('error', error);
+    if (errorHandlerFunction) {
+      errorHandlerFunction(error);
+    }
   }
 }
 
@@ -385,10 +395,14 @@ async function processMessage(messageId, messageProtobuf, timestamp) {
       }
     );
 
-    eventEmitter.emit('message', message, receiverNodeId);
+    if (messageHandlerFunction) {
+      messageHandlerFunction(messageId, message, receiverNodeId);
+    }
     removeRawMessageFromCache(messageId);
   } catch (error) {
-    eventEmitter.emit('error', error);
+    if (errorHandlerFunction) {
+      errorHandlerFunction(error);
+    }
     logger.warn({
       message:
         'Error processing received message from message queue. Discarding message.',
@@ -580,7 +594,7 @@ export async function send(receivers, message, senderNodeId) {
           msgId,
           true,
           MQ_SEND_TOTAL_TIMEOUT
-        )        
+        )
         .catch((error) => logger.error(error.getInfoForLog()))
         .then(() => {
           // finally

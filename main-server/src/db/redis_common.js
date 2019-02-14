@@ -134,7 +134,26 @@ export async function pushToListWithRangeSupport({
     throw new CustomError({
       errorType: errorType.DB_ERROR,
       cause: error,
-      details: { operation: 'pushToList', dbName, name },
+      details: { operation: 'pushToListWithRangeSupport', dbName, name },
+    });
+  }
+}
+
+export async function removeFromListWithRangeSupport({
+  nodeId,
+  dbName,
+  name,
+  value,
+}) {
+  try {
+    const redis = getRedis(dbName);
+    value = JSON.stringify(value);
+    await redis.zrem(`${nodeId}:${dbName}:${name}`, value);
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation: 'removeFromListWithRangeSupport', dbName, name },
     });
   }
 }

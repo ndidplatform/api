@@ -24,6 +24,8 @@ import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
+import { createResponse } from './create_response';
+
 import { verifySignature } from '../../utils';
 import { callbackToClient } from '../../utils/callback';
 import CustomError from 'ndid-error/custom_error';
@@ -298,147 +300,235 @@ function checkReceiverIntegrity(requestId, requestDetail, nodeId) {
   return true;
 }
 
-export async function processMessage(nodeId, message) {
+export async function processMessage(nodeId, messageId, message) {
+  const requestId = message.request_id;
   logger.debug({
     message: 'Processing message',
     nodeId,
-    messagePayload: message,
+    messageId,
+    requestId,
   });
-  if (message.type === privateMessageType.IDP_RESPONSE) {
-    const requestDetail = await tendermintNdid.getRequestDetail({
-      requestId: message.request_id,
-    });
 
-    if (requestDetail.purpose === 'AddAccessor') {
-      //reponse for create identity
-      if (await checkCreateIdentityResponse(nodeId, message, requestDetail)) {
-        //TODO what if create identity request need more than 1 min_idp
-        await identity.closeConsentRequestThenAddAccessor(
-          {
+  try {
+    if (message.type === privateMessageType.IDP_RESPONSE) {
+      const request = await cacheDb.getRequestData(nodeId, message.request_id);
+      if (request == null) return; //request not found
+      await cacheDb.addPrivateProofObjectInRequest(nodeId, message.request_id, {
+        idp_id: message.idp_id,
+        privateProofObject: {
+          privateProofValue: message.privateProofValueArray,
+          accessor_id: message.accessor_id,
+          padding: message.padding,
+        },
+      });
+
+      const requestDetail = await tendermintNdid.getRequestDetail({
+        requestId: message.request_id,
+      });
+
+      if (requestDetail.purpose === 'AddAccessor') {
+        //reponse for create identity
+        if (await checkCreateIdentityResponse(nodeId, message, requestDetail)) {
+          //TODO what if create identity request need more than 1 min_idp
+          await identity.closeConsentRequestThenAddAccessor(
+            {
+              nodeId,
+              request_id: message.request_id,
+              old_accessor_id: message.accessor_id,
+            },
+            {
+              callbackFnName: 'idp.processIdpResponseAfterAddAccessor',
+              callbackAdditionalArgs: [{ nodeId, message }],
+            }
+          );
+        } else {
+          await common.closeRequest(
+            {
+              node_id: nodeId,
+              request_id: message.request_id,
+            },
+            {
+              synchronous: false,
+              sendCallbackToClient: false,
+              saveForRetryOnChainDisabled: true,
+            }
+          );
+        }
+      } else if (requestDetail.purpose === 'RevokeAccessor') {
+        //reponse for revoke identity
+        const revoking_accessor_id = await cacheDb.getAccessorIdToRevokeFromRequestId(
+          nodeId,
+          message.request_id
+        );
+
+        if (
+          await checkRevokeAccessorResponse(
             nodeId,
-            request_id: message.request_id,
-            old_accessor_id: message.accessor_id,
-          },
-          {
-            callbackFnName: 'idp.processIdpResponseAfterAddAccessor',
-            callbackAdditionalArgs: [{ nodeId, message }],
-          }
-        );
-      } else {
-        await common.closeRequest(
-          {
-            node_id: nodeId,
-            request_id: message.request_id,
-          },
-          {
-            synchronous: false,
-            sendCallbackToClient: false,
-            saveForRetryOnChainDisabled: true,
-          }
-        );
+            message,
+            requestDetail,
+            revoking_accessor_id
+          )
+        ) {
+          //TODO what if revoke identity request need more than 1 min_idp
+          await identity.closeConsentRequestThenRevokeAccessor(
+            {
+              nodeId,
+              request_id: message.request_id,
+              old_accessor_id: message.accessor_id,
+              revoking_accessor_id,
+            },
+            {
+              callbackFnName: 'idp.processIdpResponseAfterRevokeAccessor',
+              callbackAdditionalArgs: [{ nodeId, message }],
+            }
+          );
+        } else {
+          await common.closeRequest(
+            {
+              node_id: nodeId,
+              request_id: message.request_id,
+            },
+            {
+              synchronous: false,
+              sendCallbackToClient: false,
+              saveForRetryOnChainDisabled: true,
+            }
+          );
+        }
       }
-    } else if (requestDetail.purpose === 'RevokeAccessor') {
-      //reponse for revoke identity
-      const revoking_accessor_id = await cacheDb.getAccessorIdToRevokeFromRequestId(
+    } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
+      const responseId =
+        nodeId + ':' + message.request_id + ':' + message.idp_id;
+      await common.handleChallengeRequest({
+        nodeId,
+        role: 'idp',
+        request_id: message.request_id,
+        idp_id: message.idp_id,
+        public_proof: message.public_proof,
+      });
+      await cacheDb.removePublicProofReceivedFromMQ(nodeId, responseId);
+    } else if (message.type === privateMessageType.CONSENT_REQUEST) {
+      await Promise.all([
+        cacheDb.setRequestReceivedFromMQ(nodeId, message.request_id, message),
+        cacheDb.setRPIdFromRequestId(nodeId, message.request_id, message.rp_id),
+      ]);
+
+      const requestDetail = await tendermintNdid.getRequestDetail({
+        requestId: message.request_id,
+      });
+      const messageValid = common.checkRequestMessageIntegrity(
+        message.request_id,
+        message,
+        requestDetail
+      );
+      const receiverValid = checkReceiverIntegrity(
+        message.request_id,
+        requestDetail,
+        nodeId
+      );
+      const valid = messageValid && receiverValid;
+      if (!valid) {
+        throw new CustomError({
+          errorType: errorType.REQUEST_INTEGRITY_CHECK_FAILED,
+          details: {
+            requestId: message.request_id,
+          },
+        });
+      }
+      await cacheDb.setRequestMessage(nodeId, message.request_id, {
+        request_message: message.request_message,
+        request_message_salt: message.request_message_salt,
+        initial_salt: message.initial_salt,
+      });
+      notifyIncomingRequestByCallback(nodeId, {
+        mode: message.mode,
+        request_id: message.request_id,
+        namespace: message.namespace,
+        identifier: message.identifier,
+        request_message: message.request_message,
+        request_message_hash: utils.hashRequestMessageForConsent(
+          message.request_message,
+          message.initial_salt,
+          message.request_id
+        ),
+        request_message_salt: message.request_message_salt,
+        requester_node_id: message.rp_id,
+        min_ial: message.min_ial,
+        min_aal: message.min_aal,
+        data_request_list: message.data_request_list,
+        initial_salt: message.initial_salt,
+        creation_time: message.creation_time,
+        creation_block_height: `${requestDetail.creation_chain_id}:${
+          requestDetail.creation_block_height
+        }`,
+        request_timeout: message.request_timeout,
+      });
+    } else if (message.type === privateMessageType.CHALLENGE_RESPONSE) {
+      //store challenge
+      const createResponseParams = await cacheDb.getResponseFromRequestId(
         nodeId,
         message.request_id
       );
-
-      if (
-        await checkRevokeAccessorResponse(
+      try {
+        let request = await cacheDb.getRequestReceivedFromMQ(
           nodeId,
-          message,
-          requestDetail,
-          revoking_accessor_id
-        )
-      ) {
-        //TODO what if revoke identity request need more than 1 min_idp
-        await identity.closeConsentRequestThenRevokeAccessor(
-          {
-            nodeId,
-            request_id: message.request_id,
-            old_accessor_id: message.accessor_id,
-            revoking_accessor_id,
-          },
-          {
-            callbackFnName: 'idp.processIdpResponseAfterRevokeAccessor',
-            callbackAdditionalArgs: [{ nodeId, message }],
-          }
+          message.request_id
         );
-      } else {
-        await common.closeRequest(
+        request.challenge = message.challenge;
+        logger.debug({
+          message: 'Save challenge to request',
+          request,
+          challenge: message.challenge,
+        });
+        await cacheDb.setRequestReceivedFromMQ(
+          nodeId,
+          message.request_id,
+          request
+        );
+        //query reponse data
+        logger.debug({
+          message: 'Data to response',
+          createResponseParams,
+        });
+        await createResponse(createResponseParams, { nodeId });
+      } catch (error) {
+        await callbackToClient(
+          createResponseParams.callback_url,
           {
             node_id: nodeId,
-            request_id: message.request_id,
+            type: 'response_result',
+            success: false,
+            reference_id: createResponseParams.reference_id,
+            request_id: createResponseParams.request_id,
+            error: getErrorObjectForClient(error),
           },
-          {
-            synchronous: false,
-            sendCallbackToClient: false,
-            saveForRetryOnChainDisabled: true,
-          }
+          true
+        );
+        cacheDb.removeResponseFromRequestId(
+          nodeId,
+          createResponseParams.request_id
         );
       }
-    }
-  } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
-    const responseId = nodeId + ':' + message.request_id + ':' + message.idp_id;
-    await common.handleChallengeRequest({
-      nodeId,
-      request_id: message.request_id,
-      idp_id: message.idp_id,
-      public_proof: message.public_proof,
-    });
-    await cacheDb.removePublicProofReceivedFromMQ(nodeId, responseId);
-  } else if (message.type === privateMessageType.CONSENT_REQUEST) {
-    const requestDetail = await tendermintNdid.getRequestDetail({
-      requestId: message.request_id,
-    });
-    const messageValid = common.checkRequestMessageIntegrity(
-      message.request_id,
-      message,
-      requestDetail
-    );
-    const receiverValid = checkReceiverIntegrity(
-      message.request_id,
-      requestDetail,
-      nodeId
-    );
-    const valid = messageValid && receiverValid;
-    if (!valid) {
-      throw new CustomError({
-        errorType: errorType.REQUEST_INTEGRITY_CHECK_FAILED,
-        details: {
-          requestId: message.request_id,
-        },
+    } else {
+      logger.warn({
+        message: 'Cannot process unknown message type',
+        type: message.type,
       });
     }
-    await cacheDb.setRequestMessage(nodeId, message.request_id, {
-      request_message: message.request_message,
-      request_message_salt: message.request_message_salt,
-      initial_salt: message.initial_salt,
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error processing message from message queue',
+      cause: error,
     });
-    notifyIncomingRequestByCallback(nodeId, {
-      mode: message.mode,
-      request_id: message.request_id,
-      namespace: message.namespace,
-      identifier: message.identifier,
-      request_message: message.request_message,
-      request_message_hash: utils.hashRequestMessageForConsent(
-        message.request_message,
-        message.initial_salt,
-        message.request_id
-      ),
-      request_message_salt: message.request_message_salt,
-      requester_node_id: message.rp_id,
-      min_ial: message.min_ial,
-      min_aal: message.min_aal,
-      data_request_list: message.data_request_list,
-      initial_salt: message.initial_salt,
-      creation_time: message.creation_time,
-      creation_block_height: `${requestDetail.creation_chain_id}:${
-        requestDetail.creation_block_height
-      }`,
-      request_timeout: message.request_timeout,
+    logger.error(err.getInfoForLog());
+    await common.notifyError({
+      nodeId,
+      callbackUrl: callbackUrls.error_url,
+      action: 'idp.processMessage',
+      error: err,
+      requestId,
     });
+    throw err;
   }
 }
 

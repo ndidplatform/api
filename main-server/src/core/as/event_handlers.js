@@ -20,28 +20,29 @@
  *
  */
 
-import { callbackUrls, processRequest } from '.';
+import { callbackUrls, processMessage } from '.';
 import { invalidateDataSchemaCache } from './data_validator';
 
 import CustomError from 'ndid-error/custom_error';
-import errorType from 'ndid-error/type';
 import logger from '../../logger';
 
-import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
+import * as requestProcessManager from '../request_process_manager';
 import * as cacheDb from '../../db/cache';
-import privateMessageType from '../../mq/message/type';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
 
 import * as config from '../../config';
 
-const requestIdLocks = {};
-
-export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
+export async function handleMessageFromQueue(
+  messageId,
+  message,
+  nodeId = config.nodeId
+) {
   logger.info({
     message: 'Received message from MQ',
+    messageId,
     nodeId,
   });
   logger.debug({
@@ -53,44 +54,19 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
 
   const requestId = message.request_id;
   try {
-    if (message.type === privateMessageType.DATA_REQUEST) {
-      await cacheDb.setInitialSalt(
-        nodeId,
-        message.request_id,
-        message.initial_salt
-      );
-      const latestBlockHeight = tendermint.latestBlockHeight;
-      if (tendermint.chainId !== message.chain_id) {
-        if (!(await utils.hasSeenChain(message.chain_id))) {
-          throw new CustomError({
-            errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
-          });
-        }
-      } else if (latestBlockHeight <= message.height) {
-        logger.debug({
-          message: 'Saving message from MQ',
-          tendermintLatestBlockHeight: latestBlockHeight,
-          messageBlockHeight: message.height,
-        });
-        requestIdLocks[nodeId + ':' + message.request_id] = true;
-        await Promise.all([
-          cacheDb.setRequestReceivedFromMQ(nodeId, message.request_id, message),
-          cacheDb.addRequestIdExpectedInBlock(
-            nodeId,
-            message.height,
-            message.request_id
-          ),
-        ]);
-        if (tendermint.latestBlockHeight <= message.height) {
-          delete requestIdLocks[nodeId + ':' + message.request_id];
-          return;
-        } else {
-          await cacheDb.removeRequestReceivedFromMQ(nodeId, requestId);
-        }
-      }
+    const addToProcessQueue = await requestProcessManager.handleMessageFromMqWithBlockWait(
+      messageId,
+      message,
+      nodeId
+    );
 
-      await processRequest(nodeId, message);
-      delete requestIdLocks[nodeId + ':' + message.request_id];
+    if (addToProcessQueue) {
+      requestProcessManager.addTaskToQueue({
+        nodeId,
+        messageId,
+        message,
+        processMessage,
+      });
     }
   } catch (error) {
     const err = new CustomError({
@@ -101,7 +77,7 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
     await common.notifyError({
       nodeId,
       callbackUrl: callbackUrls.error_url,
-      action: 'handleMessageFromQueue',
+      action: 'as.handleMessageFromQueue',
       error: err,
       requestId,
     });
@@ -124,7 +100,12 @@ export async function handleTendermintNewBlock(
   });
   try {
     await Promise.all([
-      processRequestExpectedInBlocks(fromHeight, toHeight, nodeId),
+      requestProcessManager.processMessageInBlocks(
+        fromHeight,
+        toHeight,
+        nodeId,
+        processMessage
+      ),
       processTasksInBlocks(parsedTransactionsInBlocks, nodeId),
     ]);
   } catch (error) {
@@ -140,24 +121,6 @@ export async function handleTendermintNewBlock(
       error: err,
     });
   }
-}
-
-async function processRequestExpectedInBlocks(fromHeight, toHeight, nodeId) {
-  const requestIdsInTendermintBlock = await cacheDb.getRequestIdsExpectedInBlock(
-    nodeId,
-    fromHeight,
-    toHeight
-  );
-  await Promise.all(
-    requestIdsInTendermintBlock.map(async (requestId) => {
-      if (requestIdLocks[nodeId + ':' + requestId]) return;
-      const request = await cacheDb.getRequestReceivedFromMQ(nodeId, requestId);
-      if (request == null) return;
-      await processRequest(nodeId, request);
-      await cacheDb.removeRequestReceivedFromMQ(nodeId, requestId);
-    })
-  );
-  cacheDb.removeRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight);
 }
 
 async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {

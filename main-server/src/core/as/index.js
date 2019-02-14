@@ -28,6 +28,7 @@ import { processDataForRP } from './process_data_for_rp';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
+import privateMessageType from '../../mq/message/type';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -214,6 +215,46 @@ function checkReceiverIntegrity({
     }
   }
   return true;
+}
+
+export async function processMessage(nodeId, messageId, message) {
+  const requestId = message.request_id;
+  logger.debug({
+    message: 'Processing message',
+    nodeId,
+    messageId,
+    requestId,
+  });
+
+  try {
+    if (message.type === privateMessageType.DATA_REQUEST) {
+      await cacheDb.setInitialSalt(
+        nodeId,
+        message.request_id,
+        message.initial_salt
+      );
+      await processRequest(nodeId, message);
+    } else {
+      logger.warn({
+        message: 'Cannot process unknown message type',
+        type: message.type,
+      });
+    }
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error processing message from message queue',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    await common.notifyError({
+      nodeId,
+      callbackUrl: callbackUrls.error_url,
+      action: 'as.processMessage',
+      error: err,
+      requestId,
+    });
+    throw err;
+  }
 }
 
 export async function processRequest(nodeId, request) {
