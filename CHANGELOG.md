@@ -4,9 +4,22 @@
 
 IMPROVEMENTS:
 
+<<<<<<< HEAD
 - Introduce master-worker architecture with backward-compatible option to be standalone.
 
 ## 1.0.2 (January 30, 2019)
+=======
+- Use `scan` stream instead of `keys` for redis oprations.
+
+BUG FIXES:
+
+- Fix redis function wrappers logic.
+- Fix cache data manipulation on detecting new chain (migrate).
+
+## 1.0.2 (February 8, 2019)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
+>>>>>>> development-single-process
 
 IMPROVEMENTS:
 
@@ -17,10 +30,14 @@ IMPROVEMENTS:
 - [MQ Service] Add new environment variable options
   - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds
   - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds
-  - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than or equal to `GRPC_PING_INTERVAL_MS` config on API main server pair.
+  - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than `GRPC_PING_INTERVAL_MS` config on API main server pair.
 - Set time limit (deadline) for gRPC function calls
-  - 10 minutes + 1 minute (default) for `sendMessage()` (equals to total retry timeout for MQ message sending with additional 5 seconds)
+  - 10 minutes + 1 minute (default) for `sendMessage()` (equals to total retry timeout for MQ message sending with additional 1 minute)
   - 1 minute (default) for `sendAckForRecvMessage()`
+
+BUG FIXES:
+
+- Fix duplicate AS data response from MQ handling on RP side when a handling happens without waiting for block.
 
 ## 1.0.1 (January 24, 2019)
 
