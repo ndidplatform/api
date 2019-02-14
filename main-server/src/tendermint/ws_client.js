@@ -29,6 +29,7 @@ import logger from '../logger';
 
 import { tendermintAddress } from '../config';
 import CustomError from 'ndid-error/custom_error';
+import errorType from 'ndid-error/type';
 
 // const PING_INTERVAL = 30000;
 const PING_TIMEOUT_MS = 60000;
@@ -157,13 +158,24 @@ export default class TendermintWsClient extends EventEmitter {
       const rpcId = parseInt(message.id);
       if (this.queue[rpcId]) {
         if (message.error) {
-          const error = new CustomError({
-            message: 'JSON-RPC ERROR',
-            details: {
-              error: message.error,
-              rpcId,
-            },
-          });
+          let error;
+          if (message.error.data === 'Mempool is full') {
+            error = new CustomError({
+              errorType: errorType.TENDERMINT_MEMPOOL_FULL,
+              details: {
+                error: message.error,
+                rpcId,
+              },
+            });
+          } else {
+            error = new CustomError({
+              errorType: errorType.TENDERMINT_TRANSACT_JSON_RPC_ERROR,
+              details: {
+                error: message.error,
+                rpcId,
+              },
+            });
+          }
           this.queue[rpcId].promise[1](error);
         } else {
           this.queue[rpcId].promise[0](message.result);

@@ -223,6 +223,10 @@ module.exports = {
     code: 10048,
     message: 'Tendermint HTTP RPC call got unexpected result',
   },
+  TENDERMINT_MEMPOOL_FULL: {
+    code: 10049,
+    message: 'Tendermint mempool is full',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
