@@ -91,13 +91,22 @@ export async function processMessageInBlocks(
       if (message == null) return;
       addTaskToQueue({
         nodeId,
-        messageId,
-        message,
         callback: processMessage,
-        onMessageProcessFinished: cleanUpMessage,
+        callbackArgs: [nodeId, messageId, message],
+        onCallbackFinished: releaseLockAndCleanUp,
+        onCallbackFinishedArgs: [nodeId, messageId],
       });
     })
   );
+}
+
+function releaseLock(messageId) {
+  delete messageProcessLock[messageId];
+}
+
+function releaseLockAndCleanUp(nodeId, messageId) {
+  releaseLock(messageId);
+  cleanUpMessage(nodeId, messageId);
 }
 
 async function cleanUpMessage(nodeId, messageId) {
@@ -115,19 +124,34 @@ async function cleanUpMessage(nodeId, messageId) {
   }
 }
 
-export function addTaskToQueue({
+export function addMqMessageTaskToQueue({
   nodeId,
   messageId,
   message,
-  callback,
-  onMessageProcessFinished,
+  processMessage,
 }) {
   const requestId = message.request_id;
+  addTaskToQueue({
+    nodeId,
+    requestId,
+    callback: processMessage,
+    callbackArgs: [nodeId, messageId, message],
+    onCallbackFinished: releaseLock,
+    onCallbackFinishedArgs: [messageId],
+  });
+}
 
+export function addTaskToQueue({
+  nodeId,
+  requestId,
+  callback,
+  callbackArgs,
+  onCallbackFinished,
+  onCallbackFinishedArgs,
+}) {
   logger.debug({
     message: 'Adding task to queue',
     nodeId,
-    messageId,
     requestId,
   });
 
@@ -135,12 +159,10 @@ export function addTaskToQueue({
     requestQueue[requestId] = [];
   }
   requestQueue[requestId].push({
-    nodeId,
-    messageId,
-    message,
-    requestId,
     callback,
-    onMessageProcessFinished,
+    callbackArgs,
+    onCallbackFinished,
+    onCallbackFinishedArgs,
   });
 
   if (!requestQueueRunning[requestId]) {
@@ -160,25 +182,23 @@ async function executeTaskInQueue(requestId) {
   }
   const {
     nodeId,
-    messageId,
-    message,
     callback,
-    onMessageProcessFinished,
+    callbackArgs,
+    onCallbackFinished,
+    onCallbackFinishedArgs,
   } = requestQueue[requestId].shift();
   logger.debug({
     message: 'Executing task in queue',
     nodeId,
-    messageId,
     requestId,
   });
   try {
-    await callback(nodeId, messageId, message);
+    await callback(...callbackArgs);
   } catch (error) {
     logger.error({ message: 'Error executing task in queue', requestId });
   }
-  delete messageProcessLock[messageId];
-  if (onMessageProcessFinished) {
-    onMessageProcessFinished(nodeId, messageId);
+  if (onCallbackFinished) {
+    onCallbackFinished(...onCallbackFinishedArgs);
   }
   executeTaskInQueue(requestId);
 }

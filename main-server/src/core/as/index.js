@@ -228,12 +228,67 @@ export async function processMessage(nodeId, messageId, message) {
 
   try {
     if (message.type === privateMessageType.DATA_REQUEST) {
+      const requestDetail = await tendermintNdid.getRequestDetail({
+        requestId: message.request_id,
+      });
+
+      if (requestDetail.closed || requestDetail.timed_out) {
+        return;
+      }
+
       await cacheDb.setInitialSalt(
         nodeId,
         message.request_id,
         message.initial_salt
       );
-      await processRequest(nodeId, message);
+
+      const requestMessageValid = common.checkRequestMessageIntegrity(
+        message.request_id,
+        message,
+        requestDetail
+      );
+      const serviceDataRequestParamsValid = checkServiceRequestParamsIntegrity(
+        message.request_id,
+        message,
+        requestDetail
+      );
+      const receiverValid = checkReceiverIntegrity({
+        requestId: message.request_id,
+        requestFromBlockchain: requestDetail,
+        requestFromMq: message,
+        nodeId,
+      });
+      if (
+        !requestMessageValid ||
+        !serviceDataRequestParamsValid ||
+        !receiverValid
+      ) {
+        throw new CustomError({
+          errorType: errorType.REQUEST_INTEGRITY_CHECK_FAILED,
+          details: {
+            requestId: message.request_id,
+          },
+        });
+      }
+      const idpResponsesValid = await isIdpResponsesValid(
+        message.request_id,
+        message
+      );
+      if (!idpResponsesValid) {
+        throw new CustomError({
+          errorType: errorType.INVALID_RESPONSES,
+          details: {
+            requestId: message.request_id,
+          },
+        });
+      }
+      const responseDetails = await getResponseDetails(message.request_id);
+      await getDataAndSendBackToRP(
+        nodeId,
+        message,
+        requestDetail,
+        responseDetails
+      );
     } else {
       logger.warn({
         message: 'Cannot process unknown message type',
@@ -255,59 +310,6 @@ export async function processMessage(nodeId, messageId, message) {
     });
     throw err;
   }
-}
-
-export async function processRequest(nodeId, request) {
-  logger.debug({
-    message: 'Processing request',
-    nodeId,
-    requestId: request.request_id,
-  });
-  const requestDetail = await tendermintNdid.getRequestDetail({
-    requestId: request.request_id,
-  });
-  const requestMessageValid = common.checkRequestMessageIntegrity(
-    request.request_id,
-    request,
-    requestDetail
-  );
-  const serviceDataRequestParamsValid = checkServiceRequestParamsIntegrity(
-    request.request_id,
-    request,
-    requestDetail
-  );
-  const receiverValid = checkReceiverIntegrity({
-    requestId: request.request_id,
-    requestFromBlockchain: requestDetail,
-    requestFromMq: request,
-    nodeId,
-  });
-  if (
-    !requestMessageValid ||
-    !serviceDataRequestParamsValid ||
-    !receiverValid
-  ) {
-    throw new CustomError({
-      errorType: errorType.REQUEST_INTEGRITY_CHECK_FAILED,
-      details: {
-        requestId: request.request_id,
-      },
-    });
-  }
-  const idpResponsesValid = await isIdpResponsesValid(
-    request.request_id,
-    request
-  );
-  if (!idpResponsesValid) {
-    throw new CustomError({
-      errorType: errorType.INVALID_RESPONSES,
-      details: {
-        requestId: request.request_id,
-      },
-    });
-  }
-  const responseDetails = await getResponseDetails(request.request_id);
-  await getDataAndSendBackToRP(nodeId, request, requestDetail, responseDetails);
 }
 
 export async function afterGotDataFromCallback(

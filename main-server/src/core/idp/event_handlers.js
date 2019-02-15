@@ -59,11 +59,11 @@ export async function handleMessageFromQueue(
   try {
     //if message is challenge for response, no need to wait for blockchain
     if (message.type === privateMessageType.CHALLENGE_RESPONSE) {
-      requestProcessManager.addTaskToQueue({
+      requestProcessManager.addMqMessageTaskToQueue({
         nodeId,
         messageId,
         message,
-        callback: processMessage,
+        processMessage,
       });
     } else {
       const addToProcessQueue = await requestProcessManager.handleMessageFromMqWithBlockWait(
@@ -73,11 +73,11 @@ export async function handleMessageFromQueue(
       );
 
       if (addToProcessQueue) {
-        requestProcessManager.addTaskToQueue({
+        requestProcessManager.addMqMessageTaskToQueue({
           nodeId,
           messageId,
           message,
-          callback: processMessage,
+          processMessage,
         });
       }
     }
@@ -113,15 +113,13 @@ export async function handleTendermintNewBlock(
   });
 
   try {
-    await Promise.all([
-      requestProcessManager.processMessageInBlocks(
-        fromHeight,
-        toHeight,
-        nodeId,
-        processMessage
-      ),
-      processTasksInBlocks(parsedTransactionsInBlocks, nodeId),
-    ]);
+    await requestProcessManager.processMessageInBlocks(
+      fromHeight,
+      toHeight,
+      nodeId,
+      processMessage
+    );
+    await processTasksInBlocks(parsedTransactionsInBlocks, nodeId);
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling Tendermint NewBlock event',
@@ -221,16 +219,24 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         incomingRequestsToProcessUpdate,
       });
 
-      await Promise.all([
-        ...Object.values(createIdentityRequestsToProcess).map(
-          ({ requestId, action }) =>
-            processCreateIdentityRequest(nodeId, requestId, action)
-        ),
-        ...Object.values(incomingRequestsToProcessUpdate).map(
-          ({ requestId, cleanUp }) =>
-            processRequestUpdate(nodeId, requestId, height, cleanUp)
-        ),
-      ]);
+      Object.values(createIdentityRequestsToProcess).map(
+        ({ requestId, action }) =>
+          requestProcessManager.addTaskToQueue({
+            nodeId,
+            requestId,
+            callback: processCreateIdentityRequest,
+            callbackArgs: [nodeId, requestId, action],
+          })
+      );
+      Object.values(incomingRequestsToProcessUpdate).map(
+        ({ requestId, cleanUp }) =>
+          requestProcessManager.addTaskToQueue({
+            nodeId,
+            requestId,
+            callback: processRequestUpdate,
+            callbackArgs: [nodeId, requestId, height, cleanUp],
+          })
+      );
     })
   );
 }

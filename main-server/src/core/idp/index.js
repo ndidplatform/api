@@ -408,14 +408,19 @@ export async function processMessage(nodeId, messageId, message) {
       });
       await cacheDb.removePublicProofReceivedFromMQ(nodeId, responseId);
     } else if (message.type === privateMessageType.CONSENT_REQUEST) {
+      const requestDetail = await tendermintNdid.getRequestDetail({
+        requestId: message.request_id,
+      });
+
+      if (requestDetail.closed || requestDetail.timed_out) {
+        return;
+      }
+
       await Promise.all([
         cacheDb.setRequestReceivedFromMQ(nodeId, message.request_id, message),
         cacheDb.setRPIdFromRequestId(nodeId, message.request_id, message.rp_id),
       ]);
 
-      const requestDetail = await tendermintNdid.getRequestDetail({
-        requestId: message.request_id,
-      });
       const messageValid = common.checkRequestMessageIntegrity(
         message.request_id,
         message,

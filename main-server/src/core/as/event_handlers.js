@@ -61,11 +61,11 @@ export async function handleMessageFromQueue(
     );
 
     if (addToProcessQueue) {
-      requestProcessManager.addTaskToQueue({
+      requestProcessManager.addMqMessageTaskToQueue({
         nodeId,
         messageId,
         message,
-        callback: processMessage,
+        processMessage,
       });
     }
   } catch (error) {
@@ -99,15 +99,13 @@ export async function handleTendermintNewBlock(
     toHeight,
   });
   try {
-    await Promise.all([
-      requestProcessManager.processMessageInBlocks(
-        fromHeight,
-        toHeight,
-        nodeId,
-        processMessage
-      ),
-      processTasksInBlocks(parsedTransactionsInBlocks, nodeId),
-    ]);
+    await requestProcessManager.processMessageInBlocks(
+      fromHeight,
+      toHeight,
+      nodeId,
+      processMessage
+    );
+    await processTasksInBlocks(parsedTransactionsInBlocks, nodeId);
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling Tendermint NewBlock event',
@@ -150,11 +148,14 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         }
       }
 
-      await Promise.all(
-        Object.values(incomingRequestsToProcessUpdate).map(
-          ({ requestId, cleanUp }) =>
-            processRequestUpdate(nodeId, requestId, height, cleanUp)
-        )
+      Object.values(incomingRequestsToProcessUpdate).map(
+        ({ requestId, cleanUp }) =>
+          requestProcessManager.addTaskToQueue({
+            nodeId,
+            requestId,
+            callback: processRequestUpdate,
+            callbackArgs: [nodeId, requestId, height, cleanUp],
+          })
       );
     })
   );
