@@ -262,7 +262,7 @@ export async function removeAllLists({ nodeId, dbName, name }) {
       });
       stream.on('data', (keys) => {
         if (keys.length) {
-          promises.push(redis.del(...keys));
+          promises.push(redis.unlink(...keys));
         }
       });
       stream.on('end', () => resolve());
