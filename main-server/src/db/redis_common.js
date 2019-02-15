@@ -254,26 +254,21 @@ export async function removeAllLists({ nodeId, dbName, name }) {
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
+    const promises = [];
     await new Promise((resolve, reject) => {
       const stream = redis.scanStream({
         match: `${nodeId}:${dbName}:${name}:*`,
         count: 100,
       });
-      const promises = [];
       stream.on('data', (keys) => {
         if (keys.length) {
           promises.push(redis.del(...keys));
         }
       });
-      stream.on('end', async () => {
-        try {
-          await Promise.all(promises);
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
-      });
+      stream.on('end', () => resolve());
+      stream.on('error', (error) => reject(error));
     });
+    await Promise.all(promises);
     metricsEventEmitter.emit(
       'operationTime',
       operation,
@@ -355,7 +350,7 @@ export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
-    const retVal = await new Promise((resolve) => {
+    const retVal = await new Promise((resolve, reject) => {
       let result = [];
       const stream = redis.scanStream({
         match: `${nodeId}:${dbName}:${name}:*`,
@@ -380,6 +375,7 @@ export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
         }
       });
       stream.on('end', () => resolve(result));
+      stream.on('error', (error) => reject(error));
     });
     metricsEventEmitter.emit(
       'operationTime',
@@ -403,7 +399,7 @@ export async function getFlattenList({ nodeId, dbName, name }) {
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
-    const lists = await new Promise((resolve) => {
+    const lists = await new Promise((resolve, reject) => {
       const result = [];
       const stream = redis.scanStream({
         match: `${nodeId}:${dbName}:${name}:*`,
@@ -427,6 +423,7 @@ export async function getFlattenList({ nodeId, dbName, name }) {
         }
       });
       stream.on('end', () => resolve(result));
+      stream.on('error', (error) => reject(error));
     });
     metricsEventEmitter.emit(
       'operationTime',
