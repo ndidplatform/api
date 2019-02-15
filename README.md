@@ -6,7 +6,7 @@
 
 - Node.js 8.9 or later (Recommended: latest version of Node.js 10 LTS)
 - npm 5.6.0 or later
-- Redis 4.0 or later
+- Redis 3.2 or later
 
 ## Getting started
 
