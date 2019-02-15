@@ -185,26 +185,21 @@ export async function removeListWithRangeSupport({ nodeId, dbName, name }) {
 export async function removeAllLists({ nodeId, dbName, name }) {
   try {
     const redis = getRedis(dbName);
+    const promises = [];
     await new Promise((resolve, reject) => {
       const stream = redis.scanStream({
         match: `${nodeId}:${dbName}:${name}:*`,
         count: 100,
       });
-      const promises = [];
       stream.on('data', (keys) => {
         if (keys.length) {
           promises.push(redis.del(...keys));
         }
       });
-      stream.on('end', async () => {
-        try {
-          await Promise.all(promises);
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
-      });
+      stream.on('end', () => resolve());
+      stream.on('error', (error) => reject(error));
     });
+    await Promise.all(promises);
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,
@@ -258,7 +253,7 @@ export async function remove({ nodeId, dbName, name, key }) {
 export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
   try {
     const redis = getRedis(dbName);
-    const retVal = await new Promise((resolve) => {
+    const retVal = await new Promise((resolve, reject) => {
       let result = [];
       const stream = redis.scanStream({
         match: `${nodeId}:${dbName}:${name}:*`,
@@ -283,6 +278,7 @@ export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
         }
       });
       stream.on('end', () => resolve(result));
+      stream.on('error', (error) => reject(error));
     });
     return retVal;
   } catch (error) {
@@ -299,7 +295,7 @@ export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
 export async function getFlattenList({ nodeId, dbName, name }) {
   try {
     const redis = getRedis(dbName);
-    const lists = await new Promise((resolve) => {
+    const lists = await new Promise((resolve, reject) => {
       const result = [];
       const stream = redis.scanStream({
         match: `${nodeId}:${dbName}:${name}:*`,
@@ -323,6 +319,7 @@ export async function getFlattenList({ nodeId, dbName, name }) {
         }
       });
       stream.on('end', () => resolve(result));
+      stream.on('error', (error) => reject(error));
     });
 
     return lists;
