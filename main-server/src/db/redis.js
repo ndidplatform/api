@@ -83,7 +83,10 @@ export default class RedisInstance extends EventEmitter {
 
   connect() {
     return new Promise(async (resolve) => {
-      this.redis.once('connect', () => resolve());
+      this.redis.once('connect', async () => {
+        await this.getRedisVersion();
+        resolve();
+      });
       try {
         await this.redis.connect();
       } catch (error) {
@@ -97,7 +100,36 @@ export default class RedisInstance extends EventEmitter {
     });
   }
 
+  async getRedisVersion() {
+    const info = await this.redis.info();
+    const parsedInfo = parseInfo(info);
+    const redisVersion = parsedInfo.redis_version;
+    const versionArr = redisVersion.split('.');
+    const version = {
+      major: versionArr[0],
+      minor: versionArr[1],
+      patch: versionArr[2],
+    };
+    this.version = version;
+  }
+
   close() {
     return this.redis.disconnect();
   }
+}
+
+function parseInfo(info) {
+  const lines = info.split('\r\n');
+  const obj = {};
+  for (var i = 0, l = info.length; i < l; i++) {
+    let line = lines[i];
+    if (line && line.split) {
+      line = line.split(':');
+      if (line.length > 1) {
+        const key = line.shift();
+        obj[key] = line.join(':');
+      }
+    }
+  }
+  return obj;
 }
