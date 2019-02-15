@@ -93,7 +93,7 @@ export async function processMessageInBlocks(
         nodeId,
         messageId,
         message,
-        processMessage,
+        callback: processMessage,
         onMessageProcessFinished: cleanUpMessage,
       });
     })
@@ -119,7 +119,7 @@ export function addTaskToQueue({
   nodeId,
   messageId,
   message,
-  processMessage,
+  callback,
   onMessageProcessFinished,
 }) {
   const requestId = message.request_id;
@@ -139,7 +139,7 @@ export function addTaskToQueue({
     messageId,
     message,
     requestId,
-    processMessage,
+    callback,
     onMessageProcessFinished,
   });
 
@@ -162,7 +162,7 @@ async function executeTaskInQueue(requestId) {
     nodeId,
     messageId,
     message,
-    processMessage,
+    callback,
     onMessageProcessFinished,
   } = requestQueue[requestId].shift();
   logger.debug({
@@ -172,7 +172,7 @@ async function executeTaskInQueue(requestId) {
     requestId,
   });
   try {
-    await processMessage(nodeId, messageId, message);
+    await callback(nodeId, messageId, message);
   } catch (error) {
     logger.error({ message: 'Error executing task in queue', requestId });
   }

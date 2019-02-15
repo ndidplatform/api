@@ -63,7 +63,7 @@ export async function handleMessageFromQueue(
         nodeId,
         messageId,
         message,
-        processMessage,
+        callback: processMessage,
       });
     } else {
       const addToProcessQueue = await requestProcessManager.handleMessageFromMqWithBlockWait(
@@ -77,7 +77,7 @@ export async function handleMessageFromQueue(
           nodeId,
           messageId,
           message,
-          processMessage,
+          callback: processMessage,
         });
       }
     }

@@ -65,7 +65,7 @@ export async function handleMessageFromQueue(
         nodeId,
         messageId,
         message,
-        processMessage,
+        callback: processMessage,
       });
     }
   } catch (error) {
