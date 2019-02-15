@@ -40,6 +40,7 @@ import * as config from '../../config';
 import * as cacheDb from '../../db/cache';
 import * as identity from '../identity';
 import privateMessageType from '../../mq/message/type';
+import { delegateToWorker } from '../../master-worker-interface/server';
 
 export * from './create_response';
 export * from './event_handlers';
@@ -301,6 +302,14 @@ function checkReceiverIntegrity(requestId, requestDetail, nodeId) {
 }
 
 export async function processMessage(nodeId, messageId, message) {
+
+  if(config.isMaster) {
+    return delegateToWorker({
+      type: 'processMessage',
+      args: arguments,
+    });
+  }
+
   const requestId = message.request_id;
   logger.debug({
     message: 'Processing message',

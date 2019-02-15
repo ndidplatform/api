@@ -38,6 +38,7 @@ import logger from '../../logger';
 
 import * as config from '../../config';
 import { role } from '../../node';
+import { delegateToWorker } from '../../master-worker-interface/server';
 
 export * from './register_or_update_as_service';
 export * from './process_data_for_rp';
@@ -218,6 +219,14 @@ function checkReceiverIntegrity({
 }
 
 export async function processMessage(nodeId, messageId, message) {
+
+  if(config.isMaster) {
+    return delegateToWorker({
+      type: 'processMessage',
+      args: arguments,
+    });
+  }
+
   const requestId = message.request_id;
   logger.debug({
     message: 'Processing message',
