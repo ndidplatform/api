@@ -115,7 +115,7 @@ async function cleanUpMessage(nodeId, messageId) {
   }
 }
 
-export async function addTaskToQueue({
+export function addTaskToQueue({
   nodeId,
   messageId,
   message,
