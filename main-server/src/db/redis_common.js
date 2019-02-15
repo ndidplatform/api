@@ -37,6 +37,17 @@ function getRedis(dbName) {
   }
 }
 
+function getRedisVersion(dbName) {
+  switch (dbName) {
+    case 'cache':
+      return cacheDbRedisInstance.version;
+    case 'long-term':
+      return longTermDbRedisInstance.version;
+    default:
+      throw new CustomError({ message: 'Unknown database name' });
+  }
+}
+
 export async function getList({ nodeId, dbName, name, key }) {
   try {
     const redis = getRedis(dbName);
@@ -204,6 +215,7 @@ export async function removeListWithRangeSupport({ nodeId, dbName, name }) {
 export async function removeAllLists({ nodeId, dbName, name }) {
   try {
     const redis = getRedis(dbName);
+    const redisVersion = getRedisVersion(dbName);
     const promises = [];
     await new Promise((resolve, reject) => {
       const stream = redis.scanStream({
@@ -212,7 +224,11 @@ export async function removeAllLists({ nodeId, dbName, name }) {
       });
       stream.on('data', (keys) => {
         if (keys.length) {
-          promises.push(redis.del(...keys));
+          promises.push(
+            redisVersion.major >= '4'
+              ? redis.unlink(...keys)
+              : redis.del(...keys)
+          );
         }
       });
       stream.on('end', () => resolve());
