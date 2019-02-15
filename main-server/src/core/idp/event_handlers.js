@@ -77,7 +77,7 @@ export async function handleMessageFromQueue(
           nodeId,
           messageId,
           message,
-          callback: processMessage,
+          processMessage,
         });
       }
     }
