@@ -22,6 +22,7 @@
 
 import cacheDbRedisInstance from './cache/redis';
 import longTermDbRedisInstance from './long_term/redis';
+import dataDbRedisInstance from './data/redis';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -32,6 +33,8 @@ function getRedis(dbName) {
       return cacheDbRedisInstance.redis;
     case 'long-term':
       return longTermDbRedisInstance.redis;
+    case 'data':
+      return dataDbRedisInstance.redis;
     default:
       throw new CustomError({ message: 'Unknown database name' });
   }
@@ -43,6 +46,8 @@ function getRedisVersion(dbName) {
       return cacheDbRedisInstance.version;
     case 'long-term':
       return longTermDbRedisInstance.version;
+    case 'data':
+      return dataDbRedisInstance.version;
     default:
       throw new CustomError({ message: 'Unknown database name' });
   }
@@ -254,6 +259,22 @@ export async function get({ nodeId, dbName, name, key }) {
       errorType: errorType.DB_ERROR,
       cause: error,
       details: { operation: 'get', dbName, name },
+    });
+  }
+}
+
+export async function getMulti({ nodeId, dbName, name, keys }) {
+  try {
+    const redis = getRedis(dbName);
+    const keysToGet = keys.map((key) => `${nodeId}:${dbName}:${name}:${key}`);
+    const result = await redis.mget(...keysToGet);
+    const retVal = result.map((val) => JSON.parse(val));
+    return retVal;
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation: 'getMulti', dbName, name },
     });
   }
 }

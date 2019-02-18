@@ -26,7 +26,7 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
 import {
-  isAccessorSignUrlSet,
+  isAccessorSignCallbackUrlSet,
   notifyCreateIdentityResultByCallback,
   accessorSign,
 } from '../idp';
@@ -152,7 +152,7 @@ export async function createIdentity(
 
     if (!accessor_id) accessor_id = utils.randomBase64Bytes(32);
 
-    if (!isAccessorSignUrlSet()) {
+    if (!(await isAccessorSignCallbackUrlSet())) {
       throw new CustomError({
         errorType: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET,
       });
@@ -418,18 +418,18 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
             request_message != null
               ? request_message
               : addAccessor
-                ? getRequestMessageForAddingAccessor({
-                    namespace,
-                    identifier,
-                    reference_id,
-                    node_id: config.nodeId,
-                  })
-                : getRequestMessageForCreatingIdentity({
-                    namespace,
-                    identifier,
-                    reference_id,
-                    node_id: config.nodeId,
-                  }),
+              ? getRequestMessageForAddingAccessor({
+                  namespace,
+                  identifier,
+                  reference_id,
+                  node_id: config.nodeId,
+                })
+              : getRequestMessageForCreatingIdentity({
+                  namespace,
+                  identifier,
+                  reference_id,
+                  node_id: config.nodeId,
+                }),
           min_ial: 1.1,
           min_aal: 1,
           min_idp: exist ? 1 : 0,
@@ -484,18 +484,18 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
             request_message != null
               ? request_message
               : addAccessor
-                ? getRequestMessageForAddingAccessor({
-                    namespace,
-                    identifier,
-                    reference_id,
-                    node_id: config.nodeId,
-                  })
-                : getRequestMessageForCreatingIdentity({
-                    namespace,
-                    identifier,
-                    reference_id,
-                    node_id: config.nodeId,
-                  }),
+              ? getRequestMessageForAddingAccessor({
+                  namespace,
+                  identifier,
+                  reference_id,
+                  node_id: config.nodeId,
+                })
+              : getRequestMessageForCreatingIdentity({
+                  namespace,
+                  identifier,
+                  reference_id,
+                  node_id: config.nodeId,
+                }),
           min_ial: 1.1,
           min_aal: 1,
           min_idp: exist ? 1 : 0,

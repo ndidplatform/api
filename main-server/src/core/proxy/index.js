@@ -31,7 +31,11 @@ import {
 
 import * as config from '../../config';
 
-export async function handleMessageFromQueue(message, receiverNodeId) {
+export async function handleMessageFromQueue(
+  messageId,
+  message,
+  receiverNodeId
+) {
   const nodesBehindProxyWithKeyOnProxy = await getNodesBehindProxyWithKeyOnProxy();
   const node = nodesBehindProxyWithKeyOnProxy.find(
     (node) => node.node_id === receiverNodeId
@@ -41,11 +45,11 @@ export async function handleMessageFromQueue(message, receiverNodeId) {
   const role = node.role.toLowerCase();
 
   if (role === 'rp') {
-    return rp.handleMessageFromQueue(message, receiverNodeId);
+    return rp.handleMessageFromQueue(messageId, message, receiverNodeId);
   } else if (role === 'idp') {
-    return idp.handleMessageFromQueue(message, receiverNodeId);
+    return idp.handleMessageFromQueue(messageId, message, receiverNodeId);
   } else if (role === 'as') {
-    return as.handleMessageFromQueue(message, receiverNodeId);
+    return as.handleMessageFromQueue(messageId, message, receiverNodeId);
   }
 }
 

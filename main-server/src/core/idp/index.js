@@ -20,8 +20,6 @@
  *
  */
 
-import fs from 'fs';
-import path from 'path';
 import fetch from 'node-fetch';
 
 import { createResponse } from './create_response';
@@ -38,6 +36,7 @@ import * as common from '../common';
 import * as utils from '../../utils';
 import * as config from '../../config';
 import * as cacheDb from '../../db/cache';
+import * as dataDb from '../../db/data';
 import * as identity from '../identity';
 import privateMessageType from '../../mq/message/type';
 import { delegateToWorker } from '../../master-worker-interface/server';
@@ -45,101 +44,142 @@ import { delegateToWorker } from '../../master-worker-interface/server';
 export * from './create_response';
 export * from './event_handlers';
 
-export const callbackUrls = {};
+const CALLBACK_URL_NAME = {
+  INCOMING_REQUEST: 'incoming_request_url',
+  INCOMING_REQUEST_STATUS_UPDATE: 'incoming_request_status_update_url',
+  IDENTITY_RESULT: 'identity_result_url', // Used by API v1
+  ACCESSOR_SIGN: 'accessor_sign_url',
+  ERROR: 'error_url',
+};
+const CALLBACK_URL_NAME_ARR = Object.values(CALLBACK_URL_NAME);
 
-const callbackUrlFilesPrefix = path.join(
-  config.dataDirectoryPath,
-  'idp-callback-url-' + config.nodeId
-);
-
-export function readCallbackUrlsFromFiles() {
-  [
-    { key: 'incoming_request_url', fileSuffix: 'incoming_request' },
-    {
-      key: 'incoming_request_status_update_url',
-      fileSuffix: 'incoming_request_status_update',
-    },
-    { key: 'identity_result_url', fileSuffix: 'identity_result' },
-    { key: 'accessor_sign_url', fileSuffix: 'accessor_sign' },
-    { key: 'error_url', fileSuffix: 'error' },
-  ].forEach(({ key, fileSuffix }) => {
-    try {
-      callbackUrls[key] = fs.readFileSync(
-        callbackUrlFilesPrefix + '-' + fileSuffix,
-        'utf8'
-      );
+export async function checkCallbackUrls() {
+  const callbackUrls = await getCallbackUrls();
+  for (let i = 0; i < CALLBACK_URL_NAME_ARR.length; i++) {
+    const callbackName = CALLBACK_URL_NAME_ARR[i];
+    if (callbackUrls[callbackName] != null) {
       logger.info({
-        message: `[IdP] ${fileSuffix} callback url read from file`,
-        callbackUrl: callbackUrls[key],
+        message: `[IdP] ${callbackName} callback url`,
+        callbackUrl: callbackUrls[callbackName],
       });
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        logger.warn({
-          message: `[IdP] ${fileSuffix} callback url file not found`,
-        });
-      } else {
-        logger.error({
-          message: `[IdP] Cannot read ${fileSuffix} callback url file`,
-          error,
-        });
-      }
-    }
-  });
-}
-
-function writeCallbackUrlToFile(fileSuffix, url) {
-  fs.writeFile(callbackUrlFilesPrefix + '-' + fileSuffix, url, (err) => {
-    if (err) {
-      logger.error({
-        message: `[IdP] Cannot write ${fileSuffix} callback url file`,
-        error: err,
+    } else {
+      logger.warn({
+        message: `[IdP] ${callbackName} callback url is not set`,
       });
     }
-  });
+  }
 }
 
-export function setCallbackUrls({
+export async function setCallbackUrls({
   incoming_request_url,
   incoming_request_status_update_url,
   identity_result_url,
   accessor_sign_url,
   error_url,
 }) {
+  const promises = [];
   if (incoming_request_url != null) {
-    callbackUrls.incoming_request_url = incoming_request_url;
-    writeCallbackUrlToFile('incoming_request', incoming_request_url);
+    promises.push(
+      dataDb.setCallbackUrl(
+        config.nodeId,
+        `idp.${CALLBACK_URL_NAME.INCOMING_REQUEST}`,
+        incoming_request_url
+      )
+    );
   }
   if (incoming_request_status_update_url != null) {
-    callbackUrls.incoming_request_status_update_url = incoming_request_status_update_url;
-    writeCallbackUrlToFile(
-      'incoming_request_status_update',
-      incoming_request_status_update_url
+    promises.push(
+      dataDb.setCallbackUrl(
+        config.nodeId,
+        `idp.${CALLBACK_URL_NAME.INCOMING_REQUEST_STATUS_UPDATE}`,
+        incoming_request_status_update_url
+      )
     );
   }
   if (identity_result_url != null) {
-    callbackUrls.identity_result_url = identity_result_url;
-    writeCallbackUrlToFile('identity_result', identity_result_url);
+    promises.push(
+      dataDb.setCallbackUrl(
+        config.nodeId,
+        `idp.${CALLBACK_URL_NAME.IDENTITY_RESULT}`,
+        identity_result_url
+      )
+    );
   }
   if (accessor_sign_url != null) {
-    callbackUrls.accessor_sign_url = accessor_sign_url;
-    writeCallbackUrlToFile('accessor_sign', accessor_sign_url);
+    promises.push(
+      dataDb.setCallbackUrl(
+        config.nodeId,
+        `idp.${CALLBACK_URL_NAME.ACCESSOR_SIGN}`,
+        accessor_sign_url
+      )
+    );
   }
   if (error_url != null) {
-    callbackUrls.error_url = error_url;
-    writeCallbackUrlToFile('error', error_url);
+    promises.push(
+      dataDb.setCallbackUrl(
+        config.nodeId,
+        `idp.${CALLBACK_URL_NAME.ERROR}`,
+        error_url
+      )
+    );
   }
+  await Promise.all(promises);
 }
 
-export function getCallbackUrls() {
+export async function getCallbackUrls() {
+  const callbackNames = CALLBACK_URL_NAME_ARR.map((name) => `idp.${name}`);
+  const callbackUrlsArr = await dataDb.getCallbackUrls(
+    config.nodeId,
+    callbackNames
+  );
+  const callbackUrls = callbackUrlsArr.reduce((callbackUrlsObj, url, index) => {
+    if (url != null) {
+      return {
+        ...callbackUrlsObj,
+        [callbackNames[index].replace(/^idp\./, '')]: url,
+      };
+    } else {
+      return callbackUrlsObj;
+    }
+  }, {});
   return callbackUrls;
 }
 
 export function getErrorCallbackUrl() {
-  return callbackUrls.error_url;
+  return dataDb.getCallbackUrl(config.nodeId, `idp.${CALLBACK_URL_NAME.ERROR}`);
 }
 
-export function isAccessorSignUrlSet() {
-  return callbackUrls.accessor_sign_url != null;
+function getIncomingRequestCallbackUrl() {
+  return dataDb.getCallbackUrl(
+    config.nodeId,
+    `idp.${CALLBACK_URL_NAME.INCOMING_REQUEST}`
+  );
+}
+
+export function getIncomingRequestStatusUpdateCallbackUrl() {
+  return dataDb.getCallbackUrl(
+    config.nodeId,
+    `idp.${CALLBACK_URL_NAME.INCOMING_REQUEST_STATUS_UPDATE}`
+  );
+}
+
+function getIdentityResultCallbackUrl() {
+  return dataDb.getCallbackUrl(
+    config.nodeId,
+    `idp.${CALLBACK_URL_NAME.IDENTITY_RESULT}`
+  );
+}
+
+function getAccessorSignCallbackUrl() {
+  return dataDb.getCallbackUrl(
+    config.nodeId,
+    `idp.${CALLBACK_URL_NAME.ACCESSOR_SIGN}`
+  );
+}
+
+export async function isAccessorSignCallbackUrlSet() {
+  const callbackUrl = await getAccessorSignCallbackUrl();
+  return callbackUrl != null;
 }
 
 export async function accessorSign({
@@ -163,7 +203,8 @@ export async function accessorSign({
     node_id,
   };
 
-  if (callbackUrls.accessor_sign_url == null) {
+  const accessorSignCallbackUrl = await getAccessorSignCallbackUrl();
+  if (accessorSignCallbackUrl == null) {
     throw new CustomError({
       errorType: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET,
     });
@@ -171,7 +212,7 @@ export async function accessorSign({
 
   logger.debug({
     message: 'Callback to accessor sign',
-    url: callbackUrls.accessor_sign_url,
+    url: accessorSignCallbackUrl,
     reference_id,
     accessor_id,
     accessor_public_key,
@@ -179,7 +220,7 @@ export async function accessorSign({
   });
 
   try {
-    const response = await fetch(callbackUrls.accessor_sign_url, {
+    const response = await fetch(accessorSignCallbackUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -209,7 +250,7 @@ export async function accessorSign({
       errorType: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED,
       cause: error,
       details: {
-        callbackUrl: callbackUrls.accessor_sign_url,
+        callbackUrl: accessorSignCallbackUrl,
         accessor_id,
         hash_id,
       },
@@ -235,8 +276,11 @@ function notifyByCallback({ url, type, eventDataForCallback }) {
   );
 }
 
-export function notifyIncomingRequestByCallback(nodeId, eventDataForCallback) {
-  const url = callbackUrls.incoming_request_url;
+export async function notifyIncomingRequestByCallback(
+  nodeId,
+  eventDataForCallback
+) {
+  const url = await getIncomingRequestCallbackUrl();
   const type = 'incoming_request';
   if (!url) {
     logger.error({
@@ -244,7 +288,7 @@ export function notifyIncomingRequestByCallback(nodeId, eventDataForCallback) {
     });
     return;
   }
-  return callbackToClient(
+  await callbackToClient(
     url,
     {
       node_id: nodeId,
@@ -261,9 +305,12 @@ export function notifyIncomingRequestByCallback(nodeId, eventDataForCallback) {
  * USE WITH API v1 ONLY
  * @param {Object} eventDataForCallback
  */
-export function notifyCreateIdentityResultByCallback(eventDataForCallback) {
+export async function notifyCreateIdentityResultByCallback(
+  eventDataForCallback
+) {
+  const callbackUrl = await getIdentityResultCallbackUrl();
   notifyByCallback({
-    url: callbackUrls.identity_result_url,
+    url: callbackUrl,
     type: 'create_identity_result',
     eventDataForCallback,
   });
@@ -273,9 +320,10 @@ export function notifyCreateIdentityResultByCallback(eventDataForCallback) {
  * USE WITH API v1 ONLY
  * @param {Object} eventDataForCallback
  */
-export function notifyAddAccessorResultByCallback(eventDataForCallback) {
+export async function notifyAddAccessorResultByCallback(eventDataForCallback) {
+  const callbackUrl = await getIdentityResultCallbackUrl();
   notifyByCallback({
-    url: callbackUrls.identity_result_url,
+    url: callbackUrl,
     type: 'add_accessor_result',
     eventDataForCallback,
   });
@@ -536,9 +584,10 @@ export async function processMessage(nodeId, messageId, message) {
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'idp.processMessage',
       error: err,
       requestId,
@@ -608,9 +657,10 @@ export async function processIdpResponseAfterAddAccessor(
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'processIdpResponseAfterAddAccessor',
       error: err,
       requestId: message.request_id,
@@ -758,9 +808,10 @@ export async function processIdpResponseAfterRevokeAccessor(
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'processIdpResponseAfterRevokeAccessor',
       error: err,
       requestId: message.request_id,

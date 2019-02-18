@@ -118,7 +118,7 @@ router.post('/node/update', validateBody, async (req, res, next) => {
 
 router.get('/node/callback', async (req, res, next) => {
   try {
-    const urls = externalCryptoService.getCallbackUrls();
+    const urls = await externalCryptoService.getCallbackUrls();
 
     if (Object.keys(urls).length > 0) {
       res.status(200).json(urls);
