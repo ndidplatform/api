@@ -150,10 +150,15 @@ async function initialize() {
           as.getErrorCallbackUrl();
         }
       });
-      await mq.initialize();
+      if(config.isMaster) {
+        await mq.initializeInbound();
+      }
+      else {
+        await mq.initializeOutbound(false);
+      }
     }
 
-    await tendermint.initialize();
+    if(config.isMaster) await tendermint.initialize();
 
     if (role === 'rp' || role === 'idp' || role === 'proxy') {
       let nodeIds;
@@ -168,16 +173,18 @@ async function initialize() {
       await core.resumeTimeoutScheduler(nodeIds);
     }
 
-    if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
-      await core.setMessageQueueAddress();
-      await mq.loadAndProcessBacklogMessages();
+    if(config.isMaster) {
+      if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
+        await core.setMessageQueueAddress();
+        await mq.loadAndProcessBacklogMessages();
+      }
+
+      tendermint.processMissingBlocks(tendermintStatusOnSync);
+      await tendermint.loadExpectedTxFromDB();
+      tendermint.loadAndRetryBacklogTransactRequests();
+
+      callbackUtil.resumeCallbackToClient();
     }
-
-    tendermint.processMissingBlocks(tendermintStatusOnSync);
-    await tendermint.loadExpectedTxFromDB();
-    tendermint.loadAndRetryBacklogTransactRequests();
-
-    callbackUtil.resumeCallbackToClient();
 
     logger.info({ message: 'Server initialized' });
   } catch (error) {
