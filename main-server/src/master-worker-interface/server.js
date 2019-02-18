@@ -70,6 +70,9 @@ export function initialize() {
 }
 
 function subscribe(call) {
+  logger.info({
+    message: 'New worker connected',
+  });
   const { workerId } = call.request;
 
   if(workerLostHandling[workerId]) {

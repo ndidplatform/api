@@ -44,6 +44,8 @@ import * as tendermintWsPool from './tendermint/ws_pool';
 import * as mq from './mq';
 import * as callbackUtil from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
+import { initialize as masterInitialize } from './master-worker-interface/server';
+import { initialize as workerInitialize } from './master-worker-interface/client';
 
 import logger from './logger';
 
@@ -132,7 +134,7 @@ async function initialize() {
       await nodeKey.initialize();
     }
 
-    httpServer.initialize();
+    if(!config.isMaster) httpServer.initialize();
 
     if (externalCryptoServiceReady != null) {
       logger.info({ message: 'Waiting for DPKI callback URLs to be set' });
@@ -185,6 +187,9 @@ async function initialize() {
 
       callbackUtil.resumeCallbackToClient();
     }
+
+    if(config.isMaster) await masterInitialize();
+    else await workerInitialize();
 
     logger.info({ message: 'Server initialized' });
   } catch (error) {
