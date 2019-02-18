@@ -142,11 +142,18 @@ export async function initialize() {
   client.jobRetry = gRPCRetry(jobRetry);
 }
 
+/*  
+  Tell master that we are retrying something.
+  If we are lost, master will tell another worker to retry it for us.
+  type: timeoutRequest, dataId = requestId
+  type: mqSend, dataId = messageId,
+  type: callback, dataId = cbId,
+*/
 function jobRetry({
-  dataId, giveUpTime, done, type
+  dataId, giveUpTime, done = false, type
 }) {
   return new Promise((resolve, reject) => {
-    client.jobRetry({
+    client.jobRetryCall({
       dataId, giveUpTime, done, type
     }, (error) => {
       if(error) reject(error);
@@ -248,6 +255,7 @@ async function onRecvData(data) {
     type,
     args,
     gRPCRef,
+    metaData,
   } = data;
 
   let argArray = parseArgsToArray(args), result, processFunction;
@@ -257,13 +265,26 @@ async function onRecvData(data) {
     argArray,
     gRPCRef
   });
-
+  let metaDataObj = JSON.parse(metaData);
+  let effectiveRole = (config.role === 'proxy') ? metaDataObj.role : config.role;
+  let retryType = metaDataObj.retryType;
+    
   switch(type) {
     case 'handleRetry':
+      switch(retryType) {
+        case 'timeoutRequest':
+          break;
+        case 'mqSend':
+          break;
+        case 'callback':
+          break;
+        default:
+          throw '';
+      }
       return;
     
     case 'processMessage':
-      switch(config.role) {
+      switch(effectiveRole) {
         case 'rp': 
           processFunction = rpProcessMessage;
           break;

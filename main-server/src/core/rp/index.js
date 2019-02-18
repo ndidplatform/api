@@ -278,6 +278,7 @@ export async function processMessage(nodeId, messageId, message) {
     return delegateToWorker({
       type: 'processMessage',
       args: arguments,
+      metaData: {role: 'rp'},
     });
   }
 

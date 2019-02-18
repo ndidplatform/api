@@ -29,6 +29,7 @@ import * as config from '../config';
 import { EventEmitter } from 'events';
 import logger from '../logger';
 import { randomBase64Bytes } from '../utils';
+import CustomError from 'ndid-error/custom_error';
 
 export const eventEmitter = new EventEmitter();
 
@@ -56,8 +57,8 @@ export function initialize() {
 
   server.addService(proto.MasterWorker.service, {
     subscribe,
-    jobRetry,
-    returnResult,
+    jobRetryCall,
+    returnResultCall,
   });
 
   server.bind(MASTER_SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
@@ -114,7 +115,7 @@ function handleWorkerLost(workerId) {
   delete workerLostHandling[workerId];
 }
 
-function jobRetry(call, doneFn) {
+function jobRetryCall(call, doneFn) {
   const {
     dataId, giveUpTime, done, workerId, type
   } = call.request;
@@ -139,7 +140,7 @@ function waitForWorker() {
   });
 }
 
-function returnResult(call, done) {
+function returnResultCall(call, done) {
   const {
     gRPCRef,
     result,
