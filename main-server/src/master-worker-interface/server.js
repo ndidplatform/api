@@ -150,8 +150,8 @@ function returnResultCall(call, done) {
     error,
   } = call.request;
   eventEmitter.emit('result:' + gRPCRef, {
-    result: JSON.parse(result),
-    error: JSON.parse(error),
+    result: JSON.parse(result || null),
+    error: JSON.parse(error || null),
   });
   done();
 }
@@ -179,6 +179,7 @@ async function waitForResult(waitForRef) {
 export async function delegateToWorker({
   type, 
   args,
+  metaData,
 }, specificWorkerId, gRPCRef = false) {
   if(!gRPCRef) {
     gRPCRef = randomBase64Bytes(16); //random
@@ -235,7 +236,8 @@ export async function delegateToWorker({
   connection.write({
     type, 
     gRPCRef,
-    args: JSON.stringify(args)
+    args: JSON.stringify(args),
+    metaData: JSON.stringify(metaData),
   });
   return waitForResult(gRPCRef);
 }

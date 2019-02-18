@@ -35,6 +35,7 @@ import { processMessage as rpProcessMessage } from '../core/rp';
 import { processMessage as idpProcessMessage } from '../core/idp';
 import { processMessage as asProcessMessage } from '../core/as';
 import { getMessageFromProtobufMessage } from '../mq';
+import * as node from '../node';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -264,10 +265,12 @@ async function onRecvData(data) {
     message: 'Worker received delegated work',
     type,
     argArray,
-    gRPCRef
+    gRPCRef,
+    metaData,
   });
-  let metaDataObj = JSON.parse(metaData);
-  let effectiveRole = (config.role === 'proxy') ? metaDataObj.role : config.role;
+  let role = await node.getNodeRoleFromBlockchain();
+  let metaDataObj = metaData ? JSON.parse(metaData) : {};
+  let effectiveRole = (role === 'proxy') ? metaDataObj.role : role;
   let retryType = metaDataObj.retryType;
     
   switch(type) {
@@ -287,6 +290,9 @@ async function onRecvData(data) {
     case 'decrypt':
       try {
         result = await getMessageFromProtobufMessage(...argArray);
+        result = JSON.stringify(result.toString('hex'));
+        //result.MqMessage.message = result.message.toString('hex');
+        //result.MqMessage.signature = result.signature.toString('hex');
         await gRPCRetry(returnResult)({ gRPCRef, result });
       }
       catch(error) {
@@ -295,6 +301,11 @@ async function onRecvData(data) {
       return;
 
     case 'processMessage':
+      logger.debug({
+        message: 'Worker process message',
+        effectiveRole,
+        argArray,
+      });
       switch(effectiveRole) {
         case 'rp': 
           processFunction = rpProcessMessage;
@@ -309,7 +320,7 @@ async function onRecvData(data) {
           throw '';
       }
       try {
-        result = await processFunction(...argArray);
+        result = JSON.stringify(await processFunction(...argArray));
         await gRPCRetry(returnResult)({ gRPCRef, result });
       }
       catch(error) {

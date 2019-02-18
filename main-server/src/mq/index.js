@@ -233,10 +233,13 @@ async function onMessage({ message, msgId, senderId }) {
   }
 }
 
-async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
+export async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
 
   if(config.isMaster) {
-    return delegateToWorker('decrypt', arguments);
+    return delegateToWorker({
+      type: 'decrypt', 
+      args: arguments
+    });
   }
   messageProtobuf = Buffer.from(messageProtobuf,'hex');
 
@@ -259,8 +262,9 @@ async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
     });
   }
 
-  const decodedDecryptedMessage = MqMessage.decode(decryptedBuffer);
-  return decodedDecryptedMessage;
+  return decryptedBuffer;
+  /*const decodedDecryptedMessage = MqMessage.decode(decryptedBuffer);
+  return decodedDecryptedMessage;*/
 }
 
 async function processMessage(messageId, messageProtobuf, timestamp) {
@@ -270,10 +274,12 @@ async function processMessage(messageId, messageProtobuf, timestamp) {
     messageLength: messageProtobuf.length,
   });
   try {
-    const outerLayerDecodedDecryptedMessage = await getMessageFromProtobufMessage(
+    const outerLayerDecryptedMessage = await getMessageFromProtobufMessage(
       messageProtobuf.toString('hex'),
       config.nodeId
     );
+
+    const outerLayerDecodedDecryptedMessage = MqMessage.decode(Buffer.from(outerLayerDecryptedMessage,'hex'));
 
     logger.debug({
       message: 'Decrypted message from message queue',

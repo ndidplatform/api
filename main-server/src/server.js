@@ -134,7 +134,7 @@ async function initialize() {
       await nodeKey.initialize();
     }
 
-    httpServer.initialize();
+    if(!config.isMaster) httpServer.initialize();
 
     if (externalCryptoServiceReady != null) {
       logger.info({ message: 'Waiting for DPKI callback URLs to be set' });
@@ -160,7 +160,7 @@ async function initialize() {
       }
     }
 
-    if(config.isMaster) await tendermint.initialize();
+    await tendermint.initialize();
 
     if (role === 'rp' || role === 'idp' || role === 'proxy') {
       let nodeIds;
@@ -175,12 +175,12 @@ async function initialize() {
       await core.resumeTimeoutScheduler(nodeIds);
     }
 
-    if(config.isMaster) {
-      if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
-        await core.setMessageQueueAddress();
-        await mq.loadAndProcessBacklogMessages();
-      }
+    if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
+      if(!config.isMaster) await core.setMessageQueueAddress();
+      else await mq.loadAndProcessBacklogMessages();
+    }
 
+    if(config.isMaster) {
       tendermint.processMissingBlocks(tendermintStatusOnSync);
       await tendermint.loadExpectedTxFromDB();
       tendermint.loadAndRetryBacklogTransactRequests();

@@ -104,7 +104,7 @@ export default async function readyHandler(req, res, next) {
       return;
     }
 
-    if (!tendermint.expectedTxsLoaded) {
+    /*if (!tendermint.expectedTxsLoaded) {
       const responseBody = {
         error: {
           message: errorType.LOADING_EXPECTED_TXS_CACHE.message,
@@ -117,7 +117,7 @@ export default async function readyHandler(req, res, next) {
         responseBody,
       });
       return;
-    }
+    }*/
   }
 
   next();

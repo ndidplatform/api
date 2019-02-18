@@ -153,7 +153,7 @@ export function loadSavedData() {
 }
 
 export async function initialize() {
-  tendermintWsClient.subscribeToNewBlockEvent();
+  if(config.isMaster) tendermintWsClient.subscribeToNewBlockEvent();
   tendermintWsClient.subscribeToTxEvent();
 }
 
