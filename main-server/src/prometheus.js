@@ -193,9 +193,9 @@ const tasksInRequestQueueProcessDurationMilliseconds = new Prometheus.Histogram(
   }
 );
 
-const pendingRequestsInRequestQueue = new Prometheus.Gauge({
-  name: 'pending_requests_in_request_process_queue_total',
-  help: 'Number of pending requests in request process queue',
+const requestsInRequestQueue = new Prometheus.Gauge({
+  name: 'requests_in_request_process_queue_total',
+  help: 'Number of requests in request process queue',
 });
 
 ///
@@ -297,8 +297,9 @@ tendermintWsPool.metricsEventEmitter.on(
 );
 
 requestProcessManager.metricsEventEmitter.on(
-  'tasksInQueueCount',
-  (tasksInQueueCount) => pendingTasksInRequestQueue.set(tasksInQueueCount)
+  'pendingTasksInQueueCount',
+  (pendingTasksInQueueCount) =>
+    pendingTasksInRequestQueue.set(pendingTasksInQueueCount)
 );
 requestProcessManager.metricsEventEmitter.on(
   'processingTasksCount',
@@ -315,8 +316,7 @@ requestProcessManager.metricsEventEmitter.on('taskProcessFail', () =>
 );
 requestProcessManager.metricsEventEmitter.on(
   'requestsInQueueCount',
-  (requestsInQueueCount) =>
-    pendingRequestsInRequestQueue.set(requestsInQueueCount)
+  (requestsInQueueCount) => requestsInRequestQueue.set(requestsInQueueCount)
 );
 
 export function stopCollectDefaultMetrics() {

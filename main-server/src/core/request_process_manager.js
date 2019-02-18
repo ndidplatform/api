@@ -34,7 +34,7 @@ const messageProcessLock = {};
 const requestQueue = {};
 const requestQueueRunning = {};
 
-let tasksInQueueCount = 0;
+let pendingTasksInQueueCount = 0;
 let processingTasksCount = 0;
 let requestsInQueueCount = 0;
 export const metricsEventEmitter = new EventEmitter();
@@ -172,7 +172,7 @@ export function addTaskToQueue({
     onCallbackFinished,
     onCallbackFinishedArgs,
   });
-  incrementTasksInQueueCount();
+  incrementPendingTasksInQueueCount();
 
   if (!requestQueueRunning[requestId]) {
     executeTaskInQueue(requestId);
@@ -202,6 +202,7 @@ async function executeTaskInQueue(requestId) {
     nodeId,
     requestId,
   });
+  decrementPendingTasksInQueueCount();
   incrementProcessingTasksCount();
   const startTime = Date.now();
   try {
@@ -212,21 +213,26 @@ async function executeTaskInQueue(requestId) {
     notifyTaskProcessFail();
   }
   decrementProcessingTasksCount();
-  decrementTasksInQueueCount();
   if (onCallbackFinished) {
     onCallbackFinished(...onCallbackFinishedArgs);
   }
   executeTaskInQueue(requestId);
 }
 
-function incrementTasksInQueueCount() {
-  tasksInQueueCount++;
-  metricsEventEmitter.emit('tasksInQueueCount', tasksInQueueCount);
+function incrementPendingTasksInQueueCount() {
+  pendingTasksInQueueCount++;
+  metricsEventEmitter.emit(
+    'pendingTasksInQueueCount',
+    pendingTasksInQueueCount
+  );
 }
 
-function decrementTasksInQueueCount() {
-  tasksInQueueCount--;
-  metricsEventEmitter.emit('tasksInQueueCount', tasksInQueueCount);
+function decrementPendingTasksInQueueCount() {
+  pendingTasksInQueueCount--;
+  metricsEventEmitter.emit(
+    'pendingTasksInQueueCount',
+    pendingTasksInQueueCount
+  );
 }
 
 function incrementProcessingTasksCount() {
