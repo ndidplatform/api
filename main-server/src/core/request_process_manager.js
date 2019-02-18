@@ -20,6 +20,8 @@
  *
  */
 
+import EventEmitter from 'events';
+
 import * as tendermint from '../tendermint';
 import * as cacheDb from '../db/cache';
 import * as utils from '../utils';
@@ -31,6 +33,11 @@ import logger from '../logger';
 const messageProcessLock = {};
 const requestQueue = {};
 const requestQueueRunning = {};
+
+let tasksInQueueCount = 0;
+let processingTasksCount = 0;
+let requestsInQueueCount = 0;
+export const metricsEventEmitter = new EventEmitter();
 
 export async function handleMessageFromMqWithBlockWait(
   messageId,
@@ -157,6 +164,7 @@ export function addTaskToQueue({
 
   if (requestQueue[requestId] == null) {
     requestQueue[requestId] = [];
+    incrementRequestsInQueueCount();
   }
   requestQueue[requestId].push({
     callback,
@@ -164,6 +172,7 @@ export function addTaskToQueue({
     onCallbackFinished,
     onCallbackFinishedArgs,
   });
+  incrementTasksInQueueCount();
 
   if (!requestQueueRunning[requestId]) {
     executeTaskInQueue(requestId);
@@ -178,6 +187,7 @@ async function executeTaskInQueue(requestId) {
     });
     delete requestQueueRunning[requestId];
     delete requestQueue[requestId];
+    decrementRequestsInQueueCount();
     return;
   }
   const {
@@ -192,13 +202,61 @@ async function executeTaskInQueue(requestId) {
     nodeId,
     requestId,
   });
+  incrementProcessingTasksCount();
+  const startTime = Date.now();
   try {
     await callback(...callbackArgs);
+    notifyTaskProcessTime(startTime);
   } catch (error) {
     logger.error({ message: 'Error executing task in queue', requestId });
+    notifyTaskProcessFail();
   }
+  decrementProcessingTasksCount();
+  decrementTasksInQueueCount();
   if (onCallbackFinished) {
     onCallbackFinished(...onCallbackFinishedArgs);
   }
   executeTaskInQueue(requestId);
+}
+
+function incrementTasksInQueueCount() {
+  tasksInQueueCount++;
+  metricsEventEmitter.emit('tasksInQueueCount', tasksInQueueCount);
+}
+
+function decrementTasksInQueueCount() {
+  tasksInQueueCount--;
+  metricsEventEmitter.emit('tasksInQueueCount', tasksInQueueCount);
+}
+
+function incrementProcessingTasksCount() {
+  processingTasksCount++;
+  metricsEventEmitter.emit('processingTasksCount', processingTasksCount);
+}
+
+function decrementProcessingTasksCount() {
+  processingTasksCount--;
+  metricsEventEmitter.emit('processingTasksCount', processingTasksCount);
+}
+
+function notifyTaskProcessTime(startTime) {
+  metricsEventEmitter.emit(
+    'taskProcessTime',
+    // type,
+    Date.now() - startTime
+  );
+}
+
+function notifyTaskProcessFail() {
+  metricsEventEmitter.emit('taskProcessFail');
+}
+
+function incrementRequestsInQueueCount() {
+  requestsInQueueCount++;
+  metricsEventEmitter.emit('requestsInQueueCount', requestsInQueueCount);
+}
+
+function decrementRequestsInQueueCount() {
+  requestsInQueueCount--;
+  metricsEventEmitter.emit('requestsInQueueCount', requestsInQueueCount);
 }

@@ -24,6 +24,7 @@ import Prometheus from 'prom-client';
 
 import * as tendermint from './tendermint';
 import * as common from './core/common';
+import * as requestProcessManager from './core/request_process_manager';
 import * as mq from './mq';
 import * as callbackUtil from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
@@ -166,6 +167,39 @@ const connectedWebSocketsInConnectionPoolTotal = new Prometheus.Gauge({
   help: 'Number of connected WebSockets in connection pool',
 });
 
+// Request Process Manager Metrics
+
+const pendingTasksInRequestQueue = new Prometheus.Gauge({
+  name: 'pending_tasks_in_request_process_queue_total',
+  help: 'Number of pending tasks in request process queue',
+});
+
+const processingTasksInRequestQueue = new Prometheus.Gauge({
+  name: 'processing_tasks_in_request_process_queue_total',
+  help: 'Number of processing tasks in request process queue',
+});
+
+const taskInRequestQueueFailsTotal = new Prometheus.Counter({
+  name: 'tasks_in_request_process_queue_fails_total',
+  help: 'Total number of fail tasks in request process queue',
+});
+
+const tasksInRequestQueueProcessDurationMilliseconds = new Prometheus.Histogram(
+  {
+    name: 'tasks_in_request_process_queue_process_duration_ms',
+    help: 'Duration of task processes in request process queue in ms',
+    // labelNames: ['type'],
+    buckets: [0.1, 5, 15, 50, 100, 200, 300, 400, 500], // buckets for response time from 0.1ms to 500ms
+  }
+);
+
+const pendingRequestsInRequestQueue = new Prometheus.Gauge({
+  name: 'pending_requests_in_request_process_queue_total',
+  help: 'Number of pending requests in request process queue',
+});
+
+///
+
 // Metrics event listeners
 tendermint.metricsEventEmitter.on('expectedTxsCount', (expectedTxsCount) =>
   expectedTxsTotal.set(expectedTxsCount)
@@ -260,6 +294,29 @@ tendermintWsPool.metricsEventEmitter.on(
   'connectedConnectionCount',
   (connectedWsCount) =>
     connectedWebSocketsInConnectionPoolTotal.set(connectedWsCount)
+);
+
+requestProcessManager.metricsEventEmitter.on(
+  'tasksInQueueCount',
+  (tasksInQueueCount) => pendingTasksInRequestQueue.set(tasksInQueueCount)
+);
+requestProcessManager.metricsEventEmitter.on(
+  'processingTasksCount',
+  (processingTasksCount) =>
+    processingTasksInRequestQueue.set(processingTasksCount)
+);
+requestProcessManager.metricsEventEmitter.on(
+  'taskProcessTime',
+  (timeUsedInMs) =>
+    tasksInRequestQueueProcessDurationMilliseconds.observe(timeUsedInMs)
+);
+requestProcessManager.metricsEventEmitter.on('taskProcessFail', () =>
+  taskInRequestQueueFailsTotal.inc()
+);
+requestProcessManager.metricsEventEmitter.on(
+  'requestsInQueueCount',
+  (requestsInQueueCount) =>
+    pendingRequestsInRequestQueue.set(requestsInQueueCount)
 );
 
 export function stopCollectDefaultMetrics() {
