@@ -134,7 +134,7 @@ router.post('/node/callback', validateBody, async (req, res, next) => {
   try {
     const { sign_url, master_sign_url, decrypt_url } = req.body;
 
-    await externalCryptoService.setDpkiCallback({
+    await externalCryptoService.setCallbackUrls({
       signCallbackUrl: sign_url,
       masterSignCallbackUrl: master_sign_url,
       decryptCallbackUrl: decrypt_url,

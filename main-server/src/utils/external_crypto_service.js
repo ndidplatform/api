@@ -59,12 +59,12 @@ export async function checkCallbackUrls() {
     const callbackName = CALLBACK_URL_NAME_ARR[i];
     if (callbackUrls[callbackName] != null) {
       logger.info({
-        message: `[DPKI] ${callbackName} callback url`,
+        message: `[External Crypto Service] ${callbackName} callback url`,
         callbackUrl: callbackUrls[callbackName],
       });
     } else {
       logger.warn({
-        message: `[DPKI] ${callbackName} callback url is not set`,
+        message: `[External Crypto Service] ${callbackName} callback url is not set`,
       });
     }
   }
@@ -207,7 +207,9 @@ async function testDecryptCallback(url, publicKey) {
 }
 
 export async function getCallbackUrls() {
-  const callbackNames = CALLBACK_URL_NAME_ARR.map((name) => `dpki.${name}`);
+  const callbackNames = CALLBACK_URL_NAME_ARR.map(
+    (name) => `external_crypto_service.${name}`
+  );
   const callbackUrlsArr = await dataDb.getCallbackUrls(
     config.nodeId,
     callbackNames
@@ -216,7 +218,7 @@ export async function getCallbackUrls() {
     if (url != null) {
       return {
         ...callbackUrlsObj,
-        [callbackNames[index].replace(/^dpki\./, '')]: url,
+        [callbackNames[index].replace(/^external_crypto_service\./, '')]: url,
       };
     } else {
       return callbackUrlsObj;
@@ -226,13 +228,16 @@ export async function getCallbackUrls() {
 }
 
 function getSignCallbackUrl() {
-  return dataDb.getCallbackUrl(config.nodeId, `dpki.${CALLBACK_URL_NAME.SIGN}`);
+  return dataDb.getCallbackUrl(
+    config.nodeId,
+    `external_crypto_service.${CALLBACK_URL_NAME.SIGN}`
+  );
 }
 
 function setSignCallbackUrl(url) {
   return dataDb.setCallbackUrl(
     config.nodeId,
-    `dpki.${CALLBACK_URL_NAME.SIGN}`,
+    `external_crypto_service.${CALLBACK_URL_NAME.SIGN}`,
     url
   );
 }
@@ -240,14 +245,14 @@ function setSignCallbackUrl(url) {
 function getMasterSignCallbackUrl() {
   return dataDb.getCallbackUrl(
     config.nodeId,
-    `dpki.${CALLBACK_URL_NAME.MASTER_SIGN}`
+    `external_crypto_service.${CALLBACK_URL_NAME.MASTER_SIGN}`
   );
 }
 
 function setMasterSignCallbackUrl(url) {
   return dataDb.setCallbackUrl(
     config.nodeId,
-    `dpki.${CALLBACK_URL_NAME.MASTER_SIGN}`,
+    `external_crypto_service.${CALLBACK_URL_NAME.MASTER_SIGN}`,
     url
   );
 }
@@ -255,14 +260,14 @@ function setMasterSignCallbackUrl(url) {
 function getDecryptCallbackUrl() {
   return dataDb.getCallbackUrl(
     config.nodeId,
-    `dpki.${CALLBACK_URL_NAME.DECRYPT}`
+    `external_crypto_service.${CALLBACK_URL_NAME.DECRYPT}`
   );
 }
 
 function setDecryptCallbackUrl(url) {
   return dataDb.setCallbackUrl(
     config.nodeId,
-    `dpki.${CALLBACK_URL_NAME.DECRYPT}`,
+    `external_crypto_service.${CALLBACK_URL_NAME.DECRYPT}`,
     url
   );
 }
@@ -282,7 +287,7 @@ async function checkAndEmitAllCallbacksSet() {
   }
 }
 
-export async function setDpkiCallback({
+export async function setCallbackUrls({
   signCallbackUrl,
   masterSignCallbackUrl,
   decryptCallbackUrl,
