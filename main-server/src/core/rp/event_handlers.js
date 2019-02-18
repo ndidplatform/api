@@ -106,7 +106,7 @@ export async function handleTendermintNewBlock(
       nodeId,
       processMessage
     );
-    processTasksInBlocks(parsedTransactionsInBlocks, nodeId);
+    await processTasksInBlocks(parsedTransactionsInBlocks, nodeId);
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling Tendermint NewBlock event',
@@ -124,25 +124,35 @@ export async function handleTendermintNewBlock(
 }
 
 function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
-  parsedTransactionsInBlocks.map(({ height, transactions }) => {
-    const requestIdsToProcessUpdateSet = new Set();
-    transactions.forEach((transaction) => {
-      const requestId = transaction.args.request_id;
-      if (requestId == null) return;
-      if (transaction.fnName === 'DeclareIdentityProof') return;
-      requestIdsToProcessUpdateSet.add(requestId);
-    });
-    const requestIdsToProcessUpdate = [...requestIdsToProcessUpdateSet];
+  return Promise.all(
+    parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
+      const requestIdsToProcessUpdate = {};
+      await Promise.all(
+        transactions.map(async (transaction) => {
+          const requestId = transaction.args.request_id;
+          if (requestId == null) return;
+          if (transaction.fnName === 'DeclareIdentityProof') return;
+          if (requestIdsToProcessUpdate[requestId] != null) return;
+          const requestData = await cacheDb.getRequestData(nodeId, requestId);
+          if (requestData == null) return; // This RP does not concern this request
+          requestIdsToProcessUpdate[requestId] = {
+            callbackUrl: requestData.callback_url,
+            referenceId: requestData.reference_id,
+          };
+        })
+      );
 
-    requestIdsToProcessUpdate.map((requestId) =>
-      requestProcessManager.addTaskToQueue({
-        nodeId,
-        requestId,
-        callback: processRequestUpdate,
-        callbackArgs: [nodeId, requestId, height],
-      })
-    );
-  });
+      Object.entries(requestIdsToProcessUpdate).map(
+        ([requestId, { callbackUrl, referenceId }]) =>
+          requestProcessManager.addTaskToQueue({
+            nodeId,
+            requestId,
+            callback: processRequestUpdate,
+            callbackArgs: [nodeId, requestId, height, callbackUrl, referenceId],
+          })
+      );
+    })
+  );
 }
 
 /**
@@ -150,10 +160,13 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
  * @param {string} requestId
  * @param {integer} height
  */
-async function processRequestUpdate(nodeId, requestId, height) {
-  const requestData = await cacheDb.getRequestData(nodeId, requestId);
-  if (requestData == null) return; // This RP does not concern this request
-
+async function processRequestUpdate(
+  nodeId,
+  requestId,
+  height,
+  callbackUrl,
+  referenceId
+) {
   logger.debug({
     message: 'Processing request update',
     nodeId,
@@ -202,7 +215,6 @@ async function processRequestUpdate(nodeId, requestId, height) {
       block_height: `${requestDetail.creation_chain_id}:${height}`,
     };
 
-    const callbackUrl = requestData.callback_url;
     await callbackToClient(callbackUrl, eventDataForCallback, true);
 
     if (
@@ -232,7 +244,6 @@ async function processRequestUpdate(nodeId, requestId, height) {
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
     // since the request is no longer going to have further events
     // (the request has reached its end state)
-    const referenceId = requestData.reference_id;
     await Promise.all([
       cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
       cacheDb.removeRequestData(nodeId, requestId),

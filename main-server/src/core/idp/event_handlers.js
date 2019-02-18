@@ -157,8 +157,8 @@ async function isCreateIdentityRequestValid(requestId) {
     }, true);
 }
 
-async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
-  await Promise.all(
+function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
+  return Promise.all(
     parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
       const createIdentityRequestsToProcess = {}; // For clean up closed or timed out create identity requests
       const incomingRequestsToProcessUpdate = {};

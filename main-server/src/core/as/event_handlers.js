@@ -127,8 +127,8 @@ export async function handleTendermintNewBlock(
   }
 }
 
-async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
-  await Promise.all(
+function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
+  return Promise.all(
     parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
       const incomingRequestsToProcessUpdate = {};
 
