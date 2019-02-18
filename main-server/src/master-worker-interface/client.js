@@ -34,6 +34,7 @@ import { wait } from '../utils';
 import { processMessage as rpProcessMessage } from '../core/rp';
 import { processMessage as idpProcessMessage } from '../core/idp';
 import { processMessage as asProcessMessage } from '../core/as';
+import { getMessageFromProtobufMessage } from '../mq';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -283,6 +284,16 @@ async function onRecvData(data) {
       }
       return;
     
+    case 'decrypt':
+      try {
+        result = await getMessageFromProtobufMessage(...argArray);
+        await gRPCRetry(returnResult)({ gRPCRef, result });
+      }
+      catch(error) {
+        await gRPCRetry(returnResult)({ gRPCRef, error }); 
+      }
+      return;
+
     case 'processMessage':
       switch(effectiveRole) {
         case 'rp': 
@@ -314,7 +325,7 @@ async function onRecvData(data) {
         message: 'Worker received unrecognized event from master',
         data,
       });
-      break;
+      return;
   }
 }
 

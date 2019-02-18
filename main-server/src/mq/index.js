@@ -37,6 +37,7 @@ import validate from './message/validator';
 
 import { role } from '../node';
 import * as config from '../config';
+import { delegateToWorker } from '../master-worker-interface/server';
 
 const MQ_SEND_TOTAL_TIMEOUT = 600000;
 
@@ -209,6 +210,12 @@ async function onMessage({ message, msgId, senderId }) {
 }
 
 async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
+
+  if(config.isMaster) {
+    return delegateToWorker('decrypt', messageProtobuf);
+  }
+  messageProtobuf = Buffer.from(messageProtobuf,'hex');
+
   const decodedMessage = EncryptedMqMessage.decode(messageProtobuf);
   const {
     encrypted_symmetric_key: encryptedSymmetricKey,
@@ -240,7 +247,7 @@ async function processMessage(messageId, messageProtobuf, timestamp) {
   });
   try {
     const outerLayerDecodedDecryptedMessage = await getMessageFromProtobufMessage(
-      messageProtobuf,
+      messageProtobuf.toString('hex'),
       config.nodeId
     );
 
