@@ -216,7 +216,7 @@ export async function getCallbackUrls() {
     if (url != null) {
       return {
         ...callbackUrlsObj,
-        [callbackNames[index]]: url,
+        [callbackNames[index].replace(/^dpki\./, '')]: url,
       };
     } else {
       return callbackUrlsObj;
