@@ -20,7 +20,11 @@
  *
  */
 
-import { callbackUrls, processMessage } from '.';
+import {
+  getErrorCallbackUrl,
+  getIncomingRequestStatusUpdateCallbackUrl,
+  processMessage,
+} from '.';
 import { invalidateDataSchemaCache } from './data_validator';
 
 import CustomError from 'ndid-error/custom_error';
@@ -74,9 +78,10 @@ export async function handleMessageFromQueue(
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'as.handleMessageFromQueue',
       error: err,
       requestId,
@@ -112,9 +117,10 @@ export async function handleTendermintNewBlock(
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'handleTendermintNewBlock',
       error: err,
     });
@@ -167,7 +173,7 @@ async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
     height,
   });
 
-  const callbackUrl = callbackUrls.incoming_request_status_update_url;
+  const callbackUrl = await getIncomingRequestStatusUpdateCallbackUrl();
   if (callbackUrl != null) {
     const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 

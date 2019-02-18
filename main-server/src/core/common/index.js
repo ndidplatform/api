@@ -197,7 +197,7 @@ export async function handleMessageQueueError(error, getErrorCallbackUrl) {
     cause: error,
   });
   logger.error(err.getInfoForLog());
-  const callbackUrl = getErrorCallbackUrl();
+  const callbackUrl = await getErrorCallbackUrl();
   await notifyError({
     callbackUrl,
     action: 'onMessage',

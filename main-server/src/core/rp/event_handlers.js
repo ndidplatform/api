@@ -20,7 +20,7 @@
  *
  */
 
-import { callbackUrls, isAllIdpResponsesValid, processMessage } from '.';
+import { getErrorCallbackUrl, isAllIdpResponsesValid, processMessage } from '.';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
@@ -73,9 +73,10 @@ export async function handleMessageFromQueue(
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'rp.handleMessageFromQueue',
       error: err,
       requestId,
@@ -112,9 +113,10 @@ export async function handleTendermintNewBlock(
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'handleTendermintNewBlock',
       error: err,
     });

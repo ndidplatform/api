@@ -20,9 +20,6 @@
  *
  */
 
-import fs from 'fs';
-import path from 'path';
-
 import { processAsData } from './process_as_data';
 
 import * as tendermintNdid from '../../tendermint/ndid';
@@ -31,6 +28,7 @@ import * as common from '../common';
 import * as utils from '../../utils';
 import * as mq from '../../mq';
 import * as cacheDb from '../../db/cache';
+import * as dataDb from '../../db/data';
 import { callbackToClient } from '../../utils/callback';
 import privateMessageType from '../../mq/message/type';
 import CustomError from 'ndid-error/custom_error';
@@ -43,63 +41,59 @@ import { role } from '../../node';
 export * from './event_handlers';
 export * from './process_as_data';
 
-export const callbackUrls = {};
+const CALLBACK_URL_NAME = {
+  ERROR: 'error_url',
+};
+const CALLBACK_URL_NAME_ARR = Object.values(CALLBACK_URL_NAME);
 
-const callbackUrlFilesPrefix = path.join(
-  config.dataDirectoryPath,
-  'rp-callback-url-' + config.nodeId
-);
-
-export function readCallbackUrlsFromFiles() {
-  [{ key: 'error_url', fileSuffix: 'error' }].forEach(({ key, fileSuffix }) => {
-    try {
-      callbackUrls[key] = fs.readFileSync(
-        callbackUrlFilesPrefix + '-' + fileSuffix,
-        'utf8'
-      );
+export async function checkCallbackUrls() {
+  const callbackUrls = await getCallbackUrls();
+  for (let i = 0; i < CALLBACK_URL_NAME_ARR.length; i++) {
+    const callbackName = CALLBACK_URL_NAME_ARR[i];
+    if (callbackUrls[callbackName] != null) {
       logger.info({
-        message: `[RP] ${fileSuffix} callback url read from file`,
-        callbackUrl: callbackUrls[key],
+        message: `[RP] ${callbackName} callback url`,
+        callbackUrl: callbackUrls[callbackName],
       });
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        logger.warn({
-          message: `[RP] ${fileSuffix} callback url file not found`,
-        });
-      } else {
-        logger.error({
-          message: `[RP] Cannot read ${fileSuffix} callback url file`,
-          error,
-        });
-      }
-    }
-  });
-}
-
-function writeCallbackUrlToFile(fileSuffix, url) {
-  fs.writeFile(callbackUrlFilesPrefix + '-' + fileSuffix, url, (err) => {
-    if (err) {
-      logger.error({
-        message: `[RP] Cannot write ${fileSuffix} callback url file`,
-        error: err,
+    } else {
+      logger.warn({
+        message: `[RP] ${callbackName} callback url is not set`,
       });
     }
-  });
-}
-
-export function setCallbackUrls({ error_url }) {
-  if (error_url != null) {
-    callbackUrls.error_url = error_url;
-    writeCallbackUrlToFile('error', error_url);
   }
 }
 
-export function getCallbackUrls() {
+export async function setCallbackUrls({ error_url }) {
+  if (error_url != null) {
+    await dataDb.setCallbackUrl(
+      config.nodeId,
+      `rp.${CALLBACK_URL_NAME.ERROR}`,
+      error_url
+    );
+  }
+}
+
+export async function getCallbackUrls() {
+  const callbackNames = CALLBACK_URL_NAME_ARR.map((name) => `rp.${name}`);
+  const callbackUrlsArr = await dataDb.getCallbackUrls(
+    config.nodeId,
+    callbackNames
+  );
+  const callbackUrls = callbackUrlsArr.reduce((callbackUrlsObj, url, index) => {
+    if (url != null) {
+      return {
+        ...callbackUrlsObj,
+        [callbackNames[index].replace(/^rp\./, '')]: url,
+      };
+    } else {
+      return callbackUrlsObj;
+    }
+  }, {});
   return callbackUrls;
 }
 
 export function getErrorCallbackUrl() {
-  return callbackUrls.error_url;
+  return dataDb.getCallbackUrl(config.nodeId, `rp.${CALLBACK_URL_NAME.ERROR}`);
 }
 
 export function isAllIdpResponsesValid(responseValidList) {
@@ -403,9 +397,10 @@ export async function processMessage(nodeId, messageId, message) {
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'rp.processMessage',
       error: err,
       requestId,

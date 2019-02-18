@@ -31,7 +31,7 @@ import logger from '../../../logger';
 
 import * as config from '../../../config';
 
-export default function readyHandler(req, res, next) {
+export default async function readyHandler(req, res, next) {
   // TODO: Return 503 with server init failed error if server init failed
 
   if (req.url.endsWith('/dpki/node/callback')) {
@@ -73,7 +73,7 @@ export default function readyHandler(req, res, next) {
   }
 
   if (req.method === 'POST') {
-    if (config.useExternalCryptoService && !isCallbackUrlsSet()) {
+    if (config.useExternalCryptoService && !(await isCallbackUrlsSet())) {
       const responseBody = {
         error: {
           message: errorType.WAITING_FOR_DPKI_CALLBACK_URL_SET.message,

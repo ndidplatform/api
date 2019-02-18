@@ -20,7 +20,7 @@
  *
  */
 
-import { callbackUrls } from '.';
+import { getErrorCallbackUrl } from '.';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
@@ -80,9 +80,10 @@ export async function processAsData({
       },
     });
     logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'processAsData',
       error: err,
       requestId,
@@ -125,9 +126,10 @@ export async function processAsData({
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'processAsData',
       error: err,
       requestId,
@@ -172,10 +174,10 @@ export async function processAsDataAfterSetDataReceived(
       cause: error,
     });
     logger.error(err.getInfoForLog());
-
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'processAsDataAfterSetDataReceived',
       error: err,
       requestId,

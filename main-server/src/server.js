@@ -38,6 +38,7 @@ import * as nodeKey from './utils/node_key';
 
 import * as cacheDb from './db/cache';
 import * as longTermDb from './db/long_term';
+import * as dataDb from './db/data';
 import * as tendermint from './tendermint';
 import * as tendermintWsPool from './tendermint/ws_pool';
 import * as mq from './mq';
@@ -93,25 +94,25 @@ async function initialize() {
     if (role === 'rp') {
       mq.setMessageHandlerFunction(rp.handleMessageFromQueue);
       tendermint.setTendermintNewBlockEventHandler(rp.handleTendermintNewBlock);
-      rp.readCallbackUrlsFromFiles();
+      await rp.checkCallbackUrls();
     } else if (role === 'idp') {
       mq.setMessageHandlerFunction(idp.handleMessageFromQueue);
       tendermint.setTendermintNewBlockEventHandler(
         idp.handleTendermintNewBlock
       );
-      idp.readCallbackUrlsFromFiles();
+      await idp.checkCallbackUrls();
     } else if (role === 'as') {
       mq.setMessageHandlerFunction(as.handleMessageFromQueue);
       tendermint.setTendermintNewBlockEventHandler(as.handleTendermintNewBlock);
-      as.readCallbackUrlsFromFiles();
+      await as.checkCallbackUrls();
     } else if (role === 'proxy') {
       mq.setMessageHandlerFunction(proxy.handleMessageFromQueue);
       tendermint.setTendermintNewBlockEventHandler(
         proxy.handleTendermintNewBlock
       );
-      rp.readCallbackUrlsFromFiles();
-      idp.readCallbackUrlsFromFiles();
-      as.readCallbackUrlsFromFiles();
+      await rp.checkCallbackUrls();
+      await idp.checkCallbackUrls();
+      await as.checkCallbackUrls();
     }
 
     callbackUtil.setShouldRetryFnGetter(core.getFunction);
@@ -119,8 +120,8 @@ async function initialize() {
 
     let externalCryptoServiceReady;
     if (config.useExternalCryptoService) {
-      externalCryptoService.readCallbackUrlsFromFiles();
-      if (!externalCryptoService.isCallbackUrlsSet()) {
+      await externalCryptoService.checkCallbackUrls();
+      if (!(await externalCryptoService.isCallbackUrlsSet())) {
         externalCryptoServiceReady = new Promise((resolve) =>
           externalCryptoService.eventEmitter.once('allCallbacksSet', () =>
             resolve()
@@ -231,7 +232,7 @@ async function shutDown() {
   // Possible solution: Have those async operations append a queue to use DB and
   // remove after finish using DB
   // => Wait here until a queue to use DB is empty
-  await Promise.all([cacheDb.close(), longTermDb.close()]);
+  await Promise.all([cacheDb.close(), longTermDb.close(), dataDb.close()]);
   core.stopAllTimeoutScheduler();
 }
 

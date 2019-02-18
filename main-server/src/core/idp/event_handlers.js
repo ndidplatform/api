@@ -20,7 +20,11 @@
  *
  */
 
-import { callbackUrls, processMessage } from '.';
+import {
+  getErrorCallbackUrl,
+  getIncomingRequestStatusUpdateCallbackUrl,
+  processMessage,
+} from '.';
 
 import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
@@ -87,9 +91,10 @@ export async function handleMessageFromQueue(
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'idp.handleMessageFromQueue',
       error: err,
       requestId,
@@ -126,9 +131,10 @@ export async function handleTendermintNewBlock(
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'handleTendermintNewBlock',
       error: err,
     });
@@ -318,7 +324,7 @@ async function processCreateIdentityRequest(nodeId, requestId, action) {
 }
 
 async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
-  const callbackUrl = callbackUrls.incoming_request_status_update_url;
+  const callbackUrl = await getIncomingRequestStatusUpdateCallbackUrl();
   if (callbackUrl != null) {
     const requestDetail = await tendermintNdid.getRequestDetail({
       requestId: requestId,
