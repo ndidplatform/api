@@ -134,7 +134,7 @@ async function initialize() {
       await nodeKey.initialize();
     }
 
-    if(!config.isMaster) httpServer.initialize();
+    httpServer.initialize();
 
     if (externalCryptoServiceReady != null) {
       logger.info({ message: 'Waiting for DPKI callback URLs to be set' });
