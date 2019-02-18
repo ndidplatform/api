@@ -212,7 +212,7 @@ async function onMessage({ message, msgId, senderId }) {
 async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
 
   if(config.isMaster) {
-    return delegateToWorker('decrypt', messageProtobuf);
+    return delegateToWorker('decrypt', arguments);
   }
   messageProtobuf = Buffer.from(messageProtobuf,'hex');
 
