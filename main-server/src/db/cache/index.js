@@ -51,14 +51,12 @@ export async function changeAllDataKeysWithExpectedBlockHeight(
     throw new Error('Invalid new height. Must be an integer.');
   }
 
-  let flattenList;
-
-  flattenList = await db.getFlattenListWithRangeSupport({
+  const flattenList = await db.getFlattenListWithRangeSupport({
     nodeId,
     dbName,
-    name: 'requestIdExpectedInBlock',
+    name: 'messageIdToProcessAtBlock',
     keyName: 'expectedBlockHeight',
-    valueName: 'requestId',
+    valueName: 'messageId',
   });
   await db.removeListWithRangeSupport({
     nodeId,
@@ -66,77 +64,9 @@ export async function changeAllDataKeysWithExpectedBlockHeight(
     name: 'requestIdExpectedInBlock',
   });
   await Promise.all(
-    flattenList.map((requestId) =>
-      addRequestIdExpectedInBlock(nodeId, newHeight, requestId)
+    flattenList.map((messageId) =>
+      addMessageIdToProcessAtBlock(nodeId, newHeight, messageId)
     )
-  );
-
-  flattenList = await db.getFlattenList({
-    nodeId,
-    dbName,
-    name: 'expectedIdpResponseNodeIdInBlock',
-    keyName: 'expectedBlockHeight',
-    valueName: 'responseMetadata',
-  });
-  await Promise.all(
-    flattenList.map(async ({ list, key }) => {
-      await db.removeList({
-        nodeId,
-        dbName,
-        name: 'expectedIdpResponseNodeIdInBlock',
-        key,
-      });
-      await Promise.all(
-        list.map((responseMetadata) =>
-          addExpectedIdpResponseNodeIdInBlock(
-            nodeId,
-            newHeight,
-            responseMetadata
-          )
-        )
-      );
-    })
-  );
-
-  flattenList = await db.getFlattenListWithRangeSupport({
-    nodeId,
-    dbName,
-    name: 'expectedIdpPublicProofInBlock',
-    keyName: 'expectedBlockHeight',
-    valueName: 'responseMetadata',
-  });
-  await db.removeListWithRangeSupport({
-    nodeId,
-    dbName,
-    name: 'expectedIdpPublicProofInBlock',
-  });
-  await Promise.all(
-    flattenList.map((responseMetadata) =>
-      addExpectedIdpPublicProofInBlock(nodeId, newHeight, responseMetadata)
-    )
-  );
-
-  flattenList = await db.getFlattenList({
-    nodeId,
-    dbName,
-    name: 'expectedDataSignInBlock',
-    keyName: 'expectedBlockHeight',
-    valueName: 'metadata',
-  });
-  await Promise.all(
-    flattenList.map(async ({ list, key }) => {
-      await db.removeList({
-        nodeId,
-        dbName,
-        name: 'expectedDataSignInBlock',
-        key,
-      });
-      await Promise.all(
-        list.map((metadata) =>
-          addExpectedDataSignInBlock(nodeId, newHeight, metadata)
-        )
-      );
-    })
   );
 }
 
@@ -405,52 +335,82 @@ export function removePendingOutboundMessage(nodeId, msgId) {
   });
 }
 
-//
-// Used by IdP and AS
-//
+////
 
-export function getRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight) {
+export function setMessageFromMQ(nodeId, messageId, message) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'messageFromMQ',
+    keyName: 'messageId',
+    key: messageId,
+    valueName: 'message',
+    value: message,
+  });
+}
+
+export function getMessageFromMQ(nodeId, messageId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'messageFromMQ',
+    keyName: 'messageId',
+    key: messageId,
+  });
+}
+
+export function removeMessageFromMQ(nodeId, messageId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'messageFromMQ',
+    keyName: 'messageId',
+    key: messageId,
+  });
+}
+
+export function getMessageIdsToProcessAtBlock(nodeId, fromHeight, toHeight) {
   return db.getListRange({
     nodeId,
     dbName,
-    name: 'requestIdExpectedInBlock',
+    name: 'messageIdToProcessAtBlock',
     keyName: 'expectedBlockHeight',
     keyRange: {
       gte: fromHeight, // greaterThanOrEqual
       lte: toHeight, // lessThanOrEqual
     },
-    valueName: 'requestId',
+    valueName: 'messageId',
   });
 }
 
-export function getRequestIdExpectedInBlock(nodeId, height) {
+export function getMessageIdToProcessAtBlock(nodeId, height) {
   return db.getListWithRangeSupport({
     nodeId,
     dbName,
-    name: 'requestIdExpectedInBlock',
+    name: 'messageIdToProcessAtBlock',
     keyName: 'expectedBlockHeight',
     key: height,
-    valueName: 'requestId',
+    valueName: 'messageId',
   });
 }
 
-export function addRequestIdExpectedInBlock(nodeId, height, requestId) {
+export function addMessageIdToProcessAtBlock(nodeId, height, messageId) {
   return db.pushToListWithRangeSupport({
     nodeId,
     dbName,
-    name: 'requestIdExpectedInBlock',
+    name: 'messageIdToProcessAtBlock',
     keyName: 'expectedBlockHeight',
     key: height,
-    valueName: 'requestId',
-    value: requestId,
+    valueName: 'messageId',
+    value: messageId,
   });
 }
 
-export function removeRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight) {
+export function removeMessageIdsToProcessAtBlock(nodeId, fromHeight, toHeight) {
   return db.removeListRange({
     nodeId,
     dbName,
-    name: 'requestIdExpectedInBlock',
+    name: 'messageIdToProcessAtBlock',
     keyName: 'expectedBlockHeight',
     keyRange: {
       gte: fromHeight, // greaterThanOrEqual
@@ -458,6 +418,23 @@ export function removeRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight) {
     },
   });
 }
+
+export function removeMessageIdToProcessAtBlock(nodeId, messageId) {
+  return db.removeFromListWithRangeSupport({
+    nodeId,
+    dbName,
+    name: 'messageIdToProcessAtBlock',
+    keyName: 'expectedBlockHeight',
+    valueName: 'messageId',
+    value: messageId,
+  });
+}
+
+////
+
+//
+// Used by IdP and AS
+//
 
 export function getRequestReceivedFromMQ(nodeId, requestId) {
   return db.get({
@@ -775,94 +752,6 @@ export function removePrivateProofObjectListInRequest(nodeId, requestId) {
   });
 }
 
-export function getExpectedIdpResponseNodeIdInBlockList(nodeId, height) {
-  return db.getList({
-    nodeId,
-    dbName,
-    name: 'expectedIdpResponseNodeIdInBlock',
-    keyName: 'expectedBlockHeight',
-    key: height,
-    valueName: 'responseMetadata',
-  });
-}
-
-export function addExpectedIdpResponseNodeIdInBlock(
-  nodeId,
-  height,
-  responseMetadata
-) {
-  return db.pushToList({
-    nodeId,
-    dbName,
-    name: 'expectedIdpResponseNodeIdInBlock',
-    keyName: 'expectedBlockHeight',
-    key: height,
-    valueName: 'responseMetadata',
-    value: responseMetadata,
-  });
-}
-
-export function removeExpectedIdpResponseNodeIdInBlockList(nodeId, height) {
-  return db.removeList({
-    nodeId,
-    dbName,
-    name: 'expectedIdpResponseNodeIdInBlock',
-    keyName: 'expectedBlockHeight',
-    key: height,
-  });
-}
-
-export function getExpectedIdpPublicProofInBlockList(
-  nodeId,
-  fromHeight,
-  toHeight
-) {
-  return db.getListRange({
-    nodeId,
-    dbName,
-    name: 'expectedIdpPublicProofInBlock',
-    keyName: 'expectedBlockHeight',
-    keyRange: {
-      gte: fromHeight, // greaterThanOrEqual
-      lte: toHeight, // lessThanOrEqual
-    },
-    valueName: 'responseMetadata',
-  });
-}
-
-export function addExpectedIdpPublicProofInBlock(
-  nodeId,
-  height,
-  responseMetadata
-) {
-  return db.pushToListWithRangeSupport({
-    nodeId,
-    dbName,
-    name: 'expectedIdpPublicProofInBlock',
-    keyName: 'expectedBlockHeight',
-    key: height,
-    valueName: 'responseMetadata',
-    value: responseMetadata,
-  });
-}
-
-export function removeExpectedIdpPublicProofInBlockList(
-  nodeId,
-  fromHeight,
-  toHeight
-) {
-  return db.removeListRange({
-    nodeId,
-    dbName,
-    name: 'expectedIdpPublicProofInBlock',
-    keyName: 'expectedBlockHeight',
-    keyRange: {
-      gte: fromHeight, // greaterThanOrEqual
-      lte: toHeight, // lessThanOrEqual
-    },
-  });
-}
-
 export function getDataResponsefromAS(nodeId, asResponseId) {
   return db.get({
     nodeId,
@@ -943,60 +832,6 @@ export function removeAllDataFromAS(nodeId) {
     nodeId,
     dbName,
     name: 'dataFromAS',
-  });
-}
-
-export function getExpectedDataSignsInBlockList(nodeId, fromHeight, toHeight) {
-  return db.getListRange({
-    nodeId,
-    dbName,
-    name: 'expectedDataSignInBlock',
-    keyName: 'expectedBlockHeight',
-    keyRange: {
-      gte: fromHeight, // greaterThanOrEqual
-      lte: toHeight, // lessThanOrEqual
-    },
-    valueName: 'metadata',
-  });
-}
-
-export function getExpectedDataSignInBlockList(nodeId, height) {
-  return db.getListWithRangeSupport({
-    nodeId,
-    dbName,
-    name: 'expectedDataSignInBlock',
-    keyName: 'expectedBlockHeight',
-    key: height,
-    valueName: 'metadata',
-  });
-}
-
-export function addExpectedDataSignInBlock(nodeId, height, metadata) {
-  return db.pushToListWithRangeSupport({
-    nodeId,
-    dbName,
-    name: 'expectedDataSignInBlock',
-    keyName: 'expectedBlockHeight',
-    key: height,
-    valueName: 'metadata',
-    value: metadata,
-  });
-}
-
-export function removeExpectedDataSignsInBlockList(
-  nodeId,
-  fromHeight,
-  toHeight
-) {
-  return db.removeListRange({
-    nodeId,
-    dbName,
-    name: 'expectedDataSignInBlock',
-    keyName: 'expectedBlockHeight',
-    keyRange: {
-      gte: fromHeight, // greaterThanOrEqual
-      lte: toHeight, // lessThanOrEqual
-    },
   });
 }
 

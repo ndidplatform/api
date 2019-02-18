@@ -30,14 +30,19 @@ import './env_var_validate';
 import * as httpServer from './http_server';
 import * as node from './node';
 import * as core from './core/common';
+import * as rp from './core/rp';
+import * as idp from './core/idp';
+import * as as from './core/as';
+import * as proxy from './core/proxy';
 import * as nodeKey from './utils/node_key';
 
 import * as cacheDb from './db/cache';
 import * as longTermDb from './db/long_term';
+import * as dataDb from './db/data';
 import * as tendermint from './tendermint';
 import * as tendermintWsPool from './tendermint/ws_pool';
 import * as mq from './mq';
-import { stopAllCallbackRetries } from './utils/callback';
+import * as callbackUtil from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
 import { stopCollectDefaultMetrics } from './prometheus';
 
@@ -71,6 +76,7 @@ async function initialize() {
     if (config.ndidNode) {
       tendermint.setWaitForInitEndedBeforeReady(false);
     }
+    tendermint.setTxResultCallbackFnGetter(core.getFunction);
 
     const tendermintReady = new Promise((resolve) =>
       tendermint.eventEmitter.once('ready', (status) => resolve(status))
@@ -86,12 +92,37 @@ async function initialize() {
       logger.info({ message: 'Node role', role });
     }
 
-    core.readCallbackUrlsFromFiles();
+    if (role === 'rp') {
+      mq.setMessageHandlerFunction(rp.handleMessageFromQueue);
+      tendermint.setTendermintNewBlockEventHandler(rp.handleTendermintNewBlock);
+      await rp.checkCallbackUrls();
+    } else if (role === 'idp') {
+      mq.setMessageHandlerFunction(idp.handleMessageFromQueue);
+      tendermint.setTendermintNewBlockEventHandler(
+        idp.handleTendermintNewBlock
+      );
+      await idp.checkCallbackUrls();
+    } else if (role === 'as') {
+      mq.setMessageHandlerFunction(as.handleMessageFromQueue);
+      tendermint.setTendermintNewBlockEventHandler(as.handleTendermintNewBlock);
+      await as.checkCallbackUrls();
+    } else if (role === 'proxy') {
+      mq.setMessageHandlerFunction(proxy.handleMessageFromQueue);
+      tendermint.setTendermintNewBlockEventHandler(
+        proxy.handleTendermintNewBlock
+      );
+      await rp.checkCallbackUrls();
+      await idp.checkCallbackUrls();
+      await as.checkCallbackUrls();
+    }
+
+    callbackUtil.setShouldRetryFnGetter(core.getFunction);
+    callbackUtil.setResponseCallbackFnGetter(core.getFunction);
 
     let externalCryptoServiceReady;
     if (config.useExternalCryptoService) {
-      externalCryptoService.readCallbackUrlsFromFiles();
-      if (!externalCryptoService.isCallbackUrlsSet()) {
+      await externalCryptoService.checkCallbackUrls();
+      if (!(await externalCryptoService.isCallbackUrlsSet())) {
         externalCryptoServiceReady = new Promise((resolve) =>
           externalCryptoService.eventEmitter.once('allCallbacksSet', () =>
             resolve()
@@ -109,15 +140,34 @@ async function initialize() {
       await externalCryptoServiceReady;
     }
 
-    await core.initialize();
-
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
+      mq.setErrorHandlerFunction(core.handleMessageQueueError, () => {
+        // FIXME ?
+        if (role === 'rp') {
+          rp.getErrorCallbackUrl();
+        } else if (role === 'idp') {
+          idp.getErrorCallbackUrl();
+        } else if (role === 'as') {
+          as.getErrorCallbackUrl();
+        }
+      });
       await mq.initialize();
     }
 
     await tendermint.initialize();
 
-    await core.resumeTimeoutScheduler();
+    if (role === 'rp' || role === 'idp' || role === 'proxy') {
+      let nodeIds;
+      if (role === 'rp') {
+        nodeIds = [config.nodeId];
+      } else if (role === 'idp') {
+        nodeIds = [config.nodeId];
+      } else if (role === 'proxy') {
+        const nodesBehindProxy = await node.getNodesBehindProxyWithKeyOnProxy();
+        nodeIds = nodesBehindProxy.map((node) => node.node_id);
+      }
+      await core.resumeTimeoutScheduler(nodeIds);
+    }
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
       await core.setMessageQueueAddress();
@@ -127,6 +177,8 @@ async function initialize() {
     tendermint.processMissingBlocks(tendermintStatusOnSync);
     await tendermint.loadExpectedTxFromDB();
     tendermint.loadAndRetryBacklogTransactRequests();
+
+    callbackUtil.resumeCallbackToClient();
 
     logger.info({ message: 'Server initialized' });
   } catch (error) {
@@ -172,7 +224,7 @@ async function shutDown() {
 
   stopCollectDefaultMetrics();
   await httpServer.close();
-  stopAllCallbackRetries();
+  callbackUtil.stopAllCallbackRetries();
   externalCryptoService.stopAllCallbackRetries();
   await mq.close();
   tendermint.tendermintWsClient.close();
@@ -182,7 +234,7 @@ async function shutDown() {
   // Possible solution: Have those async operations append a queue to use DB and
   // remove after finish using DB
   // => Wait here until a queue to use DB is empty
-  await Promise.all([cacheDb.close(), longTermDb.close()]);
+  await Promise.all([cacheDb.close(), longTermDb.close(), dataDb.close()]);
   core.stopAllTimeoutScheduler();
 }
 

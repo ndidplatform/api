@@ -29,21 +29,14 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
 
-import { role } from '../../node';
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as rp from '../rp';
 import * as idp from '../idp';
 import * as as from '../as';
-import * as proxy from '../proxy';
 import * as identity from '../identity';
 import * as mq from '../../mq';
-import {
-  setShouldRetryFnGetter,
-  setResponseCallbackFnGetter,
-  resumeCallbackToClient,
-  callbackToClient,
-} from '../../utils/callback';
+import { callbackToClient } from '../../utils/callback';
 import * as utils from '../../utils';
 import * as lt from '../../utils/long_timeout';
 import * as config from '../../config';
@@ -51,16 +44,12 @@ import { getErrorObjectForClient } from '../../utils/error';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../../mq/message/type';
 
-import * as node from '../../node';
-
 export * from './create_request';
 export * from './close_request';
 
 let processingInboundMessagesCount = 0;
 
 let messageQueueAddressesSet = !config.registerMqAtStartup;
-
-tendermint.setTxResultCallbackFnGetter(getFunction);
 
 export const metricsEventEmitter = new EventEmitter();
 
@@ -100,56 +89,6 @@ export async function setMessageQueueAddress() {
     }
     messageQueueAddressesSet = true;
   }
-}
-
-export function readCallbackUrlsFromFiles() {
-  if (role === 'rp') {
-    rp.readCallbackUrlsFromFiles();
-  } else if (role === 'idp') {
-    idp.readCallbackUrlsFromFiles();
-  } else if (role === 'as') {
-    as.readCallbackUrlsFromFiles();
-  } else if (role === 'proxy') {
-    rp.readCallbackUrlsFromFiles();
-    idp.readCallbackUrlsFromFiles();
-    as.readCallbackUrlsFromFiles();
-  }
-}
-
-export async function initialize() {
-  let handleMessageFromQueue;
-  if (role === 'rp') {
-    handleMessageFromQueue = rp.handleMessageFromQueue;
-    tendermint.setTendermintNewBlockEventHandler(rp.handleTendermintNewBlock);
-    setShouldRetryFnGetter(getFunction);
-    setResponseCallbackFnGetter(getFunction);
-    resumeCallbackToClient();
-  } else if (role === 'idp') {
-    handleMessageFromQueue = idp.handleMessageFromQueue;
-    tendermint.setTendermintNewBlockEventHandler(idp.handleTendermintNewBlock);
-    setShouldRetryFnGetter(getFunction);
-    setResponseCallbackFnGetter(getFunction);
-    resumeCallbackToClient();
-  } else if (role === 'as') {
-    handleMessageFromQueue = as.handleMessageFromQueue;
-    tendermint.setTendermintNewBlockEventHandler(as.handleTendermintNewBlock);
-    setShouldRetryFnGetter(getFunction);
-    setResponseCallbackFnGetter(getFunction);
-    resumeCallbackToClient();
-  } else if (role === 'proxy') {
-    handleMessageFromQueue = proxy.handleMessageFromQueue;
-    tendermint.setTendermintNewBlockEventHandler(
-      proxy.handleTendermintNewBlock
-    );
-    setShouldRetryFnGetter(getFunction);
-    setResponseCallbackFnGetter(getFunction);
-    resumeCallbackToClient();
-  }
-
-  if (handleMessageFromQueue) {
-    mq.eventEmitter.on('message', handleMessageFromQueue);
-  }
-  mq.eventEmitter.on('error', handleMessageQueueError);
 }
 
 export function getFunction(fnName) {
@@ -212,16 +151,7 @@ export function getFunction(fnName) {
   }
 }
 
-export async function resumeTimeoutScheduler() {
-  let nodeIds;
-  if (role === 'rp') {
-    nodeIds = [config.nodeId];
-  } else if (role === 'idp') {
-    nodeIds = [config.nodeId];
-  } else if (role === 'proxy') {
-    const nodesBehindProxy = await node.getNodesBehindProxyWithKeyOnProxy();
-    nodeIds = nodesBehindProxy.map((node) => node.node_id);
-  }
+export async function resumeTimeoutScheduler(nodeIds) {
   if (nodeIds == null) return;
   nodeIds.forEach(async (nodeId) => {
     const schedulers = await cacheDb.getAllTimeoutScheduler(nodeId);
@@ -265,20 +195,13 @@ export function checkRequestMessageIntegrity(
   return true;
 }
 
-async function handleMessageQueueError(error) {
+export async function handleMessageQueueError(error, getErrorCallbackUrl) {
   const err = new CustomError({
     message: 'Message queue receiving error',
     cause: error,
   });
   logger.error(err.getInfoForLog());
-  let callbackUrl;
-  if (role === 'rp') {
-    callbackUrl = rp.getErrorCallbackUrl();
-  } else if (role === 'idp') {
-    callbackUrl = idp.getErrorCallbackUrl();
-  } else if (role === 'as') {
-    callbackUrl = as.getErrorCallbackUrl();
-  }
+  const callbackUrl = await getErrorCallbackUrl();
   await notifyError({
     callbackUrl,
     action: 'onMessage',
@@ -523,6 +446,7 @@ async function verifyZKProof({
 
 export async function handleChallengeRequest({
   nodeId,
+  role,
   request_id,
   idp_id,
   public_proof,
@@ -551,17 +475,9 @@ export async function handleChallengeRequest({
   //if match, send challenge and return
   const nodeIdObj = {};
 
-  let nodeRole;
-  if (role === 'proxy') {
-    const nodeInfo = await tendermintNdid.getNodeInfo(nodeId);
-    nodeRole = nodeInfo.role.toLowerCase();
-  } else {
-    nodeRole = role;
-  }
-
-  if (nodeRole === 'idp') {
+  if (role === 'idp') {
     nodeIdObj.idp_id = nodeId;
-  } else if (nodeRole === 'rp') {
+  } else if (role === 'rp') {
     nodeIdObj.rp_id = nodeId;
   }
 

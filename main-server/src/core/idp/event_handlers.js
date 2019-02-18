@@ -20,8 +20,11 @@
  *
  */
 
-import { callbackUrls, processMessage } from '.';
-import { createResponse } from './create_response';
+import {
+  getErrorCallbackUrl,
+  getIncomingRequestStatusUpdateCallbackUrl,
+  processMessage,
+} from '.';
 
 import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
@@ -30,19 +33,22 @@ import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
 import logger from '../../logger';
 
-import * as tendermint from '../../tendermint';
 import * as common from '../common';
+import * as requestProcessManager from '../request_process_manager';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../../mq/message/type';
 
 import * as config from '../../config';
 import * as tendermintNdid from '../../tendermint/ndid';
 
-const requestIdLocks = {};
-
-export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
+export async function handleMessageFromQueue(
+  messageId,
+  message,
+  nodeId = config.nodeId
+) {
   logger.info({
     message: 'Received message from MQ',
+    messageId,
     nodeId,
   });
   logger.debug({
@@ -54,229 +60,46 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
   const startTime = Date.now();
 
   const requestId = message.request_id;
+
   try {
     //if message is challenge for response, no need to wait for blockchain
     if (message.type === privateMessageType.CHALLENGE_RESPONSE) {
-      //store challenge
-      const createResponseParams = await cacheDb.getResponseFromRequestId(
+      requestProcessManager.addMqMessageTaskToQueue({
         nodeId,
-        message.request_id
-      );
-      try {
-        let request = await cacheDb.getRequestReceivedFromMQ(
-          nodeId,
-          message.request_id
-        );
-        request.challenge = message.challenge;
-        logger.debug({
-          message: 'Save challenge to request',
-          request,
-          challenge: message.challenge,
-        });
-        await cacheDb.setRequestReceivedFromMQ(
-          nodeId,
-          message.request_id,
-          request
-        );
-        //query reponse data
-        logger.debug({
-          message: 'Data to response',
-          createResponseParams,
-        });
-        await createResponse(createResponseParams, { nodeId });
-      } catch (error) {
-        await callbackToClient(
-          createResponseParams.callback_url,
-          {
-            node_id: nodeId,
-            type: 'response_result',
-            success: false,
-            reference_id: createResponseParams.reference_id,
-            request_id: createResponseParams.request_id,
-            error: getErrorObjectForClient(error),
-          },
-          true
-        );
-        cacheDb.removeResponseFromRequestId(
-          nodeId,
-          createResponseParams.request_id
-        );
-      }
+        messageId,
+        message,
+        processMessage,
+      });
       common.notifyMetricsInboundMessageProcessTime(
-        'not_related_to_block',
+        'does_not_wait_for_block',
         startTime
       );
-      return;
     } else {
-      if (message.type === privateMessageType.CONSENT_REQUEST) {
-        await Promise.all([
-          cacheDb.setRequestReceivedFromMQ(nodeId, message.request_id, message),
-          cacheDb.setRPIdFromRequestId(
-            nodeId,
-            message.request_id,
-            message.rp_id
-          ),
-        ]);
+      const addToProcessQueue = await requestProcessManager.handleMessageFromMqWithBlockWait(
+        messageId,
+        message,
+        nodeId
+      );
 
-        const latestBlockHeight = tendermint.latestBlockHeight;
-        if (tendermint.chainId !== message.chain_id) {
-          if (!(await utils.hasSeenChain(message.chain_id))) {
-            throw new CustomError({
-              errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
-            });
-          }
-        } else if (latestBlockHeight <= message.height) {
-          logger.debug({
-            message: 'Saving consent request message from MQ',
-            tendermintLatestBlockHeight: latestBlockHeight,
-            messageBlockHeight: message.height,
-          });
-          requestIdLocks[nodeId + ':' + message.request_id] = true;
-          await Promise.all([
-            cacheDb.setRequestToProcessReceivedFromMQ(
-              nodeId,
-              message.request_id,
-              message
-            ),
-            cacheDb.addRequestIdExpectedInBlock(
-              nodeId,
-              message.height,
-              message.request_id
-            ),
-          ]);
-          if (tendermint.latestBlockHeight <= message.height) {
-            delete requestIdLocks[nodeId + ':' + message.request_id];
-            common.notifyMetricsInboundMessageProcessTime(
-              'wait_for_block',
-              startTime
-            );
-            return;
-          } else {
-            await cacheDb.removeRequestToProcessReceivedFromMQ(
-              nodeId,
-              message.request_id
-            );
-          }
-        }
-      } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
-        const latestBlockHeight = tendermint.latestBlockHeight;
-        if (tendermint.chainId !== message.chain_id) {
-          if (!(await utils.hasSeenChain(message.chain_id))) {
-            throw new CustomError({
-              errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
-            });
-          }
-        } else if (latestBlockHeight <= message.height) {
-          logger.debug({
-            message: 'Saving challege request message from MQ',
-            tendermintLatestBlockHeight: latestBlockHeight,
-            messageBlockHeight: message.height,
-          });
-          const responseId =
-            nodeId + ':' + message.request_id + ':' + message.idp_id;
-          requestIdLocks[nodeId + ':' + message.request_id] = true;
-          await Promise.all([
-            cacheDb.setRequestToProcessReceivedFromMQ(
-              nodeId,
-              message.request_id,
-              message
-            ),
-            cacheDb.addRequestIdExpectedInBlock(
-              nodeId,
-              message.height,
-              message.request_id
-            ),
-            cacheDb.setPublicProofReceivedFromMQ(
-              nodeId,
-              responseId,
-              message.public_proof
-            ),
-          ]);
-          if (tendermint.latestBlockHeight <= message.height) {
-            delete requestIdLocks[nodeId + ':' + message.request_id];
-            common.notifyMetricsInboundMessageProcessTime(
-              'wait_for_block',
-              startTime
-            );
-            return;
-          } else {
-            await Promise.all([
-              cacheDb.removeRequestToProcessReceivedFromMQ(
-                nodeId,
-                message.request_id
-              ),
-              cacheDb.removePublicProofReceivedFromMQ(nodeId, responseId),
-            ]);
-          }
-        }
-      } else if (message.type === privateMessageType.IDP_RESPONSE) {
-        const request = await cacheDb.getRequestData(
+      if (addToProcessQueue) {
+        requestProcessManager.addMqMessageTaskToQueue({
           nodeId,
-          message.request_id
+          messageId,
+          message,
+          processMessage,
+        });
+        common.notifyMetricsInboundMessageProcessTime(
+          'does_not_wait_for_block',
+          startTime
         );
-        if (request == null) return; //request not found
-        await cacheDb.addPrivateProofObjectInRequest(
-          nodeId,
-          message.request_id,
-          {
-            idp_id: message.idp_id,
-            privateProofObject: {
-              privateProofValue: message.privateProofValueArray,
-              accessor_id: message.accessor_id,
-              padding: message.padding,
-            },
-          }
+      } else {
+        // Save message to redis cache time
+        common.notifyMetricsInboundMessageProcessTime(
+          'wait_for_block',
+          startTime
         );
-
-        const latestBlockHeight = tendermint.latestBlockHeight;
-        if (tendermint.chainId !== message.chain_id) {
-          if (!(await utils.hasSeenChain(message.chain_id))) {
-            throw new CustomError({
-              errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
-            });
-          }
-        } else if (latestBlockHeight <= message.height) {
-          logger.debug({
-            message: 'Saving IdP response message from MQ',
-            tendermintLatestBlockHeight: latestBlockHeight,
-            messageBlockHeight: message.height,
-          });
-          requestIdLocks[nodeId + ':' + message.request_id] = true;
-          await Promise.all([
-            cacheDb.setRequestToProcessReceivedFromMQ(
-              nodeId,
-              message.request_id,
-              message
-            ),
-            cacheDb.addRequestIdExpectedInBlock(
-              nodeId,
-              message.height,
-              message.request_id
-            ),
-          ]);
-          if (tendermint.latestBlockHeight <= message.height) {
-            delete requestIdLocks[nodeId + ':' + message.request_id];
-            common.notifyMetricsInboundMessageProcessTime(
-              'wait_for_block',
-              startTime
-            );
-            return;
-          } else {
-            await cacheDb.removeRequestToProcessReceivedFromMQ(
-              nodeId,
-              message.request_id
-            );
-          }
-        }
       }
     }
-
-    await processMessage(nodeId, message);
-    delete requestIdLocks[nodeId + ':' + message.request_id];
-    common.notifyMetricsInboundMessageProcessTime(
-      'does_not_wait_for_block',
-      startTime
-    );
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling message from message queue',
@@ -284,10 +107,11 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
     });
     logger.error(err.getInfoForLog());
     common.notifyMetricsFailInboundMessageProcess();
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
-      action: 'handleMessageFromQueue',
+      callbackUrl,
+      action: 'idp.handleMessageFromQueue',
       error: err,
       requestId,
     });
@@ -311,10 +135,13 @@ export async function handleTendermintNewBlock(
 
   const startTime = Date.now();
   try {
-    await Promise.all([
-      processMessageExptectedInBlocks(fromHeight, toHeight, nodeId),
-      processTasksInBlocks(parsedTransactionsInBlocks, nodeId),
-    ]);
+    await requestProcessManager.processMessageInBlocks(
+      fromHeight,
+      toHeight,
+      nodeId,
+      processMessage
+    );
+    await processTasksInBlocks(parsedTransactionsInBlocks, nodeId);
     common.notifyMetricsBlockProcessTime(startTime);
   } catch (error) {
     const err = new CustomError({
@@ -323,34 +150,14 @@ export async function handleTendermintNewBlock(
     });
     logger.error(err.getInfoForLog());
     common.notifyMetricsFailedBlockProcess();
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'handleTendermintNewBlock',
       error: err,
     });
   }
-}
-
-async function processMessageExptectedInBlocks(fromHeight, toHeight, nodeId) {
-  const requestIdsInTendermintBlock = await cacheDb.getRequestIdsExpectedInBlock(
-    nodeId,
-    fromHeight,
-    toHeight
-  );
-  await Promise.all(
-    requestIdsInTendermintBlock.map(async (requestId) => {
-      if (requestIdLocks[nodeId + ':' + requestId]) return;
-      const message = await cacheDb.getRequestToProcessReceivedFromMQ(
-        nodeId,
-        requestId
-      );
-      if (message == null) return;
-      await processMessage(nodeId, message);
-      await cacheDb.removeRequestToProcessReceivedFromMQ(nodeId, requestId);
-    })
-  );
-  cacheDb.removeRequestIdsExpectedInBlock(nodeId, fromHeight, toHeight);
 }
 
 async function isCreateIdentityRequestValid(requestId) {
@@ -369,8 +176,8 @@ async function isCreateIdentityRequestValid(requestId) {
     }, true);
 }
 
-async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
-  await Promise.all(
+function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
+  return Promise.all(
     parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
       const createIdentityRequestsToProcess = {}; // For clean up closed or timed out create identity requests
       const incomingRequestsToProcessUpdate = {};
@@ -437,16 +244,24 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         incomingRequestsToProcessUpdate,
       });
 
-      await Promise.all([
-        ...Object.values(createIdentityRequestsToProcess).map(
-          ({ requestId, action }) =>
-            processCreateIdentityRequest(nodeId, requestId, action)
-        ),
-        ...Object.values(incomingRequestsToProcessUpdate).map(
-          ({ requestId, cleanUp }) =>
-            processRequestUpdate(nodeId, requestId, height, cleanUp)
-        ),
-      ]);
+      Object.values(createIdentityRequestsToProcess).map(
+        ({ requestId, action }) =>
+          requestProcessManager.addTaskToQueue({
+            nodeId,
+            requestId,
+            callback: processCreateIdentityRequest,
+            callbackArgs: [nodeId, requestId, action],
+          })
+      );
+      Object.values(incomingRequestsToProcessUpdate).map(
+        ({ requestId, cleanUp }) =>
+          requestProcessManager.addTaskToQueue({
+            nodeId,
+            requestId,
+            callback: processRequestUpdate,
+            callbackArgs: [nodeId, requestId, height, cleanUp],
+          })
+      );
     })
   );
 }
@@ -528,7 +343,7 @@ async function processCreateIdentityRequest(nodeId, requestId, action) {
 }
 
 async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
-  const callbackUrl = callbackUrls.incoming_request_status_update_url;
+  const callbackUrl = await getIncomingRequestStatusUpdateCallbackUrl();
   if (callbackUrl != null) {
     const requestDetail = await tendermintNdid.getRequestDetail({
       requestId: requestId,

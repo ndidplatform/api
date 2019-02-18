@@ -20,13 +20,16 @@
  *
  */
 
-import fs from 'fs';
-import path from 'path';
+import { processAsData } from './process_as_data';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as tendermint from '../../tendermint';
+import * as common from '../common';
+import * as utils from '../../utils';
 import * as mq from '../../mq';
 import * as cacheDb from '../../db/cache';
+import * as dataDb from '../../db/data';
+import { callbackToClient } from '../../utils/callback';
 import privateMessageType from '../../mq/message/type';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -38,63 +41,59 @@ import { role } from '../../node';
 export * from './event_handlers';
 export * from './process_as_data';
 
-export const callbackUrls = {};
+const CALLBACK_URL_NAME = {
+  ERROR: 'error_url',
+};
+const CALLBACK_URL_NAME_ARR = Object.values(CALLBACK_URL_NAME);
 
-const callbackUrlFilesPrefix = path.join(
-  config.dataDirectoryPath,
-  'rp-callback-url-' + config.nodeId
-);
-
-export function readCallbackUrlsFromFiles() {
-  [{ key: 'error_url', fileSuffix: 'error' }].forEach(({ key, fileSuffix }) => {
-    try {
-      callbackUrls[key] = fs.readFileSync(
-        callbackUrlFilesPrefix + '-' + fileSuffix,
-        'utf8'
-      );
+export async function checkCallbackUrls() {
+  const callbackUrls = await getCallbackUrls();
+  for (let i = 0; i < CALLBACK_URL_NAME_ARR.length; i++) {
+    const callbackName = CALLBACK_URL_NAME_ARR[i];
+    if (callbackUrls[callbackName] != null) {
       logger.info({
-        message: `[RP] ${fileSuffix} callback url read from file`,
-        callbackUrl: callbackUrls[key],
+        message: `[RP] ${callbackName} callback url`,
+        callbackUrl: callbackUrls[callbackName],
       });
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        logger.warn({
-          message: `[RP] ${fileSuffix} callback url file not found`,
-        });
-      } else {
-        logger.error({
-          message: `[RP] Cannot read ${fileSuffix} callback url file`,
-          error,
-        });
-      }
-    }
-  });
-}
-
-function writeCallbackUrlToFile(fileSuffix, url) {
-  fs.writeFile(callbackUrlFilesPrefix + '-' + fileSuffix, url, (err) => {
-    if (err) {
-      logger.error({
-        message: `[RP] Cannot write ${fileSuffix} callback url file`,
-        error: err,
+    } else {
+      logger.warn({
+        message: `[RP] ${callbackName} callback url is not set`,
       });
     }
-  });
-}
-
-export function setCallbackUrls({ error_url }) {
-  if (error_url != null) {
-    callbackUrls.error_url = error_url;
-    writeCallbackUrlToFile('error', error_url);
   }
 }
 
-export function getCallbackUrls() {
+export async function setCallbackUrls({ error_url }) {
+  if (error_url != null) {
+    await dataDb.setCallbackUrl(
+      config.nodeId,
+      `rp.${CALLBACK_URL_NAME.ERROR}`,
+      error_url
+    );
+  }
+}
+
+export async function getCallbackUrls() {
+  const callbackNames = CALLBACK_URL_NAME_ARR.map((name) => `rp.${name}`);
+  const callbackUrlsArr = await dataDb.getCallbackUrls(
+    config.nodeId,
+    callbackNames
+  );
+  const callbackUrls = callbackUrlsArr.reduce((callbackUrlsObj, url, index) => {
+    if (url != null) {
+      return {
+        ...callbackUrlsObj,
+        [callbackNames[index].replace(/^rp\./, '')]: url,
+      };
+    } else {
+      return callbackUrlsObj;
+    }
+  }, {});
   return callbackUrls;
 }
 
 export function getErrorCallbackUrl() {
-  return callbackUrls.error_url;
+  return dataDb.getCallbackUrl(config.nodeId, `rp.${CALLBACK_URL_NAME.ERROR}`);
 }
 
 export function isAllIdpResponsesValid(responseValidList) {
@@ -264,6 +263,150 @@ export async function sendRequestToAS(nodeId, requestData, height) {
         )
     )
   );
+}
+
+export async function processMessage(nodeId, messageId, message) {
+  const requestId = message.request_id;
+  logger.debug({
+    message: 'Processing message',
+    nodeId,
+    messageId,
+    requestId,
+  });
+
+  try {
+    if (message.type === privateMessageType.CHALLENGE_REQUEST) {
+      await common.handleChallengeRequest({
+        nodeId,
+        role: 'rp',
+        request_id: message.request_id,
+        idp_id: message.idp_id,
+        public_proof: message.public_proof,
+      });
+    } else if (message.type === privateMessageType.IDP_RESPONSE) {
+      const requestData = await cacheDb.getRequestData(
+        nodeId,
+        message.request_id
+      );
+      if (requestData != null) {
+        // "accessor_id" and private proof are present only in mode 3
+        if (message.mode === 3) {
+          //store private parameter from EACH idp to request, to pass along to as
+          await cacheDb.addPrivateProofObjectInRequest(
+            nodeId,
+            message.request_id,
+            {
+              idp_id: message.idp_id,
+              privateProofObject: {
+                privateProofValue: message.privateProofValueArray,
+                accessor_id: message.accessor_id,
+                padding: message.padding,
+              },
+            }
+          );
+        }
+
+        const requestDetail = await tendermintNdid.getRequestDetail({
+          requestId: message.request_id,
+          height: message.height,
+        });
+
+        const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+
+        const savedResponseValidList = await cacheDb.getIdpResponseValidList(
+          nodeId,
+          message.request_id
+        );
+
+        const responseValid = await common.checkIdpResponse({
+          nodeId,
+          requestStatus,
+          idpId: message.idp_id,
+          requestDataFromMq: message,
+          responseIal: requestDetail.response_list.find(
+            (response) => response.idp_id === message.idp_id
+          ).ial,
+        });
+
+        const responseValidList = savedResponseValidList.concat([
+          responseValid,
+        ]);
+
+        const eventDataForCallback = {
+          node_id: nodeId,
+          type: 'request_status',
+          ...requestStatus,
+          response_valid_list: responseValidList,
+          block_height: `${requestDetail.creation_chain_id}:${message.height}`,
+        };
+
+        const callbackUrl = requestData.callback_url;
+        await callbackToClient(callbackUrl, eventDataForCallback, true);
+
+        if (isAllIdpRespondedAndValid({ requestStatus, responseValidList })) {
+          const requestData = await cacheDb.getRequestData(
+            nodeId,
+            message.request_id
+          );
+          if (requestData != null) {
+            await sendRequestToAS(nodeId, requestData, message.height);
+          }
+        }
+
+        if (
+          requestStatus.status === 'completed' &&
+          !requestStatus.closed &&
+          !requestStatus.timed_out &&
+          (requestStatus.mode === 1 ||
+            (requestStatus.mode === 3 &&
+              isAllIdpResponsesValid(responseValidList)))
+        ) {
+          logger.debug({
+            message: 'Automatically closing request',
+            requestId: message.request_id,
+          });
+          await common.closeRequest(
+            { node_id: nodeId, request_id: message.request_id },
+            {
+              synchronous: false,
+              sendCallbackToClient: false,
+              saveForRetryOnChainDisabled: true,
+            }
+          );
+        }
+      }
+    } else if (message.type === privateMessageType.AS_DATA_RESPONSE) {
+      await processAsData({
+        nodeId,
+        requestId: message.request_id,
+        serviceId: message.service_id,
+        asNodeId: message.as_id,
+        signature: message.signature,
+        dataSalt: message.data_salt,
+        data: message.data,
+      });
+    } else {
+      logger.warn({
+        message: 'Cannot process unknown message type',
+        type: message.type,
+      });
+    }
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error processing message from message queue',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
+    await common.notifyError({
+      nodeId,
+      callbackUrl,
+      action: 'rp.processMessage',
+      error: err,
+      requestId,
+    });
+    throw err;
+  }
 }
 
 export async function getRequestIdByReferenceId(nodeId, referenceId) {

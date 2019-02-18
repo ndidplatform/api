@@ -20,34 +20,27 @@
  *
  */
 
-import {
-  callbackUrls,
-  isAllIdpResponsesValid,
-  isAllIdpRespondedAndValid,
-  sendRequestToAS,
-  processAsData,
-} from '.';
+import { getErrorCallbackUrl, isAllIdpResponsesValid, processMessage } from '.';
 
-import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
+import * as requestProcessManager from '../request_process_manager';
 import * as cacheDb from '../../db/cache';
-import privateMessageType from '../../mq/message/type';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../utils/callback';
 import CustomError from 'ndid-error/custom_error';
-import errorType from 'ndid-error/type';
 import logger from '../../logger';
 
 import * as config from '../../config';
 
-const challengeRequestProcessLocks = {};
-const idpResponseProcessLocks = {};
-const asDataResponseProcessLocks = {};
-
-export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
+export async function handleMessageFromQueue(
+  messageId,
+  message,
+  nodeId = config.nodeId
+) {
   logger.info({
     message: 'Received message from MQ',
+    messageId,
     nodeId,
   });
   logger.debug({
@@ -59,246 +52,32 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
   const startTime = Date.now();
 
   const requestId = message.request_id;
+
   try {
-    if (message.type === privateMessageType.CHALLENGE_REQUEST) {
-      const responseId =
-        nodeId + ':' + message.request_id + ':' + message.idp_id;
-      const latestBlockHeight = tendermint.latestBlockHeight;
-      if (tendermint.chainId !== message.chain_id) {
-        if (!(await utils.hasSeenChain(message.chain_id))) {
-          throw new CustomError({
-            errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
-          });
-        }
-      } else if (latestBlockHeight <= message.height) {
-        logger.debug({
-          message: 'Saving expected public proof from MQ',
-          responseId,
-          public_proof: message.public_proof,
-        });
-        challengeRequestProcessLocks[responseId] = true;
-        await Promise.all([
-          cacheDb.setPublicProofReceivedFromMQ(
-            nodeId,
-            responseId,
-            message.public_proof
-          ),
-          cacheDb.addExpectedIdpPublicProofInBlock(nodeId, message.height, {
-            requestId: message.request_id,
-            idpId: message.idp_id,
-          }),
-        ]);
-        if (tendermint.latestBlockHeight <= message.height) {
-          delete challengeRequestProcessLocks[responseId];
-          common.notifyMetricsInboundMessageProcessTime(
-            'wait_for_block',
-            startTime
-          );
-          return;
-        } else {
-          await cacheDb.removePublicProofReceivedFromMQ(nodeId, responseId);
-        }
-      }
-      await common.handleChallengeRequest({
-        nodeId,
-        request_id: message.request_id,
-        idp_id: message.idp_id,
-        public_proof: message.public_proof,
-      });
-      delete challengeRequestProcessLocks[responseId];
-    } else if (message.type === privateMessageType.IDP_RESPONSE) {
-      const requestData = await cacheDb.getRequestData(
-        nodeId,
-        message.request_id
-      );
-      if (requestData == null) return;
-
-      // "accessor_id" and private proof are present only in mode 3
-      if (message.mode === 3) {
-        //store private parameter from EACH idp to request, to pass along to as
-        const request = await cacheDb.getRequestData(
-          nodeId,
-          message.request_id
-        );
-        //AS involve
-        if (request != null) {
-          await cacheDb.addPrivateProofObjectInRequest(
-            nodeId,
-            message.request_id,
-            {
-              idp_id: message.idp_id,
-              privateProofObject: {
-                privateProofValue: message.privateProofValueArray,
-                accessor_id: message.accessor_id,
-                padding: message.padding,
-              },
-            }
-          );
-        }
-      }
-
-      const responseId =
-        nodeId + ':' + message.request_id + ':' + message.idp_id;
-      //must wait for height
-      const latestBlockHeight = tendermint.latestBlockHeight;
-      if (tendermint.chainId !== message.chain_id) {
-        if (!(await utils.hasSeenChain(message.chain_id))) {
-          throw new CustomError({
-            errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
-          });
-        }
-      } else if (latestBlockHeight <= message.height) {
-        logger.debug({
-          message: 'Saving message from MQ',
-          tendermintLatestBlockHeight: latestBlockHeight,
-          messageBlockHeight: message.height,
-        });
-        idpResponseProcessLocks[responseId] = true;
-        await Promise.all([
-          cacheDb.setPrivateProofReceivedFromMQ(nodeId, responseId, message),
-          cacheDb.addExpectedIdpResponseNodeIdInBlock(nodeId, message.height, {
-            requestId: message.request_id,
-            idpId: message.idp_id,
-          }),
-        ]);
-        if (tendermint.latestBlockHeight <= message.height) {
-          delete idpResponseProcessLocks[responseId];
-          common.notifyMetricsInboundMessageProcessTime(
-            'wait_for_block',
-            startTime
-          );
-          return;
-        } else {
-          await cacheDb.removePrivateProofReceivedFromMQ(nodeId, responseId);
-        }
-      }
-
-      const requestDetail = await tendermintNdid.getRequestDetail({
-        requestId: message.request_id,
-        height: message.height,
-      });
-
-      const requestStatus = utils.getDetailedRequestStatus(requestDetail);
-
-      const savedResponseValidList = await cacheDb.getIdpResponseValidList(
-        nodeId,
-        message.request_id
-      );
-
-      const responseValid = await common.checkIdpResponse({
-        nodeId,
-        requestStatus,
-        idpId: message.idp_id,
-        requestDataFromMq: message,
-        responseIal: requestDetail.response_list.find(
-          (response) => response.idp_id === message.idp_id
-        ).ial,
-      });
-
-      const responseValidList = savedResponseValidList.concat([responseValid]);
-
-      const eventDataForCallback = {
-        node_id: nodeId,
-        type: 'request_status',
-        ...requestStatus,
-        response_valid_list: responseValidList,
-        block_height: `${requestDetail.creation_chain_id}:${message.height}`,
-      };
-
-      const callbackUrl = requestData.callback_url;
-      await callbackToClient(callbackUrl, eventDataForCallback, true);
-
-      if (isAllIdpRespondedAndValid({ requestStatus, responseValidList })) {
-        const requestData = await cacheDb.getRequestData(
-          nodeId,
-          message.request_id
-        );
-        if (requestData != null) {
-          await sendRequestToAS(nodeId, requestData, message.height);
-        }
-      }
-
-      if (
-        requestStatus.status === 'completed' &&
-        !requestStatus.closed &&
-        !requestStatus.timed_out &&
-        (requestStatus.mode === 1 ||
-          (requestStatus.mode === 3 &&
-            isAllIdpResponsesValid(responseValidList)))
-      ) {
-        logger.debug({
-          message: 'Automatically closing request',
-          requestId: message.request_id,
-        });
-        await common.closeRequest(
-          { node_id: nodeId, request_id: message.request_id },
-          {
-            synchronous: false,
-            sendCallbackToClient: false,
-            saveForRetryOnChainDisabled: true,
-          }
-        );
-      }
-      delete idpResponseProcessLocks[responseId];
-    } else if (message.type === privateMessageType.AS_DATA_RESPONSE) {
-      // Receive data from AS
-      const asResponseId =
-        nodeId +
-        ':' +
-        message.request_id +
-        ':' +
-        message.service_id +
-        ':' +
-        message.as_id;
-
-      const latestBlockHeight = tendermint.latestBlockHeight;
-      if (tendermint.chainId !== message.chain_id) {
-        if (!(await utils.hasSeenChain(message.chain_id))) {
-          throw new CustomError({
-            errorType: errorType.UNRECOGNIZED_MESSAGE_CHAIN_ID,
-          });
-        }
-      } else if (latestBlockHeight <= message.height) {
-        logger.debug({
-          message: 'Saving expected data signature',
-          tendermintLatestBlockHeight: latestBlockHeight,
-          messageBlockHeight: message.height,
-        });
-        asDataResponseProcessLocks[asResponseId] = true;
-        await Promise.all([
-          cacheDb.setDataResponseFromAS(nodeId, asResponseId, message),
-          cacheDb.addExpectedDataSignInBlock(nodeId, message.height, {
-            requestId: message.request_id,
-            serviceId: message.service_id,
-            asId: message.as_id,
-          }),
-        ]);
-        if (tendermint.latestBlockHeight <= message.height) {
-          delete asDataResponseProcessLocks[asResponseId];
-          common.notifyMetricsInboundMessageProcessTime(
-            'wait_for_block',
-            startTime
-          );
-          return;
-        } else {
-          await cacheDb.removeDataResponseFromAS(nodeId, asResponseId);
-        }
-      }
-      await processAsData({
-        nodeId,
-        requestId: message.request_id,
-        serviceId: message.service_id,
-        asNodeId: message.as_id,
-        signature: message.signature,
-        dataSalt: message.data_salt,
-        data: message.data,
-      });
-      delete asDataResponseProcessLocks[asResponseId];
-    }
-    common.notifyMetricsInboundMessageProcessTime(
-      'does_not_wait_for_block',
-      startTime
+    const addToProcessQueue = await requestProcessManager.handleMessageFromMqWithBlockWait(
+      messageId,
+      message,
+      nodeId
     );
+
+    if (addToProcessQueue) {
+      requestProcessManager.addMqMessageTaskToQueue({
+        nodeId,
+        messageId,
+        message,
+        processMessage,
+      });
+      common.notifyMetricsInboundMessageProcessTime(
+        'does_not_wait_for_block',
+        startTime
+      );
+    } else {
+      // Save message to redis cache time
+      common.notifyMetricsInboundMessageProcessTime(
+        'wait_for_block',
+        startTime
+      );
+    }
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling message from message queue',
@@ -306,10 +85,11 @@ export async function handleMessageFromQueue(message, nodeId = config.nodeId) {
     });
     logger.error(err.getInfoForLog());
     common.notifyMetricsFailInboundMessageProcess();
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
-      action: 'handleMessageFromQueue',
+      callbackUrl,
+      action: 'rp.handleMessageFromQueue',
       error: err,
       requestId,
     });
@@ -333,11 +113,13 @@ export async function handleTendermintNewBlock(
 
   const startTime = Date.now();
   try {
-    await Promise.all([
-      processChallengeRequestExpectedInBlocks(fromHeight, toHeight, nodeId),
-      processASDataSignExpectedInBlocks(fromHeight, toHeight, nodeId),
-      processTasksInBlocks(parsedTransactionsInBlocks, nodeId),
-    ]);
+    await requestProcessManager.processMessageInBlocks(
+      fromHeight,
+      toHeight,
+      nodeId,
+      processMessage
+    );
+    await processTasksInBlocks(parsedTransactionsInBlocks, nodeId);
     common.notifyMetricsBlockProcessTime(startTime);
   } catch (error) {
     const err = new CustomError({
@@ -346,74 +128,44 @@ export async function handleTendermintNewBlock(
     });
     logger.error(err.getInfoForLog());
     common.notifyMetricsFailedBlockProcess();
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'handleTendermintNewBlock',
       error: err,
     });
   }
 }
 
-async function processChallengeRequestExpectedInBlocks(
-  fromHeight,
-  toHeight,
-  nodeId
-) {
-  const challengeRequestMetadataList = await cacheDb.getExpectedIdpPublicProofInBlockList(
-    nodeId,
-    fromHeight,
-    toHeight
-  );
-  await Promise.all(
-    challengeRequestMetadataList.map(async ({ requestId, idpId }) => {
-      const responseId = nodeId + ':' + requestId + ':' + idpId;
-      if (challengeRequestProcessLocks[responseId]) return;
-      const publicProof = await cacheDb.getPublicProofReceivedFromMQ(
-        nodeId,
-        responseId
-      );
-      if (publicProof == null) return;
-      await common.handleChallengeRequest({
-        nodeId,
-        request_id: requestId,
-        idp_id: idpId,
-        public_proof: publicProof,
-      });
-      await cacheDb.removePublicProofReceivedFromMQ(nodeId, responseId);
-    })
-  );
-  cacheDb.removeExpectedIdpPublicProofInBlockList(nodeId, fromHeight, toHeight);
-}
-
-async function processASDataSignExpectedInBlocks(fromHeight, toHeight, nodeId) {
-  const metadataList = await cacheDb.getExpectedDataSignsInBlockList(
-    nodeId,
-    fromHeight,
-    toHeight
-  );
-  await checkAsDataSignaturesAndSetReceived(nodeId, metadataList);
-  cacheDb.removeExpectedDataSignsInBlockList(nodeId, fromHeight, toHeight);
-}
-
-async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
-  await Promise.all(
+function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
+  return Promise.all(
     parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
-      const requestIdsToProcessUpdateSet = new Set();
-      transactions.forEach((transaction) => {
-        const requestId = transaction.args.request_id;
-        if (requestId == null) return;
-        if (transaction.fnName === 'DeclareIdentityProof') return;
-        requestIdsToProcessUpdateSet.add(requestId);
-      });
-      const requestIdsToProcessUpdate = [...requestIdsToProcessUpdateSet];
-
+      const requestIdsToProcessUpdate = {};
       await Promise.all(
-        requestIdsToProcessUpdate.map((requestId) =>
-          processRequestUpdate(nodeId, requestId, height)
-        )
+        transactions.map(async (transaction) => {
+          const requestId = transaction.args.request_id;
+          if (requestId == null) return;
+          if (transaction.fnName === 'DeclareIdentityProof') return;
+          if (requestIdsToProcessUpdate[requestId] != null) return;
+          const requestData = await cacheDb.getRequestData(nodeId, requestId);
+          if (requestData == null) return; // This RP does not concern this request
+          requestIdsToProcessUpdate[requestId] = {
+            callbackUrl: requestData.callback_url,
+            referenceId: requestData.reference_id,
+          };
+        })
       );
-      cacheDb.removeExpectedIdpResponseNodeIdInBlockList(nodeId, height);
+
+      Object.entries(requestIdsToProcessUpdate).map(
+        ([requestId, { callbackUrl, referenceId }]) =>
+          requestProcessManager.addTaskToQueue({
+            nodeId,
+            requestId,
+            callback: processRequestUpdate,
+            callbackArgs: [nodeId, requestId, height, callbackUrl, referenceId],
+          })
+      );
     })
   );
 }
@@ -423,10 +175,13 @@ async function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
  * @param {string} requestId
  * @param {integer} height
  */
-async function processRequestUpdate(nodeId, requestId, height) {
-  const requestData = await cacheDb.getRequestData(nodeId, requestId);
-  if (requestData == null) return; // This RP does not concern this request
-
+async function processRequestUpdate(
+  nodeId,
+  requestId,
+  height,
+  callbackUrl,
+  referenceId
+) {
   logger.debug({
     message: 'Processing request update',
     nodeId,
@@ -441,102 +196,62 @@ async function processRequestUpdate(nodeId, requestId, height) {
 
   const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
-  // ZK Proof and IAL verification is needed only when got new response from IdP
-  let needResponseVerification = false;
+  let idpResponse = false;
   if (
     requestStatus.status !== 'pending' &&
-    requestStatus.closed === false &&
-    requestStatus.timed_out === false
+    !requestStatus.closed &&
+    !requestStatus.timed_out
   ) {
     if (requestStatus.answered_idp_count < requestStatus.min_idp) {
-      needResponseVerification = true;
+      idpResponse = true;
     } else if (requestStatus.answered_idp_count === requestStatus.min_idp) {
       const asAnswerCount = requestStatus.service_list.reduce(
         (total, service) => total + service.signed_data_count,
         0
       );
       if (asAnswerCount === 0) {
-        needResponseVerification = true;
+        idpResponse = true;
       }
     }
   }
 
-  const savedResponseValidList = await cacheDb.getIdpResponseValidList(
-    nodeId,
-    requestId
-  );
-  let responseValidList;
-
-  if (needResponseVerification) {
-    // Validate ZK Proof and IAL
-    const responseMetadataList = await cacheDb.getExpectedIdpResponseNodeIdInBlockList(
+  // When it is not IdP response states which are processed by processMessage()
+  if (!idpResponse) {
+    const responseValidList = await cacheDb.getIdpResponseValidList(
       nodeId,
-      height
+      requestId
     );
-    const idpNodeIds = responseMetadataList
-      .filter(({ requestId: reqId }) => requestId === reqId)
-      .map((metadata) => metadata.idpId);
 
-    let responseValids = await Promise.all(
-      idpNodeIds.map((idpNodeId) => {
-        const responseId = nodeId + ':' + requestId + ':' + idpNodeId;
-        if (idpResponseProcessLocks[responseId]) return;
-        return common.checkIdpResponse({
-          nodeId,
-          requestStatus,
-          idpId: idpNodeId,
-          responseIal: requestDetail.response_list.find(
-            (response) => response.idp_id === idpNodeId
-          ).ial,
-        });
-      })
-    );
-    responseValids = responseValids.filter((valid) => valid != null);
+    const eventDataForCallback = {
+      node_id: nodeId,
+      type: 'request_status',
+      ...requestStatus,
+      response_valid_list: responseValidList,
+      block_height: `${requestDetail.creation_chain_id}:${height}`,
+    };
 
-    if (responseValids.length === 0) return;
+    await callbackToClient(callbackUrl, eventDataForCallback, true);
 
-    responseValidList = savedResponseValidList.concat(responseValids);
-  } else {
-    responseValidList = savedResponseValidList;
-  }
-
-  const eventDataForCallback = {
-    node_id: nodeId,
-    type: 'request_status',
-    ...requestStatus,
-    response_valid_list: responseValidList,
-    block_height: `${requestDetail.creation_chain_id}:${height}`,
-  };
-
-  const callbackUrl = requestData.callback_url;
-  await callbackToClient(callbackUrl, eventDataForCallback, true);
-
-  if (isAllIdpRespondedAndValid({ requestStatus, responseValidList })) {
-    const requestData = await cacheDb.getRequestData(nodeId, requestId);
-    if (requestData != null) {
-      await sendRequestToAS(nodeId, requestData, height);
+    if (
+      requestStatus.status === 'completed' &&
+      !requestStatus.closed &&
+      !requestStatus.timed_out &&
+      (requestStatus.mode === 1 ||
+        (requestStatus.mode === 3 && isAllIdpResponsesValid(responseValidList)))
+    ) {
+      logger.debug({
+        message: 'Automatically closing request',
+        requestId,
+      });
+      await common.closeRequest(
+        { node_id: nodeId, request_id: requestId },
+        {
+          synchronous: false,
+          sendCallbackToClient: false,
+          saveForRetryOnChainDisabled: true,
+        }
+      );
     }
-  }
-
-  if (
-    requestStatus.status === 'completed' &&
-    !requestStatus.closed &&
-    !requestStatus.timed_out &&
-    (requestStatus.mode === 1 ||
-      (requestStatus.mode === 3 && isAllIdpResponsesValid(responseValidList)))
-  ) {
-    logger.debug({
-      message: 'Automatically closing request',
-      requestId,
-    });
-    await common.closeRequest(
-      { node_id: nodeId, request_id: requestId },
-      {
-        synchronous: false,
-        sendCallbackToClient: false,
-        saveForRetryOnChainDisabled: true,
-      }
-    );
   }
 
   if (requestStatus.closed || requestStatus.timed_out) {
@@ -544,8 +259,6 @@ async function processRequestUpdate(nodeId, requestId, height) {
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
     // since the request is no longer going to have further events
     // (the request has reached its end state)
-    const requestData = await cacheDb.getRequestData(nodeId, requestId);
-    const referenceId = requestData.reference_id;
     await Promise.all([
       cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
       cacheDb.removeRequestData(nodeId, requestId),
@@ -554,34 +267,4 @@ async function processRequestUpdate(nodeId, requestId, height) {
       cacheDb.removeRequestCreationMetadata(nodeId, requestId),
     ]);
   }
-}
-
-async function checkAsDataSignaturesAndSetReceived(nodeId, metadataList) {
-  logger.debug({
-    message: 'Check AS data signatures and set received (bulk)',
-    nodeId,
-    metadataList,
-  });
-
-  await Promise.all(
-    metadataList.map(async ({ requestId, serviceId, asId }) => {
-      const asResponseId =
-        nodeId + ':' + requestId + ':' + serviceId + ':' + asId;
-      if (asDataResponseProcessLocks[asResponseId]) return;
-      const dataResponseFromAS = await cacheDb.getDataResponsefromAS(
-        nodeId,
-        asResponseId
-      );
-      if (dataResponseFromAS == null) return; // Have not received data from AS through message queue yet or it is being process from MQ handle function
-      await processAsData({
-        nodeId,
-        requestId,
-        serviceId,
-        asNodeId: asId,
-        signature: dataResponseFromAS.signature,
-        dataSalt: dataResponseFromAS.data_salt,
-        data: dataResponseFromAS.data,
-      });
-    })
-  );
 }

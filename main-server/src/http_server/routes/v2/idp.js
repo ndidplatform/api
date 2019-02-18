@@ -32,7 +32,7 @@ router.use(idpOnlyHandler);
 
 router.get('/callback', async (req, res, next) => {
   try {
-    const urls = idp.getCallbackUrls();
+    const urls = await idp.getCallbackUrls();
 
     if (Object.keys(urls).length > 0) {
       res.status(200).json(urls);
@@ -54,7 +54,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
       error_url,
     } = req.body;
 
-    idp.setCallbackUrls({
+    await idp.setCallbackUrls({
       incoming_request_url,
       incoming_request_status_update_url,
       accessor_sign_url,

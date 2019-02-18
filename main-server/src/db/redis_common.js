@@ -24,6 +24,7 @@ import EventEmitter from 'events';
 
 import cacheDbRedisInstance from './cache/redis';
 import longTermDbRedisInstance from './long_term/redis';
+import dataDbRedisInstance from './data/redis';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -36,6 +37,8 @@ function getRedis(dbName) {
       return cacheDbRedisInstance.redis;
     case 'long-term':
       return longTermDbRedisInstance.redis;
+    case 'data':
+      return dataDbRedisInstance.redis;
     default:
       throw new CustomError({ message: 'Unknown database name' });
   }
@@ -47,6 +50,8 @@ function getRedisVersion(dbName) {
       return cacheDbRedisInstance.version;
     case 'long-term':
       return longTermDbRedisInstance.version;
+    case 'data':
+      return dataDbRedisInstance.version;
     default:
       throw new CustomError({ message: 'Unknown database name' });
   }
@@ -97,7 +102,7 @@ export async function getListWithRangeSupport({ nodeId, dbName, name, key }) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,
       cause: error,
-      details: { operation: 'getListWithRangeSupport', dbName, name },
+      details: { operation, dbName, name },
     });
   }
 }
@@ -182,6 +187,32 @@ export async function pushToListWithRangeSupport({
     const redis = getRedis(dbName);
     value = JSON.stringify(value);
     await redis.zadd(`${nodeId}:${dbName}:${name}`, 'NX', key, value);
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
+export async function removeFromListWithRangeSupport({
+  nodeId,
+  dbName,
+  name,
+  value,
+}) {
+  const operation = 'removeFromListWithRangeSupport';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+    value = JSON.stringify(value);
+    await redis.zrem(`${nodeId}:${dbName}:${name}`, value);
     metricsEventEmitter.emit(
       'operationTime',
       operation,
@@ -311,6 +342,29 @@ export async function get({ nodeId, dbName, name, key }) {
       Date.now() - startTime
     );
     return JSON.parse(result);
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
+export async function getMulti({ nodeId, dbName, name, keys }) {
+  const operation = 'getMulti';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+    const keysToGet = keys.map((key) => `${nodeId}:${dbName}:${name}:${key}`);
+    const result = await redis.mget(...keysToGet);
+    const retVal = result.map((val) => JSON.parse(val));
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
+    return retVal;
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,

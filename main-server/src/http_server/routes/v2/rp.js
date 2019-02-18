@@ -163,7 +163,7 @@ router.post('/requests/close', validateBody, async (req, res, next) => {
 
 router.get('/callback', async (req, res, next) => {
   try {
-    const urls = rp.getCallbackUrls();
+    const urls = await rp.getCallbackUrls();
 
     if (Object.keys(urls).length > 0) {
       res.status(200).json(urls);
@@ -180,7 +180,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
   try {
     const { error_url } = req.body;
 
-    rp.setCallbackUrls({
+    await rp.setCallbackUrls({
       error_url,
     });
 

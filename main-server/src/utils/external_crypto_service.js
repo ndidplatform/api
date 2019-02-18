@@ -20,8 +20,6 @@
  *
  */
 
-import fs from 'fs';
-import path from 'path';
 import crypto from 'crypto';
 import { EventEmitter } from 'events';
 
@@ -29,9 +27,9 @@ import fetch from 'node-fetch';
 import { ExponentialBackoff } from 'simple-backoff';
 
 import { publicEncrypt, randomBase64Bytes } from './crypto';
-import { hash, verifySignature } from '.';
+import { wait, hash, verifySignature } from '.';
 import * as tendermintNdid from '../tendermint/ndid';
-import { wait } from '.';
+import * as dataDb from '../db/data';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../logger';
@@ -41,12 +39,12 @@ import * as config from '../config';
 const TEST_MESSAGE = 'test';
 const TEST_MESSAGE_BASE_64 = Buffer.from(TEST_MESSAGE).toString('base64');
 
-const callbackUrls = {};
-
-const callbackUrlFilesPrefix = path.join(
-  config.dataDirectoryPath,
-  'dpki-callback-url-' + config.nodeId
-);
+const CALLBACK_URL_NAME = {
+  SIGN: 'sign_url',
+  MASTER_SIGN: 'master_sign_url',
+  DECRYPT: 'decrypt_url',
+};
+const CALLBACK_URL_NAME_ARR = Object.values(CALLBACK_URL_NAME);
 
 const waitPromises = [];
 let stopCallbackRetry = false;
@@ -54,37 +52,23 @@ let stopCallbackRetry = false;
 let pendingCallbacksCount = 0;
 
 export const eventEmitter = new EventEmitter();
-
 export const metricsEventEmitter = new EventEmitter();
 
-export function readCallbackUrlsFromFiles() {
-  [
-    { key: 'sign_url', fileSuffix: 'signature' },
-    { key: 'master_sign_url', fileSuffix: 'masterSignature' },
-    { key: 'decrypt_url', fileSuffix: 'decrypt' },
-  ].forEach(({ key, fileSuffix }) => {
-    try {
-      callbackUrls[key] = fs.readFileSync(
-        callbackUrlFilesPrefix + '-' + fileSuffix,
-        'utf8'
-      );
+export async function checkCallbackUrls() {
+  const callbackUrls = await getCallbackUrls();
+  for (let i = 0; i < CALLBACK_URL_NAME_ARR.length; i++) {
+    const callbackName = CALLBACK_URL_NAME_ARR[i];
+    if (callbackUrls[callbackName] != null) {
       logger.info({
-        message: `[DPKI] ${fileSuffix} callback url read from file`,
-        callbackUrl: callbackUrls[key],
+        message: `[External Crypto Service] ${callbackName} callback url`,
+        callbackUrl: callbackUrls[callbackName],
       });
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        logger.warn({
-          message: `[DPKI] ${fileSuffix} callback url file not found`,
-        });
-      } else {
-        logger.error({
-          message: `[DPKI] Cannot read ${fileSuffix} callback url file`,
-          error,
-        });
-      }
+    } else {
+      logger.warn({
+        message: `[External Crypto Service] ${callbackName} callback url is not set`,
+      });
     }
-  });
+  }
 }
 
 async function testSignCallback(url, publicKey, isMaster) {
@@ -223,11 +207,74 @@ async function testDecryptCallback(url, publicKey) {
   }
 }
 
-export function getCallbackUrls() {
+export async function getCallbackUrls() {
+  const callbackNames = CALLBACK_URL_NAME_ARR.map(
+    (name) => `external_crypto_service.${name}`
+  );
+  const callbackUrlsArr = await dataDb.getCallbackUrls(
+    config.nodeId,
+    callbackNames
+  );
+  const callbackUrls = callbackUrlsArr.reduce((callbackUrlsObj, url, index) => {
+    if (url != null) {
+      return {
+        ...callbackUrlsObj,
+        [callbackNames[index].replace(/^external_crypto_service\./, '')]: url,
+      };
+    } else {
+      return callbackUrlsObj;
+    }
+  }, {});
   return callbackUrls;
 }
 
-export function isCallbackUrlsSet() {
+function getSignCallbackUrl() {
+  return dataDb.getCallbackUrl(
+    config.nodeId,
+    `external_crypto_service.${CALLBACK_URL_NAME.SIGN}`
+  );
+}
+
+function setSignCallbackUrl(url) {
+  return dataDb.setCallbackUrl(
+    config.nodeId,
+    `external_crypto_service.${CALLBACK_URL_NAME.SIGN}`,
+    url
+  );
+}
+
+function getMasterSignCallbackUrl() {
+  return dataDb.getCallbackUrl(
+    config.nodeId,
+    `external_crypto_service.${CALLBACK_URL_NAME.MASTER_SIGN}`
+  );
+}
+
+function setMasterSignCallbackUrl(url) {
+  return dataDb.setCallbackUrl(
+    config.nodeId,
+    `external_crypto_service.${CALLBACK_URL_NAME.MASTER_SIGN}`,
+    url
+  );
+}
+
+function getDecryptCallbackUrl() {
+  return dataDb.getCallbackUrl(
+    config.nodeId,
+    `external_crypto_service.${CALLBACK_URL_NAME.DECRYPT}`
+  );
+}
+
+function setDecryptCallbackUrl(url) {
+  return dataDb.setCallbackUrl(
+    config.nodeId,
+    `external_crypto_service.${CALLBACK_URL_NAME.DECRYPT}`,
+    url
+  );
+}
+
+export async function isCallbackUrlsSet() {
+  const callbackUrls = await getCallbackUrls();
   return (
     callbackUrls.sign_url != null &&
     callbackUrls.master_sign_url != null &&
@@ -235,13 +282,13 @@ export function isCallbackUrlsSet() {
   );
 }
 
-function checkAndEmitAllCallbacksSet() {
-  if (isCallbackUrlsSet()) {
+async function checkAndEmitAllCallbacksSet() {
+  if (await isCallbackUrlsSet()) {
     eventEmitter.emit('allCallbacksSet');
   }
 }
 
-export async function setDpkiCallback({
+export async function setCallbackUrls({
   signCallbackUrl,
   masterSignCallbackUrl,
   decryptCallbackUrl,
@@ -258,20 +305,7 @@ export async function setDpkiCallback({
       }
     }
     await testSignCallback(signCallbackUrl, public_key);
-
-    callbackUrls.sign_url = signCallbackUrl;
-    fs.writeFile(
-      callbackUrlFilesPrefix + '-signature',
-      signCallbackUrl,
-      (err) => {
-        if (err) {
-          logger.error({
-            message: '[DPKI] Cannot write sign callback url file',
-            error: err,
-          });
-        }
-      }
-    );
+    await setSignCallbackUrl(signCallbackUrl);
   }
   if (masterSignCallbackUrl) {
     const master_public_key = await tendermintNdid.getNodeMasterPubKey(
@@ -283,20 +317,7 @@ export async function setDpkiCallback({
       });
     }
     await testSignCallback(masterSignCallbackUrl, master_public_key, true);
-
-    callbackUrls.master_sign_url = masterSignCallbackUrl;
-    fs.writeFile(
-      callbackUrlFilesPrefix + '-masterSignature',
-      masterSignCallbackUrl,
-      (err) => {
-        if (err) {
-          logger.error({
-            message: '[DPKI] Cannot write master-sign callback url file',
-            error: err,
-          });
-        }
-      }
-    );
+    await setMasterSignCallbackUrl(masterSignCallbackUrl);
   }
   if (decryptCallbackUrl) {
     if (public_key == null) {
@@ -308,22 +329,9 @@ export async function setDpkiCallback({
       }
     }
     await testDecryptCallback(decryptCallbackUrl, public_key);
-
-    callbackUrls.decrypt_url = decryptCallbackUrl;
-    fs.writeFile(
-      callbackUrlFilesPrefix + '-decrypt',
-      decryptCallbackUrl,
-      (err) => {
-        if (err) {
-          logger.error({
-            message: '[DPKI] Cannot write sign callback url file',
-            error: err,
-          });
-        }
-      }
-    );
+    await setDecryptCallbackUrl(decryptCallbackUrl);
   }
-  checkAndEmitAllCallbacksSet();
+  await checkAndEmitAllCallbacksSet();
 }
 
 async function callbackWithRetry(url, body, logPrefix, type) {
@@ -424,7 +432,7 @@ async function callbackWithRetry(url, body, logPrefix, type) {
 }
 
 export async function decryptAsymetricKey(nodeId, encryptedMessage) {
-  const url = callbackUrls.decrypt_url;
+  const url = await getDecryptCallbackUrl();
   if (url == null) {
     throw new CustomError({
       errorType: errorType.EXTERNAL_DECRYPT_URL_NOT_SET,
@@ -503,9 +511,12 @@ export async function createSignature(
   nodeId,
   useMasterKey
 ) {
-  const url = useMasterKey
-    ? callbackUrls.master_sign_url
-    : callbackUrls.sign_url;
+  let url;
+  if (useMasterKey) {
+    url = await getMasterSignCallbackUrl();
+  } else {
+    url = await getSignCallbackUrl();
+  }
   if (url == null) {
     if (useMasterKey) {
       throw new CustomError({

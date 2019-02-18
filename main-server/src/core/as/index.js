@@ -20,14 +20,13 @@
  *
  */
 
-import fs from 'fs';
-import path from 'path';
-
 import { processDataForRP } from './process_data_for_rp';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
+import * as dataDb from '../../db/data';
+import privateMessageType from '../../mq/message/type';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -42,138 +41,91 @@ export * from './register_or_update_as_service';
 export * from './process_data_for_rp';
 export * from './event_handlers';
 
-export const callbackUrls = {};
-export const seviceCallbackUrls = {};
+const CALLBACK_URL_NAME = {
+  INCOMING_REQUEST_STATUS_UPDATE: 'incoming_request_status_update_url',
+  ERROR: 'error_url',
+};
+const CALLBACK_URL_NAME_ARR = Object.values(CALLBACK_URL_NAME);
 
-const callbackUrlFilesPrefix = path.join(
-  config.dataDirectoryPath,
-  'as-callback-url-'
-);
-
-export function readCallbackUrlsFromFiles() {
-  [
-    {
-      key: 'incoming_request_status_update_url',
-      fileSuffix: 'incoming_request_status_update',
-    },
-    { key: 'error_url', fileSuffix: 'error' },
-  ].forEach(({ key, fileSuffix }) => {
-    try {
-      callbackUrls[key] = fs.readFileSync(
-        callbackUrlFilesPrefix + config.nodeId + '-' + fileSuffix,
-        'utf8'
-      );
+export async function checkCallbackUrls() {
+  const callbackUrls = await getCallbackUrls();
+  for (let i = 0; i < CALLBACK_URL_NAME_ARR.length; i++) {
+    const callbackName = CALLBACK_URL_NAME_ARR[i];
+    if (callbackUrls[callbackName] != null) {
       logger.info({
-        message: `[AS] ${fileSuffix} callback url read from file`,
-        callbackUrl: callbackUrls[key],
+        message: `[AS] ${callbackName} callback url`,
+        callbackUrl: callbackUrls[callbackName],
       });
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        logger.warn({
-          message: `[AS] ${fileSuffix} callback url file not found`,
-        });
-      } else {
-        logger.error({
-          message: `[AS] Cannot read ${fileSuffix} callback url file`,
-          error,
-        });
-      }
+    } else {
+      logger.warn({
+        message: `[AS] ${callbackName} callback url is not set`,
+      });
     }
-  });
+  }
 }
 
-function writeCallbackUrlToFile(fileSuffix, url) {
-  fs.writeFile(
-    callbackUrlFilesPrefix + config.nodeId + '-' + fileSuffix,
-    url,
-    (err) => {
-      if (err) {
-        logger.error({
-          message: `[AS] Cannot write ${fileSuffix} callback url file`,
-          error: err,
-        });
-      }
-    }
-  );
-}
-
-export function setCallbackUrls({
+export async function setCallbackUrls({
   incoming_request_status_update_url,
   error_url,
 }) {
+  const promises = [];
   if (incoming_request_status_update_url != null) {
-    callbackUrls.incoming_request_status_update_url = incoming_request_status_update_url;
-    writeCallbackUrlToFile(
-      'incoming_request_status_update',
-      incoming_request_status_update_url
+    promises.push(
+      dataDb.setCallbackUrl(
+        config.nodeId,
+        `as.${CALLBACK_URL_NAME.INCOMING_REQUEST_STATUS_UPDATE}`,
+        incoming_request_status_update_url
+      )
     );
   }
   if (error_url != null) {
-    callbackUrls.error_url = error_url;
-    writeCallbackUrlToFile('error', error_url);
+    promises.push(
+      dataDb.setCallbackUrl(
+        config.nodeId,
+        `as.${CALLBACK_URL_NAME.ERROR}`,
+        error_url
+      )
+    );
   }
+  await Promise.all(promises);
 }
 
-export function getCallbackUrls() {
+export async function getCallbackUrls() {
+  const callbackNames = CALLBACK_URL_NAME_ARR.map((name) => `as.${name}`);
+  const callbackUrlsArr = await dataDb.getCallbackUrls(
+    config.nodeId,
+    callbackNames
+  );
+  const callbackUrls = callbackUrlsArr.reduce((callbackUrlsObj, url, index) => {
+    if (url != null) {
+      return {
+        ...callbackUrlsObj,
+        [callbackNames[index].replace(/^as\./, '')]: url,
+      };
+    } else {
+      return callbackUrlsObj;
+    }
+  }, {});
   return callbackUrls;
 }
 
 export function getErrorCallbackUrl() {
-  return callbackUrls.error_url;
+  return dataDb.getCallbackUrl(config.nodeId, `as.${CALLBACK_URL_NAME.ERROR}`);
+}
+
+export function getIncomingRequestStatusUpdateCallbackUrl() {
+  return dataDb.getCallbackUrl(
+    config.nodeId,
+    `as.${CALLBACK_URL_NAME.INCOMING_REQUEST_STATUS_UPDATE}`
+  );
 }
 
 export function setServiceCallbackUrl(nodeId, serviceId, url) {
-  return new Promise((resolve, reject) => {
-    fs.writeFile(
-      callbackUrlFilesPrefix + nodeId + '-service-' + serviceId,
-      url,
-      (err) => {
-        if (err) {
-          reject(
-            new CustomError({
-              errorType: errorType.CANNOT_WRITE_CALLBACK_URL_TO_FILE,
-              cause: err,
-              details: {
-                serviceId,
-              },
-            })
-          );
-          return;
-        }
-        seviceCallbackUrls[`${nodeId}:${serviceId}`] = url;
-        resolve();
-      }
-    );
-  });
+  return dataDb.setCallbackUrl(nodeId, `service-${serviceId}`, url);
 }
 
 export function getServiceCallbackUrl(nodeId, serviceId) {
-  if (seviceCallbackUrls[`${nodeId}:${serviceId}`] != null) {
-    return seviceCallbackUrls[`${nodeId}:${serviceId}`];
-  }
-  return new Promise((resolve, reject) => {
-    fs.readFile(
-      callbackUrlFilesPrefix + nodeId + '-service-' + serviceId,
-      'utf8',
-      (err, data) => {
-        if (err) {
-          reject(
-            new CustomError({
-              errorType: errorType.CANNOT_READ_CALLBACK_URL_FROM_FILE,
-              cause: err,
-              details: {
-                nodeId,
-                serviceId,
-              },
-            })
-          );
-          return;
-        }
-        seviceCallbackUrls[`${nodeId}:${serviceId}`] = data;
-        resolve(data);
-      }
-    );
-  });
+  return dataDb.getCallbackUrl(nodeId, `service-${serviceId}`);
 }
 
 function checkReceiverIntegrity({
@@ -216,57 +168,100 @@ function checkReceiverIntegrity({
   return true;
 }
 
-export async function processRequest(nodeId, request) {
+export async function processMessage(nodeId, messageId, message) {
+  const requestId = message.request_id;
   logger.debug({
-    message: 'Processing request',
+    message: 'Processing message',
     nodeId,
-    requestId: request.request_id,
+    messageId,
+    requestId,
   });
-  const requestDetail = await tendermintNdid.getRequestDetail({
-    requestId: request.request_id,
-  });
-  const requestMessageValid = common.checkRequestMessageIntegrity(
-    request.request_id,
-    request,
-    requestDetail
-  );
-  const serviceDataRequestParamsValid = checkServiceRequestParamsIntegrity(
-    request.request_id,
-    request,
-    requestDetail
-  );
-  const receiverValid = checkReceiverIntegrity({
-    requestId: request.request_id,
-    requestFromBlockchain: requestDetail,
-    requestFromMq: request,
-    nodeId,
-  });
-  if (
-    !requestMessageValid ||
-    !serviceDataRequestParamsValid ||
-    !receiverValid
-  ) {
-    throw new CustomError({
-      errorType: errorType.REQUEST_INTEGRITY_CHECK_FAILED,
-      details: {
-        requestId: request.request_id,
-      },
+
+  try {
+    if (message.type === privateMessageType.DATA_REQUEST) {
+      const requestDetail = await tendermintNdid.getRequestDetail({
+        requestId: message.request_id,
+      });
+
+      if (requestDetail.closed || requestDetail.timed_out) {
+        return;
+      }
+
+      await cacheDb.setInitialSalt(
+        nodeId,
+        message.request_id,
+        message.initial_salt
+      );
+
+      const requestMessageValid = common.checkRequestMessageIntegrity(
+        message.request_id,
+        message,
+        requestDetail
+      );
+      const serviceDataRequestParamsValid = checkServiceRequestParamsIntegrity(
+        message.request_id,
+        message,
+        requestDetail
+      );
+      const receiverValid = checkReceiverIntegrity({
+        requestId: message.request_id,
+        requestFromBlockchain: requestDetail,
+        requestFromMq: message,
+        nodeId,
+      });
+      if (
+        !requestMessageValid ||
+        !serviceDataRequestParamsValid ||
+        !receiverValid
+      ) {
+        throw new CustomError({
+          errorType: errorType.REQUEST_INTEGRITY_CHECK_FAILED,
+          details: {
+            requestId: message.request_id,
+          },
+        });
+      }
+      const idpResponsesValid = await isIdpResponsesValid(
+        message.request_id,
+        message
+      );
+      if (!idpResponsesValid) {
+        throw new CustomError({
+          errorType: errorType.INVALID_RESPONSES,
+          details: {
+            requestId: message.request_id,
+          },
+        });
+      }
+      const responseDetails = await getResponseDetails(message.request_id);
+      await getDataAndSendBackToRP(
+        nodeId,
+        message,
+        requestDetail,
+        responseDetails
+      );
+    } else {
+      logger.warn({
+        message: 'Cannot process unknown message type',
+        type: message.type,
+      });
+    }
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error processing message from message queue',
+      cause: error,
     });
-  }
-  const idpResponsesValid = await isIdpResponsesValid(
-    request.request_id,
-    request
-  );
-  if (!idpResponsesValid) {
-    throw new CustomError({
-      errorType: errorType.INVALID_RESPONSES,
-      details: {
-        requestId: request.request_id,
-      },
+    logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
+    await common.notifyError({
+      nodeId,
+      callbackUrl,
+      action: 'as.processMessage',
+      error: err,
+      requestId,
     });
+    throw err;
   }
-  const responseDetails = await getResponseDetails(request.request_id);
-  await getDataAndSendBackToRP(nodeId, request, requestDetail, responseDetails);
 }
 
 export async function afterGotDataFromCallback(
@@ -335,9 +330,10 @@ export async function afterGotDataFromCallback(
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl: callbackUrls.error_url,
+      callbackUrl,
       action: 'afterGotDataFromCallback',
       error: err,
       requestId: additionalData.requestId,

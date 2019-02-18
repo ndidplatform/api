@@ -70,15 +70,64 @@ const timer = {};
 
 const rawMessagesToRetry = [];
 
-export const eventEmitter = new EventEmitter();
+let messageHandlerFunction;
+let errorHandlerFunction;
 
 export const metricsEventEmitter = new EventEmitter();
 
-export async function initialize() {
+export function setMessageHandlerFunction(handler) {
+  messageHandlerFunction = handler;
+}
+
+export function setErrorHandlerFunction(handler) {
+  errorHandlerFunction = handler;
+}
+
+export async function initializeOutbound(sendSavedPendingMessages = true) {
   logger.info({
-    message: 'Initializing message queue',
+    message: 'Initializing message queue (outbound)',
   });
 
+  await mqService.initialize();
+
+  if (sendSavedPendingMessages) {
+    // Send saved pending outbound messages
+    await sendSavedPendingOutboundMessages();
+  }
+
+  logger.info({
+    message: 'Message queue (outbound) initialized',
+  });
+}
+
+export async function initializeInbound() {
+  logger.info({
+    message: 'Initializing message queue (inbound)',
+  });
+
+  await initDuplicateInboundMessageTimeout();
+
+  await mqService.initialize();
+
+  mqService.eventEmitter.on('message', onMessage);
+
+  //should tell client via error callback?
+  mqService.eventEmitter.on('error', (error) =>
+    logger.error(error.getInfoForLog())
+  );
+
+  mqService.subscribeToRecvMessages();
+
+  logger.info({
+    message: 'Message queue (inbound) initialized',
+  });
+}
+
+export function initialize() {
+  return Promise.all([initializeOutbound(), initializeInbound()]);
+}
+
+async function initDuplicateInboundMessageTimeout() {
   const timeoutList = await cacheDb.getAllDuplicateMessageTimeout(
     config.nodeId
   );
@@ -96,27 +145,15 @@ export async function initialize() {
     }
   });
   await Promise.all(promiseArray);
+}
 
-  // Load saved pending outbound messages
+async function sendSavedPendingOutboundMessages() {
   logger.info({
     message: 'Loading saved pending outbound messages',
   });
   const savedPendingOutboundMessages = await cacheDb.getAllPendingOutboundMessages(
     config.nodeId
   );
-
-  await mqService.initialize();
-
-  mqService.eventEmitter.on('message', onMessage);
-
-  //should tell client via error callback?
-  mqService.eventEmitter.on('error', (error) =>
-    logger.error(error.getInfoForLog())
-  );
-
-  mqService.subscribeToRecvMessages();
-
-  // Send saved pending outbound messages
   if (savedPendingOutboundMessages.length > 0) {
     logger.info({
       message: 'Sending saved pending outbound messages',
@@ -156,10 +193,6 @@ export async function initialize() {
       await cacheDb.removePendingOutboundMessage(config.nodeId, msgId);
     })
   );
-
-  logger.info({
-    message: 'Message queue initialized',
-  });
 }
 
 async function onMessage({ message, msgId, senderId }) {
@@ -199,7 +232,9 @@ async function onMessage({ message, msgId, senderId }) {
       await processMessage(id, message, timestamp);
     }
   } catch (error) {
-    eventEmitter.emit('error', error);
+    if (errorHandlerFunction) {
+      errorHandlerFunction(error);
+    }
   }
 }
 
@@ -390,10 +425,14 @@ async function processMessage(messageId, messageProtobuf, timestamp) {
       }
     );
 
-    eventEmitter.emit('message', message, receiverNodeId);
+    if (messageHandlerFunction) {
+      messageHandlerFunction(messageId, message, receiverNodeId);
+    }
     removeRawMessageFromCache(messageId);
   } catch (error) {
-    eventEmitter.emit('error', error);
+    if (errorHandlerFunction) {
+      errorHandlerFunction(error);
+    }
     logger.warn({
       message:
         'Error processing received message from message queue. Discarding message.',
