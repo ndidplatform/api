@@ -90,10 +90,7 @@ export async function processMessageInBlocks(
   );
   await Promise.all(
     messageIds.map(async (messageId) => {
-      if (messageProcessLock[messageId]) {
-        cleanUpMessage(nodeId, messageId);
-        return;
-      }
+      if (messageProcessLock[messageId]) return;
       const message = await cacheDb.getMessageFromMQ(nodeId, messageId);
       if (message == null) return;
       addTaskToQueue({
@@ -174,49 +171,68 @@ export function addTaskToQueue({
   });
   incrementPendingTasksInQueueCount();
 
-  if (!requestQueueRunning[requestId]) {
-    executeTaskInQueue(requestId);
+  setImmediate(executeTaskInQueue, requestId);
+}
+
+function executeTaskInQueue(requestId) {
+  if (requestQueueRunning[requestId]) return;
+  const task = requestQueue[requestId].shift();
+  if (task) {
+    requestQueueRunning[requestId] = true;
+    const {
+      nodeId,
+      callback,
+      callbackArgs,
+      onCallbackFinished,
+      onCallbackFinishedArgs,
+    } = task;
+    logger.debug({
+      message: 'Executing task in queue',
+      nodeId,
+      requestId,
+    });
+    decrementPendingTasksInQueueCount();
+    incrementProcessingTasksCount();
+    const startTime = Date.now();
+    callback(...callbackArgs)
+      .then(() => {
+        notifyTaskProcessTime(startTime);
+      })
+      .catch((error) => {
+        const err = new CustomError({
+          message: 'Error executing task in queue',
+          cause: error,
+          details: {
+            requestId,
+          },
+        });
+        logger.error(err.getInfoForLog());
+        notifyTaskProcessFail();
+      })
+      .then(() => {
+        decrementProcessingTasksCount();
+        if (onCallbackFinished) {
+          onCallbackFinished(...onCallbackFinishedArgs);
+        }
+        delete requestQueueRunning[requestId];
+        if (requestQueue[requestId].length === 0) {
+          cleanUpQueue(requestId);
+        } else {
+          setImmediate(executeTaskInQueue, requestId);
+        }
+      });
+  } else {
+    cleanUpQueue(requestId);
   }
 }
 
-async function executeTaskInQueue(requestId) {
-  requestQueueRunning[requestId] = true;
-  if (requestQueue[requestId].length === 0) {
-    logger.debug({
-      message: 'Queue is empty, cleaning up',
-    });
-    delete requestQueueRunning[requestId];
-    delete requestQueue[requestId];
-    decrementRequestsInQueueCount();
-    return;
-  }
-  const {
-    nodeId,
-    callback,
-    callbackArgs,
-    onCallbackFinished,
-    onCallbackFinishedArgs,
-  } = requestQueue[requestId].shift();
+function cleanUpQueue(requestId) {
   logger.debug({
-    message: 'Executing task in queue',
-    nodeId,
+    message: 'Queue is empty, cleaning up',
     requestId,
   });
-  decrementPendingTasksInQueueCount();
-  incrementProcessingTasksCount();
-  const startTime = Date.now();
-  try {
-    await callback(...callbackArgs);
-    notifyTaskProcessTime(startTime);
-  } catch (error) {
-    logger.error({ message: 'Error executing task in queue', requestId });
-    notifyTaskProcessFail();
-  }
-  decrementProcessingTasksCount();
-  if (onCallbackFinished) {
-    onCallbackFinished(...onCallbackFinishedArgs);
-  }
-  executeTaskInQueue(requestId);
+  delete requestQueue[requestId];
+  decrementRequestsInQueueCount();
 }
 
 function incrementPendingTasksInQueueCount() {
