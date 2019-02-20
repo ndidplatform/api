@@ -137,7 +137,10 @@ function gRPCRetry(fn) {
 export async function initialize() {
   client = new proto.MasterWorker(
     MASTER_SERVER_ADDRESS,
-    grpc.credentials.createInsecure()
+    grpc.credentials.createInsecure(),
+    {
+      'grpc.max_receive_message_length': -1,
+    }
   );
   watchForNextConnectivityStateChange();
   await waitForReady(client);

@@ -52,7 +52,9 @@ const packageDefinition = protoLoader.loadSync(
 const proto = grpc.loadPackageDefinition(packageDefinition);
 
 export function initialize() {
-  const server = new grpc.Server();
+  const server = new grpc.Server({
+    'grpc.max_receive_message_length': -1,
+  });
   const MASTER_SERVER_ADDRESS = `0.0.0.0:${config.masterServerPort}`;
 
   server.addService(proto.MasterWorker.service, {
