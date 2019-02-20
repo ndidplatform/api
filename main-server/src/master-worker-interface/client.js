@@ -34,7 +34,7 @@ import { wait } from '../utils';
 import { processMessage as rpProcessMessage } from '../core/rp';
 import { processMessage as idpProcessMessage } from '../core/idp';
 import { processMessage as asProcessMessage } from '../core/as';
-import { getMessageFromProtobufMessage } from '../mq';
+import { getMessageFromProtobufMessageInternal } from '../mq';
 import * as node from '../node';
 
 // Load protobuf
@@ -289,8 +289,8 @@ async function onRecvData(data) {
     
     case 'decrypt':
       try {
-        result = await getMessageFromProtobufMessage(...argArray);
-        result = JSON.stringify(result.toString('hex'));
+        result = await getMessageFromProtobufMessageInternal(...argArray);
+        result = JSON.stringify(result);
         //result.MqMessage.message = result.message.toString('hex');
         //result.MqMessage.signature = result.signature.toString('hex');
         await gRPCRetry(returnResult)({ gRPCRef, result });
