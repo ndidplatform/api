@@ -89,8 +89,10 @@ export async function processMessageInBlocks(
       }
       const message = await cacheDb.getMessageFromMQ(nodeId, messageId);
       if (message == null) return;
+      const requestId = message.request_id;
       addTaskToQueue({
         nodeId,
+        requestId,
         callback: processMessage,
         callbackArgs: [nodeId, messageId, message],
         onCallbackFinished: releaseLockAndCleanUp,
