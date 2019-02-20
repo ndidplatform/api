@@ -28,8 +28,6 @@ import * as config from './config';
 
 export let role;
 
-let nodesBehindProxyWithKeyOnProxy;
-
 export async function getNodeRoleFromBlockchain() {
   try {
     const nodeInfo = await tendermintNdid.getNodeInfo(config.nodeId);
@@ -86,14 +84,5 @@ export async function getNodesBehindProxyFromBlockchain({ withConfig } = {}) {
 }
 
 export async function getNodesBehindProxyWithKeyOnProxy() {
-  if (nodesBehindProxyWithKeyOnProxy == null) {
-    nodesBehindProxyWithKeyOnProxy = await getNodesBehindProxyFromBlockchain({
-      withConfig: 'KEY_ON_PROXY',
-    });
-  }
-  return nodesBehindProxyWithKeyOnProxy;
-}
-
-export function invalidateNodesBehindProxyWithKeyOnProxyCache() {
-  nodesBehindProxyWithKeyOnProxy = null;
+  return getNodesBehindProxyFromBlockchain({ withConfig: 'KEY_ON_PROXY' });
 }

@@ -25,7 +25,6 @@ import {
   getIncomingRequestStatusUpdateCallbackUrl,
   processMessage,
 } from '.';
-import { invalidateDataSchemaCache } from './data_validator';
 
 import CustomError from 'ndid-error/custom_error';
 import logger from '../../logger';
@@ -150,10 +149,6 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
       for (let i = 0; i < transactions.length; i++) {
         const transaction = transactions[i];
-        if (transaction.fnName === 'UpdateService') {
-          invalidateDataSchemaCache(transaction.args.service_id);
-          continue;
-        }
 
         const requestId = transaction.args.request_id;
         if (requestId == null) continue;
