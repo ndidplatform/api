@@ -64,8 +64,8 @@ const EncryptedMqMessage = encryptedMqMessageProtobufRoot.lookupType(
 );
 
 //FIXME
-let prefixMsgId = utils.randomBase64Bytes(8);
-let outboundMessageIdCounter = Date.now();
+let prefixMsgId = parseInt(Math.random()*65535);
+let outboundMessageIdCounter = 1;
 const pendingOutboundMessages = {};
 let pendingOutboundMessagesCount = 0;
 const timer = {};
@@ -619,7 +619,7 @@ export async function send(receivers, message, senderNodeId) {
         };
       }
 
-      const msgId = `${prefixMsgId}:${outboundMessageIdCounter++}`;
+      const msgId = parseInt(`${prefixMsgId}${outboundMessageIdCounter++}`);
       pendingOutboundMessages[msgId] = {
         mqDestAddress,
         payloadBuffer,
