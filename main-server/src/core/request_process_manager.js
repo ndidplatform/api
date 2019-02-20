@@ -166,10 +166,12 @@ export function addTaskToQueue({
     incrementRequestsInQueueCount();
   }
   requestQueue[requestId].push({
+    nodeId,
     callback,
     callbackArgs,
     onCallbackFinished,
     onCallbackFinishedArgs,
+    startTime: Date.now(),
   });
   incrementPendingTasksInQueueCount();
 
@@ -187,6 +189,7 @@ function executeTaskInQueue(requestId) {
       callbackArgs,
       onCallbackFinished,
       onCallbackFinishedArgs,
+      startTime: pendingStartTime,
     } = task;
     logger.debug({
       message: 'Executing task in queue',
@@ -194,6 +197,7 @@ function executeTaskInQueue(requestId) {
       requestId,
     });
     decrementPendingTasksInQueueCount();
+    notifyTaskPendingTime(pendingStartTime);
     incrementProcessingTasksCount();
     const startTime = Date.now();
     callback(...callbackArgs)
@@ -250,6 +254,14 @@ function decrementPendingTasksInQueueCount() {
   metricsEventEmitter.emit(
     'pendingTasksInQueueCount',
     pendingTasksInQueueCount
+  );
+}
+
+function notifyTaskPendingTime(startTime) {
+  metricsEventEmitter.emit(
+    'taskPendingTime',
+    // type,
+    Date.now() - startTime
   );
 }
 
