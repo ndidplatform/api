@@ -63,7 +63,8 @@ const EncryptedMqMessage = encryptedMqMessageProtobufRoot.lookupType(
   'EncryptedMqMessage'
 );
 
-let outboundMessageId = Date.now();
+//FIXME
+let outboundMessageId = Date.now() + parseInt(Math.random()*1000000);
 const pendingOutboundMessages = {};
 let pendingOutboundMessagesCount = 0;
 const timer = {};
