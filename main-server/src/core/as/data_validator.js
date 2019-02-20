@@ -32,26 +32,17 @@ const ajvOptions = {
 
 const ajv = new Ajv(ajvOptions);
 
-const dataSchemaCache = {};
-
 async function validate({ serviceId, data }) {
   let dataSchema, dataSchemaVersion;
-  if (dataSchemaCache[serviceId] != null) {
-    dataSchema = dataSchemaCache[serviceId].dataSchema;
-    dataSchemaVersion = dataSchemaCache[serviceId].dataSchemaVersion;
-  } else {
-    try {
-      const serviceDetail = await tendermintNdid.getServiceDetail(serviceId);
-      dataSchema = serviceDetail.data_schema;
-      dataSchemaVersion = serviceDetail.data_schema_version;
-
-      dataSchemaCache[serviceId] = { dataSchema, dataSchemaVersion };
-    } catch (error) {
-      throw new CustomError({
-        errorType: errorType.CANNOT_GET_DATA_SCHEMA,
-        cause: error,
-      });
-    }
+  try {
+    const serviceDetail = await tendermintNdid.getServiceDetail(serviceId);
+    dataSchema = serviceDetail.data_schema;
+    dataSchemaVersion = serviceDetail.data_schema_version;
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.CANNOT_GET_DATA_SCHEMA,
+      cause: error,
+    });
   }
 
   if (
@@ -91,10 +82,6 @@ async function validate({ serviceId, data }) {
       cause: error,
     });
   }
-}
-
-export function invalidateDataSchemaCache(serviceId) {
-  delete dataSchemaCache[serviceId];
 }
 
 export default validate;

@@ -24,10 +24,7 @@ import * as rp from '../rp';
 import * as idp from '../idp';
 import * as as from '../as';
 
-import {
-  getNodesBehindProxyWithKeyOnProxy,
-  invalidateNodesBehindProxyWithKeyOnProxyCache,
-} from '../../node';
+import { getNodesBehindProxyWithKeyOnProxy } from '../../node';
 
 import * as config from '../../config';
 
@@ -58,7 +55,6 @@ export async function handleTendermintNewBlock(
   toHeight,
   parsedTransactionsInBlocks
 ) {
-  await processTasksInBlocks(parsedTransactionsInBlocks);
   const nodesBehindProxyWithKeyOnProxy = await getNodesBehindProxyWithKeyOnProxy();
   await Promise.all(
     nodesBehindProxyWithKeyOnProxy.map((node) => {
@@ -88,41 +84,4 @@ export async function handleTendermintNewBlock(
       }
     })
   );
-}
-
-async function processTasksInBlocks(parsedTransactionsInBlocks) {
-  const nodesBehindProxyWithKeyOnProxy = await getNodesBehindProxyWithKeyOnProxy();
-
-  parsedTransactionsInBlocks.forEach(({ transactions }) => {
-    transactions.forEach((transaction) => {
-      if (transaction.fnName === 'UpdateNode') {
-        const childNode = nodesBehindProxyWithKeyOnProxy.find(
-          (node) => node.node_id === transaction.nodeId
-        );
-        if (childNode != null) {
-          invalidateNodesBehindProxyWithKeyOnProxyCache();
-        }
-      }
-      if (
-        transaction.fnName === 'AddNodeToProxyNode' ||
-        transaction.fnName === 'UpdateNodeProxyNode'
-      ) {
-        if (config.nodeId === transaction.args.proxy_node_id) {
-          invalidateNodesBehindProxyWithKeyOnProxyCache();
-        }
-      }
-      if (
-        transaction.fnName === 'UpdateNodeByNDID' ||
-        transaction.fnName === 'RemoveNodeFromProxyNode' ||
-        transaction.fnName === 'UpdateNodeProxyNode'
-      ) {
-        const childNode = nodesBehindProxyWithKeyOnProxy.find(
-          (node) => node.node_id === transaction.args.node_id
-        );
-        if (childNode != null) {
-          invalidateNodesBehindProxyWithKeyOnProxyCache();
-        }
-      }
-    });
-  });
 }
