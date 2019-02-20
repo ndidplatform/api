@@ -174,6 +174,15 @@ const pendingTasksInRequestQueue = new Prometheus.Gauge({
   help: 'Number of pending tasks in request process queue',
 });
 
+const tasksInRequestQueuePendingDurationMilliseconds = new Prometheus.Histogram(
+  {
+    name: 'tasks_in_request_process_queue_pending_duration_ms',
+    help: 'Duration of task pendings in request process queue in ms (waiting time)',
+    // labelNames: ['type'],
+    buckets: [0.1, 5, 15, 50, 100, 200, 300, 400, 500], // buckets for response time from 0.1ms to 500ms
+  }
+);
+
 const processingTasksInRequestQueue = new Prometheus.Gauge({
   name: 'processing_tasks_in_request_process_queue_total',
   help: 'Number of processing tasks in request process queue',
@@ -300,6 +309,11 @@ requestProcessManager.metricsEventEmitter.on(
   'pendingTasksInQueueCount',
   (pendingTasksInQueueCount) =>
     pendingTasksInRequestQueue.set(pendingTasksInQueueCount)
+);
+requestProcessManager.metricsEventEmitter.on(
+  'taskPendingTime',
+  (timeUsedInMs) =>
+    tasksInRequestQueuePendingDurationMilliseconds.observe(timeUsedInMs)
 );
 requestProcessManager.metricsEventEmitter.on(
   'processingTasksCount',
