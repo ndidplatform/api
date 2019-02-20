@@ -161,6 +161,7 @@ export function addTaskToQueue({
     requestQueue[requestId] = [];
   }
   requestQueue[requestId].push({
+    nodeId,
     callback,
     callbackArgs,
     onCallbackFinished,
