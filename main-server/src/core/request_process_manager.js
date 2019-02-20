@@ -169,6 +169,7 @@ export function addTaskToQueue({
     incrementRequestsInQueueCount();
   }
   requestQueue[requestId].push({
+    nodeId,
     callback,
     callbackArgs,
     onCallbackFinished,
