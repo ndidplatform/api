@@ -20,7 +20,9 @@
  *
  */
 
+import fs from 'fs';
 import http from 'http';
+import https from 'https';
 import express from 'express';
 import morgan from 'morgan';
 
@@ -47,13 +49,21 @@ export function initialize() {
 
   app.use(routes);
 
-  server = http.createServer(app);
-  server.listen(config.prometheusServerPort);
-
-  logger.info({
-    message: `Prometheus metrics HTTP server listening on port ${
-      config.prometheusServerPort
-    }`,
+  if (config.prometheusHttps) {
+    const httpsOptions = {
+      key: fs.readFileSync(config.prometheusHttpsKeyPath),
+      cert: fs.readFileSync(config.prometheusHttpsCertPath),
+    };
+    server = https.createServer(httpsOptions, app);
+  } else {
+    server = http.createServer(app);
+  }
+  server.listen(config.prometheusServerPort, () => {
+    logger.info({
+      message: `Prometheus metrics ${
+        config.prometheusHttps ? 'HTTPS' : 'HTTP'
+      } server listening on port ${config.prometheusServerPort}`,
+    });
   });
 }
 
@@ -62,7 +72,9 @@ export function close() {
     if (server) {
       server.close(() => {
         logger.info({
-          message: 'Prometheus metrics HTTP server closed',
+          message: `Prometheus metrics ${
+            config.prometheusHttps ? 'HTTPS' : 'HTTP'
+          } server closed`,
         });
         resolve();
       });

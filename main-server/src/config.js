@@ -203,3 +203,14 @@ export const prometheusEnabled = process.env.PROMETHEUS === 'true';
 export const prometheusServerPort = process.env.PROMETHEUS_SERVER_PORT
   ? parseInt(process.env.PROMETHEUS_SERVER_PORT)
   : 8888;
+
+export const prometheusHttps = process.env.PROMETHEUS_HTTPS === 'true';
+
+export const prometheusHttpsKeyPath =
+  process.env.PROMETHEUS_HTTPS_KEY_PATH != null
+    ? process.env.PROMETHEUS_HTTPS_KEY_PATH
+    : path.join(__dirname, '..', 'dev_https_key', 'key.pem');
+export const prometheusHttpsCertPath =
+  process.env.PROMETHEUS_HTTPS_CERT_PATH != null
+    ? process.env.PROMETHEUS_HTTPS_CERT_PATH
+    : path.join(__dirname, '..', 'dev_https_key', 'cert.pem');

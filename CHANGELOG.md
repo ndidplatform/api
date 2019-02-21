@@ -8,6 +8,9 @@ IMPROVEMENTS:
 - [Main] Add new environment variable options
   - `PROMETHEUS`: Enable prometheus metrics and HTTP server for querying metrics
   - `PROMETHEUS_SERVER_PORT`: HTTP server port for querying Prometheus metrics
+  - `PROMETHEUS_HTTPS`: Use HTTPS server for Prometheus metrics HTTP server
+  - `PROMETHEUS_HTTPS_KEY_PATH`: HTTPS private key file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true
+  - `PROMETHEUS_HTTPS_CERT_PATH`: HTTPS certificate file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true
 - Use `scan` stream instead of `keys` for redis oprations.
 
 BUG FIXES:
