@@ -5,6 +5,9 @@
 IMPROVEMENTS:
 
 - Add Prometheus support.
+- [Main] Add new environment variable options
+  - `PROMETHEUS`: Enable prometheus metrics and HTTP server for querying metrics
+  - `PROMETHEUS_SERVER_PORT`: HTTP server port for querying Prometheus metrics
 - Use `scan` stream instead of `keys` for redis oprations.
 
 BUG FIXES:

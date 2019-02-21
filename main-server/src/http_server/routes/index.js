@@ -33,10 +33,10 @@ import apiV1Router from './v1';
 import apiV2Router from './v2';
 import serverInfo from './server_info';
 import reinitNodeKeys from './reinit_node_keys';
-import prometheusRouter, {
+import {
   setHttpRequestStartTime,
   collectHttpRequestDuration,
-} from './prometheus';
+} from '../../prometheus';
 import debugRouter from './debug';
 
 import * as config from '../../config';
@@ -106,7 +106,6 @@ router.use(serverInfo);
 
 // Prometheus
 router.use(setHttpRequestStartTime);
-router.use(prometheusRouter);
 
 router.get('/reinit_node_keys', reinitNodeKeys);
 

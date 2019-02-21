@@ -44,7 +44,7 @@ import * as tendermintWsPool from './tendermint/ws_pool';
 import * as mq from './mq';
 import * as callbackUtil from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
-import { stopCollectDefaultMetrics } from './prometheus';
+import * as prometheus from './prometheus';
 
 import logger from './logger';
 
@@ -72,6 +72,10 @@ async function initialize() {
     tendermint.loadSavedData();
 
     await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
+
+    if (config.prometheusEnabled) {
+      prometheus.initialize();
+    }
 
     if (config.ndidNode) {
       tendermint.setWaitForInitEndedBeforeReady(false);
@@ -222,7 +226,7 @@ async function shutDown() {
   });
   console.log('(Ctrl+C again to force shutdown)');
 
-  stopCollectDefaultMetrics();
+  await prometheus.stop();
   await httpServer.close();
   callbackUtil.stopAllCallbackRetries();
   externalCryptoService.stopAllCallbackRetries();
