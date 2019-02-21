@@ -278,12 +278,14 @@ async function processExpectedTx(txHash, result, fromEvent) {
   });
 
   // Metrics
-  metricsEventEmitter.emit(
-    'txCommitDuration',
-    expectedTxMetricsData[txHash].functionName,
-    Date.now() - expectedTxMetricsData[txHash].startTime
-  );
-  delete expectedTxMetricsData[txHash];
+  if (expectedTxMetricsData[txHash] != null) {
+    metricsEventEmitter.emit(
+      'txCommitDuration',
+      expectedTxMetricsData[txHash].functionName,
+      Date.now() - expectedTxMetricsData[txHash].startTime
+    );
+    delete expectedTxMetricsData[txHash];
+  }
 
   try {
     const {
