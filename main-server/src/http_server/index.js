@@ -63,12 +63,12 @@ export function initialize() {
   } else {
     server = http.createServer(app);
   }
-  server.listen(config.serverPort);
-
-  logger.info({
-    message: `${config.https ? 'HTTPS' : 'HTTP'} server listening on port ${
-      config.serverPort
-    }`,
+  server.listen(config.serverPort, () => {
+    logger.info({
+      message: `${config.https ? 'HTTPS' : 'HTTP'} server listening on port ${
+        config.serverPort
+      }`,
+    });
   });
 }
 
@@ -77,7 +77,7 @@ export function close() {
     if (server) {
       server.close(() => {
         logger.info({
-          message: 'HTTP server closed',
+          message: `${config.https ? 'HTTPS' : 'HTTP'} server closed`,
         });
         resolve();
       });
