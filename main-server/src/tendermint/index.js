@@ -278,6 +278,8 @@ async function processExpectedTx(txHash, result, fromEvent) {
   });
 
   // Metrics
+  // Need to check for in-mem metrics data since loaded expected Txs from cache
+  // on server start doesn't have one and their durations shouldn't be collected
   if (expectedTxMetricsData[txHash] != null) {
     metricsEventEmitter.emit(
       'txCommitDuration',
