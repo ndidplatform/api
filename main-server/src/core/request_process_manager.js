@@ -22,6 +22,8 @@
 
 import EventEmitter from 'events';
 
+import { getFunction } from '.';
+
 import * as tendermint from '../tendermint';
 import * as cacheDb from '../db/cache';
 import * as utils from '../utils';
@@ -77,12 +79,12 @@ export async function handleMessageFromMqWithBlockWait(
   return true;
 }
 
-export async function processMessageInBlocks(
+export async function processMessageInBlocks({
   fromHeight,
   toHeight,
   nodeId,
-  processMessage
-) {
+  processMessageFnName,
+}) {
   const messageIds = await cacheDb.getMessageIdsToProcessAtBlock(
     nodeId,
     fromHeight,
@@ -97,7 +99,7 @@ export async function processMessageInBlocks(
       addTaskToQueue({
         nodeId,
         requestId,
-        callback: processMessage,
+        callbackFnName: processMessageFnName,
         callbackArgs: [nodeId, messageId, message],
         onCallbackFinished: releaseLockAndCleanUp,
         onCallbackFinishedArgs: [nodeId, messageId],
@@ -134,13 +136,13 @@ export function addMqMessageTaskToQueue({
   nodeId,
   messageId,
   message,
-  processMessage,
+  processMessageFnName,
 }) {
   const requestId = message.request_id;
   addTaskToQueue({
     nodeId,
     requestId,
-    callback: processMessage,
+    callbackFnName: processMessageFnName,
     callbackArgs: [nodeId, messageId, message],
     onCallbackFinished: releaseLock,
     onCallbackFinishedArgs: [messageId],
@@ -150,7 +152,7 @@ export function addMqMessageTaskToQueue({
 export function addTaskToQueue({
   nodeId,
   requestId,
-  callback,
+  callbackFnName,
   callbackArgs,
   onCallbackFinished,
   onCallbackFinishedArgs,
@@ -167,7 +169,7 @@ export function addTaskToQueue({
   }
   requestQueue[requestId].push({
     nodeId,
-    callback,
+    callbackFnName,
     callbackArgs,
     onCallbackFinished,
     onCallbackFinishedArgs,
@@ -185,7 +187,7 @@ function executeTaskInQueue(requestId) {
     requestQueueRunning[requestId] = true;
     const {
       nodeId,
-      callback,
+      callbackFnName,
       callbackArgs,
       onCallbackFinished,
       onCallbackFinishedArgs,
@@ -200,7 +202,7 @@ function executeTaskInQueue(requestId) {
     notifyTaskPendingTime(pendingStartTime);
     incrementProcessingTasksCount();
     const startTime = Date.now();
-    callback(...callbackArgs)
+    getFunction(callbackFnName)(...callbackArgs)
       .then(() => {
         notifyTaskProcessTime(startTime);
       })

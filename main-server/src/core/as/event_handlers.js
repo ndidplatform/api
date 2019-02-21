@@ -23,7 +23,6 @@
 import {
   getErrorCallbackUrl,
   getIncomingRequestStatusUpdateCallbackUrl,
-  processMessage,
 } from '.';
 
 import CustomError from 'ndid-error/custom_error';
@@ -69,7 +68,7 @@ export async function handleMessageFromQueue(
         nodeId,
         messageId,
         message,
-        processMessage,
+        processMessageFnName: 'as.processMessage',
       });
       common.notifyMetricsInboundMessageProcessTime(
         'does_not_wait_for_block',
@@ -117,12 +116,12 @@ export async function handleTendermintNewBlock(
 
   const startTime = Date.now();
   try {
-    await requestProcessManager.processMessageInBlocks(
+    await requestProcessManager.processMessageInBlocks({
       fromHeight,
       toHeight,
       nodeId,
-      processMessage
-    );
+      processMessageFnName: 'as.processMessage',
+    });
     await processTasksInBlocks(parsedTransactionsInBlocks, nodeId);
     common.notifyMetricsBlockProcessTime(startTime);
   } catch (error) {
@@ -170,7 +169,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
           requestProcessManager.addTaskToQueue({
             nodeId,
             requestId,
-            callback: processRequestUpdate,
+            callbackFnName: 'as.processRequestUpdate',
             callbackArgs: [nodeId, requestId, height, cleanUp],
           })
       );
@@ -178,7 +177,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
   );
 }
 
-async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
+export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
   const requestDetail = await tendermintNdid.getRequestDetail({
     requestId: requestId,
     height,

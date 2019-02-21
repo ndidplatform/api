@@ -20,11 +20,11 @@
  *
  */
 
+import { getFunction } from '..';
 import {
   getIdpsMsqDestination,
   setTimeoutScheduler,
   removeTimeoutScheduler,
-  getFunction,
 } from '.';
 
 import * as tendermint from '../../tendermint';

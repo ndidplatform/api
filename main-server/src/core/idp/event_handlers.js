@@ -23,7 +23,6 @@
 import {
   getErrorCallbackUrl,
   getIncomingRequestStatusUpdateCallbackUrl,
-  processMessage,
 } from '.';
 
 import * as utils from '../../utils';
@@ -68,7 +67,7 @@ export async function handleMessageFromQueue(
         nodeId,
         messageId,
         message,
-        processMessage,
+        processMessageFnName: 'idp.processMessage',
       });
       common.notifyMetricsInboundMessageProcessTime(
         'does_not_wait_for_block',
@@ -86,7 +85,7 @@ export async function handleMessageFromQueue(
           nodeId,
           messageId,
           message,
-          processMessage,
+          processMessageFnName: 'idp.processMessage',
         });
         common.notifyMetricsInboundMessageProcessTime(
           'does_not_wait_for_block',
@@ -135,12 +134,12 @@ export async function handleTendermintNewBlock(
 
   const startTime = Date.now();
   try {
-    await requestProcessManager.processMessageInBlocks(
+    await requestProcessManager.processMessageInBlocks({
       fromHeight,
       toHeight,
       nodeId,
-      processMessage
-    );
+      processMessageFnName: 'idp.processMessage',
+    });
     await processTasksInBlocks(parsedTransactionsInBlocks, nodeId);
     common.notifyMetricsBlockProcessTime(startTime);
   } catch (error) {
@@ -249,7 +248,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
           requestProcessManager.addTaskToQueue({
             nodeId,
             requestId,
-            callback: processCreateIdentityRequest,
+            callbackFnName: 'idp.processCreateIdentityRequest',
             callbackArgs: [nodeId, requestId, action],
           })
       );
@@ -258,7 +257,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
           requestProcessManager.addTaskToQueue({
             nodeId,
             requestId,
-            callback: processRequestUpdate,
+            callbackFnName: 'idp.processRequestUpdate',
             callbackArgs: [nodeId, requestId, height, cleanUp],
           })
       );
@@ -266,7 +265,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
   );
 }
 
-async function processCreateIdentityRequest(nodeId, requestId, action) {
+export async function processCreateIdentityRequest(nodeId, requestId, action) {
   const requestData = await cacheDb.getRequestData(nodeId, requestId);
   const referenceId = requestData.reference_id;
   const identityCallbackUrl = await cacheDb.getCallbackUrlByReferenceId(
@@ -342,7 +341,7 @@ async function processCreateIdentityRequest(nodeId, requestId, action) {
   ]);
 }
 
-async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
+export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
   const callbackUrl = await getIncomingRequestStatusUpdateCallbackUrl();
   if (callbackUrl != null) {
     const requestDetail = await tendermintNdid.getRequestDetail({

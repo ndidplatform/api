@@ -29,7 +29,8 @@ import './env_var_validate';
 
 import * as httpServer from './http_server';
 import * as node from './node';
-import * as core from './core/common';
+import * as core from './core';
+import * as coreCommon from './core/common';
 import * as rp from './core/rp';
 import * as idp from './core/idp';
 import * as as from './core/as';
@@ -139,7 +140,7 @@ async function initialize() {
       await nodeKey.initialize();
     }
 
-    if(!config.isMaster) httpServer.initialize();
+    if (!config.isMaster) httpServer.initialize();
 
     if (externalCryptoServiceReady != null) {
       logger.info({ message: 'Waiting for DPKI callback URLs to be set' });
@@ -147,7 +148,7 @@ async function initialize() {
     }
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
-      mq.setErrorHandlerFunction(core.handleMessageQueueError, () => {
+      mq.setErrorHandlerFunction(coreCommon.handleMessageQueueError, () => {
         // FIXME ?
         if (role === 'rp') {
           rp.getErrorCallbackUrl();
@@ -157,10 +158,9 @@ async function initialize() {
           as.getErrorCallbackUrl();
         }
       });
-      if(config.isMaster) {
+      if (config.isMaster) {
         await mq.initializeInbound();
-      }
-      else {
+      } else {
         await mq.initializeOutbound(false);
       }
     }
@@ -177,15 +177,20 @@ async function initialize() {
         const nodesBehindProxy = await node.getNodesBehindProxyWithKeyOnProxy();
         nodeIds = nodesBehindProxy.map((node) => node.node_id);
       }
-      await core.resumeTimeoutScheduler(nodeIds);
+      await coreCommon.resumeTimeoutScheduler(nodeIds);
     }
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
-      if(!config.isMaster) await core.setMessageQueueAddress();
-      else await mq.loadAndProcessBacklogMessages();
+      if (!config.isMaster) {
+        // FIXME: shouldn't be called on every workers. Should be called once.
+        await coreCommon.setMessageQueueAddress();
+      }
+      if (config.isMaster) {
+        await mq.loadAndProcessBacklogMessages();
+      }
     }
 
-    if(config.isMaster) {
+    if (config.isMaster) {
       tendermint.processMissingBlocks(tendermintStatusOnSync);
       await tendermint.loadExpectedTxFromDB();
       tendermint.loadAndRetryBacklogTransactRequests();
@@ -193,7 +198,7 @@ async function initialize() {
       callbackUtil.resumeCallbackToClient();
     }
 
-    if(config.isMaster) await masterInitialize();
+    if (config.isMaster) await masterInitialize();
     else await workerInitialize();
 
     logger.info({ message: 'Server initialized' });
@@ -251,7 +256,7 @@ async function shutDown() {
   // remove after finish using DB
   // => Wait here until a queue to use DB is empty
   await Promise.all([cacheDb.close(), longTermDb.close(), dataDb.close()]);
-  core.stopAllTimeoutScheduler();
+  coreCommon.stopAllTimeoutScheduler();
 }
 
 process.on('SIGTERM', shutDown);
