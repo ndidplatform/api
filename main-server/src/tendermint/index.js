@@ -63,6 +63,7 @@ let processingBlocks = {};
 let processingBlocksCount = 0;
 
 const expectedTx = {};
+const expectedTxMetricsData = {};
 let expectedTxsCount = 0;
 let getTxResultCallbackFn;
 const txEventEmitter = new EventEmitter();
@@ -80,6 +81,7 @@ export let blockchainInitialized = false;
 let waitForInitEndedBeforeReady = true;
 
 export const eventEmitter = new EventEmitter();
+export const metricsEventEmitter = new EventEmitter();
 
 const chainIdFilepath = path.join(
   config.dataDirectoryPath,
@@ -236,7 +238,7 @@ export async function loadExpectedTxFromDB() {
     }
     savedExpectedTxs.forEach(({ tx: txHash, metadata }) => {
       expectedTx[txHash] = metadata;
-      expectedTxsCount++;
+      incrementExpectedTxsCount();
     });
     expectedTxsLoaded = true;
     processMissingExpectedTxs();
@@ -274,6 +276,19 @@ async function processExpectedTx(txHash, result, fromEvent) {
     message: 'Expected Tx is included in the block. Processing.',
     txHash,
   });
+
+  // Metrics
+  // Need to check for in-mem metrics data since loaded expected Txs from cache
+  // on server start doesn't have one and their durations shouldn't be collected
+  if (expectedTxMetricsData[txHash] != null) {
+    metricsEventEmitter.emit(
+      'txCommitDuration',
+      expectedTxMetricsData[txHash].functionName,
+      Date.now() - expectedTxMetricsData[txHash].startTime
+    );
+    delete expectedTxMetricsData[txHash];
+  }
+
   try {
     const {
       transactParams,
@@ -281,7 +296,7 @@ async function processExpectedTx(txHash, result, fromEvent) {
       callbackAdditionalArgs,
     } = expectedTx[txHash];
     delete expectedTx[txHash];
-    expectedTxsCount--;
+    decrementExpectedTxsCount();
     let retVal = getTransactResultFromTx(result, fromEvent);
     const waitForCommit = !callbackFnName;
     if (waitForCommit) {
@@ -519,6 +534,7 @@ tendermintWsClient.on('connected', async () => {
     }
     eventEmitter.emit('ready', statusOnSync);
   }
+  metricsEventEmitter.emit('mainWSConnected');
 });
 
 tendermintWsClient.on('disconnected', () => {
@@ -526,6 +542,7 @@ tendermintWsClient.on('disconnected', () => {
   syncing = null;
   blockchainInitialized = false;
   reconnecting = true;
+  metricsEventEmitter.emit('mainWSDisconnected');
 });
 
 tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(
@@ -601,7 +618,7 @@ async function processNewBlock(blockHeight, appHash) {
         }
         processingBlocks[processingBlocksStr] = null;
         const blocksToProcess = toHeight - fromHeight + 1;
-        processingBlocksCount += blocksToProcess;
+        addProcessingBlocksCount(blocksToProcess);
 
         const parsedTransactionsInBlocks = (await getParsedTxsInBlocks(
           fromHeight,
@@ -614,7 +631,7 @@ async function processNewBlock(blockHeight, appHash) {
           parsedTransactionsInBlocks
         );
         delete processingBlocks[processingBlocksStr];
-        processingBlocksCount -= blocksToProcess;
+        subtractProcessingBlocksCount(blocksToProcess);
       }
     }
     lastKnownAppHash = appHash;
@@ -980,8 +997,12 @@ export async function transact({
     callbackAdditionalArgs,
   };
   expectedTx[txHash] = metadata;
-  expectedTxsCount++;
+  incrementExpectedTxsCount();
   await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, metadata);
+  expectedTxMetricsData[txHash] = {
+    startTime: Date.now(),
+    functionName: fnName,
+  };
 
   try {
     let promise;
@@ -1007,7 +1028,9 @@ export async function transact({
     return broadcastTxSyncResult;
   } catch (error) {
     delete expectedTx[txHash];
-    expectedTxsCount--;
+    delete expectedTxMetricsData[txHash];
+    decrementExpectedTxsCount();
+    metricsEventEmitter.emit('txTransactFail');
     await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
     if (
       error.code === errorType.ABCI_CHAIN_DISABLED.code &&
@@ -1068,12 +1091,32 @@ export function getAppHashFromNewBlockEvent(result) {
   return result.data.value.block.header.app_hash;
 }
 
+function incrementExpectedTxsCount() {
+  expectedTxsCount++;
+  metricsEventEmitter.emit('expectedTxsCount', expectedTxsCount);
+}
+
+function decrementExpectedTxsCount() {
+  expectedTxsCount--;
+  metricsEventEmitter.emit('expectedTxsCount', expectedTxsCount);
+}
+
 export function getExpectedTxsCount() {
   return expectedTxsCount;
 }
 
 export function getExpectedTxHashes() {
   return Object.keys(expectedTx);
+}
+
+function addProcessingBlocksCount(valueToAdd) {
+  processingBlocksCount += valueToAdd;
+  metricsEventEmitter.emit('processingBlocksCount', processingBlocksCount);
+}
+
+function subtractProcessingBlocksCount(valueToSubtract) {
+  processingBlocksCount -= valueToSubtract;
+  metricsEventEmitter.emit('processingBlocksCount', processingBlocksCount);
 }
 
 export function getProcessingBlocksCount() {

@@ -52,6 +52,7 @@ let stopCallbackRetry = false;
 let pendingCallbacksCount = 0;
 
 export const eventEmitter = new EventEmitter();
+export const metricsEventEmitter = new EventEmitter();
 
 export async function checkCallbackUrls() {
   const callbackUrls = await getCallbackUrls();
@@ -333,8 +334,8 @@ export async function setCallbackUrls({
   await checkAndEmitAllCallbacksSet();
 }
 
-async function callbackWithRetry(url, body, logPrefix) {
-  pendingCallbacksCount++;
+async function callbackWithRetry(url, body, logPrefix, type) {
+  incrementPendingCallbacksCount();
 
   const cbId = randomBase64Bytes(10);
   logger.info({
@@ -371,7 +372,13 @@ async function callbackWithRetry(url, body, logPrefix) {
         cbId,
         httpStatusCode: response.status,
       });
-      pendingCallbacksCount--;
+      decrementPendingCallbacksCount();
+      metricsEventEmitter.emit(
+        'callbackTime',
+        type,
+        response.status,
+        Date.now() - startTime
+      );
       if (response.status !== 200) {
         throw new CustomError({
           message: `[${logPrefix}] Got response status other than 200`,
@@ -399,7 +406,8 @@ async function callbackWithRetry(url, body, logPrefix) {
         Date.now() - startTime + nextRetry >
         config.callbackRetryTimeout * 1000
       ) {
-        pendingCallbacksCount--;
+        decrementPendingCallbacksCount();
+        metricsEventEmitter.emit('callbackTimedOut');
         throw new CustomError({
           message: `[${logPrefix}] callback retry timed out`,
           details: {
@@ -439,7 +447,8 @@ export async function decryptAsymetricKey(nodeId, encryptedMessage) {
     const responseBody = await callbackWithRetry(
       url,
       body,
-      'External decrypt with node key'
+      'External decrypt with node key',
+      'decrypt'
     );
 
     let result;
@@ -531,7 +540,8 @@ export async function createSignature(
     const responseBody = await callbackWithRetry(
       url,
       body,
-      'External sign with node key'
+      'External sign with node key',
+      'sign'
     );
 
     let result;
@@ -591,6 +601,16 @@ export function stopAllCallbackRetries() {
   logger.info({
     message: 'Stopped all external crypto service callback retries',
   });
+}
+
+function incrementPendingCallbacksCount() {
+  pendingCallbacksCount++;
+  metricsEventEmitter.emit('pendingCallbacksCount', pendingCallbacksCount);
+}
+
+function decrementPendingCallbacksCount() {
+  pendingCallbacksCount--;
+  metricsEventEmitter.emit('pendingCallbacksCount', pendingCallbacksCount);
 }
 
 export function getPendingCallbacksCount() {

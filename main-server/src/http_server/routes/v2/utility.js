@@ -38,6 +38,7 @@ router.get('/idp', validateQuery, async (req, res, next) => {
     });
 
     res.status(200).json(idpNodes);
+    next();
   } catch (error) {
     next(error);
   }
@@ -59,6 +60,7 @@ router.get(
       });
 
       res.status(200).json(idpNodes);
+      next();
     } catch (error) {
       next(error);
     }
@@ -78,10 +80,12 @@ router.get('/as/:service_id', async (req, res, next) => {
       );
       if (service == null) {
         res.status(404).end();
+        next();
         return;
       }
     }
     res.status(200).json(asNodes);
+    next();
   } catch (error) {
     next(error);
   }
@@ -97,6 +101,7 @@ router.get('/requests/:request_id', async (req, res, next) => {
 
     if (requestDetail == null) {
       res.status(404).end();
+      next();
       return;
     }
 
@@ -113,6 +118,7 @@ router.get('/requests/:request_id', async (req, res, next) => {
     };
 
     res.status(200).json(request);
+    next();
   } catch (error) {
     next(error);
   }
@@ -129,6 +135,7 @@ router.get('/nodes/:node_id', async (req, res, next) => {
     } else {
       res.status(200).json(result);
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -145,6 +152,7 @@ router.get('/nodes/:node_id/token', async (req, res, next) => {
     } else {
       res.status(200).json({ amount });
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -153,6 +161,7 @@ router.get('/nodes/:node_id/token', async (req, res, next) => {
 router.get('/namespaces', async (req, res, next) => {
   try {
     res.status(200).json(await tendermintNdid.getNamespaceList());
+    next();
   } catch (error) {
     next(error);
   }
@@ -161,6 +170,7 @@ router.get('/namespaces', async (req, res, next) => {
 router.get('/services', async (req, res, next) => {
   try {
     res.status(200).json(await tendermintNdid.getServiceList());
+    next();
   } catch (error) {
     next(error);
   }
@@ -184,6 +194,7 @@ router.get('/services/:service_id', async (req, res, next) => {
 
       res.status(200).json(serviceDetail);
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -213,9 +224,11 @@ router.get('/private_messages/:request_id', async (req, res, next) => {
     });
     if (messages == null) {
       res.status(404).end();
+      next();
       return;
     }
     res.status(200).json(messages);
+    next();
   } catch (error) {
     next(error);
   }
@@ -227,6 +240,7 @@ router.post('/private_messages/housekeeping', async (req, res, next) => {
     const { node_id } = req.body;
     await privateMessage.removePrivateMessages({ nodeId: node_id, type });
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -245,6 +259,7 @@ router.post(
         type,
       });
       res.status(204).end();
+      next();
     } catch (error) {
       next(error);
     }

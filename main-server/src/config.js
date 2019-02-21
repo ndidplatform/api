@@ -201,3 +201,20 @@ export const grpcCallTimeout = process.env.GRPC_CALL_TIMEOUT_MS
 export const isMaster = process.env.IS_MASTER;
 export const masterServerPort = process.env.MASTER_SERVER_PORT || 5000;
 export const masterServerIp = process.env.MASTER_SERVER_IP;
+
+export const prometheusEnabled = process.env.PROMETHEUS === 'true';
+
+export const prometheusServerPort = process.env.PROMETHEUS_SERVER_PORT
+  ? parseInt(process.env.PROMETHEUS_SERVER_PORT)
+  : 8888;
+
+export const prometheusHttps = process.env.PROMETHEUS_HTTPS === 'true';
+
+export const prometheusHttpsKeyPath =
+  process.env.PROMETHEUS_HTTPS_KEY_PATH != null
+    ? process.env.PROMETHEUS_HTTPS_KEY_PATH
+    : path.join(__dirname, '..', 'dev_https_key', 'key.pem');
+export const prometheusHttpsCertPath =
+  process.env.PROMETHEUS_HTTPS_CERT_PATH != null
+    ? process.env.PROMETHEUS_HTTPS_CERT_PATH
+    : path.join(__dirname, '..', 'dev_https_key', 'cert.pem');

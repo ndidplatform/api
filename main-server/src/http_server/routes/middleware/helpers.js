@@ -20,21 +20,9 @@
  *
  */
 
-import * as nodeKey from '../../utils/node_key';
-import * as config from '../../config';
-import logger from '../../logger';
-
-export default async function reinitNodeKeys(req, res, next) {
-  try {
-    if (!config.useExternalCryptoService) {
-      await nodeKey.initialize();
-      logger.info({
-        message: 'Successfully re-initialize node key files',
-      });
-    }
-    res.status(204).end();
-    next();
-  } catch (error) {
-    next(error);
+export function routeCollisionStopper(req, res, next) {
+  if (res.headersSent) {
+    return next('route');
   }
+  next();
 }

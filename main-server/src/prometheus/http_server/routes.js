@@ -20,21 +20,21 @@
  *
  */
 
-import * as nodeKey from '../../utils/node_key';
-import * as config from '../../config';
-import logger from '../../logger';
+import express from 'express';
 
-export default async function reinitNodeKeys(req, res, next) {
-  try {
-    if (!config.useExternalCryptoService) {
-      await nodeKey.initialize();
-      logger.info({
-        message: 'Successfully re-initialize node key files',
-      });
-    }
-    res.status(204).end();
-    next();
-  } catch (error) {
-    next(error);
+import Prometheus from 'prom-client';
+
+const router = express.Router();
+
+router.get('/metrics', (req, res) => {
+  res.set('Content-Type', Prometheus.register.contentType);
+  res.end(Prometheus.register.metrics());
+});
+
+router.use('*', function(req, res) {
+  if (!res.headersSent) {
+    res.status(404).end();
   }
-}
+});
+
+export default router;

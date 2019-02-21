@@ -20,6 +20,8 @@
  *
  */
 
+import EventEmitter from 'events';
+
 import fetch from 'node-fetch';
 import { ExponentialBackoff } from 'simple-backoff';
 
@@ -41,6 +43,8 @@ let getShouldRetryFn;
 let getResponseCallbackFn;
 
 let pendingCallbacksCount = 0;
+
+export const metricsEventEmitter = new EventEmitter();
 
 export function setShouldRetryFnGetter(fn) {
   if (typeof fn !== 'function') {
@@ -100,7 +104,7 @@ async function callbackWithRetry(
   responseCallbackFnName,
   dataForResponseCallback
 ) {
-  pendingCallbacksCount++;
+  incrementPendingCallbacksCount();
 
   const backoff = new ExponentialBackoff({
     min: 5000,
@@ -126,7 +130,13 @@ async function callbackWithRetry(
     try {
       const responseObj = await httpPost(cbId, callbackUrl, body);
 
-      pendingCallbacksCount--;
+      decrementPendingCallbacksCount();
+      metricsEventEmitter.emit(
+        'callbackTime',
+        responseObj.response.status,
+        responseObj.body !== '',
+        Date.now() - startTime
+      );
       cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
       if (responseCallbackFnName) {
         getResponseCallbackFn(responseCallbackFnName)(
@@ -145,7 +155,7 @@ async function callbackWithRetry(
       });
 
       if (error.name === 'FetchError' && error.type === 'max-size') {
-        pendingCallbacksCount--;
+        decrementPendingCallbacksCount();
         cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
         if (responseCallbackFnName) {
           getResponseCallbackFn(responseCallbackFnName)(
@@ -157,6 +167,7 @@ async function callbackWithRetry(
             dataForResponseCallback
           );
         }
+        metricsEventEmitter.emit('callbackFail');
         return;
       }
 
@@ -175,8 +186,9 @@ async function callbackWithRetry(
           shouldRetry = true;
         }
         if (!shouldRetry) {
-          pendingCallbacksCount--;
+          decrementPendingCallbacksCount();
           cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
+          metricsEventEmitter.emit('callbackFail');
           return;
         }
       } else {
@@ -189,8 +201,9 @@ async function callbackWithRetry(
             url: callbackUrl,
             cbId,
           });
-          pendingCallbacksCount--;
+          decrementPendingCallbacksCount();
           cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
+          metricsEventEmitter.emit('callbackTimedOut');
           return;
         }
       }
@@ -263,8 +276,15 @@ export async function callbackToClient(
       body,
       cbId,
     });
+    const startTime = Date.now();
     try {
       const responseObj = await httpPost(cbId, callbackUrl, body);
+      metricsEventEmitter.emit(
+        'callbackTime',
+        responseObj.response.status,
+        responseObj.body !== '',
+        Date.now() - startTime
+      );
       if (responseCallbackFnName) {
         getResponseCallbackFn(responseCallbackFnName)(
           responseObj,
@@ -276,6 +296,8 @@ export async function callbackToClient(
         message: 'Cannot send callback to client application',
         error,
       });
+
+      metricsEventEmitter.emit('callbackFail');
 
       if (error.name === 'FetchError' && error.type === 'max-size') {
         if (responseCallbackFnName) {
@@ -322,6 +344,16 @@ export function stopAllCallbackRetries() {
   logger.info({
     message: 'Stopped all callback retries',
   });
+}
+
+function incrementPendingCallbacksCount() {
+  pendingCallbacksCount++;
+  metricsEventEmitter.emit('pendingCallbacksCount', pendingCallbacksCount);
+}
+
+function decrementPendingCallbacksCount() {
+  pendingCallbacksCount--;
+  metricsEventEmitter.emit('pendingCallbacksCount', pendingCallbacksCount);
 }
 
 export function getPendingCallbacksCount() {

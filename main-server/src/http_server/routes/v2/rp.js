@@ -24,6 +24,7 @@ import express from 'express';
 
 import { validateBody } from '../middleware/validation';
 import { rpOnlyHandler } from '../middleware/role_handler';
+import { routeCollisionStopper } from '../middleware/helpers';
 import * as rp from '../../../core/rp';
 import * as common from '../../../core/common';
 
@@ -40,6 +41,7 @@ router.post(
 
       await rp.removeDataFromAS(node_id, request_id);
       res.status(204).end();
+      next();
     } catch (error) {
       next(error);
     }
@@ -51,6 +53,7 @@ router.post('/requests/housekeeping/data', async (req, res, next) => {
     const { node_id } = req.body;
     await rp.removeAllDataFromAS(node_id);
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -58,6 +61,7 @@ router.post('/requests/housekeeping/data', async (req, res, next) => {
 
 router.post(
   '/requests/:namespace/:identifier',
+  routeCollisionStopper,  // collide with "/requests/housekeeping/data"
   validateBody,
   async (req, res, next) => {
     try {
@@ -96,6 +100,7 @@ router.post(
       );
 
       res.status(202).json(result);
+      next();
     } catch (error) {
       next(error);
     }
@@ -113,6 +118,7 @@ router.get('/requests/reference/:reference_id', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -129,6 +135,7 @@ router.get('/requests/data/:request_id', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -148,6 +155,7 @@ router.post('/requests/close', validateBody, async (req, res, next) => {
       { synchronous: false }
     );
     res.status(202).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -162,6 +170,7 @@ router.get('/callback', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -176,6 +185,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
     });
 
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }

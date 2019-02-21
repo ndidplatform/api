@@ -20,6 +20,8 @@
  *
  */
 
+import EventEmitter from 'events';
+
 import * as tendermint from '../tendermint';
 import * as cacheDb from '../db/cache';
 import * as utils from '../utils';
@@ -31,6 +33,11 @@ import logger from '../logger';
 const messageProcessLock = {};
 const requestQueue = {};
 const requestQueueRunning = {};
+
+let pendingTasksInQueueCount = 0;
+let processingTasksCount = 0;
+let requestsInQueueCount = 0;
+export const metricsEventEmitter = new EventEmitter();
 
 export async function handleMessageFromMqWithBlockWait(
   messageId,
@@ -83,10 +90,7 @@ export async function processMessageInBlocks(
   );
   await Promise.all(
     messageIds.map(async (messageId) => {
-      if (messageProcessLock[messageId]) {
-        cleanUpMessage(nodeId, messageId);
-        return;
-      }
+      if (messageProcessLock[messageId]) return;
       const message = await cacheDb.getMessageFromMQ(nodeId, messageId);
       if (message == null) return;
       const requestId = message.request_id;
@@ -159,6 +163,7 @@ export function addTaskToQueue({
 
   if (requestQueue[requestId] == null) {
     requestQueue[requestId] = [];
+    incrementRequestsInQueueCount();
   }
   requestQueue[requestId].push({
     nodeId,
@@ -166,42 +171,128 @@ export function addTaskToQueue({
     callbackArgs,
     onCallbackFinished,
     onCallbackFinishedArgs,
+    startTime: Date.now(),
   });
+  incrementPendingTasksInQueueCount();
 
-  if (!requestQueueRunning[requestId]) {
-    executeTaskInQueue(requestId);
+  setImmediate(executeTaskInQueue, requestId);
+}
+
+function executeTaskInQueue(requestId) {
+  if (requestQueueRunning[requestId]) return;
+  const task = requestQueue[requestId].shift();
+  if (task) {
+    requestQueueRunning[requestId] = true;
+    const {
+      nodeId,
+      callback,
+      callbackArgs,
+      onCallbackFinished,
+      onCallbackFinishedArgs,
+      startTime: pendingStartTime,
+    } = task;
+    logger.debug({
+      message: 'Executing task in queue',
+      nodeId,
+      requestId,
+    });
+    decrementPendingTasksInQueueCount();
+    notifyTaskPendingTime(pendingStartTime);
+    incrementProcessingTasksCount();
+    const startTime = Date.now();
+    callback(...callbackArgs)
+      .then(() => {
+        notifyTaskProcessTime(startTime);
+      })
+      .catch((error) => {
+        const err = new CustomError({
+          message: 'Error executing task in queue',
+          cause: error,
+          details: {
+            requestId,
+          },
+        });
+        logger.error(err.getInfoForLog());
+        notifyTaskProcessFail();
+      })
+      .then(() => {
+        decrementProcessingTasksCount();
+        if (onCallbackFinished) {
+          onCallbackFinished(...onCallbackFinishedArgs);
+        }
+        delete requestQueueRunning[requestId];
+        if (requestQueue[requestId].length === 0) {
+          cleanUpQueue(requestId);
+        } else {
+          setImmediate(executeTaskInQueue, requestId);
+        }
+      });
+  } else {
+    cleanUpQueue(requestId);
   }
 }
 
-async function executeTaskInQueue(requestId) {
-  requestQueueRunning[requestId] = true;
-  if (requestQueue[requestId].length === 0) {
-    logger.debug({
-      message: 'Queue is empty, cleaning up',
-    });
-    delete requestQueueRunning[requestId];
-    delete requestQueue[requestId];
-    return;
-  }
-  const {
-    nodeId,
-    callback,
-    callbackArgs,
-    onCallbackFinished,
-    onCallbackFinishedArgs,
-  } = requestQueue[requestId].shift();
+function cleanUpQueue(requestId) {
   logger.debug({
-    message: 'Executing task in queue',
-    nodeId,
+    message: 'Queue is empty, cleaning up',
     requestId,
   });
-  try {
-    await callback(...callbackArgs);
-  } catch (error) {
-    logger.error({ message: 'Error executing task in queue', requestId });
-  }
-  if (onCallbackFinished) {
-    onCallbackFinished(...onCallbackFinishedArgs);
-  }
-  executeTaskInQueue(requestId);
+  delete requestQueue[requestId];
+  decrementRequestsInQueueCount();
+}
+
+function incrementPendingTasksInQueueCount() {
+  pendingTasksInQueueCount++;
+  metricsEventEmitter.emit(
+    'pendingTasksInQueueCount',
+    pendingTasksInQueueCount
+  );
+}
+
+function decrementPendingTasksInQueueCount() {
+  pendingTasksInQueueCount--;
+  metricsEventEmitter.emit(
+    'pendingTasksInQueueCount',
+    pendingTasksInQueueCount
+  );
+}
+
+function notifyTaskPendingTime(startTime) {
+  metricsEventEmitter.emit(
+    'taskPendingTime',
+    // type,
+    Date.now() - startTime
+  );
+}
+
+function incrementProcessingTasksCount() {
+  processingTasksCount++;
+  metricsEventEmitter.emit('processingTasksCount', processingTasksCount);
+}
+
+function decrementProcessingTasksCount() {
+  processingTasksCount--;
+  metricsEventEmitter.emit('processingTasksCount', processingTasksCount);
+}
+
+function notifyTaskProcessTime(startTime) {
+  metricsEventEmitter.emit(
+    'taskProcessTime',
+    // type,
+    Date.now() - startTime
+  );
+}
+
+function notifyTaskProcessFail() {
+  metricsEventEmitter.emit('taskProcessFail');
+}
+
+function incrementRequestsInQueueCount() {
+  requestsInQueueCount++;
+  metricsEventEmitter.emit('requestsInQueueCount', requestsInQueueCount);
+}
+
+function decrementRequestsInQueueCount() {
+  requestsInQueueCount--;
+  metricsEventEmitter.emit('requestsInQueueCount', requestsInQueueCount);
 }

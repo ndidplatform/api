@@ -106,6 +106,11 @@
 - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds [Default: `60000`]
 - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds [Default: `20000`]
 - `GRPC_CALL_TIMEOUT_MS`: gRPC call timeout in milliseconds [Default: `60000`]
+- `PROMETHEUS`: Enable prometheus metrics and HTTP server for querying metrics [Default: `false`]
+- `PROMETHEUS_SERVER_PORT`: HTTP server port for querying Prometheus metrics [Default: `8888`]
+- `PROMETHEUS_HTTPS`: Use HTTPS server for Prometheus metrics HTTP server [Default: `false`]
+- `PROMETHEUS_HTTPS_KEY_PATH`: HTTPS private key file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true [Default: pre-generated development key]
+- `PROMETHEUS_HTTPS_CERT_PATH`: HTTPS certificate file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true [Default: pre-generated development cert]
 
 Debug APIs (Only in development mode)
 

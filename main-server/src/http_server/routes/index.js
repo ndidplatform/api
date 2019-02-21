@@ -33,6 +33,10 @@ import apiV1Router from './v1';
 import apiV2Router from './v2';
 import serverInfo from './server_info';
 import reinitNodeKeys from './reinit_node_keys';
+import {
+  setHttpRequestStartTime,
+  collectHttpRequestDuration,
+} from '../../prometheus';
 import debugRouter from './debug';
 
 import * as config from '../../config';
@@ -99,6 +103,10 @@ router.get('/source', (req, res) => {
 });
 
 router.use(serverInfo);
+
+// Prometheus
+router.use(setHttpRequestStartTime);
+
 router.get('/reinit_node_keys', reinitNodeKeys);
 
 router.use(readyHandler);
@@ -111,9 +119,14 @@ router.use('/v2', apiV2Router);
 
 router.use(errorHandler);
 
+// Prometheus
+router.use(collectHttpRequestDuration);
+
 // All other paths besides stated above are invalid
 router.use('*', function(req, res) {
-  res.status(404).end();
+  if (!res.headersSent) {
+    res.status(404).end();
+  }
 });
 
 export default router;

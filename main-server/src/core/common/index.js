@@ -20,6 +20,8 @@
  *
  */
 
+import EventEmitter from 'events';
+
 import { createRequestInternalAsyncAfterBlockchain } from './create_request';
 import { closeRequestInternalAsyncAfterBlockchain } from './close_request';
 
@@ -48,6 +50,8 @@ export * from './close_request';
 let processingInboundMessagesCount = 0;
 
 let messageQueueAddressesSet = !config.registerMqAtStartup;
+
+export const metricsEventEmitter = new EventEmitter();
 
 export function isMqAddressesSet() {
   return messageQueueAddressesSet;
@@ -732,10 +736,38 @@ export async function notifyError({
 
 export function incrementProcessingInboundMessagesCount() {
   processingInboundMessagesCount++;
+  metricsEventEmitter.emit(
+    'processingInboundMessagesCount',
+    processingInboundMessagesCount
+  );
 }
 
 export function decrementProcessingInboundMessagesCount() {
   processingInboundMessagesCount--;
+  metricsEventEmitter.emit(
+    'processingInboundMessagesCount',
+    processingInboundMessagesCount
+  );
+}
+
+export function notifyMetricsFailInboundMessageProcess() {
+  metricsEventEmitter.emit('inboundMessageProcessFail');
+}
+
+export function notifyMetricsInboundMessageProcessTime(type, startTime) {
+  metricsEventEmitter.emit(
+    'inboundMessageProcessTime',
+    type,
+    Date.now() - startTime
+  );
+}
+
+export function notifyMetricsFailedBlockProcess(fromHeight, toHeight) {
+  metricsEventEmitter.emit('blockProcessFail', fromHeight, toHeight);
+}
+
+export function notifyMetricsBlockProcessTime(startTime) {
+  metricsEventEmitter.emit('blockProcessTime', Date.now() - startTime);
 }
 
 export function getProcessingInboundMessagesCount() {

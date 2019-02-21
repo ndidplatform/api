@@ -70,6 +70,7 @@ router.post(
       );
 
       res.status(202).end();
+      next();
     } catch (error) {
       next(error);
     }
@@ -111,6 +112,7 @@ router.post('/node/update', validateBody, async (req, res, next) => {
     );
 
     res.status(202).json(result);
+    next();
   } catch (error) {
     next(error);
   }
@@ -125,6 +127,7 @@ router.get('/node/callback', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -140,6 +143,7 @@ router.post('/node/callback', validateBody, async (req, res, next) => {
       decryptCallbackUrl: decrypt_url,
     });
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }

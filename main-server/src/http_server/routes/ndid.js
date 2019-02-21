@@ -48,6 +48,7 @@ router.post('/initNDID', validateBody, async (req, res, next) => {
       chain_history_info,
     });
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -57,6 +58,7 @@ router.post('/endInit', async (req, res, next) => {
   try {
     await ndid.endInit();
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -94,6 +96,7 @@ router.post('/registerNode', validateBody, async (req, res, next) => {
     );
 
     res.status(201).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -121,6 +124,7 @@ router.post('/updateNode', validateBody, async (req, res, next) => {
     );
 
     res.status(200).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -135,6 +139,7 @@ router.post('/enableNode', validateBody, async (req, res, next) => {
     });
 
     res.status(200).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -149,6 +154,7 @@ router.post('/disableNode', validateBody, async (req, res, next) => {
     });
 
     res.status(200).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -164,6 +170,7 @@ router.post('/setNodeToken', validateBody, async (req, res, next) => {
     });
 
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -179,6 +186,7 @@ router.post('/addNodeToken', validateBody, async (req, res, next) => {
     });
 
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -194,6 +202,7 @@ router.post('/reduceNodeToken', validateBody, async (req, res, next) => {
     });
 
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -216,6 +225,7 @@ router.post('/namespaces', validateBody, async (req, res, next) => {
       description,
     });
     res.status(201).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -229,6 +239,7 @@ router.post('/namespaces/:namespace/enable', async (req, res, next) => {
       namespace,
     });
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -242,6 +253,7 @@ router.post('/namespaces/:namespace/disable', async (req, res, next) => {
       namespace,
     });
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -263,6 +275,7 @@ router.post('/services', validateBody, async (req, res, next) => {
       data_schema_version,
     });
     res.status(201).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -280,6 +293,7 @@ router.post('/services/:service_id', validateBody, async (req, res, next) => {
       data_schema_version,
     });
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -293,6 +307,7 @@ router.post('/services/:service_id/enable', async (req, res, next) => {
       service_id,
     });
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -306,6 +321,7 @@ router.post('/services/:service_id/disable', async (req, res, next) => {
       service_id,
     });
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -320,6 +336,7 @@ router.post('/validator', validateBody, async (req, res, next) => {
       power,
     });
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -336,6 +353,7 @@ router.post(
         blocks_to_timeout,
       });
       res.status(204).end();
+      next();
     } catch (error) {
       next(error);
     }
@@ -346,6 +364,7 @@ router.post('/approveService', validateBody, async (req, res, next) => {
   try {
     await ndid.approveService(req.body);
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -363,6 +382,7 @@ router.post(
         node_id,
       });
       res.status(204).end();
+      next();
     } catch (error) {
       next(error);
     }
@@ -381,6 +401,7 @@ router.post(
         node_id,
       });
       res.status(204).end();
+      next();
     } catch (error) {
       next(error);
     }
@@ -397,6 +418,7 @@ router.post('/addNodeToProxyNode', validateBody, async (req, res, next) => {
       config,
     });
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -412,6 +434,7 @@ router.post('/updateNodeProxyNode', validateBody, async (req, res, next) => {
       config,
     });
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -428,6 +451,7 @@ router.post(
         node_id,
       });
       res.status(204).end();
+      next();
     } catch (error) {
       next(error);
     }
@@ -442,6 +466,7 @@ router.post('/setLastBlock', validateBody, async (req, res, next) => {
       block_height,
     });
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }

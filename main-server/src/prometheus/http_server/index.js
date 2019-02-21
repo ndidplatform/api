@@ -24,21 +24,19 @@ import fs from 'fs';
 import http from 'http';
 import https from 'https';
 import express from 'express';
-import bodyParser from 'body-parser';
 import morgan from 'morgan';
 
 import routes from './routes';
-import { bodyParserErrorHandler } from './routes/middleware/error_handler';
 
-import logger from '../logger';
+import logger from '../../logger';
 
-import * as config from '../config';
+import * as config from '../../config';
 
 let server;
 
 export function initialize() {
   logger.info({
-    message: 'Starting HTTP server',
+    message: 'Starting Prometheus metrics HTTP server',
   });
 
   const app = express();
@@ -49,25 +47,22 @@ export function initialize() {
     })
   );
 
-  app.use(bodyParser.json({ limit: '3mb' }));
-  app.use(bodyParserErrorHandler);
-
   app.use(routes);
 
-  if (config.https) {
+  if (config.prometheusHttps) {
     const httpsOptions = {
-      key: fs.readFileSync(config.httpsKeyPath),
-      cert: fs.readFileSync(config.httpsCertPath),
+      key: fs.readFileSync(config.prometheusHttpsKeyPath),
+      cert: fs.readFileSync(config.prometheusHttpsCertPath),
     };
     server = https.createServer(httpsOptions, app);
   } else {
     server = http.createServer(app);
   }
-  server.listen(config.serverPort, () => {
+  server.listen(config.prometheusServerPort, () => {
     logger.info({
-      message: `${config.https ? 'HTTPS' : 'HTTP'} server listening on port ${
-        config.serverPort
-      }`,
+      message: `Prometheus metrics ${
+        config.prometheusHttps ? 'HTTPS' : 'HTTP'
+      } server listening on port ${config.prometheusServerPort}`,
     });
   });
 }
@@ -77,7 +72,9 @@ export function close() {
     if (server) {
       server.close(() => {
         logger.info({
-          message: `${config.https ? 'HTTPS' : 'HTTP'} server closed`,
+          message: `Prometheus metrics ${
+            config.prometheusHttps ? 'HTTPS' : 'HTTP'
+          } server closed`,
         });
         resolve();
       });

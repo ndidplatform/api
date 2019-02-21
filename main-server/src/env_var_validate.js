@@ -145,4 +145,16 @@ if (process.env.NODE_ENV === 'production') {
   //   );
   //   process.exit(1);
   // }
+
+  if (
+    process.env.PROMETHEUS_HTTPS === 'true' &&
+    (!process.env.PROMETHEUS_HTTPS_KEY_PATH ||
+      !process.env.PROMETHEUS_HTTPS_CERT_PATH)
+  ) {
+    console.error(
+      'ERROR:',
+      '"PROMETHEUS_HTTPS_KEY_PATH" and "PROMETHEUS_HTTPS_CERT_PATH" environment variables are not set when "PROMETHEUS_HTTPS" is set to true. Process will now exit.'
+    );
+    process.exit(1);
+  }
 }

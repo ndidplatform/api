@@ -54,6 +54,7 @@ export async function handleMessageFromQueue(
   });
 
   common.incrementProcessingInboundMessagesCount();
+  const startTime = Date.now();
 
   const requestId = message.request_id;
   try {
@@ -70,6 +71,16 @@ export async function handleMessageFromQueue(
         message,
         processMessage,
       });
+      common.notifyMetricsInboundMessageProcessTime(
+        'does_not_wait_for_block',
+        startTime
+      );
+    } else {
+      // Save message to redis cache time
+      common.notifyMetricsInboundMessageProcessTime(
+        'wait_for_block',
+        startTime
+      );
     }
   } catch (error) {
     const err = new CustomError({
@@ -77,6 +88,7 @@ export async function handleMessageFromQueue(
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    common.notifyMetricsFailInboundMessageProcess();
     const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
@@ -102,6 +114,8 @@ export async function handleTendermintNewBlock(
     fromHeight,
     toHeight,
   });
+
+  const startTime = Date.now();
   try {
     await requestProcessManager.processMessageInBlocks(
       fromHeight,
@@ -110,12 +124,14 @@ export async function handleTendermintNewBlock(
       processMessage
     );
     await processTasksInBlocks(parsedTransactionsInBlocks, nodeId);
+    common.notifyMetricsBlockProcessTime(startTime);
   } catch (error) {
     const err = new CustomError({
       message: 'Error handling Tendermint NewBlock event',
       cause: error,
     });
     logger.error(err.getInfoForLog());
+    common.notifyMetricsFailedBlockProcess();
     const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,

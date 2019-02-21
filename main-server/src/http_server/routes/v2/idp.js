@@ -39,6 +39,7 @@ router.get('/callback', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -61,6 +62,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
     });
 
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -104,6 +106,7 @@ router.post('/response', validateBody, async (req, res, next) => {
     );
 
     res.status(202).end();
+    next();
   } catch (error) {
     next(error);
   }

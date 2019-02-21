@@ -20,9 +20,9 @@
  *
  */
 
-import TendermintWsClient from './ws_client';
+import { EventEmitter } from 'events';
 
-// import logger from '../logger';
+import TendermintWsClient from './ws_client';
 
 import CustomError from 'ndid-error/custom_error';
 
@@ -35,6 +35,10 @@ const wsClients = [];
 
 let wsClientIndex = 0;
 
+let connectedWsCount = 0;
+
+export const metricsEventEmitter = new EventEmitter();
+
 function connectWS(wsClient) {
   return new Promise((resolve) => {
     wsClient.once('connected', () => resolve());
@@ -46,6 +50,12 @@ export async function initialize(connect = true) {
   const promises = [];
   for (let i = 0; i < config.tendermintWsConnections; i++) {
     const tendermintWsClient = new TendermintWsClient(`ws_pool_${i}`, false);
+    tendermintWsClient.on('connected', () =>
+      incrementWsConnectedConnectionCount()
+    );
+    tendermintWsClient.on('disconnected', () =>
+      decrementWsConnectedConnectionCount()
+    );
     wsClients.push(tendermintWsClient);
     if (connect) {
       promises.push(connectWS(tendermintWsClient));
@@ -103,4 +113,14 @@ export function closeAllConnections() {
   for (let i = 0; i < wsClients.length; i++) {
     wsClients[i].close();
   }
+}
+
+function incrementWsConnectedConnectionCount() {
+  connectedWsCount++;
+  metricsEventEmitter.emit('connectedConnectionCount', connectedWsCount);
+}
+
+function decrementWsConnectedConnectionCount() {
+  connectedWsCount--;
+  metricsEventEmitter.emit('connectedConnectionCount', connectedWsCount);
 }

@@ -21,6 +21,7 @@
  */
 
 import path from 'path';
+import EventEmitter from 'events';
 
 import protobuf from 'protobufjs';
 
@@ -74,6 +75,8 @@ const rawMessagesToRetry = [];
 
 let messageHandlerFunction;
 let errorHandlerFunction;
+
+export const metricsEventEmitter = new EventEmitter();
 
 export function setMessageHandlerFunction(handler) {
   messageHandlerFunction = handler;
@@ -171,7 +174,7 @@ async function sendSavedPendingOutboundMessages() {
           payloadBuffer,
           sendTime,
         };
-        pendingOutboundMessagesCount++;
+        incrementPendingOutboundMessagesCount();
         mqService
           .sendMessage(
             mqDestAddress,
@@ -180,11 +183,14 @@ async function sendSavedPendingOutboundMessages() {
             true,
             MQ_SEND_TOTAL_TIMEOUT
           )
-          .catch((error) => logger.error(error.getInfoForLog()))
+          .catch((error) => {
+            logger.error(error.getInfoForLog());
+            metricsEventEmitter.emit('mqSendMessageFail');
+          })
           .then(() => {
             // finally
             delete pendingOutboundMessages[msgId];
-            pendingOutboundMessagesCount--;
+            decrementPendingOutboundMessagesCount();
           });
       }
       await cacheDb.removePendingOutboundMessage(config.nodeId, msgId);
@@ -625,7 +631,7 @@ export async function send(receivers, message, senderNodeId) {
         payloadBuffer,
         sendTime: Date.now(),
       };
-      pendingOutboundMessagesCount++;
+      incrementPendingOutboundMessagesCount();
 
       logger.debug({
         message: 'Sending message to message queue service server',
@@ -640,11 +646,20 @@ export async function send(receivers, message, senderNodeId) {
           true,
           MQ_SEND_TOTAL_TIMEOUT
         )
-        .catch((error) => logger.error(error.getInfoForLog()))
+        .then(() => {
+          metricsEventEmitter.emit(
+            'mqSendMessageTime',
+            Date.now() - pendingOutboundMessages[msgId].sendTime
+          );
+        })
+        .catch((error) => {
+          logger.error(error.getInfoForLog());
+          metricsEventEmitter.emit('mqSendMessageFail');
+        })
         .then(() => {
           // finally
           delete pendingOutboundMessages[msgId];
-          pendingOutboundMessagesCount--;
+          decrementPendingOutboundMessagesCount();
         });
     })
   );
@@ -699,6 +714,22 @@ export async function close() {
   for (let id in timer) {
     clearTimeout(timer[id]);
   }
+}
+
+function incrementPendingOutboundMessagesCount() {
+  pendingOutboundMessagesCount++;
+  metricsEventEmitter.emit(
+    'pendingOutboundMessagesCount',
+    pendingOutboundMessagesCount
+  );
+}
+
+function decrementPendingOutboundMessagesCount() {
+  pendingOutboundMessagesCount--;
+  metricsEventEmitter.emit(
+    'pendingOutboundMessagesCount',
+    pendingOutboundMessagesCount
+  );
 }
 
 export function getPendingOutboundMessagesCount() {
