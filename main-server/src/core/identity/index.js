@@ -23,8 +23,9 @@
 import { createIdentity } from './create_identity';
 import { revokeAccessor } from './revoke_accessor';
 
+import { getFunction } from '..';
+
 import * as tendermintNdid from '../../tendermint/ndid';
-import { getFunction } from '../common';
 import * as cacheDb from '../../db/cache';
 
 import CustomError from 'ndid-error/custom_error';

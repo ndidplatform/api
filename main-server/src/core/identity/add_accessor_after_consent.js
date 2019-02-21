@@ -20,7 +20,8 @@
  *
  */
 
-import { getFunction, closeRequest } from '../common';
+import { getFunction } from '..';
+import { closeRequest } from '../common';
 
 import logger from '../../logger';
 

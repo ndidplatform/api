@@ -20,7 +20,8 @@
  *
  */
 
-import { removeTimeoutScheduler, getFunction } from '.';
+import { getFunction } from '..';
+import { removeTimeoutScheduler } from '.';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';

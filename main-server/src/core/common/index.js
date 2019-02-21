@@ -22,19 +22,12 @@
 
 import EventEmitter from 'events';
 
-import { createRequestInternalAsyncAfterBlockchain } from './create_request';
-import { closeRequestInternalAsyncAfterBlockchain } from './close_request';
-
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
 
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
-import * as rp from '../rp';
-import * as idp from '../idp';
-import * as as from '../as';
-import * as identity from '../identity';
 import * as mq from '../../mq';
 import { callbackToClient } from '../../utils/callback';
 import * as utils from '../../utils';
@@ -88,66 +81,6 @@ export async function setMessageQueueAddress() {
       });
     }
     messageQueueAddressesSet = true;
-  }
-}
-
-export function getFunction(fnName) {
-  switch (fnName) {
-    case 'common.createRequestInternalAsyncAfterBlockchain':
-      return createRequestInternalAsyncAfterBlockchain;
-    case 'common.closeRequestInternalAsyncAfterBlockchain':
-      return closeRequestInternalAsyncAfterBlockchain;
-    case 'common.isRequestClosedOrTimedOut':
-      return isRequestClosedOrTimedOut;
-    case 'common.timeoutRequestAfterBlockchain':
-      return timeoutRequestAfterBlockchain;
-    case 'idp.requestChallengeAfterBlockchain':
-      return idp.requestChallengeAfterBlockchain;
-    case 'idp.createResponseAfterBlockchain':
-      return idp.createResponseAfterBlockchain;
-    case 'idp.processIdpResponseAfterAddAccessor':
-      return idp.processIdpResponseAfterAddAccessor;
-    case 'as.afterGotDataFromCallback':
-      return as.afterGotDataFromCallback;
-    case 'as.registerOrUpdateASServiceInternalAsyncAfterBlockchain':
-      return as.registerOrUpdateASServiceInternalAsyncAfterBlockchain;
-    case 'as.processDataForRPInternalAsyncAfterBlockchain':
-      return as.processDataForRPInternalAsyncAfterBlockchain;
-    case 'identity.updateIalInternalAsyncAfterBlockchain':
-      return identity.updateIalInternalAsyncAfterBlockchain;
-    case 'identity.createIdentityInternalAsyncAfterCreateRequestBlockchain':
-      return identity.createIdentityInternalAsyncAfterCreateRequestBlockchain;
-    case 'identity.createIdentityInternalAsyncAfterBlockchain':
-      return identity.createIdentityInternalAsyncAfterBlockchain;
-    case 'identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain':
-      return identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain;
-    case 'identity.checkForExistedIdentityAfterBlockchain':
-      return identity.checkForExistedIdentityAfterBlockchain;
-    case 'identity.createIdentityInternalAsyncAfterClearRegisterIdentityTimeout':
-      return identity.createIdentityInternalAsyncAfterClearRegisterIdentityTimeout;
-    case 'identity.addAccessorAfterCloseConsentRequest':
-      return identity.addAccessorAfterCloseConsentRequest;
-    case 'identity.addAccessorAfterConsentAfterAddAccessorMethod':
-      return identity.addAccessorAfterConsentAfterAddAccessorMethod;
-    case 'identity.addAccessorAfterConsentAfterRegisterMqDest':
-      return identity.addAccessorAfterConsentAfterRegisterMqDest;
-    case 'identity.notifyResultOfCreateRequestToRevokeAccessor':
-      return identity.notifyResultOfCreateRequestToRevokeAccessor;
-    case 'identity.revokeAccessorAfterCloseConsentRequest':
-      return identity.revokeAccessorAfterCloseConsentRequest;
-    case 'identity.notifyRevokeAccessorAfterConsent':
-      return identity.notifyRevokeAccessorAfterConsent;
-    case 'idp.processIdpResponseAfterRevokeAccessor':
-      return idp.processIdpResponseAfterRevokeAccessor;
-    case 'rp.processAsDataAfterSetDataReceived':
-      return rp.processAsDataAfterSetDataReceived;
-    default:
-      throw new CustomError({
-        message: 'Unknown function name',
-        details: {
-          fnName,
-        },
-      });
   }
 }
 
@@ -318,7 +251,7 @@ export async function timeoutRequest(nodeId, requestId) {
   }
 }
 
-function timeoutRequestAfterBlockchain(
+export function timeoutRequestAfterBlockchain(
   { error, chainDisabledRetryLater },
   { nodeId, requestId }
 ) {

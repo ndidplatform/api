@@ -29,7 +29,8 @@ import './env_var_validate';
 
 import * as httpServer from './http_server';
 import * as node from './node';
-import * as core from './core/common';
+import * as core from './core';
+import * as coreCommon from './core/common';
 import * as rp from './core/rp';
 import * as idp from './core/idp';
 import * as as from './core/as';
@@ -145,7 +146,7 @@ async function initialize() {
     }
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
-      mq.setErrorHandlerFunction(core.handleMessageQueueError, () => {
+      mq.setErrorHandlerFunction(coreCommon.handleMessageQueueError, () => {
         // FIXME ?
         if (role === 'rp') {
           rp.getErrorCallbackUrl();
@@ -170,11 +171,11 @@ async function initialize() {
         const nodesBehindProxy = await node.getNodesBehindProxyWithKeyOnProxy();
         nodeIds = nodesBehindProxy.map((node) => node.node_id);
       }
-      await core.resumeTimeoutScheduler(nodeIds);
+      await coreCommon.resumeTimeoutScheduler(nodeIds);
     }
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
-      await core.setMessageQueueAddress();
+      await coreCommon.setMessageQueueAddress();
       await mq.loadAndProcessBacklogMessages();
     }
 
@@ -239,7 +240,7 @@ async function shutDown() {
   // remove after finish using DB
   // => Wait here until a queue to use DB is empty
   await Promise.all([cacheDb.close(), longTermDb.close(), dataDb.close()]);
-  core.stopAllTimeoutScheduler();
+  coreCommon.stopAllTimeoutScheduler();
 }
 
 process.on('SIGTERM', shutDown);

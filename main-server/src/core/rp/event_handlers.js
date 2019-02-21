@@ -20,7 +20,7 @@
  *
  */
 
-import { getErrorCallbackUrl, isAllIdpResponsesValid, processMessage } from '.';
+import { getErrorCallbackUrl, isAllIdpResponsesValid } from '.';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
@@ -65,7 +65,7 @@ export async function handleMessageFromQueue(
         nodeId,
         messageId,
         message,
-        processMessage,
+        processMessageFnName: 'rp.processMessage',
       });
       common.notifyMetricsInboundMessageProcessTime(
         'does_not_wait_for_block',
@@ -113,12 +113,12 @@ export async function handleTendermintNewBlock(
 
   const startTime = Date.now();
   try {
-    await requestProcessManager.processMessageInBlocks(
+    await requestProcessManager.processMessageInBlocks({
       fromHeight,
       toHeight,
       nodeId,
-      processMessage
-    );
+      processMessageFnName: 'rp.processMessage',
+    });
     await processTasksInBlocks(parsedTransactionsInBlocks, nodeId);
     common.notifyMetricsBlockProcessTime(startTime);
   } catch (error) {
@@ -162,7 +162,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
           requestProcessManager.addTaskToQueue({
             nodeId,
             requestId,
-            callback: processRequestUpdate,
+            callbackFnName: 'rp.processRequestUpdate',
             callbackArgs: [nodeId, requestId, height, callbackUrl, referenceId],
           })
       );
@@ -175,7 +175,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
  * @param {string} requestId
  * @param {integer} height
  */
-async function processRequestUpdate(
+export async function processRequestUpdate(
   nodeId,
   requestId,
   height,
