@@ -23,7 +23,7 @@
 import { createIdentity } from './create_identity';
 import { revokeAccessor } from './revoke_accessor';
 
-import { getFunction } from '..';
+import { getFunction } from '../../functions';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';

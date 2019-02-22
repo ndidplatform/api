@@ -20,23 +20,26 @@
  *
  */
 
-//gRPC server
 import path from 'path';
+import EventEmitter from 'events';
+
 import grpc from 'grpc';
 import * as protoLoader from '@grpc/proto-loader';
 
-import * as config from '../config';
-import { EventEmitter } from 'events';
-import logger from '../logger';
 import { randomBase64Bytes } from '../utils';
 import CustomError from 'ndid-error/custom_error';
+import logger from '../logger';
 
-export const eventEmitter = new EventEmitter();
+import * as config from '../config';
 
-const jobTypeList = ['mq','callback'];
+let server;
+
+// const jobTypeList = ['mq', 'callback'];
 const workerList = [];
 const workerLostHandling = {};
 let counter = 0;
+
+export const eventEmitter = new EventEmitter();
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -51,8 +54,13 @@ const packageDefinition = protoLoader.loadSync(
 );
 const proto = grpc.loadPackageDefinition(packageDefinition);
 
+const grpcCallRefIdPrefix = randomBase64Bytes(8);
+let grpcCallRefIdCounter = 0;
+
+const grpcCall = {};
+
 export function initialize() {
-  const server = new grpc.Server({
+  server = new grpc.Server({
     'grpc.max_receive_message_length': -1,
   });
   const MASTER_SERVER_ADDRESS = `0.0.0.0:${config.masterServerPort}`;
@@ -67,7 +75,7 @@ export function initialize() {
   server.start();
 
   logger.info({
-    message: 'Master gRPC server initialzed'
+    message: 'Master gRPC server initialzed',
   });
 }
 
@@ -77,7 +85,7 @@ function subscribe(call) {
   });
   const { workerId } = call.request;
 
-  if(workerLostHandling[workerId]) {
+  if (workerLostHandling[workerId]) {
     //duplicate workerId
     call.end();
     return;
@@ -91,42 +99,44 @@ function subscribe(call) {
   workerList.push({
     connection: call,
     workerId,
+    jobCount: 0,
   });
 
   call.on('cancelled', () => {
-    for(let i = 0 ; i < workerList.length ; i++) {
-      if(workerList[i].workerId === workerId) workerList.splice(i,1);
+    for (let i = 0; i < workerList.length; i++) {
+      if (workerList[i].workerId === workerId) workerList.splice(i, 1);
     }
-    handleWorkerLost(workerId);
+    // TODO
+    // handleWorkerLost(workerId);
   });
+
+  eventEmitter.emit('worker_connected', workerId);
 }
 
-function handleWorkerLost(workerId) {
-  jobTypeList.forEach((type) => {
-    let giveUpTimeObject = workerLostHandling[workerId][type];
-    for(let dataId in giveUpTimeObject) {
-      let giveUpTime = giveUpTimeObject[dataId];
-      if(Date.now() < giveUpTime) {
-        delegateToWorker({
-          type: 'handleRetry',
-          args: function(type, dataId, giveUpTime) {
-            //cast to arguments object
-            return arguments;
-          }()
-        });
-      }
-    }
-  });
-  delete workerLostHandling[workerId];
-}
+// function handleWorkerLost(workerId) {
+//   jobTypeList.forEach((type) => {
+//     let giveUpTimeObject = workerLostHandling[workerId][type];
+//     for (let dataId in giveUpTimeObject) {
+//       let giveUpTime = giveUpTimeObject[dataId];
+//       if (Date.now() < giveUpTime) {
+//         delegateToWorker({
+//           type: 'handleRetry',
+//           args: (function(type, dataId, giveUpTime) {
+//             //cast to arguments object
+//             return arguments;
+//           })(),
+//         });
+//       }
+//     }
+//   });
+//   delete workerLostHandling[workerId];
+// }
 
 function jobRetryCall(call, doneFn) {
-  const {
-    dataId, giveUpTime, done, workerId, type
-  } = call.request;
+  const { dataId, giveUpTime, done, workerId, type } = call.request;
 
-  if(workerLostHandling[workerId][type][dataId]) {
-    if(!done) throw 'Duplicate job';
+  if (workerLostHandling[workerId][type][dataId]) {
+    if (!done) throw 'Duplicate job';
     delete workerLostHandling[workerId][type][dataId];
     return;
   }
@@ -137,114 +147,130 @@ function jobRetryCall(call, doneFn) {
 function waitForWorker() {
   return new Promise((resolve) => {
     let id = setInterval(() => {
-      if(workerList.length > 0) {
+      if (workerList.length > 0) {
         clearInterval(id);
         resolve();
       }
-    },2000);
+    }, 2000);
   });
 }
 
 function returnResultCall(call, done) {
-  const {
-    gRPCRef,
-    result,
-    error,
-  } = call.request;
-  eventEmitter.emit('result:' + gRPCRef, {
-    result: JSON.parse(result || null),
-    error: JSON.parse(error || null),
-  });
+  const { grpcRefId, retValStr, error } = call.request;
+  if (grpcCall[grpcRefId]) {
+    const { callback, worker } = grpcCall[grpcRefId];
+    if (error) {
+      logger.error(error);
+      return;
+    }
+    if (callback) {
+      let retVal;
+      if (retValStr) {
+        retVal = JSON.parse(retValStr);
+        retVal = retVal.map((val) => {
+          if (val.type === 'Buffer') {
+            return Buffer.from(val);
+          }
+          return val;
+        });
+      } else {
+        retVal = [];
+      }
+      callback(...retVal);
+    }
+    worker.jobCount--;
+    delete grpcCall[grpcRefId];
+  } else {
+    const error = new CustomError({
+      message: 'Unknown gRPC call ref ID',
+      details: {
+        grpcRefId,
+      },
+    });
+    logger.error(error.getInfoForLog());
+  }
   done();
 }
 
-async function waitForResult(waitForRef) {
-  return new Promise((resolve, reject) => {
-    eventEmitter.once('result:' + waitForRef, ({ result, error }) => {
-      logger.debug({
-        message: 'Master received result',
-        waitForRef,
-        result,
-        error,
-      });
-      if(error == null) resolve(result);
-      else {
-        if(error.name === 'CustomError') {
-          error = new CustomError(error);
-        }
-        reject(error);
+function getWorker(specificWorkerId) {
+  // if (workerList.length === 0) {
+  //   logger.info({
+  //     message: 'No worker connected, waiting...',
+  //   });
+  //   await waitForWorker();
+  // }
+
+  if (workerList.length === 0) {
+    throw new Error('No worker available');
+  }
+
+  if (!specificWorkerId) {
+    // Round-robin
+    // counter = (counter + 1) % workerList.length;
+    // const index = counter;
+
+    // Least job count
+    let min = workerList[0].jobCount;
+    let index = 0;
+    for (let i = 1; i < workerList.length; i++) {
+      if (workerList[i].jobCount < min) {
+        min = workerList[i].jobCount;
+        index = i;
       }
-    });
-  });
+    }
+    return workerList[index];
+  } else {
+    for (let i = 0; i < workerList.length; i++) {
+      if (workerList[i].workerId === specificWorkerId) {
+        return workerList[i];
+      }
+    }
+    throw new Error('Worker not found');
+  }
 }
 
 export async function delegateToWorker({
-  type, 
+  fnName,
   args,
+  callback,
   metaData,
-}, specificWorkerId, gRPCRef = false) {
-  if(!gRPCRef) {
-    gRPCRef = randomBase64Bytes(16); //random
-  }
+  specificWorkerId,
+}) {
+  const grpcRefId = `${grpcCallRefIdPrefix}-${grpcCallRefIdCounter++}`;
 
   logger.debug({
-    message: 'Master delegate',
+    message: 'Master delegate job to worker',
+    fnName,
     args,
     specificWorkerId,
-    gRPCRef,
+    grpcRefId,
   });
-  
-  let index;
-  if(workerList.length === 0) {
-    logger.info({
-      message: 'No worker connected, waiting...'
-    });
-    await waitForWorker();
-  }
 
-  if(!specificWorkerId) {
-    counter = (counter + 1)%workerList.length;
-    index = counter;
-  }
-  else {
-    for(let i = 0 ; i < workerList.length ; i++) {
-      if(workerList[i].workerId === specificWorkerId) {
-        index = i;
-        break;
-      }
-    }
-    if(!index) throw 'Worker not found';
-  }
+  const worker = getWorker(specificWorkerId);
 
-  for(let key in args) {
-    if(
-      args[key] && 
-      args[key].error && 
-      args[key].error.name === 'CustomError'
-    ) {
-      let obj = args[key];
-      args[key].error = {
-        message: obj.error.getMessageWithCode(), 
-        code: obj.error.getCode(), 
-        clientError: obj.error.isRootCauseClientError(),
-        //errorType: error.errorType,
-        details: obj.error.getDetailsOfErrorWithCode(),
-        cause: obj.error.cause,
-        name: 'CustomError',
-      };
-    }
-  }
-  let { connection } = workerList[index];
-  connection.write({
-    type, 
-    gRPCRef,
+  grpcCall[grpcRefId] = { callback, worker };
+
+  worker.jobCount++;
+
+  logger.debug({
+    message: 'Sending job to worker',
+    grpcRefId,
+    workerId: worker.workerId,
+    workerJobCount: worker.jobCount,
+  });
+
+  worker.connection.write({
+    fnName,
+    grpcRefId,
     args: JSON.stringify(args),
     metaData: JSON.stringify(metaData),
   });
-  return waitForResult(gRPCRef);
 }
 
 export function shutdown() {
+  server.tryShutdown(() => {
+    logger.info({ message: 'Job master gRPC server shutdown' });
+  });
   workerList.forEach(({ connection }) => {
     connection.end();
   });

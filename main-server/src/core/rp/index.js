@@ -37,7 +37,6 @@ import logger from '../../logger';
 
 import * as config from '../../config';
 import { role } from '../../node';
-import { delegateToWorker } from '../../master-worker-interface/server';
 
 export * from './event_handlers';
 export * from './process_as_data';
@@ -267,15 +266,6 @@ export async function sendRequestToAS(nodeId, requestData, height) {
 }
 
 export async function processMessage(nodeId, messageId, message) {
-
-  if(config.isMaster) {
-    return delegateToWorker({
-      type: 'processMessage',
-      args: arguments,
-      metaData: {role: 'rp'},
-    });
-  }
-
   const requestId = message.request_id;
   logger.debug({
     message: 'Processing message',

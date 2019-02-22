@@ -36,9 +36,10 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import validate from './message/validator';
 
+import { delegateToWorker } from '../master-worker-interface/server';
+
 import { role } from '../node';
 import * as config from '../config';
-import { delegateToWorker } from '../master-worker-interface/server';
 
 const MQ_SEND_TOTAL_TIMEOUT = 600000;
 
@@ -65,7 +66,7 @@ const EncryptedMqMessage = encryptedMqMessageProtobufRoot.lookupType(
 );
 
 //FIXME
-let prefixMsgId = parseInt(Math.random()*65535);
+let prefixMsgId = parseInt(Math.random() * 65535);
 let outboundMessageIdCounter = 1;
 const pendingOutboundMessages = {};
 let pendingOutboundMessagesCount = 0;
@@ -232,7 +233,7 @@ async function onMessage({ message, msgId, senderId }) {
     ) {
       rawMessagesToRetry[id] = message;
     } else {
-      await processMessage(id, message, timestamp);
+      await processRawMessageSwitch(id, message, timestamp);
     }
   } catch (error) {
     if (errorHandlerFunction) {
@@ -242,21 +243,6 @@ async function onMessage({ message, msgId, senderId }) {
 }
 
 async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
-  const messageHex = messageProtobuf.toString('hex');
-  const decryptedHex = await getMessageFromProtobufMessageInternal(messageHex, nodeId);
-  return MqMessage.decode(Buffer.from(decryptedHex,'hex'));
-}
-
-export async function getMessageFromProtobufMessageInternal(messageHex, nodeId) {
-
-  if(config.isMaster) {
-    return delegateToWorker({
-      type: 'decrypt', 
-      args: arguments
-    });
-  }
-  const messageProtobuf = Buffer.from(messageHex,'hex');
-
   const decodedMessage = EncryptedMqMessage.decode(messageProtobuf);
   const {
     encrypted_symmetric_key: encryptedSymmetricKey,
@@ -276,12 +262,23 @@ export async function getMessageFromProtobufMessageInternal(messageHex, nodeId) 
     });
   }
 
-  return decryptedBuffer.toString('hex');
-  /*const decodedDecryptedMessage = MqMessage.decode(decryptedBuffer);
-  return decodedDecryptedMessage;*/
+  const decodedDecryptedMessage = MqMessage.decode(decryptedBuffer);
+  return decodedDecryptedMessage;
 }
 
-async function processMessage(messageId, messageProtobuf, timestamp) {
+function processRawMessageSwitch(messageId, messageProtobuf, timestamp) {
+  if (config.isMaster) {
+    return delegateToWorker({
+      fnName: 'mq.processRawMessage',
+      args: [messageId, messageProtobuf, timestamp],
+      callback: messageHandlerFunction,
+    });
+  } else {
+    // TODO
+  }
+}
+
+export async function processRawMessage(messageId, messageProtobuf, timestamp) {
   logger.info({
     message: 'Processing raw received message from message queue',
     messageId,
@@ -292,8 +289,6 @@ async function processMessage(messageId, messageProtobuf, timestamp) {
       messageProtobuf,
       config.nodeId
     );
-
-    //const outerLayerDecodedDecryptedMessage = MqMessage.decode(Buffer.from(outerLayerDecryptedMessage,'hex'));
 
     logger.debug({
       message: 'Decrypted message from message queue',
@@ -448,8 +443,9 @@ async function processMessage(messageId, messageProtobuf, timestamp) {
 
     if (messageHandlerFunction) {
       messageHandlerFunction(messageId, message, receiverNodeId);
+    } else {
+      return [messageId, message, receiverNodeId];
     }
-    removeRawMessageFromCache(messageId);
   } catch (error) {
     if (errorHandlerFunction) {
       errorHandlerFunction(error);
@@ -459,6 +455,7 @@ async function processMessage(messageId, messageProtobuf, timestamp) {
         'Error processing received message from message queue. Discarding message.',
       error,
     });
+  } finally {
     removeRawMessageFromCache(messageId);
   }
 }
@@ -487,7 +484,7 @@ function retryProcessMessages() {
     longTermDb.getRedisInstance().connected
   ) {
     Object.entries(rawMessagesToRetry).map(([messageId, messageBuffer]) => {
-      processMessage(messageId, messageBuffer);
+      processRawMessageSwitch(messageId, messageBuffer);
       delete rawMessagesToRetry[messageId];
     });
   }
@@ -509,7 +506,7 @@ export async function loadAndProcessBacklogMessages() {
       });
     }
     rawMessages.map(({ messageId, messageBuffer }) =>
-      processMessage(messageId, messageBuffer)
+      processRawMessageSwitch(messageId, messageBuffer)
     );
   } catch (error) {
     logger.error({

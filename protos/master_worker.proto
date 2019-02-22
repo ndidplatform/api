@@ -11,9 +11,9 @@ message WorkerId {
 }
 
 message OutboundMessage {
-  string type = 1;
+  string fnName = 1;
   string args = 2;
-  string gRPCRef = 3;
+  string grpcRefId = 3;
   string metaData = 4;
 }
 
@@ -26,8 +26,8 @@ message InboundMessageForRetry {
 }
 
 message Result {
-  string gRPCRef = 1;
-  string result = 2;
+  string grpcRefId = 1;
+  string retValStr = 2;
   string error = 3;
 }
 

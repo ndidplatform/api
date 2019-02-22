@@ -20,7 +20,7 @@
  *
  */
 
-import { getFunction } from '..';
+import { getFunction } from '../../functions';
 import { removeTimeoutScheduler } from '.';
 
 import * as tendermintNdid from '../../tendermint/ndid';

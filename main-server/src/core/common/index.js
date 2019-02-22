@@ -128,6 +128,7 @@ export function checkRequestMessageIntegrity(
   return true;
 }
 
+// FIXME: no getErrorCallbackUrl given from all function calls
 export async function handleMessageQueueError(error, getErrorCallbackUrl) {
   const err = new CustomError({
     message: 'Message queue receiving error',

@@ -20,16 +20,18 @@
  *
  */
 
-import * as common from './common';
-import * as rp from './rp';
-import * as idp from './idp';
-import * as as from './as';
-import * as identity from './identity';
+import * as common from './core/common';
+import * as rp from './core/rp';
+import * as idp from './core/idp';
+import * as as from './core/as';
+import * as identity from './core/identity';
+import * as mq from './mq';
 
 import CustomError from 'ndid-error/custom_error';
 
 export function getFunction(fnName) {
   switch (fnName) {
+    // Core module
     case 'common.createRequestInternalAsyncAfterBlockchain':
       return common.createRequestInternalAsyncAfterBlockchain;
     case 'common.closeRequestInternalAsyncAfterBlockchain':
@@ -78,6 +80,7 @@ export function getFunction(fnName) {
       return idp.processIdpResponseAfterRevokeAccessor;
     case 'rp.processAsDataAfterSetDataReceived':
       return rp.processAsDataAfterSetDataReceived;
+    // Core module - process task by request ID
     case 'rp.processMessage':
       return rp.processMessage;
     case 'rp.processRequestUpdate':
@@ -92,6 +95,9 @@ export function getFunction(fnName) {
       return as.processMessage;
     case 'as.processRequestUpdate':
       return as.processRequestUpdate;
+    // MQ
+    case 'mq.processRawMessage':
+      return mq.processRawMessage;
     default:
       throw new CustomError({
         message: 'Unknown function name',

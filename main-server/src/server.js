@@ -29,13 +29,13 @@ import './env_var_validate';
 
 import * as httpServer from './http_server';
 import * as node from './node';
-import * as core from './core';
 import * as coreCommon from './core/common';
 import * as rp from './core/rp';
 import * as idp from './core/idp';
 import * as as from './core/as';
 import * as proxy from './core/proxy';
 import * as nodeKey from './utils/node_key';
+import { getFunction } from './functions';
 
 import * as cacheDb from './db/cache';
 import * as longTermDb from './db/long_term';
@@ -45,8 +45,8 @@ import * as tendermintWsPool from './tendermint/ws_pool';
 import * as mq from './mq';
 import * as callbackUtil from './utils/callback';
 import * as externalCryptoService from './utils/external_crypto_service';
-import { initialize as masterInitialize } from './master-worker-interface/server';
-import { initialize as workerInitialize } from './master-worker-interface/client';
+import * as jobMaster from './master-worker-interface/server';
+import * as jobWorker from './master-worker-interface/client';
 import * as prometheus from './prometheus';
 
 import logger from './logger';
@@ -72,9 +72,23 @@ process.on('unhandledRejection', function(reason, p) {
 async function initialize() {
   logger.info({ message: 'Initializing server' });
   try {
+    if (config.isMaster) {
+      await jobMaster.initialize();
+      logger.info({ message: 'Waiting for available worker' });
+      await new Promise((resolve) =>
+        jobMaster.eventEmitter.once('worker_connected', () => resolve())
+      );
+    } else {
+      await jobWorker.initialize();
+    }
+
     tendermint.loadSavedData();
 
-    await Promise.all([cacheDb.initialize(), longTermDb.initialize()]);
+    await Promise.all([
+      cacheDb.initialize(),
+      longTermDb.initialize(),
+      dataDb.initialize(),
+    ]);
 
     if (config.prometheusEnabled) {
       prometheus.initialize();
@@ -83,7 +97,7 @@ async function initialize() {
     if (config.ndidNode) {
       tendermint.setWaitForInitEndedBeforeReady(false);
     }
-    tendermint.setTxResultCallbackFnGetter(core.getFunction);
+    tendermint.setTxResultCallbackFnGetter(getFunction);
 
     const tendermintReady = new Promise((resolve) =>
       tendermint.eventEmitter.once('ready', (status) => resolve(status))
@@ -100,21 +114,29 @@ async function initialize() {
     }
 
     if (role === 'rp') {
-      mq.setMessageHandlerFunction(rp.handleMessageFromQueue);
+      if (config.isMaster) {
+        mq.setMessageHandlerFunction(rp.handleMessageFromQueue);
+      }
       tendermint.setTendermintNewBlockEventHandler(rp.handleTendermintNewBlock);
       await rp.checkCallbackUrls();
     } else if (role === 'idp') {
-      mq.setMessageHandlerFunction(idp.handleMessageFromQueue);
+      if (config.isMaster) {
+        mq.setMessageHandlerFunction(idp.handleMessageFromQueue);
+      }
       tendermint.setTendermintNewBlockEventHandler(
         idp.handleTendermintNewBlock
       );
       await idp.checkCallbackUrls();
     } else if (role === 'as') {
-      mq.setMessageHandlerFunction(as.handleMessageFromQueue);
+      if (config.isMaster) {
+        mq.setMessageHandlerFunction(as.handleMessageFromQueue);
+      }
       tendermint.setTendermintNewBlockEventHandler(as.handleTendermintNewBlock);
       await as.checkCallbackUrls();
     } else if (role === 'proxy') {
-      mq.setMessageHandlerFunction(proxy.handleMessageFromQueue);
+      if (config.isMaster) {
+        mq.setMessageHandlerFunction(proxy.handleMessageFromQueue);
+      }
       tendermint.setTendermintNewBlockEventHandler(
         proxy.handleTendermintNewBlock
       );
@@ -123,8 +145,8 @@ async function initialize() {
       await as.checkCallbackUrls();
     }
 
-    callbackUtil.setShouldRetryFnGetter(core.getFunction);
-    callbackUtil.setResponseCallbackFnGetter(core.getFunction);
+    callbackUtil.setShouldRetryFnGetter(getFunction);
+    callbackUtil.setResponseCallbackFnGetter(getFunction);
 
     let externalCryptoServiceReady;
     if (config.useExternalCryptoService) {
@@ -198,9 +220,6 @@ async function initialize() {
       callbackUtil.resumeCallbackToClient();
     }
 
-    if (config.isMaster) await masterInitialize();
-    else await workerInitialize();
-
     logger.info({ message: 'Server initialized' });
   } catch (error) {
     logger.error({
@@ -257,6 +276,12 @@ async function shutDown() {
   // => Wait here until a queue to use DB is empty
   await Promise.all([cacheDb.close(), longTermDb.close(), dataDb.close()]);
   coreCommon.stopAllTimeoutScheduler();
+
+  if (config.isMaster) {
+    jobMaster.shutdown();
+  } else {
+    jobWorker.shutdown();
+  }
 }
 
 process.on('SIGTERM', shutDown);

@@ -22,15 +22,19 @@
 
 import EventEmitter from 'events';
 
-import { getFunction } from '.';
+import { getFunction } from '../functions';
 
 import * as tendermint from '../tendermint';
 import * as cacheDb from '../db/cache';
 import * as utils from '../utils';
 
+import { delegateToWorker } from '../master-worker-interface/server';
+
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../logger';
+
+import * as config from '../config';
 
 const messageProcessLock = {};
 const requestQueue = {};
@@ -202,7 +206,17 @@ function executeTaskInQueue(requestId) {
     notifyTaskPendingTime(pendingStartTime);
     incrementProcessingTasksCount();
     const startTime = Date.now();
-    getFunction(callbackFnName)(...callbackArgs)
+
+    let promise;
+    if (config.isMaster) {
+      promise = delegateToWorker({
+        fnName: callbackFnName,
+        args: callbackArgs,
+      });
+    } else {
+      promise = getFunction(callbackFnName)(...callbackArgs);
+    }
+    promise
       .then(() => {
         notifyTaskProcessTime(startTime);
       })

@@ -20,7 +20,7 @@
  *
  */
 
-import { getFunction } from '..';
+import { getFunction } from '../../functions';
 import {
   getIdpsMsqDestination,
   setTimeoutScheduler,
