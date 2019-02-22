@@ -105,7 +105,9 @@ router.get('/source', (req, res) => {
 router.use(serverInfo);
 
 // Prometheus
-router.use(setHttpRequestStartTime);
+if (config.prometheusEnabled) {
+  router.use(setHttpRequestStartTime);
+}
 
 router.get('/reinit_node_keys', reinitNodeKeys);
 
@@ -120,7 +122,9 @@ router.use('/v2', apiV2Router);
 router.use(errorHandler);
 
 // Prometheus
-router.use(collectHttpRequestDuration);
+if (config.prometheusEnabled) {
+  router.use(collectHttpRequestDuration);
+}
 
 // All other paths besides stated above are invalid
 router.use('*', function(req, res) {
