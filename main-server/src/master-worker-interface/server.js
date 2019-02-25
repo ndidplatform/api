@@ -68,7 +68,7 @@ export function initialize() {
     //mqRetryCall,
     callbackRetryCall,
     requestTimeoutCall,
-    cancelTimerJob,
+    cancelTimerJobCall,
     returnResultCall,
   });
 
@@ -154,7 +154,7 @@ function handleWorkerLost(workerId) {
   delete workerLostHandling[workerId];
 }
 
-function cancelTimerJob(call, done) {
+function cancelTimerJobCall(call, done) {
   const {
     jobId,
     workerId,
