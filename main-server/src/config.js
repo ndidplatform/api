@@ -201,7 +201,7 @@ export const grpcCallTimeout = process.env.GRPC_CALL_TIMEOUT_MS
 export const mode = process.env.MODE
   ? process.env.MODE.toLowerCase()
   : 'standalone';
-export const masterServerPort = process.env.MASTER_SERVER_PORT || 5000;
+export const masterServerPort = process.env.MASTER_SERVER_PORT || 7000;
 export const masterServerIp = process.env.MASTER_SERVER_IP || 'localhost';
 
 export const prometheusEnabled = process.env.PROMETHEUS === 'true';

@@ -66,6 +66,9 @@
 
 **Environment variable options**
 
+- `MODE`: Allowed values are `standalone`, `master`, and `worker`. There can be only one `master` process per Node ID [Default: `standalone`]
+- `MASTER_SERVER_IP`: Master process gRPC server IP address. Required when MODE=master [Default: `localhost`]
+- `MASTER_SERVER_PORT`: Master process gRPC server port. Required when MODE=master and MODE=worker [Default: `7000`]
 - `NODE_ID`: Node ID ties to public key, in dev mode we have `rp1`, `rp2`, `rp3`, `idp1`, `idp2`, `idp3`, `as1`, `as2`, `as3` [Required]
 - `NDID_NODE`: Set to `true` to skip getting role from blockchain and skip waiting for blockchain initialization ended. [Default: `false`]
 - `TENDERMINT_IP`: IP Address to contact tendermint RPC [Default: `localhost`]
