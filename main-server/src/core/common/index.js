@@ -128,19 +128,22 @@ export function checkRequestMessageIntegrity(
   return true;
 }
 
-// FIXME: no getErrorCallbackUrl given from all function calls
-export async function handleMessageQueueError(error, getErrorCallbackUrl) {
-  const err = new CustomError({
-    message: 'Message queue receiving error',
-    cause: error,
-  });
-  logger.error(err.getInfoForLog());
-  const callbackUrl = await getErrorCallbackUrl();
-  await notifyError({
-    callbackUrl,
-    action: 'onMessage',
-    error: err,
-  });
+export function getHandleMessageQueueErrorFn(getErrorCallbackUrl) {
+  return async function handleMessageQueueError(error) {
+    const err = new CustomError({
+      message: 'Message queue receiving error',
+      cause: error,
+    });
+    logger.error(err.getInfoForLog());
+    if (getErrorCallbackUrl) {
+      const callbackUrl = await getErrorCallbackUrl();
+      await notifyError({
+        callbackUrl,
+        action: 'onMessage',
+        error: err,
+      });
+    }
+  };
 }
 
 export async function getIdpsMsqDestination({
@@ -488,7 +491,7 @@ export async function handleChallengeRequest({
       request_id,
       ...nodeIdObj,
       chain_id: tendermint.chainId,
-      height: 1//tendermint.latestBlockHeight,
+      height: 1, //tendermint.latestBlockHeight,
     },
     nodeId
   );

@@ -173,16 +173,17 @@ async function initialize() {
     }
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
-      mq.setErrorHandlerFunction(coreCommon.handleMessageQueueError, () => {
-        // FIXME ?
-        if (role === 'rp') {
-          rp.getErrorCallbackUrl();
-        } else if (role === 'idp') {
-          idp.getErrorCallbackUrl();
-        } else if (role === 'as') {
-          as.getErrorCallbackUrl();
-        }
-      });
+      mq.setErrorHandlerFunction(
+        coreCommon.getHandleMessageQueueErrorFn(() => {
+          if (role === 'rp') {
+            return rp.getErrorCallbackUrl;
+          } else if (role === 'idp') {
+            return idp.getErrorCallbackUrl;
+          } else if (role === 'as') {
+            return as.getErrorCallbackUrl;
+          }
+        })
+      );
       if (config.mode === MODE.STANDALONE) {
         await mq.initialize();
       } else if (config.mode === MODE.MASTER) {
