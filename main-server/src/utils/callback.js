@@ -35,6 +35,7 @@ import errorType from 'ndid-error/type';
 import * as config from '../config';
 
 import getClient from '../master-worker-interface/client';
+import MODE from '../mode';
 
 const RESPONSE_BODY_SIZE_LIMIT = 3 * 1024 * 1024; // 3MB
 
@@ -144,7 +145,7 @@ async function callbackWithRetry(
   const startTime = Date.now();
 
   //tell master about timerJob
-  if(config.mode === 'worker') {
+  if(config.mode === MODE.WORKER) {
     await getClient().callbackRetry({
       cbId,
       deadline: deadline || Date.now() + config.callbackRetryTimeout * 1000,
@@ -167,7 +168,7 @@ async function callbackWithRetry(
       const responseObj = await httpPost(cbId, callbackUrl, body);
 
       //clearTimerJob
-      if(config.mode === 'worker') {
+      if(config.mode === MODE.WORKER) {
         await getClient().cancelTimerJob({
           type: 'callback',
           cbId,

@@ -671,7 +671,7 @@ export async function send(receivers, message, senderNodeId) {
           delete pendingOutboundMessages[msgId];
           decrementPendingOutboundMessagesCount();
         });
-      /*if(config.mode === 'worker') {
+      /*if(config.mode === MODE.WORKER) {
         await getClient().mqRetry({
           msgId, 
           deadline: Date.now() + MQ_SEND_TOTAL_TIMEOUT, 
