@@ -93,8 +93,9 @@ function subscribe(call) {
   }
 
   workerLostHandling[workerId] = {
-    mq: {},
+    //mq: {},
     callback: {},
+    requestTimeout: {},
   };
 
   workerList.push({
