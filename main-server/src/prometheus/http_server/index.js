@@ -43,7 +43,7 @@ export function initialize() {
 
   app.use(
     morgan('combined', {
-      stream: { write: (message) => logger.info(message.trim()) },
+      stream: { write: (message) => logger.info({ message: message.trim() }) },
     })
   );
 
