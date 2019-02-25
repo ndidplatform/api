@@ -462,7 +462,7 @@ export async function processRawMessage(messageId, messageProtobuf, timestamp) {
     logger.warn({
       message:
         'Error processing received message from message queue. Discarding message.',
-      error,
+      err: error,
     });
     throw error;
   } finally {

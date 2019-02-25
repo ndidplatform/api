@@ -28,9 +28,7 @@ const pino = require('pino');
  * @param {string} config.env
  * @param {string} config.name // Remove?
  * @param {string} config.logLevel
- * @param {boolean} config.logPid
- * @param {boolean} config.logHostname
- * @param {boolean} config.logTimestamp
+ * @param {boolean} config.logPrettyPrint
  * @param {boolean} config.logColor
  * @param {string} config.replaceForTooLongLog // Remove?
  * @param {number} config.logLengthThreshold // Remove?
@@ -40,14 +38,13 @@ function initLogger(config) {
   const logger = pino({
     level: config.logLevel,
     messageKey: 'message',
-    base: {
-      pid: config.logPid ? process.pid : null,
-      hostname: config.logHostname ? os.hostname : null,
-    },
-    prettyPrint:
-      config.env === 'development'
-        ? { colorize: config.logColor, translateTime: true, errorProps: '*' }
-        : undefined,
+    // base: {
+    //   pid: config.logPid ? process.pid : null,
+    //   hostname: config.logHostname ? os.hostname : null,
+    // },
+    prettyPrint: config.logPrettyPrint
+      ? { colorize: config.logColor, translateTime: true, errorProps: '*' }
+      : undefined,
   });
 
   return logger;

@@ -92,6 +92,7 @@
 - `LOG_LEVEL`: Log level. Allowed values are `fatal`, `error`, `warn`, `info`, `debug` and `trace` [Default: `debug` in development, `info` in production]
 <!-- - `LOG_FORMAT`: Log format. Allowed values are `default` and `json` [Default: `default`] -->
 <!-- - `LOG_TARGET`: Where should logger writes logs to. Allowed values are `console` and `file` [Default: `console`] -->
+- `LOG_PRETTY_PRINT`: Log prettifier [Default: `true` in development, `false` otherwise]
 - `LOG_COLOR`: Log highlight color [Default: `true` in development, `false` otherwise]
 <!-- - `LOG_ONE_LINE`: Log in a single line (no line break) [Default: `false`] -->
 <!-- - `LOG_DIRECTORY_PATH`: Directory path for log files (use when `LOG_TARGET` is set to `file`) [Default: `__dirname/../log` (`log` directory in repository's directory)] -->

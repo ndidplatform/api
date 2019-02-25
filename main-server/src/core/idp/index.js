@@ -755,7 +755,7 @@ async function checkCreateIdentityResponse(nodeId, message, requestDetail) {
 
     logger.debug({
       message: 'Create identity failed',
-      error,
+      err: error,
     });
     return false;
   }
@@ -900,7 +900,7 @@ async function checkRevokeAccessorResponse(
 
     logger.debug({
       message: 'Revoke identity failed',
-      error,
+      err: error,
     });
     return false;
   }

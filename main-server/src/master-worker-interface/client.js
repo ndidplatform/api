@@ -176,7 +176,7 @@ function returnResult({ grpcRefId, retValStr, error }) {
     message: 'Worker return result',
     grpcRefId,
     retValStr,
-    error,
+    err: error,
   });
   return new Promise((resolve, reject) => {
     client.returnResultCall(

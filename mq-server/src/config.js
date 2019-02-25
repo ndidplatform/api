@@ -54,6 +54,9 @@ export const logLevel =
   process.env.LOG_LEVEL || (env === 'development' ? 'debug' : 'info');
 // export const logFormat = process.env.LOG_FORMAT || 'default';
 // export const logTarget = process.env.LOG_TARGET || 'console';
+export const logPrettyPrint = process.env.LOG_PRETTY_PRINT
+  ? process.env.LOG_PRETTY_PRINT === 'true'
+  : env === 'development';
 export const logColor =
   process.env.LOG_COLOR == null
     ? env === 'development'
