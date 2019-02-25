@@ -37,6 +37,7 @@ import errorType from 'ndid-error/type';
 import validate from './message/validator';
 
 import { delegateToWorker } from '../master-worker-interface/server';
+import getClient from '../master-worker-interface/client';
 
 import { role } from '../node';
 import MODE from '../mode';
@@ -670,6 +671,15 @@ export async function send(receivers, message, senderNodeId) {
           delete pendingOutboundMessages[msgId];
           decrementPendingOutboundMessagesCount();
         });
+      /*if(config.mode === 'worker') {
+        await getClient().mqRetry({
+          msgId, 
+          deadline: Date.now() + MQ_SEND_TOTAL_TIMEOUT, 
+          destination: JSON.stringify(mqDestAddress), 
+          payload: payloadBuffer, 
+          retryOnServerUnavailable: true 
+        });
+      }*/
     })
   );
 

@@ -2,7 +2,10 @@ syntax = "proto3";
  
 service MasterWorker {
   rpc subscribe(WorkerId) returns (stream OutboundMessage){}
-  rpc jobRetryCall(InboundMessageForRetry) returns(Empty){}
+  //rpc mqRetryCall(InboundMessageForMqRetry) returns(Empty){}
+  rpc callbackRetryCall(InboundMessageForCallbackRetry) returns(Empty){}
+  rpc requestTimeoutCall(InboundMessageForRequestTimeout) returns(Empty){}
+  rpc cancelTimerJobCall(InboundMessageForCancelTimerJob) returns(Empty){}
   rpc returnResultCall(Result) returns(Empty){}
 }
 
@@ -17,12 +20,29 @@ message OutboundMessage {
   string metaData = 4;
 }
 
-message InboundMessageForRetry {
-  string dataId = 1;
-  int64 giveUpTime = 2;
-  bool done = 3;
-  string workerId = 4;
-  string type = 5;
+/*message InboundMessageForMqRetry {
+  string msgId = 1;
+  int64 deadline = 2;
+  string workerId = 3;
+  string destination = 4;
+  bytes payload = 5;
+  bool retryOnServerUnavailable = 6;
+}*/
+
+message InboundMessageForCallbackRetry {
+  
+}
+
+message InboundMessageForRequestTimeout {
+  string requestId = 1;
+  int64 deadline = 2;
+  string workerId = 3;
+}
+
+message InboundMessageForCancelTimerJob {
+  string jobId = 1;
+  string type = 2;
+  string workerId = 3;
 }
 
 message Result {
