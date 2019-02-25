@@ -123,7 +123,7 @@ function handleRequestTimeoutWorkerLost(workerId) {
         args: [
           config.nodeId,
           requestId,
-          (Date.now() - deadline)/1000
+          (deadline - Date.now())/1000
         ],
       });
     }

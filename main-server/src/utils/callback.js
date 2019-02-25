@@ -102,25 +102,29 @@ export async function handleCallbackWorkerLost(
   cbId,
   deadline,
 ) {
-  const {
-    callbackUrl,
-    body,
-    shouldRetryFnName,
-    shouldRetryArguments,
-    responseCallbackFnName,
-    dataForResponseCallback,
-  } = await cacheDb.getCallbackWithRetryData(config.nodeId, cbId);
+  let backupCallbackData = await cacheDb.getCallbackWithRetryData(config.nodeId, cbId);
 
-  callbackWithRetry(
-    callbackUrl,
-    body,
-    cbId,
-    shouldRetryFnName,
-    shouldRetryArguments,
-    responseCallbackFnName,
-    dataForResponseCallback,
-    deadline,
-  );
+  if(backupCallbackData) {
+    const {
+      callbackUrl,
+      body,
+      shouldRetryFnName,
+      shouldRetryArguments,
+      responseCallbackFnName,
+      dataForResponseCallback,
+    } = backupCallbackData;
+
+    callbackWithRetry(
+      callbackUrl,
+      body,
+      cbId,
+      shouldRetryFnName,
+      shouldRetryArguments,
+      responseCallbackFnName,
+      dataForResponseCallback,
+      deadline,
+    );
+  }
 }
 
 async function callbackWithRetry(
@@ -171,7 +175,7 @@ async function callbackWithRetry(
       if(config.mode === MODE.WORKER) {
         await getClient().cancelTimerJob({
           type: 'callback',
-          cbId,
+          jobId: cbId,
         });
       }
 

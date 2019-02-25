@@ -308,7 +308,7 @@ export async function removeTimeoutScheduler(nodeId, requestId) {
     promiseArray.push(
       getClient().cancelTimerJob({
         type: 'requestTimeout',
-        requestId,
+        jobId: requestId,
       })
     );
   }
