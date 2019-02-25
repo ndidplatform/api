@@ -39,6 +39,7 @@ import validate from './message/validator';
 import { delegateToWorker } from '../master-worker-interface/server';
 
 import { role } from '../node';
+import MODE from '../mode';
 import * as config from '../config';
 
 const MQ_SEND_TOTAL_TIMEOUT = 600000;
@@ -266,15 +267,32 @@ async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
   return decodedDecryptedMessage;
 }
 
-function processRawMessageSwitch(messageId, messageProtobuf, timestamp) {
-  if (config.isMaster) {
-    return delegateToWorker({
+async function processRawMessageSwitch(messageId, messageProtobuf, timestamp) {
+  let promise;
+  if (config.mode === MODE.STANDALONE) {
+    promise = processRawMessage(messageId, messageProtobuf, timestamp);
+  } else if (config.mode === MODE.MASTER) {
+    promise = delegateToWorker({
       fnName: 'mq.processRawMessage',
       args: [messageId, messageProtobuf, timestamp],
       callback: messageHandlerFunction,
     });
   } else {
-    // TODO
+    throw new Error('Unsupported mode');
+  }
+  try {
+    const [_messageId, message, receiverNodeId] = await promise;
+    if (messageHandlerFunction) {
+      messageHandlerFunction(messageId, message, receiverNodeId);
+    } else {
+      logger.warn({
+        message: 'No registered "messageHandlerFunction" function',
+      });
+    }
+  } catch (error) {
+    if (errorHandlerFunction) {
+      errorHandlerFunction(error);
+    }
   }
 }
 
@@ -441,20 +459,14 @@ export async function processRawMessage(messageId, messageProtobuf, timestamp) {
       }
     );
 
-    if (messageHandlerFunction) {
-      messageHandlerFunction(messageId, message, receiverNodeId);
-    } else {
-      return [messageId, message, receiverNodeId];
-    }
+    return [messageId, message, receiverNodeId];
   } catch (error) {
-    if (errorHandlerFunction) {
-      errorHandlerFunction(error);
-    }
     logger.warn({
       message:
         'Error processing received message from message queue. Discarding message.',
       error,
     });
+    throw error;
   } finally {
     removeRawMessageFromCache(messageId);
   }

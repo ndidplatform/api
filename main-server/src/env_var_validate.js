@@ -40,6 +40,19 @@ if (process.env.NODE_ENV == null || process.env.NODE_ENV === '') {
   }
 }
 
+if (
+  process.env.MODE != null &&
+  process.env.MODE !== 'standalone' &&
+  process.env.MODE !== 'master' &&
+  process.env.MODE !== 'worker'
+) {
+  console.error(
+    'ERROR:',
+    'Unsupported "MODE" environment variable value. Only "standalone", "master", and "worker" are allowed. Process will now exit.'
+  );
+  process.exit(1);
+}
+
 if (process.env.NODE_ID == null || process.env.NODE_ID === '') {
   console.error(
     'ERROR:',

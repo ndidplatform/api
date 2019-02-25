@@ -41,7 +41,7 @@ import * as utils from '../utils';
 import { sha256, randomBase64Bytes } from '../utils/crypto';
 
 import * as node from '../node';
-
+import MODE from '../mode';
 import * as config from '../config';
 
 const tendermintProtobufRootInstance = new protobuf.Root();
@@ -155,7 +155,9 @@ export function loadSavedData() {
 }
 
 export async function initialize() {
-  if(config.isMaster) tendermintWsClient.subscribeToNewBlockEvent();
+  if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+    tendermintWsClient.subscribeToNewBlockEvent();
+  }
   tendermintWsClient.subscribeToTxEvent();
 }
 

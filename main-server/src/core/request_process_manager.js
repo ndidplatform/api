@@ -34,6 +34,7 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../logger';
 
+import MODE from '../mode';
 import * as config from '../config';
 
 const messageProcessLock = {};
@@ -208,13 +209,15 @@ function executeTaskInQueue(requestId) {
     const startTime = Date.now();
 
     let promise;
-    if (config.isMaster) {
+    if (config.mode === MODE.STANDALONE) {
+      promise = getFunction(callbackFnName)(...callbackArgs);
+    } else if (config.mode === MODE.MASTER) {
       promise = delegateToWorker({
         fnName: callbackFnName,
         args: callbackArgs,
       });
     } else {
-      promise = getFunction(callbackFnName)(...callbackArgs);
+      throw new Error('Unsupported mode');
     }
     promise
       .then(() => {

@@ -198,7 +198,9 @@ export const grpcCallTimeout = process.env.GRPC_CALL_TIMEOUT_MS
   ? parseInt(process.env.GRPC_CALL_TIMEOUT_MS)
   : 60000;
 
-export const isMaster = process.env.IS_MASTER;
+export const mode = process.env.MODE
+  ? process.env.MODE.toLowerCase()
+  : 'standalone';
 export const masterServerPort = process.env.MASTER_SERVER_PORT || 5000;
 export const masterServerIp = process.env.MASTER_SERVER_IP || 'localhost';
 

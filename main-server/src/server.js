@@ -51,6 +51,7 @@ import * as prometheus from './prometheus';
 
 import logger from './logger';
 
+import MODE from './mode';
 import * as config from './config';
 
 process.on('unhandledRejection', function(reason, p) {
@@ -72,13 +73,13 @@ process.on('unhandledRejection', function(reason, p) {
 async function initialize() {
   logger.info({ message: 'Initializing server' });
   try {
-    if (config.isMaster) {
+    if (config.mode === MODE.MASTER) {
       await jobMaster.initialize();
       logger.info({ message: 'Waiting for available worker' });
       await new Promise((resolve) =>
         jobMaster.eventEmitter.once('worker_connected', () => resolve())
       );
-    } else {
+    } else if (config.mode === MODE.WORKER) {
       await jobWorker.initialize();
     }
 
@@ -114,13 +115,13 @@ async function initialize() {
     }
 
     if (role === 'rp') {
-      if (config.isMaster) {
+      if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         mq.setMessageHandlerFunction(rp.handleMessageFromQueue);
       }
       tendermint.setTendermintNewBlockEventHandler(rp.handleTendermintNewBlock);
       await rp.checkCallbackUrls();
     } else if (role === 'idp') {
-      if (config.isMaster) {
+      if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         mq.setMessageHandlerFunction(idp.handleMessageFromQueue);
       }
       tendermint.setTendermintNewBlockEventHandler(
@@ -128,13 +129,13 @@ async function initialize() {
       );
       await idp.checkCallbackUrls();
     } else if (role === 'as') {
-      if (config.isMaster) {
+      if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         mq.setMessageHandlerFunction(as.handleMessageFromQueue);
       }
       tendermint.setTendermintNewBlockEventHandler(as.handleTendermintNewBlock);
       await as.checkCallbackUrls();
     } else if (role === 'proxy') {
-      if (config.isMaster) {
+      if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         mq.setMessageHandlerFunction(proxy.handleMessageFromQueue);
       }
       tendermint.setTendermintNewBlockEventHandler(
@@ -162,7 +163,9 @@ async function initialize() {
       await nodeKey.initialize();
     }
 
-    if (!config.isMaster) httpServer.initialize();
+    if (config.mode === MODE.STANDALONE || config.mode === MODE.WORKER) {
+      httpServer.initialize();
+    }
 
     if (externalCryptoServiceReady != null) {
       logger.info({ message: 'Waiting for DPKI callback URLs to be set' });
@@ -180,9 +183,11 @@ async function initialize() {
           as.getErrorCallbackUrl();
         }
       });
-      if (config.isMaster) {
+      if (config.mode === MODE.STANDALONE) {
+        await mq.initialize();
+      } else if (config.mode === MODE.MASTER) {
         await mq.initializeInbound();
-      } else {
+      } else if (config.mode === MODE.WORKER) {
         await mq.initializeOutbound(false);
       }
     }
@@ -203,16 +208,16 @@ async function initialize() {
     }
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
-      if (!config.isMaster) {
+      if (config.mode === MODE.STANDALONE || config.mode === MODE.WORKER) {
         // FIXME: shouldn't be called on every workers. Should be called once.
         await coreCommon.setMessageQueueAddress();
       }
-      if (config.isMaster) {
+      if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         await mq.loadAndProcessBacklogMessages();
       }
     }
 
-    if (config.isMaster) {
+    if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
       tendermint.processMissingBlocks(tendermintStatusOnSync);
       await tendermint.loadExpectedTxFromDB();
       tendermint.loadAndRetryBacklogTransactRequests();
@@ -277,9 +282,9 @@ async function shutDown() {
   await Promise.all([cacheDb.close(), longTermDb.close(), dataDb.close()]);
   coreCommon.stopAllTimeoutScheduler();
 
-  if (config.isMaster) {
+  if (config.mode === MODE.MASTER) {
     jobMaster.shutdown();
-  } else {
+  } else if (config.mode === MODE.WORKER) {
     jobWorker.shutdown();
   }
 }
