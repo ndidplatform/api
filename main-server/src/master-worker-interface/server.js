@@ -108,7 +108,6 @@ function subscribe(call) {
     for (let i = 0; i < workerList.length; i++) {
       if (workerList[i].workerId === workerId) workerList.splice(i, 1);
     }
-    // TODO
     handleWorkerLost(workerId);
   });
 
