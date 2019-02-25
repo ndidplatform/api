@@ -66,7 +66,7 @@ export function initialize() {
   server.addService(proto.MasterWorker.service, {
     subscribe,
     //mqRetryCall,
-    //callbackRetryCall,
+    callbackRetryCall,
     requestTimeoutCall,
     cancelTimerJob,
     returnResultCall,
@@ -130,9 +130,26 @@ function handleRequestTimeoutWorkerLost(workerId) {
   }
 }
 
+function handleCallbackRetryWorkerLost(workerId) {
+  for(let cbId in workerLostHandling[workerId].callback) {
+    const { 
+      deadline,
+    } = workerLostHandling[workerId].callback[cbId];
+    if(Date.now() < deadline) {
+      delegateToWorker({
+        fnName: 'callback.handleCallbackWorkerLost',
+        args: [
+          cbId,
+          deadline,
+        ],
+      });
+    }
+  }
+}
+
 function handleWorkerLost(workerId) {
   handleRequestTimeoutWorkerLost(workerId);
-  //handleCallbackRetryWorkerLost(workerId);
+  handleCallbackRetryWorkerLost(workerId);
   delete workerLostHandling[workerId];
 }
 
@@ -165,9 +182,20 @@ function cancelTimerJob(call, done) {
   done();
 }*/
 
-/*function callbackRetryCall(call, done) {
-  
-}*/
+function callbackRetryCall(call, done) {
+  const {
+    cbId,
+    workerId,
+    deadline,
+  } = call.request;
+  if (workerLostHandling[workerId].callback[cbId]) {
+    throw 'Duplicate job';
+  }
+  workerLostHandling[workerId].callback[cbId] = {
+    deadline,
+  };
+  done();
+}
 
 function requestTimeoutCall(call, done) {
   const {

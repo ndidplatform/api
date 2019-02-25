@@ -145,7 +145,7 @@ export async function initialize() {
   watchForNextConnectivityStateChange();
   await waitForReady(client);
   //client.mqRetry = gRPCRetry(mqRetry);
-  //client.callbackRetry = gRPCRetry(callbackRetry);
+  client.callbackRetry = gRPCRetry(callbackRetry);
   client.requestTimeout = gRPCRetry(requestTimeout);
   client.cancelTimerJob = gRPCRetry(cancelTimerJob);
 }
@@ -183,13 +183,16 @@ export async function initialize() {
   });
 }*/
 
-/*function callbackRetry({
-  
+function callbackRetry({
+  cbId,
+  deadline,
 }) {
   return new Promise((resolve, reject) => {
     client.callbackRetryCall(
       {
-        
+        workerId,
+        cbId,
+        deadline,
       },
       (error) => {
         if (error) reject(error);
@@ -197,7 +200,7 @@ export async function initialize() {
       }
     );
   });
-}*/
+}
 
 function cancelTimerJob({
   type,

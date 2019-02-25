@@ -30,7 +30,9 @@ message OutboundMessage {
 }*/
 
 message InboundMessageForCallbackRetry {
-  
+  string cbId = 1;
+  string workerId = 2;
+  int64 deadline = 3;
 }
 
 message InboundMessageForRequestTimeout {

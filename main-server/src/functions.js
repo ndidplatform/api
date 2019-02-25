@@ -26,6 +26,7 @@ import * as idp from './core/idp';
 import * as as from './core/as';
 import * as identity from './core/identity';
 import * as mq from './mq';
+import * as callback from './utils/callback';
 
 import CustomError from 'ndid-error/custom_error';
 
@@ -100,6 +101,9 @@ export function getFunction(fnName) {
     // MQ
     case 'mq.processRawMessage':
       return mq.processRawMessage;
+    // callback
+    case 'callback.handleCallbackWorkerLost':
+      return callback.handleCallbackWorkerLost;
     default:
       throw new CustomError({
         message: 'Unknown function name',
