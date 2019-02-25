@@ -70,7 +70,7 @@ export async function initNDID({
   } catch (error) {
     logger.error({
       message: 'Cannot init NDID',
-      error,
+      err: error,
     });
     throw error;
   }
@@ -86,7 +86,7 @@ export async function endInit() {
   } catch (error) {
     logger.error({
       message: 'Cannot end init',
-      error,
+      err: error,
     });
     throw error;
   }
@@ -102,7 +102,7 @@ export async function approveService({ node_id, service_id }) {
   } catch (error) {
     logger.error({
       message: 'Cannot approve service for AS',
-      error,
+      err: error,
     });
     throw error;
   }
@@ -120,7 +120,7 @@ export async function setNodeToken(data) {
   } catch (error) {
     logger.error({
       message: 'Cannot set node token',
-      error,
+      err: error,
     });
     throw error;
   }
@@ -138,7 +138,7 @@ export async function addNodeToken(data) {
   } catch (error) {
     logger.error({
       message: 'Cannot add node token',
-      error,
+      err: error,
     });
     throw error;
   }
@@ -156,7 +156,7 @@ export async function reduceNodeToken(data) {
   } catch (error) {
     logger.error({
       message: 'Cannot reduce node token',
-      error,
+      err: error,
     });
     throw error;
   }
@@ -182,7 +182,7 @@ export async function registerNode(data, { synchronous = false } = {}) {
       message: 'Cannot register node',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     throw err;
   }
 }
@@ -242,7 +242,7 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
       originalArgs: arguments[0],
       options: arguments[1],
       additionalArgs: arguments[2],
-      error,
+      err: error,
     });
 
     if (!synchronous) {
@@ -275,7 +275,7 @@ export async function updateNode(data, { synchronous = false } = {}) {
       message: 'Cannot update node',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     throw err;
   }
 }
@@ -316,7 +316,7 @@ async function updateNodeInternalAsync(data, { synchronous = false } = {}) {
       originalArgs: arguments[0],
       options: arguments[1],
       additionalArgs: arguments[2],
-      error,
+      err: error,
     });
 
     if (!synchronous) {

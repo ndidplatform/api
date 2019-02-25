@@ -251,7 +251,7 @@ export async function processMessage(nodeId, messageId, message) {
       message: 'Error processing message from message queue',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
@@ -329,7 +329,7 @@ export async function afterGotDataFromCallback(
       message: 'Error processing data response from AS',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,

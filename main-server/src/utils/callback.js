@@ -150,7 +150,7 @@ async function callbackWithRetry(
 
       logger.error({
         message: 'Cannot send callback to client application',
-        error,
+        err: error,
         cbId,
       });
 
@@ -294,7 +294,7 @@ export async function callbackToClient(
     } catch (error) {
       logger.error({
         message: 'Cannot send callback to client application',
-        error,
+        err: error,
       });
 
       metricsEventEmitter.emit('callbackFail');

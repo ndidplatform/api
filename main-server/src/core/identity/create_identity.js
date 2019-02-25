@@ -223,7 +223,7 @@ export async function createIdentity(
       message: 'Cannot create new identity',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
 
     if (
       !(
@@ -344,7 +344,7 @@ async function createIdentityInternalAsync(
       originalArgs: arguments[0],
       options: arguments[1],
       additionalArgs: arguments[2],
-      error,
+      err: error,
     });
 
     if (!synchronous) {
@@ -539,7 +539,7 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
       originalArgs: arguments[0],
       options: arguments[1],
       additionalArgs: arguments[2],
-      error,
+      err: error,
     });
 
     if (!synchronous) {
@@ -730,7 +730,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       originalArgs: arguments[1],
       options: arguments[2],
       additionalArgs: arguments[3],
-      error,
+      err: error,
     });
 
     if (!synchronous) {
@@ -829,7 +829,7 @@ export async function createIdentityInternalAsyncAfterBlockchain(
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
-      error,
+      err: error,
     });
 
     if (!synchronous) {
@@ -922,7 +922,7 @@ export async function createIdentityInternalAsyncAfterClearRegisterIdentityTimeo
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
-      error,
+      err: error,
     });
 
     if (!synchronous) {

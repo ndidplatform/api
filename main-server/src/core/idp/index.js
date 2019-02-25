@@ -573,7 +573,7 @@ export async function processMessage(nodeId, messageId, message) {
       message: 'Error processing message from message queue',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
@@ -646,7 +646,7 @@ export async function processIdpResponseAfterAddAccessor(
       message: 'Error processing IdP response for creating identity',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
@@ -797,7 +797,7 @@ export async function processIdpResponseAfterRevokeAccessor(
       message: 'Error processing IdP response for revoke identity',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,

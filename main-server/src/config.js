@@ -55,18 +55,18 @@ export const dataDirectoryPath =
 
 export const logLevel =
   process.env.LOG_LEVEL || (env === 'development' ? 'debug' : 'info');
-export const logFormat = process.env.LOG_FORMAT || 'default';
-export const logTarget = process.env.LOG_TARGET || 'console';
+// export const logFormat = process.env.LOG_FORMAT || 'default';
+// export const logTarget = process.env.LOG_TARGET || 'console';
 export const logColor =
   process.env.LOG_COLOR == null
-    ? logTarget === 'console'
+    ? env === 'development'
     : process.env.LOG_COLOR === 'true';
-export const logOneLine = process.env.LOG_ONE_LINE === 'true';
-export const logDirectoryPath =
-  process.env.LOG_DIRECTORY_PATH || path.join(__dirname, '..', 'log');
+// export const logOneLine = process.env.LOG_ONE_LINE === 'true';
+// export const logDirectoryPath =
+//   process.env.LOG_DIRECTORY_PATH || path.join(__dirname, '..', 'log');
 
-export const logLengthThreshold = Infinity; // 2000
-export const replaceForTooLongLog = '<--- Too long, omitted --->';
+// export const logLengthThreshold = Infinity; // 2000
+// export const replaceForTooLongLog = '<--- Too long, omitted --->';
 
 const defaultTendermintPort = 45000;
 

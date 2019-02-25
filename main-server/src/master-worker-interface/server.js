@@ -187,7 +187,7 @@ function returnResultCall(call, done) {
         grpcRefId,
       },
     });
-    logger.error(error.getInfoForLog());
+    logger.error({ err: error });
   }
   done();
 }

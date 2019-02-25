@@ -132,7 +132,7 @@ export default class TendermintWsClient extends EventEmitter {
       logger.error({
         message: 'Tendermint WS error',
         name: this.name,
-        error,
+        err: error,
       });
       // this.emit('error', error);
     });

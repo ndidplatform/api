@@ -109,7 +109,7 @@ export async function addAccessorAfterCloseConsentRequest(
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
-      error,
+      err: error,
     });
 
     if (callbackFnName != null) {
@@ -172,7 +172,7 @@ export async function addAccessorAfterConsentAfterAddAccessorMethod(
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
-      error,
+      err: error,
     });
 
     if (callbackFnName != null) {
@@ -215,7 +215,7 @@ export async function addAccessorAfterConsentAfterRegisterMqDest(
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
-      error,
+      err: error,
     });
 
     if (callbackFnName != null) {

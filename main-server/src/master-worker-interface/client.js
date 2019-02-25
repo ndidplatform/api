@@ -73,7 +73,7 @@ function watchForNextConnectivityStateChange() {
         if (error) {
           logger.error({
             message: 'Worker service gRPC connectivity state watch error',
-            error,
+            err: error,
           });
         } else {
           const newConnectivityState = client

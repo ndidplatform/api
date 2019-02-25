@@ -113,7 +113,7 @@ export async function revokeAccessor(revokeAccessorParams) {
       message: 'Cannot revoke identity',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
 
     if (
       !(
@@ -194,7 +194,7 @@ export async function createRequestToRevokeAccessor(
       message: 'Revoke identity internal async error',
       originalArgs: arguments[0],
       additionalArgs: arguments[1],
-      error,
+      err: error,
     });
 
     await callbackToClient(
@@ -248,7 +248,7 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
       tendermintResult: arguments[0],
       originalArgs: arguments[1],
       additionalArgs: arguments[2],
-      error,
+      err: error,
     });
 
     await callbackToClient(

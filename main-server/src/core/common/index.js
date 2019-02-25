@@ -134,7 +134,7 @@ export function getHandleMessageQueueErrorFn(getErrorCallbackUrl) {
       message: 'Message queue receiving error',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     if (getErrorCallbackUrl) {
       const callbackUrl = await getErrorCallbackUrl();
       await notifyError({
@@ -249,7 +249,7 @@ export async function timeoutRequest(nodeId, requestId) {
     logger.error({
       message: 'Cannot set timeout request',
       requestId,
-      error,
+      err: error,
     });
     throw error;
   }
@@ -268,7 +268,7 @@ export function timeoutRequestAfterBlockchain(
       message: 'Timeout request after blockchain error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
-      error,
+      err: error,
     });
   }
 }

@@ -133,7 +133,7 @@ async function cleanUpMessage(nodeId, messageId) {
       message: 'Error cleaning up message from cache DB',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
   }
 }
 
@@ -231,7 +231,7 @@ function executeTaskInQueue(requestId) {
             requestId,
           },
         });
-        logger.error(err.getInfoForLog());
+        logger.error({ err });
         notifyTaskProcessFail();
       })
       .then(() => {

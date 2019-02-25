@@ -103,7 +103,7 @@ process.on('unhandledRejection', function(reason, p) {
 
 // Make sure data and log directories exist
 mkdirp.sync(config.dataDirectoryPath);
-mkdirp.sync(config.logDirectoryPath);
+// mkdirp.sync(config.logDirectoryPath);
 
 async function addKeyAndSetToken(nodeId, role, behindProxy) {
   const node_name = ''; //all anonymous

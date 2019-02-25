@@ -96,7 +96,7 @@ export async function updateIal(
       message: "Cannot update identity's IAL",
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     throw err;
   }
 }
@@ -124,7 +124,7 @@ async function updateIalInternalAsync(
       originalArgs: arguments[0],
       options: arguments[1],
       additionalArgs: arguments[2],
-      error,
+      err: error,
     });
 
     if (!synchronous) {
@@ -171,7 +171,7 @@ export async function updateIalInternalAsyncAfterBlockchain(
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
-      error,
+      err: error,
     });
 
     if (!synchronous) {
