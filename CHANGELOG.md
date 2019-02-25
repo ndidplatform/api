@@ -5,6 +5,7 @@
 IMPROVEMENTS:
 
 - (Experimental) Load balancing support by setting `MODE` to `master` on one process and `worker` on other processes with the same Node ID.
+- Refactor request process flow.
 - Add Prometheus support.
 - [Main] Add new environment variable options
   - `MODE`: Allowed values are `standalone`, `master`, and `worker`. There can be only one `master` process per Node ID
