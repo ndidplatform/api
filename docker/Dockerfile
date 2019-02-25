@@ -43,7 +43,7 @@ WORKDIR /api/main-server
 RUN npm run build && npm prune --production
 
 COPY ./protos /api/protos
-COPY COPYING /api/
+COPY COPYING /api/main-server/build
 COPY VERSION /api/
 
 COPY ./docker/start-api.sh /api/docker/

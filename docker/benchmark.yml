@@ -5,7 +5,7 @@ services:
     environment:
       - ROLE=ndid
       - NODE_ID=ndid1
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-ndid
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - DB_IP=api-redis
@@ -28,7 +28,7 @@ services:
     environment:
       - ROLE=idp
       - NODE_ID=idp1
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-idp-1
@@ -57,7 +57,7 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-idp-1
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-idp-1
@@ -79,7 +79,7 @@ services:
     environment:
       - ROLE=idp
       - NODE_ID=idp2
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-idp-2
@@ -108,7 +108,7 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-idp-2
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-idp-2
@@ -130,7 +130,7 @@ services:
     environment:
       - ROLE=idp
       - NODE_ID=idp3
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-idp-3
@@ -159,7 +159,7 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-idp-3
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-idp-3
@@ -181,7 +181,7 @@ services:
     environment:
       - ROLE=rp
       - NODE_ID=rp1
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-rp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-rp-1
@@ -210,7 +210,7 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-rp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-rp-1
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-rp-1
@@ -232,7 +232,7 @@ services:
     environment:
       - ROLE=as
       - NODE_ID=as1
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-as
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-as-1
@@ -261,7 +261,7 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-as
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-as-1
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-as-1
@@ -283,7 +283,7 @@ services:
     environment:
       - ROLE=as
       - NODE_ID=as2
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-as
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-as-2
@@ -312,7 +312,7 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-as
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-as-2
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-as-2
@@ -334,7 +334,7 @@ services:
     environment:
       - ROLE=proxy
       - NODE_ID=proxy1
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-ndid
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-proxy-1
@@ -364,7 +364,7 @@ services:
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - DB_IP=api-redis-proxy-1
       - MASTER_SERVER_IP=api-proxy-1-master
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-proxy-1
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-proxy-1
@@ -387,7 +387,7 @@ services:
     environment:
       - ROLE=proxy
       - NODE_ID=proxy2
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-ndid
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-proxy-2
@@ -417,7 +417,7 @@ services:
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - DB_IP=api-redis-proxy-2
       - MASTER_SERVER_IP=api-proxy-2-master
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-proxy-2
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-proxy-2
