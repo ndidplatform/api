@@ -144,24 +144,93 @@ export async function initialize() {
   );
   watchForNextConnectivityStateChange();
   await waitForReady(client);
-  client.jobRetry = gRPCRetry(jobRetry);
+  //client.mqRetry = gRPCRetry(mqRetry);
+  client.callbackRetry = gRPCRetry(callbackRetry);
+  client.requestTimeout = gRPCRetry(requestTimeout);
+  client.cancelTimerJob = gRPCRetry(cancelTimerJob);
 }
 
 /*  
   Tell master that we are retrying something.
   If we are lost, master will tell another worker to retry it for us.
-  type: timeoutRequest, dataId = requestId
-  type: mqSend, dataId = messageId,
-  type: callback, dataId = cbId,
 */
-function jobRetry({ dataId, giveUpTime, done = false, type }) {
+
+/*function mqRetry({
+  msgId, 
+  deadline, 
+  cancel = false, 
+  workerId, 
+  destination, 
+  payload, 
+  retryOnServerUnavailable 
+}) {
   return new Promise((resolve, reject) => {
-    client.jobRetryCall(
+    client.mqRetryCall(
       {
-        dataId,
-        giveUpTime,
-        done,
+        msgId, 
+        deadline, 
+        cancel, 
+        workerId, 
+        destination, 
+        payload, 
+        retryOnServerUnavailable 
+      },
+      (error) => {
+        if (error) reject(error);
+        else resolve();
+      }
+    );
+  });
+}*/
+
+function callbackRetry({
+  cbId,
+  deadline,
+}) {
+  return new Promise((resolve, reject) => {
+    client.callbackRetryCall(
+      {
+        workerId,
+        cbId,
+        deadline,
+      },
+      (error) => {
+        if (error) reject(error);
+        else resolve();
+      }
+    );
+  });
+}
+
+function cancelTimerJob({
+  type,
+  jobId,
+}) {
+  return new Promise((resolve, reject) => {
+    client.cancelTimerJobCall(
+      {
         type,
+        jobId,
+        workerId,
+      },
+      (error) => {
+        if (error) reject(error);
+        else resolve();
+      }
+    );
+  });
+}
+
+function requestTimeout({
+  requestId,
+  deadline
+}) {
+  return new Promise((resolve, reject) => {
+    client.requestTimeoutCall(
+      {
+        requestId,
+        deadline,
+        workerId,
       },
       (error) => {
         if (error) reject(error);

@@ -34,6 +34,9 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import * as config from '../config';
 
+import getClient from '../master-worker-interface/client';
+import MODE from '../mode';
+
 const RESPONSE_BODY_SIZE_LIMIT = 3 * 1024 * 1024; // 3MB
 
 const waitPromises = [];
@@ -95,6 +98,35 @@ async function httpPost(cbId, callbackUrl, body) {
   };
 }
 
+export async function handleCallbackWorkerLost(
+  cbId,
+  deadline,
+) {
+  let backupCallbackData = await cacheDb.getCallbackWithRetryData(config.nodeId, cbId);
+
+  if(backupCallbackData) {
+    const {
+      callbackUrl,
+      body,
+      shouldRetryFnName,
+      shouldRetryArguments,
+      responseCallbackFnName,
+      dataForResponseCallback,
+    } = backupCallbackData;
+
+    callbackWithRetry(
+      callbackUrl,
+      body,
+      cbId,
+      shouldRetryFnName,
+      shouldRetryArguments,
+      responseCallbackFnName,
+      dataForResponseCallback,
+      deadline,
+    );
+  }
+}
+
 async function callbackWithRetry(
   callbackUrl,
   body,
@@ -102,7 +134,8 @@ async function callbackWithRetry(
   shouldRetryFnName,
   shouldRetryArguments = [],
   responseCallbackFnName,
-  dataForResponseCallback
+  dataForResponseCallback,
+  deadline,
 ) {
   incrementPendingCallbacksCount();
 
@@ -114,6 +147,14 @@ async function callbackWithRetry(
   });
 
   const startTime = Date.now();
+
+  //tell master about timerJob
+  if(config.mode === MODE.WORKER) {
+    await getClient().callbackRetry({
+      cbId,
+      deadline: deadline || Date.now() + config.callbackRetryTimeout * 1000,
+    });
+  }
 
   for (;;) {
     if (stopCallbackRetry) return;
@@ -129,6 +170,14 @@ async function callbackWithRetry(
     });
     try {
       const responseObj = await httpPost(cbId, callbackUrl, body);
+
+      //clearTimerJob
+      if(config.mode === MODE.WORKER) {
+        await getClient().cancelTimerJob({
+          type: 'callback',
+          jobId: cbId,
+        });
+      }
 
       decrementPendingCallbacksCount();
       metricsEventEmitter.emit(
@@ -192,19 +241,21 @@ async function callbackWithRetry(
           return;
         }
       } else {
-        if (
-          Date.now() - startTime + nextRetry >
-          config.callbackRetryTimeout * 1000
-        ) {
-          logger.warn({
-            message: 'Callback retry timed out',
-            url: callbackUrl,
-            cbId,
-          });
-          decrementPendingCallbacksCount();
-          cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
-          metricsEventEmitter.emit('callbackTimedOut');
-          return;
+        if(!deadline || Date.now() < deadline) {
+          if (
+            Date.now() - startTime + nextRetry >
+            config.callbackRetryTimeout * 1000
+          ) {
+            logger.warn({
+              message: 'Callback retry timed out',
+              url: callbackUrl,
+              cbId,
+            });
+            decrementPendingCallbacksCount();
+            cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
+            metricsEventEmitter.emit('callbackTimedOut');
+            return;
+          }
         }
       }
 

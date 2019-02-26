@@ -37,6 +37,9 @@ import { getErrorObjectForClient } from '../../utils/error';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../../mq/message/type';
 
+import getClient from '../../master-worker-interface/client';
+import MODE from '../../mode';
+
 export * from './create_request';
 export * from './close_request';
 
@@ -285,13 +288,31 @@ export function runTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
 
 export async function setTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
   let unixTimeout = Date.now() + secondsToTimeout * 1000;
-  await cacheDb.setTimeoutScheduler(nodeId, requestId, unixTimeout);
+  let promiseArray = [cacheDb.setTimeoutScheduler(nodeId, requestId, unixTimeout)];
+  if(config.mode === MODE.WORKER) {
+    promiseArray.push(
+      getClient().requestTimeout({
+        requestId,
+        deadline: unixTimeout,
+      })
+    );
+  }
+  await Promise.all(promiseArray);
   runTimeoutScheduler(nodeId, requestId, secondsToTimeout);
 }
 
 export async function removeTimeoutScheduler(nodeId, requestId) {
   lt.clearTimeout(timeoutScheduler[`${nodeId}:${requestId}`]);
-  await cacheDb.removeTimeoutScheduler(nodeId, requestId);
+  let promiseArray = [cacheDb.removeTimeoutScheduler(nodeId, requestId)];
+  if(config.mode === MODE.WORKER) {
+    promiseArray.push(
+      getClient().cancelTimerJob({
+        type: 'requestTimeout',
+        jobId: requestId,
+      })
+    );
+  }
+  await Promise.all(promiseArray);
   delete timeoutScheduler[`${nodeId}:${requestId}`];
 }
 

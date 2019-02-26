@@ -37,6 +37,7 @@ import errorType from 'ndid-error/type';
 import validate from './message/validator';
 
 import { delegateToWorker } from '../master-worker-interface/server';
+import getClient from '../master-worker-interface/client';
 
 import { role } from '../node';
 import MODE from '../mode';
@@ -266,31 +267,42 @@ async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
 }
 
 async function processRawMessageSwitch(messageId, messageProtobuf, timestamp) {
-  let promise;
   if (config.mode === MODE.STANDALONE) {
-    promise = processRawMessage(messageId, messageProtobuf, timestamp);
+    const [_messageId, message, receiverNodeId] = await processRawMessage(
+      messageId,
+      messageProtobuf,
+      timestamp
+    );
+    handleProcessedRawMessage(null, [messageId, message, receiverNodeId]);
   } else if (config.mode === MODE.MASTER) {
-    promise = delegateToWorker({
+    delegateToWorker({
       fnName: 'mq.processRawMessage',
       args: [messageId, messageProtobuf, timestamp],
-      callback: messageHandlerFunction,
+      callback: handleProcessedRawMessage,
     });
   } else {
     throw new Error('Unsupported mode');
   }
-  try {
-    const [_messageId, message, receiverNodeId] = await promise;
-    if (messageHandlerFunction) {
-      messageHandlerFunction(messageId, message, receiverNodeId);
-    } else {
-      logger.warn({
-        message: 'No registered "messageHandlerFunction" function',
-      });
-    }
-  } catch (error) {
+}
+
+function handleProcessedRawMessage(
+  error,
+  [messageId, message, receiverNodeId]
+) {
+  if (error) {
+    // logger.error()
     if (errorHandlerFunction) {
       errorHandlerFunction(error);
     }
+    return;
+  }
+
+  if (messageHandlerFunction) {
+    messageHandlerFunction(messageId, message, receiverNodeId);
+  } else {
+    logger.warn({
+      message: 'No registered "messageHandlerFunction" function',
+    });
   }
 }
 
@@ -668,6 +680,15 @@ export async function send(receivers, message, senderNodeId) {
           delete pendingOutboundMessages[msgId];
           decrementPendingOutboundMessagesCount();
         });
+      /*if(config.mode === MODE.WORKER) {
+        await getClient().mqRetry({
+          msgId, 
+          deadline: Date.now() + MQ_SEND_TOTAL_TIMEOUT, 
+          destination: JSON.stringify(mqDestAddress), 
+          payload: payloadBuffer, 
+          retryOnServerUnavailable: true 
+        });
+      }*/
     })
   );
 

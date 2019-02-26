@@ -208,47 +208,86 @@ function executeTaskInQueue(requestId) {
     incrementProcessingTasksCount();
     const startTime = Date.now();
 
-    let promise;
     if (config.mode === MODE.STANDALONE) {
-      promise = getFunction(callbackFnName)(...callbackArgs);
+      getFunction(callbackFnName)(...callbackArgs)
+        .then(() => onTaskExecutionSuccess(startTime))
+        .catch(onTaskExecutionFail)
+        .then(() =>
+          onTaskExecutionFinished({
+            requestId,
+            onCallbackFinished,
+            onCallbackFinishedArgs,
+          })
+        );
     } else if (config.mode === MODE.MASTER) {
-      promise = delegateToWorker({
+      delegateToWorker({
         fnName: callbackFnName,
         args: callbackArgs,
+        callback: onTaskExecutionCallback,
+        additionalCallbackArgs: {
+          requestId,
+          startTime,
+          onCallbackFinished,
+          onCallbackFinishedArgs,
+        },
       });
     } else {
       throw new Error('Unsupported mode');
     }
-    promise
-      .then(() => {
-        notifyTaskProcessTime(startTime);
-      })
-      .catch((error) => {
-        const err = new CustomError({
-          message: 'Error executing task in queue',
-          cause: error,
-          details: {
-            requestId,
-          },
-        });
-        logger.error({ err });
-        notifyTaskProcessFail();
-      })
-      .then(() => {
-        decrementProcessingTasksCount();
-        if (onCallbackFinished) {
-          onCallbackFinished(...onCallbackFinishedArgs);
-        }
-        delete requestQueueRunning[requestId];
-        if (requestQueue[requestId].length === 0) {
-          cleanUpQueue(requestId);
-        } else {
-          setImmediate(executeTaskInQueue, requestId);
-        }
-      });
   } else {
     cleanUpQueue(requestId);
   }
+}
+
+function onTaskExecutionSuccess(startTime) {
+  notifyTaskProcessTime(startTime);
+}
+
+function onTaskExecutionFail(error, requestId) {
+  const err = new CustomError({
+    message: 'Error executing task in queue',
+    cause: error,
+    details: {
+      requestId,
+    },
+  });
+  logger.error({ err });
+  notifyTaskProcessFail();
+}
+
+function onTaskExecutionFinished({
+  requestId,
+  onCallbackFinished,
+  onCallbackFinishedArgs,
+}) {
+  decrementProcessingTasksCount();
+  if (onCallbackFinished) {
+    onCallbackFinished(...onCallbackFinishedArgs);
+  }
+  delete requestQueueRunning[requestId];
+  if (requestQueue[requestId].length === 0) {
+    cleanUpQueue(requestId);
+  } else {
+    setImmediate(executeTaskInQueue, requestId);
+  }
+}
+
+function onTaskExecutionCallback(
+  error,
+  result,
+  { requestId, startTime, onCallbackFinished, onCallbackFinishedArgs }
+) {
+  if (!error) {
+    onTaskExecutionSuccess(startTime);
+  } else {
+    onTaskExecutionFail(error);
+  }
+
+  onTaskExecutionFinished({
+    requestId,
+    onCallbackFinished,
+    onCallbackFinishedArgs,
+  });
 }
 
 function cleanUpQueue(requestId) {

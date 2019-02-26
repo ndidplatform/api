@@ -34,10 +34,8 @@ import * as config from '../config';
 
 let server;
 
-// const jobTypeList = ['mq', 'callback'];
 const workerList = [];
 const workerLostHandling = {};
-let counter = 0;
 
 export const eventEmitter = new EventEmitter();
 
@@ -67,7 +65,10 @@ export function initialize() {
 
   server.addService(proto.MasterWorker.service, {
     subscribe,
-    jobRetryCall,
+    //mqRetryCall,
+    callbackRetryCall,
+    requestTimeoutCall,
+    cancelTimerJobCall,
     returnResultCall,
   });
 
@@ -92,8 +93,9 @@ function subscribe(call) {
   }
 
   workerLostHandling[workerId] = {
-    mq: {},
+    //mq: {},
     callback: {},
+    requestTimeout: {},
   };
 
   workerList.push({
@@ -106,45 +108,111 @@ function subscribe(call) {
     for (let i = 0; i < workerList.length; i++) {
       if (workerList[i].workerId === workerId) workerList.splice(i, 1);
     }
-    // TODO
-    // handleWorkerLost(workerId);
+    handleWorkerLost(workerId);
   });
 
   eventEmitter.emit('worker_connected', workerId);
 }
 
-// function handleWorkerLost(workerId) {
-//   jobTypeList.forEach((type) => {
-//     let giveUpTimeObject = workerLostHandling[workerId][type];
-//     for (let dataId in giveUpTimeObject) {
-//       let giveUpTime = giveUpTimeObject[dataId];
-//       if (Date.now() < giveUpTime) {
-//         delegateToWorker({
-//           type: 'handleRetry',
-//           args: (function(type, dataId, giveUpTime) {
-//             //cast to arguments object
-//             return arguments;
-//           })(),
-//         });
-//       }
-//     }
-//   });
-//   delete workerLostHandling[workerId];
-// }
-
-function jobRetryCall(call, doneFn) {
-  const { dataId, giveUpTime, done, workerId, type } = call.request;
-
-  if (workerLostHandling[workerId][type][dataId]) {
-    if (!done) throw 'Duplicate job';
-    delete workerLostHandling[workerId][type][dataId];
-    return;
+function handleRequestTimeoutWorkerLost(workerId) {
+  for(let requestId in workerLostHandling[workerId].requestTimeout) {
+    const { deadline } = workerLostHandling[workerId].requestTimeout[requestId];
+    if(Date.now() < deadline) {
+      delegateToWorker({
+        fnName: 'common.setTimeoutScheduler',
+        args: [
+          config.nodeId,
+          requestId,
+          (deadline - Date.now())/1000
+        ],
+      });
+    }
   }
-  workerLostHandling[workerId][type][dataId] = giveUpTime;
-  doneFn();
 }
 
-function waitForWorker() {
+function handleCallbackRetryWorkerLost(workerId) {
+  for(let cbId in workerLostHandling[workerId].callback) {
+    const { 
+      deadline,
+    } = workerLostHandling[workerId].callback[cbId];
+    if(Date.now() < deadline) {
+      delegateToWorker({
+        fnName: 'callback.handleCallbackWorkerLost',
+        args: [
+          cbId,
+          deadline,
+        ],
+      });
+    }
+  }
+}
+
+function handleWorkerLost(workerId) {
+  handleRequestTimeoutWorkerLost(workerId);
+  handleCallbackRetryWorkerLost(workerId);
+  delete workerLostHandling[workerId];
+}
+
+function cancelTimerJobCall(call, done) {
+  const {
+    jobId,
+    workerId,
+    type,
+  } = call.request;
+  delete workerLostHandling[workerId][type][jobId];
+  done();
+}
+
+/*function mqRetryCall(call, done) {
+  const { 
+    msgId, 
+    deadline, 
+    workerId, 
+    destination, 
+    payload, 
+    retryOnServerUnavailable 
+  } = call.request;
+
+  if (workerLostHandling[workerId]['mq'][msgId]) {
+    throw 'Duplicate job';
+  }
+  workerLostHandling[workerId]['mq'][msgId] = {
+    deadline, destination, payload, retryOnServerUnavailable
+  };
+  done();
+}*/
+
+function callbackRetryCall(call, done) {
+  const {
+    cbId,
+    workerId,
+    deadline,
+  } = call.request;
+  if (workerLostHandling[workerId].callback[cbId]) {
+    throw 'Duplicate job';
+  }
+  workerLostHandling[workerId].callback[cbId] = {
+    deadline,
+  };
+  done();
+}
+
+function requestTimeoutCall(call, done) {
+  const {
+    requestId,
+    deadline,
+    workerId,
+  } = call.request;
+  if (workerLostHandling[workerId].requestTimeout[requestId]) {
+    throw 'Duplicate job';
+  }
+  workerLostHandling[workerId].requestTimeout[requestId] = {
+    deadline,
+  };
+  done();
+}
+
+/*function waitForWorker() {
   return new Promise((resolve) => {
     let id = setInterval(() => {
       if (workerList.length > 0) {
@@ -153,16 +221,12 @@ function waitForWorker() {
       }
     }, 2000);
   });
-}
+}*/
 
 function returnResultCall(call, done) {
   const { grpcRefId, retValStr, error } = call.request;
   if (grpcCall[grpcRefId]) {
-    const { callback, worker } = grpcCall[grpcRefId];
-    if (error) {
-      logger.error(error);
-      return;
-    }
+    const { callback, additionalCallbackArgs, worker } = grpcCall[grpcRefId];
     if (callback) {
       let retVal;
       if (retValStr) {
@@ -176,7 +240,11 @@ function returnResultCall(call, done) {
       } else {
         retVal = [];
       }
-      callback(...retVal);
+      callback(error, retVal, additionalCallbackArgs);
+    } else {
+      if (error) {
+        logger.error({ err: error });
+      }
     }
     worker.jobCount--;
     delete grpcCall[grpcRefId];
@@ -229,10 +297,11 @@ function getWorker(specificWorkerId) {
   }
 }
 
-export async function delegateToWorker({
+export function delegateToWorker({
   fnName,
   args,
   callback,
+  additionalCallbackArgs,
   metaData,
   specificWorkerId,
 }) {
@@ -248,7 +317,7 @@ export async function delegateToWorker({
 
   const worker = getWorker(specificWorkerId);
 
-  grpcCall[grpcRefId] = { callback, worker };
+  grpcCall[grpcRefId] = { callback, additionalCallbackArgs, worker };
 
   worker.jobCount++;
 

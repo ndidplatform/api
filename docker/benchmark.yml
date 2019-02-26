@@ -1,41 +1,17 @@
 version: '3'
 services:
-  api-ndid-master:
+  api-ndid:
     image: ndidplatform/api:latest
     environment:
       - ROLE=ndid
       - NODE_ID=ndid1
-      - NDID_IP=api-ndid-worker
-      - TENDERMINT_IP=tm-ndid
-      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - DB_IP=api-redis
-      #- SERVER_PORT=${API_PORT:-8080}
-      - NDID_NODE=true
-      - IS_MASTER=true
-      - IS_STANDALONE=false
-    volumes:
-      - ./start-api-test.sh:/api/start-api-test.sh
-      - ./keys/ndid/:/api/keys/
-      - ./data/ndid/:/api/main-server/data/
-    entrypoint: /api/start-api-test.sh
-    security_opt:
-      - no-new-privileges
-    #ports:
-    #  - "8080:${API_PORT:-8080}"
-    networks:
-      - ndidplatform
-  api-ndid-worker:
-    image: ndidplatform/api:latest
-    environment:
-      - ROLE=ndid
-      - NODE_ID=ndid1
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-ndid
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
       - NDID_NODE=true
-      - MASTER_SERVER_IP=api-ndid-master
+      - MODE=standalone
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
       - ./keys/ndid/:/api/keys/
@@ -52,15 +28,14 @@ services:
     environment:
       - ROLE=idp
       - NODE_ID=idp1
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-idp-1
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-idp-1
       - DB_IP=api-redis
-      - IS_MASTER=true
-      - IS_STANDALONE=false
+      - MODE=master
       #- SERVER_PORT=${API_PORT:-8080}
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
@@ -82,11 +57,12 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-idp-1
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-idp-1
       - SERVER_PORT=${API_PORT:-8080}
+      - MODE=worker
     ports:
       - "8100:${API_PORT:-8080}"
     security_opt:
@@ -103,7 +79,7 @@ services:
     environment:
       - ROLE=idp
       - NODE_ID=idp2
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-idp-2
@@ -111,8 +87,7 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-idp-2
       - DB_IP=api-redis
       #- SERVER_PORT=${API_PORT:-8080}
-      - IS_MASTER=true
-      - IS_STANDALONE=false
+      - MODE=master
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
       - ./keys/idp-2/:/api/keys/
@@ -133,11 +108,12 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-idp-2
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-idp-2
       - SERVER_PORT=${API_PORT:-8080}
+      - MODE=worker
     security_opt:
       - no-new-privileges
     networks:
@@ -154,7 +130,7 @@ services:
     environment:
       - ROLE=idp
       - NODE_ID=idp3
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-idp-3
@@ -162,8 +138,7 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-idp-3
       - DB_IP=api-redis
       #- SERVER_PORT=${API_PORT:-8080}
-      - IS_MASTER=true
-      - IS_STANDALONE=false
+      - MODE=master
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
       - ./keys/idp-3/:/api/keys/
@@ -184,11 +159,12 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-idp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-idp-3
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-idp-3
       - SERVER_PORT=${API_PORT:-8080}
+      - MODE=worker
     security_opt:
       - no-new-privileges
     networks:
@@ -205,7 +181,7 @@ services:
     environment:
       - ROLE=rp
       - NODE_ID=rp1
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-rp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-rp-1
@@ -213,8 +189,7 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-rp-1
       - DB_IP=api-redis
       #- SERVER_PORT=${API_PORT:-8080}
-      - IS_MASTER=true
-      - IS_STANDALONE=false
+      - MODE=master
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
       - ./keys/rp-1/:/api/keys/
@@ -235,11 +210,12 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-rp
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-rp-1
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-rp-1
       - SERVER_PORT=${API_PORT:-8080}
+      - MODE=worker
     security_opt:
       - no-new-privileges
     networks:
@@ -256,7 +232,7 @@ services:
     environment:
       - ROLE=as
       - NODE_ID=as1
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-as
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-as-1
@@ -264,8 +240,7 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-as-1
       - DB_IP=api-redis
       #- SERVER_PORT=${API_PORT:-8080}
-      - IS_MASTER=true
-      - IS_STANDALONE=false
+      - MODE=master
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
       - ./keys/as-1/:/api/keys/
@@ -286,11 +261,12 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-as
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-as-1
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-as-1
       - SERVER_PORT=${API_PORT:-8080}
+      - MODE=worker
     security_opt:
       - no-new-privileges
     networks:
@@ -307,7 +283,7 @@ services:
     environment:
       - ROLE=as
       - NODE_ID=as2
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-as
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-as-2
@@ -315,8 +291,7 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-as-2
       - DB_IP=api-redis
       #- SERVER_PORT=${API_PORT:-8080}
-      - IS_MASTER=true
-      - IS_STANDALONE=false
+      - MODE=master
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
       - ./keys/as-2/:/api/keys/
@@ -337,11 +312,12 @@ services:
       - DB_IP=api-redis
       - TENDERMINT_IP=tm-as
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-as-2
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-as-2
       - SERVER_PORT=${API_PORT:-8080}
+      - MODE=worker
     security_opt:
       - no-new-privileges
     networks:
@@ -358,7 +334,7 @@ services:
     environment:
       - ROLE=proxy
       - NODE_ID=proxy1
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-ndid
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-proxy-1
@@ -366,8 +342,7 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-proxy-1
       - DB_IP=api-redis-proxy-1
       #- SERVER_PORT=${API_PORT:-8080}
-      - IS_MASTER=true
-      - IS_STANDALONE=false
+      - MODE=master
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
       - ./keys/proxy-1/:/api/keys/
@@ -389,11 +364,12 @@ services:
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - DB_IP=api-redis-proxy-1
       - MASTER_SERVER_IP=api-proxy-1-master
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-proxy-1
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-proxy-1
       - SERVER_PORT=${API_PORT:-8080}
+      - MODE=worker
     volumes:
       - ./keys/proxy-1/:/api/keys/
       - ./data/proxy-1/:/api/main-server/data/
@@ -411,7 +387,7 @@ services:
     environment:
       - ROLE=proxy
       - NODE_ID=proxy2
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - TENDERMINT_IP=tm-ndid
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-proxy-2
@@ -419,8 +395,7 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-proxy-2
       - DB_IP=api-redis-proxy-2
       #- SERVER_PORT=${API_PORT:-8080}
-      - IS_MASTER=true
-      - IS_STANDALONE=false
+      - MODE=master
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
       - ./keys/proxy-2/:/api/keys/
@@ -442,11 +417,12 @@ services:
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - DB_IP=api-redis-proxy-2
       - MASTER_SERVER_IP=api-proxy-2-master
-      - NDID_IP=api-ndid-worker
+      - NDID_IP=api-ndid
       - MQ_CONTACT_IP=mq-proxy-2
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - MQ_SERVICE_SERVER_IP=mq-proxy-2
       - SERVER_PORT=${API_PORT:-8080}
+      - MODE=worker
     volumes:
       - ./keys/proxy-2/:/api/keys/
       - ./data/proxy-2/:/api/main-server/data/

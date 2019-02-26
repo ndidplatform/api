@@ -162,6 +162,17 @@ export function setCallbackWithRetryData(nodeId, cbId, data) {
   });
 }
 
+export function getCallbackWithRetryData(nodeId, cbId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'callbackWithRetry',
+    keyName: 'cbId',
+    key: cbId,
+    valueName: 'data',
+  });
+}
+
 export function removeCallbackWithRetryData(nodeId, cbId) {
   return db.remove({
     nodeId,
