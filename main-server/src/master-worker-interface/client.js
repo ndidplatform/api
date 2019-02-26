@@ -363,20 +363,43 @@ function handleCallbackShutdown() {
   return promiseArray;
 }
 
-export function shutdown() {
-  closing = true;
-  if (client) {
-    gRPCRetry(workerStopping).then(async () => {
-      let promiseArray = handleRequestTimeoutShutdown().concat(
-        handleCallbackShutdown()
-      );
-      await Promise.all(promiseArray);
-      if (workerSubscribeChannel) {
-        workerSubscribeChannel.cancel();
+function waitForAllJobDone() {
+  return new Promise((resolve) => {
+    let intervalId = setInterval(() => {
+      if(workingJobCounter === 0) {
+        clearInterval(intervalId);
+        resolve();
       }
-      client.close();
-    });
+    },1000);
+  });
+}
+
+export async function shutdown() {
+  closing = true;
+  logger.info({
+    message: 'shutting down worker',
+    workerId,
+  });
+  if (client) {
+    await gRPCRetry(workerStopping)();
+    await Promise.all([
+      ...handleRequestTimeoutShutdown(),
+      ...handleCallbackShutdown(),
+      waitForAllJobDone(),
+    ]);
+    if (workerSubscribeChannel) {
+      workerSubscribeChannel.on('error', () => {
+        //handle to suppress error log
+        workerSubscribeChannel = null;
+      });
+      workerSubscribeChannel.cancel();
+    }
+    client.close();
   }
+  logger.info({
+    message: 'Worker shutdown successfully',
+    workerId,
+  });
 }
 
 export default function() {

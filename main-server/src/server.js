@@ -275,19 +275,19 @@ async function shutDown() {
   await mq.close();
   tendermint.tendermintWsClient.close();
   tendermintWsPool.closeAllConnections();
+  coreCommon.stopAllTimeoutScheduler();
+
+  if (config.mode === MODE.MASTER) {
+    jobMaster.shutdown();
+  } else if (config.mode === MODE.WORKER) {
+    await jobWorker.shutdown();
+  }
   // TODO: wait for async operations which going to use DB to finish before closing
   // a connection to DB
   // Possible solution: Have those async operations append a queue to use DB and
   // remove after finish using DB
   // => Wait here until a queue to use DB is empty
   await Promise.all([cacheDb.close(), longTermDb.close(), dataDb.close()]);
-  coreCommon.stopAllTimeoutScheduler();
-
-  if (config.mode === MODE.MASTER) {
-    jobMaster.shutdown();
-  } else if (config.mode === MODE.WORKER) {
-    jobWorker.shutdown();
-  }
 }
 
 process.on('SIGTERM', shutDown);
