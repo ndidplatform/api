@@ -34,7 +34,6 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import * as config from '../config';
 
-import getClient from '../master-worker-interface/client';
 import MODE from '../mode';
 
 const RESPONSE_BODY_SIZE_LIMIT = 3 * 1024 * 1024; // 3MB
@@ -46,6 +45,7 @@ let getShouldRetryFn;
 let getResponseCallbackFn;
 
 let pendingCallbacksCount = 0;
+let pendingCallback = {};
 
 export const metricsEventEmitter = new EventEmitter();
 
@@ -150,10 +150,9 @@ async function callbackWithRetry(
 
   //tell master about timerJob
   if(config.mode === MODE.WORKER) {
-    await getClient().callbackRetry({
-      cbId,
+    pendingCallback[cbId] = { 
       deadline: deadline || Date.now() + config.callbackRetryTimeout * 1000,
-    });
+    };
   }
 
   for (;;) {
@@ -171,12 +170,8 @@ async function callbackWithRetry(
     try {
       const responseObj = await httpPost(cbId, callbackUrl, body);
 
-      //clearTimerJob
       if(config.mode === MODE.WORKER) {
-        await getClient().cancelTimerJob({
-          type: 'callback',
-          jobId: cbId,
-        });
+        delete pendingCallback[cbId];
       }
 
       decrementPendingCallbacksCount();
@@ -409,4 +404,8 @@ function decrementPendingCallbacksCount() {
 
 export function getPendingCallbacksCount() {
   return pendingCallbacksCount;
+}
+
+export function getCallbackPendingTimer() {
+  return pendingCallback;
 }

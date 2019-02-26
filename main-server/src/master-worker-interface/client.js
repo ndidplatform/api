@@ -34,6 +34,8 @@ import { wait, randomBase64Bytes } from '../utils';
 import logger from '../logger';
 
 import * as config from '../config';
+import { getRequestTimeoutPendingTimer } from '../core/common';
+import { getCallbackPendingTimer } from '../utils/callback';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -331,10 +333,44 @@ async function onRecvData(data) {
   // }
 }
 
+function handleRequestTimeoutShutdown() {
+  let promiseArray = [];
+  let pendingRequestTimeoutTimer = getRequestTimeoutPendingTimer();
+  for(let requestId in pendingRequestTimeoutTimer) {
+    let { deadline } = pendingRequestTimeoutTimer[requestId];
+    promiseArray.push(
+      client.requestTimeout({
+        requestId,
+        deadline
+      })
+    );
+  }
+  return promiseArray;
+}
+
+function handleCallbackShutdown() {
+  let promiseArray = [];
+  let callbackPendingTimer = getCallbackPendingTimer();
+  for(let cbId in getCallbackPendingTimer) {
+    let { deadline } = callbackPendingTimer[cbId];
+    promiseArray.push(
+      client.callbackRetry({
+        cbId,
+        deadline
+      })
+    );
+  }
+  return promiseArray;
+}
+
 export function shutdown() {
   closing = true;
   if (client) {
-    gRPCRetry(workerStopping).then(() => {
+    gRPCRetry(workerStopping).then(async () => {
+      let promiseArray = handleRequestTimeoutShutdown().concat(
+        handleCallbackShutdown()
+      );
+      await Promise.all(promiseArray);
       if (workerSubscribeChannel) {
         workerSubscribeChannel.cancel();
       }

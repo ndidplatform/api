@@ -37,7 +37,6 @@ import { getErrorObjectForClient } from '../../utils/error';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../../mq/message/type';
 
-import getClient from '../../master-worker-interface/client';
 import MODE from '../../mode';
 
 export * from './create_request';
@@ -46,6 +45,8 @@ export * from './close_request';
 let processingInboundMessagesCount = 0;
 
 let messageQueueAddressesSet = !config.registerMqAtStartup;
+
+let pendingTimer = {};
 
 export const metricsEventEmitter = new EventEmitter();
 
@@ -288,31 +289,19 @@ export function runTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
 
 export async function setTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
   let unixTimeout = Date.now() + secondsToTimeout * 1000;
-  let promiseArray = [cacheDb.setTimeoutScheduler(nodeId, requestId, unixTimeout)];
+  await cacheDb.setTimeoutScheduler(nodeId, requestId, unixTimeout);
   if(config.mode === MODE.WORKER) {
-    promiseArray.push(
-      getClient().requestTimeout({
-        requestId,
-        deadline: unixTimeout,
-      })
-    );
+    pendingTimer[requestId] = { deadline: unixTimeout };
   }
-  await Promise.all(promiseArray);
   runTimeoutScheduler(nodeId, requestId, secondsToTimeout);
 }
 
 export async function removeTimeoutScheduler(nodeId, requestId) {
   lt.clearTimeout(timeoutScheduler[`${nodeId}:${requestId}`]);
-  let promiseArray = [cacheDb.removeTimeoutScheduler(nodeId, requestId)];
+  await cacheDb.removeTimeoutScheduler(nodeId, requestId);
   if(config.mode === MODE.WORKER) {
-    promiseArray.push(
-      getClient().cancelTimerJob({
-        type: 'requestTimeout',
-        jobId: requestId,
-      })
-    );
+    delete pendingTimer[requestId];
   }
-  await Promise.all(promiseArray);
   delete timeoutScheduler[`${nodeId}:${requestId}`];
 }
 
@@ -730,4 +719,8 @@ export function notifyMetricsBlockProcessTime(startTime) {
 
 export function getProcessingInboundMessagesCount() {
   return processingInboundMessagesCount;
+}
+
+export function getRequestTimeoutPendingTimer() {
+  return pendingTimer;
 }
