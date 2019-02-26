@@ -57,6 +57,8 @@ let connectivityState = null;
 let closing = false;
 let workerSubscribeChannel = null;
 
+let workingJobCounter = 0;
+
 export const eventEmitter = new EventEmitter();
 
 function watchForNextConnectivityStateChange() {
@@ -202,6 +204,18 @@ function callbackRetry({
   });
 }
 
+function workerStopping() {
+  return new Promise((resolve, reject) => {
+    client.workerStoppingCall(
+      { workerId },
+      (error) => {
+        if (error) reject(error);
+        else resolve();
+      }
+    );
+  });
+}
+
 function cancelTimerJob({
   type,
   jobId,
@@ -281,13 +295,16 @@ async function onRecvData(data) {
       }
       return arg;
     });
+    workingJobCounter++;
     const retVal = await getFunction(fnName)(...argArray);
     let retValStr;
     if (retVal != null) {
       retValStr = JSON.stringify(retVal);
     }
+    workingJobCounter--;
     await gRPCRetry(returnResult)({ grpcRefId, retValStr });
   } catch (error) {
+    workingJobCounter--;
     await gRPCRetry(returnResult)({ grpcRefId, error });
   }
 
@@ -317,10 +334,12 @@ async function onRecvData(data) {
 export function shutdown() {
   closing = true;
   if (client) {
-    if (workerSubscribeChannel) {
-      workerSubscribeChannel.cancel();
-    }
-    client.close();
+    gRPCRetry(workerStopping).then(() => {
+      if (workerSubscribeChannel) {
+        workerSubscribeChannel.cancel();
+      }
+      client.close();
+    });
   }
 }
 

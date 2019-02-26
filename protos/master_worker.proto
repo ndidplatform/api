@@ -7,6 +7,7 @@ service MasterWorker {
   rpc requestTimeoutCall(InboundMessageForRequestTimeout) returns(Empty){}
   rpc cancelTimerJobCall(InboundMessageForCancelTimerJob) returns(Empty){}
   rpc returnResultCall(Result) returns(Empty){}
+  rpc workerStoppingCall(WorkerId) returns(Empty){}
 }
 
 message WorkerId {
