@@ -269,31 +269,42 @@ async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
 }
 
 async function processRawMessageSwitch(messageId, messageProtobuf, timestamp) {
-  let promise;
   if (config.mode === MODE.STANDALONE) {
-    promise = processRawMessage(messageId, messageProtobuf, timestamp);
+    const [_messageId, message, receiverNodeId] = await processRawMessage(
+      messageId,
+      messageProtobuf,
+      timestamp
+    );
+    handleProcessedRawMessage(null, [messageId, message, receiverNodeId]);
   } else if (config.mode === MODE.MASTER) {
-    promise = delegateToWorker({
+    delegateToWorker({
       fnName: 'mq.processRawMessage',
       args: [messageId, messageProtobuf, timestamp],
-      callback: messageHandlerFunction,
+      callback: handleProcessedRawMessage,
     });
   } else {
     throw new Error('Unsupported mode');
   }
-  try {
-    const [_messageId, message, receiverNodeId] = await promise;
-    if (messageHandlerFunction) {
-      messageHandlerFunction(messageId, message, receiverNodeId);
-    } else {
-      logger.warn({
-        message: 'No registered "messageHandlerFunction" function',
-      });
-    }
-  } catch (error) {
+}
+
+function handleProcessedRawMessage(
+  error,
+  [messageId, message, receiverNodeId]
+) {
+  if (error) {
+    // logger.error()
     if (errorHandlerFunction) {
       errorHandlerFunction(error);
     }
+    return;
+  }
+
+  if (messageHandlerFunction) {
+    messageHandlerFunction(messageId, message, receiverNodeId);
+  } else {
+    logger.warn({
+      message: 'No registered "messageHandlerFunction" function',
+    });
   }
 }
 

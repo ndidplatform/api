@@ -226,11 +226,7 @@ function requestTimeoutCall(call, done) {
 function returnResultCall(call, done) {
   const { grpcRefId, retValStr, error } = call.request;
   if (grpcCall[grpcRefId]) {
-    const { callback, worker } = grpcCall[grpcRefId];
-    if (error) {
-      logger.error(error);
-      return;
-    }
+    const { callback, additionalCallbackArgs, worker } = grpcCall[grpcRefId];
     if (callback) {
       let retVal;
       if (retValStr) {
@@ -244,7 +240,11 @@ function returnResultCall(call, done) {
       } else {
         retVal = [];
       }
-      callback(...retVal);
+      callback(error, retVal, additionalCallbackArgs);
+    } else {
+      if (error) {
+        logger.error({ err: error });
+      }
     }
     worker.jobCount--;
     delete grpcCall[grpcRefId];
@@ -297,10 +297,11 @@ function getWorker(specificWorkerId) {
   }
 }
 
-export async function delegateToWorker({
+export function delegateToWorker({
   fnName,
   args,
   callback,
+  additionalCallbackArgs,
   metaData,
   specificWorkerId,
 }) {
@@ -316,7 +317,7 @@ export async function delegateToWorker({
 
   const worker = getWorker(specificWorkerId);
 
-  grpcCall[grpcRefId] = { callback, worker };
+  grpcCall[grpcRefId] = { callback, additionalCallbackArgs, worker };
 
   worker.jobCount++;
 
