@@ -41,8 +41,8 @@ export function getFunction(fnName) {
       return common.isRequestClosedOrTimedOut;
     case 'common.timeoutRequestAfterBlockchain':
       return common.timeoutRequestAfterBlockchain;
-    case 'common.setTimeoutScheduler':
-      return common.setTimeoutScheduler;
+    case 'common.handleRequestTimeoutWorkerLost':
+      return common.handleRequestTimeoutWorkerLost;
     case 'idp.requestChallengeAfterBlockchain':
       return idp.requestChallengeAfterBlockchain;
     case 'idp.createResponseAfterBlockchain':

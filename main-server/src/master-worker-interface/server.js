@@ -118,7 +118,7 @@ function subscribe(call) {
 }
 
 function handleRequestTimeoutWorkerLost(workerId) {
-  for(let requestId in workerLostHandling[workerId].requestTimeout) {
+  /*for(let requestId in workerLostHandling[workerId].requestTimeout) {
     const { deadline } = workerLostHandling[workerId].requestTimeout[requestId];
     if(Date.now() < deadline) {
       delegateToWorker({
@@ -130,11 +130,15 @@ function handleRequestTimeoutWorkerLost(workerId) {
         ],
       });
     }
-  }
+  }*/
+  delegateToWorker({
+    fnName: 'common.handleRequestTimeoutWorkerLost',
+    args: [ workerLostHandling[workerId].requestTimeout ],
+  });
 }
 
 function handleCallbackRetryWorkerLost(workerId) {
-  for(let cbId in workerLostHandling[workerId].callback) {
+  /*for(let cbId in workerLostHandling[workerId].callback) {
     const { deadline } = workerLostHandling[workerId].callback[cbId];
     if(Date.now() < deadline) {
       delegateToWorker({
@@ -145,18 +149,26 @@ function handleCallbackRetryWorkerLost(workerId) {
         ],
       });
     }
-  }
+  }*/
+  delegateToWorker({
+    fnName: 'callback.handleCallbackWorkerLost',
+    args: [ workerLostHandling[workerId].callback ],
+  });
 }
 
 function handleMqRetryWorkerLost(workerId) {
-  for(let msgId in workerLostHandling[workerId].mq) {
+  /*for(let msgId in workerLostHandling[workerId].mq) {
     delegateToWorker({
       fnName: 'mq.handleMqWorkerLost',
       args: [
         msgId,
       ],
     });
-  }
+  }*/
+  delegateToWorker({
+    fnName: 'mq.handleMqWorkerLost',
+    args: [ workerLostHandling[workerId].mq ],
+  });
 }
 
 function handleWorkerLost(workerId) {
