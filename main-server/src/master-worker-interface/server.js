@@ -33,6 +33,7 @@ import logger from '../logger';
 import * as config from '../config';
 
 let server;
+let stoppingWorkerCount = 0;
 
 const workerList = [];
 const workerLostHandling = {};
@@ -70,6 +71,7 @@ export function initialize() {
     requestTimeoutCall,
     cancelTimerJobCall,
     returnResultCall,
+    workerStoppingCall,
   });
 
   server.bind(MASTER_SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
@@ -102,11 +104,15 @@ function subscribe(call) {
     connection: call,
     workerId,
     jobCount: 0,
+    stopping: false,
   });
 
   call.on('cancelled', () => {
     for (let i = 0; i < workerList.length; i++) {
-      if (workerList[i].workerId === workerId) workerList.splice(i, 1);
+      if (workerList[i].workerId === workerId) {
+        if(workerList[i].stopping) stoppingWorkerCount--;
+        workerList.splice(i, 1);
+      }
     }
     handleWorkerLost(workerId);
   });
@@ -151,6 +157,17 @@ function handleWorkerLost(workerId) {
   handleRequestTimeoutWorkerLost(workerId);
   handleCallbackRetryWorkerLost(workerId);
   delete workerLostHandling[workerId];
+}
+
+function workerStoppingCall(call, done) {
+  const { workerId } = call.request;
+  workerList.forEach((worker) => {
+    if(worker.workerId === workerId) {
+      if(!worker.stopping) stoppingWorkerCount++;
+      worker.stopping = true;
+    }
+  });
+  done();
 }
 
 function cancelTimerJobCall(call, done) {
@@ -268,7 +285,7 @@ function getWorker(specificWorkerId) {
   //   await waitForWorker();
   // }
 
-  if (workerList.length === 0) {
+  if (workerList.length === 0 || workerList.length === stoppingWorkerCount) {
     throw new Error('No worker available');
   }
 
@@ -278,10 +295,10 @@ function getWorker(specificWorkerId) {
     // const index = counter;
 
     // Least job count
-    let min = workerList[0].jobCount;
-    let index = 0;
-    for (let i = 1; i < workerList.length; i++) {
-      if (workerList[i].jobCount < min) {
+    let min = Infinity;
+    let index = -1;
+    for (let i = 0; i < workerList.length; i++) {
+      if (workerList[i].jobCount < min && !workerList[i].stopping) {
         min = workerList[i].jobCount;
         index = i;
       }

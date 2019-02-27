@@ -34,6 +34,8 @@ import { wait, randomBase64Bytes } from '../utils';
 import logger from '../logger';
 
 import * as config from '../config';
+import { getRequestTimeoutPendingTimer } from '../core/common';
+import { getCallbackPendingTimer } from '../utils/callback';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -56,6 +58,8 @@ let client = null;
 let connectivityState = null;
 let closing = false;
 let workerSubscribeChannel = null;
+
+let workingJobCounter = 0;
 
 export const eventEmitter = new EventEmitter();
 
@@ -202,6 +206,18 @@ function callbackRetry({
   });
 }
 
+function workerStopping() {
+  return new Promise((resolve, reject) => {
+    client.workerStoppingCall(
+      { workerId },
+      (error) => {
+        if (error) reject(error);
+        else resolve();
+      }
+    );
+  });
+}
+
 function cancelTimerJob({
   type,
   jobId,
@@ -281,13 +297,16 @@ async function onRecvData(data) {
       }
       return arg;
     });
+    workingJobCounter++;
     const retVal = await getFunction(fnName)(...argArray);
     let retValStr;
     if (retVal != null) {
       retValStr = JSON.stringify(retVal);
     }
+    workingJobCounter--;
     await gRPCRetry(returnResult)({ grpcRefId, retValStr });
   } catch (error) {
+    workingJobCounter--;
     await gRPCRetry(returnResult)({ grpcRefId, error });
   }
 
@@ -314,14 +333,73 @@ async function onRecvData(data) {
   // }
 }
 
-export function shutdown() {
+function handleRequestTimeoutShutdown() {
+  let promiseArray = [];
+  let pendingRequestTimeoutTimer = getRequestTimeoutPendingTimer();
+  for(let requestId in pendingRequestTimeoutTimer) {
+    let { deadline } = pendingRequestTimeoutTimer[requestId];
+    promiseArray.push(
+      client.requestTimeout({
+        requestId,
+        deadline
+      })
+    );
+  }
+  return promiseArray;
+}
+
+function handleCallbackShutdown() {
+  let promiseArray = [];
+  let callbackPendingTimer = getCallbackPendingTimer();
+  for(let cbId in getCallbackPendingTimer) {
+    let { deadline } = callbackPendingTimer[cbId];
+    promiseArray.push(
+      client.callbackRetry({
+        cbId,
+        deadline
+      })
+    );
+  }
+  return promiseArray;
+}
+
+function waitForAllJobDone() {
+  return new Promise((resolve) => {
+    let intervalId = setInterval(() => {
+      if(workingJobCounter === 0) {
+        clearInterval(intervalId);
+        resolve();
+      }
+    },1000);
+  });
+}
+
+export async function shutdown() {
   closing = true;
+  logger.info({
+    message: 'shutting down worker',
+    workerId,
+  });
   if (client) {
+    await gRPCRetry(workerStopping)();
+    await Promise.all([
+      ...handleRequestTimeoutShutdown(),
+      ...handleCallbackShutdown(),
+      waitForAllJobDone(),
+    ]);
     if (workerSubscribeChannel) {
+      workerSubscribeChannel.on('error', () => {
+        //handle to suppress error log
+        workerSubscribeChannel = null;
+      });
       workerSubscribeChannel.cancel();
     }
     client.close();
   }
+  logger.info({
+    message: 'Worker shutdown successfully',
+    workerId,
+  });
 }
 
 export default function() {

@@ -489,10 +489,14 @@ if [ "${MODE}" == "standalone" ] || [ "${MODE}" == "worker" ]; then
         wait_until_namespace_exist "passport_num"
         wait_until_service_exist "bank_statement"
         wait_until_service_exist "customer_info"
-        until register_node_id; do sleep 1; done
+        if [ "${SKIP}" != "true" ]; then
+          until register_node_id; do sleep 1; done
+        fi
         wait_until_node_exist
-        until set_token_for_node_id 10000; do sleep 1; done
-        wait_until_node_has_token_with_amount 10000
+        if [ "${SKIP}" != "true" ]; then
+          until set_token_for_node_id 10000; do sleep 1; done
+          wait_until_node_has_token_with_amount 10000
+        fi
         until tendermint_add_validator; do sleep 1; done
         if [ "${ROLE}" = "as" ]; then
           until approve_service "bank_statement"; do sleep 1; done
