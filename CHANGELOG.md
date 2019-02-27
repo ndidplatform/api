@@ -8,7 +8,7 @@ BREAKING CHANGES:
 - Remove logging to file feature.
 - Remove logging environment variable options
   - `LOG_FORMAT`
-  - `LOG_TARGET`: Always log to `stdout`. Logging to file should be done with piping stdout to file and optionally using `logrotate` for log rotation.
+  - `LOG_TARGET`: Always log to `stdout`. Logging to file should be done with piping stdout to file or other service (e.g. syslog) and optionally using `logrotate` for log rotation.
   - `LOG_ONE_LINE`: Set `LOG_PRETTY_PRINT` to `false` instead. Log will be in one-line JSON format.
   - `LOG_DIRECTORY_PATH`
 - Add logging environment variable option
