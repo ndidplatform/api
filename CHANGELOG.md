@@ -2,6 +2,19 @@
 
 ## TBD
 
+BREAKING CHANGES:
+
+- Change logging format.
+- Remove logging to file feature.
+- Remove logging environment variable options
+  - `LOG_FORMAT`
+  - `LOG_TARGET`: Always log to `stdout`. Logging to file should be done with piping stdout to file and optionally using `logrotate` for log rotation.
+  - `LOG_ONE_LINE`: Set `LOG_PRETTY_PRINT` to `false` instead. Log will be in one-line JSON format.
+  - `LOG_DIRECTORY_PATH`
+- Add logging environment variable option
+  - `LOG_PRETTY_PRINT`: Default to `true` in development (`NODE_ENV` not set or set to `development`), `false` otherwise. If not set to `true`, log will be in JSON format.
+- Change allowed `LOG_LEVEL` option values to `fatal`, `error`, `warn`, `info`, `debug` and `trace`.
+
 IMPROVEMENTS:
 
 - (Experimental) Load balancing support by setting `MODE` to `master` on one process and `worker` on other processes with the same Node ID.
