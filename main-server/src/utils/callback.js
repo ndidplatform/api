@@ -98,33 +98,32 @@ async function httpPost(cbId, callbackUrl, body) {
   };
 }
 
-export async function handleCallbackWorkerLost(jobs) {
-  for(let cbId in jobs) {
-    const { deadline } = jobs[cbId];
-    if(deadline > Date.now()) {
-      const backupCallbackData = await cacheDb.getCallbackWithRetryData(config.nodeId, cbId);
-      if(backupCallbackData) {
-        const {
-          callbackUrl,
-          body,
-          shouldRetryFnName,
-          shouldRetryArguments,
-          responseCallbackFnName,
-          dataForResponseCallback,
-        } = backupCallbackData;
+export async function handleCallbackWorkerLost(
+  cbId,
+  deadline,
+) {
+  let backupCallbackData = await cacheDb.getCallbackWithRetryData(config.nodeId, cbId);
 
-        callbackWithRetry(
-          callbackUrl,
-          body,
-          cbId,
-          shouldRetryFnName,
-          shouldRetryArguments,
-          responseCallbackFnName,
-          dataForResponseCallback,
-          deadline,
-        );
-      }
-    }
+  if(backupCallbackData) {
+    const {
+      callbackUrl,
+      body,
+      shouldRetryFnName,
+      shouldRetryArguments,
+      responseCallbackFnName,
+      dataForResponseCallback,
+    } = backupCallbackData;
+
+    callbackWithRetry(
+      callbackUrl,
+      body,
+      cbId,
+      shouldRetryFnName,
+      shouldRetryArguments,
+      responseCallbackFnName,
+      dataForResponseCallback,
+      deadline,
+    );
   }
 }
 

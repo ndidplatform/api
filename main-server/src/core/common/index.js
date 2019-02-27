@@ -305,19 +305,6 @@ export async function removeTimeoutScheduler(nodeId, requestId) {
   delete timeoutScheduler[`${nodeId}:${requestId}`];
 }
 
-export async function handleRequestTimeoutWorkerLost(jobs) {
-  for(let requestId in jobs) {
-    const { deadline } = jobs[requestId];
-    if(deadline > Date.now()) {
-      setTimeoutScheduler(
-        config.nodeId, 
-        requestId, 
-        (deadline - Date.now())/1000
-      );
-    }
-  }
-}
-
 async function verifyZKProof({
   request_id,
   idp_id,
