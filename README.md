@@ -52,6 +52,9 @@
 - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds [Default: `300000`]
 - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds [Default: `20000`]
 - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than `GRPC_PING_INTERVAL_MS` config on API server pair. [Default: `30000`]
+- `LOG_LEVEL`: *Description below*
+- `LOG_PRETTY_PRINT`: *Description below*
+- `LOG_COLOR`: *Description below*
 
 5.  Run a server
 
@@ -90,12 +93,8 @@
 - `DB_PORT`: Port of DB (redis) server [Default: `6379`]
 - `DB_PASSWORD`: Authentication password for DB (redis) connection
 - `LOG_LEVEL`: Log level. Allowed values are `fatal`, `error`, `warn`, `info`, `debug` and `trace` [Default: `debug` in development, `info` in production]
-<!-- - `LOG_FORMAT`: Log format. Allowed values are `default` and `json` [Default: `default`] -->
-<!-- - `LOG_TARGET`: Where should logger writes logs to. Allowed values are `console` and `file` [Default: `console`] -->
-- `LOG_PRETTY_PRINT`: Log prettifier [Default: `true` in development, `false` otherwise]
+- `LOG_PRETTY_PRINT`: Log prettifier (easy to read format). If not set to `true`, log will be in JSON format [Default: `true` in development, `false` otherwise]
 - `LOG_COLOR`: Log highlight color [Default: `true` in development, `false` otherwise]
-<!-- - `LOG_ONE_LINE`: Log in a single line (no line break) [Default: `false`] -->
-<!-- - `LOG_DIRECTORY_PATH`: Directory path for log files (use when `LOG_TARGET` is set to `file`) [Default: `__dirname/../log` (`log` directory in repository's directory)] -->
 - `CLIENT_HTTP_ERROR_CODE`: HTTP error code when responding a client error [Default: `400`]
 - `SERVER_HTTP_ERROR_CODE`: HTTP error code when responding a server error [Default: `500`]
 - `USE_EXTERNAL_CRYPTO_SERVICE`: Use external service for decrypting and signing (e.g. HSM) [Default: `false`]
