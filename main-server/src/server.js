@@ -60,7 +60,7 @@ process.on('unhandledRejection', function(reason, p) {
       message: 'Unhandled Rejection',
       p,
     });
-    logger.error(reason.getInfoForLog());
+    logger.error({ err: reason });
   } else {
     logger.error({
       message: 'Unhandled Rejection',

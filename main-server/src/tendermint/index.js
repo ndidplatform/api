@@ -264,7 +264,7 @@ async function processMissingExpectedTxs() {
           message:
             'Error getting Tx for processing missing expected Tx (Tx may still be in mempool or does not exist)',
           txHash,
-          error: error.name === 'CustomError' ? error.getInfoForLog() : error,
+          err: error,
         });
       }
     })
