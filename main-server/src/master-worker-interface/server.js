@@ -66,10 +66,7 @@ export function initialize() {
 
   server.addService(proto.MasterWorker.service, {
     subscribe,
-    //mqRetryCall,
-    callbackRetryCall,
-    requestTimeoutCall,
-    cancelTimerJobCall,
+    timerJobsCall,
     returnResultCall,
     workerStoppingCall,
   });
@@ -153,9 +150,21 @@ function handleCallbackRetryWorkerLost(workerId) {
   }
 }
 
+function handleMqRetryWorkerLost(workerId) {
+  for(let msgId in workerLostHandling[workerId].mq) {
+    delegateToWorker({
+      fnName: 'mq.handleMqWorkerLost',
+      args: [
+        msgId,
+      ],
+    });
+  }
+}
+
 function handleWorkerLost(workerId) {
   handleRequestTimeoutWorkerLost(workerId);
   handleCallbackRetryWorkerLost(workerId);
+  handleMqRetryWorkerLost(workerId);
   delete workerLostHandling[workerId];
 }
 
@@ -170,62 +179,67 @@ function workerStoppingCall(call, done) {
   done();
 }
 
-function cancelTimerJobCall(call, done) {
-  const {
-    jobId,
-    workerId,
-    type,
-  } = call.request;
-  delete workerLostHandling[workerId][type][jobId];
-  done();
-}
-
-/*function mqRetryCall(call, done) {
+function mqRetryHandle(detail) {
   const { 
     msgId, 
-    deadline, 
     workerId, 
-    destination, 
-    payload, 
-    retryOnServerUnavailable 
-  } = call.request;
+  } = detail;
 
-  if (workerLostHandling[workerId]['mq'][msgId]) {
+  if (workerLostHandling[workerId].mq[msgId]) {
     throw 'Duplicate job';
   }
-  workerLostHandling[workerId]['mq'][msgId] = {
-    deadline, destination, payload, retryOnServerUnavailable
-  };
-  done();
-}*/
+  workerLostHandling[workerId].mq[msgId] = true;
+}
 
-function callbackRetryCall(call, done) {
+function callbackRetryHandle(detail) {
   const {
     cbId,
     workerId,
     deadline,
-  } = call.request;
+  } = detail;
   if (workerLostHandling[workerId].callback[cbId]) {
     throw 'Duplicate job';
   }
   workerLostHandling[workerId].callback[cbId] = {
     deadline,
   };
-  done();
 }
 
-function requestTimeoutCall(call, done) {
+function requestTimeoutHandle(detail) {
   const {
     requestId,
     deadline,
     workerId,
-  } = call.request;
+  } = detail;
   if (workerLostHandling[workerId].requestTimeout[requestId]) {
     throw 'Duplicate job';
   }
   workerLostHandling[workerId].requestTimeout[requestId] = {
     deadline,
   };
+}
+
+function timerJobsCall(call, done) {
+  let {
+    jobsDetail,
+    workerId,
+  } = call.request;
+  jobsDetail = JSON.parse(jobsDetail);
+  jobsDetail.forEach(({ type, ...detail }) => {
+    switch(type) {
+      case 'requestTimeout':
+        requestTimeoutHandle({ workerId, ...detail });
+        break;
+      case 'callback':
+        callbackRetryHandle({ workerId, ...detail });
+        break;
+      case 'mq':
+        mqRetryHandle({ workerId, ...detail });
+        break;
+      default: 
+        throw 'Unrecognized timer job';
+    }
+  });
   done();
 }
 

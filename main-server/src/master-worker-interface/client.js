@@ -34,8 +34,9 @@ import { wait, randomBase64Bytes } from '../utils';
 import logger from '../logger';
 
 import * as config from '../config';
-import { getRequestTimeoutPendingTimer } from '../core/common';
-import { getCallbackPendingTimer } from '../utils/callback';
+import { getRequestTimeoutPendingTimerJobs } from '../core/common';
+import { getCallbackPendingTimerJobs } from '../utils/callback';
+import { getMqPendingTimerJobs } from '../mq';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -148,106 +149,12 @@ export async function initialize() {
   );
   watchForNextConnectivityStateChange();
   await waitForReady(client);
-  //client.mqRetry = gRPCRetry(mqRetry);
-  client.callbackRetry = gRPCRetry(callbackRetry);
-  client.requestTimeout = gRPCRetry(requestTimeout);
-  client.cancelTimerJob = gRPCRetry(cancelTimerJob);
-}
-
-/*  
-  Tell master that we are retrying something.
-  If we are lost, master will tell another worker to retry it for us.
-*/
-
-/*function mqRetry({
-  msgId, 
-  deadline, 
-  cancel = false, 
-  workerId, 
-  destination, 
-  payload, 
-  retryOnServerUnavailable 
-}) {
-  return new Promise((resolve, reject) => {
-    client.mqRetryCall(
-      {
-        msgId, 
-        deadline, 
-        cancel, 
-        workerId, 
-        destination, 
-        payload, 
-        retryOnServerUnavailable 
-      },
-      (error) => {
-        if (error) reject(error);
-        else resolve();
-      }
-    );
-  });
-}*/
-
-function callbackRetry({
-  cbId,
-  deadline,
-}) {
-  return new Promise((resolve, reject) => {
-    client.callbackRetryCall(
-      {
-        workerId,
-        cbId,
-        deadline,
-      },
-      (error) => {
-        if (error) reject(error);
-        else resolve();
-      }
-    );
-  });
 }
 
 function workerStopping() {
   return new Promise((resolve, reject) => {
     client.workerStoppingCall(
       { workerId },
-      (error) => {
-        if (error) reject(error);
-        else resolve();
-      }
-    );
-  });
-}
-
-function cancelTimerJob({
-  type,
-  jobId,
-}) {
-  return new Promise((resolve, reject) => {
-    client.cancelTimerJobCall(
-      {
-        type,
-        jobId,
-        workerId,
-      },
-      (error) => {
-        if (error) reject(error);
-        else resolve();
-      }
-    );
-  });
-}
-
-function requestTimeout({
-  requestId,
-  deadline
-}) {
-  return new Promise((resolve, reject) => {
-    client.requestTimeoutCall(
-      {
-        requestId,
-        deadline,
-        workerId,
-      },
       (error) => {
         if (error) reject(error);
         else resolve();
@@ -309,58 +216,6 @@ async function onRecvData(data) {
     workingJobCounter--;
     await gRPCRetry(returnResult)({ grpcRefId, error });
   }
-
-  // switch (fnName) {
-  //   case 'handleRetry':
-  //     switch(retryType) {
-  //       case 'timeoutRequest':
-  //         break;
-  //       case 'mqSend':
-  //         break;
-  //       case 'callback':
-  //         break;
-  //       default:
-  //         throw '';
-  //     }
-  //     return;
-
-  //   default:
-  //     logger.debug({
-  //       message: 'Worker received unrecognized event from master',
-  //       data,
-  //     });
-  //     return;
-  // }
-}
-
-function handleRequestTimeoutShutdown() {
-  let promiseArray = [];
-  let pendingRequestTimeoutTimer = getRequestTimeoutPendingTimer();
-  for(let requestId in pendingRequestTimeoutTimer) {
-    let { deadline } = pendingRequestTimeoutTimer[requestId];
-    promiseArray.push(
-      client.requestTimeout({
-        requestId,
-        deadline
-      })
-    );
-  }
-  return promiseArray;
-}
-
-function handleCallbackShutdown() {
-  let promiseArray = [];
-  let callbackPendingTimer = getCallbackPendingTimer();
-  for(let cbId in getCallbackPendingTimer) {
-    let { deadline } = callbackPendingTimer[cbId];
-    promiseArray.push(
-      client.callbackRetry({
-        cbId,
-        deadline
-      })
-    );
-  }
-  return promiseArray;
 }
 
 function waitForAllJobDone() {
@@ -374,6 +229,33 @@ function waitForAllJobDone() {
   });
 }
 
+/*  
+  Tell master that we are retrying something.
+  If we are lost, master will tell another worker to retry it for us.
+*/
+
+function handleShutdownTimerJobs(timerJobsArray) {
+  let jobsDetail = [];
+  timerJobsArray.forEach(({ type, jobs }) => {
+    jobs.type = type;
+    jobsDetail.push(jobs);
+  });
+  return gRPCRetry(() => {
+    return new Promise((resolve, reject) => {
+      client.timerJobsCall(
+        {
+          jobsDetail: JSON.stringify(jobsDetail),
+          workerId
+        },
+        (error) => {
+          if (error) reject(error);
+          else resolve();
+        }
+      );
+    });
+  })();
+}
+
 export async function shutdown() {
   closing = true;
   logger.info({
@@ -382,9 +264,20 @@ export async function shutdown() {
   });
   if (client) {
     await gRPCRetry(workerStopping)();
+    let timerJobsArray = [
+      {
+        type: 'requestTimeout',
+        jobs: getRequestTimeoutPendingTimerJobs()
+      }, {
+        type: 'callback',
+        jobs: getCallbackPendingTimerJobs(),
+      }, {
+        type: 'mq',
+        jobs: getMqPendingTimerJobs(),
+      }
+    ];
     await Promise.all([
-      ...handleRequestTimeoutShutdown(),
-      ...handleCallbackShutdown(),
+      handleShutdownTimerJobs(timerJobsArray),
       waitForAllJobDone(),
     ]);
     if (workerSubscribeChannel) {
