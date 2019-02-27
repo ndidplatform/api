@@ -92,7 +92,7 @@ function subscribe(call) {
   }
 
   workerLostHandling[workerId] = {
-    //mq: {},
+    mq: {},
     callback: {},
     requestTimeout: {},
   };
@@ -135,9 +135,7 @@ function handleRequestTimeoutWorkerLost(workerId) {
 
 function handleCallbackRetryWorkerLost(workerId) {
   for(let cbId in workerLostHandling[workerId].callback) {
-    const { 
-      deadline,
-    } = workerLostHandling[workerId].callback[cbId];
+    const { deadline } = workerLostHandling[workerId].callback[cbId];
     if(Date.now() < deadline) {
       delegateToWorker({
         fnName: 'callback.handleCallbackWorkerLost',
@@ -179,80 +177,22 @@ function workerStoppingCall(call, done) {
   done();
 }
 
-function mqRetryHandle(detail) {
-  const { 
-    msgId, 
-    workerId, 
-  } = detail;
-
-  if (workerLostHandling[workerId].mq[msgId]) {
-    throw 'Duplicate job';
-  }
-  workerLostHandling[workerId].mq[msgId] = true;
-}
-
-function callbackRetryHandle(detail) {
-  const {
-    cbId,
-    workerId,
-    deadline,
-  } = detail;
-  if (workerLostHandling[workerId].callback[cbId]) {
-    throw 'Duplicate job';
-  }
-  workerLostHandling[workerId].callback[cbId] = {
-    deadline,
-  };
-}
-
-function requestTimeoutHandle(detail) {
-  const {
-    requestId,
-    deadline,
-    workerId,
-  } = detail;
-  if (workerLostHandling[workerId].requestTimeout[requestId]) {
-    throw 'Duplicate job';
-  }
-  workerLostHandling[workerId].requestTimeout[requestId] = {
-    deadline,
-  };
-}
-
 function timerJobsCall(call, done) {
   let {
     jobsDetail,
     workerId,
   } = call.request;
   jobsDetail = JSON.parse(jobsDetail);
-  jobsDetail.forEach(({ type, ...detail }) => {
-    switch(type) {
-      case 'requestTimeout':
-        requestTimeoutHandle({ workerId, ...detail });
-        break;
-      case 'callback':
-        callbackRetryHandle({ workerId, ...detail });
-        break;
-      case 'mq':
-        mqRetryHandle({ workerId, ...detail });
-        break;
-      default: 
-        throw 'Unrecognized timer job';
+  jobsDetail.forEach(({ type, ...jobs }) => {
+    for(let jobId in jobs) {
+      if(workerLostHandling[workerId][type][jobId]) {
+        throw 'Duplicate job';
+      }
+      workerLostHandling[workerId][type][jobId] = jobs[jobId];
     }
   });
   done();
 }
-
-/*function waitForWorker() {
-  return new Promise((resolve) => {
-    let id = setInterval(() => {
-      if (workerList.length > 0) {
-        clearInterval(id);
-        resolve();
-      }
-    }, 2000);
-  });
-}*/
 
 function returnResultCall(call, done) {
   const { grpcRefId, retValStr, error } = call.request;
@@ -292,13 +232,6 @@ function returnResultCall(call, done) {
 }
 
 function getWorker(specificWorkerId) {
-  // if (workerList.length === 0) {
-  //   logger.info({
-  //     message: 'No worker connected, waiting...',
-  //   });
-  //   await waitForWorker();
-  // }
-
   if (workerList.length === 0 || workerList.length === stoppingWorkerCount) {
     throw new Error('No worker available');
   }
