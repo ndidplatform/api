@@ -145,7 +145,7 @@ export async function processDataForRP(
         synchronous,
       },
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     throw err;
   }
 }
@@ -225,7 +225,7 @@ async function processDataForRPInternalAsync(
       originalArgs: arguments[1],
       options: arguments[2],
       additionalArgs: arguments[3],
-      error,
+      err: error,
     });
 
     if (!synchronous) {
@@ -302,7 +302,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
-      error,
+      err: error,
     });
 
     if (!synchronous) {

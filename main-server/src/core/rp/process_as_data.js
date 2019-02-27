@@ -79,7 +79,7 @@ export async function processAsData({
         requestId,
       },
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
@@ -125,7 +125,7 @@ export async function processAsData({
       },
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
@@ -173,7 +173,7 @@ export async function processAsDataAfterSetDataReceived(
       },
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
@@ -191,7 +191,7 @@ async function cleanUpDataResponseFromAS(nodeId, asResponseId) {
   } catch (error) {
     logger.error({
       message: 'Cannot remove data response from AS',
-      error,
+      err: error,
     });
   }
 }

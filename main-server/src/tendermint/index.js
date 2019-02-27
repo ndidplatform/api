@@ -112,7 +112,7 @@ export function loadSavedData() {
     } else {
       logger.error({
         message: 'Cannot read chain ID file',
-        error,
+        err: error,
       });
     }
   }
@@ -133,7 +133,7 @@ export function loadSavedData() {
     } else {
       logger.error({
         message: 'Cannot read latest block height file',
-        error,
+        err: error,
       });
     }
   }
@@ -149,7 +149,7 @@ export function loadSavedData() {
         latestBlockHeightFileExist: latestBlockHeight != null,
       },
     });
-    logger.error(error.getInfoForLog());
+    logger.error({ err: error });
     throw error;
   }
 }
@@ -179,7 +179,7 @@ function saveLatestBlockHeight(height) {
       if (err) {
         logger.error({
           message: 'Cannot write latest block height file',
-          error: err,
+          err,
         });
       }
     });
@@ -192,7 +192,7 @@ function saveChainId(chainIdToSave) {
     if (err) {
       logger.error({
         message: 'Cannot write chain ID file',
-        error: err,
+        err,
       });
     }
   });
@@ -206,7 +206,7 @@ function removeChainIdAndLatestBlockHeightFiles() {
     if (error.code !== 'ENOENT') {
       logger.error({
         message: 'Cannot unlink chain ID file',
-        error,
+        err: error,
       });
     }
   }
@@ -217,7 +217,7 @@ function removeChainIdAndLatestBlockHeightFiles() {
     if (error.code !== 'ENOENT') {
       logger.error({
         message: 'Cannot unlink latest block height files',
-        error,
+        err: error,
       });
     }
   }
@@ -339,7 +339,7 @@ async function processExpectedTx(txHash, result, fromEvent) {
       },
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
   }
 }
 
@@ -378,7 +378,7 @@ async function pollStatusUntilSynced() {
             result: status,
           },
         });
-        logger.error(err.getInfoForLog());
+        logger.error({ err });
         await utils.wait(backoff.next());
         continue;
       }

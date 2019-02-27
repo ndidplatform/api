@@ -230,7 +230,7 @@ async function initialize() {
   } catch (error) {
     logger.error({
       message: 'Cannot initialize server',
-      error,
+      err: error,
     });
     // shutDown();
   }
@@ -250,7 +250,7 @@ logger.info({
 
 // Make sure data and log directories exist
 mkdirp.sync(config.dataDirectoryPath);
-mkdirp.sync(config.logDirectoryPath);
+// mkdirp.sync(config.logDirectoryPath);
 
 // Graceful Shutdown
 let shutDownCalledOnce = false;

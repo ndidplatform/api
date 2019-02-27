@@ -47,10 +47,11 @@ class CustomError extends Error {
     }
 
     if (cause != null) {
-      Object.defineProperty(this, 'cause', {
-        value: cause,
-        writable: false,
-      });
+      // Object.defineProperty(this, 'cause', {
+      //   value: cause,
+      //   writable: false,
+      // });
+      this.cause = cause;
     }
 
     Error.captureStackTrace(this, this.constructor);
@@ -109,38 +110,38 @@ class CustomError extends Error {
     return false;
   }
 
-  /**
-   * Get error info
-   * @returns {Object} Error info
-   */
-  getInfoForLog(withStack = true) {
-    const retval = {
-      message: this.message,
-      code: this.getCode(),
-    };
-    if (this.details != null) {
-      retval.details = this.details;
-    }
-    if (this.cause != null) {
-      if (this.cause.name === 'CustomError') {
-        retval.cause = this.cause.getInfoForLog(false);
-      } else {
-        const cause = {
-          name: this.cause.name,
-          message: this.cause.message,
-        };
-        if (this.cause.code != null) {
-          cause.code = this.cause.code;
-        }
-        retval.cause = cause;
-      }
-    }
-    if (withStack) {
-      retval.stack = this.stack;
-      retval._printErrStack = true;
-    }
-    return retval;
-  }
+  // /**
+  //  * Get error info
+  //  * @returns {Object} Error info
+  //  */
+  // getInfoForLog(withStack = true) {
+  //   const retval = {
+  //     message: this.message,
+  //     code: this.getCode(),
+  //   };
+  //   if (this.details != null) {
+  //     retval.details = this.details;
+  //   }
+  //   if (this.cause != null) {
+  //     if (this.cause.name === 'CustomError') {
+  //       retval.cause = this.cause.getInfoForLog(false);
+  //     } else {
+  //       const cause = {
+  //         name: this.cause.name,
+  //         message: this.cause.message,
+  //       };
+  //       if (this.cause.code != null) {
+  //         cause.code = this.cause.code;
+  //       }
+  //       retval.cause = cause;
+  //     }
+  //   }
+  //   if (withStack) {
+  //     retval.stack = this.stack;
+  //     retval._printErrStack = true;
+  //   }
+  //   return retval;
+  // }
 }
 
 function buildStackDescriptor(oldStackDescriptor, nested) {

@@ -186,7 +186,7 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
       message: 'Cannot request challenge and create IdP response',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     throw err;
   }
 }
@@ -355,7 +355,7 @@ export async function createResponse(
       message: 'Cannot create IdP response',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     throw err;
   }
 }
@@ -394,7 +394,7 @@ export async function createResponseAfterBlockchain(
       message: 'Create IdP response after blockchain error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
-      error,
+      err: error,
     });
 
     await callbackToClient(
@@ -558,7 +558,7 @@ export async function requestChallengeAfterBlockchain(
       message: 'Request challenge after blockchain error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
-      error,
+      err: error,
     });
 
     await callbackToClient(

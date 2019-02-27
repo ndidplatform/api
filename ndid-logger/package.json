@@ -9,8 +9,8 @@
     "test:es6": "mocha src/**/*.test.js --require @babel/register --require source-map-support/register"
   },
   "dependencies": {
-    "winston": "^3.0.0",
-    "winston-daily-rotate-file": "^3.3.0"
+    "pino": "^5.11.1",
+    "pino-pretty": "^2.5.0"
   },
   "devDependencies": {
     "chai": "^4.1.2",

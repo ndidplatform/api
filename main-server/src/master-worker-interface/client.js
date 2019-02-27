@@ -78,7 +78,7 @@ function watchForNextConnectivityStateChange() {
         if (error) {
           logger.error({
             message: 'Worker service gRPC connectivity state watch error',
-            error,
+            err: error,
           });
         } else {
           const newConnectivityState = client
@@ -168,7 +168,7 @@ function returnResult({ grpcRefId, retValStr, error }) {
     message: 'Worker return result',
     grpcRefId,
     retValStr,
-    error,
+    err: error,
   });
   return new Promise((resolve, reject) => {
     client.returnResultCall(

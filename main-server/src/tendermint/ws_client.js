@@ -57,13 +57,13 @@ export default class TendermintWsClient extends EventEmitter {
   connect() {
     logger.info({
       message: 'Tendermint WS connecting',
-      name: this.name,
+      connectionName: this.name,
     });
     this.ws = new WebSocket(`ws://${tendermintAddress}/websocket`);
     this.ws.on('open', () => {
       logger.info({
         message: 'Tendermint WS connected',
-        name: this.name,
+        connectionName: this.name,
       });
       // Reset backoff interval
       this.backoff.reset();
@@ -90,7 +90,7 @@ export default class TendermintWsClient extends EventEmitter {
       if (this.connected === true) {
         logger.info({
           message: 'Tendermint WS disconnected',
-          name: this.name,
+          connectionName: this.name,
           code,
           reason,
         });
@@ -122,7 +122,7 @@ export default class TendermintWsClient extends EventEmitter {
         const backoffTime = this.backoff.next();
         logger.debug({
           message: `Tendermint WS try reconnect in ${backoffTime} ms`,
-          name: this.name,
+          connectionName: this.name,
         });
         this.reconnectTimeoutFn = setTimeout(() => this.connect(), backoffTime);
       }
@@ -131,8 +131,8 @@ export default class TendermintWsClient extends EventEmitter {
     this.ws.on('error', (error) => {
       logger.error({
         message: 'Tendermint WS error',
-        name: this.name,
-        error,
+        connectionName: this.name,
+        err: error,
       });
       // this.emit('error', error);
     });
@@ -140,7 +140,7 @@ export default class TendermintWsClient extends EventEmitter {
     this.ws.on('message', (message) => {
       // logger.debug({
       //   message: 'Data received from tendermint WS',
-      //   name: this.name,
+      //   connectionName: this.name,
       //   data: message,
       // });
       try {
@@ -148,9 +148,9 @@ export default class TendermintWsClient extends EventEmitter {
       } catch (error) {
         logger.warn({
           message: 'Error JSON parsing message received from tendermint',
-          name: this.name,
+          connectionName: this.name,
           data: message,
-          error,
+          err: error,
         });
         return;
       }
@@ -205,7 +205,7 @@ export default class TendermintWsClient extends EventEmitter {
     logger.debug({
       message:
         'Tendermint WS ping timed out (did not receive ping from server). Terminating connection.',
-      name: this.name,
+      connectionName: this.name,
     });
     this.ws.terminate();
   }
@@ -316,7 +316,7 @@ export default class TendermintWsClient extends EventEmitter {
 
       logger.debug({
         message: 'Calling Tendermint through WS',
-        name: this.name,
+        connectionName: this.name,
         payload: message,
       });
       this.ws.send(JSON.stringify(message), wsOpts, (error) => {

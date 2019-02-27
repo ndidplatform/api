@@ -31,7 +31,7 @@ export async function tmQuery({ fnName, jsonParameter }) {
   } catch (error) {
     logger.error({
       message: 'Cannot query',
-      error,
+      err: error,
     });
     throw error;
   }
@@ -74,7 +74,7 @@ export async function tmTransact({
   } catch (error) {
     logger.error({
       message: 'Cannot create transaction',
-      error,
+      err: error,
     });
     throw error;
   }

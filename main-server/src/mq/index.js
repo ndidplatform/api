@@ -118,9 +118,7 @@ export async function initializeInbound() {
   mqService.eventEmitter.on('message', onMessage);
 
   //should tell client via error callback?
-  mqService.eventEmitter.on('error', (error) =>
-    logger.error(error.getInfoForLog())
-  );
+  mqService.eventEmitter.on('error', (error) => logger.error({ err: error }));
 
   mqService.subscribeToRecvMessages();
 
@@ -238,7 +236,7 @@ async function onMessage({ message, msgId, senderId }) {
     await cacheDb.setRawMessageFromMQ(config.nodeId, id, message);
     mqService
       .sendAckForRecvMessage(msgId)
-      .catch((error) => logger.error(error.getInfoForLog()));
+      .catch((error) => logger.error({ err: error }));
 
     if (
       !tendermint.connected ||
@@ -489,7 +487,7 @@ export async function processRawMessage(messageId, messageProtobuf, timestamp) {
     logger.warn({
       message:
         'Error processing received message from message queue. Discarding message.',
-      error,
+      err: error,
     });
     throw error;
   } finally {
@@ -508,7 +506,7 @@ async function removeRawMessageFromCache(messageId) {
     logger.error({
       message: 'Cannot remove raw received message from MQ from cache DB',
       messageId,
-      error,
+      err: error,
     });
   }
 }
@@ -687,7 +685,7 @@ export async function send(receivers, message, senderNodeId) {
           );
         })
         .catch((error) => {
-          logger.error(error.getInfoForLog());
+          logger.error({ err: error });
           metricsEventEmitter.emit('mqSendMessageFail');
         })
         .then(() => {

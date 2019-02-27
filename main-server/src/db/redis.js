@@ -76,7 +76,7 @@ export default class RedisInstance extends EventEmitter {
     this.redis.on('error', (error) => {
       logger.error({
         message: `DB (${this.dbName}): Cannot connect to Redis server`,
-        error,
+        err: error,
       });
     });
   }
@@ -94,7 +94,7 @@ export default class RedisInstance extends EventEmitter {
           message: `DB (${
             this.dbName
           }): Cannot connect to Redis the first time`,
-          error,
+          err: error,
         });
       }
     });

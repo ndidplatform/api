@@ -101,7 +101,7 @@ async function updateNodeInternalAsync(
       originalArgs: arguments[0],
       options: arguments[1],
       additionalArgs: arguments[2],
-      error,
+      err: error,
     });
 
     if (!synchronous) {

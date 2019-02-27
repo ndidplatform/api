@@ -47,7 +47,7 @@ try {
 } catch (error) {
   logger.warn({
     message: 'Cannot read request message template files',
-    error,
+    err: error,
   });
 }
 

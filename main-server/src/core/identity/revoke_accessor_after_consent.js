@@ -90,7 +90,7 @@ export async function revokeAccessorAfterCloseConsentRequest(
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
-      error,
+      err: error,
     });
 
     if (callbackFnName != null) {
@@ -124,7 +124,7 @@ export async function notifyRevokeAccessorAfterConsent(
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
-      error,
+      err: error,
     });
 
     if (callbackFnName != null) {

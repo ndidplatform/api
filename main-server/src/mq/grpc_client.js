@@ -84,7 +84,7 @@ function watchForNextConnectivityStateChange() {
         if (error) {
           logger.error({
             message: 'MQ service gRPC connectivity state watch error',
-            error,
+            err: error,
           });
         } else {
           const newConnectivityState = client
@@ -108,7 +108,7 @@ function watchForNextConnectivityStateChange() {
                 message: 'Node ID check failed on reconnect',
                 cause: error,
               });
-              logger.error(err.getInfoForLog());
+              logger.error({ err });
             }
             if (nodeIdMatched) {
               if (subscribedToRecvMessages) {
@@ -270,7 +270,7 @@ export function subscribeToRecvMessages() {
         message: 'Receive Message channel error',
         cause: error,
       });
-      logger.error(err.getInfoForLog());
+      logger.error({ err });
       recvMessageChannel.cancel();
       recvMessageChannel = null;
       logger.debug({
@@ -354,7 +354,7 @@ export async function sendMessage(
         await sendMessageInternal(mqAddress, payload, msgId);
         return;
       } catch (error) {
-        logger.error(error.getInfoForLog());
+        logger.error({ err: error });
 
         if (error.cause && error.cause.code === grpc.status.CANCELLED) {
           throw error;

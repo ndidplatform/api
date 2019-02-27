@@ -161,7 +161,7 @@ async function closeRequestInternalAsync(
       originalArgs: arguments[0],
       options: arguments[1],
       additionalArgs: arguments[2],
-      error,
+      err: error,
     });
 
     if (!synchronous) {
@@ -236,7 +236,7 @@ export async function closeRequestInternalAsyncAfterBlockchain(
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
-      error,
+      err: error,
     });
 
     if (!synchronous) {

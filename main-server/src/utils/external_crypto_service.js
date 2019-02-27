@@ -398,7 +398,7 @@ async function callbackWithRetry(url, body, logPrefix, type) {
 
       logger.error({
         message: `[${logPrefix}] Cannot send callback`,
-        error,
+        err: error,
         cbId,
       });
 

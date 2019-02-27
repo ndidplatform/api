@@ -25,15 +25,19 @@ import { initLogger } from 'ndid-logger';
 import * as config from './config';
 
 const logger = initLogger({
+  env: config.env,
   name: config.nodeId,
   logLevel: config.logLevel,
-  logTarget: config.logTarget,
-  logDirectoryPath: config.logDirectoryPath,
-  logFormat: config.logFormat,
+  // logPid: config.env !== 'development',
+  // logHostname: config.env !== 'development',
+  // logTarget: config.logTarget,
+  // logDirectoryPath: config.logDirectoryPath,
+  // logFormat: config.logFormat,
+  logPrettyPrint: config.logPrettyPrint,
   logColor: config.logColor,
-  logOneLine: config.logOneLine,
-  replaceForTooLongLog: config.replaceForTooLongLog,
-  logLengthThreshold: config.logLengthThreshold,
+  // logOneLine: config.logOneLine,
+  // replaceForTooLongLog: config.replaceForTooLongLog,
+  // logLengthThreshold: config.logLengthThreshold,
 });
 
 export default logger;

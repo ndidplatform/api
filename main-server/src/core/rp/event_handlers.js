@@ -83,7 +83,7 @@ export async function handleMessageFromQueue(
       message: 'Error handling message from message queue',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     common.notifyMetricsFailInboundMessageProcess();
     const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
@@ -126,7 +126,7 @@ export async function handleTendermintNewBlock(
       message: 'Error handling Tendermint NewBlock event',
       cause: error,
     });
-    logger.error(err.getInfoForLog());
+    logger.error({ err });
     common.notifyMetricsFailedBlockProcess();
     const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
