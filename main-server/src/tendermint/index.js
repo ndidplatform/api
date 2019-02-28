@@ -522,6 +522,7 @@ tendermintWsClient.on('connected', async () => {
       tendermintWsClient.subscribeToNewBlockEvent();
     }
     tendermintWsClient.subscribeToTxEvent();
+    await tendermintWsPool.waitForAvailableConnection();
     const statusOnSync = await pollStatusUntilSynced();
     if (waitForInitEndedBeforeReady) {
       await pollInitStatusUntilInitEnded();

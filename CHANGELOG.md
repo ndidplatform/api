@@ -36,6 +36,7 @@ BUG FIXES:
 
 - Fix redis function wrappers logic.
 - Fix cache data manipulation on detecting new chain (migrate).
+- Fix incorrect socket returned by Tendermint WebSocket pool `getConnection()`.
 
 ## 1.0.2 (February 8, 2019)
 

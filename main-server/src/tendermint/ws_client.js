@@ -303,7 +303,14 @@ export default class TendermintWsClient extends EventEmitter {
   _call(method, params, wsOpts) {
     return new Promise((resolve, reject) => {
       if (!this.connected) {
-        return reject(new Error('socket is not connected'));
+        return reject(
+          new CustomError({
+            message: 'WebSocket is not connected',
+            details: {
+              connectionName: this.name,
+            },
+          })
+        );
       }
 
       const id = ++this.rpcId;

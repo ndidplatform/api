@@ -35,6 +35,7 @@ const wsClients = [];
 
 let wsClientIndex = 0;
 
+let availableConnectionPromiseResolve = null;
 let connectedWsCount = 0;
 
 export const metricsEventEmitter = new EventEmitter();
@@ -90,12 +91,19 @@ function getNextConnectedConnectionClientIndex(curentIndex) {
   return null;
 }
 
+export function waitForAvailableConnection() {
+  if (connectedWsCount > 0) {
+    return;
+  }
+  availableConnectionPromiseResolve = null;
+  return new Promise((resolve) => {
+    availableConnectionPromiseResolve = resolve;
+  });
+}
+
 // Round-robin
 export function getConnection() {
-  wsClientIndex++;
-  if (wsClientIndex >= wsClients.length) {
-    wsClientIndex = 0;
-  }
+  wsClientIndex = wsClientIndex % wsClients.length;
   if (!wsClients[wsClientIndex].connected) {
     const nextConnectedConnectionClientIndex = getNextConnectedConnectionClientIndex(
       wsClientIndex
@@ -105,6 +113,7 @@ export function getConnection() {
         message: 'No connected WS available',
       });
     }
+    wsClientIndex = nextConnectedConnectionClientIndex;
   }
   return wsClients[wsClientIndex];
 }
@@ -117,6 +126,11 @@ export function closeAllConnections() {
 
 function incrementWsConnectedConnectionCount() {
   connectedWsCount++;
+  if (connectedWsCount > 0) {
+    if (availableConnectionPromiseResolve) {
+      availableConnectionPromiseResolve();
+    }
+  }
   metricsEventEmitter.emit('connectedConnectionCount', connectedWsCount);
 }
 
