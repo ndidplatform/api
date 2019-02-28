@@ -268,16 +268,16 @@ async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
 
 async function processRawMessageSwitch(messageId, messageProtobuf, timestamp) {
   if (config.mode === MODE.STANDALONE) {
-    const [_messageId, message, receiverNodeId] = await processRawMessage(
+    const { message, receiverNodeId } = await processRawMessage({
       messageId,
       messageProtobuf,
-      timestamp
-    );
+      timestamp,
+    });
     handleProcessedRawMessage(null, [messageId, message, receiverNodeId]);
   } else if (config.mode === MODE.MASTER) {
     delegateToWorker({
       fnName: 'mq.processRawMessage',
-      args: [messageId, messageProtobuf, timestamp],
+      args: { messageId, messageProtobuf, timestamp },
       callback: handleProcessedRawMessage,
     });
   } else {
@@ -306,7 +306,11 @@ function handleProcessedRawMessage(
   }
 }
 
-export async function processRawMessage(messageId, messageProtobuf, timestamp) {
+export async function processRawMessage({
+  messageId,
+  messageProtobuf,
+  timestamp,
+}) {
   logger.info({
     message: 'Processing raw received message from message queue',
     messageId,

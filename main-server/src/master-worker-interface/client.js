@@ -28,6 +28,8 @@ import * as protoLoader from '@grpc/proto-loader';
 
 import { ExponentialBackoff } from 'simple-backoff';
 
+import { getArgsFromProtobufBuffer } from './message';
+
 import { getFunction } from '../functions';
 
 import { wait, randomBase64Bytes } from '../utils';
@@ -187,10 +189,7 @@ export async function initialize() {
   });
 }*/
 
-function callbackRetry({
-  cbId,
-  deadline,
-}) {
+function callbackRetry({ cbId, deadline }) {
   return new Promise((resolve, reject) => {
     client.callbackRetryCall(
       {
@@ -208,20 +207,14 @@ function callbackRetry({
 
 function workerStopping() {
   return new Promise((resolve, reject) => {
-    client.workerStoppingCall(
-      { workerId },
-      (error) => {
-        if (error) reject(error);
-        else resolve();
-      }
-    );
+    client.workerStoppingCall({ workerId }, (error) => {
+      if (error) reject(error);
+      else resolve();
+    });
   });
 }
 
-function cancelTimerJob({
-  type,
-  jobId,
-}) {
+function cancelTimerJob({ type, jobId }) {
   return new Promise((resolve, reject) => {
     client.cancelTimerJobCall(
       {
@@ -237,10 +230,7 @@ function cancelTimerJob({
   });
 }
 
-function requestTimeout({
-  requestId,
-  deadline
-}) {
+function requestTimeout({ requestId, deadline }) {
   return new Promise((resolve, reject) => {
     client.requestTimeoutCall(
       {
@@ -279,26 +269,24 @@ function returnResult({ grpcRefId, retValStr, error }) {
 }
 
 async function onRecvData(data) {
-  const { fnName, args, grpcRefId, metaData } = data;
+  const { fnName, args, grpcRefId } = data;
 
   logger.debug({
     message: 'Worker received delegated work',
     fnName,
     args,
     grpcRefId,
-    metaData,
   });
 
   try {
-    let argArray = JSON.parse(args);
-    argArray = argArray.map((arg) => {
-      if (arg.type === 'Buffer') {
-        return Buffer.from(arg);
-      }
-      return arg;
-    });
+    const parsedArgs = getArgsFromProtobufBuffer(fnName, args);
     workingJobCounter++;
-    const retVal = await getFunction(fnName)(...argArray);
+    let retVal;
+    if (Array.isArray(parsedArgs)) {
+      retVal = await getFunction(fnName)(...parsedArgs);
+    } else {
+      retVal = await getFunction(fnName)(parsedArgs);
+    }
     let retValStr;
     if (retVal != null) {
       retValStr = JSON.stringify(retVal);
@@ -336,12 +324,12 @@ async function onRecvData(data) {
 function handleRequestTimeoutShutdown() {
   let promiseArray = [];
   let pendingRequestTimeoutTimer = getRequestTimeoutPendingTimer();
-  for(let requestId in pendingRequestTimeoutTimer) {
+  for (let requestId in pendingRequestTimeoutTimer) {
     let { deadline } = pendingRequestTimeoutTimer[requestId];
     promiseArray.push(
       client.requestTimeout({
         requestId,
-        deadline
+        deadline,
       })
     );
   }
@@ -351,12 +339,12 @@ function handleRequestTimeoutShutdown() {
 function handleCallbackShutdown() {
   let promiseArray = [];
   let callbackPendingTimer = getCallbackPendingTimer();
-  for(let cbId in getCallbackPendingTimer) {
+  for (let cbId in getCallbackPendingTimer) {
     let { deadline } = callbackPendingTimer[cbId];
     promiseArray.push(
       client.callbackRetry({
         cbId,
-        deadline
+        deadline,
       })
     );
   }
@@ -366,11 +354,11 @@ function handleCallbackShutdown() {
 function waitForAllJobDone() {
   return new Promise((resolve) => {
     let intervalId = setInterval(() => {
-      if(workingJobCounter === 0) {
+      if (workingJobCounter === 0) {
         clearInterval(intervalId);
         resolve();
       }
-    },1000);
+    }, 1000);
   });
 }
 

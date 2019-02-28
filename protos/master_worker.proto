@@ -16,9 +16,8 @@ message WorkerId {
 
 message OutboundMessage {
   string fnName = 1;
-  string args = 2;
+  bytes args = 2;
   string grpcRefId = 3;
-  string metaData = 4;
 }
 
 /*message InboundMessageForMqRetry {

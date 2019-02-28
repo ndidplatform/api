@@ -26,6 +26,8 @@ import EventEmitter from 'events';
 import grpc from 'grpc';
 import * as protoLoader from '@grpc/proto-loader';
 
+import { getArgsProtobufBuffer, getReturnValue } from './message';
+
 import { randomBase64Bytes } from '../utils';
 import CustomError from 'ndid-error/custom_error';
 import logger from '../logger';
@@ -110,7 +112,7 @@ function subscribe(call) {
   call.on('cancelled', () => {
     for (let i = 0; i < workerList.length; i++) {
       if (workerList[i].workerId === workerId) {
-        if(workerList[i].stopping) stoppingWorkerCount--;
+        if (workerList[i].stopping) stoppingWorkerCount--;
         workerList.splice(i, 1);
       }
     }
@@ -121,33 +123,24 @@ function subscribe(call) {
 }
 
 function handleRequestTimeoutWorkerLost(workerId) {
-  for(let requestId in workerLostHandling[workerId].requestTimeout) {
+  for (let requestId in workerLostHandling[workerId].requestTimeout) {
     const { deadline } = workerLostHandling[workerId].requestTimeout[requestId];
-    if(Date.now() < deadline) {
+    if (Date.now() < deadline) {
       delegateToWorker({
         fnName: 'common.setTimeoutScheduler',
-        args: [
-          config.nodeId,
-          requestId,
-          (deadline - Date.now())/1000
-        ],
+        args: [config.nodeId, requestId, (deadline - Date.now()) / 1000],
       });
     }
   }
 }
 
 function handleCallbackRetryWorkerLost(workerId) {
-  for(let cbId in workerLostHandling[workerId].callback) {
-    const { 
-      deadline,
-    } = workerLostHandling[workerId].callback[cbId];
-    if(Date.now() < deadline) {
+  for (let cbId in workerLostHandling[workerId].callback) {
+    const { deadline } = workerLostHandling[workerId].callback[cbId];
+    if (Date.now() < deadline) {
       delegateToWorker({
         fnName: 'callback.handleCallbackWorkerLost',
-        args: [
-          cbId,
-          deadline,
-        ],
+        args: [cbId, deadline],
       });
     }
   }
@@ -162,8 +155,8 @@ function handleWorkerLost(workerId) {
 function workerStoppingCall(call, done) {
   const { workerId } = call.request;
   workerList.forEach((worker) => {
-    if(worker.workerId === workerId) {
-      if(!worker.stopping) stoppingWorkerCount++;
+    if (worker.workerId === workerId) {
+      if (!worker.stopping) stoppingWorkerCount++;
       worker.stopping = true;
     }
   });
@@ -171,11 +164,7 @@ function workerStoppingCall(call, done) {
 }
 
 function cancelTimerJobCall(call, done) {
-  const {
-    jobId,
-    workerId,
-    type,
-  } = call.request;
+  const { jobId, workerId, type } = call.request;
   delete workerLostHandling[workerId][type][jobId];
   done();
 }
@@ -200,11 +189,7 @@ function cancelTimerJobCall(call, done) {
 }*/
 
 function callbackRetryCall(call, done) {
-  const {
-    cbId,
-    workerId,
-    deadline,
-  } = call.request;
+  const { cbId, workerId, deadline } = call.request;
   if (workerLostHandling[workerId].callback[cbId]) {
     throw 'Duplicate job';
   }
@@ -215,11 +200,7 @@ function callbackRetryCall(call, done) {
 }
 
 function requestTimeoutCall(call, done) {
-  const {
-    requestId,
-    deadline,
-    workerId,
-  } = call.request;
+  const { requestId, deadline, workerId } = call.request;
   if (workerLostHandling[workerId].requestTimeout[requestId]) {
     throw 'Duplicate job';
   }
@@ -319,7 +300,6 @@ export function delegateToWorker({
   args,
   callback,
   additionalCallbackArgs,
-  metaData,
   specificWorkerId,
 }) {
   const grpcRefId = `${grpcCallRefIdPrefix}-${grpcCallRefIdCounter++}`;
@@ -345,11 +325,12 @@ export function delegateToWorker({
     workerJobCount: worker.jobCount,
   });
 
+  const argsProtobuf = getArgsProtobufBuffer(fnName, args);
+
   worker.connection.write({
     fnName,
     grpcRefId,
-    args: JSON.stringify(args),
-    metaData: JSON.stringify(metaData),
+    args: argsProtobuf,
   });
 }
 

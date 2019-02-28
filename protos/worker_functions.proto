@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+message MqProcessRawMessageArgs {
+  string messageId = 1;
+  bytes messageProtobuf = 2;
+  int64 timestamp = 3;
+}
+
+message MqProcessRawMessageReturn {
+  string messageId = 1;
+  string message = 2;
+  string receiverNodeId = 3;
+}
+
+message OthersArgs {
+  string args = 1;
+}
+
+message OthersReturn {
+  string retVal = 1;
+}
