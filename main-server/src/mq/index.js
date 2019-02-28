@@ -151,6 +151,49 @@ async function initDuplicateInboundMessageTimeout() {
   await Promise.all(promiseArray);
 }
 
+export async function handleMqWorkerLost(msgId) {
+  const data = await cacheDb.getPendingOutboundMessage(config.nodeId, msgId);
+  await sendPendingOutboundMessage({
+    msgId,
+    data,
+  });
+} 
+
+async function sendPendingOutboundMessage({ 
+  msgId: msgIdStr, 
+  data 
+}) {
+  const msgId = Number(msgIdStr);
+  const { mqDestAddress, payloadBuffer: payloadBufferArr, sendTime } = data;
+  if (sendTime + MQ_SEND_TOTAL_TIMEOUT > Date.now()) {
+    const payloadBuffer = Buffer.from(payloadBufferArr);
+    pendingOutboundMessages[msgId] = {
+      mqDestAddress,
+      payloadBuffer,
+      sendTime,
+    };
+    incrementPendingOutboundMessagesCount();
+    mqService
+      .sendMessage(
+        mqDestAddress,
+        payloadBuffer,
+        msgId,
+        true,
+        MQ_SEND_TOTAL_TIMEOUT
+      )
+      .catch((error) => {
+        logger.error(error.getInfoForLog());
+        metricsEventEmitter.emit('mqSendMessageFail');
+      })
+      .then(() => {
+        // finally
+        delete pendingOutboundMessages[msgId];
+        decrementPendingOutboundMessagesCount();
+      });
+  }
+  await cacheDb.removePendingOutboundMessage(config.nodeId, msgId);
+}
+
 async function sendSavedPendingOutboundMessages() {
   logger.info({
     message: 'Loading saved pending outbound messages',
@@ -165,37 +208,7 @@ async function sendSavedPendingOutboundMessages() {
     });
   }
   await Promise.all(
-    savedPendingOutboundMessages.map(async ({ msgId: msgIdStr, data }) => {
-      const msgId = Number(msgIdStr);
-      const { mqDestAddress, payloadBuffer: payloadBufferArr, sendTime } = data;
-      if (sendTime + MQ_SEND_TOTAL_TIMEOUT > Date.now()) {
-        const payloadBuffer = Buffer.from(payloadBufferArr);
-        pendingOutboundMessages[msgId] = {
-          mqDestAddress,
-          payloadBuffer,
-          sendTime,
-        };
-        incrementPendingOutboundMessagesCount();
-        mqService
-          .sendMessage(
-            mqDestAddress,
-            payloadBuffer,
-            msgId,
-            true,
-            MQ_SEND_TOTAL_TIMEOUT
-          )
-          .catch((error) => {
-            logger.error({ err: error });
-            metricsEventEmitter.emit('mqSendMessageFail');
-          })
-          .then(() => {
-            // finally
-            delete pendingOutboundMessages[msgId];
-            decrementPendingOutboundMessagesCount();
-          });
-      }
-      await cacheDb.removePendingOutboundMessage(config.nodeId, msgId);
-    })
+    savedPendingOutboundMessages.map(sendPendingOutboundMessage)
   );
 }
 
@@ -221,6 +234,10 @@ async function onMessage({ message, msgId, senderId }) {
 
   try {
     await cacheDb.setRawMessageFromMQ(config.nodeId, id, message);
+    logger.debug({
+      message: 'Sending ACK for received MQ message',
+      msgId: id,
+    });
     mqService
       .sendAckForRecvMessage(msgId)
       .catch((error) => logger.error({ err: error }));
@@ -766,6 +783,14 @@ function decrementPendingOutboundMessagesCount() {
 
 export function getPendingOutboundMessagesCount() {
   return pendingOutboundMessagesCount;
+}
+
+export function getMqPendingTimer() {
+  let shutdownHandleObject = {};
+  for(let msgId in pendingOutboundMessages) {
+    shutdownHandleObject[msgId] = {};
+  }
+  return shutdownHandleObject;
 }
 
 tendermint.eventEmitter.on('ready', retryProcessMessages);

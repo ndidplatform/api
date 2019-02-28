@@ -518,16 +518,20 @@ function checkForSetLastBlock(parsedTransactionsInBlocks) {
 tendermintWsClient.on('connected', async () => {
   connected = true;
   if (reconnecting) {
-    tendermintWsClient.subscribeToNewBlockEvent();
+    if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+      tendermintWsClient.subscribeToNewBlockEvent();
+    }
     tendermintWsClient.subscribeToTxEvent();
     const statusOnSync = await pollStatusUntilSynced();
     if (waitForInitEndedBeforeReady) {
       await pollInitStatusUntilInitEnded();
     }
     eventEmitter.emit('ready', statusOnSync);
-    processMissingBlocks(statusOnSync);
+    if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+      processMissingBlocks(statusOnSync);
+      loadAndRetryBacklogTransactRequests();
+    }
     processMissingExpectedTxs();
-    loadAndRetryBacklogTransactRequests();
     reconnecting = false;
   } else {
     const statusOnSync = await pollStatusUntilSynced();

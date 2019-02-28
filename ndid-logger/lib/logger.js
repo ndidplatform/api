@@ -21,6 +21,11 @@
  */
 
 const pino = require('pino');
+const pinoPretty = require('pino-pretty');
+
+function bufferToJSONForLogger() {
+  return { type: 'Buffer', data_base64: this.toString('base64') };
+}
 
 /**
  * Initialize logger
@@ -45,6 +50,16 @@ function initLogger(config) {
     prettyPrint: config.logPrettyPrint
       ? { colorize: config.logColor, translateTime: true, errorProps: '*' }
       : undefined,
+    prettifier: (options) => {
+      const pretty = pinoPretty(options);
+      return (inputData) => {
+        const tmp = Buffer.prototype.toJSON;
+        Buffer.prototype.toJSON = bufferToJSONForLogger;
+        const result = pretty(inputData);
+        Buffer.prototype.toJSON = tmp;
+        return result;
+      };
+    },
   });
 
   return logger;

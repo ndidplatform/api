@@ -336,6 +336,16 @@ export function setPendingOutboundMessage(nodeId, msgId, data) {
   });
 }
 
+export function getPendingOutboundMessage(nodeId, msgId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'pendingOutboundMessages',
+    keyName: 'msgId',
+    key: msgId,
+  });
+}
+
 export function removePendingOutboundMessage(nodeId, msgId) {
   return db.remove({
     nodeId,
