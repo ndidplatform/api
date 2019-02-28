@@ -50,16 +50,18 @@ function initLogger(config) {
     prettyPrint: config.logPrettyPrint
       ? { colorize: config.logColor, translateTime: true, errorProps: '*' }
       : undefined,
-    prettifier: (options) => {
-      const pretty = pinoPretty(options);
-      return (inputData) => {
-        const tmp = Buffer.prototype.toJSON;
-        Buffer.prototype.toJSON = bufferToJSONForLogger;
-        const result = pretty(inputData);
-        Buffer.prototype.toJSON = tmp;
-        return result;
-      };
-    },
+    prettifier: config.logPrettyPrint
+      ? (options) => {
+          const pretty = pinoPretty(options);
+          return (inputData) => {
+            const tmp = Buffer.prototype.toJSON;
+            Buffer.prototype.toJSON = bufferToJSONForLogger;
+            const result = pretty(inputData);
+            Buffer.prototype.toJSON = tmp;
+            return result;
+          };
+        }
+      : undefined,
   });
 
   return logger;
