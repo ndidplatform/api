@@ -35,6 +35,7 @@ const wsClients = [];
 
 let wsClientIndex = 0;
 
+let availableConnectionPromise = null;]
 let availableConnectionPromiseResolve = null;
 let connectedWsCount = 0;
 
@@ -95,10 +96,16 @@ export function waitForAvailableConnection() {
   if (connectedWsCount > 0) {
     return;
   }
-  availableConnectionPromiseResolve = null;
-  return new Promise((resolve) => {
-    availableConnectionPromiseResolve = resolve;
-  });
+  if (!availableConnectionPromise) {
+    availableConnectionPromise = new Promise((resolve) => {
+      availableConnectionPromiseResolve = () => {
+        availableConnectionPromise = null;
+        availableConnectionPromiseResolve = null;
+        resolve();
+      };
+    });
+  }
+  return availableConnectionPromise;
 }
 
 // Round-robin
