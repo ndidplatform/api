@@ -35,7 +35,7 @@ const wsClients = [];
 
 let wsClientIndex = 0;
 
-let availableConnectionPromise = null;]
+let availableConnectionPromise = null;
 let availableConnectionPromiseResolve = null;
 let connectedWsCount = 0;
 
