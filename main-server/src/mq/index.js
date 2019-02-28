@@ -234,6 +234,10 @@ async function onMessage({ message, msgId, senderId }) {
 
   try {
     await cacheDb.setRawMessageFromMQ(config.nodeId, id, message);
+    logger.debug({
+      message: 'Sending ACK for received MQ message',
+      msgId: id,
+    });
     mqService
       .sendAckForRecvMessage(msgId)
       .catch((error) => logger.error({ err: error }));
