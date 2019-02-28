@@ -157,12 +157,9 @@ export async function handleMqWorkerLost(msgId) {
     msgId,
     data,
   });
-} 
+}
 
-async function sendPendingOutboundMessage({ 
-  msgId: msgIdStr, 
-  data 
-}) {
+async function sendPendingOutboundMessage({ msgId: msgIdStr, data }) {
   const msgId = Number(msgIdStr);
   const { mqDestAddress, payloadBuffer: payloadBufferArr, sendTime } = data;
   if (sendTime + MQ_SEND_TOTAL_TIMEOUT > Date.now()) {
@@ -285,7 +282,7 @@ async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
 
 async function processRawMessageSwitch(messageId, messageProtobuf, timestamp) {
   if (config.mode === MODE.STANDALONE) {
-    const { message, receiverNodeId } = await processRawMessage({
+    const [_messageId, message, receiverNodeId] = await processRawMessage({
       messageId,
       messageProtobuf,
       timestamp,
@@ -787,7 +784,7 @@ export function getPendingOutboundMessagesCount() {
 
 export function getMqPendingTimer() {
   let shutdownHandleObject = {};
-  for(let msgId in pendingOutboundMessages) {
+  for (let msgId in pendingOutboundMessages) {
     shutdownHandleObject[msgId] = {};
   }
   return shutdownHandleObject;
