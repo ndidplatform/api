@@ -31,6 +31,7 @@ IMPROVEMENTS:
   - `PROMETHEUS_HTTPS_CERT_PATH`: HTTPS certificate file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true
 - Use `scan` stream instead of `keys` for redis operations.
 - Use `unlink` (if available - redis 4 or later) instead of `del` for redis delete by key operations.
+- Add error callback when error occurs at MQ.
 
 BUG FIXES:
 
