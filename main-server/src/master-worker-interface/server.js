@@ -26,7 +26,7 @@ import EventEmitter from 'events';
 import grpc from 'grpc';
 import * as protoLoader from '@grpc/proto-loader';
 
-import { getArgsProtobufBuffer, getReturnValue } from './message';
+import { getArgsProtobuf } from './message';
 
 import { randomBase64Bytes } from '../utils';
 import CustomError from 'ndid-error/custom_error';
@@ -132,9 +132,9 @@ function handleRequestTimeoutWorkerLost(workerId) {
 }
 
 function handleCallbackRetryWorkerLost(workerId) {
-  for(let cbId in workerLostHandling[workerId].callback) {
+  for (let cbId in workerLostHandling[workerId].callback) {
     const { deadline } = workerLostHandling[workerId].callback[cbId];
-    if(Date.now() < deadline) {
+    if (Date.now() < deadline) {
       delegateToWorker({
         fnName: 'callback.handleCallbackWorkerLost',
         args: [cbId, deadline],
@@ -144,12 +144,10 @@ function handleCallbackRetryWorkerLost(workerId) {
 }
 
 function handleMqRetryWorkerLost(workerId) {
-  for(let msgId in workerLostHandling[workerId].mq) {
+  for (let msgId in workerLostHandling[workerId].mq) {
     delegateToWorker({
       fnName: 'mq.handleMqWorkerLost',
-      args: [
-        msgId,
-      ],
+      args: [msgId],
     });
   }
 }
@@ -173,14 +171,11 @@ function workerStoppingCall(call, done) {
 }
 
 function timerJobsCall(call, done) {
-  let {
-    jobsDetail,
-    workerId,
-  } = call.request;
+  let { jobsDetail, workerId } = call.request;
   jobsDetail = JSON.parse(jobsDetail);
   jobsDetail.forEach(({ type, ...jobs }) => {
-    for(let jobId in jobs) {
-      if(workerLostHandling[workerId][type][jobId]) {
+    for (let jobId in jobs) {
+      if (workerLostHandling[workerId][type][jobId]) {
         throw 'Duplicate job';
       }
       workerLostHandling[workerId][type][jobId] = jobs[jobId];
@@ -203,8 +198,6 @@ function returnResultCall(call, done) {
           }
           return val;
         });
-      } else {
-        retVal = [];
       }
       callback(error, retVal, additionalCallbackArgs);
     } else {
@@ -275,7 +268,7 @@ export function delegateToWorker({
 
   const worker = getWorker(specificWorkerId);
 
-  grpcCall[grpcRefId] = { callback, additionalCallbackArgs, worker };
+  grpcCall[grpcRefId] = { fnName, callback, additionalCallbackArgs, worker };
 
   worker.jobCount++;
 
@@ -286,7 +279,7 @@ export function delegateToWorker({
     workerJobCount: worker.jobCount,
   });
 
-  const argsProtobuf = getArgsProtobufBuffer(fnName, args);
+  const argsProtobuf = getArgsProtobuf(fnName, args);
 
   worker.connection.write({
     fnName,

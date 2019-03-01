@@ -29,46 +29,52 @@ const workerFunctionsProtobufRoot = workerFunctionsProtobufRootInstance.loadSync
   path.join(__dirname, '..', '..', '..', 'protos', 'worker_functions.proto'),
   { keepCase: true }
 );
+const RpProcessRequestUpdateArgs = workerFunctionsProtobufRoot.lookupType(
+  'RpProcessRequestUpdateArgs'
+);
 const MqProcessRawMessageArgs = workerFunctionsProtobufRoot.lookupType(
   'MqProcessRawMessageArgs'
 );
-const MqProcessRawMessageReturn = workerFunctionsProtobufRoot.lookupType(
-  'MqProcessRawMessageReturn'
-);
-
 const OthersArgs = workerFunctionsProtobufRoot.lookupType('OthersArgs');
-const OthersReturn = workerFunctionsProtobufRoot.lookupType('OthersReturn');
 
-export function getArgsProtobufBuffer(fnName, args) {
+function getArgsProtobufType(fnName) {
   let protobufType;
   switch (fnName) {
     // Core module - process task by request ID
     // case 'rp.processMessage':
-    //   return rp.processMessage;
+    //   break;
     // case 'rp.processRequestUpdate':
-    //   return rp.processRequestUpdate;
+    //   protobufType = RpProcessRequestUpdateArgs;
+    //   break;
     // case 'idp.processMessage':
-    //   return idp.processMessage;
+    //   break;
     // case 'idp.processRequestUpdate':
-    //   return idp.processRequestUpdate;
+    //   break;
     // case 'idp.processCreateIdentityRequest':
-    //   return idp.processCreateIdentityRequest;
+    //   break;
     // case 'as.processMessage':
-    //   return as.processMessage;
+    //   break;
     // case 'as.processRequestUpdate':
-    //   return as.processRequestUpdate;
+    //   break;
     // MQ
     case 'mq.processRawMessage':
       protobufType = MqProcessRawMessageArgs;
       break;
     // callback
     // case 'callback.handleCallbackWorkerLost':
-    //   return callback.handleCallbackWorkerLost;
+    //   break;
     default:
       protobufType = OthersArgs;
-      args = {
-        args: JSON.stringify(args),
-      };
+  }
+  return protobufType;
+}
+
+export function getArgsProtobuf(fnName, args) {
+  const protobufType = getArgsProtobufType(fnName);
+  if (protobufType === OthersArgs) {
+    args = {
+      args: JSON.stringify(args),
+    };
   }
 
   const protoMessage = protobufType.create(args);
@@ -76,33 +82,11 @@ export function getArgsProtobufBuffer(fnName, args) {
   return protoBuffer;
 }
 
-export function getArgsFromProtobufBuffer(fnName, argsProtobuf) {
-  let protobufType;
-  switch (fnName) {
-    // Core module - process task by request ID
-    // case 'rp.processMessage':
-    //   return rp.processMessage;
-    // case 'rp.processRequestUpdate':
-    //   return rp.processRequestUpdate;
-    // case 'idp.processMessage':
-    //   return idp.processMessage;
-    // case 'idp.processRequestUpdate':
-    //   return idp.processRequestUpdate;
-    // case 'idp.processCreateIdentityRequest':
-    //   return idp.processCreateIdentityRequest;
-    // case 'as.processMessage':
-    //   return as.processMessage;
-    // case 'as.processRequestUpdate':
-    //   return as.processRequestUpdate;
-    // MQ
-    case 'mq.processRawMessage':
-      protobufType = MqProcessRawMessageArgs;
-      break;
-    // callback
-    // case 'callback.handleCallbackWorkerLost':
-    //   return callback.handleCallbackWorkerLost;
-    default: {
-      const decodedMessage = OthersArgs.decode(argsProtobuf);
+export function getArgsFromProtobuf(fnName, argsProtobuf) {
+  const protobufType = getArgsProtobufType(fnName);
+  if (protobufType === OthersArgs) {
+    const decodedMessage = OthersArgs.decode(argsProtobuf);
+    if (decodedMessage.args) {
       let retVal = JSON.parse(decodedMessage.args);
       retVal = retVal.map((val) => {
         if (val.type === 'Buffer') {
@@ -112,50 +96,8 @@ export function getArgsFromProtobufBuffer(fnName, argsProtobuf) {
       });
       return retVal;
     }
+  } else {
+    const decodedMessage = protobufType.decode(argsProtobuf);
+    return decodedMessage;
   }
-
-  const decodedMessage = protobufType.decode(argsProtobuf);
-  return decodedMessage;
-}
-
-export function getReturnValue(fnName, retValProtobuf) {
-  let protobufType;
-  switch (fnName) {
-    // Core module - process task by request ID
-    // case 'rp.processMessage':
-    //   return rp.processMessage;
-    // case 'rp.processRequestUpdate':
-    //   return rp.processRequestUpdate;
-    // case 'idp.processMessage':
-    //   return idp.processMessage;
-    // case 'idp.processRequestUpdate':
-    //   return idp.processRequestUpdate;
-    // case 'idp.processCreateIdentityRequest':
-    //   return idp.processCreateIdentityRequest;
-    // case 'as.processMessage':
-    //   return as.processMessage;
-    // case 'as.processRequestUpdate':
-    //   return as.processRequestUpdate;
-    // MQ
-    case 'mq.processRawMessage':
-      protobufType = MqProcessRawMessageReturn;
-      break;
-    // callback
-    // case 'callback.handleCallbackWorkerLost':
-    //   return callback.handleCallbackWorkerLost;
-    default: {
-      const decodedMessage = OthersReturn.decode(retValProtobuf);
-      let retVal = JSON.parse(decodedMessage.args);
-      retVal = retVal.map((val) => {
-        if (val.type === 'Buffer') {
-          return Buffer.from(val);
-        }
-        return val;
-      });
-      return retVal;
-    }
-  }
-
-  const decodedMessage = protobufType.decode(retValProtobuf);
-  return decodedMessage;
 }

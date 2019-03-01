@@ -6,16 +6,14 @@ message MqProcessRawMessageArgs {
   int64 timestamp = 3;
 }
 
-message MqProcessRawMessageReturn {
-  string messageId = 1;
-  string message = 2;
-  string receiverNodeId = 3;
+message RpProcessRequestUpdateArgs {
+  string nodeId = 1;
+  string requestId = 2;
+  int64 height = 3;
+  string callbackUrl = 4;
+  string referenceId = 5;
 }
 
 message OthersArgs {
   string args = 1;
-}
-
-message OthersReturn {
-  string retVal = 1;
 }
