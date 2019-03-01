@@ -1205,3 +1205,45 @@ export function removeRpIdFromDataRequestId(nodeId, dataRequestId) {
     key: dataRequestId,
   });
 }
+
+export function addTaskToPersistentQueue(nodeId, requestId, task) {
+  return db.pushToList({
+    nodeId,
+    dbName,
+    name: 'persistentTaskQueue',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'task',
+    value: task,
+  });
+}
+
+export function getAllTaskInPersistentQueue(nodeId) {
+  return db.getAll({
+    nodeId,
+    dbName,
+    name: 'persistentTaskQueue',
+    keyName: 'requestId',
+    valueName: 'tasks',
+  });
+}
+
+export function removeFirstTaskFromPersistentQueue(nodeId, requestId) {
+  return db.popFromList({
+    nodeId,
+    dbName,
+    name: 'persistentTaskQueue',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
+export function removeAllTaskFromPersistentQueue(nodeId, requestId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'persistentTaskQueue',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}

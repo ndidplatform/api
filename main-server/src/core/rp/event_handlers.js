@@ -61,7 +61,7 @@ export async function handleMessageFromQueue(
     );
 
     if (addToProcessQueue) {
-      requestProcessManager.addMqMessageTaskToQueue({
+      await requestProcessManager.addMqMessageTaskToQueue({
         nodeId,
         messageId,
         message,
@@ -158,8 +158,8 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
       );
 
       Object.entries(requestIdsToProcessUpdate).map(
-        ([requestId, { callbackUrl, referenceId }]) =>
-          requestProcessManager.addTaskToQueue({
+        async ([requestId, { callbackUrl, referenceId }]) =>
+          await requestProcessManager.addTaskToQueue({
             nodeId,
             requestId,
             callbackFnName: 'rp.processRequestUpdate',

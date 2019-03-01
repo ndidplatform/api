@@ -45,6 +45,7 @@ let pendingTasksInQueueCount = 0;
 let processingTasksCount = 0;
 let requestsInQueueCount = 0;
 export const metricsEventEmitter = new EventEmitter();
+let removePersistentQueueEmitter = new EventEmitter();
 
 export async function handleMessageFromMqWithBlockWait(
   messageId,
@@ -101,7 +102,7 @@ export async function processMessageInBlocks({
       const message = await cacheDb.getMessageFromMQ(nodeId, messageId);
       if (message == null) return;
       const requestId = message.request_id;
-      addTaskToQueue({
+      await addTaskToQueue({
         nodeId,
         requestId,
         callbackFnName: processMessageFnName,
@@ -137,14 +138,14 @@ async function cleanUpMessage(nodeId, messageId) {
   }
 }
 
-export function addMqMessageTaskToQueue({
+export async function addMqMessageTaskToQueue({
   nodeId,
   messageId,
   message,
   processMessageFnName,
 }) {
   const requestId = message.request_id;
-  addTaskToQueue({
+  await addTaskToQueue({
     nodeId,
     requestId,
     callbackFnName: processMessageFnName,
@@ -154,7 +155,21 @@ export function addMqMessageTaskToQueue({
   });
 }
 
-export function addTaskToQueue({
+export async function restoreTaskFromPersistentQueue() {
+  let tasksInPersistentQueue = await cacheDb.getAllTaskInPersistentQueue(
+    config.nodeId,
+  );
+  tasksInPersistentQueue.forEach((requestId, tasks) => {
+    requestQueue[requestId] = tasks;
+    //TODO: batch incremental?
+    tasks.forEach(() => {
+      incrementPendingTasksInQueueCount();
+    });
+    setImmediate(executeTaskInQueue, requestId);
+  });
+}
+
+export async function addTaskToQueue({
   nodeId,
   requestId,
   callbackFnName,
@@ -172,20 +187,25 @@ export function addTaskToQueue({
     requestQueue[requestId] = [];
     incrementRequestsInQueueCount();
   }
-  requestQueue[requestId].push({
+  const taskData = {
     nodeId,
     callbackFnName,
     callbackArgs,
     onCallbackFinished,
     onCallbackFinishedArgs,
     startTime: Date.now(),
-  });
+  };
+  await cacheDb.addTaskToPersistentQueue(
+    config.nodeId, 
+    requestId, taskData
+  );
+  requestQueue[requestId].push(taskData);
   incrementPendingTasksInQueueCount();
 
   setImmediate(executeTaskInQueue, requestId);
 }
 
-function executeTaskInQueue(requestId) {
+async function executeTaskInQueue(requestId) {
   if (requestQueueRunning[requestId]) return;
   const task = requestQueue[requestId].shift();
   if (task) {
@@ -209,6 +229,9 @@ function executeTaskInQueue(requestId) {
     const startTime = Date.now();
 
     if (config.mode === MODE.STANDALONE) {
+      let removePersistentQueuePromise = new Promise((resolve) => {
+        removePersistentQueueEmitter.once(requestId, resolve);
+      });
       getFunction(callbackFnName)(...callbackArgs)
         .then(() => onTaskExecutionSuccess(startTime))
         .catch(onTaskExecutionFail)
@@ -217,7 +240,7 @@ function executeTaskInQueue(requestId) {
             requestId,
             onCallbackFinished,
             onCallbackFinishedArgs,
-          })
+          }, removePersistentQueuePromise)
         );
     } else if (config.mode === MODE.MASTER) {
       delegateToWorker({
@@ -234,6 +257,11 @@ function executeTaskInQueue(requestId) {
     } else {
       throw new Error('Unsupported mode');
     }
+    await cacheDb.removeFirstTaskFromPersistentQueue(
+      config.nodeId, 
+      requestId
+    );
+    removePersistentQueueEmitter.emit(requestId);
   } else {
     cleanUpQueue(requestId);
   }
@@ -259,7 +287,7 @@ function onTaskExecutionFinished({
   requestId,
   onCallbackFinished,
   onCallbackFinishedArgs,
-}) {
+}, removePersistentQueuePromise) {
   decrementProcessingTasksCount();
   if (onCallbackFinished) {
     onCallbackFinished(...onCallbackFinishedArgs);
@@ -268,7 +296,14 @@ function onTaskExecutionFinished({
   if (requestQueue[requestId].length === 0) {
     cleanUpQueue(requestId);
   } else {
-    setImmediate(executeTaskInQueue, requestId);
+    if(!removePersistentQueuePromise) {
+      setImmediate(executeTaskInQueue, requestId);
+    }
+    else {
+      removePersistentQueuePromise.then(() => {
+        setImmediate(executeTaskInQueue, requestId);
+      });
+    }
   }
 }
 

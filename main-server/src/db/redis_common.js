@@ -174,6 +174,29 @@ export async function pushToList({ nodeId, dbName, name, key, value }) {
   }
 }
 
+export async function popFromList({ nodeId, dbName, name, key }) {
+  const operation = 'popFromList';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+    const result = await redis.lpop(
+      `${nodeId}:${dbName}:${name}:${key}`
+    );
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
+    return JSON.parse(result);
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
 export async function pushToListWithRangeSupport({
   nodeId,
   dbName,

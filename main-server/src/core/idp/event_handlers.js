@@ -63,7 +63,7 @@ export async function handleMessageFromQueue(
   try {
     //if message is challenge for response, no need to wait for blockchain
     if (message.type === privateMessageType.CHALLENGE_RESPONSE) {
-      requestProcessManager.addMqMessageTaskToQueue({
+      await requestProcessManager.addMqMessageTaskToQueue({
         nodeId,
         messageId,
         message,
@@ -81,7 +81,7 @@ export async function handleMessageFromQueue(
       );
 
       if (addToProcessQueue) {
-        requestProcessManager.addMqMessageTaskToQueue({
+        await requestProcessManager.addMqMessageTaskToQueue({
           nodeId,
           messageId,
           message,
@@ -244,8 +244,8 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
       });
 
       Object.values(createIdentityRequestsToProcess).map(
-        ({ requestId, action }) =>
-          requestProcessManager.addTaskToQueue({
+        async ({ requestId, action }) =>
+          await requestProcessManager.addTaskToQueue({
             nodeId,
             requestId,
             callbackFnName: 'idp.processCreateIdentityRequest',
@@ -253,8 +253,8 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
           })
       );
       Object.values(incomingRequestsToProcessUpdate).map(
-        ({ requestId, cleanUp }) =>
-          requestProcessManager.addTaskToQueue({
+        async ({ requestId, cleanUp }) =>
+          await requestProcessManager.addTaskToQueue({
             nodeId,
             requestId,
             callbackFnName: 'idp.processRequestUpdate',
