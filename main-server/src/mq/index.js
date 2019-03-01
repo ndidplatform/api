@@ -37,7 +37,7 @@ import errorType from 'ndid-error/type';
 import validate from './message/validator';
 
 import { delegateToWorker } from '../master-worker-interface/server';
-import getClient from '../master-worker-interface/client';
+import { getErrorCallbackUrl, notifyError } from '../core/common'; 
 
 import { role } from '../node';
 import MODE from '../mode';
@@ -118,7 +118,16 @@ export async function initializeInbound() {
   mqService.eventEmitter.on('message', onMessage);
 
   //should tell client via error callback?
-  mqService.eventEmitter.on('error', (error) => logger.error({ err: error }));
+  mqService.eventEmitter.on('error', async (error) => {
+    logger.error({ err: error });
+    const callbackUrl = await getErrorCallbackUrl();
+    await notifyError({
+      nodeId: config.nodeId,
+      callbackUrl,
+      action: 'mqService',
+      error: error,
+    });
+  });
 
   mqService.subscribeToRecvMessages();
 
