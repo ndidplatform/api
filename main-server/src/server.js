@@ -177,11 +177,11 @@ async function initialize() {
       mq.setErrorHandlerFunction(
         coreCommon.getHandleMessageQueueErrorFn(() => {
           if (role === 'rp') {
-            return rp.getErrorCallbackUrl;
+            return rp.getErrorCallbackUrl();
           } else if (role === 'idp') {
-            return idp.getErrorCallbackUrl;
+            return idp.getErrorCallbackUrl();
           } else if (role === 'as') {
-            return as.getErrorCallbackUrl;
+            return as.getErrorCallbackUrl();
           }
         })
       );
