@@ -51,6 +51,7 @@ import * as prometheus from './prometheus';
 
 import logger from './logger';
 
+import { version } from './version';
 import MODE from './mode';
 import * as config from './config';
 
@@ -244,6 +245,7 @@ const {
 } = config;
 logger.info({
   message: 'Starting server',
+  version,
   NODE_ENV: process.env.NODE_ENV,
   config: configToLog,
 });

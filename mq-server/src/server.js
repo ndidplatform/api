@@ -36,6 +36,7 @@ import errorType from 'ndid-error/type';
 
 import logger from './logger';
 
+import { version } from './version';
 import * as config from './config';
 
 const MQ_SEND_TIMEOUT = 60000; // 1 min
@@ -255,6 +256,7 @@ function initialize() {
 
 logger.info({
   message: 'Starting server',
+  version,
   NODE_ENV: process.env.NODE_ENV,
   config,
 });
