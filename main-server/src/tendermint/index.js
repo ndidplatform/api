@@ -243,6 +243,7 @@ export async function loadExpectedTxFromDB() {
       incrementExpectedTxsCount();
     });
     expectedTxsLoaded = true;
+    // TODO: send to workers from master
     processMissingExpectedTxs();
   } catch (error) {
     logger.error({
