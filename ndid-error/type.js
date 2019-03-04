@@ -21,6 +21,11 @@
  */
 
 module.exports = {
+  // Test
+  TEST: {
+    code: 100,
+    message: 'Test error callback',
+  },
   // Server errors
   UNKNOWN_ERROR: {
     code: 10000,
