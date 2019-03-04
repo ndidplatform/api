@@ -279,6 +279,8 @@ async function callbackWithRetry(
  * @param {Object} dataForResponseCallback
  */
 export async function callbackToClient(
+  // FIXME: take "getCallbackUrl" function name as an argument instead of "callbackUrl".
+  // Need to add more function name (string) mapping to function.
   callbackUrl,
   body,
   retry,
