@@ -1206,11 +1206,11 @@ export function removeRpIdFromDataRequestId(nodeId, dataRequestId) {
   });
 }
 
-export function addTaskToPersistentQueue(nodeId, requestId, task) {
+export function addTaskToRequestProcessQueue(nodeId, requestId, task) {
   return db.pushToList({
     nodeId,
     dbName,
-    name: 'persistentTaskQueue',
+    name: 'persistentRequestProcessQueue',
     keyName: 'requestId',
     key: requestId,
     valueName: 'task',
@@ -1218,31 +1218,31 @@ export function addTaskToPersistentQueue(nodeId, requestId, task) {
   });
 }
 
-export function getAllTaskInPersistentQueue(nodeId) {
+export function getAllTasksInRequestProcessQueue(nodeId) {
   return db.getAll({
     nodeId,
     dbName,
-    name: 'persistentTaskQueue',
+    name: 'persistentRequestProcessQueue',
     keyName: 'requestId',
     valueName: 'tasks',
   });
 }
 
-export function removeFirstTaskFromPersistentQueue(nodeId, requestId) {
+export function removeFirstTaskFromRequestProcessQueue(nodeId, requestId) {
   return db.popFromList({
     nodeId,
     dbName,
-    name: 'persistentTaskQueue',
+    name: 'persistentRequestProcessQueue',
     keyName: 'requestId',
     key: requestId,
   });
 }
 
-export function removeAllTaskFromPersistentQueue(nodeId, requestId) {
+export function removeAllTasksFromRequestProcessQueue(nodeId, requestId) {
   return db.remove({
     nodeId,
     dbName,
-    name: 'persistentTaskQueue',
+    name: 'persistentRequestProcessQueue',
     keyName: 'requestId',
     key: requestId,
   });

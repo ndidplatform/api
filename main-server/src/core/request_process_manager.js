@@ -45,7 +45,6 @@ let pendingTasksInQueueCount = 0;
 let processingTasksCount = 0;
 let requestsInQueueCount = 0;
 export const metricsEventEmitter = new EventEmitter();
-let removePersistentQueueEmitter = new EventEmitter();
 
 export async function handleMessageFromMqWithBlockWait(
   messageId,
@@ -156,10 +155,10 @@ export async function addMqMessageTaskToQueue({
 }
 
 export async function restoreTaskFromPersistentQueue() {
-  let tasksInPersistentQueue = await cacheDb.getAllTaskInPersistentQueue(
-    config.nodeId,
+  const tasksInRequestProcessQueue = await cacheDb.getAllTasksInRequestProcessQueue(
+    config.nodeId
   );
-  tasksInPersistentQueue.forEach((requestId, tasks) => {
+  tasksInRequestProcessQueue.forEach((requestId, tasks) => {
     requestQueue[requestId] = tasks;
     //TODO: batch incremental?
     tasks.forEach(() => {
@@ -195,9 +194,10 @@ export async function addTaskToQueue({
     onCallbackFinishedArgs,
     startTime: Date.now(),
   };
-  await cacheDb.addTaskToPersistentQueue(
-    config.nodeId, 
-    requestId, taskData
+  await cacheDb.addTaskToRequestProcessQueue(
+    config.nodeId,
+    requestId,
+    taskData
   );
   requestQueue[requestId].push(taskData);
   incrementPendingTasksInQueueCount();
@@ -229,9 +229,6 @@ async function executeTaskInQueue(requestId) {
     const startTime = Date.now();
 
     if (config.mode === MODE.STANDALONE) {
-      let removePersistentQueuePromise = new Promise((resolve) => {
-        removePersistentQueueEmitter.once(requestId, resolve);
-      });
       getFunction(callbackFnName)(...callbackArgs)
         .then(() => onTaskExecutionSuccess(startTime))
         .catch(onTaskExecutionFail)
@@ -240,7 +237,7 @@ async function executeTaskInQueue(requestId) {
             requestId,
             onCallbackFinished,
             onCallbackFinishedArgs,
-          }, removePersistentQueuePromise)
+          })
         );
     } else if (config.mode === MODE.MASTER) {
       delegateToWorker({
@@ -257,11 +254,6 @@ async function executeTaskInQueue(requestId) {
     } else {
       throw new Error('Unsupported mode');
     }
-    await cacheDb.removeFirstTaskFromPersistentQueue(
-      config.nodeId, 
-      requestId
-    );
-    removePersistentQueueEmitter.emit(requestId);
   } else {
     cleanUpQueue(requestId);
   }
@@ -287,7 +279,7 @@ function onTaskExecutionFinished({
   requestId,
   onCallbackFinished,
   onCallbackFinishedArgs,
-}, removePersistentQueuePromise) {
+}) {
   decrementProcessingTasksCount();
   if (onCallbackFinished) {
     onCallbackFinished(...onCallbackFinishedArgs);
@@ -296,15 +288,19 @@ function onTaskExecutionFinished({
   if (requestQueue[requestId].length === 0) {
     cleanUpQueue(requestId);
   } else {
-    if(!removePersistentQueuePromise) {
-      setImmediate(executeTaskInQueue, requestId);
-    }
-    else {
-      removePersistentQueuePromise.then(() => {
-        setImmediate(executeTaskInQueue, requestId);
-      });
-    }
+    setImmediate(executeTaskInQueue, requestId);
   }
+  cacheDb
+    .removeFirstTaskFromRequestProcessQueue(config.nodeId, requestId)
+    .catch((error) => {
+      logger.error({
+        message: 'Cannot remove task from request task queue',
+        cause: error,
+        details: {
+          requestId,
+        },
+      });
+    });
 }
 
 function onTaskExecutionCallback(
@@ -331,6 +327,17 @@ function cleanUpQueue(requestId) {
     requestId,
   });
   delete requestQueue[requestId];
+  cacheDb
+    .removeAllTasksFromRequestProcessQueue(config.nodeId, requestId)
+    .catch((error) => {
+      logger.error({
+        message: 'Cannot remove request task queue',
+        cause: error,
+        details: {
+          requestId,
+        },
+      });
+    });
   decrementRequestsInQueueCount();
 }
 
