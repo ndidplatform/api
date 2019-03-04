@@ -28,7 +28,7 @@ import * as protoLoader from '@grpc/proto-loader';
 
 import { ExponentialBackoff } from 'simple-backoff';
 
-import { getArgsFromProtobufBuffer } from './message';
+import { getArgsFromProtobuf } from './message';
 
 import { getFunction } from '../functions';
 
@@ -162,13 +162,17 @@ function workerStopping() {
   });
 }
 
-function returnResult({ grpcRefId, retValStr, error }) {
+function returnResult({ grpcRefId, retVal, error }) {
   logger.debug({
     message: 'Worker return result',
     grpcRefId,
-    retValStr,
+    retVal,
     err: error,
   });
+  let retValStr;
+  if (retVal != null) {
+    retValStr = JSON.stringify(retVal);
+  }
   return new Promise((resolve, reject) => {
     client.returnResultCall(
       {
@@ -195,7 +199,7 @@ async function onRecvData(data) {
   });
 
   try {
-    const parsedArgs = getArgsFromProtobufBuffer(fnName, args);
+    const parsedArgs = getArgsFromProtobuf(fnName, args);
     workingJobCounter++;
     let retVal;
     if (Array.isArray(parsedArgs)) {
@@ -203,12 +207,8 @@ async function onRecvData(data) {
     } else {
       retVal = await getFunction(fnName)(parsedArgs);
     }
-    let retValStr;
-    if (retVal != null) {
-      retValStr = JSON.stringify(retVal);
-    }
     workingJobCounter--;
-    await gRPCRetry(returnResult)({ grpcRefId, retValStr });
+    await gRPCRetry(returnResult)({ grpcRefId, retVal });
   } catch (error) {
     workingJobCounter--;
     await gRPCRetry(returnResult)({ grpcRefId, error });
@@ -242,7 +242,7 @@ function handleShutdownTimerJobs(timerJobsArray) {
       client.timerJobsCall(
         {
           jobsDetail: JSON.stringify(jobsDetail),
-          workerId
+          workerId,
         },
         (error) => {
           if (error) reject(error);
@@ -264,14 +264,16 @@ export async function shutdown() {
     let timerJobsArray = [
       {
         type: 'requestTimeout',
-        jobs: getRequestTimeoutPendingTimerJobs()
-      }, {
+        jobs: getRequestTimeoutPendingTimerJobs(),
+      },
+      {
         type: 'callback',
         jobs: getCallbackPendingTimerJobs(),
-      }, {
+      },
+      {
         type: 'mq',
         jobs: getMqPendingTimerJobs(),
-      }
+      },
     ];
     await Promise.all([
       handleShutdownTimerJobs(timerJobsArray),
