@@ -23,7 +23,7 @@
 import * as tendermintNdid from '../tendermint/ndid';
 import { getErrorObjectForClient } from '../utils/error';
 import { validateKey, verifyNewKey } from '../utils/node_key';
-import { callbackToClient } from '../utils/callback';
+import { callbackToClient } from '../callback';
 import logger from '../logger';
 
 import * as config from '../config';

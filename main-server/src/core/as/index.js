@@ -31,7 +31,7 @@ import privateMessageType from '../../mq/message/type';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import * as utils from '../../utils';
-import { callbackToClient } from '../../utils/callback';
+import { callbackToClient } from '../../callback';
 import logger from '../../logger';
 
 import * as config from '../../config';

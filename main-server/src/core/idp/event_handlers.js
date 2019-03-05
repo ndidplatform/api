@@ -26,7 +26,7 @@ import {
 } from '.';
 
 import * as utils from '../../utils';
-import { callbackToClient } from '../../utils/callback';
+import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';

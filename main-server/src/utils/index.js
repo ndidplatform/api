@@ -29,7 +29,7 @@ import bignum from 'bignum';
 import * as cryptoUtils from './crypto';
 import { parseKey, encodeSignature } from './asn1parser';
 import * as nodeKey from './node_key';
-import * as externalCryptoService from './external_crypto_service';
+import * as externalCryptoService from '../external_crypto_service';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';

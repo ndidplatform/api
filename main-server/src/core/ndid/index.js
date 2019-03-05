@@ -26,7 +26,7 @@ import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import logger from '../../logger';
 import { validateKey } from '../../utils/node_key';
-import { callbackToClient } from '../../utils/callback';
+import { callbackToClient } from '../../callback';
 
 import CustomError from 'ndid-error/custom_error';
 import { getErrorObjectForClient } from '../../utils/error';

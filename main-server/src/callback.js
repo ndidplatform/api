@@ -25,16 +25,16 @@ import EventEmitter from 'events';
 import fetch from 'node-fetch';
 import { ExponentialBackoff } from 'simple-backoff';
 
-import { randomBase64Bytes } from './crypto';
+import { randomBase64Bytes } from './utils/crypto';
 
-import { wait } from '.';
-import * as cacheDb from '../db/cache';
-import logger from '../logger';
+import { wait } from './utils';
+import * as cacheDb from './db/cache';
+import logger from './logger';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
-import * as config from '../config';
+import * as config from './config';
 
-import MODE from '../mode';
+import MODE from './mode';
 
 const RESPONSE_BODY_SIZE_LIMIT = 3 * 1024 * 1024; // 3MB
 

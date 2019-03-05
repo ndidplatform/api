@@ -29,7 +29,7 @@ import logger from '../../logger';
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
-import { callbackToClient } from '../../utils/callback';
+import { callbackToClient } from '../../callback';
 import * as utils from '../../utils';
 import * as lt from '../../utils/long_timeout';
 import * as config from '../../config';

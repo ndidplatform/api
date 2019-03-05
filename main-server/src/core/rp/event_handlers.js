@@ -27,7 +27,7 @@ import * as common from '../common';
 import * as requestProcessManager from '../request_process_manager';
 import * as cacheDb from '../../db/cache';
 import * as utils from '../../utils';
-import { callbackToClient } from '../../utils/callback';
+import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import logger from '../../logger';
 

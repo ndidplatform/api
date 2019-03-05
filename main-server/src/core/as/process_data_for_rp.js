@@ -23,7 +23,7 @@
 import validateData from './data_validator';
 import * as tendermint from '../../tendermint';
 
-import { callbackToClient } from '../../utils/callback';
+import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';

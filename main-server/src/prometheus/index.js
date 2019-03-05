@@ -28,8 +28,8 @@ import * as tendermint from '../tendermint';
 import * as common from '../core/common';
 import * as requestProcessManager from '../core/request_process_manager';
 import * as mq from '../mq';
-import * as callbackUtil from '../utils/callback';
-import * as externalCryptoService from '../utils/external_crypto_service';
+import * as callbackUtil from '../callback';
+import * as externalCryptoService from '../external_crypto_service';
 import * as redis from '../db/redis_common';
 import * as tendermintWsPool from '../tendermint/ws_pool';
 

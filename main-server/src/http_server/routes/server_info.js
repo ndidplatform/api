@@ -27,8 +27,8 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../../core/common';
 import * as mq from '../../mq';
 import * as mqService from '../../mq/grpc_client';
-import * as callbackUtil from '../../utils/callback';
-import * as externalCryptoService from '../../utils/external_crypto_service';
+import * as callbackUtil from '../../callback';
+import * as externalCryptoService from '../../external_crypto_service';
 import * as config from '../../config';
 import logger from '../../logger';
 

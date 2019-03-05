@@ -37,7 +37,7 @@ import logger from '../logger';
 
 import * as config from '../config';
 import { getRequestTimeoutPendingTimerJobs } from '../core/common';
-import { getCallbackPendingTimerJobs } from '../utils/callback';
+import { getCallbackPendingTimerJobs } from '../callback';
 import { getMqPendingTimerJobs } from '../mq';
 
 // Load protobuf

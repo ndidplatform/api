@@ -40,7 +40,7 @@ import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
 import * as utils from '../../utils';
 import { validateKey } from '../../utils/node_key';
-import { callbackToClient } from '../../utils/callback';
+import { callbackToClient } from '../../callback';
 import logger from '../../logger';
 
 import * as config from '../../config';

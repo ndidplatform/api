@@ -29,7 +29,7 @@ import * as utils from '../../utils';
 import * as mq from '../../mq';
 import * as cacheDb from '../../db/cache';
 import * as dataDb from '../../db/data';
-import { callbackToClient } from '../../utils/callback';
+import { callbackToClient } from '../../callback';
 import privateMessageType from '../../mq/message/type';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';

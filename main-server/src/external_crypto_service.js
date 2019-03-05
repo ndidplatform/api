@@ -26,15 +26,15 @@ import { EventEmitter } from 'events';
 import fetch from 'node-fetch';
 import { ExponentialBackoff } from 'simple-backoff';
 
-import { publicEncrypt, randomBase64Bytes } from './crypto';
-import { wait, hash, verifySignature } from '.';
-import * as tendermintNdid from '../tendermint/ndid';
-import * as dataDb from '../db/data';
+import { publicEncrypt, randomBase64Bytes } from './utils/crypto';
+import { wait, hash, verifySignature } from './utils';
+import * as tendermintNdid from './tendermint/ndid';
+import * as dataDb from './db/data';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
-import logger from '../logger';
+import logger from './logger';
 
-import * as config from '../config';
+import * as config from './config';
 
 const TEST_MESSAGE = 'test';
 const TEST_MESSAGE_BASE_64 = Buffer.from(TEST_MESSAGE).toString('base64');

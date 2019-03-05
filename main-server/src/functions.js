@@ -26,7 +26,7 @@ import * as idp from './core/idp';
 import * as as from './core/as';
 import * as identity from './core/identity';
 import * as mq from './mq';
-import * as callback from './utils/callback';
+import * as callback from './callback';
 
 import CustomError from 'ndid-error/custom_error';
 

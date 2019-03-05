@@ -22,7 +22,7 @@
 
 import * as tendermint from '../../../tendermint';
 import { isMqAddressesSet } from '../../../core/common';
-import { isCallbackUrlsSet } from '../../../utils/external_crypto_service';
+import { isCallbackUrlsSet } from '../../../external_crypto_service';
 import { role } from '../../../node';
 
 import errorType from 'ndid-error/type';
