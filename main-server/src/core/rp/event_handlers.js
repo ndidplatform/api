@@ -85,10 +85,9 @@ export async function handleMessageFromQueue(
     });
     logger.error({ err });
     common.notifyMetricsFailInboundMessageProcess();
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'rp.getErrorCallbackUrl',
       action: 'rp.handleMessageFromQueue',
       error: err,
       requestId,
@@ -128,10 +127,9 @@ export async function handleTendermintNewBlock(
     });
     logger.error({ err });
     common.notifyMetricsFailedBlockProcess();
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'rp.getErrorCallbackUrl',
       action: 'handleTendermintNewBlock',
       error: err,
     });
@@ -230,7 +228,11 @@ export async function processRequestUpdate(
       block_height: `${requestDetail.creation_chain_id}:${height}`,
     };
 
-    await callbackToClient(callbackUrl, eventDataForCallback, true);
+    await callbackToClient({
+      callbackUrl,
+      body: eventDataForCallback,
+      retry: true,
+    });
 
     if (
       requestStatus.status === 'completed' &&

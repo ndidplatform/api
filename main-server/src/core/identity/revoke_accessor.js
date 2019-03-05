@@ -197,9 +197,9 @@ export async function createRequestToRevokeAccessor(
       err: error,
     });
 
-    await callbackToClient(
-      callback_url,
-      {
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
         node_id: nodeId,
         type: 'revoke_accessor_request_result',
         success: false,
@@ -208,8 +208,8 @@ export async function createRequestToRevokeAccessor(
         accessor_id,
         error: getErrorObjectForClient(error),
       },
-      true
-    );
+      retry: true,
+    });
 
     await revokeAccessorCleanUpOnError({
       nodeId,
@@ -229,9 +229,9 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
   try {
     if (error) throw error;
 
-    await callbackToClient(
-      callback_url,
-      {
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
         node_id: nodeId,
         type: 'revoke_accessor_request_result',
         reference_id,
@@ -240,8 +240,8 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
         creation_block_height: `${chainId}:${height}`,
         success: true,
       },
-      true
-    );
+      retry: true,
+    });
   } catch (error) {
     logger.error({
       message: 'Create identity internal async after create request error',
@@ -251,9 +251,9 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
       err: error,
     });
 
-    await callbackToClient(
-      callback_url,
-      {
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
         node_id: nodeId,
         type: 'revoke_accessor_request_result',
         success: false,
@@ -262,8 +262,8 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
         accessor_id,
         error: getErrorObjectForClient(error),
       },
-      true
-    );
+      retry: true,
+    });
 
     await revokeAccessorCleanUpOnError({
       nodeId,

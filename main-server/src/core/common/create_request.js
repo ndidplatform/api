@@ -548,9 +548,9 @@ async function createRequestInternalAsync(
 
     if (!synchronous) {
       if (sendCallbackToClient) {
-        await callbackToClient(
-          callback_url,
-          {
+        await callbackToClient({
+          callbackUrl: callback_url,
+          body: {
             node_id,
             type: 'create_request_result',
             success: false,
@@ -558,8 +558,8 @@ async function createRequestInternalAsync(
             request_id,
             error: getErrorObjectForClient(error),
           },
-          true
-        );
+          retry: true,
+        });
       }
       if (callbackFnName != null) {
         if (callbackAdditionalArgs != null) {
@@ -645,9 +645,9 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
     if (!synchronous) {
       if (sendCallbackToClient) {
-        await callbackToClient(
-          callback_url,
-          {
+        await callbackToClient({
+          callbackUrl: callback_url,
+          body: {
             node_id,
             type: 'create_request_result',
             success: true,
@@ -655,8 +655,8 @@ export async function createRequestInternalAsyncAfterBlockchain(
             request_id,
             creation_block_height: `${tendermint.chainId}:${height}`,
           },
-          true
-        );
+          retry: true,
+        });
       }
       if (callbackFnName != null) {
         if (callbackAdditionalArgs != null) {
@@ -680,9 +680,9 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
     if (!synchronous) {
       if (sendCallbackToClient) {
-        await callbackToClient(
-          callback_url,
-          {
+        await callbackToClient({
+          callbackUrl: callback_url,
+          body: {
             node_id,
             type: 'create_request_result',
             success: false,
@@ -690,8 +690,8 @@ export async function createRequestInternalAsyncAfterBlockchain(
             request_id,
             error: getErrorObjectForClient(error),
           },
-          true
-        );
+          retry: true,
+        });
       }
       if (callbackFnName != null) {
         if (callbackAdditionalArgs != null) {

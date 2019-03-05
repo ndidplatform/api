@@ -38,6 +38,7 @@ import * as cacheDb from '../../db/cache';
 import privateMessageType from '../../mq/message/type';
 
 import MODE from '../../mode';
+import { getFunction } from '../../functions';
 
 export * from './create_request';
 export * from './close_request';
@@ -132,17 +133,16 @@ export function checkRequestMessageIntegrity(
   return true;
 }
 
-export function getHandleMessageQueueErrorFn(getErrorCallbackUrl) {
+export function getHandleMessageQueueErrorFn(getErrorCallbackUrlFnName) {
   return async function handleMessageQueueError(error) {
     const err = new CustomError({
-      message: 'Message queue receiving error',
+      message: 'Message queue error',
       cause: error,
     });
     logger.error({ err });
-    if (getErrorCallbackUrl) {
-      const callbackUrl = await getErrorCallbackUrl();
+    if (getErrorCallbackUrlFnName) {
       await notifyError({
-        callbackUrl,
+        getCallbackUrlFnName: getErrorCallbackUrlFnName(),
         action: 'onMessage',
         error: err,
       });
@@ -290,7 +290,7 @@ export function runTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
 export async function setTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
   let unixTimeout = Date.now() + secondsToTimeout * 1000;
   await cacheDb.setTimeoutScheduler(nodeId, requestId, unixTimeout);
-  if(config.mode === MODE.WORKER) {
+  if (config.mode === MODE.WORKER) {
     pendingTimer[requestId] = { deadline: unixTimeout };
   }
   runTimeoutScheduler(nodeId, requestId, secondsToTimeout);
@@ -299,7 +299,7 @@ export async function setTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
 export async function removeTimeoutScheduler(nodeId, requestId) {
   lt.clearTimeout(timeoutScheduler[`${nodeId}:${requestId}`]);
   await cacheDb.removeTimeoutScheduler(nodeId, requestId);
-  if(config.mode === MODE.WORKER) {
+  if (config.mode === MODE.WORKER) {
     delete pendingTimer[requestId];
   }
   delete timeoutScheduler[`${nodeId}:${requestId}`];
@@ -654,7 +654,7 @@ export async function isRequestClosedOrTimedOut(requestId) {
 
 export async function notifyError({
   nodeId,
-  callbackUrl,
+  getCallbackUrlFnName,
   action,
   error,
   requestId,
@@ -662,23 +662,24 @@ export async function notifyError({
   logger.debug({
     message: 'Notifying error through callback',
   });
+  const callbackUrl = await getFunction(getCallbackUrlFnName)();
   if (callbackUrl == null) {
     logger.warn({
       message: 'Error callback URL has not been set',
     });
     return;
   }
-  await callbackToClient(
-    callbackUrl,
-    {
+  await callbackToClient({
+    getCallbackUrlFnName,
+    body: {
       node_id: nodeId,
       type: 'error',
       action,
       request_id: requestId,
       error: getErrorObjectForClient(error),
     },
-    false
-  );
+    retry: false,
+  });
 }
 
 export function incrementProcessingInboundMessagesCount() {

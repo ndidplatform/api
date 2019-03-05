@@ -84,16 +84,16 @@ async function updateNodeInternalAsync(
     await tendermintNdid.updateNode({ public_key, master_public_key }, nodeId);
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: 'update_node_result',
           reference_id,
           success: true,
         },
-        true
-      );
+        retry: true,
+      });
     }
   } catch (error) {
     logger.error({
@@ -105,17 +105,17 @@ async function updateNodeInternalAsync(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: 'update_node_result',
           reference_id,
           success: false,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     }
 
     throw error;

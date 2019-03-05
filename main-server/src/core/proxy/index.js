@@ -20,68 +20,72 @@
  *
  */
 
-import * as rp from '../rp';
-import * as idp from '../idp';
-import * as as from '../as';
+import * as dataDb from '../../db/data';
 
-import { getNodesBehindProxyWithKeyOnProxy } from '../../node';
+import logger from '../../logger';
 
 import * as config from '../../config';
 
-export async function handleMessageFromQueue(
-  messageId,
-  message,
-  receiverNodeId
-) {
-  const nodesBehindProxyWithKeyOnProxy = await getNodesBehindProxyWithKeyOnProxy();
-  const node = nodesBehindProxyWithKeyOnProxy.find(
-    (node) => node.node_id === receiverNodeId
-  );
-  if (node == null) return;
+export * from './event_handlers';
 
-  const role = node.role.toLowerCase();
+const CALLBACK_URL_NAME = {
+  ERROR: 'error_url',
+};
+const CALLBACK_URL_NAME_ARR = Object.values(CALLBACK_URL_NAME);
 
-  if (role === 'rp') {
-    return rp.handleMessageFromQueue(messageId, message, receiverNodeId);
-  } else if (role === 'idp') {
-    return idp.handleMessageFromQueue(messageId, message, receiverNodeId);
-  } else if (role === 'as') {
-    return as.handleMessageFromQueue(messageId, message, receiverNodeId);
+export async function checkCallbackUrls() {
+  const callbackUrls = await getCallbackUrls();
+  for (let i = 0; i < CALLBACK_URL_NAME_ARR.length; i++) {
+    const callbackName = CALLBACK_URL_NAME_ARR[i];
+    if (callbackUrls[callbackName] != null) {
+      logger.info({
+        message: `[Proxy] ${callbackName} callback url`,
+        callbackUrl: callbackUrls[callbackName],
+      });
+    } else {
+      logger.warn({
+        message: `[Proxy] ${callbackName} callback url is not set`,
+      });
+    }
   }
 }
 
-export async function handleTendermintNewBlock(
-  fromHeight,
-  toHeight,
-  parsedTransactionsInBlocks
-) {
-  const nodesBehindProxyWithKeyOnProxy = await getNodesBehindProxyWithKeyOnProxy();
-  await Promise.all(
-    nodesBehindProxyWithKeyOnProxy.map((node) => {
-      let { node_id, role } = node;
-      role = role.toLowerCase();
-      if (role === 'rp') {
-        return rp.handleTendermintNewBlock(
-          fromHeight,
-          toHeight,
-          parsedTransactionsInBlocks,
-          node_id
-        );
-      } else if (role === 'idp') {
-        return idp.handleTendermintNewBlock(
-          fromHeight,
-          toHeight,
-          parsedTransactionsInBlocks,
-          node_id
-        );
-      } else if (role === 'as') {
-        return as.handleTendermintNewBlock(
-          fromHeight,
-          toHeight,
-          parsedTransactionsInBlocks,
-          node_id
-        );
-      }
-    })
+export async function setCallbackUrls({ error_url }) {
+  const promises = [];
+  if (error_url != null) {
+    promises.push(
+      dataDb.setCallbackUrl(
+        config.nodeId,
+        `proxy.${CALLBACK_URL_NAME.ERROR}`,
+        error_url
+      )
+    );
+  }
+  await Promise.all(promises);
+}
+
+export async function getCallbackUrls() {
+  const callbackNames = CALLBACK_URL_NAME_ARR.map((name) => `proxy.${name}`);
+  const callbackUrlsArr = await dataDb.getCallbackUrls(
+    config.nodeId,
+    callbackNames
+  );
+  const callbackUrls = callbackUrlsArr.reduce((callbackUrlsObj, url, index) => {
+    if (url != null) {
+      return {
+        ...callbackUrlsObj,
+        [callbackNames[index].replace(/^proxy\./, '')]: url,
+      };
+    } else {
+      return callbackUrlsObj;
+    }
+  }, {});
+  return callbackUrls;
+}
+
+export function getErrorCallbackUrl() {
+  return dataDb.getCallbackUrl(
+    config.nodeId,
+    `proxy.${CALLBACK_URL_NAME.ERROR}`
   );
 }

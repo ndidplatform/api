@@ -20,44 +20,44 @@
  *
  */
 
-import { role } from '../../../node';
+import express from 'express';
 
-export function rpOnlyHandler(req, res, next) {
-  if (role !== 'rp' && role !== 'proxy') {
-    res.status(404).end();
-    return;
-  }
-  next();
-}
+import { validateBody } from '../middleware/validation';
+import { proxyOnlyHandler } from '../middleware/role_handler';
+import * as proxy from '../../../core/proxy';
 
-export function idpOnlyHandler(req, res, next) {
-  if (role !== 'idp' && role !== 'proxy') {
-    res.status(404).end();
-    return;
-  }
-  next();
-}
+const router = express.Router();
 
-export function asOnlyHandler(req, res, next) {
-  if (role !== 'as' && role !== 'proxy') {
-    res.status(404).end();
-    return;
-  }
-  next();
-}
+router.use(proxyOnlyHandler);
 
-export function proxyOnlyHandler(req, res, next) {
-  if (role !== 'proxy') {
-    res.status(404).end();
-    return;
-  }
-  next();
-}
+router.get('/callback', async (req, res, next) => {
+  try {
+    const urls = await proxy.getCallbackUrls();
 
-export function ndidOnlyHandler(req, res, next) {
-  if (role != null && role !== 'ndid') {
-    res.status(404).end();
-    return;
+    if (Object.keys(urls).length > 0) {
+      res.status(200).json(urls);
+    } else {
+      res.status(404).end();
+    }
+    next();
+  } catch (error) {
+    next(error);
   }
-  next();
-}
+});
+
+router.post('/callback', validateBody, async (req, res, next) => {
+  try {
+    const { error_url } = req.body;
+
+    await proxy.setCallbackUrls({
+      error_url,
+    });
+
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+export default router;

@@ -106,10 +106,9 @@ export async function handleMessageFromQueue(
     });
     logger.error({ err });
     common.notifyMetricsFailInboundMessageProcess();
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
       action: 'idp.handleMessageFromQueue',
       error: err,
       requestId,
@@ -149,10 +148,9 @@ export async function handleTendermintNewBlock(
     });
     logger.error({ err });
     common.notifyMetricsFailedBlockProcess();
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
       action: 'handleTendermintNewBlock',
       error: err,
     });
@@ -316,9 +314,9 @@ export async function processCreateIdentityRequest(nodeId, requestId, action) {
       });
     }
 
-    await callbackToClient(
-      identityCallbackUrl,
-      {
+    await callbackToClient({
+      callbackUrl: identityCallbackUrl,
+      body: {
         node_id: nodeId,
         type,
         success: false,
@@ -326,8 +324,8 @@ export async function processCreateIdentityRequest(nodeId, requestId, action) {
         request_id: requestId,
         error: getErrorObjectForClient(identityError),
       },
-      true
-    );
+      retry: true,
+    });
   }
 
   await Promise.all([
@@ -368,7 +366,11 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
       block_height: `${requestDetail.creation_chain_id}:${height}`,
     };
 
-    await callbackToClient(callbackUrl, eventDataForCallback, true);
+    await callbackToClient({
+      getCallbackUrlFnName: 'idp.getIncomingRequestStatusUpdateCallbackUrl',
+      body: eventDataForCallback,
+      retry: true,
+    });
   }
 
   // Clean up when request is timed out or closed before IdP response

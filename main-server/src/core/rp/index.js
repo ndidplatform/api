@@ -341,7 +341,11 @@ export async function processMessage(nodeId, messageId, message) {
         };
 
         const callbackUrl = requestData.callback_url;
-        await callbackToClient(callbackUrl, eventDataForCallback, true);
+        await callbackToClient({
+          callbackUrl,
+          body: eventDataForCallback,
+          retry: true,
+        });
 
         if (isAllIdpRespondedAndValid({ requestStatus, responseValidList })) {
           const requestData = await cacheDb.getRequestData(
@@ -397,10 +401,9 @@ export async function processMessage(nodeId, messageId, message) {
       cause: error,
     });
     logger.error({ err });
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'rp.getErrorCallbackUrl',
       action: 'rp.processMessage',
       error: err,
       requestId,

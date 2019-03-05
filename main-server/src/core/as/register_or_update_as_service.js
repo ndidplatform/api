@@ -177,17 +177,17 @@ async function registerOrUpdateASServiceInternalAsync(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: 'add_or_update_service_result',
           success: false,
           reference_id,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     }
 
     throw error;
@@ -208,16 +208,16 @@ export async function registerOrUpdateASServiceInternalAsyncAfterBlockchain(
     }
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: 'add_or_update_service_result',
           success: true,
           reference_id,
         },
-        true
-      );
+        retry: true,
+      });
     }
   } catch (error) {
     logger.error({
@@ -229,17 +229,17 @@ export async function registerOrUpdateASServiceInternalAsyncAfterBlockchain(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: 'add_or_update_service_result',
           success: false,
           reference_id,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     } else {
       throw error;
     }

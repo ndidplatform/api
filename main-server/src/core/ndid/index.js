@@ -225,16 +225,16 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: config.nodeId,
           type: 'create_node_result',
           reference_id,
           success: true,
         },
-        true
-      );
+        retry: true,
+      });
     }
   } catch (error) {
     logger.error({
@@ -246,17 +246,17 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: config.nodeId,
           type: 'create_node_result',
           reference_id,
           success: false,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     }
 
     throw error;
@@ -299,16 +299,16 @@ async function updateNodeInternalAsync(data, { synchronous = false } = {}) {
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: config.nodeId,
           type: 'update_node_result',
           reference_id,
           success: true,
         },
-        true
-      );
+        retry: true,
+      });
     }
   } catch (error) {
     logger.error({
@@ -320,17 +320,17 @@ async function updateNodeInternalAsync(data, { synchronous = false } = {}) {
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: config.nodeId,
           type: 'update_node_result',
           reference_id,
           success: false,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     }
 
     throw error;

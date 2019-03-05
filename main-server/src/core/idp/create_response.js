@@ -224,9 +224,9 @@ async function requestChallengeAndCreateResponseInternalAsync(
       await createResponse(createResponseParams, { nodeId });
     }
   } catch (error) {
-    await callbackToClient(
-      callback_url,
-      {
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
         node_id: nodeId,
         type: 'response_result',
         success: false,
@@ -234,8 +234,8 @@ async function requestChallengeAndCreateResponseInternalAsync(
         request_id,
         error: getErrorObjectForClient(error),
       },
-      true
-    );
+      retry: true,
+    });
     await cacheDb.removeResponseFromRequestId(request_id);
   }
 }
@@ -376,17 +376,17 @@ export async function createResponseAfterBlockchain(
       height
     );
 
-    await callbackToClient(
-      callback_url,
-      {
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
         node_id: nodeId,
         type: 'response_result',
         success: true,
         reference_id,
         request_id,
       },
-      true
-    );
+      retry: true,
+    });
     cacheDb.removeRPIdFromRequestId(nodeId, request_id);
     cacheDb.removeResponseFromRequestId(nodeId, request_id);
   } catch (error) {
@@ -397,9 +397,9 @@ export async function createResponseAfterBlockchain(
       err: error,
     });
 
-    await callbackToClient(
-      callback_url,
-      {
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
         node_id: nodeId,
         type: 'response_result',
         success: false,
@@ -407,8 +407,8 @@ export async function createResponseAfterBlockchain(
         request_id: request_id,
         error: getErrorObjectForClient(error),
       },
-      true
-    );
+      retry: true,
+    });
   }
 }
 
@@ -561,9 +561,9 @@ export async function requestChallengeAfterBlockchain(
       err: error,
     });
 
-    await callbackToClient(
-      callback_url,
-      {
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
         node_id: nodeId,
         type: 'response_result',
         success: false,
@@ -571,8 +571,8 @@ export async function requestChallengeAfterBlockchain(
         request_id: request_id,
         error: getErrorObjectForClient(error),
       },
-      true
-    );
+      retry: true,
+    });
     await cacheDb.removeResponseFromRequestId(nodeId, request_id);
   }
 }

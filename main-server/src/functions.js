@@ -24,6 +24,7 @@ import * as common from './core/common';
 import * as rp from './core/rp';
 import * as idp from './core/idp';
 import * as as from './core/as';
+import * as proxy from './core/proxy';
 import * as identity from './core/identity';
 import * as mq from './mq';
 import * as callback from './callback';
@@ -83,6 +84,29 @@ export function getFunction(fnName) {
       return idp.processIdpResponseAfterRevokeAccessor;
     case 'rp.processAsDataAfterSetDataReceived':
       return rp.processAsDataAfterSetDataReceived;
+    // Callback
+    case 'rp.getCallbackUrls':
+      return rp.getCallbackUrls;
+    case 'rp.getErrorCallbackUrl':
+      return rp.getErrorCallbackUrl;
+    case 'idp.getCallbackUrls':
+      return idp.getCallbackUrls;
+    case 'idp.getErrorCallbackUrl':
+      return idp.getErrorCallbackUrl;
+    case 'idp.getIncomingRequestCallbackUrl':
+      return idp.getIncomingRequestCallbackUrl;
+    case 'idp.getIncomingRequestStatusUpdateCallbackUrl':
+      return idp.getIncomingRequestStatusUpdateCallbackUrl;
+    case 'as.getCallbackUrls':
+      return as.getCallbackUrls;
+    case 'as.getErrorCallbackUrl':
+      return as.getErrorCallbackUrl;
+    case 'as.getServiceCallbackUrl':
+      return as.getServiceCallbackUrl;
+    case 'as.getIncomingRequestStatusUpdateCallbackUrl':
+      return as.getIncomingRequestStatusUpdateCallbackUrl;
+    case 'proxy.getErrorCallbackUrl':
+      return proxy.getErrorCallbackUrl;
     // Core module - process task by request ID
     case 'rp.processMessage':
       return rp.processMessage;

@@ -148,7 +148,7 @@ export function getErrorCallbackUrl() {
   return dataDb.getCallbackUrl(config.nodeId, `idp.${CALLBACK_URL_NAME.ERROR}`);
 }
 
-function getIncomingRequestCallbackUrl() {
+export function getIncomingRequestCallbackUrl() {
   return dataDb.getCallbackUrl(
     config.nodeId,
     `idp.${CALLBACK_URL_NAME.INCOMING_REQUEST}`
@@ -265,14 +265,14 @@ function notifyByCallback({ url, type, eventDataForCallback }) {
     });
     return;
   }
-  return callbackToClient(
-    url,
-    {
+  return callbackToClient({
+    callbackUrl: url,
+    body: {
       type,
       ...eventDataForCallback,
     },
-    true
-  );
+    retry: true,
+  });
 }
 
 export async function notifyIncomingRequestByCallback(
@@ -287,17 +287,17 @@ export async function notifyIncomingRequestByCallback(
     });
     return;
   }
-  await callbackToClient(
-    url,
-    {
+  await callbackToClient({
+    getCallbackUrlFnName: 'idp.getIncomingRequestCallbackUrl',
+    body: {
       node_id: nodeId,
       type,
       ...eventDataForCallback,
     },
-    true,
-    'common.isRequestClosedOrTimedOut',
-    [eventDataForCallback.request_id]
-  );
+    retry: true,
+    shouldRetry: 'common.isRequestClosedOrTimedOut',
+    shouldRetryArguments: [eventDataForCallback.request_id],
+  });
 }
 
 /**
@@ -545,9 +545,9 @@ export async function processMessage(nodeId, messageId, message) {
         });
         await createResponse(createResponseParams, { nodeId });
       } catch (error) {
-        await callbackToClient(
-          createResponseParams.callback_url,
-          {
+        await callbackToClient({
+          callbackUrl: createResponseParams.callback_url,
+          body: {
             node_id: nodeId,
             type: 'response_result',
             success: false,
@@ -555,8 +555,8 @@ export async function processMessage(nodeId, messageId, message) {
             request_id: createResponseParams.request_id,
             error: getErrorObjectForClient(error),
           },
-          true
-        );
+          retry: true,
+        });
         cacheDb.removeResponseFromRequestId(
           nodeId,
           createResponseParams.request_id
@@ -574,10 +574,9 @@ export async function processMessage(nodeId, messageId, message) {
       cause: error,
     });
     logger.error({ err });
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
       action: 'idp.processMessage',
       error: err,
       requestId,
@@ -611,15 +610,15 @@ export async function processIdpResponseAfterAddAccessor(
         // Implies API v1
         notifyAddAccessorResultByCallback(notifyData);
       } else {
-        await callbackToClient(
+        await callbackToClient({
           callbackUrl,
-          {
+          body: {
             node_id: nodeId,
             type: 'add_accessor_result',
             ...notifyData,
           },
-          true
-        );
+          retry: true,
+        });
         cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
       }
     } else {
@@ -627,15 +626,15 @@ export async function processIdpResponseAfterAddAccessor(
         // Implies API v1
         notifyCreateIdentityResultByCallback(notifyData);
       } else {
-        await callbackToClient(
+        await callbackToClient({
           callbackUrl,
-          {
+          body: {
             node_id: nodeId,
             type: 'create_identity_result',
             ...notifyData,
           },
-          true
-        );
+          retry: true,
+        });
         cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
       }
     }
@@ -647,10 +646,9 @@ export async function processIdpResponseAfterAddAccessor(
       cause: error,
     });
     logger.error({ err });
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
       action: 'processIdpResponseAfterAddAccessor',
       error: err,
       requestId: message.request_id,
@@ -713,9 +711,9 @@ async function checkCreateIdentityResponse(nodeId, message, requestDetail) {
           error: getErrorObjectForClient(error),
         });
       } else {
-        await callbackToClient(
+        await callbackToClient({
           callbackUrl,
-          {
+          body: {
             node_id: nodeId,
             type: 'add_accessor_result',
             success: false,
@@ -723,8 +721,8 @@ async function checkCreateIdentityResponse(nodeId, message, requestDetail) {
             request_id: message.request_id,
             error: getErrorObjectForClient(error),
           },
-          true
-        );
+          retry: true,
+        });
         cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
       }
     } else {
@@ -736,9 +734,9 @@ async function checkCreateIdentityResponse(nodeId, message, requestDetail) {
           error: getErrorObjectForClient(error),
         });
       } else {
-        await callbackToClient(
+        await callbackToClient({
           callbackUrl,
-          {
+          body: {
             node_id: nodeId,
             type: 'create_identity_result',
             success: false,
@@ -746,8 +744,8 @@ async function checkCreateIdentityResponse(nodeId, message, requestDetail) {
             request_id: message.request_id,
             error: getErrorObjectForClient(error),
           },
-          true
-        );
+          retry: true,
+        });
         cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
       }
     }
@@ -780,15 +778,15 @@ export async function processIdpResponseAfterRevokeAccessor(
       reference_id,
       request_id: requestId,
     };
-    await callbackToClient(
+    await callbackToClient({
       callbackUrl,
-      {
+      body: {
         node_id: nodeId,
         type: 'revoke_accessor_result',
         ...notifyData,
       },
-      true
-    );
+      retry: true,
+    });
     cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
     cleanUpRequestData(nodeId, requestId, reference_id);
     cacheDb.removeRevokeAccessorDataByReferenceId(nodeId, reference_id);
@@ -798,10 +796,9 @@ export async function processIdpResponseAfterRevokeAccessor(
       cause: error,
     });
     logger.error({ err });
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
       action: 'processIdpResponseAfterRevokeAccessor',
       error: err,
       requestId: message.request_id,
@@ -883,9 +880,9 @@ async function checkRevokeAccessorResponse(
       reference_id
     );
 
-    await callbackToClient(
+    await callbackToClient({
       callbackUrl,
-      {
+      body: {
         node_id: nodeId,
         type: 'revoke_accessor_result',
         success: false,
@@ -893,8 +890,8 @@ async function checkRevokeAccessorResponse(
         request_id: message.request_id,
         error: getErrorObjectForClient(error),
       },
-      true
-    );
+      retry: true,
+    });
     cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
     cacheDb.removeRevokeAccessorDataByReferenceId(nodeId, reference_id);
 

@@ -23,9 +23,6 @@
 import express from 'express';
 import * as debug from '../../core/debug';
 import * as common from '../../core/common';
-import * as rp from '../../core/rp';
-import * as idp from '../../core/idp';
-import * as as from '../../core/as';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -34,11 +31,10 @@ import * as config from '../../config';
 
 const router = express.Router();
 
-async function testErrorCallback(getErrorCallbackUrl) {
-  const callbackUrl = await getErrorCallbackUrl();
+async function testErrorCallback(getErrorCallbackUrlFnName) {
   await common.notifyError({
     nodeId: config.nodeId,
-    callbackUrl,
+    getCallbackUrlFnName: getErrorCallbackUrlFnName,
     action: 'mqService',
     error: new CustomError({
       errorType: errorType.TEST,
@@ -85,7 +81,7 @@ router.post('/tmTransact/:fnName', async (req, res) => {
 
 router.get('/error_callback_test/rp', async (req, res) => {
   try {
-    await testErrorCallback(rp.getErrorCallbackUrl);
+    await testErrorCallback('rp.getErrorCallbackUrl');
     res.status(204).end();
   } catch (error) {
     res.status(500).send(error);
@@ -94,7 +90,7 @@ router.get('/error_callback_test/rp', async (req, res) => {
 
 router.get('/error_callback_test/idp', async (req, res) => {
   try {
-    await testErrorCallback(idp.getErrorCallbackUrl);
+    await testErrorCallback('idp.getErrorCallbackUrl');
     res.status(204).end();
   } catch (error) {
     res.status(500).send(error);
@@ -103,7 +99,7 @@ router.get('/error_callback_test/idp', async (req, res) => {
 
 router.get('/error_callback_test/as', async (req, res) => {
   try {
-    await testErrorCallback(as.getErrorCallbackUrl);
+    await testErrorCallback('as.getErrorCallbackUrl');
     res.status(204).end();
   } catch (error) {
     res.status(500).send(error);

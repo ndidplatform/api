@@ -88,10 +88,9 @@ export async function handleMessageFromQueue(
     });
     logger.error({ err });
     common.notifyMetricsFailInboundMessageProcess();
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'as.getErrorCallbackUrl',
       action: 'as.handleMessageFromQueue',
       error: err,
       requestId,
@@ -131,10 +130,9 @@ export async function handleTendermintNewBlock(
     });
     logger.error({ err });
     common.notifyMetricsFailedBlockProcess();
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'as.getErrorCallbackUrl',
       action: 'handleTendermintNewBlock',
       error: err,
     });
@@ -204,7 +202,11 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
       block_height: `${requestDetail.creation_chain_id}:${height}`,
     };
 
-    await callbackToClient(callbackUrl, eventDataForCallback, true);
+    await callbackToClient({
+      getCallbackUrlFnName: 'as.getIncomingRequestStatusUpdateCallbackUrl',
+      body: eventDataForCallback,
+      retry: true,
+    });
   }
 
   // Clean up when request is timed out or closed before AS response

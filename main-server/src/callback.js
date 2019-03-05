@@ -32,6 +32,8 @@ import * as cacheDb from './db/cache';
 import logger from './logger';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
+import { getFunction } from './functions';
+
 import * as config from './config';
 
 import MODE from './mode';
@@ -98,15 +100,15 @@ async function httpPost(cbId, callbackUrl, body) {
   };
 }
 
-export async function handleCallbackWorkerLost(
-  cbId,
-  deadline,
-) {
-  let backupCallbackData = await cacheDb.getCallbackWithRetryData(config.nodeId, cbId);
+export async function handleCallbackWorkerLost(cbId, deadline) {
+  const backupCallbackData = await cacheDb.getCallbackWithRetryData(
+    config.nodeId,
+    cbId
+  );
 
-  if(backupCallbackData) {
+  if (backupCallbackData) {
     const {
-      callbackUrl,
+      getCallbackUrlFnName,
       body,
       shouldRetryFnName,
       shouldRetryArguments,
@@ -115,27 +117,29 @@ export async function handleCallbackWorkerLost(
     } = backupCallbackData;
 
     callbackWithRetry(
-      callbackUrl,
+      getCallbackUrlFnName,
       body,
       cbId,
       shouldRetryFnName,
       shouldRetryArguments,
       responseCallbackFnName,
       dataForResponseCallback,
-      deadline,
+      deadline
     );
   }
 }
 
 async function callbackWithRetry(
   callbackUrl,
+  getCallbackUrlFnName,
+  getCallbackUrlFnArgs,
   body,
   cbId,
   shouldRetryFnName,
   shouldRetryArguments = [],
   responseCallbackFnName,
   dataForResponseCallback,
-  deadline,
+  deadline
 ) {
   incrementPendingCallbacksCount();
 
@@ -149,28 +153,42 @@ async function callbackWithRetry(
   const startTime = Date.now();
 
   //tell master about timerJob
-  if(config.mode === MODE.WORKER) {
-    pendingCallback[cbId] = { 
+  if (config.mode === MODE.WORKER) {
+    pendingCallback[cbId] = {
       deadline: deadline || Date.now() + config.callbackRetryTimeout * 1000,
     };
   }
 
+  let _callbackUrl;
+  if (callbackUrl && !getCallbackUrlFnName) {
+    _callbackUrl = callbackUrl;
+  }
   for (;;) {
     if (stopCallbackRetry) return;
-    logger.info({
-      message: 'Sending a callback with retry',
-      url: callbackUrl,
-      cbId,
-    });
-    logger.debug({
-      message: 'Callback data in body',
-      body,
-      cbId,
-    });
     try {
-      const responseObj = await httpPost(cbId, callbackUrl, body);
+      if (!callbackUrl && getCallbackUrlFnName) {
+        if (getCallbackUrlFnArgs) {
+          _callbackUrl = await getFunction(getCallbackUrlFnName)(
+            ...getCallbackUrlFnArgs
+          );
+        } else {
+          _callbackUrl = await getFunction(getCallbackUrlFnName)();
+        }
+      }
+      logger.info({
+        message: 'Sending a callback with retry',
+        url: _callbackUrl,
+        cbId,
+      });
+      logger.debug({
+        message: 'Callback data in body',
+        body,
+        cbId,
+      });
 
-      if(config.mode === MODE.WORKER) {
+      const responseObj = await httpPost(cbId, _callbackUrl, body);
+
+      if (config.mode === MODE.WORKER) {
         delete pendingCallback[cbId];
       }
 
@@ -236,14 +254,14 @@ async function callbackWithRetry(
           return;
         }
       } else {
-        if(!deadline || Date.now() < deadline) {
+        if (!deadline || Date.now() < deadline) {
           if (
             Date.now() - startTime + nextRetry >
             config.callbackRetryTimeout * 1000
           ) {
             logger.warn({
               message: 'Callback retry timed out',
-              url: callbackUrl,
+              url: _callbackUrl,
               cbId,
             });
             decrementPendingCallbacksCount();
@@ -270,34 +288,46 @@ async function callbackWithRetry(
 /**
  * Send callback to client application
  *
- * @param {string} callbackUrl
- * @param {Object} body
- * @param {boolean} retry
- * @param {function} shouldRetry
- * @param {Array} shouldRetryArguments
- * @param {function} responseCallback
- * @param {Object} dataForResponseCallback
+ * @param {Object} callbackToClientParams
+ * @param {string} callbackToClientParams.callbackUrl
+ * @param {string} callbackToClientParams.getCallbackUrlFnName
+ * @param {Array} callbackToClientParams.getCallbackUrlFnArgs
+ * @param {Object} callbackToClientParams.body
+ * @param {boolean} callbackToClientParams.retry
+ * @param {function} callbackToClientParams.shouldRetry
+ * @param {Array} callbackToClientParams.shouldRetryArguments
+ * @param {string} callbackToClientParams.responseCallbackFnName
+ * @param {Object} callbackToClientParams.dataForResponseCallback
  */
-export async function callbackToClient(
-  // FIXME: take "getCallbackUrl" function name as an argument instead of "callbackUrl".
-  // Need to add more function name (string) mapping to function.
+export async function callbackToClient({
   callbackUrl,
+  getCallbackUrlFnName,
+  getCallbackUrlFnArgs,
   body,
   retry,
   shouldRetryFnName,
   shouldRetryArguments,
   responseCallbackFnName,
-  dataForResponseCallback
-) {
+  dataForResponseCallback,
+}) {
+  if (!callbackUrl && !getCallbackUrlFnName) {
+    throw new Error(
+      'Missing argument: "callbackUrl" or "getCallbackUrlFnName" must be provided'
+    );
+  }
+
   const cbId = randomBase64Bytes(10);
   if (retry) {
     logger.info({
       message: 'Saving data for callback with retry',
-      url: callbackUrl,
+      callbackUrl,
+      getCallbackUrlFnName,
       cbId,
     });
     await cacheDb.setCallbackWithRetryData(config.nodeId, cbId, {
       callbackUrl,
+      getCallbackUrlFnName,
+      getCallbackUrlFnArgs,
       body,
       shouldRetryFnName,
       shouldRetryArguments,
@@ -306,6 +336,8 @@ export async function callbackToClient(
     });
     callbackWithRetry(
       callbackUrl,
+      getCallbackUrlFnName,
+      getCallbackUrlFnArgs,
       body,
       cbId,
       shouldRetryFnName,
@@ -314,18 +346,28 @@ export async function callbackToClient(
       dataForResponseCallback
     );
   } else {
-    logger.info({
-      message: 'Sending a callback without retry',
-      url: callbackUrl,
-      cbId,
-    });
-    logger.debug({
-      message: 'Callback data in body',
-      body,
-      cbId,
-    });
     const startTime = Date.now();
     try {
+      if (getCallbackUrlFnName) {
+        if (getCallbackUrlFnArgs) {
+          callbackUrl = await getFunction(getCallbackUrlFnName)(
+            ...getCallbackUrlFnArgs
+          );
+        } else {
+          callbackUrl = await getFunction(getCallbackUrlFnName)();
+        }
+      }
+      logger.info({
+        message: 'Sending a callback without retry',
+        url: callbackUrl,
+        cbId,
+      });
+      logger.debug({
+        message: 'Callback data in body',
+        body,
+        cbId,
+      });
+
       const responseObj = await httpPost(cbId, callbackUrl, body);
       metricsEventEmitter.emit(
         'callbackTime',
@@ -376,6 +418,8 @@ export async function resumeCallbackToClient() {
   callbackDatum.forEach((callback) =>
     callbackWithRetry(
       callback.data.callbackUrl,
+      callback.data.getCallbackUrlFnName,
+      callback.data.getCallbackUrlFnArgs,
       callback.data.body,
       callback.cbId,
       callback.data.shouldRetryFnName,

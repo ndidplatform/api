@@ -229,9 +229,9 @@ async function processDataForRPInternalAsync(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: 'send_data_result',
           success: false,
@@ -239,8 +239,8 @@ async function processDataForRPInternalAsync(
           request_id: requestId,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     }
 
     throw error;
@@ -281,17 +281,17 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: 'send_data_result',
           success: true,
           reference_id,
           request_id: requestId,
         },
-        true
-      );
+        retry: true,
+      });
     }
 
     const dataRequestId = requestId + ':' + serviceId;
@@ -306,9 +306,9 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: 'send_data_result',
           success: false,
@@ -316,8 +316,8 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
           request_id: requestId,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     } else {
       throw error;
     }

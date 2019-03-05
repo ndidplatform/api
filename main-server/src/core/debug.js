@@ -59,15 +59,21 @@ export async function tmTransact({
     tendermint
       .transact({ nodeId, fnName, params: jsonParameter, useMasterKey })
       .then((result) => {
-        callbackToClient(callbackUrl, {
-          success: true,
-          result,
+        callbackToClient({
+          callbackUrl,
+          body: {
+            success: true,
+            result,
+          },
         });
       })
       .catch((error) => {
-        callbackToClient(callbackUrl, {
-          success: false,
-          error,
+        callbackToClient({
+          callbackUrl,
+          body: {
+            success: false,
+            error,
+          },
         });
       });
     return 'Accept';

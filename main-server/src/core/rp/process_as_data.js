@@ -20,8 +20,6 @@
  *
  */
 
-import { getErrorCallbackUrl } from '.';
-
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
@@ -80,10 +78,9 @@ export async function processAsData({
       },
     });
     logger.error({ err });
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'rp.getErrorCallbackUrl',
       action: 'processAsData',
       error: err,
       requestId,
@@ -126,10 +123,9 @@ export async function processAsData({
       cause: error,
     });
     logger.error({ err });
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'rp.getErrorCallbackUrl',
       action: 'processAsData',
       error: err,
       requestId,
@@ -174,10 +170,9 @@ export async function processAsDataAfterSetDataReceived(
       cause: error,
     });
     logger.error({ err });
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'rp.getErrorCallbackUrl',
       action: 'processAsDataAfterSetDataReceived',
       error: err,
       requestId,

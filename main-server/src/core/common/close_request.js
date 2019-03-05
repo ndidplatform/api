@@ -166,9 +166,9 @@ async function closeRequestInternalAsync(
 
     if (!synchronous) {
       if (sendCallbackToClient) {
-        await callbackToClient(
-          callback_url,
-          {
+        await callbackToClient({
+          callbackUrl: callback_url,
+          body: {
             node_id,
             type: 'close_request_result',
             success: false,
@@ -176,8 +176,8 @@ async function closeRequestInternalAsync(
             request_id,
             error: getErrorObjectForClient(error),
           },
-          true
-        );
+          retry: true,
+        });
       }
       if (callbackFnName != null) {
         if (callbackAdditionalArgs != null) {
@@ -210,17 +210,17 @@ export async function closeRequestInternalAsyncAfterBlockchain(
 
     if (!synchronous) {
       if (sendCallbackToClient) {
-        await callbackToClient(
-          callback_url,
-          {
+        await callbackToClient({
+          callbackUrl: callback_url,
+          body: {
             node_id,
             type: 'close_request_result',
             success: true,
             reference_id,
             request_id,
           },
-          true
-        );
+          retry: true,
+        });
       }
       if (callbackFnName != null) {
         if (callbackAdditionalArgs != null) {
@@ -241,9 +241,9 @@ export async function closeRequestInternalAsyncAfterBlockchain(
 
     if (!synchronous) {
       if (sendCallbackToClient) {
-        await callbackToClient(
-          callback_url,
-          {
+        await callbackToClient({
+          callbackUrl: callback_url,
+          body: {
             node_id,
             type: 'close_request_result',
             success: false,
@@ -251,8 +251,8 @@ export async function closeRequestInternalAsyncAfterBlockchain(
             request_id,
             error: getErrorObjectForClient(error),
           },
-          true
-        );
+          retry: true,
+        });
       }
       if (callbackFnName != null) {
         if (callbackAdditionalArgs != null) {

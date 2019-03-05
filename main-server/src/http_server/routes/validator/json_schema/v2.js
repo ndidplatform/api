@@ -255,6 +255,16 @@ export default {
         },
       },
     },
+    '/proxy/callback': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          error_url: {
+            $ref: 'defs#/definitions/url',
+          },
+        },
+      },
+    },
     '/dpki/node/create': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',

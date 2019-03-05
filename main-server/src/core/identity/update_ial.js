@@ -128,17 +128,17 @@ async function updateIalInternalAsync(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: 'update_ial_result',
           success: false,
           reference_id,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     }
 
     throw error;
@@ -154,16 +154,16 @@ export async function updateIalInternalAsyncAfterBlockchain(
     if (error) throw error;
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: 'update_ial_result',
           success: true,
           reference_id,
         },
-        true
-      );
+        retry: true,
+      });
     }
   } catch (error) {
     logger.error({
@@ -175,17 +175,17 @@ export async function updateIalInternalAsyncAfterBlockchain(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: 'update_ial_result',
           success: false,
           reference_id,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     } else {
       throw error;
     }

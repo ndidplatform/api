@@ -252,10 +252,9 @@ export async function processMessage(nodeId, messageId, message) {
       cause: error,
     });
     logger.error({ err });
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'as.getErrorCallbackUrl',
       action: 'as.processMessage',
       error: err,
       requestId,
@@ -330,10 +329,9 @@ export async function afterGotDataFromCallback(
       cause: error,
     });
     logger.error({ err });
-    const callbackUrl = await getErrorCallbackUrl();
     await common.notifyError({
       nodeId,
-      callbackUrl,
+      getCallbackUrlFnName: 'as.getErrorCallbackUrl',
       action: 'afterGotDataFromCallback',
       error: err,
       requestId: additionalData.requestId,
@@ -385,9 +383,10 @@ async function getDataAndSendBackToRP(
         request_params,
       });
 
-      await callbackToClient(
-        callbackUrl,
-        {
+      await callbackToClient({
+        getCallbackUrlFnName: 'as.getServiceCallbackUrl',
+        getCallbackUrlFnArgs: [nodeId, service_id],
+        body: {
           node_id: nodeId,
           type: 'data_request',
           request_id: request.request_id,
@@ -406,17 +405,17 @@ async function getDataAndSendBackToRP(
           }`,
           request_timeout: request.request_timeout,
         },
-        true,
-        'common.isRequestClosedOrTimedOut',
-        [request.request_id],
-        'as.afterGotDataFromCallback',
-        {
+        retry: true,
+        shouldRetryFnName: 'common.isRequestClosedOrTimedOut',
+        shouldRetryArguments: [request.request_id],
+        responseCallbackFnName: 'as.afterGotDataFromCallback',
+        dataForResponseCallback: {
           nodeId,
           rpId: request.rp_id,
           requestId: request.request_id,
           serviceId: service_id,
-        }
-      );
+        },
+      });
     })
   );
 }

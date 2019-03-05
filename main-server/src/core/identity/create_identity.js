@@ -348,9 +348,9 @@ async function createIdentityInternalAsync(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: addAccessor
             ? 'add_accessor_request_result'
@@ -362,8 +362,8 @@ async function createIdentityInternalAsync(
             accessor_id != null ? accessor_id : generated_accessor_id,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     }
 
     await createIdentityCleanUpOnError({
@@ -543,9 +543,9 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: addAccessor
             ? 'add_accessor_request_result'
@@ -557,8 +557,8 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
             accessor_id != null ? accessor_id : generated_accessor_id,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     }
 
     await createIdentityCleanUpOnError({
@@ -601,9 +601,9 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
 
     if (exist) {
       if (!synchronous) {
-        await callbackToClient(
-          callback_url,
-          addAccessor
+        await callbackToClient({
+          callbackUrl: callback_url,
+          body: addAccessor
             ? {
                 node_id: nodeId,
                 type: 'add_accessor_request_result',
@@ -623,8 +623,8 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 success: true,
                 exist: true,
               },
-          true
-        );
+          retry: true,
+        });
       }
 
       //save data for add accessor to persistent
@@ -640,9 +640,9 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       });
     } else {
       if (!synchronous) {
-        await callbackToClient(
-          callback_url,
-          addAccessor
+        await callbackToClient({
+          callbackUrl: callback_url,
+          body: addAccessor
             ? {
                 node_id: nodeId,
                 type: 'add_accessor_request_result',
@@ -662,8 +662,8 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
                 success: true,
                 exist: false,
               },
-          true
-        );
+          retry: true,
+        });
       }
 
       const accessor_group_id = utils.randomBase64Bytes(32);
@@ -734,9 +734,9 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: addAccessor
             ? 'add_accessor_request_result'
@@ -748,8 +748,8 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
             accessor_id != null ? accessor_id : generated_accessor_id,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     }
 
     await createIdentityCleanUpOnError({
@@ -833,9 +833,9 @@ export async function createIdentityInternalAsyncAfterBlockchain(
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: addAccessor
             ? 'add_accessor_request_result'
@@ -847,8 +847,8 @@ export async function createIdentityInternalAsyncAfterBlockchain(
             accessor_id != null ? accessor_id : generated_accessor_id,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     }
 
     await createIdentityCleanUpOnError({
@@ -886,9 +886,9 @@ export async function createIdentityInternalAsyncAfterClearRegisterIdentityTimeo
         secret,
       });
     } else {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: 'create_identity_result',
           success: true,
@@ -896,8 +896,8 @@ export async function createIdentityInternalAsyncAfterClearRegisterIdentityTimeo
           request_id,
           secret,
         },
-        true
-      );
+        retry: true,
+      });
       cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
       await common.closeRequest(
         {
@@ -926,9 +926,9 @@ export async function createIdentityInternalAsyncAfterClearRegisterIdentityTimeo
     });
 
     if (!synchronous) {
-      await callbackToClient(
-        callback_url,
-        {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
           node_id: nodeId,
           type: addAccessor
             ? 'add_accessor_request_result'
@@ -940,8 +940,8 @@ export async function createIdentityInternalAsyncAfterClearRegisterIdentityTimeo
             accessor_id != null ? accessor_id : generated_accessor_id,
           error: getErrorObjectForClient(error),
         },
-        true
-      );
+        retry: true,
+      });
     }
 
     await createIdentityCleanUpOnError({
