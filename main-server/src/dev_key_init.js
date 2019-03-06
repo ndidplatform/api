@@ -27,6 +27,8 @@ import fs from 'fs';
 import path from 'path';
 import mkdirp from 'mkdirp';
 
+import * as cacheDb from './db/cache';
+
 import * as ndid from './core/ndid';
 import * as tendermint from './tendermint';
 import * as nodeKey from './utils/node_key';
@@ -170,6 +172,8 @@ function addNodeToProxyNode(nodeId, proxyNodeId, nodeProxyConfig) {
 }
 
 export async function init() {
+  await cacheDb.initialize();
+
   tendermint.setWaitForInitEndedBeforeReady(false);
 
   const tendermintReady = new Promise((resolve) =>
