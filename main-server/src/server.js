@@ -213,7 +213,6 @@ async function initialize() {
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
       if (config.mode === MODE.STANDALONE || config.mode === MODE.WORKER) {
-        // FIXME: shouldn't be called on every workers. Should be called once.
         await coreCommon.setMessageQueueAddress();
       }
       if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {

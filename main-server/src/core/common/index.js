@@ -45,7 +45,7 @@ export * from './close_request';
 
 let processingInboundMessagesCount = 0;
 
-let messageQueueAddressesSet = !config.registerMqAtStartup;
+let messageQueueAddressesSet = false;
 
 let pendingTimer = {};
 
@@ -56,7 +56,7 @@ export function isMqAddressesSet() {
 }
 
 export async function setMessageQueueAddress() {
-  if (!messageQueueAddressesSet) {
+  if (config.registerMqAtStartup && !messageQueueAddressesSet) {
     // FIXME: must retry on error (except some errors e.g. node disabled) or server init will fail
     // and http API will always return 503
 
