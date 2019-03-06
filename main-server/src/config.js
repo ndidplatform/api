@@ -206,6 +206,7 @@ export const mode = process.env.MODE
   : 'standalone';
 export const masterServerPort = process.env.MASTER_SERVER_PORT || 7000;
 export const masterServerIp = process.env.MASTER_SERVER_IP || 'localhost';
+export const callToMasterRetryTimeout = process.env.CALL_TO_MASTER_RETRY_TIMEOUT_MS || 120000;
 
 export const prometheusEnabled = process.env.PROMETHEUS === 'true';
 

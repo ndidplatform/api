@@ -127,16 +127,19 @@ function gRPCRetry(fn) {
     factor: 2,
     jitter: 0.2,
   });
-  let startTime = Date.now();
-  let retry = async function() {
-    if (Date.now() - startTime < config.workerCallTimeout) {
+  const startTime = Date.now();
+  const retry = async function() {
+    if (Date.now() - startTime < config.callToMasterRetryTimeout) {
       try {
         await fn(...arguments);
       } catch (error) {
         await wait(backoff.next());
         await retry(...arguments);
       }
-    } else return fn(...arguments); //retry for the last time
+    } else {
+       //retry for the last time
+      return fn(...arguments);
+    }
   };
   return retry;
 }
