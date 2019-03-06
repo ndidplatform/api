@@ -119,6 +119,8 @@ export async function initializeInbound() {
   mqService.eventEmitter.on('error', (error) => {
     if (errorHandlerFunction) {
       errorHandlerFunction(error);
+    } else {
+      logger.error({ err: error });
     }
   });
 
