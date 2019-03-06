@@ -155,14 +155,22 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         })
       );
 
-      Object.entries(requestIdsToProcessUpdate).map(
-        async ([requestId, { callbackUrl, referenceId }]) =>
-          await requestProcessManager.addTaskToQueue({
-            nodeId,
-            requestId,
-            callbackFnName: 'rp.processRequestUpdate',
-            callbackArgs: [nodeId, requestId, height, callbackUrl, referenceId],
-          })
+      await Promise.all(
+        Object.entries(requestIdsToProcessUpdate).map(
+          ([requestId, { callbackUrl, referenceId }]) =>
+            requestProcessManager.addTaskToQueue({
+              nodeId,
+              requestId,
+              callbackFnName: 'rp.processRequestUpdate',
+              callbackArgs: [
+                nodeId,
+                requestId,
+                height,
+                callbackUrl,
+                referenceId,
+              ],
+            })
+        )
       );
     })
   );

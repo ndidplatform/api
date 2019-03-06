@@ -241,24 +241,26 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         incomingRequestsToProcessUpdate,
       });
 
-      Object.values(createIdentityRequestsToProcess).map(
-        async ({ requestId, action }) =>
-          await requestProcessManager.addTaskToQueue({
-            nodeId,
-            requestId,
-            callbackFnName: 'idp.processCreateIdentityRequest',
-            callbackArgs: [nodeId, requestId, action],
-          })
-      );
-      Object.values(incomingRequestsToProcessUpdate).map(
-        async ({ requestId, cleanUp }) =>
-          await requestProcessManager.addTaskToQueue({
-            nodeId,
-            requestId,
-            callbackFnName: 'idp.processRequestUpdate',
-            callbackArgs: [nodeId, requestId, height, cleanUp],
-          })
-      );
+      await Promise.all([
+        ...Object.values(createIdentityRequestsToProcess).map(
+          ({ requestId, action }) =>
+            requestProcessManager.addTaskToQueue({
+              nodeId,
+              requestId,
+              callbackFnName: 'idp.processCreateIdentityRequest',
+              callbackArgs: [nodeId, requestId, action],
+            })
+        ),
+        ...Object.values(incomingRequestsToProcessUpdate).map(
+          ({ requestId, cleanUp }) =>
+            requestProcessManager.addTaskToQueue({
+              nodeId,
+              requestId,
+              callbackFnName: 'idp.processRequestUpdate',
+              callbackArgs: [nodeId, requestId, height, cleanUp],
+            })
+        ),
+      ]);
     })
   );
 }

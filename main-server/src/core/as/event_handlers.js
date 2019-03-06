@@ -162,14 +162,16 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         }
       }
 
-      Object.values(incomingRequestsToProcessUpdate).map(
-        async ({ requestId, cleanUp }) =>
-          await requestProcessManager.addTaskToQueue({
-            nodeId,
-            requestId,
-            callbackFnName: 'as.processRequestUpdate',
-            callbackArgs: [nodeId, requestId, height, cleanUp],
-          })
+      await Promise.all(
+        Object.values(incomingRequestsToProcessUpdate).map(
+          ({ requestId, cleanUp }) =>
+            requestProcessManager.addTaskToQueue({
+              nodeId,
+              requestId,
+              callbackFnName: 'as.processRequestUpdate',
+              callbackArgs: [nodeId, requestId, height, cleanUp],
+            })
+        )
       );
     })
   );

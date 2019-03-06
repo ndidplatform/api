@@ -182,10 +182,6 @@ export async function addTaskToQueue({
     requestId,
   });
 
-  if (requestQueue[requestId] == null) {
-    requestQueue[requestId] = [];
-    incrementRequestsInQueueCount();
-  }
   const taskData = {
     nodeId,
     callbackFnName,
@@ -199,13 +195,18 @@ export async function addTaskToQueue({
     requestId,
     taskData
   );
+
+  if (requestQueue[requestId] == null) {
+    requestQueue[requestId] = [];
+    incrementRequestsInQueueCount();
+  }
   requestQueue[requestId].push(taskData);
   incrementPendingTasksInQueueCount();
 
   setImmediate(executeTaskInQueue, requestId);
 }
 
-async function executeTaskInQueue(requestId) {
+function executeTaskInQueue(requestId) {
   if (requestQueueRunning[requestId]) return;
   const task = requestQueue[requestId].shift();
   if (task) {
