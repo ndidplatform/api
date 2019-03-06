@@ -26,6 +26,7 @@ import * as idp from './core/idp';
 import * as as from './core/as';
 import * as proxy from './core/proxy';
 import * as identity from './core/identity';
+import * as dpki from './core/dpki';
 import * as mq from './mq';
 import * as callback from './callback';
 
@@ -84,6 +85,8 @@ export function getFunction(fnName) {
       return idp.processIdpResponseAfterRevokeAccessor;
     case 'rp.processAsDataAfterSetDataReceived':
       return rp.processAsDataAfterSetDataReceived;
+    case 'dpki.updateNodeInternalAsyncAfterBlockchain':
+      return dpki.updateNodeInternalAsyncAfterBlockchain;
     // Callback
     case 'rp.getCallbackUrls':
       return rp.getCallbackUrls;

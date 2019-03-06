@@ -80,8 +80,58 @@ async function updateNodeInternalAsync(
   { nodeId }
 ) {
   try {
-    // FIXME: async transact
-    await tendermintNdid.updateNode({ public_key, master_public_key }, nodeId);
+    if (!synchronous) {
+      await tendermintNdid.updateNode(
+        { public_key, master_public_key },
+        nodeId,
+        'dpki.updateNodeInternalAsyncAfterBlockchain',
+        [{ nodeId, reference_id, callback_url }, { synchronous }]
+      );
+    } else {
+      await tendermintNdid.updateNode(
+        { public_key, master_public_key },
+        nodeId
+      );
+      await updateNodeInternalAsyncAfterBlockchain(
+        {},
+        { nodeId, reference_id, callback_url },
+        { synchronous }
+      );
+    }
+  } catch (error) {
+    logger.error({
+      message: 'Update node internal async error',
+      originalArgs: arguments[0],
+      options: arguments[1],
+      additionalArgs: arguments[2],
+      err: error,
+    });
+
+    if (!synchronous) {
+      await callbackToClient({
+        callbackUrl: callback_url,
+        body: {
+          node_id: nodeId,
+          type: 'update_node_result',
+          reference_id,
+          success: false,
+          error: getErrorObjectForClient(error),
+        },
+        retry: true,
+      });
+    }
+
+    throw error;
+  }
+}
+
+export async function updateNodeInternalAsyncAfterBlockchain(
+  { error },
+  { nodeId, reference_id, callback_url },
+  { synchronous = false } = {}
+) {
+  try {
+    if (error) throw error;
 
     if (!synchronous) {
       await callbackToClient({
@@ -97,7 +147,7 @@ async function updateNodeInternalAsync(
     }
   } catch (error) {
     logger.error({
-      message: 'Update node internal async error',
+      message: 'Update node internal async after blockchain error',
       originalArgs: arguments[0],
       options: arguments[1],
       additionalArgs: arguments[2],
