@@ -117,6 +117,11 @@ async function updateIalInternalAsync(
       );
     } else {
       await tendermintNdid.updateIal({ hash_id, ial }, nodeId);
+      await updateIalInternalAsyncAfterBlockchain(
+        {},
+        { nodeId, reference_id, callback_url },
+        { synchronous }
+      );
     }
   } catch (error) {
     logger.error({
