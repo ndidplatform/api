@@ -24,7 +24,7 @@ IMPROVEMENTS:
   - `MODE`: Allowed values are `standalone`, `master`, and `worker`. There can be only one `master` process per Node ID
   - `MASTER_SERVER_IP`: Master process gRPC server IP address. Required when MODE=master
   - `MASTER_SERVER_PORT`: Master process gRPC server port. Required when MODE=master and MODE=worker
-  - `CALL_TO_MASTER_RETRY_TIMEOUT_MS`: gRPC call from worker process to master process retry timeout
+  - `CALL_TO_MASTER_RETRY_TIMEOUT_MS`: gRPC call from worker process to master process retry timeout in milliseconds
   - `PROMETHEUS`: Enable prometheus metrics and HTTP server for querying metrics
   - `PROMETHEUS_SERVER_PORT`: HTTP server port for querying Prometheus metrics
   - `PROMETHEUS_HTTPS`: Use HTTPS server for Prometheus metrics HTTP server
