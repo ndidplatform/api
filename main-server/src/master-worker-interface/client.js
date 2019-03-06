@@ -30,15 +30,16 @@ import { ExponentialBackoff } from 'simple-backoff';
 
 import { getArgsFromProtobuf } from './message';
 
+import { getPendingRequestTimeout } from '../core/common';
+import { getPendingCallback } from '../callback';
+import { getPendingOutboundMessageMsgIds } from '../mq';
+
 import { getFunction } from '../functions';
 
 import { wait, randomBase64Bytes } from '../utils';
 import logger from '../logger';
 
 import * as config from '../config';
-import { getRequestTimeoutPendingTimerJobs } from '../core/common';
-import { getCallbackPendingTimerJobs } from '../callback';
-import { getMqPendingTimerJobs } from '../mq';
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -137,7 +138,7 @@ function gRPCRetry(fn) {
         await retry(...arguments);
       }
     } else {
-       //retry for the last time
+      //retry for the last time
       return fn(...arguments);
     }
   };
@@ -187,6 +188,35 @@ function returnResult({ grpcRefId, retVal, error }) {
         grpcRefId,
         retValStr,
         error,
+      },
+      (error) => {
+        if (error) reject(error);
+        else resolve();
+      }
+    );
+  });
+}
+
+export function broadcastRemoveRequestTimeoutScheduler({ nodeId, requestId }) {
+  return gRPCRetry(broadcastRemoveRequestTimeoutSchedulerInternal)({
+    nodeId,
+    requestId,
+  });
+}
+
+function broadcastRemoveRequestTimeoutSchedulerInternal({ nodeId, requestId }) {
+  logger.debug({
+    message:
+      'Sending remove request timeout scheduler broadcast request to master',
+    nodeId,
+    requestId,
+  });
+  return new Promise((resolve, reject) => {
+    client.removeRequestTimeoutScheduler(
+      {
+        workerId,
+        nodeId,
+        requestId,
       },
       (error) => {
         if (error) reject(error);
@@ -264,7 +294,7 @@ function handleShutdownTimerJobs(timerJobsArray) {
 export async function shutdown() {
   closing = true;
   logger.info({
-    message: 'shutting down worker',
+    message: 'Shutting down worker',
     workerId,
   });
   if (client) {
@@ -272,15 +302,15 @@ export async function shutdown() {
     let timerJobsArray = [
       {
         type: 'requestTimeout',
-        jobs: getRequestTimeoutPendingTimerJobs(),
+        jobs: getPendingRequestTimeout(),
       },
       {
         type: 'callback',
-        jobs: getCallbackPendingTimerJobs(),
+        jobs: getPendingCallback(),
       },
       {
         type: 'mq',
-        jobs: getMqPendingTimerJobs(),
+        jobs: getPendingOutboundMessageMsgIds(),
       },
     ];
     await Promise.all([

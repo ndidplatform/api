@@ -108,7 +108,9 @@ export async function handleCallbackWorkerLost(cbId, deadline) {
 
   if (backupCallbackData) {
     const {
+      callbackUrl,
       getCallbackUrlFnName,
+      getCallbackUrlFnArgs,
       body,
       shouldRetryFnName,
       shouldRetryArguments,
@@ -117,7 +119,9 @@ export async function handleCallbackWorkerLost(cbId, deadline) {
     } = backupCallbackData;
 
     callbackWithRetry(
+      callbackUrl,
       getCallbackUrlFnName,
+      getCallbackUrlFnArgs,
       body,
       cbId,
       shouldRetryFnName,
@@ -152,7 +156,6 @@ async function callbackWithRetry(
 
   const startTime = Date.now();
 
-  //tell master about timerJob
   if (config.mode === MODE.WORKER) {
     pendingCallback[cbId] = {
       deadline: deadline || Date.now() + config.callbackRetryTimeout * 1000,
@@ -191,7 +194,6 @@ async function callbackWithRetry(
       if (config.mode === MODE.WORKER) {
         delete pendingCallback[cbId];
       }
-
       decrementPendingCallbacksCount();
       metricsEventEmitter.emit(
         'callbackTime',
@@ -217,6 +219,9 @@ async function callbackWithRetry(
       });
 
       if (error.name === 'FetchError' && error.type === 'max-size') {
+        if (config.mode === MODE.WORKER) {
+          delete pendingCallback[cbId];
+        }
         decrementPendingCallbacksCount();
         cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
         if (responseCallbackFnName) {
@@ -248,6 +253,9 @@ async function callbackWithRetry(
           shouldRetry = true;
         }
         if (!shouldRetry) {
+          if (config.mode === MODE.WORKER) {
+            delete pendingCallback[cbId];
+          }
           decrementPendingCallbacksCount();
           cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
           metricsEventEmitter.emit('callbackFail');
@@ -264,6 +272,9 @@ async function callbackWithRetry(
               url: _callbackUrl,
               cbId,
             });
+            if (config.mode === MODE.WORKER) {
+              delete pendingCallback[cbId];
+            }
             decrementPendingCallbacksCount();
             cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
             metricsEventEmitter.emit('callbackTimedOut');
@@ -452,6 +463,6 @@ export function getPendingCallbacksCount() {
   return pendingCallbacksCount;
 }
 
-export function getCallbackPendingTimer() {
+export function getPendingCallback() {
   return pendingCallback;
 }

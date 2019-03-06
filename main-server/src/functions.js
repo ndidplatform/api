@@ -45,6 +45,8 @@ export function getFunction(fnName) {
       return common.timeoutRequestAfterBlockchain;
     case 'common.setTimeoutScheduler':
       return common.setTimeoutScheduler;
+    case 'common.removeTimeoutSchedulerInternal':
+      return common.removeTimeoutSchedulerInternal;
     case 'idp.requestChallengeAfterBlockchain':
       return idp.requestChallengeAfterBlockchain;
     case 'idp.createResponseAfterBlockchain':

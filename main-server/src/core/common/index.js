@@ -37,6 +37,8 @@ import { getErrorObjectForClient } from '../../utils/error';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../../mq/message/type';
 
+import { broadcastRemoveRequestTimeoutScheduler } from '../../master-worker-interface/client';
+
 import MODE from '../../mode';
 import { getFunction } from '../../functions';
 
@@ -47,7 +49,7 @@ let processingInboundMessagesCount = 0;
 
 let messageQueueAddressesSet = false;
 
-let pendingTimer = {};
+let pendingRequestTimeout = {};
 
 export const metricsEventEmitter = new EventEmitter();
 
@@ -288,19 +290,31 @@ export function runTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
 }
 
 export async function setTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
-  let unixTimeout = Date.now() + secondsToTimeout * 1000;
+  const unixTimeout = Date.now() + secondsToTimeout * 1000;
   await cacheDb.setTimeoutScheduler(nodeId, requestId, unixTimeout);
   if (config.mode === MODE.WORKER) {
-    pendingTimer[requestId] = { deadline: unixTimeout };
+    pendingRequestTimeout[requestId] = { deadline: unixTimeout };
   }
   runTimeoutScheduler(nodeId, requestId, secondsToTimeout);
 }
 
-export async function removeTimeoutScheduler(nodeId, requestId) {
+export function removeTimeoutScheduler(nodeId, requestId) {
+  if (
+    config.mode === MODE.WORKER &&
+    timeoutScheduler[`${nodeId}:${requestId}`] == null
+  ) {
+    // Scheduler may be on another worker
+    return broadcastRemoveRequestTimeoutScheduler({ nodeId, requestId });
+  } else {
+    return removeTimeoutSchedulerInternal(nodeId, requestId);
+  }
+}
+
+export async function removeTimeoutSchedulerInternal(nodeId, requestId) {
   lt.clearTimeout(timeoutScheduler[`${nodeId}:${requestId}`]);
   await cacheDb.removeTimeoutScheduler(nodeId, requestId);
   if (config.mode === MODE.WORKER) {
-    delete pendingTimer[requestId];
+    delete pendingRequestTimeout[requestId];
   }
   delete timeoutScheduler[`${nodeId}:${requestId}`];
 }
@@ -722,6 +736,6 @@ export function getProcessingInboundMessagesCount() {
   return processingInboundMessagesCount;
 }
 
-export function getRequestTimeoutPendingTimer() {
-  return pendingTimer;
+export function getPendingRequestTimeout() {
+  return pendingRequestTimeout;
 }

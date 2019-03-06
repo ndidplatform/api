@@ -120,7 +120,7 @@ export async function initializeInbound() {
     if (errorHandlerFunction) {
       errorHandlerFunction(error);
     } else {
-      logger.error({ err: error });
+      logger.error({ message: 'MQ Service error', err: error });
     }
   });
 
@@ -183,7 +183,7 @@ async function sendPendingOutboundMessage({ msgId: msgIdStr, data }) {
         MQ_SEND_TOTAL_TIMEOUT
       )
       .catch((error) => {
-        logger.error(error.getInfoForLog());
+        logger.error({ message: 'Send message failed', err: error });
         metricsEventEmitter.emit('mqSendMessageFail');
       })
       .then(() => {
@@ -241,7 +241,12 @@ async function onMessage({ message, msgId, senderId }) {
     });
     mqService
       .sendAckForRecvMessage(msgId)
-      .catch((error) => logger.error({ err: error }));
+      .catch((error) =>
+        logger.error({
+          message: 'Send ACK for received message failed',
+          err: error,
+        })
+      );
 
     if (
       !tendermint.connected ||
@@ -694,7 +699,7 @@ export async function send(receivers, message, senderNodeId) {
           );
         })
         .catch((error) => {
-          logger.error({ err: error });
+          logger.error({ message: 'Send message failed', err: error });
           metricsEventEmitter.emit('mqSendMessageFail');
         })
         .then(() => {
@@ -786,12 +791,8 @@ export function getPendingOutboundMessagesCount() {
   return pendingOutboundMessagesCount;
 }
 
-export function getMqPendingTimer() {
-  let shutdownHandleObject = {};
-  for (let msgId in pendingOutboundMessages) {
-    shutdownHandleObject[msgId] = {};
-  }
-  return shutdownHandleObject;
+export function getPendingOutboundMessageMsgIds() {
+  return Object.keys(pendingOutboundMessages);
 }
 
 tendermint.eventEmitter.on('ready', retryProcessMessages);

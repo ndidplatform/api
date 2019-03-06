@@ -78,6 +78,7 @@ export function initialize() {
     subscribe,
     timerJobsCall,
     returnResultCall,
+    removeRequestTimeoutScheduler,
     workerStoppingCall,
   });
 
@@ -152,12 +153,12 @@ function handleCallbackRetryWorkerLost(workerId) {
 }
 
 function handleMqRetryWorkerLost(workerId) {
-  for (let msgId in workerLostHandling[workerId].mq) {
+  workerLostHandling[workerId].mq.forEach((msgId) =>
     delegateToWorker({
       fnName: 'mq.handleMqWorkerLost',
       args: [msgId],
-    });
-  }
+    })
+  );
 }
 
 function handleWorkerLost(workerId) {
@@ -224,6 +225,16 @@ function returnResultCall(call, done) {
     });
     logger.error({ err: error });
   }
+  done();
+}
+
+function removeRequestTimeoutScheduler(call, done) {
+  const { workerId, nodeId, requestId } = call.request;
+  remoteFnCallToWorkers({
+    fnName: 'common.removeTimeoutSchedulerInternal',
+    args: [nodeId, requestId],
+    excludedWorkerIds: [workerId],
+  });
   done();
 }
 
@@ -296,21 +307,30 @@ export function delegateToWorker({
   });
 }
 
-export function remoteFnCallToAllWorkers({
+export function remoteFnCallToWorkers({
   fnName,
   args,
   callback,
   additionalCallbackArgs,
+  excludedWorkerIds,
 }) {
   logger.debug({
-    message: 'Master remote function call to all workers',
+    message: 'Master remote function call to multiple workers',
     fnName,
     args,
+    excludedWorkerIds,
   });
 
   const argsProtobuf = getArgsProtobuf(fnName, args);
 
   workerList.forEach((worker) => {
+    if (
+      excludedWorkerIds != null &&
+      excludedWorkerIds.includes(worker.workerId)
+    ) {
+      return;
+    }
+
     const grpcRefId = `${grpcCallRefIdPrefix}-${grpcCallRefIdCounter++}`;
 
     logger.debug({
