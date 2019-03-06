@@ -179,9 +179,7 @@ export async function popFromList({ nodeId, dbName, name, key }) {
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
-    const result = await redis.lpop(
-      `${nodeId}:${dbName}:${name}:${key}`
-    );
+    const result = await redis.lpop(`${nodeId}:${dbName}:${name}:${key}`);
     metricsEventEmitter.emit(
       'operationTime',
       operation,
@@ -255,7 +253,13 @@ export async function removeList({ nodeId, dbName, name, key }) {
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
-    await redis.del(`${nodeId}:${dbName}:${name}:${key}`);
+    const redisVersion = getRedisVersion(dbName);
+    const keyOnRedis = `${nodeId}:${dbName}:${name}:${key}`;
+    if (redisVersion.major >= '4') {
+      await redis.unlink(keyOnRedis);
+    } else {
+      await redis.del(keyOnRedis);
+    }
     metricsEventEmitter.emit(
       'operationTime',
       operation,
@@ -299,7 +303,13 @@ export async function removeListWithRangeSupport({ nodeId, dbName, name }) {
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
-    await redis.del(`${nodeId}:${dbName}:${name}`);
+    const redisVersion = getRedisVersion(dbName);
+    const keyOnRedis = `${nodeId}:${dbName}:${name}`;
+    if (redisVersion.major >= '4') {
+      await redis.unlink(keyOnRedis);
+    } else {
+      await redis.del(keyOnRedis);
+    }
     metricsEventEmitter.emit(
       'operationTime',
       operation,
@@ -423,7 +433,13 @@ export async function remove({ nodeId, dbName, name, key }) {
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
-    await redis.del(`${nodeId}:${dbName}:${name}:${key}`);
+    const redisVersion = getRedisVersion(dbName);
+    const keyOnRedis = `${nodeId}:${dbName}:${name}:${key}`;
+    if (redisVersion.major >= '4') {
+      await redis.unlink(keyOnRedis);
+    } else {
+      await redis.del(keyOnRedis);
+    }
     metricsEventEmitter.emit(
       'operationTime',
       operation,
