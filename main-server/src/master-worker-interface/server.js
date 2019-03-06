@@ -296,6 +296,49 @@ export function delegateToWorker({
   });
 }
 
+export function remoteFnCallToAllWorkers({
+  fnName,
+  args,
+  callback,
+  additionalCallbackArgs,
+}) {
+  logger.debug({
+    message: 'Master remote function call to all workers',
+    fnName,
+    args,
+  });
+
+  const argsProtobuf = getArgsProtobuf(fnName, args);
+
+  workerList.forEach((worker) => {
+    const grpcRefId = `${grpcCallRefIdPrefix}-${grpcCallRefIdCounter++}`;
+
+    logger.debug({
+      message: 'Master remote function call to worker',
+      fnName,
+      args,
+      grpcRefId,
+    });
+
+    grpcCall[grpcRefId] = { fnName, callback, additionalCallbackArgs, worker };
+
+    // worker.jobCount++;
+
+    logger.debug({
+      message: 'Remote calling function on worker',
+      grpcRefId,
+      workerId: worker.workerId,
+      // workerJobCount: worker.jobCount,
+    });
+
+    worker.connection.write({
+      fnName,
+      grpcRefId,
+      args: argsProtobuf,
+    });
+  });
+}
+
 export function shutdown() {
   server.tryShutdown(() => {
     logger.info({ message: 'Job master gRPC server shutdown' });
