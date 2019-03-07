@@ -68,9 +68,8 @@ export function initialize() {
     'grpc.keepalive_timeout_ms': config.grpcPingTimeout,
     'grpc.keepalive_permit_without_calls': 1,
     'grpc.http2.max_pings_without_data': 0,
-    // 'grpc.http2.min_ping_interval_without_data_ms':
-    //   config.grpcExpectedClientPingInterval,
-    'grpc.http2.min_ping_interval_without_data_ms': config.grpcPingInterval,
+    'grpc.http2.min_ping_interval_without_data_ms':
+      config.grpcExpectedClientPingInterval,
     'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
     'grpc.max_receive_message_length': -1,
   });
@@ -121,7 +120,9 @@ function subscribe(call) {
   call.on('cancelled', () => {
     for (let i = 0; i < workerList.length; i++) {
       if (workerList[i].workerId === workerId) {
-        if (workerList[i].stopping) stoppingWorkerCount--;
+        if (workerList[i].stopping) {
+          stoppingWorkerCount--;
+        }
         workerList.splice(i, 1);
       }
     }
@@ -132,8 +133,12 @@ function subscribe(call) {
 }
 
 function handleRequestTimeoutWorkerLost(workerId) {
-  for (let requestId in workerLostHandling[workerId].requestTimeout) {
-    const { deadline } = workerLostHandling[workerId].requestTimeout[requestId];
+  const requestTimeout = workerLostHandling[workerId].find(
+    ({ type }) => type === 'requestTimeout'
+  );
+  const requestTimeoutTask = requestTimeout.tasks;
+  for (let requestId in requestTimeoutTask) {
+    const { deadline } = requestTimeoutTask[requestId];
     if (Date.now() < deadline) {
       delegateToWorker({
         fnName: 'common.setTimeoutScheduler',
@@ -144,8 +149,12 @@ function handleRequestTimeoutWorkerLost(workerId) {
 }
 
 function handleCallbackRetryWorkerLost(workerId) {
-  for (let cbId in workerLostHandling[workerId].callback) {
-    const { deadline } = workerLostHandling[workerId].callback[cbId];
+  const callback = workerLostHandling[workerId].find(
+    ({ type }) => type === 'callback'
+  );
+  const callbackTask = callback.tasks;
+  for (let cbId in callbackTask) {
+    const { deadline } = callbackTask[cbId];
     if (Date.now() < deadline) {
       delegateToWorker({
         fnName: 'callback.handleCallbackWorkerLost',
@@ -156,7 +165,8 @@ function handleCallbackRetryWorkerLost(workerId) {
 }
 
 function handleMqRetryWorkerLost(workerId) {
-  workerLostHandling[workerId].mq.forEach((msgId) =>
+  const mq = workerLostHandling[workerId].find(({ type }) => type === 'mq');
+  mq.tasks.forEach((msgId) =>
     delegateToWorker({
       fnName: 'mq.handleMqWorkerLost',
       args: [msgId],
@@ -165,6 +175,11 @@ function handleMqRetryWorkerLost(workerId) {
 }
 
 function handleWorkerLost(workerId) {
+  logger.info({
+    message: 'Worker lost',
+    workerId,
+    remainingTasksAvailable: workerLostHandling[workerId] != null,
+  });
   handleRequestTimeoutWorkerLost(workerId);
   handleCallbackRetryWorkerLost(workerId);
   handleMqRetryWorkerLost(workerId);
@@ -173,26 +188,20 @@ function handleWorkerLost(workerId) {
 
 function workerStoppingCall(call, done) {
   const { workerId } = call.request;
-  workerList.forEach((worker) => {
-    if (worker.workerId === workerId) {
-      if (!worker.stopping) stoppingWorkerCount++;
-      worker.stopping = true;
+  const worker = workerList.find((worker) => worker.workerId === workerId);
+  if (worker != null) {
+    if (!worker.stopping) {
+      stoppingWorkerCount++;
     }
-  });
+    worker.stopping = true;
+  }
   done();
 }
 
 function timerJobsCall(call, done) {
   let { jobsDetail, workerId } = call.request;
   jobsDetail = JSON.parse(jobsDetail);
-  jobsDetail.forEach(({ type, ...jobs }) => {
-    for (let jobId in jobs) {
-      if (workerLostHandling[workerId][type][jobId]) {
-        throw 'Duplicate job';
-      }
-      workerLostHandling[workerId][type][jobId] = jobs[jobId];
-    }
-  });
+  workerLostHandling[workerId] = jobsDetail;
   done();
 }
 
@@ -338,8 +347,8 @@ export function remoteFnCallToWorkers({
 
   workerList.forEach((worker) => {
     if (
-      excludedWorkerIds != null &&
-      excludedWorkerIds.includes(worker.workerId)
+      worker.stopping ||
+      (excludedWorkerIds != null && excludedWorkerIds.includes(worker.workerId))
     ) {
       return;
     }

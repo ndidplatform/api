@@ -197,6 +197,11 @@ export const grpcPingTimeout = process.env.GRPC_PING_TIMEOUT_MS
   ? parseInt(process.env.GRPC_PING_TIMEOUT_MS)
   : 20000;
 
+export const grpcExpectedClientPingInterval = process.env
+  .GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS
+  ? parseInt(process.env.GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS)
+  : 30000;
+
 export const grpcCallTimeout = process.env.GRPC_CALL_TIMEOUT_MS
   ? parseInt(process.env.GRPC_CALL_TIMEOUT_MS)
   : 60000;
@@ -206,7 +211,8 @@ export const mode = process.env.MODE
   : 'standalone';
 export const masterServerPort = process.env.MASTER_SERVER_PORT || 7000;
 export const masterServerIp = process.env.MASTER_SERVER_IP || 'localhost';
-export const callToMasterRetryTimeout = process.env.CALL_TO_MASTER_RETRY_TIMEOUT_MS || 120000;
+export const callToMasterRetryTimeout =
+  process.env.CALL_TO_MASTER_RETRY_TIMEOUT_MS || 120000;
 
 export const prometheusEnabled = process.env.PROMETHEUS === 'true';
 

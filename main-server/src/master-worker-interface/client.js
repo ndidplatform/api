@@ -266,11 +266,11 @@ async function onRecvData(data) {
     } else {
       retVal = await getFunction(fnName)(parsedArgs);
     }
-    workingJobCounter--;
     await gRPCRetry(returnResult)({ grpcRefId, retVal });
-  } catch (error) {
     workingJobCounter--;
+  } catch (error) {
     await gRPCRetry(returnResult)({ grpcRefId, error });
+    workingJobCounter--;
   }
 }
 
@@ -290,12 +290,7 @@ function waitForAllJobDone() {
   If we are lost, master will tell another worker to retry it for us.
 */
 
-function handleShutdownTimerJobs(timerJobsArray) {
-  let jobsDetail = [];
-  timerJobsArray.forEach(({ type, jobs }) => {
-    jobs.type = type;
-    jobsDetail.push(jobs);
-  });
+function handleShutdownTimerJobs(jobsDetail) {
   return gRPCRetry(() => {
     return new Promise((resolve, reject) => {
       client.timerJobsCall(
@@ -320,24 +315,22 @@ export async function shutdown() {
   });
   if (client) {
     await gRPCRetry(workerStopping)();
-    let timerJobsArray = [
+    await waitForAllJobDone();
+    const pendingTasks = [
       {
         type: 'requestTimeout',
-        jobs: getPendingRequestTimeout(),
+        tasks: getPendingRequestTimeout(),
       },
       {
         type: 'callback',
-        jobs: getPendingCallback(),
+        tasks: getPendingCallback(),
       },
       {
         type: 'mq',
-        jobs: getPendingOutboundMessageMsgIds(),
+        tasks: getPendingOutboundMessageMsgIds(),
       },
     ];
-    await Promise.all([
-      handleShutdownTimerJobs(timerJobsArray),
-      waitForAllJobDone(),
-    ]);
+    await handleShutdownTimerJobs(pendingTasks);
     if (workerSubscribeChannel) {
       workerSubscribeChannel.on('error', () => {
         //handle to suppress error log
