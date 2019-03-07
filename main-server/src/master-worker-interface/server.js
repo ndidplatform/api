@@ -180,6 +180,7 @@ function handleWorkerLost(workerId) {
     workerId,
     remainingTasksAvailable: workerLostHandling[workerId] != null,
   });
+  // FIXME: when there is no worker available
   handleRequestTimeoutWorkerLost(workerId);
   handleCallbackRetryWorkerLost(workerId);
   handleMqRetryWorkerLost(workerId);

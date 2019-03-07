@@ -314,6 +314,7 @@ export async function shutdown() {
     workerId,
   });
   if (client) {
+    // FIXME: if master process cannot be reached / not available
     await gRPCRetry(workerStopping)();
     await waitForAllJobDone();
     const pendingTasks = [
