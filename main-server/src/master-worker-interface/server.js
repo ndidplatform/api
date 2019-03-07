@@ -28,6 +28,8 @@ import * as protoLoader from '@grpc/proto-loader';
 
 import { getArgsProtobuf } from './message';
 
+import { getFunction } from '../functions';
+
 import { randomBase64Bytes } from '../utils';
 import CustomError from 'ndid-error/custom_error';
 import logger from '../logger';
@@ -78,6 +80,7 @@ export function initialize() {
     subscribe,
     timerJobsCall,
     returnResultCall,
+    externalCryptoServiceCallbackUrlsSet,
     removeRequestTimeoutScheduler,
     workerStoppingCall,
   });
@@ -225,6 +228,16 @@ function returnResultCall(call, done) {
     });
     logger.error({ err: error });
   }
+  done();
+}
+
+async function externalCryptoServiceCallbackUrlsSet(call, done) {
+  const { workerId } = call.request;
+  await getFunction('externalCryptoService.checkAndEmitAllCallbacksSet')();
+  remoteFnCallToWorkers({
+    fnName: 'externalCryptoService.checkAndEmitAllCallbacksSet',
+    excludedWorkerIds: [workerId],
+  });
   done();
 }
 

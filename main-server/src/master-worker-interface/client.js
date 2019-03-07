@@ -197,6 +197,27 @@ function returnResult({ grpcRefId, retVal, error }) {
   });
 }
 
+export function externalCryptoServiceCallbackUrlsSet() {
+  return gRPCRetry(externalCryptoServiceCallbackUrlsSetInternal)();
+}
+
+function externalCryptoServiceCallbackUrlsSetInternal() {
+  logger.debug({
+    message: 'Signaling external crypto service callback URLs set to master',
+  });
+  return new Promise((resolve, reject) => {
+    client.externalCryptoServiceCallbackUrlsSet(
+      {
+        workerId,
+      },
+      (error) => {
+        if (error) reject(error);
+        else resolve();
+      }
+    );
+  });
+}
+
 export function broadcastRemoveRequestTimeoutScheduler({ nodeId, requestId }) {
   return gRPCRetry(broadcastRemoveRequestTimeoutSchedulerInternal)({
     nodeId,

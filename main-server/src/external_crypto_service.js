@@ -34,6 +34,9 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from './logger';
 
+import { externalCryptoServiceCallbackUrlsSet } from './master-worker-interface/client';
+
+import MODE from './mode';
 import * as config from './config';
 
 const TEST_MESSAGE = 'test';
@@ -282,7 +285,7 @@ export async function isCallbackUrlsSet() {
   );
 }
 
-async function checkAndEmitAllCallbacksSet() {
+export async function checkAndEmitAllCallbacksSet() {
   if (await isCallbackUrlsSet()) {
     eventEmitter.emit('allCallbacksSet');
   }
@@ -330,6 +333,9 @@ export async function setCallbackUrls({
     }
     await testDecryptCallback(decryptCallbackUrl, public_key);
     await setDecryptCallbackUrl(decryptCallbackUrl);
+  }
+  if (config.mode === MODE.WORKER) {
+    await externalCryptoServiceCallbackUrlsSet();
   }
   await checkAndEmitAllCallbacksSet();
 }

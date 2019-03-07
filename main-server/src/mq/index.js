@@ -126,6 +126,11 @@ export async function initializeInbound() {
 
   mqService.subscribeToRecvMessages();
 
+  tendermint.eventEmitter.on('ready', retryProcessMessages);
+
+  cacheDb.getRedisInstance().on('reconnect', retryProcessMessages);
+  longTermDb.getRedisInstance().on('reconnect', retryProcessMessages);
+
   logger.info({
     message: 'Message queue (inbound) initialized',
   });
@@ -239,14 +244,12 @@ async function onMessage({ message, msgId, senderId }) {
       message: 'Sending ACK for received MQ message',
       msgId: id,
     });
-    mqService
-      .sendAckForRecvMessage(msgId)
-      .catch((error) =>
-        logger.error({
-          message: 'Send ACK for received message failed',
-          err: error,
-        })
-      );
+    mqService.sendAckForRecvMessage(msgId).catch((error) =>
+      logger.error({
+        message: 'Send ACK for received message failed',
+        err: error,
+      })
+    );
 
     if (
       !tendermint.connected ||
@@ -794,8 +797,3 @@ export function getPendingOutboundMessagesCount() {
 export function getPendingOutboundMessageMsgIds() {
   return Object.keys(pendingOutboundMessages);
 }
-
-tendermint.eventEmitter.on('ready', retryProcessMessages);
-
-cacheDb.getRedisInstance().on('reconnect', retryProcessMessages);
-longTermDb.getRedisInstance().on('reconnect', retryProcessMessages);

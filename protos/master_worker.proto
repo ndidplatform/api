@@ -8,6 +8,7 @@ service MasterWorker {
   rpc cancelTimerJobCall(InboundMessageForCancelTimerJob) returns(Empty){}*/
   rpc timerJobsCall(InboundMessageForTimerJob) returns(Empty){}
   rpc returnResultCall(Result) returns(Empty){}
+  rpc externalCryptoServiceCallbackUrlsSet(ExternalCryptoServiceCallbackUrlsSetArgs) returns(Empty){}
   rpc removeRequestTimeoutScheduler(RequestTimeoutSchedulerMetadata) returns(Empty){}
   rpc workerStoppingCall(WorkerId) returns(Empty){}
 }
@@ -25,6 +26,10 @@ message OutboundMessage {
 message InboundMessageForTimerJob {
   string jobsDetail = 1;
   string workerId = 2;
+}
+
+message ExternalCryptoServiceCallbackUrlsSetArgs {
+  string workerId = 1;
 }
 
 message RequestTimeoutSchedulerMetadata {

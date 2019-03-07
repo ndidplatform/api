@@ -29,6 +29,7 @@ import * as identity from './core/identity';
 import * as dpki from './core/dpki';
 import * as mq from './mq';
 import * as callback from './callback';
+import * as externalCryptoService from './external_crypto_service';
 
 import CustomError from 'ndid-error/custom_error';
 
@@ -135,6 +136,8 @@ export function getFunction(fnName) {
     // callback
     case 'callback.handleCallbackWorkerLost':
       return callback.handleCallbackWorkerLost;
+    case 'externalCryptoService.checkAndEmitAllCallbacksSet':
+      return externalCryptoService.checkAndEmitAllCallbacksSet;
     default:
       throw new CustomError({
         message: 'Unknown function name',
