@@ -346,7 +346,3 @@ export async function shutdown() {
     workerId,
   });
 }
-
-export default function() {
-  return client;
-}
