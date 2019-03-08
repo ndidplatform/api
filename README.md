@@ -61,7 +61,7 @@
 - `PROMETHEUS_HTTPS_KEY_PATH`
 - `PROMETHEUS_HTTPS_CERT_PATH`
 
-5.  Run a server
+5.  Run a main server
 
     ```sh
     # from repository root directory
@@ -196,6 +196,10 @@ docker-compose -f docker/docker-compose.yml up
 
 - To run docker container without building image, run command show in **Run** section (no building required). It will run docker container with image from Dockerhub (https://hub.docker.com/r/ndidplatform/api/).
 - To pull latest image from Dockerhub, run `docker pull ndidplatform/api` and `docker pull ndidplatform/mq`
+
+## Logging
+
+Both main server and MQ service server only log to stdout. For log rotation, see http://getpino.io/#/docs/help?id=log-rotation.
 
 ## Note
 
