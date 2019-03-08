@@ -55,6 +55,11 @@
 - `LOG_LEVEL`: *Description below*
 - `LOG_PRETTY_PRINT`: *Description below*
 - `LOG_COLOR`: *Description below*
+- `PROMETHEUS`
+- `PROMETHEUS_SERVER_PORT`
+- `PROMETHEUS_HTTPS`
+- `PROMETHEUS_HTTPS_KEY_PATH`
+- `PROMETHEUS_HTTPS_CERT_PATH`
 
 5.  Run a server
 

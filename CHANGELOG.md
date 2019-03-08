@@ -20,17 +20,18 @@ IMPROVEMENTS:
 - (Experimental) Load balancing support by setting `MODE` to `master` on one process and `worker` on other processes with the same Node ID.
 - Refactor request process flow.
 - Add Prometheus support.
+- Add new environment variable options
+  - `PROMETHEUS`: Enable prometheus metrics and HTTP server for querying metrics
+  - `PROMETHEUS_SERVER_PORT`: HTTP server port for querying Prometheus metrics
+  - `PROMETHEUS_HTTPS`: Use HTTPS server for Prometheus metrics HTTP server
+  - `PROMETHEUS_HTTPS_KEY_PATH`: HTTPS private key file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true
+  - `PROMETHEUS_HTTPS_CERT_PATH`: HTTPS certificate file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true
 - [Main] Add new environment variable options
   - `MODE`: Allowed values are `standalone`, `master`, and `worker`. There can be only one `master` process per Node ID
   - `MASTER_SERVER_IP`: Master process gRPC server IP address. Required when MODE=master
   - `MASTER_SERVER_PORT`: Master process gRPC server port. Required when MODE=master and MODE=worker
   - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Used by `master` mode process. Must be less than `GRPC_PING_INTERVAL_MS` config on worker processes.
   - `CALL_TO_MASTER_RETRY_TIMEOUT_MS`: gRPC call from worker process to master process retry timeout in milliseconds
-  - `PROMETHEUS`: Enable prometheus metrics and HTTP server for querying metrics
-  - `PROMETHEUS_SERVER_PORT`: HTTP server port for querying Prometheus metrics
-  - `PROMETHEUS_HTTPS`: Use HTTPS server for Prometheus metrics HTTP server
-  - `PROMETHEUS_HTTPS_KEY_PATH`: HTTPS private key file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true
-  - `PROMETHEUS_HTTPS_CERT_PATH`: HTTPS certificate file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true
 - Use `scan` stream instead of `keys` for redis operations.
 - Use `unlink` (if available - redis 4 or later) instead of `del` for redis delete by key operations.
 - Add error callback when error occurs at MQ.
