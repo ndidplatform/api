@@ -20,6 +20,8 @@
  *
  */
 
+import path from 'path';
+
 export const env = process.env.NODE_ENV || 'development';
 
 const defaultMqBindingPort = 5555;
@@ -67,3 +69,20 @@ export const maxConcurrentMessagesPerMqSocket =
   process.env.MAX_CONCURRENT_MESSAGES_PER_MQ_SOCKET || 16;
 
 export const maxMqSockets = process.env.MAX_MQ_SOCKETS || 10000;
+
+export const prometheusEnabled = process.env.PROMETHEUS === 'true';
+
+export const prometheusServerPort = process.env.PROMETHEUS_SERVER_PORT
+  ? parseInt(process.env.PROMETHEUS_SERVER_PORT)
+  : 8888;
+
+export const prometheusHttps = process.env.PROMETHEUS_HTTPS === 'true';
+
+export const prometheusHttpsKeyPath =
+  process.env.PROMETHEUS_HTTPS_KEY_PATH != null
+    ? process.env.PROMETHEUS_HTTPS_KEY_PATH
+    : path.join(__dirname, '..', 'dev_https_key', 'key.pem');
+export const prometheusHttpsCertPath =
+  process.env.PROMETHEUS_HTTPS_CERT_PATH != null
+    ? process.env.PROMETHEUS_HTTPS_CERT_PATH
+    : path.join(__dirname, '..', 'dev_https_key', 'cert.pem');

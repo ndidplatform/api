@@ -25,6 +25,7 @@ import 'source-map-support/register';
 import 'dotenv/config';
 
 import path from 'path';
+import EventEmitter from 'events';
 
 import grpc from 'grpc';
 import * as protoLoader from '@grpc/proto-loader';
@@ -33,6 +34,8 @@ import MQSend from './mq_module/mq_send_controller';
 import MQRecv from './mq_module/mq_recv_controller';
 
 import errorType from 'ndid-error/type';
+
+import * as prometheus from './prometheus';
 
 import logger from './logger';
 
@@ -75,12 +78,15 @@ const SERVER_ADDRESS = `0.0.0.0:${config.serverPort}`;
 let recvSubscriberConnections = [];
 let sendCalls = {};
 
+export const metricsEventEmitter = new EventEmitter();
+
 // Recv
 function subscribeToRecvMessages(call) {
   logger.debug({
     message: 'subscribeToRecvMessages',
   });
   recvSubscriberConnections.push(call);
+  metricsEventEmitter.emit('incoming_message_subscribe');
 
   call.on('cancelled', () => {
     logger.debug({
@@ -90,6 +96,7 @@ function subscribeToRecvMessages(call) {
       recvSubscriberConnections.indexOf(call),
       1
     );
+    metricsEventEmitter.emit('incoming_message_unsubscribe');
   });
 }
 
@@ -117,6 +124,8 @@ function sendAckForRecvMessage(call, callback) {
       message: errorType.MQ_SEND_ACK_UNKNOWN_MESSAGE_ID.message,
     });
   }
+
+  metricsEventEmitter.emit('incoming_message_ack_sent');
 }
 
 function onRecvMessage({ message, msgId, senderId }) {
@@ -126,16 +135,19 @@ function onRecvMessage({ message, msgId, senderId }) {
       msgId,
       senderId,
     });
+    metricsEventEmitter.emit('incoming_message_without_subscriber');
   }
   recvSubscriberConnections.forEach((connection) => {
     connection.write({ message, message_id: msgId, sender_id: senderId });
   });
+  metricsEventEmitter.emit('incoming_message');
 }
 
 function onRecvError({ error }) {
   recvSubscriberConnections.forEach((connection) => {
     connection.write({ error });
   });
+  metricsEventEmitter.emit('incoming_message_error');
 }
 
 // Send
@@ -168,6 +180,7 @@ function sendMessage(call, callback) {
     message: 'send',
     msgId,
   });
+  metricsEventEmitter.emit('outgoing_message');
 }
 
 function getInfo(call, callback) {
@@ -178,6 +191,10 @@ function getInfo(call, callback) {
 }
 
 function initialize() {
+  if (config.prometheusEnabled) {
+    prometheus.initialize();
+  }
+
   mqSend = new MQSend({
     senderId: config.nodeId,
     timeout: MQ_SEND_TIMEOUT,
@@ -209,6 +226,11 @@ function initialize() {
       });
       delete sendCalls[msgId];
     }
+    if (error.code === errorType.MQ_SEND_TIMEOUT.code) {
+      metricsEventEmitter.emit('outgoing_message_send_timeout');
+    } else {
+      metricsEventEmitter.emit('outgoing_message_error');
+    }
   });
   mqSend.on('ack_received', (msgId) => {
     logger.debug({
@@ -220,6 +242,7 @@ function initialize() {
       callback(null);
       delete sendCalls[msgId];
     }
+    metricsEventEmitter.emit('outgoing_message_ack_received');
   });
   mqSend.on('retry_send', (msgId, retryCount) => {
     logger.info({
@@ -227,12 +250,20 @@ function initialize() {
       msgId,
       retryCount,
     });
+    metricsEventEmitter.emit('outgoing_message_retry');
   });
 
   mqRecv.on('error', (error) => {
     logger.error({ err: error });
     onRecvError({ error: { code: error.code, message: error.message } });
   });
+
+  mqSend.on('new_socket_connection', (count) =>
+    metricsEventEmitter.emit('sending_socket_connection_count', count)
+  );
+  mqSend.on('socket_connection_closed', (count) =>
+    metricsEventEmitter.emit('sending_socket_connection_count', count)
+  );
 
   logger.info({
     message: 'Message queue initialized',
@@ -262,7 +293,7 @@ logger.info({
 });
 
 let shutDownCalledOnce = false;
-function shutDown() {
+async function shutDown() {
   if (shutDownCalledOnce) {
     logger.error({
       message: 'Forcefully shutting down',
@@ -274,6 +305,9 @@ function shutDown() {
   logger.info({
     message: 'Received kill signal, shutting down gracefully',
   });
+
+  await prometheus.stop();
+
   server.tryShutdown(() => {
     if (mqRecv) {
       mqRecv.close();

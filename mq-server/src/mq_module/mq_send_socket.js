@@ -66,6 +66,7 @@ export default class MQSendSocket extends EventEmitter {
       const newSocket = this._init(dest, msgId);
       this.socketDestMap[newSocket.id] = destKey;
       count++;
+      this.emit('new_socket_connection', count);
       if (count > maxConn) {
         console.log(count);
         maxConn = count;
@@ -98,6 +99,7 @@ export default class MQSendSocket extends EventEmitter {
       if (this.socketUsedBy[socketId].length === 0) {
         this.socketMap.get(seqId).close();
         count--;
+        this.emit('socket_connection_closed', count);
         delete this.socketUsedBy[socketId];
         let destKey = this.socketDestMap[socketId];
         let index = this.socketListByDest[destKey].findIndex((socket) => {

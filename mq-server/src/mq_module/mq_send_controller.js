@@ -117,6 +117,13 @@ export default class MQSend extends EventEmitter {
         this.emit('ack_received', msg.retryspec.msgId);
       }.bind(this)
     );
+
+    this.socket.on('new_socket_connection', (count) =>
+      this.emit('new_socket_connection', count)
+    );
+    this.socket.on('socket_connection_closed', (count) =>
+      this.emit('socket_connection_closed', count)
+    );
   }
 
   _cleanUp(msgId, seqId) {
