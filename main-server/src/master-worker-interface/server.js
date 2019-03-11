@@ -365,7 +365,7 @@ export function remoteFnCallToWorkers({
 
     grpcCall[grpcRefId] = { fnName, callback, additionalCallbackArgs, worker };
 
-    // worker.jobCount++;
+    worker.jobCount++;
 
     logger.debug({
       message: 'Remote calling function on worker',
