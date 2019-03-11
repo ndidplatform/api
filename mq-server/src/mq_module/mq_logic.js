@@ -47,6 +47,7 @@ export default class MQLogic extends EventEmitter {
     for (let i = 0; i < itemToDelete.length; i++) {
       this.seqMap.delete(itemToDelete[i]);
     }
+    delete this.callbacksAfterAck[msgId];
   }
 
   _performSend(dest, payload, msgId, retryCount = 0) {
@@ -94,12 +95,15 @@ export default class MQLogic extends EventEmitter {
     }
   }
 
+  /**
+   * Should be called when ACK is received
+   * @param {number} msgId 
+   */
   cleanUp(msgId) {
-    this._cleanUp(msgId);
     if (this.callbacksAfterAck[msgId]) {
       this.callbacksAfterAck[msgId]();
-      delete this.callbacksAfterAck[msgId];
     }
+    this._cleanUp(msgId);
   }
 
   send(dest, payload, callbackAfterAck, msgId) {

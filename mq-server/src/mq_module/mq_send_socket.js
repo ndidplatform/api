@@ -112,6 +112,7 @@ export default class MQSendSocket extends EventEmitter {
         if (this.socketListByDest[destKey].length === 0) {
           delete this.socketListByDest[destKey];
         }
+        delete this.socketDestMap[socketId];
       }
     } else {
       throw 'Something is wrong';
