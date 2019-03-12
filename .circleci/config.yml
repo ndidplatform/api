@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:10
       - image: ndidplatform/tendermint:latest
         environment:
           TM_RPC_PORT: 45000
@@ -70,7 +70,7 @@ jobs:
             curl -v http://localhost:8080/utility/services
   push_to_docker_hub:
     docker:
-      - image: circleci/node:carbon
+      - image: circleci/node:10
     steps:
       - checkout
       - setup_remote_docker
@@ -98,7 +98,7 @@ jobs:
             docker push $REPO_NAME/mq:$DOCKER_TAG
   push_dev_to_docker_hub:
     docker:
-      - image: circleci/node:carbon
+      - image: circleci/node:10
     steps:
       - checkout
       - setup_remote_docker
