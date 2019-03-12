@@ -9,19 +9,19 @@ service MessageQueue {
  
 message InboundMessage {
   bytes message = 1;
-  int64 message_id = 2;
+  string message_id = 2;
   string sender_id = 3;
   Error error = 4;
 }
 
 message InboundMessageAck {
-  int64 message_id = 1;
+  string message_id = 1;
 }
 
 message OutboundMessage {
   MqAddress mq_address = 1;
   bytes payload = 2;
-  int64 message_id = 3;
+  string message_id = 3;
 }
 
 message MqAddress {

@@ -141,6 +141,9 @@ export default class MQSend extends EventEmitter {
   }
 
   send(dest, payload, callbackAfterAck, msgId) {
+    if (msgId && typeof msgId !== 'string') {
+      throw new Error('"msgId" must be a string');
+    }
     // let the logic to dictate when\where it should send
     return this.logic.send(dest, payload, callbackAfterAck, msgId);
   }

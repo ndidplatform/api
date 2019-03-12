@@ -66,8 +66,7 @@ const EncryptedMqMessage = encryptedMqMessageProtobufRoot.lookupType(
   'EncryptedMqMessage'
 );
 
-//FIXME
-let prefixMsgId = parseInt(Math.random() * 65535);
+const prefixMsgId = utils.randomBase64Bytes(8);
 let outboundMessageIdCounter = 1;
 const pendingOutboundMessages = {};
 let pendingOutboundMessagesCount = 0;
@@ -674,7 +673,7 @@ export async function send(receivers, message, senderNodeId) {
         };
       }
 
-      const msgId = parseInt(`${prefixMsgId}${outboundMessageIdCounter++}`);
+      const msgId = `${prefixMsgId}_${outboundMessageIdCounter++}`;
       pendingOutboundMessages[msgId] = {
         mqDestAddress,
         payloadBuffer,

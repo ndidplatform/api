@@ -51,7 +51,7 @@ function extractRetrySpec(message) {
   const decodedMessage = MqProtocolMessage.decode(message);
   return {
     retryspec: {
-      msgId: decodedMessage.msg_id.toNumber(),
+      msgId: decodedMessage.msg_id,
       seqId: decodedMessage.seq_id,
     },
     message: decodedMessage.message,
