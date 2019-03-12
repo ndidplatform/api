@@ -113,7 +113,9 @@ export default class MQLogic extends EventEmitter {
     if (!msgId) {
       msgId = this.maxMsgId++;
     }
-    this.callbacksAfterAck[msgId] = callbackAfterAck;
+    if (callbackAfterAck) {
+      this.callbacksAfterAck[msgId] = callbackAfterAck;
+    }
     this._performSend(dest, payload, msgId);
     return msgId;
   }
