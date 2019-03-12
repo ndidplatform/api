@@ -37,6 +37,7 @@ import { getErrorObjectForClient } from '../../utils/error';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../../mq/message/type';
 
+import { delegateToWorker } from '../../master-worker-interface/server';
 import { broadcastRemoveRequestTimeoutScheduler } from '../../master-worker-interface/client';
 
 import MODE from '../../mode';
@@ -102,7 +103,18 @@ export async function resumeTimeoutScheduler(nodeIds) {
         requestId,
         timoutInSeconds: (unixTimeout - Date.now()) / 1000,
       });
-      runTimeoutScheduler(nodeId, requestId, (unixTimeout - Date.now()) / 1000);
+      if (config.mode === MODE.STANDALONE) {
+        runTimeoutScheduler(
+          nodeId,
+          requestId,
+          (unixTimeout - Date.now()) / 1000
+        );
+      } else if (config.mode === MODE.MASTER) {
+        delegateToWorker({
+          fnName: 'common.runTimeoutScheduler',
+          args: [nodeId, requestId, (unixTimeout - Date.now()) / 1000],
+        });
+      }
     });
   });
 }

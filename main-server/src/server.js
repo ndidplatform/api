@@ -208,7 +208,9 @@ async function initialize() {
         const nodesBehindProxy = await node.getNodesBehindProxyWithKeyOnProxy();
         nodeIds = nodesBehindProxy.map((node) => node.node_id);
       }
-      await coreCommon.resumeTimeoutScheduler(nodeIds);
+      if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+        await coreCommon.resumeTimeoutScheduler(nodeIds);
+      }
     }
 
     if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
