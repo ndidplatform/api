@@ -22,7 +22,6 @@
 
 import fs from 'fs';
 import crypto from 'crypto';
-import constants from 'constants';
 
 import bignum from 'bignum';
 
@@ -138,7 +137,7 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
     rawMessageBuffer = cryptoUtils.publicDecrypt(
       {
         key: publicKey,
-        padding: constants.RSA_NO_PADDING,
+        padding: crypto.constants.RSA_NO_PADDING,
       },
       Buffer.from(cipher, 'base64')
     );
@@ -445,7 +444,12 @@ export function verifySignature(signature, publicKey, plainText) {
   return cryptoUtils.verifySignature(signature, publicKey, plainText);
 }
 
-function generateCustomPadding(initialSalt, blockLength = 2048) {
+function getDataHashWithCustomPadding(
+  initialSalt,
+  keyModulus,
+  dataHash,
+  blockLength = 2048
+) {
   const hashLength = 256;
   const padLengthInbyte = parseInt(Math.floor((blockLength - hashLength) / 8));
   let paddingBuffer = Buffer.alloc(0);
@@ -462,17 +466,28 @@ function generateCustomPadding(initialSalt, blockLength = 2048) {
         .slice(0, config.saltLength),
     ]);
   }
-  //set most significant bit to 0
-  paddingBuffer[0] = paddingBuffer[0] & 0x7f;
-  return paddingBuffer;
+
+  const hashWithPadding = Buffer.concat([paddingBuffer, dataHash]);
+
+  // set most significant bit to 0 if padding is greater than modulus
+  const replacePaddingFirstBitWithZero =
+    Buffer.compare(hashWithPadding, keyModulus) === 1;
+  if (replacePaddingFirstBitWithZero) {
+    hashWithPadding[0] = hashWithPadding[0] & 0x7f;
+  }
+
+  return hashWithPadding;
 }
 
 export function hashRequestMessageForConsent(
   request_message,
   initial_salt,
-  request_id
+  request_id,
+  accessorPublicKey
 ) {
-  const paddingBuffer = generateCustomPadding(initial_salt);
+  const parsedKey = parseKey(accessorPublicKey);
+  const keyModulus = parsedKey.data.modulus.toBuffer();
+
   const derivedSalt = cryptoUtils
     .sha256(request_id + initial_salt)
     .slice(0, config.saltLength)
@@ -480,7 +495,14 @@ export function hashRequestMessageForConsent(
 
   const normalHashBuffer = cryptoUtils.sha256(request_message + derivedSalt);
 
-  return Buffer.concat([paddingBuffer, normalHashBuffer]).toString('base64');
+  //should find block length if use another sign method
+  const hashWithPadding = getDataHashWithCustomPadding(
+    initial_salt,
+    keyModulus,
+    normalHashBuffer
+  );
+
+  return hashWithPadding.toString('base64');
 }
 
 export function verifyResponseSignature(
@@ -490,29 +512,24 @@ export function verifyResponseSignature(
   initial_salt,
   request_id
 ) {
-  //should find block length if use another sign method
-  const paddingBuffer = generateCustomPadding(initial_salt);
-  const derivedSalt = cryptoUtils
-    .sha256(request_id + initial_salt)
-    .slice(0, config.saltLength)
-    .toString('base64');
-
-  const decryptedSignature = cryptoUtils
+  const decryptedSignatureBase64 = cryptoUtils
     .publicDecrypt(
       {
         key: publicKey,
-        padding: constants.RSA_NO_PADDING,
+        padding: crypto.constants.RSA_NO_PADDING,
       },
       Buffer.from(signature, 'base64')
     )
     .toString('base64');
 
-  const paddedBase64 = Buffer.concat([
-    paddingBuffer,
-    cryptoUtils.sha256(request_message + derivedSalt),
-  ]).toString('base64');
+  const hashWithPaddingBase64 = hashRequestMessageForConsent(
+    request_message,
+    initial_salt,
+    request_id,
+    publicKey
+  );
 
-  return paddedBase64 === decryptedSignature;
+  return hashWithPaddingBase64 === decryptedSignatureBase64;
 }
 
 export function createRequestId() {
