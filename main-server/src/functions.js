@@ -132,8 +132,8 @@ export function getFunction(fnName) {
     // MQ
     case 'mq.processRawMessage':
       return mq.processRawMessage;
-    case 'mq.handleMqWorkerLost':
-      return mq.handleMqWorkerLost;
+    case 'mq.resumePendingOutboundMessageSendOnWorker':
+      return mq.resumePendingOutboundMessageSendOnWorker;
     // callback
     case 'callback.resumeCallbackToClientOnWorker':
       return callback.resumeCallbackToClientOnWorker;

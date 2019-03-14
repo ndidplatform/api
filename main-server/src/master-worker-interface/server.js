@@ -165,7 +165,7 @@ function handleMqRetryWorkerLost(workerId) {
   const mq = workerLostHandling[workerId].find(({ type }) => type === 'mq');
   mq.tasks.forEach((msgId) =>
     delegateToWorker({
-      fnName: 'mq.handleMqWorkerLost',
+      fnName: 'mq.resumePendingOutboundMessageSendOnWorker',
       args: [msgId],
     })
   );

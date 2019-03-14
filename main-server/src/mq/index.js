@@ -159,12 +159,9 @@ async function initDuplicateInboundMessageTimeout() {
   await Promise.all(promiseArray);
 }
 
-export async function handleMqWorkerLost(msgId) {
+export async function resumePendingOutboundMessageSendOnWorker(msgId) {
   const data = await cacheDb.getPendingOutboundMessage(config.nodeId, msgId);
-  await sendPendingOutboundMessage({
-    msgId,
-    data,
-  });
+  await sendPendingOutboundMessage({ msgId, data });
 }
 
 async function sendPendingOutboundMessage({ msgId: msgIdStr, data }) {
