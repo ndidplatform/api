@@ -44,8 +44,6 @@ export function getFunction(fnName) {
       return common.isRequestClosedOrTimedOut;
     case 'common.timeoutRequestAfterBlockchain':
       return common.timeoutRequestAfterBlockchain;
-    case 'common.setTimeoutScheduler':
-      return common.setTimeoutScheduler;
     case 'common.runTimeoutScheduler':
       return common.runTimeoutScheduler;
     case 'common.removeTimeoutSchedulerInternal':

@@ -34,6 +34,7 @@ import * as rp from './core/rp';
 import * as idp from './core/idp';
 import * as as from './core/as';
 import * as proxy from './core/proxy';
+import * as requestProcessManager from './core/request_process_manager';
 import * as nodeKey from './utils/node_key';
 import { getFunction } from './functions';
 
@@ -74,16 +75,6 @@ process.on('unhandledRejection', function(reason, p) {
 async function initialize() {
   logger.info({ message: 'Initializing server' });
   try {
-    if (config.mode === MODE.MASTER) {
-      await jobMaster.initialize();
-      logger.info({ message: 'Waiting for available worker' });
-      await new Promise((resolve) =>
-        jobMaster.eventEmitter.once('worker_connected', () => resolve())
-      );
-    } else if (config.mode === MODE.WORKER) {
-      await jobWorker.initialize();
-    }
-
     tendermint.loadSavedData();
 
     await Promise.all([
@@ -164,6 +155,16 @@ async function initialize() {
       await nodeKey.initialize();
     }
 
+    if (config.mode === MODE.MASTER) {
+      await jobMaster.initialize();
+      logger.info({ message: 'Waiting for available worker' });
+      await new Promise((resolve) =>
+        jobMaster.eventEmitter.once('worker_connected', () => resolve())
+      );
+    } else if (config.mode === MODE.WORKER) {
+      await jobWorker.initialize();
+    }
+
     if (config.mode === MODE.STANDALONE || config.mode === MODE.WORKER) {
       httpServer.initialize();
     }
@@ -227,7 +228,7 @@ async function initialize() {
       await tendermint.loadExpectedTxFromDB();
       tendermint.loadAndRetryBacklogTransactRequests();
 
-      callbackUtil.resumeCallbackToClient();
+      callbackUtil.resumeCallbackToClient(); // TODO: delegate to worker if mode = master
     }
 
     logger.info({ message: 'Server initialized' });
@@ -277,9 +278,6 @@ async function shutDown() {
   await httpServer.close();
   callbackUtil.stopAllCallbackRetries();
   externalCryptoService.stopAllCallbackRetries();
-  await mq.close();
-  tendermint.tendermintWsClient.close();
-  tendermintWsPool.closeAllConnections();
   coreCommon.stopAllTimeoutScheduler();
 
   if (config.mode === MODE.MASTER) {
@@ -287,11 +285,15 @@ async function shutDown() {
   } else if (config.mode === MODE.WORKER) {
     await jobWorker.shutdown();
   }
-  // TODO: wait for async operations which going to use DB to finish before closing
-  // a connection to DB
-  // Possible solution: Have those async operations append a queue to use DB and
-  // remove after finish using DB
-  // => Wait here until a queue to use DB is empty
+
+  // Wait for async operations which going to use TM/MQ/DB to finish before
+  // closing connections
+  await requestProcessManager.stop();
+
+  await mq.close();
+  tendermint.tendermintWsClient.close();
+  tendermintWsPool.closeAllConnections();
+
   await Promise.all([cacheDb.close(), longTermDb.close(), dataDb.close()]);
 }
 

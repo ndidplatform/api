@@ -97,22 +97,20 @@ export async function resumeTimeoutScheduler(nodeIds) {
   nodeIds.forEach(async (nodeId) => {
     const schedulers = await cacheDb.getAllTimeoutScheduler(nodeId);
     schedulers.forEach(({ requestId, unixTimeout }) => {
+      const timeoutInSeconds = (unixTimeout - Date.now()) / 1000;
       logger.info({
         message: 'Resuming timeout schedulers',
         nodeId,
         requestId,
-        timoutInSeconds: (unixTimeout - Date.now()) / 1000,
+        unixTimeout,
+        timeoutInSeconds,
       });
       if (config.mode === MODE.STANDALONE) {
-        runTimeoutScheduler(
-          nodeId,
-          requestId,
-          (unixTimeout - Date.now()) / 1000
-        );
+        runTimeoutScheduler(nodeId, requestId, unixTimeout);
       } else if (config.mode === MODE.MASTER) {
         delegateToWorker({
           fnName: 'common.runTimeoutScheduler',
-          args: [nodeId, requestId, (unixTimeout - Date.now()) / 1000],
+          args: [nodeId, requestId, unixTimeout],
         });
       }
     });
@@ -291,23 +289,25 @@ export function timeoutRequestAfterBlockchain(
   }
 }
 
-export function runTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
-  if (secondsToTimeout < 0) {
+export function runTimeoutScheduler(nodeId, requestId, unixTimeout) {
+  const now = Date.now();
+  if (now >= unixTimeout) {
     timeoutRequest(nodeId, requestId);
   } else {
+    if (config.mode === MODE.WORKER) {
+      pendingRequestTimeout[requestId] = { deadline: unixTimeout };
+    }
+    const timeout = unixTimeout - now;
     timeoutScheduler[`${nodeId}:${requestId}`] = lt.setTimeout(() => {
       timeoutRequest(nodeId, requestId);
-    }, secondsToTimeout * 1000);
+    }, timeout);
   }
 }
 
 export async function setTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
   const unixTimeout = Date.now() + secondsToTimeout * 1000;
   await cacheDb.setTimeoutScheduler(nodeId, requestId, unixTimeout);
-  if (config.mode === MODE.WORKER) {
-    pendingRequestTimeout[requestId] = { deadline: unixTimeout };
-  }
-  runTimeoutScheduler(nodeId, requestId, secondsToTimeout);
+  runTimeoutScheduler(nodeId, requestId, unixTimeout);
 }
 
 export function removeTimeoutScheduler(nodeId, requestId) {

@@ -277,6 +277,10 @@ async function onRecvData(data) {
 
 function waitForAllJobDone() {
   if (workingJobCount > 0) {
+    logger.info({
+      message: 'Waiting for jobs to finish',
+      workingJobCount,
+    });
     return new Promise((resolve) =>
       eventEmitter.once('all_jobs_cleared', () => resolve())
     );

@@ -41,6 +41,7 @@ let stoppingWorkerCount = 0;
 
 const workerList = [];
 const workerLostHandling = {};
+const lostWorkerIdsToHandle = [];
 
 export const eventEmitter = new EventEmitter();
 
@@ -98,17 +99,11 @@ function subscribe(call) {
   });
   const { workerId } = call.request;
 
-  if (workerLostHandling[workerId]) {
+  if (workerList.find((worker) => worker.workerId === workerId) != null) {
     //duplicate workerId
     call.end();
     return;
   }
-
-  workerLostHandling[workerId] = {
-    mq: {},
-    callback: {},
-    requestTimeout: {},
-  };
 
   workerList.push({
     connection: call,
@@ -129,6 +124,8 @@ function subscribe(call) {
     handleWorkerLost(workerId);
   });
 
+  lostWorkerIdsToHandle.forEach(handleLostWorkerRemainingTasks);
+
   eventEmitter.emit('worker_connected', workerId);
 }
 
@@ -141,8 +138,8 @@ function handleRequestTimeoutWorkerLost(workerId) {
     const { deadline } = requestTimeoutTask[requestId];
     if (Date.now() < deadline) {
       delegateToWorker({
-        fnName: 'common.setTimeoutScheduler',
-        args: [config.nodeId, requestId, (deadline - Date.now()) / 1000],
+        fnName: 'common.runTimeoutScheduler',
+        args: [config.nodeId, requestId, deadline],
       });
     }
   }
@@ -175,16 +172,38 @@ function handleMqRetryWorkerLost(workerId) {
 }
 
 function handleWorkerLost(workerId) {
+  const remainingTasksAvailable = workerLostHandling[workerId] != null;
   logger.info({
     message: 'Worker lost',
     workerId,
-    remainingTasksAvailable: workerLostHandling[workerId] != null,
+    remainingTasksAvailable,
   });
-  // FIXME: when there is no worker available
+  if (remainingTasksAvailable) {
+    // No worker available, hold off until available
+    if (workerList.length === 0 || workerList.length === stoppingWorkerCount) {
+      lostWorkerIdsToHandle.push(workerId);
+    } else {
+      handleLostWorkerRemainingTasks(workerId);
+    }
+  } else {
+    logger.warn({
+      message: 'Worker lost without signaling first',
+      workerId,
+    });
+  }
+}
+
+function handleLostWorkerRemainingTasks(workerId) {
+  logger.debug({
+    message: 'Handle lost worker remaining tasks',
+    workerId,
+    tasks: workerLostHandling[workerId],
+  });
   handleRequestTimeoutWorkerLost(workerId);
   handleCallbackRetryWorkerLost(workerId);
   handleMqRetryWorkerLost(workerId);
   delete workerLostHandling[workerId];
+  lostWorkerIdsToHandle.splice(lostWorkerIdsToHandle.indexOf(workerId), 1);
 }
 
 function workerStoppingCall(call, done) {
@@ -202,6 +221,11 @@ function workerStoppingCall(call, done) {
 function timerJobsCall(call, done) {
   let { jobsDetail, workerId } = call.request;
   jobsDetail = JSON.parse(jobsDetail);
+  logger.debug({
+    message: 'Received worker remaining tasks before worker shutdown',
+    workerId,
+    tasks: jobsDetail,
+  });
   workerLostHandling[workerId] = jobsDetail;
   done();
 }

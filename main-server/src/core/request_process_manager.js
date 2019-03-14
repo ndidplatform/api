@@ -41,6 +41,10 @@ const messageProcessLock = {};
 const requestQueue = {};
 const requestQueueRunning = {};
 
+let stopping = false;
+
+const eventEmitter = new EventEmitter();
+
 let pendingTasksInQueueCount = 0;
 let processingTasksCount = 0;
 let requestsInQueueCount = 0;
@@ -196,6 +200,8 @@ export async function addTaskToQueue({
     taskData
   );
 
+  if (stopping) return;
+
   if (requestQueue[requestId] == null) {
     requestQueue[requestId] = [];
     incrementRequestsInQueueCount();
@@ -342,6 +348,23 @@ function cleanUpQueue(requestId) {
   decrementRequestsInQueueCount();
 }
 
+function waitForAllRequestProcessToFinish() {
+  if (requestsInQueueCount > 0) {
+    logger.info({
+      message: 'Waiting for request processes to finish',
+      requestsInQueueCount,
+    });
+    return new Promise((resolve) =>
+      eventEmitter.once('request_process_queue_empty', () => resolve())
+    );
+  }
+}
+
+export async function stop() {
+  stopping = true;
+  await waitForAllRequestProcessToFinish();
+}
+
 function incrementPendingTasksInQueueCount() {
   pendingTasksInQueueCount++;
   metricsEventEmitter.emit(
@@ -396,4 +419,7 @@ function incrementRequestsInQueueCount() {
 function decrementRequestsInQueueCount() {
   requestsInQueueCount--;
   metricsEventEmitter.emit('requestsInQueueCount', requestsInQueueCount);
+  if (requestsInQueueCount === 0) {
+    eventEmitter.emit('request_process_queue_empty');
+  }
 }
