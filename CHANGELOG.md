@@ -14,6 +14,7 @@ BREAKING CHANGES:
 - Add logging environment variable option
   - `LOG_PRETTY_PRINT`: Default to `true` in development (`NODE_ENV` not set or set to `development`), `false` otherwise. If not set to `true`, log will be in JSON format.
 - Change allowed `LOG_LEVEL` option values to `fatal`, `error`, `warn`, `info`, `debug` and `trace`.
+- Change MQ message protocol format - change message ID type from int64 to string.
 
 IMPROVEMENTS:
 
