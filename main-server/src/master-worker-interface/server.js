@@ -78,7 +78,7 @@ export function initialize() {
 
   server.addService(proto.MasterWorker.service, {
     subscribe,
-    timerJobsCall,
+    tasksBeforeShutdown,
     returnResultCall,
     externalCryptoServiceCallbackUrlsSet,
     removeRequestTimeoutScheduler,
@@ -218,7 +218,7 @@ function workerStoppingCall(call, done) {
   done();
 }
 
-function timerJobsCall(call, done) {
+function tasksBeforeShutdown(call, done) {
   let { jobsDetail, workerId } = call.request;
   jobsDetail = JSON.parse(jobsDetail);
   logger.debug({

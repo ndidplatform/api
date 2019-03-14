@@ -295,7 +295,7 @@ function waitForAllJobDone() {
 function handleShutdownTimerJobs(jobsDetail) {
   return gRPCRetry(() => {
     return new Promise((resolve, reject) => {
-      client.timerJobsCall(
+      client.tasksBeforeShutdown(
         {
           jobsDetail: JSON.stringify(jobsDetail),
           workerId,

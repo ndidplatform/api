@@ -6,7 +6,7 @@ service MasterWorker {
   rpc callbackRetryCall(InboundMessageForTimerJob) returns(Empty){}
   rpc requestTimeoutCall(InboundMessageForTimerJob) returns(Empty){}
   rpc cancelTimerJobCall(InboundMessageForCancelTimerJob) returns(Empty){}*/
-  rpc timerJobsCall(InboundMessageForTimerJob) returns(Empty){}
+  rpc tasksBeforeShutdown(RemainingTasks) returns(Empty){}
   rpc returnResultCall(Result) returns(Empty){}
   rpc externalCryptoServiceCallbackUrlsSet(ExternalCryptoServiceCallbackUrlsSetArgs) returns(Empty){}
   rpc removeRequestTimeoutScheduler(RequestTimeoutSchedulerMetadata) returns(Empty){}
@@ -23,7 +23,7 @@ message OutboundMessage {
   string grpcRefId = 3;
 }
 
-message InboundMessageForTimerJob {
+message RemainingTasks {
   string jobsDetail = 1;
   string workerId = 2;
 }
