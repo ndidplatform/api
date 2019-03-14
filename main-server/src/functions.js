@@ -134,8 +134,10 @@ export function getFunction(fnName) {
     case 'mq.handleMqWorkerLost':
       return mq.handleMqWorkerLost;
     // callback
-    case 'callback.handleCallbackWorkerLost':
-      return callback.handleCallbackWorkerLost;
+    case 'callback.resumeCallbackToClientOnWorker':
+      return callback.resumeCallbackToClientOnWorker;
+    case 'callback.continueCallbackWithRetry':
+      return callback.continueCallbackWithRetry;
     case 'externalCryptoService.checkAndEmitAllCallbacksSet':
       return externalCryptoService.checkAndEmitAllCallbacksSet;
     default:

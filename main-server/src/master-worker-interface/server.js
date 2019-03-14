@@ -154,7 +154,7 @@ function handleCallbackRetryWorkerLost(workerId) {
     const { deadline } = callbackTask[cbId];
     if (Date.now() < deadline) {
       delegateToWorker({
-        fnName: 'callback.handleCallbackWorkerLost',
+        fnName: 'callback.continueCallbackWithRetry',
         args: [cbId, deadline],
       });
     }

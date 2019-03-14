@@ -61,7 +61,9 @@ function getArgsProtobufType(fnName) {
       protobufType = MqProcessRawMessageArgs;
       break;
     // callback
-    // case 'callback.handleCallbackWorkerLost':
+    // case 'callback.resumeCallbackToClientOnWorker':
+    //   break;
+    // case 'callback.continueCallbackWithRetry':
     //   break;
     default:
       protobufType = OthersArgs;

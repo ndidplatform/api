@@ -27,6 +27,8 @@ import { ExponentialBackoff } from 'simple-backoff';
 
 import { randomBase64Bytes } from './utils/crypto';
 
+import { delegateToWorker } from './master-worker-interface/server';
+
 import { wait } from './utils';
 import * as cacheDb from './db/cache';
 import logger from './logger';
@@ -100,7 +102,7 @@ async function httpPost(cbId, callbackUrl, body) {
   };
 }
 
-export async function handleCallbackWorkerLost(cbId, deadline) {
+export async function continueCallbackWithRetry(cbId, deadline) {
   const backupCallbackData = await cacheDb.getCallbackWithRetryData(
     config.nodeId,
     cbId
@@ -426,18 +428,44 @@ export async function resumeCallbackToClient() {
   const callbackDatum = await cacheDb.getAllCallbackWithRetryData(
     config.nodeId
   );
-  callbackDatum.forEach((callback) =>
-    callbackWithRetry(
-      callback.data.callbackUrl,
-      callback.data.getCallbackUrlFnName,
-      callback.data.getCallbackUrlFnArgs,
-      callback.data.body,
-      callback.cbId,
-      callback.data.shouldRetryFnName,
-      callback.data.shouldRetryArguments,
-      callback.data.responseCallbackFnName,
-      callback.data.dataForResponseCallback
-    )
+  callbackDatum.forEach((callback) => {
+    if (config.mode === MODE.STANDALONE) {
+      callbackWithRetry(
+        callback.data.callbackUrl,
+        callback.data.getCallbackUrlFnName,
+        callback.data.getCallbackUrlFnArgs,
+        callback.data.body,
+        callback.cbId,
+        callback.data.shouldRetryFnName,
+        callback.data.shouldRetryArguments,
+        callback.data.responseCallbackFnName,
+        callback.data.dataForResponseCallback
+      );
+    } else if (config.mode === MODE.MASTER) {
+      delegateToWorker({
+        fnName: 'callback.resumeCallbackToClientOnWorker',
+        args: [
+          {
+            cbId: callback.cbId,
+            ...callback.data,
+          },
+        ],
+      });
+    }
+  });
+}
+
+export function resumeCallbackToClientOnWorker(callbackData) {
+  callbackWithRetry(
+    callbackData.callbackUrl,
+    callbackData.getCallbackUrlFnName,
+    callbackData.getCallbackUrlFnArgs,
+    callbackData.body,
+    callbackData.cbId,
+    callbackData.shouldRetryFnName,
+    callbackData.shouldRetryArguments,
+    callbackData.responseCallbackFnName,
+    callbackData.dataForResponseCallback
   );
 }
 
