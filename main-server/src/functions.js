@@ -27,6 +27,7 @@ import * as as from './core/as';
 import * as proxy from './core/proxy';
 import * as identity from './core/identity';
 import * as dpki from './core/dpki';
+import * as tendermint from './tendermint';
 import * as mq from './mq';
 import * as callback from './callback';
 import * as externalCryptoService from './external_crypto_service';
@@ -140,6 +141,11 @@ export function getFunction(fnName) {
       return callback.continueCallbackWithRetry;
     case 'externalCryptoService.checkAndEmitAllCallbacksSet':
       return externalCryptoService.checkAndEmitAllCallbacksSet;
+    // tendermint
+    case 'tendermint.loadExpectedTxOnWorker':
+      return tendermint.loadExpectedTxOnWorker;
+    case 'tendermint.retryBacklogTransactRequest':
+      return tendermint.retryBacklogTransactRequest;
     default:
       throw new CustomError({
         message: 'Unknown function name',

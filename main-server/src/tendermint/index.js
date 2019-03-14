@@ -31,6 +31,8 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../logger';
 
+import { delegateToWorker } from '../master-worker-interface/server';
+
 // import * as tendermintHttpClient from './http_client';
 import TendermintWsClient from './ws_client';
 import * as tendermintWsPool from './ws_pool';
@@ -67,7 +69,7 @@ const expectedTxMetricsData = {};
 let expectedTxsCount = 0;
 let getTxResultCallbackFn;
 const txEventEmitter = new EventEmitter();
-export let expectedTxsLoaded = false;
+// export let expectedTxsLoaded = false;
 let reconnecting = false; // Use when reconnect WS
 let pollingStatus = false;
 
@@ -238,18 +240,33 @@ export async function loadExpectedTxFromDB() {
         message: 'No backlog expected Txs to process',
       });
     }
-    savedExpectedTxs.forEach(({ tx: txHash, metadata }) => {
-      expectedTx[txHash] = metadata;
-      incrementExpectedTxsCount();
-    });
-    expectedTxsLoaded = true;
-    // TODO: send to workers from master
-    processMissingExpectedTxs();
+    if (config.mode === MODE.STANDALONE) {
+      savedExpectedTxs.forEach(({ tx: txHash, metadata }) => {
+        expectedTx[txHash] = metadata;
+        incrementExpectedTxsCount();
+      });
+      // expectedTxsLoaded = true;
+      processMissingExpectedTxs();
+    } else if (config.mode === MODE.MASTER) {
+      delegateToWorker({
+        fnName: 'tendermint.loadExpectedTxOnWorker',
+        args: [savedExpectedTxs],
+      });
+    }
   } catch (error) {
     logger.error({
       message: 'Cannot load backlog expected Txs from cache DB',
     });
   }
+}
+
+export function loadExpectedTxOnWorker(savedExpectedTxs) {
+  savedExpectedTxs.forEach(({ tx: txHash, metadata }) => {
+    expectedTx[txHash] = metadata;
+    incrementExpectedTxsCount();
+  });
+  // expectedTxsLoaded = true;
+  processMissingExpectedTxs();
 }
 
 async function processMissingExpectedTxs() {
@@ -485,17 +502,27 @@ export async function loadAndRetryBacklogTransactRequests() {
       message: 'Backlog transact requests to retry',
       transactRequests,
     });
-    await Promise.all(
-      transactRequests.map(async ({ id, transactParams }) => {
-        await transact(transactParams);
-        await cacheDb.removeTransactRequestForRetry(config.nodeId, id);
-      })
-    );
+    if (config.mode === MODE.STANDALONE) {
+      await Promise.all(transactRequests.map(retryBacklogTransactRequest));
+    } else if (config.mode === MODE.MASTER) {
+      transactRequests.forEach((transactRequest) =>
+        delegateToWorker({
+          fnName: 'tendermint.retryBacklogTransactRequest',
+          args: [transactRequest],
+        })
+      );
+    }
   } else {
     logger.info({
       message: 'No backlog transact request to retry',
     });
   }
+}
+
+export async function retryBacklogTransactRequest(transactRequest) {
+  const { id, transactParams } = transactRequest;
+  await transact(transactParams);
+  await cacheDb.removeTransactRequestForRetry(config.nodeId, id);
 }
 
 function checkForSetLastBlock(parsedTransactionsInBlocks) {
