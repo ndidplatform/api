@@ -239,6 +239,7 @@ export async function loadExpectedTxFromDB() {
       logger.info({
         message: 'No backlog expected Txs to process',
       });
+      return;
     }
     if (config.mode === MODE.STANDALONE) {
       savedExpectedTxs.forEach(({ tx: txHash, metadata }) => {
