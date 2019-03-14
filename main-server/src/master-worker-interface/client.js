@@ -63,9 +63,11 @@ let connectivityState = null;
 let closing = false;
 let workerSubscribeChannel = null;
 
-let workingJobCounter = 0;
+let workingJobCount = 0;
 
-export const eventEmitter = new EventEmitter();
+const eventEmitter = new EventEmitter();
+
+export const metricsEventEmitter = new EventEmitter();
 
 function watchForNextConnectivityStateChange() {
   if (client == null) {
@@ -121,7 +123,7 @@ async function waitForReady(client) {
   });
 }
 
-function gRPCRetry(fn) {
+function gRPCRetry(fn, timeout = config.callToMasterRetryTimeout) {
   const backoff = new ExponentialBackoff({
     min: 2000,
     max: 10000,
@@ -130,7 +132,7 @@ function gRPCRetry(fn) {
   });
   const startTime = Date.now();
   const retry = async function() {
-    if (Date.now() - startTime < config.callToMasterRetryTimeout) {
+    if (Date.now() - startTime < timeout) {
       try {
         await fn(...arguments);
       } catch (error) {
@@ -257,9 +259,9 @@ async function onRecvData(data) {
     grpcRefId,
   });
 
+  incrementWorkingJobCount();
   try {
     const parsedArgs = getArgsFromProtobuf(fnName, args);
-    workingJobCounter++;
     let retVal;
     if (Array.isArray(parsedArgs)) {
       retVal = await getFunction(fnName)(...parsedArgs);
@@ -267,22 +269,18 @@ async function onRecvData(data) {
       retVal = await getFunction(fnName)(parsedArgs);
     }
     await gRPCRetry(returnResult)({ grpcRefId, retVal });
-    workingJobCounter--;
   } catch (error) {
     await gRPCRetry(returnResult)({ grpcRefId, error });
-    workingJobCounter--;
   }
+  decrementWorkingJobCount();
 }
 
 function waitForAllJobDone() {
-  return new Promise((resolve) => {
-    let intervalId = setInterval(() => {
-      if (workingJobCounter === 0) {
-        clearInterval(intervalId);
-        resolve();
-      }
-    }, 1000);
-  });
+  if (workingJobCount > 0) {
+    return new Promise((resolve) =>
+      eventEmitter.once('all_jobs_cleared', () => resolve())
+    );
+  }
 }
 
 /*  
@@ -308,14 +306,13 @@ function handleShutdownTimerJobs(jobsDetail) {
 }
 
 export async function shutdown() {
-  closing = true;
   logger.info({
     message: 'Shutting down worker',
     workerId,
   });
   if (client) {
-    // FIXME: if master process cannot be reached / not available
     await gRPCRetry(workerStopping)();
+    closing = true;
     await waitForAllJobDone();
     const pendingTasks = [
       {
@@ -345,4 +342,17 @@ export async function shutdown() {
     message: 'Worker shutdown successfully',
     workerId,
   });
+}
+
+function incrementWorkingJobCount() {
+  workingJobCount++;
+  metricsEventEmitter.emit('workingJobCount', workingJobCount);
+}
+
+function decrementWorkingJobCount() {
+  workingJobCount--;
+  metricsEventEmitter.emit('workingJobCount', workingJobCount);
+  if (workingJobCount === 0) {
+    eventEmitter.emit('all_jobs_cleared');
+  }
 }
