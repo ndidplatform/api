@@ -228,7 +228,7 @@ async function initialize() {
       await tendermint.loadExpectedTxFromDB();
       tendermint.loadAndRetryBacklogTransactRequests();
 
-      callbackUtil.resumeCallbackToClient(); // TODO: delegate to worker if mode = master
+      callbackUtil.resumeCallbackToClient();
     }
 
     logger.info({ message: 'Server initialized' });
