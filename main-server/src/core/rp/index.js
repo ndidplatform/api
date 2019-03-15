@@ -35,6 +35,7 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
 
+import ROLE from '../../role';
 import * as config from '../../config';
 import { role } from '../../node';
 
@@ -278,7 +279,7 @@ export async function processMessage(nodeId, messageId, message) {
     if (message.type === privateMessageType.CHALLENGE_REQUEST) {
       await common.handleChallengeRequest({
         nodeId,
-        role: 'rp',
+        role: ROLE.RP,
         request_id: message.request_id,
         idp_id: message.idp_id,
         public_proof: message.public_proof,

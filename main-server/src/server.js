@@ -54,6 +54,7 @@ import logger from './logger';
 
 import { version } from './version';
 import MODE from './mode';
+import ROLE from './role';
 import * as config from './config';
 
 process.on('unhandledRejection', function(reason, p) {
@@ -106,13 +107,13 @@ async function initialize() {
       logger.info({ message: 'Node role', role });
     }
 
-    if (role === 'rp') {
+    if (role === ROLE.RP) {
       if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         mq.setMessageHandlerFunction(rp.handleMessageFromQueue);
       }
       tendermint.setTendermintNewBlockEventHandler(rp.handleTendermintNewBlock);
       await rp.checkCallbackUrls();
-    } else if (role === 'idp') {
+    } else if (role === ROLE.IDP) {
       if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         mq.setMessageHandlerFunction(idp.handleMessageFromQueue);
       }
@@ -120,13 +121,13 @@ async function initialize() {
         idp.handleTendermintNewBlock
       );
       await idp.checkCallbackUrls();
-    } else if (role === 'as') {
+    } else if (role === ROLE.AS) {
       if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         mq.setMessageHandlerFunction(as.handleMessageFromQueue);
       }
       tendermint.setTendermintNewBlockEventHandler(as.handleTendermintNewBlock);
       await as.checkCallbackUrls();
-    } else if (role === 'proxy') {
+    } else if (role === ROLE.PROXY) {
       if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         mq.setMessageHandlerFunction(proxy.handleMessageFromQueue);
       }
@@ -174,16 +175,21 @@ async function initialize() {
       await externalCryptoServiceReady;
     }
 
-    if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
+    if (
+      role === ROLE.RP ||
+      role === ROLE.IDP ||
+      role === ROLE.AS ||
+      role === ROLE.PROXY
+    ) {
       mq.setErrorHandlerFunction(
         coreCommon.getHandleMessageQueueErrorFn(() => {
-          if (role === 'rp') {
+          if (role === ROLE.RP) {
             return 'rp.getErrorCallbackUrl';
-          } else if (role === 'idp') {
+          } else if (role === ROLE.IDP) {
             return 'idp.getErrorCallbackUrl';
-          } else if (role === 'as') {
+          } else if (role === ROLE.AS) {
             return 'as.getErrorCallbackUrl';
-          } else if (role === 'proxy') {
+          } else if (role === ROLE.PROXY) {
             return 'proxy.getErrorCallbackUrl';
           }
         })
@@ -199,13 +205,13 @@ async function initialize() {
 
     await tendermint.initialize();
 
-    if (role === 'rp' || role === 'idp' || role === 'proxy') {
+    if (role === ROLE.RP || role === ROLE.IDP || role === ROLE.PROXY) {
       let nodeIds;
-      if (role === 'rp') {
+      if (role === ROLE.RP) {
         nodeIds = [config.nodeId];
-      } else if (role === 'idp') {
+      } else if (role === ROLE.IDP) {
         nodeIds = [config.nodeId];
-      } else if (role === 'proxy') {
+      } else if (role === ROLE.PROXY) {
         const nodesBehindProxy = await node.getNodesBehindProxyWithKeyOnProxy();
         nodeIds = nodesBehindProxy.map((node) => node.node_id);
       }
@@ -214,7 +220,12 @@ async function initialize() {
       }
     }
 
-    if (role === 'rp' || role === 'idp' || role === 'as' || role === 'proxy') {
+    if (
+      role === ROLE.RP ||
+      role === ROLE.IDP ||
+      role === ROLE.AS ||
+      role === ROLE.PROXY
+    ) {
       if (config.mode === MODE.STANDALONE || config.mode === MODE.WORKER) {
         await coreCommon.setMessageQueueAddress();
       }

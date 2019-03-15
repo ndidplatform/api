@@ -26,6 +26,8 @@ import * as as from '../as';
 
 import { getNodesBehindProxyWithKeyOnProxy } from '../../node';
 
+import ROLE from '../../role';
+
 export async function handleMessageFromQueue(
   messageId,
   message,
@@ -39,11 +41,11 @@ export async function handleMessageFromQueue(
 
   const role = node.role.toLowerCase();
 
-  if (role === 'rp') {
+  if (role === ROLE.RP) {
     return rp.handleMessageFromQueue(messageId, message, receiverNodeId);
-  } else if (role === 'idp') {
+  } else if (role === ROLE.IDP) {
     return idp.handleMessageFromQueue(messageId, message, receiverNodeId);
-  } else if (role === 'as') {
+  } else if (role === ROLE.AS) {
     return as.handleMessageFromQueue(messageId, message, receiverNodeId);
   }
 }
@@ -58,21 +60,21 @@ export async function handleTendermintNewBlock(
     nodesBehindProxyWithKeyOnProxy.map((node) => {
       let { node_id, role } = node;
       role = role.toLowerCase();
-      if (role === 'rp') {
+      if (role === ROLE.RP) {
         return rp.handleTendermintNewBlock(
           fromHeight,
           toHeight,
           parsedTransactionsInBlocks,
           node_id
         );
-      } else if (role === 'idp') {
+      } else if (role === ROLE.IDP) {
         return idp.handleTendermintNewBlock(
           fromHeight,
           toHeight,
           parsedTransactionsInBlocks,
           node_id
         );
-      } else if (role === 'as') {
+      } else if (role === ROLE.AS) {
         return as.handleTendermintNewBlock(
           fromHeight,
           toHeight,

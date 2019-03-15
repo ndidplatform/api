@@ -20,46 +20,12 @@
  *
  */
 
-import { role } from '../../../node';
+const ROLE = {
+  NDID: 'ndid',
+  RP: 'rp',
+  IDP: 'idp',
+  AS: 'as',
+  PROXY: 'proxy',
+};
 
-import ROLE from '../../../role';
-
-export function rpOnlyHandler(req, res, next) {
-  if (role !== ROLE.RP && role !== ROLE.PROXY) {
-    res.status(404).end();
-    return;
-  }
-  next();
-}
-
-export function idpOnlyHandler(req, res, next) {
-  if (role !== ROLE.IDP && role !== ROLE.PROXY) {
-    res.status(404).end();
-    return;
-  }
-  next();
-}
-
-export function asOnlyHandler(req, res, next) {
-  if (role !== ROLE.AS && role !== ROLE.PROXY) {
-    res.status(404).end();
-    return;
-  }
-  next();
-}
-
-export function proxyOnlyHandler(req, res, next) {
-  if (role !== ROLE.PROXY) {
-    res.status(404).end();
-    return;
-  }
-  next();
-}
-
-export function ndidOnlyHandler(req, res, next) {
-  if (role != null && role !== ROLE.NDID) {
-    res.status(404).end();
-    return;
-  }
-  next();
-}
+export default ROLE;

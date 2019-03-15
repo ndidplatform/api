@@ -41,6 +41,7 @@ import { delegateToWorker } from '../../master-worker-interface/server';
 import { broadcastRemoveRequestTimeoutScheduler } from '../../master-worker-interface/client';
 
 import MODE from '../../mode';
+import ROLE from '../../role';
 import { getFunction } from '../../functions';
 
 export * from './create_request';
@@ -448,9 +449,9 @@ export async function handleChallengeRequest({
   //if match, send challenge and return
   const nodeIdObj = {};
 
-  if (role === 'idp') {
+  if (role === ROLE.IDP) {
     nodeIdObj.idp_id = nodeId;
-  } else if (role === 'rp') {
+  } else if (role === ROLE.RP) {
     nodeIdObj.rp_id = nodeId;
   }
 

@@ -40,6 +40,8 @@ import * as dataDb from '../../db/data';
 import * as identity from '../identity';
 import privateMessageType from '../../mq/message/type';
 
+import ROLE from '../../role';
+
 export * from './create_response';
 export * from './event_handlers';
 
@@ -449,7 +451,7 @@ export async function processMessage(nodeId, messageId, message) {
         nodeId + ':' + message.request_id + ':' + message.idp_id;
       await common.handleChallengeRequest({
         nodeId,
-        role: 'idp',
+        role: ROLE.IDP,
         request_id: message.request_id,
         idp_id: message.idp_id,
         public_proof: message.public_proof,
