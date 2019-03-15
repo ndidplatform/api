@@ -293,7 +293,7 @@ logger.info({
 });
 
 let shutDownCalledOnce = false;
-async function shutDown() {
+function shutDown() {
   if (shutDownCalledOnce) {
     logger.error({
       message: 'Forcefully shutting down',
@@ -306,9 +306,7 @@ async function shutDown() {
     message: 'Received kill signal, shutting down gracefully',
   });
 
-  await prometheus.stop();
-
-  server.tryShutdown(() => {
+  server.tryShutdown(async () => {
     if (mqRecv) {
       mqRecv.close();
       logger.info({
@@ -324,6 +322,8 @@ async function shutDown() {
         });
       }
     }
+
+    await prometheus.stop();
 
     logger.info({
       message: 'Shutdown gracefully',
