@@ -285,7 +285,6 @@ async function shutDown() {
   });
   console.log('(Ctrl+C again to force shutdown)');
 
-  await prometheus.stop();
   await httpServer.close();
   callbackUtil.stopAllCallbackRetries();
   externalCryptoService.stopAllCallbackRetries();
@@ -304,6 +303,8 @@ async function shutDown() {
   await mq.close();
   tendermint.tendermintWsClient.close();
   tendermintWsPool.closeAllConnections();
+
+  await prometheus.stop();
 
   await Promise.all([cacheDb.close(), longTermDb.close(), dataDb.close()]);
 }
