@@ -107,16 +107,15 @@ async function updateIalInternalAsync(
   { nodeId }
 ) {
   try {
-    const hash_id = utils.hash(namespace + ':' + identifier);
     if (!synchronous) {
       await tendermintNdid.updateIal(
-        { hash_id, ial },
+        { namespace, identifier, ial },
         nodeId,
         'identity.updateIalInternalAsyncAfterBlockchain',
         [{ nodeId, reference_id, callback_url }, { synchronous }]
       );
     } else {
-      await tendermintNdid.updateIal({ hash_id, ial }, nodeId);
+      await tendermintNdid.updateIal({ namespace, identifier, ial }, nodeId);
       await updateIalInternalAsyncAfterBlockchain(
         {},
         { nodeId, reference_id, callback_url },

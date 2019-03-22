@@ -352,11 +352,11 @@ export async function checkIdpResponse({
   const requestId = requestStatus.request_id;
 
   const requestData = await cacheDb.getRequestData(nodeId, requestId);
-  const identityInfo = await tendermintNdid.getIdentityInfo(
-    requestData.namespace,
-    requestData.identifier,
-    idpId
-  );
+  const identityInfo = await tendermintNdid.getIdentityInfo({
+    namespace: requestData.namespace,
+    identifier: requestData.identifier,
+    node_id: idpId,
+  });
 
   if (requestStatus.mode === 1) {
     validIal = null; // Cannot check in mode 1

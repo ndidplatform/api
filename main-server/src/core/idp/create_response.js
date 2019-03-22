@@ -133,11 +133,11 @@ export async function createResponse(createResponseParams) {
       //   request_id
       // );
 
-      const declaredIal = (await tendermintNdid.getIdentityInfo(
-        requestData.namespace,
-        requestData.identifier,
-        node_id
-      )).ial;
+      const declaredIal = (await tendermintNdid.getIdentityInfo({
+        namespace: requestData.namespace,
+        identifier: requestData.identifier,
+        node_id,
+      })).ial;
       if (ial !== declaredIal) {
         throw new CustomError({
           errorType: errorType.WRONG_IAL,
@@ -270,13 +270,7 @@ export async function createResponseAfterBlockchain(
   try {
     if (error) throw error;
 
-    await sendResponseToRP(
-      nodeId,
-      request_id,
-      mode,
-      accessor_id,
-      height
-    );
+    await sendResponseToRP(nodeId, request_id, mode, accessor_id, height);
 
     await callbackToClient({
       callbackUrl: callback_url,
@@ -313,13 +307,7 @@ export async function createResponseAfterBlockchain(
   }
 }
 
-async function sendResponseToRP(
-  nodeId,
-  request_id,
-  mode,
-  accessor_id,
-  height
-) {
+async function sendResponseToRP(nodeId, request_id, mode, accessor_id, height) {
   const rp_id = await cacheDb.getRPIdFromRequestId(nodeId, request_id);
 
   logger.info({

@@ -176,11 +176,11 @@ export async function getIdentityInfo({ nodeId, namespace, identifier }) {
       nodeId = config.nodeId;
     }
 
-    const identityInfo = await tendermintNdid.getIdentityInfo(
+    const identityInfo = await tendermintNdid.getIdentityInfo({
       namespace,
       identifier,
-      nodeId
-    );
+      node_id: nodeId,
+    });
     return identityInfo;
   } catch (error) {
     throw new CustomError({

@@ -169,10 +169,10 @@ export async function createIdentity(
       associated,
     });
 
-    const exist = await tendermintNdid.checkExistingIdentity(
+    const exist = await tendermintNdid.checkExistingIdentity({
       namespace,
-      identifier
-    );
+      identifier,
+    });
     if (synchronous) {
       createIdentityInternalAsync(...arguments, {
         nodeId: node_id,

@@ -508,18 +508,31 @@ export async function setDataReceived(
 }
 
 export async function updateIal(
-  { hash_id, ial },
+  { reference_group_code, namespace, identifier, ial },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if (reference_group_code && (namespace || identifier)) {
+    throw new Error(
+      'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
+    );
+  }
+  if (
+    !reference_group_code &&
+    ((namespace && !identifier) || (!namespace && identifier))
+  ) {
+    throw new Error('Missing args');
+  }
   try {
     await tendermint.transact({
       nodeId,
       fnName: 'UpdateIdentity',
       params: {
-        hash_id,
+        reference_group_code,
+        identity_namespace: namespace,
+        identity_identifier_hash: utils.hash(identifier),
         ial,
       },
       callbackFnName,
@@ -530,7 +543,9 @@ export async function updateIal(
     throw new CustomError({
       message: 'Cannot update Ial',
       cause: error,
-      hash_id,
+      reference_group_code,
+      namespace,
+      identifier,
       ial,
     });
   }
@@ -955,9 +970,25 @@ export async function getAccessorOwner(accessor_id) {
   }
 }
 
-export async function checkExistingIdentity(namespace, identifier) {
+export async function checkExistingIdentity({
+  reference_group_code,
+  namespace,
+  identifier,
+}) {
+  if (reference_group_code && (namespace || identifier)) {
+    throw new Error(
+      'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
+    );
+  }
+  if (
+    !reference_group_code &&
+    ((namespace && !identifier) || (!namespace && identifier))
+  ) {
+    throw new Error('Missing args');
+  }
   try {
     const result = await tendermint.query('CheckExistingIdentity', {
+      reference_group_code,
       identity_namespace: namespace,
       identity_identifier_hash: utils.hash(identifier),
     });
@@ -973,9 +1004,26 @@ export async function checkExistingIdentity(namespace, identifier) {
   }
 }
 
-export async function getIdentityInfo(namespace, identifier, node_id) {
+export async function getIdentityInfo({
+  reference_group_code,
+  namespace,
+  identifier,
+  node_id,
+}) {
+  if (reference_group_code && (namespace || identifier)) {
+    throw new Error(
+      'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
+    );
+  }
+  if (
+    !reference_group_code &&
+    ((namespace && !identifier) || (!namespace && identifier))
+  ) {
+    throw new Error('Missing args');
+  }
   try {
     return await tendermint.query('GetIdentityInfo', {
+      reference_group_code,
       identity_namespace: namespace,
       identity_identifier_hash: utils.hash(identifier),
       node_id,
