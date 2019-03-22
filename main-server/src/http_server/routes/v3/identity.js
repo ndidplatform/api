@@ -41,6 +41,7 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
       callback_url,
       namespace,
       identifier,
+      mode,
       accessor_type,
       accessor_public_key,
       accessor_id,
@@ -55,6 +56,7 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
         callback_url,
         namespace,
         identifier,
+        mode,
         accessor_type,
         accessor_public_key,
         accessor_id,
@@ -158,9 +160,8 @@ router.post(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { node_id, reference_id, callback_url, identifier_list } = req.body;
+      const { node_id, reference_id, callback_url, identity_list } = req.body;
 
-      // Not Implemented
       // TODO
 
       res.status(501).end();
@@ -228,7 +229,6 @@ router.get('/:namespace/:identifier/endorsement', async (req, res, next) => {
     const { namespace, identifier } = req.params;
 
     // Not Implemented
-    // TODO
 
     res.status(501).end();
     next();
@@ -253,7 +253,6 @@ router.post(
       } = req.body;
 
       // Not Implemented
-      // TODO
 
       res.status(501).end();
       next();
@@ -347,27 +346,114 @@ router.post(
   }
 );
 
-router.post('/secret', idpOnlyHandler, async (req, res, next) => {
-  try {
-    const {
-      node_id,
-      accessor_id,
-      namespace,
-      identifier,
-      reference_id,
-    } = req.body;
-    const secret = await identity.calculateSecret({
-      node_id,
-      accessor_id,
-      namespace,
-      identifier,
-      reference_id,
-    });
-    res.status(200).json({ secret });
-    next();
-  } catch (error) {
-    next(error);
+router.post(
+  '/:namespace/:identifier/revoke',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const {
+        node_id,
+        reference_id,
+        callback_url,
+        request_message,
+      } = req.body;
+
+      const { namespace, identifier } = req.params;
+
+      // const result = await identity.({
+      //   node_id,
+      //   reference_id,
+      //   callback_url,
+      //   namespace,
+      //   identifier,
+      //   request_message,
+      // });
+
+      // res.status(202).json(result);
+      next();
+    } catch (error) {
+      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
+        res.status(404).end();
+        next();
+        return;
+      }
+      next(error);
+    }
   }
-});
+);
+
+router.post(
+  '/:namespace/:identifier/removal_from_reference_group',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const {
+        node_id,
+        reference_id,
+        callback_url,
+        request_message,
+      } = req.body;
+
+      const { namespace, identifier } = req.params;
+
+      // const result = await identity.({
+      //   node_id,
+      //   reference_id,
+      //   callback_url,
+      //   namespace,
+      //   identifier,
+      //   request_message,
+      // });
+
+      // res.status(202).json(result);
+      next();
+    } catch (error) {
+      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
+        res.status(404).end();
+        next();
+        return;
+      }
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/:namespace/:identifier/reference_group_merge',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const {
+        node_id,
+        reference_id,
+        callback_url,
+        namespace_to_merge,
+        identifier_to_merge,
+        request_message,
+      } = req.body;
+
+      const { namespace, identifier } = req.params;
+
+      // const result = await identity.({
+      //   node_id,
+      //   reference_id,
+      //   callback_url,
+      //   namespace,
+      //   identifier,
+      //   request_message,
+      // });
+
+      // res.status(202).json(result);
+      next();
+    } catch (error) {
+      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
+        res.status(404).end();
+        next();
+        return;
+      }
+      next(error);
+    }
+  }
+);
 
 export default router;

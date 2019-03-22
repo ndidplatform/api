@@ -148,8 +148,6 @@ export const nodeBehindProxyMasterPrivateKeyDirectoryPath = useExternalCryptoSer
   : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH;
 
 //in byte
-export const challengeLength = 2;
-export const zkRandomLengthForIdp = 128;
 export const saltLength = 16;
 
 export const createIdentityRequestMessageTemplateFilepath =

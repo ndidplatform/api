@@ -44,6 +44,7 @@ export async function registerOrUpdateASService(
     min_ial,
     min_aal,
     url,
+    accepted_namespace_list,
   } = registerOrUpdateASServiceParams;
 
   if (role === 'proxy') {
@@ -67,7 +68,13 @@ export async function registerOrUpdateASService(
     });
 
     if (!isRegisterd) {
-      if (!service_id || !min_aal || !min_ial || !url) {
+      if (
+        !service_id ||
+        !min_aal ||
+        !min_ial ||
+        !url ||
+        !accepted_namespace_list
+      ) {
         throw new CustomError({
           errorType: errorType.MISSING_ARGUMENTS,
         });
@@ -101,7 +108,15 @@ export async function registerOrUpdateASService(
 }
 
 async function registerOrUpdateASServiceInternalAsync(
-  { service_id, reference_id, callback_url, min_ial, min_aal, url },
+  {
+    service_id,
+    reference_id,
+    callback_url,
+    min_ial,
+    min_aal,
+    url,
+    accepted_namespace_list,
+  },
   { synchronous = false } = {},
   { nodeId, isRegisterd }
 ) {
@@ -113,6 +128,7 @@ async function registerOrUpdateASServiceInternalAsync(
             service_id,
             min_aal,
             min_ial,
+            accepted_namespace_list,
           },
           nodeId,
           'as.registerOrUpdateASServiceInternalAsyncAfterBlockchain',
@@ -127,6 +143,7 @@ async function registerOrUpdateASServiceInternalAsync(
             service_id,
             min_aal,
             min_ial,
+            accepted_namespace_list,
           },
           nodeId
         );
@@ -143,6 +160,7 @@ async function registerOrUpdateASServiceInternalAsync(
             service_id,
             min_aal,
             min_ial,
+            accepted_namespace_list,
           },
           nodeId,
           'as.registerOrUpdateASServiceInternalAsyncAfterBlockchain',
@@ -157,6 +175,7 @@ async function registerOrUpdateASServiceInternalAsync(
             service_id,
             min_aal,
             min_ial,
+            accepted_namespace_list,
           },
           nodeId
         );

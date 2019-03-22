@@ -39,6 +39,7 @@ router.get('/callback', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -48,19 +49,22 @@ router.post('/callback', validateBody, async (req, res, next) => {
   try {
     const {
       incoming_request_url,
-      identity_result_url,
-      accessor_sign_url,
+      incoming_request_status_update_url,
+      identity_changes_notification_url,
+      accessor_encrypt_url,
       error_url,
     } = req.body;
 
     await idp.setCallbackUrls({
       incoming_request_url,
-      identity_result_url,
-      accessor_sign_url,
+      incoming_request_status_update_url,
+      identity_changes_notification_url,
+      accessor_encrypt_url,
       error_url,
     });
 
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -69,36 +73,38 @@ router.post('/callback', validateBody, async (req, res, next) => {
 router.post('/response', validateBody, async (req, res, next) => {
   try {
     const {
+      node_id,
       reference_id,
+      callback_url,
       request_id,
       //namespace,
       //identifier,
       ial,
       aal,
-      secret,
       status,
-      signature,
       accessor_id,
-      callback_url,
       //request_message,
     } = req.body;
 
-    await idp.requestChallengeAndCreateResponse({
-      reference_id,
-      request_id,
-      //namespace,
-      //identifier,
-      ial,
-      aal,
-      secret,
-      status,
-      signature,
-      accessor_id,
-      callback_url,
-      //request_message,
-    });
+    await idp.createResponse(
+      {
+        node_id,
+        reference_id,
+        callback_url,
+        request_id,
+        //namespace,
+        //identifier,
+        ial,
+        aal,
+        status,
+        accessor_id,
+        //request_message,
+      },
+      { synchronous: false }
+    );
 
     res.status(202).end();
+    next();
   } catch (error) {
     next(error);
   }

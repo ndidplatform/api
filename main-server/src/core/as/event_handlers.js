@@ -149,7 +149,6 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
         const requestId = transaction.args.request_id;
         if (requestId == null) continue;
-        if (transaction.fnName === 'DeclareIdentityProof') continue;
 
         const initialSalt = await cacheDb.getInitialSalt(nodeId, requestId);
         if (initialSalt != null) {
@@ -192,11 +191,10 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
       type: 'request_status',
       ...requestStatus,
       response_valid_list: requestDetail.response_list.map(
-        ({ idp_id, valid_signature, valid_proof, valid_ial }) => {
+        ({ idp_id, valid_signature, valid_ial }) => {
           return {
             idp_id,
             valid_signature,
-            valid_proof,
             valid_ial,
           };
         }

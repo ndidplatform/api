@@ -49,8 +49,6 @@ export function getFunction(fnName) {
       return common.runTimeoutScheduler;
     case 'common.removeTimeoutSchedulerInternal':
       return common.removeTimeoutSchedulerInternal;
-    case 'idp.requestChallengeAfterBlockchain':
-      return idp.requestChallengeAfterBlockchain;
     case 'idp.createResponseAfterBlockchain':
       return idp.createResponseAfterBlockchain;
     case 'idp.processIdpResponseAfterAddAccessor':
@@ -69,10 +67,6 @@ export function getFunction(fnName) {
       return identity.createIdentityInternalAsyncAfterBlockchain;
     case 'identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain':
       return identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain;
-    case 'identity.checkForExistedIdentityAfterBlockchain':
-      return identity.checkForExistedIdentityAfterBlockchain;
-    case 'identity.createIdentityInternalAsyncAfterClearRegisterIdentityTimeout':
-      return identity.createIdentityInternalAsyncAfterClearRegisterIdentityTimeout;
     case 'identity.addAccessorAfterCloseConsentRequest':
       return identity.addAccessorAfterCloseConsentRequest;
     case 'identity.addAccessorAfterConsentAfterAddAccessorMethod':

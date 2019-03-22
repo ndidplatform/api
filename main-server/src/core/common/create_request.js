@@ -223,6 +223,8 @@ async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
           (node_info) => node_info.node_id
         );
       }
+
+      // TODO: check for "accepted_namespace_list" should contains namespace used in create request
     })
   );
 }
@@ -332,12 +334,6 @@ export async function createRequest(
       request_id = utils.createRequestId();
     }
 
-    const challenge = {};
-    const generatedChallenges = utils.generatedChallenges(receivers.length);
-    receivers.forEach(({ node_id }, index) => {
-      challenge[node_id] = generatedChallenges[index];
-    });
-
     const initial_salt = utils.randomBase64Bytes(config.saltLength);
     const request_message_salt = utils.generateRequestMessageSalt(initial_salt);
 
@@ -364,8 +360,6 @@ export async function createRequest(
       data_request_list,
       data_request_params_salt_list,
       request_message,
-      // for zk proof
-      challenge,
       rp_id: node_id,
       request_message_salt,
       initial_salt,
@@ -374,7 +368,6 @@ export async function createRequest(
     };
 
     // save request data to DB to send to AS via mq when authen complete
-    // and for zk proof
     await Promise.all([
       cacheDb.setRequestData(node_id, request_id, requestData),
       cacheDb.setRequestIdByReferenceId(node_id, reference_id, request_id),
@@ -613,7 +606,6 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
     const {
       min_idp: _1, // eslint-disable-line no-unused-vars
-      challenge: _2, // eslint-disable-line no-unused-vars
       reference_id: _3, // eslint-disable-line no-unused-vars
       callback_url: _4, // eslint-disable-line no-unused-vars
       ...requestDataWithoutLocalSpecificProps
@@ -716,7 +708,6 @@ export async function createRequestInternalAsyncAfterBlockchain(
 async function createRequestCleanUpOnError({ nodeId, requestId, referenceId }) {
   await Promise.all([
     cacheDb.removeRequestData(nodeId, requestId),
-    cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
     cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
     cacheDb.removeRequestCreationMetadata(nodeId, requestId),
   ]);

@@ -342,24 +342,6 @@ router.post('/validator', validateBody, async (req, res, next) => {
   }
 });
 
-router.post(
-  '/setTimeoutBlockRegisterIdentity',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const { blocks_to_timeout } = req.body;
-
-      await ndid.setTimeoutBlockRegisterIdentity({
-        blocks_to_timeout,
-      });
-      res.status(204).end();
-      next();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
 router.post('/approveService', validateBody, async (req, res, next) => {
   try {
     await ndid.approveService(req.body);

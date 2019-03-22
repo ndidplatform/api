@@ -332,208 +332,6 @@ export async function removeTimeoutSchedulerInternal(nodeId, requestId) {
   delete timeoutScheduler[`${nodeId}:${requestId}`];
 }
 
-async function verifyZKProof({
-  request_id,
-  idp_id,
-  requestData,
-  response,
-  accessor_public_key,
-  privateProofObject,
-  challenge,
-  mode,
-  nodeId,
-}) {
-  //THIS FUNCTION CHECK ACCESSOR_GROUP_ID AGAINST OTHER RESPONES BEFORE VERIFY ACTUAL ZK-PROOK
-  const { namespace, identifier } = requestData;
-  const privateProofObjectList = await cacheDb.getPrivateProofObjectListInRequest(
-    nodeId,
-    requestData.request_id
-  );
-
-  if (mode === 1) {
-    return null;
-  }
-
-  logger.debug({
-    message: 'Verifying zk proof',
-    request_id,
-    idp_id,
-    challenge,
-    privateProofObject,
-    mode,
-  });
-
-  //query accessor_group_id of this accessor_id
-  const accessor_group_id = await tendermintNdid.getAccessorGroupId(
-    privateProofObject.accessor_id
-  );
-
-  logger.debug({
-    message: 'Verifying zk proof',
-    privateProofObjectList,
-  });
-
-  //and check against all accessor_group_id of responses
-  for (let i = 0; i < privateProofObjectList.length; i++) {
-    let otherPrivateProofObject = privateProofObjectList[i].privateProofObject;
-    let otherGroupId = await tendermintNdid.getAccessorGroupId(
-      otherPrivateProofObject.accessor_id
-    );
-    if (otherGroupId !== accessor_group_id) {
-      logger.debug({
-        message: 'Conflict response',
-        otherGroupId,
-        otherPrivateProofObject,
-        accessor_group_id,
-        accessorId: privateProofObject.accessor_id,
-      });
-
-      throw new CustomError({
-        errorType: errorType.DIFFERENT_ACCESSOR_GROUP_ID,
-        details: {
-          accessorId: privateProofObject.accessor_id,
-          accessor_group_id,
-          otherGroupId,
-        },
-      });
-    }
-  }
-
-  const publicProof = JSON.parse(response.identity_proof);
-  const privateProofValueHash = response.private_proof_hash;
-
-  return utils.verifyZKProof(
-    accessor_public_key,
-    challenge,
-    privateProofObject.privateProofValueArray,
-    publicProof,
-    {
-      namespace,
-      identifier,
-    },
-    privateProofValueHash,
-    privateProofObject.padding
-  );
-}
-
-//===== zkp and request related =====
-
-export async function handleChallengeRequest({
-  nodeId,
-  role,
-  request_id,
-  idp_id,
-  public_proof,
-}) {
-  logger.debug({
-    message: 'Handle challenge request',
-    nodeId,
-    request_id,
-    idp_id,
-    public_proof,
-  });
-
-  //const [request_id, idp_id] = responseId.split(':');
-
-  //get public proof in blockchain
-  const public_proof_blockchain = JSON.parse(
-    await tendermintNdid.getIdentityProof(request_id, idp_id)
-  );
-
-  //check public proof in blockchain and in message queue
-  if (public_proof_blockchain.length !== public_proof.length) return;
-  for (let i = 0; i < public_proof.length; i++) {
-    if (public_proof_blockchain[i] !== public_proof[i]) return;
-  }
-
-  //if match, send challenge and return
-  const nodeIdObj = {};
-
-  if (role === ROLE.IDP) {
-    nodeIdObj.idp_id = nodeId;
-  } else if (role === ROLE.RP) {
-    nodeIdObj.rp_id = nodeId;
-  }
-
-  let challenge;
-  let challengeObject = (await cacheDb.getRequestData(nodeId, request_id))
-    .challenge;
-  //no challenge found
-  if (challengeObject == null || !challengeObject[idp_id]) return;
-  challenge = challengeObject[idp_id];
-
-  logger.debug({
-    message: 'Get challenge',
-    challenge,
-  });
-
-  const nodeInfo = await tendermintNdid.getNodeInfo(idp_id);
-  if (nodeInfo == null) {
-    throw new CustomError({
-      errorType: errorType.NODE_INFO_NOT_FOUND,
-      details: {
-        request_id,
-      },
-    });
-  }
-
-  let receivers;
-  if (nodeInfo.proxy != null) {
-    if (nodeInfo.proxy.mq == null) {
-      throw new CustomError({
-        errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
-        details: {
-          request_id,
-          nodeId: idp_id,
-        },
-      });
-    }
-    receivers = [
-      {
-        node_id: idp_id,
-        public_key: nodeInfo.public_key,
-        proxy: {
-          node_id: nodeInfo.proxy.node_id,
-          public_key: nodeInfo.proxy.public_key,
-          ip: nodeInfo.proxy.mq[0].ip,
-          port: nodeInfo.proxy.mq[0].port,
-          config: nodeInfo.proxy.config,
-        },
-      },
-    ];
-  } else {
-    if (nodeInfo.mq == null) {
-      throw new CustomError({
-        errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
-        details: {
-          request_id,
-          nodeId: idp_id,
-        },
-      });
-    }
-    receivers = [
-      {
-        node_id: idp_id,
-        public_key: nodeInfo.public_key,
-        ip: nodeInfo.mq[0].ip,
-        port: nodeInfo.mq[0].port,
-      },
-    ];
-  }
-  await mq.send(
-    receivers,
-    {
-      type: privateMessageType.CHALLENGE_RESPONSE,
-      challenge,
-      request_id,
-      ...nodeIdObj,
-      chain_id: tendermint.chainId,
-      height: 1, //tendermint.latestBlockHeight,
-    },
-    nodeId
-  );
-}
-
 export async function checkIdpResponse({
   nodeId,
   requestStatus,
@@ -542,7 +340,7 @@ export async function checkIdpResponse({
   requestDataFromMq,
 }) {
   logger.debug({
-    message: 'Checking IdP response (ZK Proof, IAL)',
+    message: 'Checking IdP response (IAL)',
     requestStatus,
     idpId,
     responseIal,
@@ -571,18 +369,11 @@ export async function checkIdpResponse({
     }
   }
 
-  const privateProofObject = requestDataFromMq
-    ? requestDataFromMq
-    : await cacheDb.getPrivateProofReceivedFromMQ(
-        nodeId,
-        nodeId + ':' + requestStatus.request_id + ':' + idpId
-      );
-
   const accessor_public_key = await tendermintNdid.getAccessorKey(
-    privateProofObject.accessor_id
+    requestDataFromMq.accessor_id
   );
 
-  let validProof, signatureValid;
+  let signatureValid;
   if (accessor_public_key || requestStatus.mode === 1) {
     const response_list = (await tendermintNdid.getRequestDetail({
       requestId: requestStatus.request_id,
@@ -590,28 +381,6 @@ export async function checkIdpResponse({
     const response = response_list.find(
       (response) => response.idp_id === idpId
     );
-
-    // Check ZK Proof
-    const challenge = requestData.challenge[idpId];
-    validProof = await verifyZKProof({
-      request_id: requestStatus.request_id,
-      idp_id: idpId,
-      requestData,
-      response,
-      accessor_public_key,
-      privateProofObject,
-      challenge,
-      mode: requestStatus.mode,
-      nodeId,
-    });
-
-    logger.debug({
-      message: 'Checked ZK proof and IAL',
-      requestId,
-      idpId,
-      validProof,
-      validIal,
-    });
 
     // Check signature
     if (requestStatus.mode === 1) {
@@ -639,27 +408,20 @@ export async function checkIdpResponse({
   } else {
     logger.debug({
       message: 'Accessor key not found or inactive',
-      accessorId: privateProofObject.accessor_id,
+      accessorId: requestDataFromMq.accessor_id,
       idpId,
     });
 
-    validProof = false;
     signatureValid = false;
   }
 
   const responseValid = {
     idp_id: idpId,
     valid_signature: signatureValid,
-    valid_proof: validProof,
     valid_ial: validIal,
   };
 
   await cacheDb.addIdpResponseValidList(nodeId, requestId, responseValid);
-
-  cacheDb.removePrivateProofReceivedFromMQ(
-    nodeId,
-    `${nodeId}:${requestStatus.request_id}:${idpId}`
-  );
 
   return responseValid;
 }

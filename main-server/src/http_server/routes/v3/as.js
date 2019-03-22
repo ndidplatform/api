@@ -33,19 +33,32 @@ router.use(asOnlyHandler);
 router.post('/service/:service_id', validateBody, async (req, res, next) => {
   try {
     const { service_id } = req.params;
-    const { min_ial, min_aal, url } = req.body;
+    const {
+      node_id,
+      reference_id,
+      callback_url,
+      min_ial,
+      min_aal,
+      url,
+      accepted_namespace_list,
+    } = req.body;
 
     await as.registerOrUpdateASService(
       {
+        node_id,
         service_id,
+        reference_id,
+        callback_url,
         min_aal,
         min_ial,
         url,
+        accepted_namespace_list,
       },
-      { synchronous: true }
+      { synchronous: false }
     );
 
-    res.status(204).end();
+    res.status(202).end();
+    next();
   } catch (error) {
     next(error);
   }
@@ -53,15 +66,17 @@ router.post('/service/:service_id', validateBody, async (req, res, next) => {
 
 router.get('/service/:service_id', async (req, res, next) => {
   try {
+    const { node_id } = req.query;
     const { service_id } = req.params;
 
-    const result = await as.getServiceDetail(service_id);
+    const result = await as.getServiceDetail(node_id, service_id);
 
     if (result == null) {
       res.status(404).end();
     } else {
       res.status(200).json(result);
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -73,18 +88,22 @@ router.post(
   async (req, res, next) => {
     try {
       const { request_id, service_id } = req.params;
-      const { data } = req.body;
+      const { node_id, reference_id, callback_url, data } = req.body;
 
       await as.processDataForRP(
         data,
         {
+          node_id,
+          reference_id,
+          callback_url,
           requestId: request_id,
           serviceId: service_id,
         },
-        { synchronous: true }
+        { synchronous: false }
       );
 
-      res.status(204).end();
+      res.status(202).end();
+      next();
     } catch (error) {
       next(error);
     }
@@ -100,6 +119,7 @@ router.get('/callback', async (req, res, next) => {
     } else {
       res.status(404).end();
     }
+    next();
   } catch (error) {
     next(error);
   }
@@ -107,13 +127,15 @@ router.get('/callback', async (req, res, next) => {
 
 router.post('/callback', validateBody, async (req, res, next) => {
   try {
-    const { error_url } = req.body;
+    const { incoming_request_status_update_url, error_url } = req.body;
 
     await as.setCallbackUrls({
+      incoming_request_status_update_url,
       error_url,
     });
 
     res.status(204).end();
+    next();
   } catch (error) {
     next(error);
   }

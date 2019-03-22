@@ -36,14 +36,10 @@ export const MESSAGE_DIRECTIONS = {
 
 function getName(messageType) {
   switch (messageType) {
-    case privateMessageType.CHALLENGE_REQUEST:
-      return 'challengeRequestMessage';
     case privateMessageType.IDP_RESPONSE:
       return 'idpResponseMessage';
     case privateMessageType.AS_DATA_RESPONSE:
       return 'asDataResponseMessage';
-    case privateMessageType.CHALLENGE_RESPONSE:
-      return 'challengeResponseMessage';
     case privateMessageType.CONSENT_REQUEST:
       return 'consentRequestMessage';
     case privateMessageType.DATA_REQUEST:

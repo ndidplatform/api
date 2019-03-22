@@ -495,19 +495,6 @@ export async function setValidator({ public_key, power }) {
   }
 }
 
-export async function setTimeoutBlockRegisterIdentity({ blocks_to_timeout }) {
-  try {
-    await tendermint.transact({
-      nodeId: config.nodeId,
-      fnName: 'SetTimeOutBlockRegisterIdentity',
-      params: { time_out_block: blocks_to_timeout },
-    });
-  } catch (error) {
-    // TODO:
-    throw error;
-  }
-}
-
 export async function enableServiceDestination({ service_id, node_id }) {
   try {
     await tendermint.transact({

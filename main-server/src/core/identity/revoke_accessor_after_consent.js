@@ -59,8 +59,6 @@ export async function revokeAccessorAfterCloseConsentRequest(
 ) {
   try {
     if (error) throw error;
-    //NOTE: zero knowledge proof cannot be verify by blockchain, hence,
-    //if this idp call to add their accessor it's imply that zk proof is verified by them
     logger.debug({
       message: 'Got consent, revoking accessor',
       nodeId,

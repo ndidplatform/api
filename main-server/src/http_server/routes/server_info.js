@@ -56,7 +56,7 @@ router.get('/info', async function getInfo(req, res, next) {
     res.status(200).json({
       env: config.env,
       version: version == null ? null : version,
-      apiVersion: '2.4',
+      apiVersion: '3',
       nodeId: config.nodeId,
       nodeName: nodeInfo != null ? nodeInfo.node_name : undefined,
       nodePublicKey: nodeInfo != null ? nodeInfo.public_key : undefined,

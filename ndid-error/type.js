@@ -82,13 +82,13 @@ module.exports = {
     message:
       'External crypto service for decrypting with node key URL has not been set',
   },
-  SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET: {
+  ENCRYPT_WITH_ACCESSOR_KEY_URL_NOT_SET: {
     code: 10013,
-    message: 'Sign with accessor key callback URL has not been set',
+    message: 'Encrypt with accessor key callback URL has not been set',
   },
-  SIGN_WITH_ACCESSOR_KEY_FAILED: {
+  ENCRYPT_WITH_ACCESSOR_KEY_FAILED: {
     code: 10014,
-    message: 'Cannot sign with accessor key by callback',
+    message: 'Cannot encrypt with accessor key by callback',
   },
   INVALID_RESPONSE: {
     code: 10015,

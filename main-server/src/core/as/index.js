@@ -514,11 +514,9 @@ export async function getServiceDetail(nodeId, service_id) {
 
 async function isIdpResponsesValid(request_id, dataFromMq) {
   const {
-    privateProofObjectList,
-    namespace,
-    identifier,
     request_message,
     initial_salt,
+    response_private_data_list,
   } = dataFromMq;
 
   const requestDetail = await tendermintNdid.getRequestDetail({
@@ -529,20 +527,19 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
     return false;
   }
 
-  // mode 1 bypass zkp
+  // mode 1 bypass signature check
   if (requestDetail.mode === 1) {
     return true;
   }
 
-  //query and verify zk, also check conflict with each others
-  const accessor_group_id = await tendermintNdid.getAccessorGroupId(
-    privateProofObjectList[0].privateProofObject.accessor_id
+  const referenceGroupCode = await tendermintNdid.getReferenceGroupCodeByAccessorId(
+    response_private_data_list[0].accessor_id
   );
-  for (let i = 1; i < privateProofObjectList.length; i++) {
-    let otherGroupId = await tendermintNdid.getAccessorGroupId(
-      privateProofObjectList[i].privateProofObject.accessor_id
+  for (let i = 1; i < response_private_data_list.length; i++) {
+    const otherReferenceGroupCode = await tendermintNdid.getReferenceGroupCodeByAccessorId(
+      response_private_data_list[i].accessor_id
     );
-    if (otherGroupId !== accessor_group_id) {
+    if (otherReferenceGroupCode !== referenceGroupCode) {
       return false;
     }
   }
@@ -551,22 +548,18 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
     requestId: request_id,
   })).response_list;
   let valid = true;
-  for (let i = 0; i < privateProofObjectList.length; i++) {
-    //query accessor_public_key from privateProof.accessor_id
-    const public_key = await tendermintNdid.getAccessorKey(
-      privateProofObjectList[i].privateProofObject.accessor_id
+  for (let i = 0; i < response_private_data_list.length; i++) {
+    const accessor_public_key = await tendermintNdid.getAccessorKey(
+      response_private_data_list[i].accessor_id
     );
-    //query publicProof from response of idp_id in request
     const response = response_list.find(
-      (response) => response.idp_id === privateProofObjectList[i].idp_id
+      (response) => response.idp_id === response_private_data_list[i].idp_id
     );
-    const publicProof = JSON.parse(response.identity_proof);
     const signature = response.signature;
-    const privateProofValueHash = response.private_proof_hash;
 
     const signatureValid = utils.verifyResponseSignature(
       signature,
-      public_key,
+      accessor_public_key,
       request_message,
       initial_salt,
       request_id
@@ -577,24 +570,12 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
       signatureValid,
       request_message,
       initial_salt,
-      public_key,
+      accessor_public_key,
       signature,
-      privateProofObjectList,
+      response_private_data_list,
     });
 
-    const zkProofValid = utils.verifyZKProof(
-      public_key,
-      dataFromMq.challenge[privateProofObjectList[i].idp_id],
-      privateProofObjectList[i].privateProofObject.privateProofValue,
-      publicProof,
-      {
-        namespace,
-        identifier,
-      },
-      privateProofValueHash,
-      privateProofObjectList[i].privateProofObject.padding
-    );
-    valid = valid && signatureValid && zkProofValid;
+    valid = valid && signatureValid;
   }
   return valid;
 }

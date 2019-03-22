@@ -22,9 +22,6 @@
 
 import fetch from 'node-fetch';
 
-import { createResponse } from './create_response';
-
-import { verifySignature } from '../../utils';
 import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -40,16 +37,14 @@ import * as dataDb from '../../db/data';
 import * as identity from '../identity';
 import privateMessageType from '../../mq/message/type';
 
-import ROLE from '../../role';
-
 export * from './create_response';
 export * from './event_handlers';
 
 const CALLBACK_URL_NAME = {
   INCOMING_REQUEST: 'incoming_request_url',
   INCOMING_REQUEST_STATUS_UPDATE: 'incoming_request_status_update_url',
-  IDENTITY_RESULT: 'identity_result_url', // Used by API v1
-  ACCESSOR_SIGN: 'accessor_sign_url',
+  IDENTITY_CHANGES_NOTIFICATION: 'identity_changes_notification_url',
+  ACCESSOR_ENCRYPT: 'accessor_encrypt_url',
   ERROR: 'error_url',
 };
 const CALLBACK_URL_NAME_ARR = Object.values(CALLBACK_URL_NAME);
@@ -74,8 +69,8 @@ export async function checkCallbackUrls() {
 export async function setCallbackUrls({
   incoming_request_url,
   incoming_request_status_update_url,
-  identity_result_url,
-  accessor_sign_url,
+  identity_changes_notification_url,
+  accessor_encrypt_url,
   error_url,
 }) {
   const promises = [];
@@ -97,21 +92,21 @@ export async function setCallbackUrls({
       )
     );
   }
-  if (identity_result_url != null) {
+  if (identity_changes_notification_url != null) {
     promises.push(
       dataDb.setCallbackUrl(
         config.nodeId,
-        `idp.${CALLBACK_URL_NAME.IDENTITY_RESULT}`,
-        identity_result_url
+        `idp.${CALLBACK_URL_NAME.IDENTITY_CHANGES_NOTIFICATION}`,
+        identity_changes_notification_url
       )
     );
   }
-  if (accessor_sign_url != null) {
+  if (accessor_encrypt_url != null) {
     promises.push(
       dataDb.setCallbackUrl(
         config.nodeId,
-        `idp.${CALLBACK_URL_NAME.ACCESSOR_SIGN}`,
-        accessor_sign_url
+        `idp.${CALLBACK_URL_NAME.ACCESSOR_ENCRYPT}`,
+        accessor_encrypt_url
       )
     );
   }
@@ -164,64 +159,71 @@ export function getIncomingRequestStatusUpdateCallbackUrl() {
   );
 }
 
-function getIdentityResultCallbackUrl() {
+function getIdentityChangesNotificationCallbackUrl() {
   return dataDb.getCallbackUrl(
     config.nodeId,
-    `idp.${CALLBACK_URL_NAME.IDENTITY_RESULT}`
+    `idp.${CALLBACK_URL_NAME.IDENTITY_CHANGES_NOTIFICATION}`
   );
 }
 
-function getAccessorSignCallbackUrl() {
+function getAccessorEncryptCallbackUrl() {
   return dataDb.getCallbackUrl(
     config.nodeId,
-    `idp.${CALLBACK_URL_NAME.ACCESSOR_SIGN}`
+    `idp.${CALLBACK_URL_NAME.ACCESSOR_ENCRYPT}`
   );
 }
 
-export async function isAccessorSignCallbackUrlSet() {
-  const callbackUrl = await getAccessorSignCallbackUrl();
+export async function isAccessorEncryptCallbackUrlSet() {
+  const callbackUrl = await getAccessorEncryptCallbackUrl();
   return callbackUrl != null;
 }
 
-export async function accessorSign({
+export async function accessorEncrypt({
   node_id,
-  sid,
-  hash_id,
+  request_message,
+  initial_salt,
   accessor_id,
   accessor_public_key,
   reference_id,
+  request_id,
 }) {
+  const request_message_padded_hash = utils.hashRequestMessageForConsent(
+    request_message,
+    initial_salt,
+    request_id,
+    accessor_public_key
+  );
+
   const data = {
-    sid_hash: hash_id,
-    sid,
-    hash_method: 'SHA256',
-    key_type: 'RSA',
-    sign_method: 'RSA-SHA256',
-    type: 'accessor_sign',
-    padding: 'PKCS#1v1.5',
-    accessor_id,
-    reference_id,
     node_id,
+    type: 'accessor_encrypt',
+    accessor_id,
+    key_type: 'RSA',
+    padding: 'none',
+    request_message_padded_hash,
+    reference_id,
+    request_id,
   };
 
-  const accessorSignCallbackUrl = await getAccessorSignCallbackUrl();
-  if (accessorSignCallbackUrl == null) {
+  const accessorEncryptCallbackUrl = await getAccessorEncryptCallbackUrl();
+  if (accessorEncryptCallbackUrl == null) {
     throw new CustomError({
-      errorType: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET,
+      errorType: errorType.ENCRYPT_WITH_ACCESSOR_KEY_URL_NOT_SET,
     });
   }
 
   logger.debug({
     message: 'Callback to accessor sign',
-    url: accessorSignCallbackUrl,
+    url: accessorEncryptCallbackUrl,
     reference_id,
+    request_id,
     accessor_id,
     accessor_public_key,
-    hash_id,
+    request_message_padded_hash,
   });
 
   try {
-    const response = await fetch(accessorSignCallbackUrl, {
+    const response = await fetch(accessorEncryptCallbackUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -231,16 +233,24 @@ export async function accessorSign({
     });
     const responseBody = await response.text();
     logger.info({
-      message: 'Accessor sign response',
+      message: 'Accessor encrypt response',
       httpStatusCode: response.status,
     });
     logger.debug({
-      message: 'Accessor sign response body',
+      message: 'Accessor encrypt response body',
       body: responseBody,
     });
     const signatureObj = JSON.parse(responseBody);
     const signature = signatureObj.signature;
-    if (!verifySignature(signature, accessor_public_key, sid)) {
+    if (
+      !utils.verifyResponseSignature(
+        signature,
+        accessor_public_key,
+        request_message,
+        initial_salt,
+        request_id
+      )
+    ) {
       throw new CustomError({
         errorType: errorType.INVALID_ACCESSOR_SIGNATURE,
       });
@@ -248,33 +258,15 @@ export async function accessorSign({
     return signature;
   } catch (error) {
     throw new CustomError({
-      errorType: errorType.SIGN_WITH_ACCESSOR_KEY_FAILED,
+      errorType: errorType.ENCRYPT_WITH_ACCESSOR_KEY_FAILED,
       cause: error,
       details: {
-        callbackUrl: accessorSignCallbackUrl,
+        callbackUrl: accessorEncryptCallbackUrl,
         accessor_id,
-        hash_id,
+        request_message_padded_hash,
       },
     });
   }
-}
-
-// Used by API v1
-function notifyByCallback({ url, type, eventDataForCallback }) {
-  if (!url) {
-    logger.error({
-      message: `Callback URL for type: ${type} has not been set`,
-    });
-    return;
-  }
-  return callbackToClient({
-    callbackUrl: url,
-    body: {
-      type,
-      ...eventDataForCallback,
-    },
-    retry: true,
-  });
 }
 
 export async function notifyIncomingRequestByCallback(
@@ -299,34 +291,6 @@ export async function notifyIncomingRequestByCallback(
     retry: true,
     shouldRetry: 'common.isRequestClosedOrTimedOut',
     shouldRetryArguments: [eventDataForCallback.request_id],
-  });
-}
-
-/**
- * USE WITH API v1 ONLY
- * @param {Object} eventDataForCallback
- */
-export async function notifyCreateIdentityResultByCallback(
-  eventDataForCallback
-) {
-  const callbackUrl = await getIdentityResultCallbackUrl();
-  notifyByCallback({
-    url: callbackUrl,
-    type: 'create_identity_result',
-    eventDataForCallback,
-  });
-}
-
-/**
- * USE WITH API v1 ONLY
- * @param {Object} eventDataForCallback
- */
-export async function notifyAddAccessorResultByCallback(eventDataForCallback) {
-  const callbackUrl = await getIdentityResultCallbackUrl();
-  notifyByCallback({
-    url: callbackUrl,
-    type: 'add_accessor_result',
-    eventDataForCallback,
   });
 }
 
@@ -363,19 +327,12 @@ export async function processMessage(nodeId, messageId, message) {
     if (message.type === privateMessageType.IDP_RESPONSE) {
       const request = await cacheDb.getRequestData(nodeId, message.request_id);
       if (request == null) return; //request not found
-      await cacheDb.addPrivateProofObjectInRequest(nodeId, message.request_id, {
-        idp_id: message.idp_id,
-        privateProofObject: {
-          privateProofValue: message.privateProofValueArray,
-          accessor_id: message.accessor_id,
-          padding: message.padding,
-        },
-      });
 
       const requestDetail = await tendermintNdid.getRequestDetail({
         requestId: message.request_id,
       });
 
+      // FIXME: add new purpose 'RegisterIdentity'
       if (requestDetail.purpose === 'AddAccessor') {
         //reponse for create identity
         if (await checkCreateIdentityResponse(nodeId, message, requestDetail)) {
@@ -446,17 +403,6 @@ export async function processMessage(nodeId, messageId, message) {
           );
         }
       }
-    } else if (message.type === privateMessageType.CHALLENGE_REQUEST) {
-      const responseId =
-        nodeId + ':' + message.request_id + ':' + message.idp_id;
-      await common.handleChallengeRequest({
-        nodeId,
-        role: ROLE.IDP,
-        request_id: message.request_id,
-        idp_id: message.idp_id,
-        public_proof: message.public_proof,
-      });
-      await cacheDb.removePublicProofReceivedFromMQ(nodeId, responseId);
     } else if (message.type === privateMessageType.CONSENT_REQUEST) {
       const requestDetail = await tendermintNdid.getRequestDetail({
         requestId: message.request_id,
@@ -501,11 +447,7 @@ export async function processMessage(nodeId, messageId, message) {
         namespace: message.namespace,
         identifier: message.identifier,
         request_message: message.request_message,
-        request_message_hash: utils.hashRequestMessageForConsent(
-          message.request_message,
-          message.initial_salt,
-          message.request_id
-        ),
+        request_message_hash: requestDetail.request_message_hash,
         request_message_salt: message.request_message_salt,
         requester_node_id: message.rp_id,
         min_ial: message.min_ial,
@@ -518,52 +460,6 @@ export async function processMessage(nodeId, messageId, message) {
         }`,
         request_timeout: message.request_timeout,
       });
-    } else if (message.type === privateMessageType.CHALLENGE_RESPONSE) {
-      //store challenge
-      const createResponseParams = await cacheDb.getResponseFromRequestId(
-        nodeId,
-        message.request_id
-      );
-      try {
-        let request = await cacheDb.getRequestReceivedFromMQ(
-          nodeId,
-          message.request_id
-        );
-        request.challenge = message.challenge;
-        logger.debug({
-          message: 'Save challenge to request',
-          request,
-          challenge: message.challenge,
-        });
-        await cacheDb.setRequestReceivedFromMQ(
-          nodeId,
-          message.request_id,
-          request
-        );
-        //query reponse data
-        logger.debug({
-          message: 'Data to response',
-          createResponseParams,
-        });
-        await createResponse(createResponseParams, { nodeId });
-      } catch (error) {
-        await callbackToClient({
-          callbackUrl: createResponseParams.callback_url,
-          body: {
-            node_id: nodeId,
-            type: 'response_result',
-            success: false,
-            reference_id: createResponseParams.reference_id,
-            request_id: createResponseParams.request_id,
-            error: getErrorObjectForClient(error),
-          },
-          retry: true,
-        });
-        cacheDb.removeResponseFromRequestId(
-          nodeId,
-          createResponseParams.request_id
-        );
-      }
     } else {
       logger.warn({
         message: 'Cannot process unknown message type',
@@ -608,37 +504,27 @@ export async function processIdpResponseAfterAddAccessor(
       secret,
     };
     if (associated) {
-      if (callbackUrl == null) {
-        // Implies API v1
-        notifyAddAccessorResultByCallback(notifyData);
-      } else {
-        await callbackToClient({
-          callbackUrl,
-          body: {
-            node_id: nodeId,
-            type: 'add_accessor_result',
-            ...notifyData,
-          },
-          retry: true,
-        });
-        cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
-      }
+      await callbackToClient({
+        callbackUrl,
+        body: {
+          node_id: nodeId,
+          type: 'add_accessor_result',
+          ...notifyData,
+        },
+        retry: true,
+      });
+      cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
     } else {
-      if (callbackUrl == null) {
-        // Implies API v1
-        notifyCreateIdentityResultByCallback(notifyData);
-      } else {
-        await callbackToClient({
-          callbackUrl,
-          body: {
-            node_id: nodeId,
-            type: 'create_identity_result',
-            ...notifyData,
-          },
-          retry: true,
-        });
-        cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
-      }
+      await callbackToClient({
+        callbackUrl,
+        body: {
+          node_id: nodeId,
+          type: 'create_identity_result',
+          ...notifyData,
+        },
+        retry: true,
+      });
+      cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
     }
     cleanUpRequestData(nodeId, requestId, reference_id);
     cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);
@@ -674,7 +560,6 @@ async function checkCreateIdentityResponse(nodeId, message, requestDetail) {
 
     if (
       !responseValid.valid_signature ||
-      !responseValid.valid_proof ||
       !responseValid.valid_ial
     ) {
       throw new CustomError({
@@ -705,51 +590,33 @@ async function checkCreateIdentityResponse(nodeId, message, requestDetail) {
       reference_id
     );
     if (associated) {
-      if (callbackUrl == null) {
-        // Implies API v1
-        notifyAddAccessorResultByCallback({
-          request_id: message.request_id,
+      await callbackToClient({
+        callbackUrl,
+        body: {
+          node_id: nodeId,
+          type: 'add_accessor_result',
           success: false,
+          reference_id,
+          request_id: message.request_id,
           error: getErrorObjectForClient(error),
-        });
-      } else {
-        await callbackToClient({
-          callbackUrl,
-          body: {
-            node_id: nodeId,
-            type: 'add_accessor_result',
-            success: false,
-            reference_id,
-            request_id: message.request_id,
-            error: getErrorObjectForClient(error),
-          },
-          retry: true,
-        });
-        cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
-      }
+        },
+        retry: true,
+      });
+      cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
     } else {
-      if (callbackUrl == null) {
-        // Implies API v1
-        notifyCreateIdentityResultByCallback({
-          request_id: message.request_id,
+      await callbackToClient({
+        callbackUrl,
+        body: {
+          node_id: nodeId,
+          type: 'create_identity_result',
           success: false,
+          reference_id,
+          request_id: message.request_id,
           error: getErrorObjectForClient(error),
-        });
-      } else {
-        await callbackToClient({
-          callbackUrl,
-          body: {
-            node_id: nodeId,
-            type: 'create_identity_result',
-            success: false,
-            reference_id,
-            request_id: message.request_id,
-            error: getErrorObjectForClient(error),
-          },
-          retry: true,
-        });
-        cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
-      }
+        },
+        retry: true,
+      });
+      cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
     }
     cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);
 
@@ -851,7 +718,6 @@ async function checkRevokeAccessorResponse(
 
     if (
       !responseValid.valid_signature ||
-      !responseValid.valid_proof ||
       !responseValid.valid_ial
     ) {
       throw new CustomError({
@@ -909,7 +775,6 @@ async function cleanUpRequestData(nodeId, requestId, referenceId) {
   return Promise.all([
     cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
     cacheDb.removeRequestData(nodeId, requestId),
-    cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
     cacheDb.removeIdpResponseValidList(nodeId, requestId),
     cacheDb.removeRequestCreationMetadata(nodeId, requestId),
   ]);

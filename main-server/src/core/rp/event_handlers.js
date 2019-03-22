@@ -20,7 +20,7 @@
  *
  */
 
-import { getErrorCallbackUrl, isAllIdpResponsesValid } from '.';
+import { isAllIdpResponsesValid } from '.';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
@@ -144,7 +144,6 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         transactions.map(async (transaction) => {
           const requestId = transaction.args.request_id;
           if (requestId == null) return;
-          if (transaction.fnName === 'DeclareIdentityProof') return;
           if (requestIdsToProcessUpdate[requestId] != null) return;
           const requestData = await cacheDb.getRequestData(nodeId, requestId);
           if (requestData == null) return; // This RP does not concern this request
@@ -272,7 +271,7 @@ export async function processRequestUpdate(
     await Promise.all([
       cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
       cacheDb.removeRequestData(nodeId, requestId),
-      cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
+      cacheDb.removeResponsePrivateDataListForRequest(nodeId, requestId),
       cacheDb.removeIdpResponseValidList(nodeId, requestId),
       cacheDb.removeRequestCreationMetadata(nodeId, requestId),
     ]);

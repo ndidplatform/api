@@ -625,80 +625,6 @@ export function removeIdpResponseValidList(nodeId, requestId) {
   });
 }
 
-export function getPublicProofReceivedFromMQ(nodeId, responseId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'publicProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-    valueName: 'publicProofArray',
-  });
-}
-
-export function setPublicProofReceivedFromMQ(
-  nodeId,
-  responseId,
-  publicProofArray
-) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'publicProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-    valueName: 'publicProofArray',
-    value: publicProofArray,
-  });
-}
-
-export function removePublicProofReceivedFromMQ(nodeId, responseId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'publicProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-  });
-}
-
-export function getPrivateProofReceivedFromMQ(nodeId, responseId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'privateProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-    valueName: 'privateProofObject',
-  });
-}
-
-export function setPrivateProofReceivedFromMQ(
-  nodeId,
-  responseId,
-  privateProofObject
-) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'privateProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-    valueName: 'privateProofObject',
-    value: privateProofObject,
-  });
-}
-
-export function removePrivateProofReceivedFromMQ(nodeId, responseId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'privateProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-  });
-}
-
 export function getRequestCreationMetadata(nodeId, requestId) {
   return db.get({
     nodeId,
@@ -735,43 +661,6 @@ export function removeRequestCreationMetadata(nodeId, requestId) {
 //
 // Used by RP
 //
-
-export function getPrivateProofObjectListInRequest(nodeId, requestId) {
-  return db.getList({
-    nodeId,
-    dbName,
-    name: 'privateProofObjectListInRequest',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'privateProofObjectList',
-  });
-}
-
-export function addPrivateProofObjectInRequest(
-  nodeId,
-  requestId,
-  privateProofObject
-) {
-  return db.pushToList({
-    nodeId,
-    dbName,
-    name: 'privateProofObjectListInRequest',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'privateProofObjectList',
-    value: privateProofObject,
-  });
-}
-
-export function removePrivateProofObjectListInRequest(nodeId, requestId) {
-  return db.removeList({
-    nodeId,
-    dbName,
-    name: 'privateProofObjectListInRequest',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
 
 export function getDataResponsefromAS(nodeId, asResponseId) {
   return db.get({
@@ -856,6 +745,43 @@ export function removeAllDataFromAS(nodeId) {
   });
 }
 
+export function getResponsePrivateDataListForRequest(nodeId, requestId) {
+  return db.getList({
+    nodeId,
+    dbName,
+    name: 'responsePrivateDataForRequest',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'responsePrivateDataList',
+  });
+}
+
+export function addResponsePrivateDataForRequest(
+  nodeId,
+  requestId,
+  responsePrivateData
+) {
+  return db.pushToList({
+    nodeId,
+    dbName,
+    name: 'responsePrivateDataForRequest',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'responsePrivateDataList',
+    value: responsePrivateData,
+  });
+}
+
+export function removeResponsePrivateDataListForRequest(nodeId, requestId) {
+  return db.removeList({
+    nodeId,
+    dbName,
+    name: 'responsePrivateDataForRequest',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 //
 // Used by IdP
 //
@@ -925,39 +851,6 @@ export function removeAccessorIdToRevokeFromRequestId(nodeId, requestId) {
     nodeId,
     dbName,
     name: 'accessorIdToRevokeFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
-export function getResponseFromRequestId(nodeId, requestId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'responseDataFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'response',
-  });
-}
-
-export function setResponseFromRequestId(nodeId, requestId, response) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'responseDataFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'response',
-    value: response,
-  });
-}
-
-export function removeResponseFromRequestId(nodeId, requestId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'responseDataFromRequestId',
     keyName: 'requestId',
     key: requestId,
   });

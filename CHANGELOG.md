@@ -4,6 +4,9 @@
 
 BREAKING CHANGES:
 
+- Remove API v1.
+- Remove API v2.
+- API v3.
 - Change logging format.
 - Remove logging to file feature.
 - Remove logging environment variable options

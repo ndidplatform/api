@@ -20,10 +20,7 @@
  *
  */
 
-import {
-  getErrorCallbackUrl,
-  getIncomingRequestStatusUpdateCallbackUrl,
-} from '.';
+import { getIncomingRequestStatusUpdateCallbackUrl } from '.';
 
 import * as utils from '../../utils';
 import { callbackToClient } from '../../callback';
@@ -61,8 +58,13 @@ export async function handleMessageFromQueue(
   const requestId = message.request_id;
 
   try {
-    //if message is challenge for response, no need to wait for blockchain
-    if (message.type === privateMessageType.CHALLENGE_RESPONSE) {
+    const addToProcessQueue = await requestProcessManager.handleMessageFromMqWithBlockWait(
+      messageId,
+      message,
+      nodeId
+    );
+
+    if (addToProcessQueue) {
       await requestProcessManager.addMqMessageTaskToQueue({
         nodeId,
         messageId,
@@ -74,30 +76,11 @@ export async function handleMessageFromQueue(
         startTime
       );
     } else {
-      const addToProcessQueue = await requestProcessManager.handleMessageFromMqWithBlockWait(
-        messageId,
-        message,
-        nodeId
+      // Save message to redis cache time
+      common.notifyMetricsInboundMessageProcessTime(
+        'wait_for_block',
+        startTime
       );
-
-      if (addToProcessQueue) {
-        await requestProcessManager.addMqMessageTaskToQueue({
-          nodeId,
-          messageId,
-          message,
-          processMessageFnName: 'idp.processMessage',
-        });
-        common.notifyMetricsInboundMessageProcessTime(
-          'does_not_wait_for_block',
-          startTime
-        );
-      } else {
-        // Save message to redis cache time
-        common.notifyMetricsInboundMessageProcessTime(
-          'wait_for_block',
-          startTime
-        );
-      }
     }
   } catch (error) {
     const err = new CustomError({
@@ -165,8 +148,8 @@ async function isCreateIdentityRequestValid(requestId) {
   }
 
   return requestDetail.response_list
-    .map(({ valid_proof, valid_ial, valid_signature }) => {
-      return valid_proof && valid_ial && valid_signature;
+    .map(({ valid_ial, valid_signature }) => {
+      return valid_ial && valid_signature;
     })
     .reduce((accum, pilot) => {
       return accum && pilot;
@@ -213,8 +196,6 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
             continue;
           }
         }
-
-        if (transaction.fnName === 'DeclareIdentityProof') continue;
 
         const requestReceivedFromMQ = await cacheDb.getRequestReceivedFromMQ(
           nodeId,
@@ -333,7 +314,6 @@ export async function processCreateIdentityRequest(nodeId, requestId, action) {
   await Promise.all([
     cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
     cacheDb.removeRequestData(nodeId, requestId),
-    cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
     cacheDb.removeIdpResponseValidList(nodeId, requestId),
     cacheDb.removeRequestCreationMetadata(nodeId, requestId),
     identityPromise,
@@ -356,11 +336,10 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
       type: 'request_status',
       ...requestStatus,
       response_valid_list: requestDetail.response_list.map(
-        ({ idp_id, valid_signature, valid_proof, valid_ial }) => {
+        ({ idp_id, valid_signature, valid_ial }) => {
           return {
             idp_id,
             valid_signature,
-            valid_proof,
             valid_ial,
           };
         }

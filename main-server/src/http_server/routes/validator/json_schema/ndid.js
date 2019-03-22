@@ -200,15 +200,6 @@ export default {
         required: ['public_key', 'power'],
       },
     },
-    '/ndid/setTimeoutBlockRegisterIdentity': {
-      body: {
-        $schema: 'http://json-schema.org/draft-07/schema#',
-        properties: {
-          blocks_to_timeout: { type: 'number', minimum: 0 },
-        },
-        required: ['blocks_to_timeout'],
-      },
-    },
     '/ndid/approveService': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
