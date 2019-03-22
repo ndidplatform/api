@@ -975,11 +975,9 @@ export async function checkExistingIdentity(namespace, identifier) {
 
 export async function getIdentityInfo(namespace, identifier, node_id) {
   try {
-    const sid = namespace + ':' + identifier;
-    const hash_id = utils.hash(sid);
-
     return await tendermint.query('GetIdentityInfo', {
-      hash_id,
+      identity_namespace: namespace,
+      identity_identifier_hash: utils.hash(identifier),
       node_id,
     });
   } catch (error) {
@@ -992,10 +990,14 @@ export async function getIdentityInfo(namespace, identifier, node_id) {
 
 export async function getReferenceGroupCode(namespace, identifier) {
   try {
-    return await tendermint.query('GetReferenceGroupCode', {
+    const result = await tendermint.query('GetReferenceGroupCode', {
       identity_namespace: namespace,
       identity_identifier_hash: utils.hash(identifier),
     });
+    if (result == null) {
+      return null;
+    }
+    return result.reference_group_code;
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get reference group code from blockchain',
@@ -1006,9 +1008,13 @@ export async function getReferenceGroupCode(namespace, identifier) {
 
 export async function getReferenceGroupCodeByAccessorId(accessor_id) {
   try {
-    return await tendermint.query('getReferenceGroupCodeByAccessorId', {
+    const result = await tendermint.query('getReferenceGroupCodeByAccessorId', {
       accessor_id,
     });
+    if (result == null) {
+      return null;
+    }
+    return result.reference_group_code;
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get reference group code by accessor ID from blockchain',

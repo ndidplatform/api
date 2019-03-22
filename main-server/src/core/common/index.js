@@ -347,11 +347,10 @@ export async function checkIdpResponse({
     requestDataFromMq,
   });
 
-  let validIal;
+  let validIal, validSignature;
 
   const requestId = requestStatus.request_id;
 
-  // Check IAL
   const requestData = await cacheDb.getRequestData(nodeId, requestId);
   const identityInfo = await tendermintNdid.getIdentityInfo(
     requestData.namespace,
@@ -361,31 +360,39 @@ export async function checkIdpResponse({
 
   if (requestStatus.mode === 1) {
     validIal = null; // Cannot check in mode 1
-  } else if (requestStatus.mode === 3) {
+    validSignature = null;
+  } else if (requestStatus.mode === 2 && requestStatus.mode === 3) {
+    // IAL check
     if (responseIal === identityInfo.ial) {
       validIal = true;
     } else {
       validIal = false;
     }
-  }
 
-  const accessor_public_key = await tendermintNdid.getAccessorKey(
-    requestDataFromMq.accessor_id
-  );
+    // Signature check
+    const requestReferenceGroupCode = await tendermintNdid.getReferenceGroupCode(
+      requestData.namespace,
+      requestData.identifier
+    );
+    const responseReferenceGroupCode = await tendermintNdid.getReferenceGroupCodeByAccessorId(
+      requestDataFromMq.accessor_id
+    );
+    if (requestReferenceGroupCode !== responseReferenceGroupCode) {
+      validSignature = false;
+    }
 
-  let signatureValid;
-  if (accessor_public_key || requestStatus.mode === 1) {
-    const response_list = (await tendermintNdid.getRequestDetail({
-      requestId: requestStatus.request_id,
-    })).response_list;
-    const response = response_list.find(
-      (response) => response.idp_id === idpId
+    const accessor_public_key = await tendermintNdid.getAccessorKey(
+      requestDataFromMq.accessor_id
     );
 
-    // Check signature
-    if (requestStatus.mode === 1) {
-      signatureValid = null; // Cannot check in mode 1
-    } else if (requestStatus.mode === 3) {
+    if (accessor_public_key) {
+      const response_list = (await tendermintNdid.getRequestDetail({
+        requestId: requestStatus.request_id,
+      })).response_list;
+      const response = response_list.find(
+        (response) => response.idp_id === idpId
+      );
+
       const { request_message, initial_salt, request_id } = requestData;
       const signature = response.signature;
 
@@ -397,27 +404,27 @@ export async function checkIdpResponse({
         signature,
       });
 
-      signatureValid = utils.verifyResponseSignature(
+      validSignature = utils.verifyResponseSignature(
         signature,
         accessor_public_key,
         request_message,
         initial_salt,
         request_id
       );
-    }
-  } else {
-    logger.debug({
-      message: 'Accessor key not found or inactive',
-      accessorId: requestDataFromMq.accessor_id,
-      idpId,
-    });
+    } else {
+      logger.debug({
+        message: 'Accessor key not found or inactive',
+        accessorId: requestDataFromMq.accessor_id,
+        idpId,
+      });
 
-    signatureValid = false;
+      validSignature = false;
+    }
   }
 
   const responseValid = {
     idp_id: idpId,
-    valid_signature: signatureValid,
+    valid_signature: validSignature,
     valid_ial: validIal,
   };
 
