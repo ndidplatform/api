@@ -303,12 +303,16 @@ export async function processMessage(nodeId, messageId, message) {
 
         const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
+        if (requestStatus.closed || requestStatus.timed_out) {
+          return;
+        }
+
         const savedResponseValidList = await cacheDb.getIdpResponseValidList(
           nodeId,
           message.request_id
         );
 
-        const responseValid = await common.checkIdpResponse({
+        const responseValid = await common.getAndSaveIdpResponseValid({
           nodeId,
           requestStatus,
           idpId: message.idp_id,

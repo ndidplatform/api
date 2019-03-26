@@ -168,7 +168,7 @@ export async function registerIdentity(
   }
 }
 
-export async function addAccessorMethod(
+export async function addAccessor(
   {
     reference_group_code,
     namespace,
@@ -197,7 +197,7 @@ export async function addAccessorMethod(
   try {
     return await tendermint.transact({
       nodeId,
-      fnName: 'AddAccessorMethod',
+      fnName: 'AddAccessor',
       params: {
         reference_group_code,
         identity_namespace: namespace,
@@ -213,13 +213,13 @@ export async function addAccessorMethod(
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot add accessor method to blockchain',
+      message: 'Cannot add accessor to blockchain',
       cause: error,
     });
   }
 }
 
-export async function revokeAccessorMethod(
+export async function revokeAccessor(
   { request_id, accessor_id },
   nodeId,
   callbackFnName,
@@ -229,7 +229,7 @@ export async function revokeAccessorMethod(
   try {
     return await tendermint.transact({
       nodeId,
-      fnName: 'RevokeAccessorMethod',
+      fnName: 'RevokeAccessor',
       params: {
         request_id,
         accessor_id_list: [accessor_id],
@@ -240,7 +240,7 @@ export async function revokeAccessorMethod(
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot revoke accessor method from blockchain',
+      message: 'Cannot revoke accessor from blockchain',
       cause: error,
     });
   }
@@ -1056,7 +1056,7 @@ export async function getReferenceGroupCode(namespace, identifier) {
 
 export async function getReferenceGroupCodeByAccessorId(accessor_id) {
   try {
-    const result = await tendermint.query('getReferenceGroupCodeByAccessorId', {
+    const result = await tendermint.query('GetReferenceGroupCodeByAccessorId', {
       accessor_id,
     });
     if (result == null) {

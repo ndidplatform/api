@@ -332,7 +332,7 @@ export async function removeTimeoutSchedulerInternal(nodeId, requestId) {
   delete timeoutScheduler[`${nodeId}:${requestId}`];
 }
 
-export async function checkIdpResponse({
+export async function getAndSaveIdpResponseValid({
   nodeId,
   requestStatus,
   idpId,

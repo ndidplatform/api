@@ -514,6 +514,8 @@ export async function getServiceDetail(nodeId, service_id) {
 
 async function isIdpResponsesValid(request_id, dataFromMq) {
   const {
+    namespace,
+    identifier,
     request_message,
     initial_salt,
     response_private_data_list,
@@ -532,8 +534,9 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
     return true;
   }
 
-  const referenceGroupCode = await tendermintNdid.getReferenceGroupCodeByAccessorId(
-    response_private_data_list[0].accessor_id
+  const referenceGroupCode = await tendermintNdid.getReferenceGroupCode(
+    namespace,
+    identifier
   );
   for (let i = 1; i < response_private_data_list.length; i++) {
     const otherReferenceGroupCode = await tendermintNdid.getReferenceGroupCodeByAccessorId(

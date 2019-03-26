@@ -81,7 +81,7 @@ router.get(
       const { node_id } = req.query;
       const { reference_id } = req.params;
 
-      const createIdentityData = await identity.getCreateIdentityDataByReferenceId(
+      const identityRequestData = await identity.getIdentityRequestDataByReferenceId(
         node_id,
         reference_id
       );
@@ -90,16 +90,20 @@ router.get(
         reference_id
       );
 
-      if (createIdentityData != null) {
-        res.status(200).json({
-          request_id: createIdentityData.request_id,
-          accessor_id: createIdentityData.accessor_id,
-        });
-      } else if (revokeIdentityData != null) {
-        res.status(200).json({
-          request_id: revokeIdentityData.request_id,
-          accessor_id: revokeIdentityData.accessor_id,
-        });
+      if (identityRequestData != null) {
+        if (identityRequestData.type === 'RegisterIdentity') {
+          res.status(200).json({
+            request_id: identityRequestData.request_id,
+            accessor_id: identityRequestData.accessor_id,
+          });
+        } else if (identityRequestData.type === 'AddAccessor') {
+          res.status(200).json({
+            request_id: revokeIdentityData.request_id,
+            accessor_id: revokeIdentityData.accessor_id,
+          });
+        } else {
+          res.status(500).end(); // FIXME: ?
+        }
       } else {
         res.status(404).end();
       }
@@ -280,7 +284,7 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
-      const result = await identity.addAccessorMethodForAssociatedIdp(
+      const result = await identity.addAccessor(
         {
           node_id,
           reference_id,
@@ -323,7 +327,7 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
-      const result = await identity.revokeAccessorMethodForAssociatedIdp({
+      const result = await identity.revokeAccessor({
         node_id,
         reference_id,
         callback_url,
@@ -351,12 +355,7 @@ router.post(
   validateBody,
   async (req, res, next) => {
     try {
-      const {
-        node_id,
-        reference_id,
-        callback_url,
-        request_message,
-      } = req.body;
+      const { node_id, reference_id, callback_url, request_message } = req.body;
 
       const { namespace, identifier } = req.params;
 
@@ -387,12 +386,7 @@ router.post(
   validateBody,
   async (req, res, next) => {
     try {
-      const {
-        node_id,
-        reference_id,
-        callback_url,
-        request_message,
-      } = req.body;
+      const { node_id, reference_id, callback_url, request_message } = req.body;
 
       const { namespace, identifier } = req.params;
 

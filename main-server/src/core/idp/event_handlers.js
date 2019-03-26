@@ -159,7 +159,7 @@ async function isCreateIdentityRequestValid(requestId) {
 function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
   return Promise.all(
     parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
-      const createIdentityRequestsToProcess = {}; // For clean up closed or timed out create identity requests
+      const identityRequestsToProcess = {}; // For clean up closed or timed out create identity requests
       const incomingRequestsToProcessUpdate = {};
 
       for (let i = 0; i < transactions.length; i++) {
@@ -177,7 +177,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
               continue;
             }
 
-            createIdentityRequestsToProcess[requestId] = {
+            identityRequestsToProcess[requestId] = {
               requestId,
               action: 'close',
             };
@@ -189,7 +189,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
           const requestData = await cacheDb.getRequestData(nodeId, requestId);
 
           if (requestData != null) {
-            createIdentityRequestsToProcess[requestId] = {
+            identityRequestsToProcess[requestId] = {
               requestId,
               action: 'timeout',
             };
@@ -214,7 +214,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
       logger.debug({
         message: 'Create identity requests to process',
-        createIdentityRequestsToProcess,
+        identityRequestsToProcess,
       });
 
       logger.debug({
@@ -223,12 +223,12 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
       });
 
       await Promise.all([
-        ...Object.values(createIdentityRequestsToProcess).map(
+        ...Object.values(identityRequestsToProcess).map(
           ({ requestId, action }) =>
             requestProcessManager.addTaskToQueue({
               nodeId,
               requestId,
-              callbackFnName: 'idp.processCreateIdentityRequest',
+              callbackFnName: 'idp.processIdentityRequest',
               callbackArgs: [nodeId, requestId, action],
             })
         ),
@@ -246,15 +246,13 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
   );
 }
 
-export async function processCreateIdentityRequest(nodeId, requestId, action) {
+export async function processIdentityRequest(nodeId, requestId, action) {
   const requestData = await cacheDb.getRequestData(nodeId, requestId);
   const referenceId = requestData.reference_id;
   const identityCallbackUrl = await cacheDb.getCallbackUrlByReferenceId(
     nodeId,
     referenceId
   );
-
-  let identityPromise, type;
 
   logger.debug({
     message: 'Cleanup associated requestId',
@@ -263,26 +261,26 @@ export async function processCreateIdentityRequest(nodeId, requestId, action) {
   });
 
   //check type
-  const [createIdentityData, revokeAccessorData] = await Promise.all([
-    cacheDb.getCreateIdentityDataByReferenceId(nodeId, referenceId),
-    cacheDb.getRevokeAccessorDataByReferenceId(nodeId, referenceId),
-  ]);
+  const identityRequestData = await cacheDb.getIdentityRequestDataByReferenceId(
+    nodeId,
+    referenceId
+  );
 
-  if (createIdentityData) {
-    type = createIdentityData.associated
-      ? 'add_accessor_result'
-      : 'create_identity_result';
-
-    identityPromise = cacheDb.removeCreateIdentityDataByReferenceId(
+  let type;
+  if (identityRequestData != null) {
+    if (identityRequestData.type === 'RegisterIdentity') {
+      type = 'create_identity_result';
+    } else if (identityRequestData.type === 'AddAccessor') {
+      type = 'add_accessor_result';
+    } else if (identityRequestData.type === 'RevokeAccessor') {
+      type = 'revoke_accessor_result';
+    }
+  } else {
+    throw new CustomError({
+      message: 'Cannot find identity request data',
       nodeId,
-      referenceId
-    );
-  } else if (revokeAccessorData) {
-    type = 'revoke_accessor_result';
-    identityPromise = cacheDb.removeRevokeAccessorDataByReferenceId(
-      nodeId,
-      referenceId
-    );
+      referenceId,
+    });
   }
 
   if (identityCallbackUrl != null) {
@@ -316,7 +314,7 @@ export async function processCreateIdentityRequest(nodeId, requestId, action) {
     cacheDb.removeRequestData(nodeId, requestId),
     cacheDb.removeIdpResponseValidList(nodeId, requestId),
     cacheDb.removeRequestCreationMetadata(nodeId, requestId),
-    identityPromise,
+    cacheDb.removeIdentityRequestDataByReferenceId(nodeId, referenceId),
     cacheDb.removeIdentityFromRequestId(nodeId, requestId),
   ]);
 }

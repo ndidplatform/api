@@ -117,8 +117,8 @@ export function getFunction(fnName) {
       return idp.processMessage;
     case 'idp.processRequestUpdate':
       return idp.processRequestUpdate;
-    case 'idp.processCreateIdentityRequest':
-      return idp.processCreateIdentityRequest;
+    case 'idp.processIdentityRequest':
+      return idp.processIdentityRequest;
     case 'as.processMessage':
       return as.processMessage;
     case 'as.processRequestUpdate':

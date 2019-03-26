@@ -456,7 +456,9 @@ export function getDetailedRequestStatus(requestDetail) {
         responseCount.reject === 0 &&
         (responseCount.accept > 0 ||
           (responseCount.accept === 0 &&
-            requestDetail.purpose === 'AddAccessor'))
+            ['RegisterIdentity', 'AddAccessor', 'RevokeAccessor'].includes(
+              requestDetail.purpose
+            )))
       ) {
         status = 'completed';
       }

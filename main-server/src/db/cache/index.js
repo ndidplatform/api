@@ -819,42 +819,42 @@ export function removeRequestToProcessReceivedFromMQ(nodeId, requestId) {
   });
 }
 
-export function getAccessorIdToRevokeFromRequestId(nodeId, requestId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'accessorIdToRevokeFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'accessorId',
-  });
-}
+// export function getAccessorIdToRevokeFromRequestId(nodeId, requestId) {
+//   return db.get({
+//     nodeId,
+//     dbName,
+//     name: 'accessorIdToRevokeFromRequestId',
+//     keyName: 'requestId',
+//     key: requestId,
+//     valueName: 'accessorId',
+//   });
+// }
 
-export function setAccessorIdToRevokeFromRequestId(
-  nodeId,
-  requestId,
-  accessorId
-) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'accessorIdToRevokeFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'accessorId',
-    value: accessorId,
-  });
-}
+// export function setAccessorIdToRevokeFromRequestId(
+//   nodeId,
+//   requestId,
+//   accessorId
+// ) {
+//   return db.set({
+//     nodeId,
+//     dbName,
+//     name: 'accessorIdToRevokeFromRequestId',
+//     keyName: 'requestId',
+//     key: requestId,
+//     valueName: 'accessorId',
+//     value: accessorId,
+//   });
+// }
 
-export function removeAccessorIdToRevokeFromRequestId(nodeId, requestId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'accessorIdToRevokeFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
+// export function removeAccessorIdToRevokeFromRequestId(nodeId, requestId) {
+//   return db.remove({
+//     nodeId,
+//     dbName,
+//     name: 'accessorIdToRevokeFromRequestId',
+//     keyName: 'requestId',
+//     key: requestId,
+//   });
+// }
 
 export function getRPIdFromRequestId(nodeId, requestId) {
   return db.get({
@@ -922,75 +922,38 @@ export function removeIdentityFromRequestId(nodeId, requestId) {
   });
 }
 
-export function getCreateIdentityDataByReferenceId(nodeId, referenceId) {
+export function getIdentityRequestDataByReferenceId(nodeId, referenceId) {
   return db.get({
     nodeId,
     dbName,
-    name: 'createIdentityDataReferenceIdMapping',
+    name: 'identityRequestDataReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
-    valueName: 'createIdentityData',
+    valueName: 'identityRequestData',
   });
 }
 
-export function setCreateIdentityDataByReferenceId(
+export function setIdentityRequestDataByReferenceId(
   nodeId,
   referenceId,
-  createIdentityData
+  identityRequestData
 ) {
   return db.set({
     nodeId,
     dbName,
-    name: 'createIdentityDataReferenceIdMapping',
+    name: 'identityRequestDataReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
-    valueName: 'createIdentityData',
-    value: createIdentityData,
+    valueName: 'identityRequestData',
+    value: identityRequestData,
   });
 }
 
-export function removeCreateIdentityDataByReferenceId(nodeId, referenceId) {
+export function removeIdentityRequestDataByReferenceId(nodeId, referenceId) {
   return db.remove({
     nodeId,
     dbName,
-    name: 'createIdentityDataReferenceIdMapping',
-    keyName: 'referenceId',
-    key: referenceId,
-  });
-}
-
-export function getRevokeAccessorDataByReferenceId(nodeId, referenceId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'revokeAccessorDataReferenceIdMapping',
-    keyName: 'referenceId',
-    key: referenceId,
-    valueName: 'revokeAccessorData',
-  });
-}
-
-export function setRevokeAccessorDataByReferenceId(
-  nodeId,
-  referenceId,
-  revokeAccessorData
-) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'revokeAccessorDataReferenceIdMapping',
-    keyName: 'referenceId',
-    key: referenceId,
-    valueName: 'revokeAccessorData',
-    value: revokeAccessorData,
-  });
-}
-
-export function removeRevokeAccessorDataByReferenceId(nodeId, referenceId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'revokeAccessorDataReferenceIdMapping',
+    name: 'identityRequestDataReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
   });

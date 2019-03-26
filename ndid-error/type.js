@@ -558,7 +558,7 @@ module.exports = {
     message: 'Mismatched ial between response and identity info',
     clientError: true,
   },
-  INVALID_ACCESSOR_RESPONSE: {
+  INVALID_ACCESSOR_RESPONSE: { // TODO: Remove this
     code: 20061,
     message: 'Revoking accessor mismatch with responding accessor',
     clientError: true,

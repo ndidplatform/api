@@ -30,31 +30,9 @@ import logger from '../../logger';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 
-export async function closeConsentRequestThenRevokeAccessor(
-  { nodeId, request_id, old_accessor_id, revoking_accessor_id },
-  { callbackFnName, callbackAdditionalArgs }
-) {
-  await closeRequest(
-    {
-      node_id: nodeId,
-      request_id: request_id,
-    },
-    {
-      synchronous: false,
-      sendCallbackToClient: false,
-      callbackFnName: 'identity.revokeAccessorAfterCloseConsentRequest',
-      callbackAdditionalArgs: [
-        { nodeId, request_id, old_accessor_id, revoking_accessor_id },
-        { callbackFnName, callbackAdditionalArgs },
-      ],
-      saveForRetryOnChainDisabled: true,
-    }
-  );
-}
-
 export async function revokeAccessorAfterCloseConsentRequest(
   { error },
-  { nodeId, request_id, old_accessor_id, revoking_accessor_id },
+  { nodeId, request_id },
   { callbackFnName, callbackAdditionalArgs }
 ) {
   try {
@@ -63,20 +41,25 @@ export async function revokeAccessorAfterCloseConsentRequest(
       message: 'Got consent, revoking accessor',
       nodeId,
       request_id,
-      old_accessor_id,
     });
 
-    await tendermintNdid.revokeAccessorMethod(
+    const { type, accessor_id } = await cacheDb.getIdentityFromRequestId(
+      nodeId,
+      request_id
+    );
+
+    await tendermintNdid.revokeAccessor(
       {
         request_id,
-        accessor_id: revoking_accessor_id,
+        accessor_id,
       },
       nodeId,
-      'identity.notifyRevokeAccessorAfterConsent',
+      'identity.revokeAccessorAfterConsentAndBlockchain',
       [
         {
           nodeId,
           request_id,
+          type,
         },
         { callbackFnName, callbackAdditionalArgs },
       ],
@@ -101,24 +84,24 @@ export async function revokeAccessorAfterCloseConsentRequest(
   }
 }
 
-export async function notifyRevokeAccessorAfterConsent(
+export async function revokeAccessorAfterConsentAndBlockchain(
   { error, chainDisabledRetryLater },
-  { nodeId, request_id },
+  { nodeId, request_id, type },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
   if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 
-    await cacheDb.removeAccessorIdToRevokeFromRequestId(nodeId, request_id);
+    await cacheDb.removeIdentityFromRequestId(nodeId, request_id);
     if (callbackAdditionalArgs != null) {
-      getFunction(callbackFnName)({}, ...callbackAdditionalArgs);
+      getFunction(callbackFnName)({ type }, ...callbackAdditionalArgs);
     } else {
-      getFunction(callbackFnName)({});
+      getFunction(callbackFnName)({ type });
     }
   } catch (error) {
     logger.error({
-      message: 'Revoke accessor after consent error',
+      message: 'Revoke accessor after consent and blockchain error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],

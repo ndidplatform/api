@@ -20,8 +20,11 @@
  *
  */
 
+import { getIdentityInfo } from '.';
+
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
+import * as tendermintNdid from '../../tendermint/ndid';
 import { getRequestMessageForRevokingAccessor } from '../../utils/request_message';
 
 import CustomError from 'ndid-error/custom_error';
@@ -48,7 +51,6 @@ import { role } from '../../node';
  * @param {string} revokeAccessorParams.request_message
  * @param {Object} options
  * @param {boolean} options.synchronous
- * @param {number} options.apiVersion
  *
  * @returns {{ request_id: string }}
  */
@@ -83,29 +85,77 @@ export async function revokeAccessor(revokeAccessorParams) {
       });
     }
 
+    const identityOnNode = await getIdentityInfo({
+      nodeId: node_id,
+      namespace,
+      identifier,
+    });
+    if (identityOnNode == null) {
+      throw new CustomError({
+        errorType: errorType.IDENTITY_NOT_FOUND,
+        details: {
+          namespace,
+          identifier,
+        },
+      });
+    }
+
+    const accessor_public_key = await tendermintNdid.getAccessorKey(
+      accessor_id
+    );
+    if (accessor_public_key == null) {
+      throw new CustomError({
+        errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE,
+        details: {
+          accessor_id,
+        },
+      });
+    }
+
+    //check is accessor_id created by this idp?
+    const accessorOwner = await tendermintNdid.getAccessorOwner(accessor_id);
+    if (accessorOwner !== node_id) {
+      throw new CustomError({
+        errorType: errorType.NOT_OWNER_OF_ACCESSOR,
+        details: {
+          accessor_id,
+        },
+      });
+    }
+
     const request_id = utils.createRequestId();
 
-    await cacheDb.setRevokeAccessorDataByReferenceId(node_id, reference_id, {
+    await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
+      type: 'RevokeAccessor',
       request_id,
       accessor_id,
       namespace,
       identifier,
     });
 
-    await cacheDb.setAccessorIdToRevokeFromRequestId(
-      node_id,
-      request_id,
-      accessor_id
-    );
+    // Get maximum mode for identity
+    let mode;
+    if (identityOnNode.mode.find((mode) => mode === 3) != null) {
+      mode = 3;
+    } else if (identityOnNode.mode.find((mode) => mode === 2) != null) {
+      mode = 2;
+    } else {
+      throw new CustomError({
+        message: 'no available mode',
+        // FIXME
+      });
+    }
 
     await cacheDb.setCallbackUrlByReferenceId(
       node_id,
       reference_id,
       callback_url
     );
+
     createRequestToRevokeAccessor(...arguments, {
       nodeId: node_id,
       request_id,
+      mode,
     });
     return { request_id };
   } catch (error) {
@@ -122,7 +172,7 @@ export async function revokeAccessor(revokeAccessorParams) {
       )
     ) {
       await Promise.all([
-        cacheDb.removeRevokeAccessorDataByReferenceId(node_id, reference_id),
+        cacheDb.removeIdentityRequestDataByReferenceId(node_id, reference_id),
         cacheDb.removeCallbackUrlByReferenceId(node_id, reference_id),
       ]);
     }
@@ -140,7 +190,7 @@ export async function createRequestToRevokeAccessor(
     accessor_id,
     request_message,
   },
-  { nodeId, request_id }
+  { nodeId, request_id, mode }
 ) {
   try {
     await common.createRequest(
@@ -162,12 +212,12 @@ export async function createRequestToRevokeAccessor(
                 node_id: config.nodeId,
                 accessor_id,
               }),
-        //WHAT SHOULD IT BE?
+        // WHAT SHOULD THESE BE? (IAL, AAL, MIN_IDP)
         min_ial: 1.1,
         min_aal: 1,
         min_idp: 1,
         request_timeout: 86400,
-        mode: 3,
+        mode,
         purpose: 'RevokeAccessor',
       },
       {
@@ -178,11 +228,14 @@ export async function createRequestToRevokeAccessor(
           {
             reference_id,
             callback_url,
+            namespace,
+            identifier,
             accessor_id,
           },
           {
             nodeId,
             request_id,
+            mode,
           },
         ],
         saveForRetryOnChainDisabled: true,
@@ -223,8 +276,8 @@ export async function createRequestToRevokeAccessor(
 
 export async function notifyResultOfCreateRequestToRevokeAccessor(
   { chainId, height, error },
-  { reference_id, callback_url, accessor_id },
-  { nodeId, request_id }
+  { reference_id, callback_url, namespace, identifier, accessor_id },
+  { nodeId, request_id, mode }
 ) {
   try {
     if (error) throw error;
@@ -242,12 +295,115 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
       },
       retry: true,
     });
+
+    if (mode === 3) {
+      // save data for later use after got consent from user (in mode 3)
+      await cacheDb.setIdentityFromRequestId(nodeId, request_id, {
+        type: 'RevokeAccessor',
+        namespace,
+        identifier,
+        accessor_id,
+      });
+    } else {
+      await tendermintNdid.revokeAccessor(
+        {
+          accessor_id,
+          request_id,
+        },
+        nodeId,
+        'identity.revokeAccessorInternalAsyncAfterBlockchain',
+        [
+          {
+            nodeId,
+            reference_id,
+            callback_url,
+            request_id,
+            accessor_id,
+          },
+        ],
+        true
+      );
+    }
   } catch (error) {
     logger.error({
       message: 'Create identity internal async after create request error',
       tendermintResult: arguments[0],
       originalArgs: arguments[1],
       additionalArgs: arguments[2],
+      err: error,
+    });
+
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
+        node_id: nodeId,
+        type: 'revoke_accessor_request_result',
+        success: false,
+        reference_id,
+        request_id,
+        accessor_id,
+        error: getErrorObjectForClient(error),
+      },
+      retry: true,
+    });
+
+    await revokeAccessorCleanUpOnError({
+      nodeId,
+      requestId: request_id,
+      referenceId: reference_id,
+    });
+
+    throw error;
+  }
+}
+
+export async function revokeAccessorInternalAsyncAfterBlockchain(
+  { error },
+  {
+    nodeId,
+    reference_id,
+    callback_url,
+    request_id,
+    accessor_id,
+  }
+) {
+  try {
+    if (error) throw error;
+
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
+        node_id: nodeId,
+        type: 'revoke_accessor_result',
+        success: true,
+        reference_id,
+        request_id,
+      },
+      retry: true,
+    });
+    cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
+    await common.closeRequest(
+      {
+        node_id: nodeId,
+        request_id,
+      },
+      {
+        synchronous: false,
+        sendCallbackToClient: false,
+        saveForRetryOnChainDisabled: true,
+      }
+    );
+
+    cacheDb.removeIdentityRequestDataByReferenceId(nodeId, reference_id);
+    cacheDb.removeRequestIdByReferenceId(nodeId, reference_id);
+    cacheDb.removeRequestData(nodeId, request_id);
+    cacheDb.removeRequestCreationMetadata(nodeId, request_id);
+  } catch (error) {
+    logger.error({
+      message: 'Revoke accessor internal async after clear MQ dest. timeout error',
+      tendermintResult: arguments[0],
+      additionalArgs: arguments[1],
+      options: arguments[2],
       err: error,
     });
 
@@ -284,7 +440,7 @@ async function revokeAccessorCleanUpOnError({
 }) {
   await Promise.all([
     cacheDb.removeCallbackUrlByReferenceId(nodeId, referenceId),
-    cacheDb.removeRevokeAccessorDataByReferenceId(nodeId, referenceId),
+    cacheDb.removeIdentityRequestDataByReferenceId(nodeId, referenceId),
     cacheDb.removeAccessorIdToRevokeFromRequestId(nodeId, requestId),
   ]);
 }

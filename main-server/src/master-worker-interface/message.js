@@ -50,7 +50,7 @@ function getArgsProtobufType(fnName) {
     //   break;
     // case 'idp.processRequestUpdate':
     //   break;
-    // case 'idp.processCreateIdentityRequest':
+    // case 'idp.processIdentityRequest':
     //   break;
     // case 'as.processMessage':
     //   break;

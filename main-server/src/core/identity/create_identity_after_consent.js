@@ -21,16 +21,12 @@
  */
 
 import { getFunction } from '../../functions';
-
 import logger from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 
-import CustomError from 'ndid-error/custom_error';
-import errorType from 'ndid-error/type';
-
-export async function addAccessorAfterCloseConsentRequest(
+export async function createIdentityAfterCloseConsentRequest(
   { error },
   { nodeId, request_id },
   { callbackFnName, callbackAdditionalArgs }
@@ -38,7 +34,7 @@ export async function addAccessorAfterCloseConsentRequest(
   try {
     if (error) throw error;
     logger.debug({
-      message: 'Got consent, adding accessor',
+      message: 'Got consent, creating identity',
       nodeId,
       request_id,
     });
@@ -47,6 +43,7 @@ export async function addAccessorAfterCloseConsentRequest(
       type,
       namespace,
       identifier,
+      ial,
       accessor_id,
       accessor_public_key,
       accessor_type,
@@ -57,16 +54,23 @@ export async function addAccessorAfterCloseConsentRequest(
       identifier
     );
 
-    await tendermintNdid.addAccessor(
+    await tendermintNdid.registerIdentity(
       {
-        reference_group_code,
-        accessor_id,
-        accessor_public_key,
-        accessor_type,
-        request_id,
+        users: [
+          {
+            reference_group_code,
+            namespace,
+            identifier,
+            ial,
+            accessor_id,
+            accessor_public_key,
+            accessor_type,
+            request_id,
+          },
+        ],
       },
       nodeId,
-      'identity.addAccessorAfterConsentAndBlockchain',
+      'identity.createIdentityAfterCloseConsentAndBlockchain',
       [
         {
           nodeId,
@@ -79,7 +83,7 @@ export async function addAccessorAfterCloseConsentRequest(
     );
   } catch (error) {
     logger.error({
-      message: 'Add accessor after close consent request error',
+      message: 'Create identity after close consent request error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
@@ -96,7 +100,7 @@ export async function addAccessorAfterCloseConsentRequest(
   }
 }
 
-export async function addAccessorAfterConsentAndBlockchain(
+export async function createIdentityAfterCloseConsentAndBlockchain(
   { error, chainDisabledRetryLater },
   { nodeId, request_id, type },
   { callbackFnName, callbackAdditionalArgs } = {}
