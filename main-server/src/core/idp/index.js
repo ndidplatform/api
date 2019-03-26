@@ -413,6 +413,7 @@ export async function processMessage(nodeId, messageId, message) {
       }
 
       await Promise.all([
+        cacheDb.setReferenceGroupCodeFromRequestId(nodeId, message.request_id, message.reference_group_code),
         cacheDb.setRequestReceivedFromMQ(nodeId, message.request_id, message),
         cacheDb.setRPIdFromRequestId(nodeId, message.request_id, message.rp_id),
       ]);

@@ -360,6 +360,7 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
       cacheDb.removeRequestReceivedFromMQ(nodeId, requestId),
       cacheDb.removeRPIdFromRequestId(nodeId, requestId),
       cacheDb.removeRequestMessage(nodeId, requestId),
+      cacheDb.removeReferenceGroupCodeFromRequestId(nodeId, requestId),
     ]);
   }
 }

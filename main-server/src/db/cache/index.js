@@ -819,6 +819,43 @@ export function removeRequestToProcessReceivedFromMQ(nodeId, requestId) {
   });
 }
 
+export function getReferenceGroupCodeFromRequestId(nodeId, requestId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'referenceGroupCodeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'referenceGroupCode',
+  });
+}
+
+export function setReferenceGroupCodeFromRequestId(
+  nodeId,
+  requestId,
+  referenceGroupCode
+) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'referenceGroupCodeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'referenceGroupCode',
+    value: referenceGroupCode,
+  });
+}
+
+export function removeReferenceGroupCodeFromRequestId(nodeId, requestId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'referenceGroupCodeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 export function getAccessorIdToRevokeFromRequestId(nodeId, requestId) {
   return db.get({
     nodeId,
