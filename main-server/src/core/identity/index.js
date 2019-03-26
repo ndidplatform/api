@@ -90,7 +90,12 @@ export async function getRevokeAccessorDataByReferenceId(nodeId, referenceId) {
   }
 }
 
-export async function getIdentityInfo({ nodeId, namespace, identifier }) {
+export async function getIdentityInfo({
+  nodeId,
+  namespace,
+  identifier,
+  referenceGroupCode,
+}) {
   try {
     if (role === 'proxy') {
       if (nodeId == null) {
@@ -106,6 +111,7 @@ export async function getIdentityInfo({ nodeId, namespace, identifier }) {
       namespace,
       identifier,
       node_id: nodeId,
+      reference_group_code: referenceGroupCode,
     });
     return identityInfo;
   } catch (error) {
@@ -198,8 +204,7 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
         callbackAdditionalArgs: [
           { nodeId, requestId },
           {
-            callbackFnName:
-              'identity.afterIdentityOperationSuccess',
+            callbackFnName: 'identity.afterIdentityOperationSuccess',
             callbackAdditionalArgs: [{ nodeId, request_id: requestId }],
           },
         ],

@@ -22,6 +22,7 @@
 
 import { accessorEncrypt } from '.';
 
+import { getIdentityInfo } from '../identity';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as tendermint from '../../tendermint';
 import * as cacheDb from '../../db/cache';
@@ -111,6 +112,21 @@ export async function createResponse(createResponseParams) {
 
     let accessorPublicKey;
     if (request.mode === 3) {
+      //check association mode list
+      //idp associate with only mode 2 won't be able to response mode 3 request
+      const referenceGroupCode = cacheDb.getReferenceGroupCodeFromRequestId(
+        node_id,
+        request_id
+      );
+      const { mode_list } = await getIdentityInfo({
+        nodeId: node_id,
+        referenceGroupCode,
+      });
+      if (mode_list.indexOf(3) === -1)
+        throw new CustomError({
+          errorType: errorType.IDENTITY_MODE_MISMATCH,
+        });
+
       if (accessor_id == null) {
         throw new CustomError({
           errorType: errorType.ACCESSOR_ID_NEEDED,

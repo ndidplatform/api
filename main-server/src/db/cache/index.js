@@ -819,42 +819,42 @@ export function removeRequestToProcessReceivedFromMQ(nodeId, requestId) {
   });
 }
 
-// export function getAccessorIdToRevokeFromRequestId(nodeId, requestId) {
-//   return db.get({
-//     nodeId,
-//     dbName,
-//     name: 'accessorIdToRevokeFromRequestId',
-//     keyName: 'requestId',
-//     key: requestId,
-//     valueName: 'accessorId',
-//   });
-// }
+export function getReferenceGroupCodeFromRequestId(nodeId, requestId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'referenceGroupCodeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'referenceGroupCode',
+  });
+}
 
-// export function setAccessorIdToRevokeFromRequestId(
-//   nodeId,
-//   requestId,
-//   accessorId
-// ) {
-//   return db.set({
-//     nodeId,
-//     dbName,
-//     name: 'accessorIdToRevokeFromRequestId',
-//     keyName: 'requestId',
-//     key: requestId,
-//     valueName: 'accessorId',
-//     value: accessorId,
-//   });
-// }
+export function setReferenceGroupCodeFromRequestId(
+  nodeId,
+  requestId,
+  referenceGroupCode
+) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'referenceGroupCodeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'referenceGroupCode',
+    value: referenceGroupCode,
+  });
+}
 
-// export function removeAccessorIdToRevokeFromRequestId(nodeId, requestId) {
-//   return db.remove({
-//     nodeId,
-//     dbName,
-//     name: 'accessorIdToRevokeFromRequestId',
-//     keyName: 'requestId',
-//     key: requestId,
-//   });
-// }
+export function removeReferenceGroupCodeFromRequestId(nodeId, requestId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'referenceGroupCodeFromRequestId',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
 
 export function getRPIdFromRequestId(nodeId, requestId) {
   return db.get({

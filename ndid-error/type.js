@@ -578,6 +578,11 @@ module.exports = {
     message: 'Master signed check string mismatched',
     clientError: true,
   },
+  IDENTITY_MODE_MISMATCH: {
+    code: 20065,
+    message: 'This request must be responsed by identity onboarded in mode 3',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
