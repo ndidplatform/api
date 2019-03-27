@@ -213,7 +213,7 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
 }
 
 export async function afterIdentityOperationSuccess(
-  { error, type, accessor_id, reference_id, request_id },
+  { error, type, reference_group_code, accessor_id, reference_id, request_id },
   { nodeId }
 ) {
   if (error && (type == null || accessor_id == null || reference_id == null)) {
@@ -271,6 +271,7 @@ export async function afterIdentityOperationSuccess(
         success: true,
         reference_id,
         request_id,
+        reference_group_code,
       },
       retry: true,
     });

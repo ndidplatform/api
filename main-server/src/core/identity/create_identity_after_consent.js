@@ -81,6 +81,7 @@ export async function createIdentityAfterCloseConsentRequest(
         {
           nodeId,
           type,
+          reference_group_code,
           accessor_id,
           reference_id,
           request_id,
@@ -100,7 +101,10 @@ export async function createIdentityAfterCloseConsentRequest(
 
     if (callbackFnName != null) {
       if (callbackAdditionalArgs != null) {
-        getFunction(callbackFnName)({ error, request_id }, ...callbackAdditionalArgs);
+        getFunction(callbackFnName)(
+          { error, request_id },
+          ...callbackAdditionalArgs
+        );
       } else {
         getFunction(callbackFnName)({ error, request_id });
       }
@@ -110,7 +114,7 @@ export async function createIdentityAfterCloseConsentRequest(
 
 export async function createIdentityAfterCloseConsentAndBlockchain(
   { error, chainDisabledRetryLater },
-  { nodeId, type, accessor_id, reference_id, request_id },
+  { nodeId, type, reference_group_code, accessor_id, reference_id, request_id },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
   if (chainDisabledRetryLater) return;
@@ -122,6 +126,7 @@ export async function createIdentityAfterCloseConsentAndBlockchain(
       getFunction(callbackFnName)(
         {
           type,
+          reference_group_code,
           accessor_id,
           reference_id,
           request_id,
@@ -131,6 +136,7 @@ export async function createIdentityAfterCloseConsentAndBlockchain(
     } else {
       getFunction(callbackFnName)({
         type,
+        reference_group_code,
         accessor_id,
         reference_id,
         request_id,
@@ -147,9 +153,18 @@ export async function createIdentityAfterCloseConsentAndBlockchain(
 
     if (callbackFnName != null) {
       if (callbackAdditionalArgs != null) {
-        getFunction(callbackFnName)({ error, type, accessor_id, reference_id, request_id }, ...callbackAdditionalArgs);
+        getFunction(callbackFnName)(
+          { error, type, accessor_id, reference_id, request_id },
+          ...callbackAdditionalArgs
+        );
       } else {
-        getFunction(callbackFnName)({ error, type, accessor_id, reference_id, request_id });
+        getFunction(callbackFnName)({
+          error,
+          type,
+          accessor_id,
+          reference_id,
+          request_id,
+        });
       }
     }
   }
