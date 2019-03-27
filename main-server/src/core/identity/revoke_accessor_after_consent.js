@@ -23,7 +23,6 @@
 //==================== plain copy ===================================
 
 import { getFunction } from '../../functions';
-import { closeRequest } from '../common';
 
 import logger from '../../logger';
 

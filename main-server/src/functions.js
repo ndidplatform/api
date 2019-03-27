@@ -65,22 +65,30 @@ export function getFunction(fnName) {
       return identity.createIdentityInternalAsyncAfterCreateRequestBlockchain;
     case 'identity.createIdentityInternalAsyncAfterBlockchain':
       return identity.createIdentityInternalAsyncAfterBlockchain;
-    case 'identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain':
-      return identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain;
+    case 'identity.createIdentityAfterCloseConsentRequest':
+      return identity.createIdentityAfterCloseConsentRequest;
+    case 'identity.createIdentityAfterCloseConsentAndBlockchain':
+      return identity.createIdentityAfterCloseConsentAndBlockchain;
+    case 'identity.addAccessorInternalAsyncAfterCreateRequestBlockchain':
+      return identity.addAccessorInternalAsyncAfterCreateRequestBlockchain;
+    case 'identity.addAccessorInternalAsyncAfterBlockchain':
+      return identity.addAccessorInternalAsyncAfterBlockchain;
     case 'identity.addAccessorAfterCloseConsentRequest':
       return identity.addAccessorAfterCloseConsentRequest;
-    case 'identity.addAccessorAfterConsentAfterAddAccessorMethod':
-      return identity.addAccessorAfterConsentAfterAddAccessorMethod;
-    case 'identity.addAccessorAfterConsentAfterRegisterMqDest':
-      return identity.addAccessorAfterConsentAfterRegisterMqDest;
+    case 'identity.addAccessorAfterConsentAndBlockchain':
+      return identity.addAccessorAfterConsentAndBlockchain;
     case 'identity.notifyResultOfCreateRequestToRevokeAccessor':
       return identity.notifyResultOfCreateRequestToRevokeAccessor;
+    case 'identity.revokeAccessorInternalAsyncAfterBlockchain':
+      return identity.revokeAccessorInternalAsyncAfterBlockchain;
     case 'identity.revokeAccessorAfterCloseConsentRequest':
       return identity.revokeAccessorAfterCloseConsentRequest;
-    case 'identity.notifyRevokeAccessorAfterConsent':
-      return identity.notifyRevokeAccessorAfterConsent;
-    case 'idp.processIdpResponseAfterRevokeAccessor':
-      return idp.processIdpResponseAfterRevokeAccessor;
+    case 'identity.revokeAccessorAfterConsentAndBlockchain':
+      return identity.revokeAccessorAfterConsentAndBlockchain;
+    case 'identity.afterIdentityOperationSuccess':
+      return identity.afterIdentityOperationSuccess;
+    case 'identity.afterCloseFailedIdentityConsentRequest':
+      return identity.afterCloseFailedIdentityConsentRequest;
     case 'rp.processAsDataAfterSetDataReceived':
       return rp.processAsDataAfterSetDataReceived;
     case 'dpki.updateNodeInternalAsyncAfterBlockchain':

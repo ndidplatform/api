@@ -181,7 +181,7 @@ export async function revokeAccessor(revokeAccessorParams) {
   }
 }
 
-export async function createRequestToRevokeAccessor(
+async function createRequestToRevokeAccessor(
   {
     reference_id,
     callback_url,
@@ -400,7 +400,7 @@ export async function revokeAccessorInternalAsyncAfterBlockchain(
     cacheDb.removeRequestCreationMetadata(nodeId, request_id);
   } catch (error) {
     logger.error({
-      message: 'Revoke accessor internal async after clear MQ dest. timeout error',
+      message: 'Revoke accessor internal async after clear blockchain error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],

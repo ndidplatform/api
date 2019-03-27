@@ -203,8 +203,7 @@ export async function addAccessor(
   }
 }
 
-export async function addAccessorInternalAsync(
-  { error },
+async function addAccessorInternalAsync(
   {
     reference_id,
     callback_url,
@@ -219,8 +218,6 @@ export async function addAccessorInternalAsync(
   { nodeId, request_id, mode, generated_accessor_id }
 ) {
   try {
-    if (error) throw error;
-
     let min_idp;
     if (mode === 2) {
       min_idp = 0;

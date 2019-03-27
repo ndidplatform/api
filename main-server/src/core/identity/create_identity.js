@@ -212,8 +212,7 @@ export async function createIdentity(
   }
 }
 
-export async function createIdentityInternalAsync(
-  { error },
+async function createIdentityInternalAsync(
   {
     reference_id,
     callback_url,
@@ -230,8 +229,6 @@ export async function createIdentityInternalAsync(
   { nodeId, request_id, generated_accessor_id, exist }
 ) {
   try {
-    if (error) throw error;
-
     let min_idp;
     if (mode === 2) {
       min_idp = 0;
