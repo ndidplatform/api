@@ -352,9 +352,17 @@ export async function afterCloseFailedIdentityConsentRequest(
       err: identityConsentRequestError,
     });
   } catch (error) {
-    // TODO
-    logger.error({
-      message: '',
+    const err = new CustomError({
+      message: 'Error reporting unsuccessful identity consent request result',
+      cause: error,
+    });
+    logger.error({ err });
+    await common.notifyError({
+      nodeId,
+      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
+      action: 'afterCloseFailedIdentityConsentRequest',
+      error: err,
+      requestId,
     });
   }
 

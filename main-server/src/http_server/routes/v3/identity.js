@@ -49,22 +49,19 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
       request_message,
     } = req.body;
 
-    const result = await identity.createIdentity(
-      {
-        node_id,
-        reference_id,
-        callback_url,
-        namespace,
-        identifier,
-        mode,
-        accessor_type,
-        accessor_public_key,
-        accessor_id,
-        ial,
-        request_message,
-      },
-      { synchronous: false }
-    );
+    const result = await identity.createIdentity({
+      node_id,
+      reference_id,
+      callback_url,
+      namespace,
+      identifier,
+      mode,
+      accessor_type,
+      accessor_public_key,
+      accessor_id,
+      ial,
+      request_message,
+    });
 
     res.status(202).json(result);
     next();
@@ -284,20 +281,17 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
-      const result = await identity.addAccessor(
-        {
-          node_id,
-          reference_id,
-          callback_url,
-          namespace,
-          identifier,
-          accessor_type,
-          accessor_public_key,
-          accessor_id,
-          request_message,
-        },
-        { synchronous: false }
-      );
+      const result = await identity.addAccessor({
+        node_id,
+        reference_id,
+        callback_url,
+        namespace,
+        identifier,
+        accessor_type,
+        accessor_public_key,
+        accessor_id,
+        request_message,
+      });
 
       res.status(202).json(result);
       next();

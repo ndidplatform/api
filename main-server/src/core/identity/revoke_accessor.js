@@ -49,8 +49,6 @@ import { role } from '../../node';
  * @param {string} revokeAccessorParams.identifier
  * @param {string} revokeAccessorParams.accessor_id
  * @param {string} revokeAccessorParams.request_message
- * @param {Object} options
- * @param {boolean} options.synchronous
  *
  * @returns {{ request_id: string }}
  */
