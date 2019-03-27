@@ -200,7 +200,7 @@ async function createRequestToRevokeAccessor(
         identifier,
         reference_id,
         idp_id_list: [nodeId], //only self
-        callback_url: 'SYS_GEN_REVOKE_IDENTITY',
+        callback_url: 'SYS_GEN_REVOKE_ACCESSOR',
         data_request_list: [],
         request_message:
           request_message != null

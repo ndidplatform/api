@@ -233,7 +233,7 @@ async function addAccessorInternalAsync(
           identifier,
           reference_id,
           idp_id_list: [],
-          callback_url: 'SYS_GEN_CREATE_IDENTITY',
+          callback_url: 'SYS_GEN_ADD_ACCESSOR',
           data_request_list: [],
           request_message:
             request_message != null
