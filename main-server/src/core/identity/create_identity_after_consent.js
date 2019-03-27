@@ -28,7 +28,7 @@ import * as cacheDb from '../../db/cache';
 
 export async function createIdentityAfterCloseConsentRequest(
   { error },
-  { nodeId, request_id, identity },
+  { nodeId, request_id, reference_group_code, identity },
   { callbackFnName, callbackAdditionalArgs }
 ) {
   try {
@@ -54,10 +54,12 @@ export async function createIdentityAfterCloseConsentRequest(
       callback_url,
     } = identity;
 
-    const reference_group_code = await tendermintNdid.getReferenceGroupCode(
-      namespace,
-      identifier
-    );
+    if (reference_group_code == null) {
+      reference_group_code = await tendermintNdid.getReferenceGroupCode(
+        namespace,
+        identifier
+      );
+    }
 
     await tendermintNdid.registerIdentity(
       {

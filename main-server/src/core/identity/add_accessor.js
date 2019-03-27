@@ -421,7 +421,7 @@ export async function addAccessorInternalAsyncAfterCreateRequestBlockchain(
           sendCallbackToClient: false,
           callbackFnName: 'identity.addAccessorAfterCloseConsentRequest',
           callbackAdditionalArgs: [
-            { nodeId, requestId: request_id, identity },
+            { nodeId, request_id, identity },
             {
               callbackFnName: 'identity.afterIdentityOperationSuccess',
               callbackAdditionalArgs: [{ nodeId }],

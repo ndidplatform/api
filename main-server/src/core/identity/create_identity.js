@@ -425,6 +425,10 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       reference_id,
       callback_url,
     };
+    let reference_group_code;
+    if (!exist) {
+      reference_group_code = utils.randomBase64Bytes(32);
+    }
     if (exist && mode === 3) {
       // save data for later use after got consent from user (in mode 2,3)
       await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
@@ -440,7 +444,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
           sendCallbackToClient: false,
           callbackFnName: 'identity.createIdentityAfterCloseConsentRequest',
           callbackAdditionalArgs: [
-            { nodeId, requestId: request_id, identity },
+            { nodeId, request_id, reference_group_code, identity },
             {
               callbackFnName: 'identity.afterIdentityOperationSuccess',
               callbackAdditionalArgs: [{ nodeId }],

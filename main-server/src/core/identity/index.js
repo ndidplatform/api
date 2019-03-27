@@ -202,7 +202,7 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
         sendCallbackToClient: false,
         callbackFnName,
         callbackAdditionalArgs: [
-          { nodeId, requestId },
+          { nodeId, request_id: requestId },
           {
             callbackFnName: 'identity.afterIdentityOperationSuccess',
             callbackAdditionalArgs: [{ nodeId }],

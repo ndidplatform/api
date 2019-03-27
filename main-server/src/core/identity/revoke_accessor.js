@@ -318,7 +318,7 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
           sendCallbackToClient: false,
           callbackFnName: 'identity.revokeAccessorAfterCloseConsentRequest',
           callbackAdditionalArgs: [
-            { nodeId, requestId: request_id, identity },
+            { nodeId, request_id, identity },
             {
               callbackFnName: 'identity.afterIdentityOperationSuccess',
               callbackAdditionalArgs: [{ nodeId }],
