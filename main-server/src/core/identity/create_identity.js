@@ -414,84 +414,41 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       });
     }
 
+    const identity = {
+      type: 'RegisterIdentity',
+      namespace,
+      identifier,
+      ial,
+      accessor_id,
+      accessor_public_key,
+      accessor_type,
+      reference_id,
+      callback_url,
+    };
     if (exist && mode === 3) {
-      // save data for later use after got consent from user (in mode 3)
-      await cacheDb.setIdentityFromRequestId(nodeId, request_id, {
-        type: 'RegisterIdentity',
-        namespace,
-        identifier,
-        accessor_type,
-        accessor_id,
-        accessor_public_key,
-        ial,
-      });
+      // save data for later use after got consent from user (in mode 2,3)
+      await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
     } else {
-      if (!synchronous) {
-        await tendermintNdid.registerIdentity(
-          {
-            users: [
-              {
-                namespace,
-                identifier,
-                ial,
-                mode,
-                accessor_id,
-                accessor_public_key,
-                accessor_type,
-                request_id,
-              },
-            ],
-          },
-          nodeId,
-          'identity.createIdentityInternalAsyncAfterBlockchain',
-          [
+      // TODO: bring back synchronous?
+      await common.closeRequest(
+        {
+          node_id: nodeId,
+          request_id,
+        },
+        {
+          synchronous: false,
+          sendCallbackToClient: false,
+          callbackFnName: 'identity.createIdentityAfterCloseConsentRequest',
+          callbackAdditionalArgs: [
+            { nodeId, requestId: request_id, identity },
             {
-              nodeId,
-              reference_id,
-              callback_url,
-              request_id,
-              namespace,
-              identifier,
-              accessor_id,
-              generated_accessor_id,
+              callbackFnName: 'identity.afterIdentityOperationSuccess',
+              callbackAdditionalArgs: [{ nodeId }],
             },
-            { synchronous },
           ],
-          true
-        );
-      } else {
-        await tendermintNdid.registerIdentity(
-          {
-            users: [
-              {
-                namespace,
-                identifier,
-                ial,
-                mode, // allow only 2, 3
-                accessor_id,
-                accessor_public_key,
-                accessor_type,
-                request_id,
-              },
-            ],
-          },
-          nodeId
-        );
-        await createIdentityInternalAsyncAfterBlockchain(
-          {},
-          {
-            nodeId,
-            reference_id,
-            callback_url,
-            request_id,
-            namespace,
-            identifier,
-            accessor_id,
-            generated_accessor_id,
-          },
-          { synchronous }
-        );
-      }
+          saveForRetryOnChainDisabled: true,
+        }
+      );
     }
   } catch (error) {
     logger.error({
@@ -500,88 +457,6 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       originalArgs: arguments[1],
       options: arguments[2],
       additionalArgs: arguments[3],
-      err: error,
-    });
-
-    if (!synchronous) {
-      await callbackToClient({
-        callbackUrl: callback_url,
-        body: {
-          node_id: nodeId,
-          type: 'create_identity_request_result',
-          success: false,
-          reference_id,
-          request_id,
-          accessor_id:
-            accessor_id != null ? accessor_id : generated_accessor_id,
-          error: getErrorObjectForClient(error),
-        },
-        retry: true,
-      });
-    }
-
-    await createIdentityCleanUpOnError({
-      nodeId,
-      requestId: request_id,
-      referenceId: reference_id,
-    });
-
-    throw error;
-  }
-}
-
-export async function createIdentityInternalAsyncAfterBlockchain(
-  { error },
-  {
-    nodeId,
-    reference_id,
-    callback_url,
-    request_id,
-    secret,
-    accessor_id,
-    generated_accessor_id,
-  },
-  { synchronous = true } = {}
-) {
-  try {
-    if (error) throw error;
-
-    await callbackToClient({
-      callbackUrl: callback_url,
-      body: {
-        node_id: nodeId,
-        type: 'create_identity_result',
-        success: true,
-        reference_id,
-        request_id,
-        secret,
-      },
-      retry: true,
-    });
-    cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
-    await common.closeRequest(
-      {
-        node_id: nodeId,
-        request_id,
-      },
-      {
-        synchronous: false,
-        sendCallbackToClient: false,
-        saveForRetryOnChainDisabled: true,
-      }
-    );
-
-    cacheDb.removeIdentityRequestDataByReferenceId(nodeId, reference_id);
-    cacheDb.removeRequestIdByReferenceId(nodeId, reference_id);
-    cacheDb.removeRequestData(nodeId, request_id);
-    cacheDb.removeRequestCreationMetadata(nodeId, request_id);
-  } catch (error) {
-    logger.error({
-      message:
-        'Create identity internal async after clear MQ dest. timeout error',
-      tendermintResult: arguments[0],
-      additionalArgs: arguments[1],
-      options: arguments[2],
       err: error,
     });
 

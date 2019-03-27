@@ -63,24 +63,18 @@ export function getFunction(fnName) {
       return identity.updateIalInternalAsyncAfterBlockchain;
     case 'identity.createIdentityInternalAsyncAfterCreateRequestBlockchain':
       return identity.createIdentityInternalAsyncAfterCreateRequestBlockchain;
-    case 'identity.createIdentityInternalAsyncAfterBlockchain':
-      return identity.createIdentityInternalAsyncAfterBlockchain;
     case 'identity.createIdentityAfterCloseConsentRequest':
       return identity.createIdentityAfterCloseConsentRequest;
     case 'identity.createIdentityAfterCloseConsentAndBlockchain':
       return identity.createIdentityAfterCloseConsentAndBlockchain;
     case 'identity.addAccessorInternalAsyncAfterCreateRequestBlockchain':
       return identity.addAccessorInternalAsyncAfterCreateRequestBlockchain;
-    case 'identity.addAccessorInternalAsyncAfterBlockchain':
-      return identity.addAccessorInternalAsyncAfterBlockchain;
     case 'identity.addAccessorAfterCloseConsentRequest':
       return identity.addAccessorAfterCloseConsentRequest;
     case 'identity.addAccessorAfterConsentAndBlockchain':
       return identity.addAccessorAfterConsentAndBlockchain;
     case 'identity.notifyResultOfCreateRequestToRevokeAccessor':
       return identity.notifyResultOfCreateRequestToRevokeAccessor;
-    case 'identity.revokeAccessorInternalAsyncAfterBlockchain':
-      return identity.revokeAccessorInternalAsyncAfterBlockchain;
     case 'identity.revokeAccessorAfterCloseConsentRequest':
       return identity.revokeAccessorAfterCloseConsentRequest;
     case 'identity.revokeAccessorAfterConsentAndBlockchain':

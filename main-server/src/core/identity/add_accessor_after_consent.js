@@ -27,22 +27,22 @@ import logger from '../../logger';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 
-import CustomError from 'ndid-error/custom_error';
-import errorType from 'ndid-error/type';
-
 export async function addAccessorAfterCloseConsentRequest(
   { error },
-  { nodeId, request_id },
+  { nodeId, request_id, identity },
   { callbackFnName, callbackAdditionalArgs }
 ) {
   try {
     if (error) throw error;
     logger.debug({
-      message: 'Got consent, adding accessor',
+      message: 'Closed consent request, adding accessor',
       nodeId,
       request_id,
     });
 
+    if (identity == null) {
+      identity = await cacheDb.getIdentityFromRequestId(nodeId, request_id);
+    }
     const {
       type,
       namespace,
@@ -50,7 +50,9 @@ export async function addAccessorAfterCloseConsentRequest(
       accessor_id,
       accessor_public_key,
       accessor_type,
-    } = await cacheDb.getIdentityFromRequestId(nodeId, request_id);
+      reference_id,
+      callback_url,
+    } = identity;
 
     const reference_group_code = await tendermintNdid.getReferenceGroupCode(
       namespace,
@@ -70,8 +72,11 @@ export async function addAccessorAfterCloseConsentRequest(
       [
         {
           nodeId,
-          request_id,
           type,
+          accessor_id,
+          reference_id,
+          callback_url,
+          request_id,
         },
         { callbackFnName, callbackAdditionalArgs },
       ],
@@ -98,7 +103,7 @@ export async function addAccessorAfterCloseConsentRequest(
 
 export async function addAccessorAfterConsentAndBlockchain(
   { error, chainDisabledRetryLater },
-  { nodeId, request_id, type },
+  { nodeId, type, accessor_id, reference_id, callback_url, request_id },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
   if (chainDisabledRetryLater) return;
@@ -110,12 +115,20 @@ export async function addAccessorAfterConsentAndBlockchain(
       getFunction(callbackFnName)(
         {
           type,
+          accessor_id,
+          reference_id,
+          callback_url,
+          request_id,
         },
         ...callbackAdditionalArgs
       );
     } else {
       getFunction(callbackFnName)({
         type,
+        accessor_id,
+        reference_id,
+        callback_url,
+        request_id,
       });
     }
   } catch (error) {

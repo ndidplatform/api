@@ -39,7 +39,7 @@ import { role } from '../../node';
 
 /**
  * Revoke identity
- * Use in mode 3
+ * Use in mode 2,3
  *
  * @param {Object} revokeAccessorParams
  * @param {string} revokeAccessorParams.node_id
@@ -244,7 +244,7 @@ async function createRequestToRevokeAccessor(
     );
   } catch (error) {
     logger.error({
-      message: 'Revoke identity internal async error',
+      message: 'Revoke accessor internal async error',
       originalArgs: arguments[0],
       additionalArgs: arguments[1],
       err: error,
@@ -296,37 +296,41 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
       retry: true,
     });
 
+    const identity = {
+      type: 'RevokeAccessor',
+      namespace,
+      identifier,
+      accessor_id,
+      reference_id,
+      callback_url,
+    };
     if (mode === 3) {
-      // save data for later use after got consent from user (in mode 3)
-      await cacheDb.setIdentityFromRequestId(nodeId, request_id, {
-        type: 'RevokeAccessor',
-        namespace,
-        identifier,
-        accessor_id,
-      });
+      // save data for later use after got consent from user (in mode 2,3)
+      await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
     } else {
-      await tendermintNdid.revokeAccessor(
+      await common.closeRequest(
         {
-          accessor_id,
+          node_id: nodeId,
           request_id,
         },
-        nodeId,
-        'identity.revokeAccessorInternalAsyncAfterBlockchain',
-        [
-          {
-            nodeId,
-            reference_id,
-            callback_url,
-            request_id,
-            accessor_id,
-          },
-        ],
-        true
+        {
+          synchronous: false,
+          sendCallbackToClient: false,
+          callbackFnName: 'identity.revokeAccessorAfterCloseConsentRequest',
+          callbackAdditionalArgs: [
+            { nodeId, requestId: request_id, identity },
+            {
+              callbackFnName: 'identity.afterIdentityOperationSuccess',
+              callbackAdditionalArgs: [{ nodeId }],
+            },
+          ],
+          saveForRetryOnChainDisabled: true,
+        }
       );
     }
   } catch (error) {
     logger.error({
-      message: 'Create identity internal async after create request error',
+      message: 'Revoke accessor internal async after create request error',
       tendermintResult: arguments[0],
       originalArgs: arguments[1],
       additionalArgs: arguments[2],
@@ -356,82 +360,6 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
     throw error;
   }
 }
-
-export async function revokeAccessorInternalAsyncAfterBlockchain(
-  { error },
-  {
-    nodeId,
-    reference_id,
-    callback_url,
-    request_id,
-    accessor_id,
-  }
-) {
-  try {
-    if (error) throw error;
-
-    await callbackToClient({
-      callbackUrl: callback_url,
-      body: {
-        node_id: nodeId,
-        type: 'revoke_accessor_result',
-        success: true,
-        reference_id,
-        request_id,
-      },
-      retry: true,
-    });
-    cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
-    await common.closeRequest(
-      {
-        node_id: nodeId,
-        request_id,
-      },
-      {
-        synchronous: false,
-        sendCallbackToClient: false,
-        saveForRetryOnChainDisabled: true,
-      }
-    );
-
-    cacheDb.removeIdentityRequestDataByReferenceId(nodeId, reference_id);
-    cacheDb.removeRequestIdByReferenceId(nodeId, reference_id);
-    cacheDb.removeRequestData(nodeId, request_id);
-    cacheDb.removeRequestCreationMetadata(nodeId, request_id);
-  } catch (error) {
-    logger.error({
-      message: 'Revoke accessor internal async after clear blockchain error',
-      tendermintResult: arguments[0],
-      additionalArgs: arguments[1],
-      options: arguments[2],
-      err: error,
-    });
-
-    await callbackToClient({
-      callbackUrl: callback_url,
-      body: {
-        node_id: nodeId,
-        type: 'revoke_accessor_request_result',
-        success: false,
-        reference_id,
-        request_id,
-        accessor_id,
-        error: getErrorObjectForClient(error),
-      },
-      retry: true,
-    });
-
-    await revokeAccessorCleanUpOnError({
-      nodeId,
-      requestId: request_id,
-      referenceId: reference_id,
-    });
-
-    throw error;
-  }
-}
-
-//=============================================================================
 
 async function revokeAccessorCleanUpOnError({
   nodeId,

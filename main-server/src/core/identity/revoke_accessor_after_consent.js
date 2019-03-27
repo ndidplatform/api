@@ -31,21 +31,21 @@ import * as cacheDb from '../../db/cache';
 
 export async function revokeAccessorAfterCloseConsentRequest(
   { error },
-  { nodeId, request_id },
+  { nodeId, request_id, identity },
   { callbackFnName, callbackAdditionalArgs }
 ) {
   try {
     if (error) throw error;
     logger.debug({
-      message: 'Got consent, revoking accessor',
+      message: 'Closed consent request, revoking accessor',
       nodeId,
       request_id,
     });
 
-    const { type, accessor_id } = await cacheDb.getIdentityFromRequestId(
-      nodeId,
-      request_id
-    );
+    if (identity == null) {
+      identity = await cacheDb.getIdentityFromRequestId(nodeId, request_id);
+    }
+    const { type, accessor_id, reference_id, callback_url } = identity;
 
     await tendermintNdid.revokeAccessor(
       {
@@ -57,8 +57,11 @@ export async function revokeAccessorAfterCloseConsentRequest(
       [
         {
           nodeId,
-          request_id,
           type,
+          accessor_id,
+          reference_id,
+          callback_url,
+          request_id,
         },
         { callbackFnName, callbackAdditionalArgs },
       ],
@@ -85,7 +88,7 @@ export async function revokeAccessorAfterCloseConsentRequest(
 
 export async function revokeAccessorAfterConsentAndBlockchain(
   { error, chainDisabledRetryLater },
-  { nodeId, request_id, type },
+  { nodeId, type, accessor_id, reference_id, callback_url, request_id },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
   if (chainDisabledRetryLater) return;
@@ -94,9 +97,18 @@ export async function revokeAccessorAfterConsentAndBlockchain(
 
     await cacheDb.removeIdentityFromRequestId(nodeId, request_id);
     if (callbackAdditionalArgs != null) {
-      getFunction(callbackFnName)({ type }, ...callbackAdditionalArgs);
+      getFunction(callbackFnName)(
+        { type, accessor_id, reference_id, callback_url, request_id },
+        ...callbackAdditionalArgs
+      );
     } else {
-      getFunction(callbackFnName)({ type });
+      getFunction(callbackFnName)({
+        type,
+        accessor_id,
+        reference_id,
+        callback_url,
+        request_id,
+      });
     }
   } catch (error) {
     logger.error({

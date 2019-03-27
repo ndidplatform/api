@@ -205,7 +205,7 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
           { nodeId, requestId },
           {
             callbackFnName: 'identity.afterIdentityOperationSuccess',
-            callbackAdditionalArgs: [{ nodeId, request_id: requestId }],
+            callbackAdditionalArgs: [{ nodeId }],
           },
         ],
         saveForRetryOnChainDisabled: true,
@@ -215,14 +215,23 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
 }
 
 export async function afterIdentityOperationSuccess(
-  { error, type },
-  { nodeId, message }
+  { error, type, accessor_id, reference_id, callback_url, request_id },
+  { nodeId }
 ) {
+  let typeCallback;
+  if (type === 'RegisterIdentity') {
+    typeCallback = 'create_identity_result';
+  }
+  if (type === 'AddAccessor') {
+    typeCallback = 'add_accessor_result';
+  }
+  if (type === 'RevokeAccessor') {
+    typeCallback = 'revoke_accessor_result';
+  }
   try {
     if (error) throw error;
 
-    const requestId = message.request_id;
-    const requestData = await cacheDb.getRequestData(nodeId, requestId);
+    const requestData = await cacheDb.getRequestData(nodeId, request_id);
     const reference_id = requestData.reference_id;
     const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
       nodeId,
@@ -232,29 +241,45 @@ export async function afterIdentityOperationSuccess(
       callbackUrl,
       body: {
         node_id: nodeId,
-        type,
+        type: typeCallback,
         success: true,
         reference_id,
-        request_id: requestId,
+        request_id,
       },
       retry: true,
     });
-    cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
-    cleanUpRequestData(nodeId, requestId, reference_id);
-    cacheDb.removeIdentityRequestDataByReferenceId(nodeId, reference_id);
   } catch (error) {
     const err = new CustomError({
       message: 'Error processing after identity operation success',
       cause: error,
     });
     logger.error({ err });
-    await common.notifyError({
-      nodeId,
-      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
-      action: 'afterIdentityOperationSuccess',
-      error: err,
-      requestId: message.request_id,
+
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
+        node_id: nodeId,
+        type: typeCallback,
+        success: false,
+        reference_id,
+        request_id,
+        accessor_id,
+        error: getErrorObjectForClient(error),
+      },
+      retry: true,
     });
+
+    // await common.notifyError({
+    //   nodeId,
+    //   getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
+    //   action: 'afterIdentityOperationSuccess',
+    //   error: err,
+    //   requestId: message.request_id,
+    // });
+  } finally {
+    cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
+    cleanUpRequestData(nodeId, request_id, reference_id);
+    cacheDb.removeIdentityRequestDataByReferenceId(nodeId, reference_id);
   }
 }
 
