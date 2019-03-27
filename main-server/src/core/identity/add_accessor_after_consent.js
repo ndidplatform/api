@@ -51,7 +51,6 @@ export async function addAccessorAfterCloseConsentRequest(
       accessor_public_key,
       accessor_type,
       reference_id,
-      callback_url,
     } = identity;
 
     const reference_group_code = await tendermintNdid.getReferenceGroupCode(
@@ -75,7 +74,6 @@ export async function addAccessorAfterCloseConsentRequest(
           type,
           accessor_id,
           reference_id,
-          callback_url,
           request_id,
         },
         { callbackFnName, callbackAdditionalArgs },
@@ -93,9 +91,12 @@ export async function addAccessorAfterCloseConsentRequest(
 
     if (callbackFnName != null) {
       if (callbackAdditionalArgs != null) {
-        getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        getFunction(callbackFnName)(
+          { error, request_id },
+          ...callbackAdditionalArgs
+        );
       } else {
-        getFunction(callbackFnName)({ error });
+        getFunction(callbackFnName)({ error, request_id });
       }
     }
   }
@@ -103,7 +104,7 @@ export async function addAccessorAfterCloseConsentRequest(
 
 export async function addAccessorAfterConsentAndBlockchain(
   { error, chainDisabledRetryLater },
-  { nodeId, type, accessor_id, reference_id, callback_url, request_id },
+  { nodeId, type, accessor_id, reference_id, request_id },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
   if (chainDisabledRetryLater) return;
@@ -117,7 +118,6 @@ export async function addAccessorAfterConsentAndBlockchain(
           type,
           accessor_id,
           reference_id,
-          callback_url,
           request_id,
         },
         ...callbackAdditionalArgs
@@ -127,7 +127,6 @@ export async function addAccessorAfterConsentAndBlockchain(
         type,
         accessor_id,
         reference_id,
-        callback_url,
         request_id,
       });
     }
@@ -142,9 +141,18 @@ export async function addAccessorAfterConsentAndBlockchain(
 
     if (callbackFnName != null) {
       if (callbackAdditionalArgs != null) {
-        getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        getFunction(callbackFnName)(
+          { error, type, accessor_id, reference_id, request_id },
+          ...callbackAdditionalArgs
+        );
       } else {
-        getFunction(callbackFnName)({ error });
+        getFunction(callbackFnName)({
+          error,
+          type,
+          accessor_id,
+          reference_id,
+          request_id,
+        });
       }
     }
   }

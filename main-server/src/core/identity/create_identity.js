@@ -423,7 +423,6 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       accessor_public_key,
       accessor_type,
       reference_id,
-      callback_url,
     };
     let reference_group_code;
     if (!exist) {

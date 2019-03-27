@@ -125,21 +125,10 @@ export async function registerIdentity(
       accessor_type,
       request_id,
     } = user;
-    if (reference_group_code && (namespace || identifier)) {
-      throw new Error(
-        'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
-      );
-    }
-    if (
-      !reference_group_code &&
-      ((namespace && !identifier) || (!namespace && identifier))
-    ) {
-      throw new Error('Missing args');
-    }
     return {
       reference_group_code,
-      identity_namespace: user.namespace,
-      identity_identifier_hash: utils.hash(user.identifier),
+      identity_namespace: namespace,
+      identity_identifier_hash: utils.hash(identifier),
       ial,
       mode,
       accessor_id,

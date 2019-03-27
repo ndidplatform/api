@@ -45,7 +45,7 @@ export async function revokeAccessorAfterCloseConsentRequest(
     if (identity == null) {
       identity = await cacheDb.getIdentityFromRequestId(nodeId, request_id);
     }
-    const { type, accessor_id, reference_id, callback_url } = identity;
+    const { type, accessor_id, reference_id } = identity;
 
     await tendermintNdid.revokeAccessor(
       {
@@ -60,7 +60,6 @@ export async function revokeAccessorAfterCloseConsentRequest(
           type,
           accessor_id,
           reference_id,
-          callback_url,
           request_id,
         },
         { callbackFnName, callbackAdditionalArgs },
@@ -78,9 +77,12 @@ export async function revokeAccessorAfterCloseConsentRequest(
 
     if (callbackFnName != null) {
       if (callbackAdditionalArgs != null) {
-        getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        getFunction(callbackFnName)(
+          { error, request_id },
+          ...callbackAdditionalArgs
+        );
       } else {
-        getFunction(callbackFnName)({ error });
+        getFunction(callbackFnName)({ error, request_id });
       }
     }
   }
@@ -88,7 +90,7 @@ export async function revokeAccessorAfterCloseConsentRequest(
 
 export async function revokeAccessorAfterConsentAndBlockchain(
   { error, chainDisabledRetryLater },
-  { nodeId, type, accessor_id, reference_id, callback_url, request_id },
+  { nodeId, type, accessor_id, reference_id, request_id },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
   if (chainDisabledRetryLater) return;
@@ -98,7 +100,7 @@ export async function revokeAccessorAfterConsentAndBlockchain(
     await cacheDb.removeIdentityFromRequestId(nodeId, request_id);
     if (callbackAdditionalArgs != null) {
       getFunction(callbackFnName)(
-        { type, accessor_id, reference_id, callback_url, request_id },
+        { type, accessor_id, reference_id, request_id },
         ...callbackAdditionalArgs
       );
     } else {
@@ -106,7 +108,6 @@ export async function revokeAccessorAfterConsentAndBlockchain(
         type,
         accessor_id,
         reference_id,
-        callback_url,
         request_id,
       });
     }
@@ -121,9 +122,18 @@ export async function revokeAccessorAfterConsentAndBlockchain(
 
     if (callbackFnName != null) {
       if (callbackAdditionalArgs != null) {
-        getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        getFunction(callbackFnName)(
+          { error, type, accessor_id, reference_id, request_id },
+          ...callbackAdditionalArgs
+        );
       } else {
-        getFunction(callbackFnName)({ error });
+        getFunction(callbackFnName)({
+          error,
+          type,
+          accessor_id,
+          reference_id,
+          request_id,
+        });
       }
     }
   }

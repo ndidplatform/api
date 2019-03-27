@@ -302,7 +302,6 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
       identifier,
       accessor_id,
       reference_id,
-      callback_url,
     };
     if (mode === 3) {
       // save data for later use after got consent from user (in mode 2,3)

@@ -404,7 +404,6 @@ export async function addAccessorInternalAsyncAfterCreateRequestBlockchain(
       accessor_public_key,
       accessor_type,
       reference_id,
-      callback_url,
     };
     if (mode === 3) {
       // save data for later use after got consent from user (in mode 2,3)

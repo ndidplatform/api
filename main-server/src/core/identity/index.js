@@ -185,11 +185,9 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
     let callbackFnName;
     if (requestDetail.purpose === 'RegisterIdentity') {
       callbackFnName = 'identity.createIdentityAfterCloseConsentRequest';
-    }
-    if (requestDetail.purpose === 'AddAccessor') {
+    } else if (requestDetail.purpose === 'AddAccessor') {
       callbackFnName = 'identity.addAccessorAfterCloseConsentRequest';
-    }
-    if (requestDetail.purpose === 'RevokeAccessor') {
+    } else if (requestDetail.purpose === 'RevokeAccessor') {
       callbackFnName = 'identity.revokeAccessorAfterCloseConsentRequest';
     }
     await common.closeRequest(
@@ -215,17 +213,48 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
 }
 
 export async function afterIdentityOperationSuccess(
-  { error, type, accessor_id, reference_id, callback_url, request_id },
+  { error, type, accessor_id, reference_id, request_id },
   { nodeId }
 ) {
+  if (error && (type == null || accessor_id == null || reference_id == null)) {
+    await common.notifyError({
+      nodeId,
+      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
+      action: 'afterIdentityOperationSuccess',
+      error,
+      requestId: request_id,
+    });
+    return;
+  }
+
+  let callbackUrl;
+  try {
+    callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
+      nodeId,
+      reference_id
+    );
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Cannot get callback URL after identity operation success',
+      cause: error,
+    });
+    logger.error({ err });
+    await common.notifyError({
+      nodeId,
+      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
+      action: 'afterIdentityOperationSuccess',
+      error: err,
+      requestId: request_id,
+    });
+    return;
+  }
+
   let typeCallback;
   if (type === 'RegisterIdentity') {
     typeCallback = 'create_identity_result';
-  }
-  if (type === 'AddAccessor') {
+  } else if (type === 'AddAccessor') {
     typeCallback = 'add_accessor_result';
-  }
-  if (type === 'RevokeAccessor') {
+  } else if (type === 'RevokeAccessor') {
     typeCallback = 'revoke_accessor_result';
   }
   try {
@@ -233,10 +262,7 @@ export async function afterIdentityOperationSuccess(
 
     const requestData = await cacheDb.getRequestData(nodeId, request_id);
     const reference_id = requestData.reference_id;
-    const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
-      nodeId,
-      reference_id
-    );
+
     await callbackToClient({
       callbackUrl,
       body: {
@@ -256,7 +282,7 @@ export async function afterIdentityOperationSuccess(
     logger.error({ err });
 
     await callbackToClient({
-      callbackUrl: callback_url,
+      callbackUrl,
       body: {
         node_id: nodeId,
         type: typeCallback,
@@ -268,14 +294,6 @@ export async function afterIdentityOperationSuccess(
       },
       retry: true,
     });
-
-    // await common.notifyError({
-    //   nodeId,
-    //   getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
-    //   action: 'afterIdentityOperationSuccess',
-    //   error: err,
-    //   requestId: message.request_id,
-    // });
   } finally {
     cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
     cleanUpRequestData(nodeId, request_id, reference_id);
@@ -299,11 +317,12 @@ export async function afterCloseFailedIdentityConsentRequest(
       reference_id
     );
     if (identityData == null) {
-      logger.error({
+      const err = new CustomError({
         message: 'Cannot get identity data',
-        requestId,
+        details: { requestId },
       });
-      return false;
+      logger.error({ err });
+      throw err;
     }
     let type;
     if (identityData.type === 'RegisterIdentity') {
