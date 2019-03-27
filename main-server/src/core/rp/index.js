@@ -122,7 +122,8 @@ export function isAllIdpRespondedAndValid({
     // Send request to AS only when all IdP responses' IAL are valid in mode 3
     if (
       requestStatus.mode === 1 ||
-      (requestStatus.mode === 3 && isAllIdpResponsesValid(responseValidList))
+      ((requestStatus.mode === 2 || requestStatus.mode === 3) &&
+        isAllIdpResponsesValid(responseValidList))
     ) {
       return true;
     }
@@ -356,7 +357,7 @@ export async function processMessage(nodeId, messageId, message) {
           !requestStatus.closed &&
           !requestStatus.timed_out &&
           (requestStatus.mode === 1 ||
-            (requestStatus.mode === 3 &&
+            ((requestStatus.mode === 2 || requestStatus.mode === 3) &&
               isAllIdpResponsesValid(responseValidList)))
         ) {
           logger.debug({

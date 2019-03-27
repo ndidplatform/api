@@ -163,7 +163,7 @@ export function getHandleMessageQueueErrorFn(getErrorCallbackUrlFnName) {
   };
 }
 
-export async function getIdpsMsqDestination({
+export async function getIdpMQDestinations({
   namespace,
   identifier,
   min_ial,
@@ -172,8 +172,8 @@ export async function getIdpsMsqDestination({
   mode,
 }) {
   const idpNodes = await tendermintNdid.getIdpNodesInfo({
-    namespace: mode === 3 ? namespace : undefined,
-    identifier: mode === 3 ? identifier : undefined,
+    namespace: mode === 2 || mode === 3 ? namespace : undefined,
+    identifier: mode === 2 || mode === 3 ? identifier : undefined,
     min_ial,
     min_aal,
     node_id_list: idp_id_list, // filter to include only nodes in this list if node ID exists
@@ -361,7 +361,7 @@ export async function getAndSaveIdpResponseValid({
   if (requestStatus.mode === 1) {
     validIal = null; // Cannot check in mode 1
     validSignature = null;
-  } else if (requestStatus.mode === 2 && requestStatus.mode === 3) {
+  } else if (requestStatus.mode === 2 || requestStatus.mode === 3) {
     // IAL check
     if (responseIal === identityInfo.ial) {
       validIal = true;

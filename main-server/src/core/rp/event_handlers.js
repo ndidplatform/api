@@ -246,7 +246,8 @@ export async function processRequestUpdate(
       !requestStatus.closed &&
       !requestStatus.timed_out &&
       (requestStatus.mode === 1 ||
-        (requestStatus.mode === 3 && isAllIdpResponsesValid(responseValidList)))
+        ((requestStatus.mode === 2 || requestStatus.mode === 3) &&
+          isAllIdpResponsesValid(responseValidList)))
     ) {
       logger.debug({
         message: 'Automatically closing request',

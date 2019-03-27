@@ -22,7 +22,7 @@
 
 import { getFunction } from '../../functions';
 import {
-  getIdpsMsqDestination,
+  getIdpMQDestinations,
   setTimeoutScheduler,
   removeTimeoutScheduler,
 } from '.';
@@ -70,7 +70,7 @@ async function checkIdpListCondition({
     });
   }
 
-  const receivers = await getIdpsMsqDestination({
+  const receivers = await getIdpMQDestinations({
     namespace,
     identifier,
     min_ial,
