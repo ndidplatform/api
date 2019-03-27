@@ -271,7 +271,7 @@ export async function afterIdentityOperationSuccess(
         success: true,
         reference_id,
         request_id,
-        reference_group_code,
+        reference_group_code, // For create_identity_result
       },
       retry: true,
     });
