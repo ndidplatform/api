@@ -290,7 +290,7 @@ export async function revokeIdentity(
   }
   if (
     !reference_group_code &&
-    ((namespace && !identifier) || (!namespace && identifier))
+    (!namespace || !identifier)
   ) {
     throw new Error('Missing args');
   }
