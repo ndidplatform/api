@@ -354,10 +354,6 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
 
   // Clean up when request is timed out or closed before IdP response
   if (cleanUp) {
-    await Promise.all([
-      cacheDb.removeRequestReceivedFromMQ(nodeId, requestId),
-      cacheDb.removeRPIdFromRequestId(nodeId, requestId),
-      cacheDb.removeReferenceGroupCodeFromRequestId(nodeId, requestId),
-    ]);
+    await cacheDb.removeRequestReceivedFromMQ(nodeId, requestId);
   }
 }

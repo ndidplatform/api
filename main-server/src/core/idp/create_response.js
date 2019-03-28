@@ -98,30 +98,25 @@ export async function createResponse(createResponseParams) {
       });
     }
 
-    const savedRpId = await cacheDb.getRPIdFromRequestId(node_id, request_id);
-    if (!savedRpId) {
+    const requestData = await cacheDb.getRequestReceivedFromMQ(
+      node_id,
+      request_id
+    );
+    if (!requestData) {
       throw new CustomError({
         errorType: errorType.UNKNOWN_CONSENT_REQUEST,
       });
     }
 
-    const requestData = await cacheDb.getRequestReceivedFromMQ(
-      node_id,
-      request_id
-    );
-
     let accessorPublicKey;
     if (request.mode === 2 || request.mode === 3) {
       //check association mode list
       //idp associate with only mode 2 won't be able to response mode 3 request
-      const referenceGroupCode = await cacheDb.getReferenceGroupCodeFromRequestId(
-        node_id,
-        request_id
-      );
-      const { mode_list } = await getIdentityInfo({
+      const identityInfo = await getIdentityInfo({
         nodeId: node_id,
-        referenceGroupCode,
+        referenceGroupCode: requestData.reference_group_code,
       });
+      const { mode_list, ial: declaredIal } = identityInfo;
       if (!mode_list.includes(request.mode)) {
         throw new CustomError({
           errorType: errorType.IDENTITY_MODE_MISMATCH,
@@ -144,10 +139,6 @@ export async function createResponse(createResponseParams) {
         });
       }
 
-      const declaredIal = (await tendermintNdid.getIdentityInfo({
-        node_id,
-        reference_group_code: requestData.reference_group_code,
-      })).ial;
       if (ial !== declaredIal) {
         throw new CustomError({
           errorType: errorType.WRONG_IAL,
@@ -281,7 +272,6 @@ export async function createResponseAfterBlockchain(
       },
       retry: true,
     });
-    cacheDb.removeRPIdFromRequestId(nodeId, request_id);
   } catch (error) {
     logger.error({
       message: 'Create IdP response after blockchain error',
@@ -305,9 +295,14 @@ export async function createResponseAfterBlockchain(
   }
 }
 
-async function sendResponseToRP(nodeId, request_id, mode, accessor_id, height) {
-  const rp_id = await cacheDb.getRPIdFromRequestId(nodeId, request_id);
-
+async function sendResponseToRP({
+  nodeId,
+  request_id,
+  mode,
+  accessor_id,
+  rp_id,
+  height,
+}) {
   logger.info({
     message: 'Query MQ destination for RP',
   });

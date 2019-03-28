@@ -334,15 +334,11 @@ export async function processMessage(nodeId, messageId, message) {
         return;
       }
 
-      await Promise.all([
-        cacheDb.setReferenceGroupCodeFromRequestId(
-          nodeId,
-          message.request_id,
-          message.reference_group_code
-        ),
-        cacheDb.setRequestReceivedFromMQ(nodeId, message.request_id, message),
-        cacheDb.setRPIdFromRequestId(nodeId, message.request_id, message.rp_id),
-      ]);
+      await cacheDb.setRequestReceivedFromMQ(
+        nodeId,
+        message.request_id,
+        message
+      );
 
       const messageValid = common.checkRequestMessageIntegrity(
         message.request_id,
