@@ -170,10 +170,7 @@ export async function addAccessor(
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
-  if (
-    !reference_group_code &&
-    ((namespace && !identifier) || (!namespace && identifier))
-  ) {
+  if (!reference_group_code && (!namespace || !identifier)) {
     throw new Error('Missing args');
   }
   try {
@@ -240,10 +237,7 @@ export async function upgradeIdentityMode(
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
-  if (
-    !reference_group_code &&
-    ((namespace && !identifier) || (!namespace && identifier))
-  ) {
+  if (!reference_group_code && (!namespace || !identifier)) {
     throw new Error('Missing args');
   }
   try {
@@ -281,10 +275,7 @@ export async function revokeIdentityAssociation(
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
-  if (
-    !reference_group_code &&
-    (!namespace || !identifier)
-  ) {
+  if (!reference_group_code && (!namespace || !identifier)) {
     throw new Error('Missing args');
   }
   try {
@@ -329,10 +320,7 @@ export async function mergeReferenceGroup(
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
-  if (
-    !reference_group_code &&
-    ((namespace && !identifier) || (!namespace && identifier))
-  ) {
+  if (!reference_group_code && (!namespace || !identifier)) {
     throw new Error('Missing args');
   }
 
@@ -346,7 +334,7 @@ export async function mergeReferenceGroup(
   }
   if (
     !reference_group_code_to_merge &&
-    ((namespace && !identifier) || (!namespace_to_merge && identifier_to_merge))
+    (!namespace_to_merge || identifier_to_merge)
   ) {
     throw new Error('Missing args');
   }
@@ -501,10 +489,7 @@ export async function updateIal(
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
-  if (
-    !reference_group_code &&
-    ((namespace && !identifier) || (!namespace && identifier))
-  ) {
+  if (!reference_group_code && (!namespace || !identifier)) {
     throw new Error('Missing args');
   }
   try {
@@ -792,10 +777,7 @@ export async function getIdpNodes({
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
-  if (
-    !reference_group_code &&
-    ((namespace && !identifier) || (!namespace && identifier))
-  ) {
+  if (!reference_group_code && (!namespace || !identifier)) {
     throw new Error('Missing args');
   }
   try {
@@ -829,10 +811,7 @@ export async function getIdpNodesInfo({
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
-  if (
-    !reference_group_code &&
-    ((namespace && !identifier) || (!namespace && identifier))
-  ) {
+  if (!reference_group_code && (!namespace || !identifier)) {
     throw new Error('Missing args');
   }
   try {
@@ -962,10 +941,7 @@ export async function checkExistingIdentity({
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
-  if (
-    !reference_group_code &&
-    ((namespace && !identifier) || (!namespace && identifier))
-  ) {
+  if (!reference_group_code && (!namespace || !identifier)) {
     throw new Error('Missing args');
   }
   try {
@@ -997,10 +973,7 @@ export async function getIdentityInfo({
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
-  if (
-    !reference_group_code &&
-    ((namespace && !identifier) || (!namespace && identifier))
-  ) {
+  if (!reference_group_code && (!namespace || !identifier)) {
     throw new Error('Missing args');
   }
   try {
