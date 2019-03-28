@@ -102,8 +102,7 @@ export default {
     },
     required: [
       'mode',
-      'namespace',
-      'identifier',
+      'reference_group_code',
       'request_id',
       'min_ial',
       'min_aal',
