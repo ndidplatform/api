@@ -114,7 +114,7 @@ export async function createResponse(createResponseParams) {
     if (request.mode === 2 || request.mode === 3) {
       //check association mode list
       //idp associate with only mode 2 won't be able to response mode 3 request
-      const referenceGroupCode = cacheDb.getReferenceGroupCodeFromRequestId(
+      const referenceGroupCode = await cacheDb.getReferenceGroupCodeFromRequestId(
         node_id,
         request_id
       );
@@ -145,9 +145,8 @@ export async function createResponse(createResponseParams) {
       }
 
       const declaredIal = (await tendermintNdid.getIdentityInfo({
-        namespace: requestData.namespace,
-        identifier: requestData.identifier,
         node_id,
+        reference_group_code: requestData.reference_group_code,
       })).ial;
       if (ial !== declaredIal) {
         throw new CustomError({
