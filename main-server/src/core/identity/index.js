@@ -258,6 +258,8 @@ export async function afterIdentityOperationSuccess(
     typeCallback = 'add_accessor_result';
   } else if (type === 'RevokeAccessor') {
     typeCallback = 'revoke_accessor_result';
+  } else if (type === 'RevokeAssociation') {
+    typeCallback = 'revoke_identity_result';
   }
   try {
     if (error) throw error;
