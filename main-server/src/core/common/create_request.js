@@ -297,7 +297,7 @@ export async function createRequest(
 
   try {
     const { allowed_mode_list } = await tendermintNdid.getAllowedModeList();
-    if(allowed_mode_list.index(mode) === -1) throw new CustomError({
+    if(allowed_mode_list.indexOf(mode) === -1) throw new CustomError({
       errorType: errorType.UNSUPPORTED_MODE,
     });
 
