@@ -106,7 +106,17 @@ export async function updateNode(
  * @param {boolean} saveForRetryOnChainDisabled
  */
 export async function registerIdentity(
-  identity,
+  {
+    reference_group_code,
+    namespace,
+    identifier,
+    ial,
+    mode_list,
+    accessor_id,
+    accessor_public_key,
+    accessor_type,
+    request_id,
+  },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
@@ -116,7 +126,17 @@ export async function registerIdentity(
     const result = await tendermint.transact({
       nodeId,
       fnName: 'RegisterIdentity',
-      params: identity,
+      params: {
+        reference_group_code,
+        identity_namespace: namespace,
+        identity_identifier_hash: utils.hash(identifier),
+        ial,
+        mode_list,
+        accessor_id,
+        accessor_public_key,
+        accessor_type,
+        request_id,
+      },
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
