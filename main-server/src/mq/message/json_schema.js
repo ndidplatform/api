@@ -55,9 +55,8 @@ export default {
   [messageTypes.CONSENT_REQUEST]: {
     $schema: 'http://json-schema.org/draft-07/schema#',
     properties: {
-      mode: { type: 'number', enum: [1, 3] },
-      namespace: { type: 'string', minLength: 1 },
-      identifier: { type: 'string', minLength: 1 },
+      mode: { type: 'number', enum: [1, 2, 3] },
+      reference_group_code: { type: 'string', minLength: 1 },
       request_id: { type: 'string', minLength: 1 },
       min_ial: { $ref: 'defs#/definitions/ial' },
       min_aal: { $ref: 'defs#/definitions/aal' },
@@ -124,7 +123,7 @@ export default {
     $schema: 'http://json-schema.org/draft-07/schema#',
     properties: {
       request_id: { type: 'string', minLength: 1 },
-      mode: { type: 'number', enum: [1, 3] },
+      mode: { type: 'number', enum: [1, 2, 3] },
       namespace: { type: 'string', minLength: 1 },
       identifier: { type: 'string', minLength: 1 },
       service_data_request_list: {
@@ -190,13 +189,12 @@ export default {
         },
         required: ['request_id', 'mode', 'idp_id', 'chain_id', 'height'],
       },
-      // Mode 3
+      // Mode 2,3
       {
         properties: {
           request_id: { type: 'string', minLength: 1 },
-          mode: { type: 'number', enum: [3] },
+          mode: { type: 'number', enum: [2, 3] },
           accessor_id: { type: 'string', minLength: 1 },
-          padding: { type: 'string', minLength: 1 },
           idp_id: { type: 'string', minLength: 1 },
           chain_id: { type: 'string', minLength: 1 },
           height: { type: 'integer', minimum: 1 },
@@ -205,7 +203,6 @@ export default {
           'request_id',
           'mode',
           'accessor_id',
-          'padding',
           'idp_id',
           'chain_id',
           'height',

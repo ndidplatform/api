@@ -371,8 +371,7 @@ export async function processMessage(nodeId, messageId, message) {
       notifyIncomingRequestByCallback(nodeId, {
         mode: message.mode,
         request_id: message.request_id,
-        namespace: message.namespace,
-        identifier: message.identifier,
+        reference_group_code: message.reference_group_code,
         request_message: message.request_message,
         request_message_hash: requestDetail.request_message_hash,
         request_message_salt: message.request_message_salt,

@@ -216,30 +216,13 @@ export async function createResponseInternal(
       request_id,
     });
 
-    let dataToBlockchain;
-    if (mode === 3) {
-      // const requestFromMq = await cacheDb.getRequestReceivedFromMQ(
-      //   nodeId,
-      //   request_id
-      // );
-
-      dataToBlockchain = {
-        request_id,
-        aal,
-        ial,
-        status,
-        signature,
-        //accessor_id,
-      };
-    } else if (mode === 1) {
-      dataToBlockchain = {
-        request_id,
-        aal,
-        ial,
-        status,
-        signature,
-      };
-    }
+    const dataToBlockchain = {
+      request_id,
+      aal,
+      ial,
+      status,
+      signature,
+    };
 
     await tendermintNdid.createIdpResponse(
       dataToBlockchain,

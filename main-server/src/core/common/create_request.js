@@ -608,10 +608,12 @@ export async function createRequestInternalAsyncAfterBlockchain(
       min_idp: _1, // eslint-disable-line no-unused-vars
       reference_id: _3, // eslint-disable-line no-unused-vars
       callback_url: _4, // eslint-disable-line no-unused-vars
-      ...requestDataWithoutLocalSpecificProps
+      namespace,
+      identifier,
+      ...requestDataWithoutLocalProps
     } = requestData;
     const requestDataWithoutDataRequestParams = {
-      ...requestDataWithoutLocalSpecificProps,
+      ...requestDataWithoutLocalProps,
       data_request_list: requestData.data_request_list.map((dataRequest) => {
         const { request_params, ...dataRequestWithoutParams } = dataRequest; // eslint-disable-line no-unused-vars
         return {
@@ -620,12 +622,18 @@ export async function createRequestInternalAsyncAfterBlockchain(
       }),
     };
 
+    const reference_group_code = tendermintNdid.getReferenceGroupCode(
+      namespace,
+      identifier
+    );
+
     // send request data to IDPs via message queue
     if (min_idp > 0) {
       await mq.send(
         receivers,
         {
           type: privateMessageType.CONSENT_REQUEST,
+          reference_group_code,
           ...requestDataWithoutDataRequestParams,
           creation_time,
           chain_id: tendermint.chainId,
