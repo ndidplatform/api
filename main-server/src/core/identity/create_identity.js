@@ -348,6 +348,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       namespace,
       identifier,
       ial,
+      mode,
       accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
       accessor_public_key,
       accessor_type,

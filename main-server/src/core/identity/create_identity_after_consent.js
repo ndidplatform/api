@@ -47,6 +47,7 @@ export async function createIdentityAfterCloseConsentRequest(
       namespace,
       identifier,
       ial,
+      mode,
       accessor_id,
       accessor_public_key,
       accessor_type,
@@ -60,6 +61,13 @@ export async function createIdentityAfterCloseConsentRequest(
       );
     }
 
+    let mode_list;
+    if (mode === 2) {
+      mode_list = [2];
+    } else if (mode === 3) {
+      mode_list = [2, 3];
+    }
+
     await tendermintNdid.registerIdentity(
       {
         users: [
@@ -68,6 +76,7 @@ export async function createIdentityAfterCloseConsentRequest(
             namespace,
             identifier,
             ial,
+            mode_list,
             accessor_id,
             accessor_public_key,
             accessor_type,

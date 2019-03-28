@@ -96,7 +96,7 @@ export async function updateNode(
  * @param {string} params.users[].namespace
  * @param {string} params.users[].identifier
  * @param {string} params.users[].ial
- * @param {string} params.users[].mode
+ * @param {string} params.users[].mode_list
  * @param {string} params.users[].accessor_id
  * @param {string} params.users[].accessor_public_key
  * @param {string} params.users[].accessor_type
@@ -119,7 +119,7 @@ export async function registerIdentity(
       namespace,
       identifier,
       ial,
-      mode,
+      mode_list,
       accessor_id,
       accessor_public_key,
       accessor_type,
@@ -130,7 +130,7 @@ export async function registerIdentity(
       identity_namespace: namespace,
       identity_identifier_hash: utils.hash(identifier),
       ial,
-      mode,
+      mode_list,
       accessor_id,
       accessor_public_key,
       accessor_type,
