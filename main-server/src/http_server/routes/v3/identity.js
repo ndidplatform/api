@@ -351,16 +351,16 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
-      // const result = await identity.({
-      //   node_id,
-      //   reference_id,
-      //   callback_url,
-      //   namespace,
-      //   identifier,
-      //   request_message,
-      // });
+      const result = await identity.revokeIdentityAssociation({
+        node_id,
+        reference_id,
+        callback_url,
+        namespace,
+        identifier,
+        request_message,
+      });
 
-      // res.status(202).json(result);
+      res.status(202).json(result);
       next();
     } catch (error) {
       if (error.code === errorType.IDENTITY_NOT_FOUND.code) {

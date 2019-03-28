@@ -30,6 +30,7 @@ import * as config from '../config';
 let createIdentityTemplate;
 let addAccessorTemplate;
 let revokeAccessorTemplate;
+let revokeAssociationTemplate;
 
 try {
   createIdentityTemplate = fs.readFileSync(
@@ -42,6 +43,10 @@ try {
   );
   revokeAccessorTemplate = fs.readFileSync(
     config.revokeAccessorRequestMessageTemplateFilepath,
+    'utf8'
+  );
+  revokeAssociationTemplate = fs.readFileSync(
+    config.revokeAssociationRequestMessageTemplateFilepath,
     'utf8'
   );
 } catch (error) {
@@ -92,6 +97,24 @@ export function getRequestMessageForRevokingAccessor({
   accessor_id,
 }) {
   return mustache.render(revokeAccessorTemplate, {
+    reference_id,
+    namespace,
+    identifier,
+    node_id,
+    node_name,
+    accessor_id,
+  });
+}
+
+export function getRequestMessageForRevokingAssociation({
+  reference_id,
+  namespace,
+  identifier,
+  node_id,
+  node_name,
+  accessor_id,
+}) {
+  return mustache.render(revokeAssociationTemplate, {
     reference_id,
     namespace,
     identifier,
