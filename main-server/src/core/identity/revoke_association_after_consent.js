@@ -49,19 +49,11 @@ export async function revokeAssociationAfterCloseConsentRequest(
       reference_id,
     } = identity;
 
-    const reference_group_code = await tendermintNdid.getReferenceGroupCode(
-      namespace,
-      identifier
-    );
-
     await tendermintNdid.revokeIdentity(
       {
-        user: {
-          reference_group_code,
-          namespace,
-          identifier,
-          request_id,
-        },
+        namespace,
+        identifier,
+        request_id,
       },
       nodeId,
       'identity.revokeAssociationAfterCloseConsentAndBlockchain',
@@ -69,7 +61,6 @@ export async function revokeAssociationAfterCloseConsentRequest(
         {
           nodeId,
           type,
-          reference_group_code,
           reference_id,
           request_id,
         },
@@ -101,7 +92,7 @@ export async function revokeAssociationAfterCloseConsentRequest(
 
 export async function revokeAssociationAfterCloseConsentAndBlockchain(
   { error, chainDisabledRetryLater },
-  { nodeId, type, reference_group_code, reference_id, request_id },
+  { nodeId, type, reference_id, request_id },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
   if (chainDisabledRetryLater) return;
@@ -113,7 +104,6 @@ export async function revokeAssociationAfterCloseConsentAndBlockchain(
       getFunction(callbackFnName)(
         {
           type,
-          reference_group_code,
           reference_id,
           request_id,
         },
@@ -122,7 +112,6 @@ export async function revokeAssociationAfterCloseConsentAndBlockchain(
     } else {
       getFunction(callbackFnName)({
         type,
-        reference_group_code,
         reference_id,
         request_id,
       });
