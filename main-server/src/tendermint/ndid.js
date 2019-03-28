@@ -180,7 +180,9 @@ export async function addAccessor(
       params: {
         reference_group_code,
         identity_namespace: namespace,
-        identity_identifier_hash: utils.hash(identifier),
+        identity_identifier_hash: identifier
+          ? utils.hash(identifier)
+          : undefined,
         accessor_id,
         accessor_public_key,
         accessor_type,
@@ -247,7 +249,9 @@ export async function upgradeIdentityMode(
       params: {
         reference_group_code,
         identity_namespace: namespace,
-        identity_identifier_hash: utils.hash(identifier),
+        identity_identifier_hash: identifier
+          ? utils.hash(identifier)
+          : undefined,
         mode,
         request_id,
       },
@@ -285,7 +289,9 @@ export async function revokeIdentityAssociation(
       params: {
         reference_group_code,
         identity_namespace: namespace,
-        identity_identifier_hash: utils.hash(identifier),
+        identity_identifier_hash: identifier
+          ? utils.hash(identifier)
+          : undefined,
         request_id,
       },
       callbackFnName,
@@ -346,10 +352,14 @@ export async function mergeReferenceGroup(
       params: {
         reference_group_code,
         identity_namespace: namespace,
-        identity_identifier_hash: utils.hash(identifier),
+        identity_identifier_hash: identifier
+          ? utils.hash(identifier)
+          : undefined,
         reference_group_code_to_merge,
         identity_namespace_to_merge: namespace_to_merge,
-        identity_identifier_hash_to_merge: utils.hash(identifier_to_merge),
+        identity_identifier_hash_to_merge: identifier_to_merge
+          ? utils.hash(identifier_to_merge)
+          : undefined,
         request_id,
       },
       callbackFnName,
@@ -499,7 +509,9 @@ export async function updateIal(
       params: {
         reference_group_code,
         identity_namespace: namespace,
-        identity_identifier_hash: utils.hash(identifier),
+        identity_identifier_hash: identifier
+          ? utils.hash(identifier)
+          : undefined,
         ial,
       },
       callbackFnName,
@@ -784,7 +796,7 @@ export async function getIdpNodes({
     const result = await tendermint.query('GetIdpNodes', {
       reference_group_code,
       identity_namespace: namespace,
-      identity_identifier_hash: utils.hash(identifier),
+      identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
       min_ial,
       min_aal,
       node_id_list,
@@ -818,7 +830,7 @@ export async function getIdpNodesInfo({
     const result = await tendermint.query('GetIdpNodesInfo', {
       reference_group_code,
       identity_namespace: namespace,
-      identity_identifier_hash: utils.hash(identifier),
+      identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
       min_ial,
       min_aal,
       node_id_list,
@@ -948,7 +960,7 @@ export async function checkExistingIdentity({
     const result = await tendermint.query('CheckExistingIdentity', {
       reference_group_code,
       identity_namespace: namespace,
-      identity_identifier_hash: utils.hash(identifier),
+      identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
     });
     if (result == null) {
       return null;
@@ -980,7 +992,7 @@ export async function getIdentityInfo({
     return await tendermint.query('GetIdentityInfo', {
       reference_group_code,
       identity_namespace: namespace,
-      identity_identifier_hash: utils.hash(identifier),
+      identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
       node_id,
     });
   } catch (error) {

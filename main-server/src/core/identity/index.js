@@ -94,9 +94,9 @@ export async function getRevokeAccessorDataByReferenceId(nodeId, referenceId) {
 
 export async function getIdentityInfo({
   nodeId,
+  referenceGroupCode,
   namespace,
   identifier,
-  referenceGroupCode,
 }) {
   try {
     if (role === 'proxy') {
@@ -110,10 +110,10 @@ export async function getIdentityInfo({
     }
 
     const identityInfo = await tendermintNdid.getIdentityInfo({
+      reference_group_code: referenceGroupCode,
       namespace,
       identifier,
       node_id: nodeId,
-      reference_group_code: referenceGroupCode,
     });
     return identityInfo;
   } catch (error) {
