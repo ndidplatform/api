@@ -67,27 +67,6 @@ router.get(
   }
 );
 
-router.get(
-  '/reference_group_code/:namespace/:identifier',
-  async (req, res, next) => {
-    try {
-      const { namespace, identifier } = req.params;
-
-      // const idpNodes = await tendermintNdid.getIdpNodes({
-      //   namespace,
-      //   identifier,
-      //   min_ial: parseFloat(min_ial),
-      //   min_aal: parseFloat(min_aal),
-      // });
-
-      // res.status(200).json(idpNodes);
-      next();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
 router.get('/as/:service_id', async (req, res, next) => {
   try {
     const { service_id } = req.params;

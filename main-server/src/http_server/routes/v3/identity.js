@@ -135,15 +135,13 @@ router.get('/:namespace/:identifier', async (req, res, next) => {
   try {
     const { namespace, identifier } = req.params;
 
-    const idpNodes = await tendermintNdid.getIdpNodes({
+    const reference_group_code = await tendermintNdid.getReferenceGroupCode(
       namespace,
-      identifier,
-      min_ial: 0,
-      min_aal: 0,
-    });
+      identifier
+    );
 
-    if (idpNodes.length !== 0) {
-      res.status(204).end();
+    if (reference_group_code !== null) {
+      res.status(200).json({ reference_group_code });
     } else {
       res.status(404).end();
     }
