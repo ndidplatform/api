@@ -70,19 +70,15 @@ export async function createIdentityAfterCloseConsentRequest(
 
     await tendermintNdid.registerIdentity(
       {
-        users: [
-          {
-            reference_group_code,
-            namespace,
-            identifier,
-            ial,
-            mode_list,
-            accessor_id,
-            accessor_public_key,
-            accessor_type,
-            request_id,
-          },
-        ],
+        reference_group_code,
+        namespace,
+        identifier,
+        ial,
+        mode_list,
+        accessor_id,
+        accessor_public_key,
+        accessor_type,
+        request_id,
       },
       nodeId,
       'identity.createIdentityAfterCloseConsentAndBlockchain',

@@ -90,60 +90,33 @@ export async function updateNode(
 
 /**
  *
- * @param {Object} params
- * @param {Object[]} params.users
- * @param {string} params.users[].reference_group_code
- * @param {string} params.users[].namespace
- * @param {string} params.users[].identifier
- * @param {string} params.users[].ial
- * @param {string} params.users[].mode_list
- * @param {string} params.users[].accessor_id
- * @param {string} params.users[].accessor_public_key
- * @param {string} params.users[].accessor_type
- * @param {string} params.users[].request_id
+ * @param {Object} identity
+ * @param {string} identity.reference_group_code
+ * @param {string} identity.namespace
+ * @param {string} identity.identifier
+ * @param {string} identity.ial
+ * @param {string} identity.mode_list
+ * @param {string} identity.accessor_id
+ * @param {string} identity.accessor_public_key
+ * @param {string} identity.accessor_type
+ * @param {string} identity.request_id
  * @param {string} nodeId
  * @param {string} callbackFnName
  * @param {Array} callbackAdditionalArgs
  * @param {boolean} saveForRetryOnChainDisabled
  */
 export async function registerIdentity(
-  { users },
+  identity,
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  users = users.map((user) => {
-    const {
-      reference_group_code,
-      namespace,
-      identifier,
-      ial,
-      mode_list,
-      accessor_id,
-      accessor_public_key,
-      accessor_type,
-      request_id,
-    } = user;
-    return {
-      reference_group_code,
-      identity_namespace: namespace,
-      identity_identifier_hash: utils.hash(identifier),
-      ial,
-      mode_list,
-      accessor_id,
-      accessor_public_key,
-      accessor_type,
-      request_id,
-    };
-  });
   try {
     const result = await tendermint.transact({
       nodeId,
       fnName: 'RegisterIdentity',
-      params: {
-        users,
-      },
+      params: identity,
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
