@@ -226,6 +226,7 @@ export async function createResponseInternal(
           request_id,
           mode,
           accessor_id,
+          rp_id: requestData.rp_id,
         },
       ],
       true
@@ -253,13 +254,20 @@ export async function createResponseInternal(
 
 export async function createResponseAfterBlockchain(
   { height, error, chainDisabledRetryLater },
-  { nodeId, reference_id, callback_url, request_id, mode, accessor_id }
+  { nodeId, reference_id, callback_url, request_id, mode, accessor_id, rp_id }
 ) {
   if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 
-    await sendResponseToRP(nodeId, request_id, mode, accessor_id, height);
+    await sendResponseToRP({
+      nodeId,
+      request_id,
+      mode,
+      accessor_id,
+      rp_id,
+      height,
+    });
 
     await callbackToClient({
       callbackUrl: callback_url,

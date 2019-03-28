@@ -32,7 +32,6 @@ import logger from '../../logger';
 import * as common from '../common';
 import * as requestProcessManager from '../request_process_manager';
 import * as cacheDb from '../../db/cache';
-import privateMessageType from '../../mq/message/type';
 
 import * as config from '../../config';
 import * as tendermintNdid from '../../tendermint/ndid';
