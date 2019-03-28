@@ -363,11 +363,6 @@ export async function processMessage(nodeId, messageId, message) {
           },
         });
       }
-      await cacheDb.setRequestMessage(nodeId, message.request_id, {
-        request_message: message.request_message,
-        request_message_salt: message.request_message_salt,
-        initial_salt: message.initial_salt,
-      });
       notifyIncomingRequestByCallback(nodeId, {
         mode: message.mode,
         request_id: message.request_id,

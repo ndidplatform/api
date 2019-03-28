@@ -357,7 +357,6 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
     await Promise.all([
       cacheDb.removeRequestReceivedFromMQ(nodeId, requestId),
       cacheDb.removeRPIdFromRequestId(nodeId, requestId),
-      cacheDb.removeRequestMessage(nodeId, requestId),
       cacheDb.removeReferenceGroupCodeFromRequestId(nodeId, requestId),
     ]);
   }

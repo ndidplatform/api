@@ -959,39 +959,6 @@ export function removeIdentityRequestDataByReferenceId(nodeId, referenceId) {
   });
 }
 
-export function getRequestMessage(nodeId, requestId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'requestMessage',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'requestMessageAndSalt',
-  });
-}
-
-export function setRequestMessage(nodeId, requestId, requestMessageAndSalt) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'requestMessage',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'requestMessageAndSalt',
-    value: requestMessageAndSalt,
-  });
-}
-
-export function removeRequestMessage(nodeId, requestId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'requestMessage',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
 //
 // Used by AS
 //

@@ -111,7 +111,7 @@ export async function createResponse(createResponseParams) {
     );
 
     let accessorPublicKey;
-    if (request.mode === 3) {
+    if (request.mode === 2 || request.mode === 3) {
       //check association mode list
       //idp associate with only mode 2 won't be able to response mode 3 request
       const referenceGroupCode = cacheDb.getReferenceGroupCodeFromRequestId(
@@ -122,10 +122,11 @@ export async function createResponse(createResponseParams) {
         nodeId: node_id,
         referenceGroupCode,
       });
-      if (mode_list.indexOf(3) === -1)
+      if (!mode_list.includes(request.mode)) {
         throw new CustomError({
           errorType: errorType.IDENTITY_MODE_MISMATCH,
         });
+      }
 
       if (accessor_id == null) {
         throw new CustomError({
@@ -142,12 +143,6 @@ export async function createResponse(createResponseParams) {
           },
         });
       }
-
-      // Verify accessor signature
-      // const { request_message, initial_salt } = await cacheDb.getRequestMessage(
-      //   node_id,
-      //   request_id
-      // );
 
       const declaredIal = (await tendermintNdid.getIdentityInfo({
         namespace: requestData.namespace,
@@ -206,15 +201,20 @@ export async function createResponseInternal(
     const request = await tendermintNdid.getRequest({ requestId: request_id });
     const mode = request.mode;
 
-    const signature = await accessorEncrypt({
-      node_id: nodeId,
-      request_message: requestData.request_message,
-      initial_salt: requestData.initial_salt,
-      accessor_id,
-      accessor_public_key: accessorPublicKey,
-      reference_id,
-      request_id,
-    });
+    let signature;
+    if (requestData.mode === 1) {
+      // TODO: get signature for mode 1
+    } else if (requestData.mode === 2 || requestData.mode === 3) {
+      signature = await accessorEncrypt({
+        node_id: nodeId,
+        request_message: requestData.request_message,
+        initial_salt: requestData.initial_salt,
+        accessor_id,
+        accessor_public_key: accessorPublicKey,
+        reference_id,
+        request_id,
+      });
+    }
 
     const dataToBlockchain = {
       request_id,
