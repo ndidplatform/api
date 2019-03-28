@@ -41,6 +41,8 @@ export * from './add_accessor';
 export * from './add_accessor_after_consent';
 export * from './revoke_accessor';
 export * from './revoke_accessor_after_consent';
+export * from './revoke_association';
+export * from './revoke_association_after_consent';
 
 export async function getIdentityRequestDataByReferenceId(nodeId, referenceId) {
   try {

@@ -177,6 +177,15 @@ export const revokeAccessorRequestMessageTemplateFilepath =
     'revoke_accessor.mustache'
   );
 
+export const revokeAssociationRequestMessageTemplateFilepath =
+  process.env.REVOKE_ASSOCIATION_REQUEST_MESSAGE_TEMPLATE_PATH ||
+  path.join(
+    __dirname,
+    '..',
+    'request_message_templates',
+    'revoke_association.mustache'
+  );
+
 // Callback retry timeout in seconds
 export const callbackRetryTimeout = process.env.CALLBACK_RETRY_TIMEOUT
   ? parseInt(process.env.CALLBACK_RETRY_TIMEOUT)

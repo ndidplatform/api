@@ -157,6 +157,43 @@ export async function registerIdentity(
   }
 }
 
+export async function revokeIdentity(
+  { user },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  const {
+    reference_group_code,
+    namespace,
+    identifier,
+    request_id,
+  } = user;
+  const revokeData =  {
+    reference_group_code,
+    identity_namespace: namespace,
+    identity_identifier_hash: utils.hash(identifier),
+    request_id,
+  };
+  try {
+    const result = await tendermint.transact({
+      nodeId,
+      fnName: 'RevokeIdentity',
+      params: revokeData,
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot revoke association at blockchain',
+      cause: error,
+    });
+  }
+}
+
 export async function addAccessor(
   {
     reference_group_code,
