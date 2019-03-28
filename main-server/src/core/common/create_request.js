@@ -622,7 +622,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
       }),
     };
 
-    const reference_group_code = tendermintNdid.getReferenceGroupCode(
+    const reference_group_code = await tendermintNdid.getReferenceGroupCode(
       namespace,
       identifier
     );
