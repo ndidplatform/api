@@ -276,7 +276,7 @@ export async function upgradeIdentityMode(
   }
 }
 
-export async function revokeIdentity(
+export async function revokeIdentityAssociation(
   { reference_group_code, namespace, identifier, request_id },
   nodeId,
   callbackFnName,
@@ -297,7 +297,7 @@ export async function revokeIdentity(
   try {
     return await tendermint.transact({
       nodeId,
-      fnName: 'RevokeIdentity',
+      fnName: 'RevokeIdentityAssociation',
       params: {
         reference_group_code,
         identity_namespace: namespace,

@@ -38,27 +38,29 @@ import * as config from '../../config';
 import { role } from '../../node';
 
 /**
- * Revoke association fron idp from the platform
+ * Revoke identity-IdP association from the platform
  * Use in mode 2,3
  *
- * @param {Object} revokeAssociationParams
- * @param {string} revokeAssociationParams.node_id
- * @param {string} revokeAssociationParams.reference_id
- * @param {string} revokeAssociationParams.callback_url
- * @param {string} revokeAssociationParams.namespace
- * @param {string} revokeAssociationParams.identifier
- * @param {string} revokeAssociationParams.request_message
+ * @param {Object} revokeIdentityAssociationParams
+ * @param {string} revokeIdentityAssociationParams.node_id
+ * @param {string} revokeIdentityAssociationParams.reference_id
+ * @param {string} revokeIdentityAssociationParams.callback_url
+ * @param {string} revokeIdentityAssociationParams.namespace
+ * @param {string} revokeIdentityAssociationParams.identifier
+ * @param {string} revokeIdentityAssociationParams.request_message
  *
  * @returns {{ request_id: string }}
  */
-export async function revokeAssociation(revokeAssociationParams) {
-  let { node_id } = revokeAssociationParams;
+export async function revokeIdentityAssociation(
+  revokeIdentityAssociationParams
+) {
+  let { node_id } = revokeIdentityAssociationParams;
   const {
     reference_id,
     callback_url,
     namespace,
     identifier,
-  } = revokeAssociationParams;
+  } = revokeIdentityAssociationParams;
 
   if (role === 'proxy') {
     if (node_id == null) {
@@ -113,7 +115,7 @@ export async function revokeAssociation(revokeAssociationParams) {
     const request_id = utils.createRequestId();
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
-      type: 'revokeAssociation',
+      type: 'RevokeIdentityAssociation',
       request_id,
     });
 
@@ -131,7 +133,7 @@ export async function revokeAssociation(revokeAssociationParams) {
     return { request_id };
   } catch (error) {
     const err = new CustomError({
-      message: 'Cannot revoke association',
+      message: 'Cannot revoke identity association',
       cause: error,
     });
     logger.error({ err });
@@ -153,20 +155,12 @@ export async function revokeAssociation(revokeAssociationParams) {
 }
 
 async function revokeAssociationInternalAsync(
-  {
-    reference_id,
-    callback_url,
-    namespace,
-    identifier,
-    request_message,
-  },
+  { reference_id, callback_url, namespace, identifier, request_message },
   { nodeId, request_id, modeList }
 ) {
   try {
-    let mode = modeList.indexOf(3) === -1
-      ? 2
-      : 3;
-    let min_idp = mode === 3 ? 1 : 0;
+    const mode = modeList.includes(3) ? 3 : 2;
+    const min_idp = mode === 3 ? 1 : 0;
 
     await common.createRequest(
       {
@@ -191,13 +185,13 @@ async function revokeAssociationInternalAsync(
         min_idp,
         request_timeout: 86400,
         mode,
-        purpose: 'revokeAssociation',
+        purpose: 'RevokeIdentityAssociation',
       },
       {
         synchronous: false,
         sendCallbackToClient: false,
         callbackFnName:
-          'identity.revokeAssociationInternalAsyncAfterCreateRequestBlockchain',
+          'identity.revokeIdentityAssociationInternalAsyncAfterCreateRequestBlockchain',
         callbackAdditionalArgs: [
           {
             reference_id,
@@ -217,7 +211,7 @@ async function revokeAssociationInternalAsync(
     );
   } catch (error) {
     logger.error({
-      message: 'Revoke association internal async error',
+      message: 'Revoke identity association internal async error',
       originalArgs: arguments[0],
       options: arguments[1],
       additionalArgs: arguments[2],
@@ -228,7 +222,7 @@ async function revokeAssociationInternalAsync(
       callbackUrl: callback_url,
       body: {
         node_id: nodeId,
-        type: 'revoke_association_request_result',
+        type: 'revoke_identity_association_request_result',
         success: false,
         reference_id,
         request_id,
@@ -237,7 +231,7 @@ async function revokeAssociationInternalAsync(
       retry: true,
     });
 
-    await revokeAssociationCleanUpOnError({
+    await revokeIdentityAssociationCleanUpOnError({
       nodeId,
       requestId: request_id,
       referenceId: reference_id,
@@ -247,15 +241,9 @@ async function revokeAssociationInternalAsync(
   }
 }
 
-export async function revokeAssociationInternalAsyncAfterCreateRequestBlockchain(
+export async function revokeIdentityAssociationInternalAsyncAfterCreateRequestBlockchain(
   { chainId, height, error },
-  {
-    reference_id,
-    callback_url,
-    namespace,
-    identifier,
-    mode,
-  },
+  { reference_id, callback_url, namespace, identifier, mode },
   { nodeId, request_id }
 ) {
   try {
@@ -265,7 +253,7 @@ export async function revokeAssociationInternalAsyncAfterCreateRequestBlockchain
       callbackUrl: callback_url,
       body: {
         node_id: nodeId,
-        type: 'revoke_association_request_result',
+        type: 'revoke_identity_association_request_result',
         reference_id,
         request_id,
         creation_block_height: `${chainId}:${height}`,
@@ -275,7 +263,7 @@ export async function revokeAssociationInternalAsyncAfterCreateRequestBlockchain
     });
 
     const identity = {
-      type: 'RevokeAssociation',
+      type: 'RevokeIdentityAssociation',
       namespace,
       identifier,
       reference_id,
@@ -292,7 +280,7 @@ export async function revokeAssociationInternalAsyncAfterCreateRequestBlockchain
         {
           synchronous: false,
           sendCallbackToClient: false,
-          callbackFnName: 'identity.revokeAssociationAfterCloseConsentRequest',
+          callbackFnName: 'identity.revokeIdentityAssociationAfterCloseConsentRequest',
           callbackAdditionalArgs: [
             { nodeId, request_id, identity },
             {
@@ -306,7 +294,8 @@ export async function revokeAssociationInternalAsyncAfterCreateRequestBlockchain
     }
   } catch (error) {
     logger.error({
-      message: 'Revoke association internal async after create request error',
+      message:
+        'Revoke identity association internal async after create request error',
       tendermintResult: arguments[0],
       originalArgs: arguments[1],
       options: arguments[2],
@@ -318,7 +307,7 @@ export async function revokeAssociationInternalAsyncAfterCreateRequestBlockchain
       callbackUrl: callback_url,
       body: {
         node_id: nodeId,
-        type: 'revoke_association_request_result',
+        type: 'revoke_identity_association_request_result',
         success: false,
         reference_id,
         request_id,
@@ -327,7 +316,7 @@ export async function revokeAssociationInternalAsyncAfterCreateRequestBlockchain
       retry: true,
     });
 
-    await revokeAssociationCleanUpOnError({
+    await revokeIdentityAssociationCleanUpOnError({
       nodeId,
       requestId: request_id,
       referenceId: reference_id,
@@ -337,7 +326,7 @@ export async function revokeAssociationInternalAsyncAfterCreateRequestBlockchain
   }
 }
 
-async function revokeAssociationCleanUpOnError({
+async function revokeIdentityAssociationCleanUpOnError({
   nodeId,
   requestId,
   referenceId,

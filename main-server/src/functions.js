@@ -83,12 +83,12 @@ export function getFunction(fnName) {
       return identity.afterIdentityOperationSuccess;
     case 'identity.afterCloseFailedIdentityConsentRequest':
       return identity.afterCloseFailedIdentityConsentRequest;
-    case 'identity.revokeAssociationInternalAsyncAfterCreateRequestBlockchain':
-      return identity.revokeAssociationInternalAsyncAfterCreateRequestBlockchain;
-    case 'identity.revokeAssociationAfterCloseConsentRequest':
-      return identity.revokeAssociationAfterCloseConsentRequest;
-    case 'identity.revokeAssociationAfterCloseConsentAndBlockchain':
-      return identity.revokeAssociationAfterCloseConsentAndBlockchain;
+    case 'identity.revokeIdentityAssociationInternalAsyncAfterCreateRequestBlockchain':
+      return identity.revokeIdentityAssociationInternalAsyncAfterCreateRequestBlockchain;
+    case 'identity.revokeIdentityAssociationAfterCloseConsentRequest':
+      return identity.revokeIdentityAssociationAfterCloseConsentRequest;
+    case 'identity.revokeIdentityAssociationAfterCloseConsentAndBlockchain':
+      return identity.revokeIdentityAssociationAfterCloseConsentAndBlockchain;
     case 'rp.processAsDataAfterSetDataReceived':
       return rp.processAsDataAfterSetDataReceived;
     case 'dpki.updateNodeInternalAsyncAfterBlockchain':

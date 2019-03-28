@@ -353,7 +353,7 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
-      const result = await identity.revokeAssociation({
+      const result = await identity.revokeIdentityAssociation({
         node_id,
         reference_id,
         callback_url,

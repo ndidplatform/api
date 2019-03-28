@@ -41,8 +41,8 @@ export * from './add_accessor';
 export * from './add_accessor_after_consent';
 export * from './revoke_accessor';
 export * from './revoke_accessor_after_consent';
-export * from './revoke_association';
-export * from './revoke_association_after_consent';
+export * from './revoke_identity_association';
+export * from './revoke_identity_association_after_consent';
 
 export async function getIdentityRequestDataByReferenceId(nodeId, referenceId) {
   try {
@@ -258,8 +258,8 @@ export async function afterIdentityOperationSuccess(
     typeCallback = 'add_accessor_result';
   } else if (type === 'RevokeAccessor') {
     typeCallback = 'revoke_accessor_result';
-  } else if (type === 'RevokeAssociation') {
-    typeCallback = 'revoke_identity_result';
+  } else if (type === 'RevokeIdentityAssociation') {
+    typeCallback = 'revoke_identity_association_result';
   }
   try {
     if (error) throw error;
@@ -336,6 +336,8 @@ export async function afterCloseFailedIdentityConsentRequest(
       type = 'add_accessor_result';
     } else if (identityData.type === 'RevokeAccessor') {
       type = 'revoke_accessor_result';
+    } else if (type === 'RevokeIdentityAssociation') {
+      type = 'revoke_identity_association_result';
     }
     await callbackToClient({
       callbackUrl,

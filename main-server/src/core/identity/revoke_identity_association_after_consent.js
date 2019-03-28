@@ -26,7 +26,7 @@ import logger from '../../logger';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 
-export async function revokeAssociationAfterCloseConsentRequest(
+export async function revokeIdentityAssociationAfterCloseConsentRequest(
   { error },
   { nodeId, request_id, identity },
   { callbackFnName, callbackAdditionalArgs }
@@ -34,7 +34,7 @@ export async function revokeAssociationAfterCloseConsentRequest(
   try {
     if (error) throw error;
     logger.debug({
-      message: 'Closed consent request, revoking association',
+      message: 'Closed consent request, revoking identity association',
       nodeId,
       request_id,
     });
@@ -49,14 +49,14 @@ export async function revokeAssociationAfterCloseConsentRequest(
       reference_id,
     } = identity;
 
-    await tendermintNdid.revokeIdentity(
+    await tendermintNdid.revokeIdentityAssociation(
       {
         namespace,
         identifier,
         request_id,
       },
       nodeId,
-      'identity.revokeAssociationAfterCloseConsentAndBlockchain',
+      'identity.revokeIdentityAssociationAfterCloseConsentAndBlockchain',
       [
         {
           nodeId,
@@ -90,7 +90,7 @@ export async function revokeAssociationAfterCloseConsentRequest(
   }
 }
 
-export async function revokeAssociationAfterCloseConsentAndBlockchain(
+export async function revokeIdentityAssociationAfterCloseConsentAndBlockchain(
   { error, chainDisabledRetryLater },
   { nodeId, type, reference_id, request_id },
   { callbackFnName, callbackAdditionalArgs } = {}
