@@ -337,6 +337,19 @@ async function updateNodeInternalAsync(data, { synchronous = false } = {}) {
   }
 }
 
+export async function setAllowedModeList({ allowed_mode_list }) {
+  try {
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'SetAllowedModeList',
+      params: { allowed_mode_list },
+    });
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
 export async function enableNode({ node_id }) {
   try {
     await tendermint.transact({

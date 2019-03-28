@@ -671,6 +671,17 @@ export async function updateServiceDestination(
 //
 // Query
 //
+export async function getAllowedModeList() {
+  try {
+    const result = await tendermint.query('GetAllowedModeList');
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get allowed mode list',
+      cause: error,
+    });
+  }
+}
 
 export async function getChainHistory() {
   try {

@@ -296,6 +296,11 @@ export async function createRequest(
   }
 
   try {
+    const { allowed_mode_list } = await tendermintNdid.getAllowedModeList();
+    if(allowed_mode_list.index(mode) === -1) throw new CustomError({
+      errorType: errorType.UNSUPPORTED_MODE,
+    });
+
     const requestId = await cacheDb.getRequestIdByReferenceId(
       node_id,
       reference_id

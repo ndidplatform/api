@@ -583,6 +583,11 @@ module.exports = {
     message: 'This request must be responsed by identity onboarded in mode 3',
     clientError: true,
   },
+  UNSUPPORTED_MODE: {
+    code: 20066,
+    message: 'This request mode is not supported',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
