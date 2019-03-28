@@ -1034,7 +1034,7 @@ export async function getReferenceGroupCode(namespace, identifier) {
 
 export async function getReferenceGroupCodeByAccessorId(accessor_id) {
   try {
-    const result = await tendermint.query('GetReferenceGroupCodeByAccessorId', {
+    const result = await tendermint.query('GetReferenceGroupCodeByAccessorID', {
       accessor_id,
     });
     if (result == null) {
