@@ -595,6 +595,11 @@ module.exports = {
       'Missing identity argument ("merge_to_namespace" or "merge_to_identifier") to merge',
     clientError: true,
   },
+  IDENTITY_TO_MERGE_TO_DOES_NOT_EXIST: {
+    code: 20068,
+    message: 'Identity to merge to does not exist',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

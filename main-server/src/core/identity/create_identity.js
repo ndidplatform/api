@@ -85,6 +85,16 @@ export async function createIdentity(createIdentityParams) {
   }
 
   try {
+    const identityRequestData = await cacheDb.getIdentityRequestDataByReferenceId(
+      node_id,
+      reference_id
+    );
+    if (identityRequestData) {
+      throw new CustomError({
+        errorType: errorType.DUPLICATE_REFERENCE_ID,
+      });
+    }
+
     if (
       (merge_to_namespace && !merge_to_identifier) ||
       (!merge_to_namespace && merge_to_identifier)
@@ -95,16 +105,6 @@ export async function createIdentity(createIdentityParams) {
     }
 
     validateKey(accessor_public_key, accessor_type);
-
-    const identityRequestData = await cacheDb.getIdentityRequestDataByReferenceId(
-      node_id,
-      reference_id
-    );
-    if (identityRequestData) {
-      throw new CustomError({
-        errorType: errorType.DUPLICATE_REFERENCE_ID,
-      });
-    }
 
     ial = parseFloat(ial);
 
@@ -178,6 +178,21 @@ export async function createIdentity(createIdentityParams) {
       identifier,
     });
 
+    let reference_group_code;
+    if (merge_to_namespace && merge_to_identifier) {
+      reference_group_code = await tendermintNdid.getReferenceGroupCode(
+        merge_to_namespace,
+        merge_to_identifier
+      );
+      if (!reference_group_code) {
+        throw new CustomError({
+          errorType: errorType.IDENTITY_TO_MERGE_TO_DOES_NOT_EXIST,
+        });
+      }
+    } else if (!exist) {
+      reference_group_code = utils.randomBase64Bytes(32);
+    }
+
     await cacheDb.setCallbackUrlByReferenceId(
       node_id,
       reference_id,
@@ -189,6 +204,7 @@ export async function createIdentity(createIdentityParams) {
       request_id,
       generated_accessor_id: accessor_id,
       exist,
+      reference_group_code,
     });
     return { request_id, accessor_id };
   } catch (error) {
@@ -226,10 +242,8 @@ async function createIdentityInternalAsync(
     accessor_id,
     ial,
     request_message,
-    merge_to_namespace,
-    merge_to_identifier,
   },
-  { nodeId, request_id, generated_accessor_id, exist }
+  { nodeId, request_id, generated_accessor_id, exist, reference_group_code }
 ) {
   try {
     let min_idp;
@@ -280,14 +294,13 @@ async function createIdentityInternalAsync(
             accessor_public_key,
             accessor_id,
             ial,
-            merge_to_namespace,
-            merge_to_identifier,
           },
           {
             nodeId,
             exist,
             request_id,
             generated_accessor_id,
+            reference_group_code,
           },
         ],
         saveForRetryOnChainDisabled: true,
@@ -339,10 +352,8 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
     accessor_public_key,
     accessor_id,
     ial,
-    merge_to_namespace,
-    merge_to_identifier,
   },
-  { nodeId, exist, request_id, generated_accessor_id }
+  { nodeId, exist, request_id, generated_accessor_id, reference_group_code }
 ) {
   try {
     if (error) throw error;
@@ -373,15 +384,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       accessor_type,
       reference_id,
     };
-    let reference_group_code;
-    if (merge_to_namespace && merge_to_identifier) {
-      reference_group_code = await tendermintNdid.getReferenceGroupCode(
-        merge_to_namespace,
-        merge_to_identifier
-      );
-    } else if (!exist) {
-      reference_group_code = utils.randomBase64Bytes(32);
-    }
+
     if (exist && mode === 3) {
       // save data for later use after got consent from user (in mode 2,3)
       await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
