@@ -191,6 +191,9 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
       callbackFnName = 'identity.addAccessorAfterCloseConsentRequest';
     } else if (requestDetail.purpose === 'RevokeAccessor') {
       callbackFnName = 'identity.revokeAccessorAfterCloseConsentRequest';
+    } else if (requestDetail.purpose === 'RevokeIdentityAssociation') {
+      callbackFnName =
+        'identity.revokeIdentityAssociationAfterCloseConsentRequest';
     }
     await common.closeRequest(
       {
