@@ -165,7 +165,7 @@ export default {
       'service_data_request_list',
       'request_message',
       'request_message_salt',
-      'response_accessor_id_list',
+      'response_private_data_list',
       'creation_time',
       'request_timeout',
       'rp_id',
