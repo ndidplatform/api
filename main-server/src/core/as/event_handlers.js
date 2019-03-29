@@ -20,10 +20,7 @@
  *
  */
 
-import {
-  getErrorCallbackUrl,
-  getIncomingRequestStatusUpdateCallbackUrl,
-} from '.';
+import { getIncomingRequestStatusUpdateCallbackUrl } from '.';
 
 import CustomError from 'ndid-error/custom_error';
 import logger from '../../logger';

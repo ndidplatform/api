@@ -685,16 +685,24 @@ async function getParsedTxsInBlocks(fromHeight, toHeight) {
 
     const transactions = getTransactionListFromBlock(block);
 
-    const successTransactions = transactions.filter((transaction, index) => {
-      const deliverTxResult = blockResults[blockIndex].results.DeliverTx[index];
-      const successTag = deliverTxResult.tags.find(
-        (tag) => tag.key === successBase64
-      );
-      if (successTag) {
-        return successTag.value === trueBase64;
-      }
-      return false;
-    });
+    const successTransactions = transactions
+      .map((transaction, index) => {
+        const deliverTxResult =
+          blockResults[blockIndex].results.DeliverTx[index];
+        return {
+          ...transaction,
+          deliverTxResult,
+        };
+      })
+      .filter(({ deliverTxResult }) => {
+        const successTag = deliverTxResult.tags.find(
+          (tag) => tag.key === successBase64
+        );
+        if (successTag) {
+          return successTag.value === trueBase64;
+        }
+        return false;
+      });
 
     return {
       height,

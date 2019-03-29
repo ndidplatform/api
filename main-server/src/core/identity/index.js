@@ -43,6 +43,7 @@ export * from './revoke_accessor';
 export * from './revoke_accessor_after_consent';
 export * from './revoke_identity_association';
 export * from './revoke_identity_association_after_consent';
+export * from './notification';
 
 export async function getIdentityRequestDataByReferenceId(nodeId, referenceId) {
   try {

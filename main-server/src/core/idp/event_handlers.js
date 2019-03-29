@@ -30,6 +30,7 @@ import { getErrorObjectForClient } from '../../utils/error';
 import logger from '../../logger';
 
 import * as common from '../common';
+import * as identity from '../identity';
 import * as requestProcessManager from '../request_process_manager';
 import * as cacheDb from '../../db/cache';
 
@@ -160,6 +161,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
     parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
       const identityRequestsToProcess = {}; // For clean up closed or timed out create identity requests
       const incomingRequestsToProcessUpdate = {};
+      const identityChangesToCheckForNotification = [];
 
       for (let i = 0; i < transactions.length; i++) {
         const transaction = transactions[i];
@@ -209,6 +211,17 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
               transaction.fnName === 'TimeOutRequest',
           };
         }
+
+        if (
+          [
+            'RegisterIdentity',
+            'AddAccessor',
+            'RevokeAccessor',
+            'RevokeIdentityAssociation',
+          ].includes(transaction.fnName)
+        ) {
+          identityChangesToCheckForNotification.push(transaction);
+        }
       }
 
       logger.debug({
@@ -219,6 +232,11 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
       logger.debug({
         message: "Inbound requests' update to process",
         incomingRequestsToProcessUpdate,
+      });
+
+      logger.debug({
+        message: 'Identity changes to check for notification',
+        identityChangesToCheckForNotification,
       });
 
       await Promise.all([
@@ -239,6 +257,9 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
               callbackFnName: 'idp.processRequestUpdate',
               callbackArgs: [nodeId, requestId, height, cleanUp],
             })
+        ),
+        ...identity.handleIdentityChangeTransactions(
+          identityChangesToCheckForNotification
         ),
       ]);
     })
