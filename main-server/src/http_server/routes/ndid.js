@@ -67,9 +67,11 @@ router.post('/endInit', async (req, res, next) => {
 router.post('/setAllowedModeList', async (req, res, next) => {
   try {
     const {
+      purpose,
       allowed_mode_list
     } = req.body;
     await ndid.setAllowedModeList({
+      purpose,
       allowed_mode_list
     });
     res.status(204).end();

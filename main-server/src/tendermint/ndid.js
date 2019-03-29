@@ -671,9 +671,12 @@ export async function updateServiceDestination(
 //
 // Query
 //
-export async function getAllowedModeList() {
+export async function getAllowedModeList(purpose = '') {
   try {
-    const result = await tendermint.query('GetAllowedModeList');
+    const result = await tendermint.query(
+      'GetAllowedModeList',
+      { purpose }
+    );
     return result;
   } catch (error) {
     throw new CustomError({
