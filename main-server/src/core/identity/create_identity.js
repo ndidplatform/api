@@ -56,6 +56,8 @@ import { role } from '../../node';
  * @param {string} createIdentityParams.accessor_id
  * @param {number} createIdentityParams.ial
  * @param {string} createIdentityParams.request_message
+ * @param {string} createIdentityParams.merge_to_namespace
+ * @param {string} createIdentityParams.merge_to_identifier
  *
  * @returns {{ request_id: string, accessor_id: string }}
  */
@@ -68,6 +70,8 @@ export async function createIdentity(createIdentityParams) {
     identifier,
     accessor_type,
     accessor_public_key,
+    merge_to_namespace,
+    merge_to_identifier,
   } = createIdentityParams;
 
   if (role === 'proxy') {
@@ -81,6 +85,15 @@ export async function createIdentity(createIdentityParams) {
   }
 
   try {
+    if (
+      (merge_to_namespace && !merge_to_identifier) ||
+      (!merge_to_namespace && merge_to_identifier)
+    ) {
+      throw new CustomError({
+        errorType: errorType.MISSING_IDENTITY_ARGUMENT_TO_MERGE,
+      });
+    }
+
     validateKey(accessor_public_key, accessor_type);
 
     const identityRequestData = await cacheDb.getIdentityRequestDataByReferenceId(
@@ -213,6 +226,8 @@ async function createIdentityInternalAsync(
     accessor_id,
     ial,
     request_message,
+    merge_to_namespace,
+    merge_to_identifier,
   },
   { nodeId, request_id, generated_accessor_id, exist }
 ) {
@@ -265,6 +280,8 @@ async function createIdentityInternalAsync(
             accessor_public_key,
             accessor_id,
             ial,
+            merge_to_namespace,
+            merge_to_identifier,
           },
           {
             nodeId,
@@ -322,6 +339,8 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
     accessor_public_key,
     accessor_id,
     ial,
+    merge_to_namespace,
+    merge_to_identifier,
   },
   { nodeId, exist, request_id, generated_accessor_id }
 ) {
@@ -355,7 +374,12 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       reference_id,
     };
     let reference_group_code;
-    if (!exist) {
+    if (merge_to_namespace && merge_to_identifier) {
+      reference_group_code = await tendermintNdid.getReferenceGroupCode(
+        merge_to_namespace,
+        merge_to_identifier
+      );
+    } else if (!exist) {
       reference_group_code = utils.randomBase64Bytes(32);
     }
     if (exist && mode === 3) {

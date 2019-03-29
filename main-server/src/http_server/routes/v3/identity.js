@@ -47,6 +47,8 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
       accessor_id,
       ial,
       request_message,
+      merge_to_namespace,
+      merge_to_identifier,
     } = req.body;
 
     const result = await identity.createIdentity({
@@ -61,6 +63,8 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
       accessor_id,
       ial,
       request_message,
+      merge_to_namespace,
+      merge_to_identifier,
     });
 
     res.status(202).json(result);

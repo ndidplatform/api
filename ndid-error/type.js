@@ -558,7 +558,8 @@ module.exports = {
     message: 'Mismatched ial between response and identity info',
     clientError: true,
   },
-  INVALID_ACCESSOR_RESPONSE: { // TODO: Remove this
+  INVALID_ACCESSOR_RESPONSE: {
+    // TODO: Remove this
     code: 20061,
     message: 'Revoking accessor mismatch with responding accessor',
     clientError: true,
@@ -586,6 +587,12 @@ module.exports = {
   UNSUPPORTED_MODE: {
     code: 20066,
     message: 'This request mode is not supported',
+    clientError: true,
+  },
+  MISSING_IDENTITY_ARGUMENT_TO_MERGE: {
+    code: 20067,
+    message:
+      'Missing identity argument ("merge_to_namespace" or "merge_to_identifier") to merge',
     clientError: true,
   },
 

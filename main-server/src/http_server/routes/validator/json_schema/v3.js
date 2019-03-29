@@ -389,6 +389,8 @@ export default {
           accessor_id: { type: 'string', minLength: 1 },
           ial: { $ref: 'defs#/definitions/ial' },
           request_message: { type: 'string' },
+          merge_to_namespace: { type: 'string', minLength: 1 },
+          merge_to_identifier: { type: 'string', minLength: 1 },
         },
         required: [
           'reference_id',
@@ -398,7 +400,7 @@ export default {
           'mode',
           'accessor_type',
           'accessor_public_key',
-          //'accessor_id',
+          //'accessor_id', // omit to let system auto generate
           'ial',
         ],
       },
