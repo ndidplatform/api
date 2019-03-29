@@ -43,13 +43,6 @@ import logger from '../../logger';
 import * as config from '../../config';
 import { role } from '../../node';
 
-const systemCallbackUrlList = [
-  'SYS_GEN_ADD_ACCESSOR',
-  'SYS_GEN_CREATE_IDENTITY',
-  'SYS_GEN_REVOKE_ACCESSOR',
-  'SYS_GEN_REVOKE_ASSOCIATION',
-];
-
 async function checkIdpListCondition({
   namespace,
   identifier,
@@ -304,14 +297,11 @@ export async function createRequest(
   }
 
   try {
-    //check only for tx without purpose and not automatically create
-    if(!purpose || systemCallbackUrlList.indexOf(callback_url) === -1) {
-      const { allowed_mode_list } = await tendermintNdid.getAllowedModeList();
-      if (!allowed_mode_list.includes(mode)) {
-        throw new CustomError({
-          errorType: errorType.UNSUPPORTED_MODE,
-        });
-      }
+    const { allowed_mode_list } = await tendermintNdid.getAllowedModeList(purpose);
+    if (!allowed_mode_list.includes(mode)) {
+      throw new CustomError({
+        errorType: errorType.UNSUPPORTED_MODE,
+      });
     }
 
     const requestId = await cacheDb.getRequestIdByReferenceId(
