@@ -314,6 +314,8 @@ async function createIdentityInternalAsync(
             request_id,
             generated_accessor_id,
             reference_group_code,
+            existingNamespace,
+            existingIdentifier,
             new_identity_list,
           },
         ],
@@ -370,6 +372,8 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
     request_id,
     generated_accessor_id,
     reference_group_code,
+    existingNamespace,
+    existingIdentifier,
     new_identity_list,
   }
 ) {
@@ -386,7 +390,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
         accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
         creation_block_height: `${chainId}:${height}`,
         success: true,
-        exist: reference_group_code != null,
+        exist: !!(existingNamespace && existingIdentifier),
       },
       retry: true,
     });
