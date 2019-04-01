@@ -30,13 +30,15 @@ import { getErrorObjectForClient } from '../../utils/error';
 import logger from '../../logger';
 
 import * as common from '../common';
+import * as identity from '../identity';
 import * as requestProcessManager from '../request_process_manager';
+import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 
-import * as config from '../../config';
-import * as tendermintNdid from '../../tendermint/ndid';
-
 import { delegateToWorker } from '../../master-worker-interface/server';
+
+import * as config from '../../config';
+import MODE from '../../mode';
 
 export async function handleMessageFromQueue(
   messageId,
@@ -242,10 +244,30 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         identityChangesToCheckForNotification,
       });
 
-      delegateToWorker({
-        fnName: 'identity.handleIdentityChangeTransactions',
-        args: [identityChangesToCheckForNotification],
-      });
+      if (config.mode === MODE.STANDALONE) {
+        identityChangesToCheckForNotification.forEach((transaction) => {
+          identity.handleIdentityChangeTransactions({
+            nodeId,
+            getCallbackUrlFnName:
+              'idp.getIdentityChangeNotificationCallbackUrl',
+            transaction,
+          });
+        });
+      } else if (config.mode === MODE.MASTER) {
+        identityChangesToCheckForNotification.forEach((transaction) => {
+          delegateToWorker({
+            fnName: 'identity.handleIdentityChangeTransactions',
+            args: [
+              {
+                nodeId,
+                getCallbackUrlFnName:
+                  'idp.getIdentityChangeNotificationCallbackUrl',
+                transaction,
+              },
+            ],
+          });
+        });
+      }
       await Promise.all([
         ...Object.values(identityRequestsToProcess).map(
           ({ requestId, action }) =>
