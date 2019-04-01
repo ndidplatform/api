@@ -26,6 +26,10 @@ import { getFunction } from '../../functions';
 import CustomError from 'ndid-error/custom_error';
 import logger from '../../logger';
 
+const reference_group_code_base64 = Buffer.from(
+  'reference_group_code'
+).toString('base64');
+
 export async function handleIdentityChangeTransactions({
   nodeId,
   getCallbackUrlFnName,
@@ -36,7 +40,9 @@ export async function handleIdentityChangeTransactions({
   }
 
   const referenceGroupCode = Buffer.from(
-    transaction.deliverTxResult.reference_group_code,
+    transaction.deliverTxResult.tags.find(
+      (tag) => tag.key === reference_group_code_base64
+    ).value,
     'base64'
   ).toString();
   // Check if associated with nodeId
