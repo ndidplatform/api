@@ -381,8 +381,17 @@ export default {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
-          namespace: { type: 'string', minLength: 1 },
-          identifier: { type: 'string', minLength: 1 },
+          identity_list: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                namespace: { type: 'string', minLength: 1 },
+                identifier: { type: 'string', minLength: 1 },
+              },
+              required: ['namespace', 'identifier'],
+            },
+          },
           mode: { type: 'number', enum: [2, 3] },
           accessor_type: { $ref: 'defs#/definitions/keyType' },
           accessor_public_key: { type: 'string', minLength: 1 },
@@ -395,8 +404,7 @@ export default {
         required: [
           'reference_id',
           'callback_url',
-          'namespace',
-          'identifier',
+          'identity_list',
           'mode',
           'accessor_type',
           'accessor_public_key',

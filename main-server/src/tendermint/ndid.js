@@ -92,8 +92,9 @@ export async function updateNode(
  *
  * @param {Object} identity
  * @param {string} identity.reference_group_code
- * @param {string} identity.namespace
- * @param {string} identity.identifier
+ * @param {Object[]} identity.new_identity_list
+ * @param {string} identity.new_identity_list[].namespace
+ * @param {string} identity.new_identity_list[].identifier
  * @param {string} identity.ial
  * @param {string} identity.mode_list
  * @param {string} identity.accessor_id
@@ -108,8 +109,7 @@ export async function updateNode(
 export async function registerIdentity(
   {
     reference_group_code,
-    namespace,
-    identifier,
+    new_identity_list,
     ial,
     mode_list,
     accessor_id,
@@ -123,13 +123,17 @@ export async function registerIdentity(
   saveForRetryOnChainDisabled
 ) {
   try {
+    new_identity_list = new_identity_list.map(({ namespace, identifier }) => ({
+      identity_namespace: namespace,
+      identity_identifier_hash: utils.hash(identifier),
+    }));
+
     const result = await tendermint.transact({
       nodeId,
       fnName: 'RegisterIdentity',
       params: {
         reference_group_code,
-        identity_namespace: namespace,
-        identity_identifier_hash: utils.hash(identifier),
+        new_identity_list,
         ial,
         mode_list,
         accessor_id,
@@ -673,10 +677,7 @@ export async function updateServiceDestination(
 //
 export async function getAllowedModeList(purpose = '') {
   try {
-    const result = await tendermint.query(
-      'GetAllowedModeList',
-      { purpose }
-    );
+    const result = await tendermint.query('GetAllowedModeList', { purpose });
     return result;
   } catch (error) {
     throw new CustomError({

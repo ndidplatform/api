@@ -28,7 +28,7 @@ import * as cacheDb from '../../db/cache';
 
 export async function createIdentityAfterCloseConsentRequest(
   { error },
-  { nodeId, request_id, reference_group_code, identity },
+  { nodeId, request_id, identity },
   { callbackFnName, callbackAdditionalArgs }
 ) {
   try {
@@ -44,8 +44,8 @@ export async function createIdentityAfterCloseConsentRequest(
     }
     const {
       type,
-      namespace,
-      identifier,
+      reference_group_code,
+      new_identity_list,
       ial,
       mode,
       accessor_id,
@@ -53,13 +53,6 @@ export async function createIdentityAfterCloseConsentRequest(
       accessor_type,
       reference_id,
     } = identity;
-
-    if (reference_group_code == null) {
-      reference_group_code = await tendermintNdid.getReferenceGroupCode(
-        namespace,
-        identifier
-      );
-    }
 
     let mode_list;
     if (mode === 2) {
@@ -71,8 +64,7 @@ export async function createIdentityAfterCloseConsentRequest(
     await tendermintNdid.registerIdentity(
       {
         reference_group_code,
-        namespace,
-        identifier,
+        new_identity_list,
         ial,
         mode_list,
         accessor_id,

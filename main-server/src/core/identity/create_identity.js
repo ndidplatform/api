@@ -50,14 +50,15 @@ import { role } from '../../node';
  * @param {string} createIdentityParams.callback_url
  * @param {string} createIdentityParams.namespace
  * @param {string} createIdentityParams.identifier
+ * @param {Object[]} createIdentityParams.identity_list
+ * @param {string} createIdentityParams.identity_list[].namespace
+ * @param {string} createIdentityParams.identity_list[].identifier
  * @param {string} createIdentityParams.mode
  * @param {string} createIdentityParams.accessor_type
  * @param {string} createIdentityParams.accessor_public_key
  * @param {string} createIdentityParams.accessor_id
  * @param {number} createIdentityParams.ial
  * @param {string} createIdentityParams.request_message
- * @param {string} createIdentityParams.merge_to_namespace
- * @param {string} createIdentityParams.merge_to_identifier
  *
  * @returns {{ request_id: string, accessor_id: string }}
  */
@@ -66,12 +67,9 @@ export async function createIdentity(createIdentityParams) {
   const {
     reference_id,
     callback_url,
-    namespace,
-    identifier,
+    identity_list,
     accessor_type,
     accessor_public_key,
-    merge_to_namespace,
-    merge_to_identifier,
   } = createIdentityParams;
 
   if (role === 'proxy') {
@@ -95,56 +93,82 @@ export async function createIdentity(createIdentityParams) {
       });
     }
 
-    if (
-      (merge_to_namespace && !merge_to_identifier) ||
-      (!merge_to_namespace && merge_to_identifier)
-    ) {
-      throw new CustomError({
-        errorType: errorType.MISSING_IDENTITY_ARGUMENT_TO_MERGE,
-      });
-    }
-
     validateKey(accessor_public_key, accessor_type);
 
     ial = parseFloat(ial);
 
     const namespaceDetails = await tendermintNdid.getNamespaceList();
-    const valid = namespaceDetails.find(
-      (namespaceDetail) => namespaceDetail.namespace === namespace
-    );
-    if (!valid) {
-      throw new CustomError({
-        errorType: errorType.INVALID_NAMESPACE,
-        details: {
-          namespace,
-        },
-      });
-    }
+    let reference_group_code;
+    let existingNamespace;
+    let existingIdentifier;
+    const new_identity_list = [];
+    await Promise.all(
+      identity_list.map(async ({ namespace, identifier }) => {
+        const valid = namespaceDetails.find(
+          (namespaceDetail) => namespaceDetail.namespace === namespace
+        );
+        if (!valid) {
+          throw new CustomError({
+            errorType: errorType.INVALID_NAMESPACE,
+            details: {
+              namespace,
+            },
+          });
+        }
 
-    const identityOnNode = await getIdentityInfo({
-      nodeId: node_id,
-      namespace,
-      identifier,
-    });
-    //already created identity for this user
-    if (identityOnNode != null) {
-      throw new CustomError({
-        errorType: errorType.IDENTITY_ALREADY_CREATED,
-        details: {
+        const identityOnNode = await getIdentityInfo({
+          nodeId: node_id,
           namespace,
           identifier,
-        },
-      });
+        });
+        //already created identity for this user
+        if (identityOnNode != null) {
+          throw new CustomError({
+            errorType: errorType.IDENTITY_ALREADY_CREATED,
+            details: {
+              namespace,
+              identifier,
+            },
+          });
+        }
+
+        const identityReferenceGroupCode = await tendermintNdid.getReferenceGroupCode(
+          namespace,
+          identifier
+        );
+
+        if (identityReferenceGroupCode != null) {
+          if (reference_group_code == null) {
+            reference_group_code = identityReferenceGroupCode;
+            existingNamespace = namespace;
+            existingIdentifier = identifier;
+          } else {
+            if (reference_group_code !== identityReferenceGroupCode) {
+              throw new CustomError({
+                // FIXME
+                message: 'Multiple reference group in identity list',
+              });
+            }
+          }
+        } else {
+          new_identity_list.push({
+            namespace,
+            identifier,
+          });
+        }
+      })
+    );
+    if (reference_group_code == null) {
+      reference_group_code = utils.randomBase64Bytes(32);
     }
 
     //check ial
-    let { max_ial } = await tendermintNdid.getNodeInfo(node_id);
+    const { max_ial } = await tendermintNdid.getNodeInfo(node_id);
     if (ial > max_ial) {
       throw new CustomError({
         errorType: errorType.MAXIMUM_IAL_EXCEED,
         details: {
-          namespace,
-          identifier,
+          ial,
         },
       });
     }
@@ -153,7 +177,7 @@ export async function createIdentity(createIdentityParams) {
       accessor_id = utils.randomBase64Bytes(32);
     }
 
-    let checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(
+    const checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(
       accessor_id
     );
     if (checkDuplicateAccessorId != null) {
@@ -173,26 +197,6 @@ export async function createIdentity(createIdentityParams) {
       accessor_id,
     });
 
-    const exist = await tendermintNdid.checkExistingIdentity({
-      namespace,
-      identifier,
-    });
-
-    let reference_group_code;
-    if (merge_to_namespace && merge_to_identifier) {
-      reference_group_code = await tendermintNdid.getReferenceGroupCode(
-        merge_to_namespace,
-        merge_to_identifier
-      );
-      if (!reference_group_code) {
-        throw new CustomError({
-          errorType: errorType.IDENTITY_TO_MERGE_TO_DOES_NOT_EXIST,
-        });
-      }
-    } else if (!exist) {
-      reference_group_code = utils.randomBase64Bytes(32);
-    }
-
     await cacheDb.setCallbackUrlByReferenceId(
       node_id,
       reference_id,
@@ -203,8 +207,10 @@ export async function createIdentity(createIdentityParams) {
       nodeId: node_id,
       request_id,
       generated_accessor_id: accessor_id,
-      exist,
       reference_group_code,
+      existingNamespace,
+      existingIdentifier,
+      new_identity_list,
     });
     return { request_id, accessor_id };
   } catch (error) {
@@ -234,8 +240,6 @@ async function createIdentityInternalAsync(
   {
     reference_id,
     callback_url,
-    namespace,
-    identifier,
     mode,
     accessor_type,
     accessor_public_key,
@@ -243,21 +247,29 @@ async function createIdentityInternalAsync(
     ial,
     request_message,
   },
-  { nodeId, request_id, generated_accessor_id, exist, reference_group_code }
+  {
+    nodeId,
+    request_id,
+    generated_accessor_id,
+    reference_group_code,
+    existingNamespace,
+    existingIdentifier,
+    new_identity_list,
+  }
 ) {
   try {
     let min_idp;
     if (mode === 2) {
       min_idp = 0;
     } else if (mode === 3) {
-      min_idp = exist ? 1 : 0;
+      min_idp = reference_group_code != null ? 1 : 0;
     }
 
     await common.createRequest(
       {
         node_id: nodeId,
-        namespace,
-        identifier,
+        namespace: existingNamespace,
+        identifier: existingIdentifier,
         reference_id,
         idp_id_list: [],
         callback_url: 'SYS_GEN_CREATE_IDENTITY',
@@ -266,8 +278,8 @@ async function createIdentityInternalAsync(
           request_message != null
             ? request_message
             : getRequestMessageForCreatingIdentity({
-                namespace,
-                identifier,
+                namespace: existingNamespace,
+                identifier: existingIdentifier,
                 reference_id,
                 node_id: config.nodeId,
               }),
@@ -287,8 +299,6 @@ async function createIdentityInternalAsync(
           {
             reference_id,
             callback_url,
-            namespace,
-            identifier,
             mode,
             accessor_type,
             accessor_public_key,
@@ -297,10 +307,10 @@ async function createIdentityInternalAsync(
           },
           {
             nodeId,
-            exist,
             request_id,
             generated_accessor_id,
             reference_group_code,
+            new_identity_list,
           },
         ],
         saveForRetryOnChainDisabled: true,
@@ -345,15 +355,19 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
   {
     reference_id,
     callback_url,
-    namespace,
-    identifier,
     mode,
     accessor_type,
     accessor_public_key,
     accessor_id,
     ial,
   },
-  { nodeId, exist, request_id, generated_accessor_id, reference_group_code }
+  {
+    nodeId,
+    request_id,
+    generated_accessor_id,
+    reference_group_code,
+    new_identity_list,
+  }
 ) {
   try {
     if (error) throw error;
@@ -368,15 +382,15 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
         accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
         creation_block_height: `${chainId}:${height}`,
         success: true,
-        exist,
+        exist: reference_group_code != null,
       },
       retry: true,
     });
 
     const identity = {
       type: 'RegisterIdentity',
-      namespace,
-      identifier,
+      reference_group_code,
+      new_identity_list,
       ial,
       mode,
       accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
@@ -385,8 +399,8 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       reference_id,
     };
 
-    if (exist && mode === 3) {
-      // save data for later use after got consent from user (in mode 2,3)
+    if (reference_group_code != null && mode === 3) {
+      // save data for later use after got consent from user (in mode 3)
       await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
     } else {
       await common.closeRequest(
@@ -399,7 +413,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
           sendCallbackToClient: false,
           callbackFnName: 'identity.createIdentityAfterCloseConsentRequest',
           callbackAdditionalArgs: [
-            { nodeId, request_id, reference_group_code, identity },
+            { nodeId, request_id, identity },
             {
               callbackFnName: 'identity.afterIdentityOperationSuccess',
               callbackAdditionalArgs: [{ nodeId }],
