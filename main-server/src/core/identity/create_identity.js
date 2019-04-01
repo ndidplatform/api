@@ -268,8 +268,12 @@ async function createIdentityInternalAsync(
     await common.createRequest(
       {
         node_id: nodeId,
-        namespace: existingNamespace,
-        identifier: existingIdentifier,
+        namespace: existingNamespace
+          ? existingNamespace
+          : new_identity_list[0].namespace,
+        identifier: existingIdentifier
+          ? existingIdentifier
+          : new_identity_list[0].identifier,
         reference_id,
         idp_id_list: [],
         callback_url: 'SYS_GEN_CREATE_IDENTITY',
