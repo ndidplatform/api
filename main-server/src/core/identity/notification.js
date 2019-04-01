@@ -48,6 +48,7 @@ export async function handleIdentityChangeTransactions({
   // Check if associated with nodeId
   const identityInfo = await tendermintNdid.getIdentityInfo({
     reference_group_code: referenceGroupCode,
+    node_id: nodeId,
   });
   if (identityInfo == null) {
     return;
