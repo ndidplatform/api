@@ -407,7 +407,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       reference_id,
     };
 
-    if (reference_group_code != null && mode === 3) {
+    if (existingNamespace && existingIdentifier && mode === 3) {
       // save data for later use after got consent from user (in mode 3)
       await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
     } else {
