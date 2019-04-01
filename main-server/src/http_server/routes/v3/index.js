@@ -26,6 +26,7 @@ import rpRouter from './rp';
 import idpRouter from './idp';
 import asRouter from './as';
 import identityRouter from './identity';
+import identityRequestRouter from './identity_request';
 import utilityRouter from './utility';
 import dpkiRouter from './dpki';
 
@@ -35,6 +36,7 @@ router.use('/rp', rpRouter);
 router.use('/idp', idpRouter);
 router.use('/as', asRouter);
 router.use('/identity', identityRouter);
+router.use('/identity_request', identityRequestRouter);
 router.use('/utility', utilityRouter);
 router.use('/dpki', dpkiRouter);
 
