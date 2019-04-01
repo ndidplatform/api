@@ -35,7 +35,7 @@ export async function handleIdentityChangeTransactions({
   getCallbackUrlFnName,
   transaction,
 }) {
-  if (nodeId === transaction.node_id) {
+  if (nodeId === transaction.nodeId) {
     return;
   }
 
