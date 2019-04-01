@@ -262,7 +262,7 @@ async function createIdentityInternalAsync(
     if (mode === 2) {
       min_idp = 0;
     } else if (mode === 3) {
-      min_idp = reference_group_code != null ? 1 : 0;
+      min_idp = existingNamespace && existingIdentifier ? 1 : 0;
     }
 
     await common.createRequest(
