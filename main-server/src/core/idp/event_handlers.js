@@ -30,12 +30,13 @@ import { getErrorObjectForClient } from '../../utils/error';
 import logger from '../../logger';
 
 import * as common from '../common';
-import * as identity from '../identity';
 import * as requestProcessManager from '../request_process_manager';
 import * as cacheDb from '../../db/cache';
 
 import * as config from '../../config';
 import * as tendermintNdid from '../../tendermint/ndid';
+
+import { delegateToWorker } from '../../master-worker-interface/server';
 
 export async function handleMessageFromQueue(
   messageId,
@@ -165,6 +166,19 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
       for (let i = 0; i < transactions.length; i++) {
         const transaction = transactions[i];
+
+        if (
+          [
+            'RegisterIdentity',
+            'AddAccessor',
+            'RevokeAccessor',
+            'RevokeIdentityAssociation',
+          ].includes(transaction.fnName)
+        ) {
+          identityChangesToCheckForNotification.push(transaction);
+          continue;
+        }
+
         const requestId = transaction.args.request_id;
         if (requestId == null) continue;
         if (transaction.fnName === 'CloseRequest') {
@@ -211,17 +225,6 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
               transaction.fnName === 'TimeOutRequest',
           };
         }
-
-        if (
-          [
-            'RegisterIdentity',
-            'AddAccessor',
-            'RevokeAccessor',
-            'RevokeIdentityAssociation',
-          ].includes(transaction.fnName)
-        ) {
-          identityChangesToCheckForNotification.push(transaction);
-        }
       }
 
       logger.debug({
@@ -239,6 +242,10 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         identityChangesToCheckForNotification,
       });
 
+      delegateToWorker({
+        fnName: 'identity.handleIdentityChangeTransactions',
+        args: [identityChangesToCheckForNotification],
+      });
       await Promise.all([
         ...Object.values(identityRequestsToProcess).map(
           ({ requestId, action }) =>
@@ -257,9 +264,6 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
               callbackFnName: 'idp.processRequestUpdate',
               callbackArgs: [nodeId, requestId, height, cleanUp],
             })
-        ),
-        ...identity.handleIdentityChangeTransactions(
-          identityChangesToCheckForNotification
         ),
       ]);
     })

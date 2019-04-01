@@ -23,7 +23,6 @@
 import * as tendermintNdid from '../../tendermint/ndid';
 import { callbackToClient } from '../../callback';
 import { getFunction } from '../../functions';
-import { delegateToWorker } from '../../master-worker-interface/server';
 import CustomError from 'ndid-error/custom_error';
 import logger from '../../logger';
 
@@ -58,21 +57,16 @@ export async function handleIdentityChangeTransactions({
   } else if (transaction.fnName === 'RevokeIdentityAssociation') {
     action = 'revoke_identity_association';
   }
-  delegateToWorker({
-    fnName: 'identity.notifyIdentityChange',
-    args: [
-      {
-        getCallbackUrlFnName,
-        nodeId,
-        referenceGroupCode,
-        action,
-        actorNodeId: transaction.node_id,
-      },
-    ],
+  notifyIdentityChange({
+    getCallbackUrlFnName,
+    nodeId,
+    referenceGroupCode,
+    action,
+    actorNodeId: transaction.node_id,
   });
 }
 
-export async function notifyIdentityChange({
+async function notifyIdentityChange({
   getCallbackUrlFnName,
   nodeId,
   referenceGroupCode,
