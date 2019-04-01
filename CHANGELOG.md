@@ -7,6 +7,16 @@ BREAKING CHANGES:
 - Remove API v1.
 - Remove API v2.
 - API v3.
+  - Route changes
+    - POST `/rp/requests/housekeeping/data/:request_id` to `/rp/request_data_removal/:request_id`
+    - POST `/rp/requests/housekeeping/data` to `/rp/request_data_removal`
+    - GET `/rp/requests/reference/:reference_id` to `/rp/request_references/:reference_id`
+    - GET `/rp/requests/data/:request_id` to `/rp/request_data/:request_id`
+    - POST `/rp/requests/close` to `/rp/request_close`
+    - GET `/identity/requests/reference/:reference_id` to `/identity/request_references/:reference_id`
+    - POST `/identity/requests/close` to `/identity/request_close`
+    - POST `/utility/private_messages/housekeeping` to `/utility/private_message_removal`
+    - POST `/utility/private_messages/:request_id/housekeeping` to `/utility/private_message_removal/:request_id`
 - Change logging format.
 - Remove logging to file feature.
 - Remove logging environment variable options

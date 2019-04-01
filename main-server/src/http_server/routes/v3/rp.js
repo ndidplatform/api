@@ -24,7 +24,6 @@ import express from 'express';
 
 import { validateBody } from '../middleware/validation';
 import { rpOnlyHandler } from '../middleware/role_handler';
-import { routeCollisionStopper } from '../middleware/helpers';
 import * as rp from '../../../core/rp';
 import * as common from '../../../core/common';
 
@@ -33,35 +32,7 @@ const router = express.Router();
 router.use(rpOnlyHandler);
 
 router.post(
-  '/requests/housekeeping/data/:request_id',
-  async (req, res, next) => {
-    try {
-      const { request_id } = req.params;
-      const { node_id } = req.body;
-
-      await rp.removeDataFromAS(node_id, request_id);
-      res.status(204).end();
-      next();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.post('/requests/housekeeping/data', async (req, res, next) => {
-  try {
-    const { node_id } = req.body;
-    await rp.removeAllDataFromAS(node_id);
-    res.status(204).end();
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post(
   '/requests/:namespace/:identifier',
-  routeCollisionStopper,  // collide with "/requests/housekeeping/data"
   validateBody,
   async (req, res, next) => {
     try {
@@ -107,7 +78,7 @@ router.post(
   }
 );
 
-router.get('/requests/reference/:reference_id', async (req, res, next) => {
+router.get('/request_references/:reference_id', async (req, res, next) => {
   try {
     const { node_id } = req.query;
     const { reference_id } = req.params;
@@ -124,7 +95,7 @@ router.get('/requests/reference/:reference_id', async (req, res, next) => {
   }
 });
 
-router.get('/requests/data/:request_id', async (req, res, next) => {
+router.get('/request_data/:request_id', async (req, res, next) => {
   try {
     const { node_id } = req.query;
     const { request_id } = req.params;
@@ -141,7 +112,31 @@ router.get('/requests/data/:request_id', async (req, res, next) => {
   }
 });
 
-router.post('/requests/close', validateBody, async (req, res, next) => {
+router.post('/request_data_removal', async (req, res, next) => {
+  try {
+    const { node_id } = req.body;
+    await rp.removeAllDataFromAS(node_id);
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/request_data_removal/:request_id', async (req, res, next) => {
+  try {
+    const { request_id } = req.params;
+    const { node_id } = req.body;
+
+    await rp.removeDataFromAS(node_id, request_id);
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/request_close', validateBody, async (req, res, next) => {
   try {
     const { node_id, reference_id, callback_url, request_id } = req.body;
 

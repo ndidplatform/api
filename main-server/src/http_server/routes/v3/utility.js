@@ -234,7 +234,7 @@ router.get('/private_messages/:request_id', async (req, res, next) => {
   }
 });
 
-router.post('/private_messages/housekeeping', async (req, res, next) => {
+router.post('/private_message_removal', async (req, res, next) => {
   try {
     const { type } = req.query;
     const { node_id } = req.body;
@@ -246,24 +246,21 @@ router.post('/private_messages/housekeeping', async (req, res, next) => {
   }
 });
 
-router.post(
-  '/private_messages/:request_id/housekeeping',
-  async (req, res, next) => {
-    try {
-      const { request_id } = req.params;
-      const { type } = req.query;
-      const { node_id } = req.body;
-      await privateMessage.removePrivateMessages({
-        nodeId: node_id,
-        requestId: request_id,
-        type,
-      });
-      res.status(204).end();
-      next();
-    } catch (error) {
-      next(error);
-    }
+router.post('/private_message_removal/:request_id', async (req, res, next) => {
+  try {
+    const { request_id } = req.params;
+    const { type } = req.query;
+    const { node_id } = req.body;
+    await privateMessage.removePrivateMessages({
+      nodeId: node_id,
+      requestId: request_id,
+      type,
+    });
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 export default router;
