@@ -600,6 +600,12 @@ module.exports = {
     message: 'Identity to merge to does not exist',
     clientError: true,
   },
+  SOME_AS_DO_NOT_ACCEPT_NAMESPACE: {
+    code: 20069,
+    message:
+      'Some AS IDs in some services in data request list do not accept provided namespace',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

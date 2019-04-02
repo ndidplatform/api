@@ -125,7 +125,12 @@ async function checkIdpListCondition({
   return receivers;
 }
 
-async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
+async function checkAsListCondition({
+  data_request_list,
+  namespace,
+  min_ial,
+  min_aal,
+}) {
   const serviceIds = data_request_list.map(
     (dataRequest) => dataRequest.service_id
   );
@@ -177,12 +182,22 @@ async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
 
         //filter potential AS to be only in as_id_list
         potential_as_list = potential_as_list.filter((as_node) => {
-          return as_id_list.indexOf(as_node.node_id) !== -1;
+          return as_id_list.include(as_node.node_id);
         });
 
         if (potential_as_list.length !== as_id_list.length) {
           throw new CustomError({
             errorType: errorType.SOME_AS_DO_NOT_PROVIDE_SERVICE,
+          });
+        }
+
+        potential_as_list = potential_as_list.filter((as_node) => {
+          return as_node.accepted_namespace_list.include(namespace);
+        });
+
+        if (potential_as_list.length !== as_id_list.length) {
+          throw new CustomError({
+            errorType: errorType.SOME_AS_DO_NOT_ACCEPT_NAMESPACE,
           });
         }
       }
@@ -223,8 +238,6 @@ async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
           (node_info) => node_info.node_id
         );
       }
-
-      // TODO: check for "accepted_namespace_list" should contains namespace used in create request
     })
   );
 }
@@ -329,6 +342,7 @@ export async function createRequest(
     if (data_request_list != null && data_request_list.length > 0) {
       await checkAsListCondition({
         data_request_list,
+        namespace,
         min_ial,
         min_aal,
       });
