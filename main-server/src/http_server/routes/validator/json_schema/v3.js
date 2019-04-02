@@ -23,7 +23,7 @@
 export default {
   defsSchema: {
     definitions: {
-      request_message_type: {
+      requestMessageType: {
         type: 'string',
         enum: [
           'text/plain',
@@ -139,7 +139,7 @@ export default {
           },
           request_message: { type: 'string' },
           request_message_type: {
-            $ref: 'defs#/definitions/request_message_type',
+            $ref: 'defs#/definitions/requestMessageType',
           },
           min_ial: { $ref: 'defs#/definitions/ial' },
           min_aal: { $ref: 'defs#/definitions/aal' },
@@ -415,7 +415,7 @@ export default {
           ial: { $ref: 'defs#/definitions/ial' },
           request_message: { type: 'string' },
           request_message_type: {
-            $ref: 'defs#/definitions/request_message_type',
+            $ref: 'defs#/definitions/requestMessageType',
           },
         },
         required: [
@@ -478,7 +478,7 @@ export default {
           accessor_id: { type: 'string', minLength: 1 },
           request_message: { type: 'string' },
           request_message_type: {
-            $ref: 'defs#/definitions/request_message_type',
+            $ref: 'defs#/definitions/requestMessageType',
           },
         },
         required: [
@@ -499,7 +499,7 @@ export default {
           accessor_id: { type: 'string', minLength: 1 },
           request_message: { type: 'string' },
           request_message_type: {
-            $ref: 'defs#/definitions/request_message_type',
+            $ref: 'defs#/definitions/requestMessageType',
           },
         },
         required: ['reference_id', 'callback_url', 'accessor_id'],
@@ -514,7 +514,7 @@ export default {
           callback_url: { $ref: 'defs#/definitions/url' },
           request_message: { type: 'string' },
           request_message_type: {
-            $ref: 'defs#/definitions/request_message_type',
+            $ref: 'defs#/definitions/requestMessageType',
           },
         },
         required: ['reference_id', 'callback_url'],
@@ -529,7 +529,7 @@ export default {
           callback_url: { $ref: 'defs#/definitions/url' },
           request_message: { type: 'string' },
           request_message_type: {
-            $ref: 'defs#/definitions/request_message_type',
+            $ref: 'defs#/definitions/requestMessageType',
           },
         },
         required: ['reference_id', 'callback_url'],
@@ -546,7 +546,7 @@ export default {
           identifier_to_merge: { type: 'string', minLength: 1 },
           request_message: { type: 'string' },
           request_message_type: {
-            $ref: 'defs#/definitions/request_message_type',
+            $ref: 'defs#/definitions/requestMessageType',
           },
         },
         required: [
