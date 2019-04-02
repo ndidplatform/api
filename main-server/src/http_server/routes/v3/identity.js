@@ -25,7 +25,6 @@ import express from 'express';
 import { validateBody } from '../middleware/validation';
 import { idpOnlyHandler } from '../middleware/role_handler';
 import * as identity from '../../../core/identity';
-import * as common from '../../../core/common';
 import * as tendermintNdid from '../../../tendermint/ndid';
 
 import errorType from 'ndid-error/type';
@@ -45,8 +44,6 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
       accessor_id,
       ial,
       request_message,
-      merge_to_namespace,
-      merge_to_identifier,
     } = req.body;
 
     const result = await identity.createIdentity({
@@ -60,8 +57,6 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
       accessor_id,
       ial,
       request_message,
-      merge_to_namespace,
-      merge_to_identifier,
     });
 
     res.status(202).json(result);
