@@ -45,6 +45,7 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
       accessor_id,
       ial,
       request_message,
+      request_message_type,
       merge_to_namespace,
       merge_to_identifier,
     } = req.body;
@@ -214,6 +215,7 @@ router.post(
         accessor_public_key,
         accessor_id,
         request_message,
+        request_message_type,
       } = req.body;
 
       const { namespace, identifier } = req.params;
@@ -254,6 +256,7 @@ router.post(
         callback_url,
         accessor_id,
         request_message,
+        request_message_type,
       } = req.body;
 
       const { namespace, identifier } = req.params;
@@ -286,7 +289,13 @@ router.post(
   validateBody,
   async (req, res, next) => {
     try {
-      const { node_id, reference_id, callback_url, request_message } = req.body;
+      const {
+        node_id,
+        reference_id,
+        callback_url,
+        request_message,
+        request_message_type,
+      } = req.body;
 
       const { namespace, identifier } = req.params;
 
@@ -317,7 +326,13 @@ router.post(
   validateBody,
   async (req, res, next) => {
     try {
-      const { node_id, reference_id, callback_url, request_message } = req.body;
+      const {
+        node_id,
+        reference_id,
+        callback_url,
+        request_message,
+        request_message_type,
+      } = req.body;
 
       const { namespace, identifier } = req.params;
 
@@ -355,6 +370,7 @@ router.post(
         namespace_to_merge,
         identifier_to_merge,
         request_message,
+        request_message_type,
       } = req.body;
 
       const { namespace, identifier } = req.params;
