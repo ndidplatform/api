@@ -38,6 +38,8 @@ import logger from '../../logger';
 import * as config from '../../config';
 import { role } from '../../node';
 
+import { createIdentityAfterCloseConsentRequest } from './create_identity_after_consent';
+
 // TODO: bring back synchronous?
 
 /**
@@ -265,64 +267,84 @@ async function createIdentityInternalAsync(
       min_idp = existingNamespace && existingIdentifier ? 1 : 0;
     }
 
-    await common.createRequest(
-      {
-        node_id: nodeId,
-        namespace: existingNamespace
-          ? existingNamespace
-          : new_identity_list[0].namespace,
-        identifier: existingIdentifier
-          ? existingIdentifier
-          : new_identity_list[0].identifier,
-        reference_id,
-        idp_id_list: [],
-        callback_url: 'SYS_GEN_CREATE_IDENTITY',
-        data_request_list: [],
-        request_message:
-          request_message != null
-            ? request_message
-            : getRequestMessageForCreatingIdentity({
-                namespace: existingNamespace,
-                identifier: existingIdentifier,
-                reference_id,
-                node_id: config.nodeId,
-              }),
-        min_ial: 1.1,
-        min_aal: 1,
-        min_idp,
-        request_timeout: 86400,
-        mode,
-        purpose: 'RegisterIdentity',
-      },
-      {
-        synchronous: false,
-        sendCallbackToClient: false,
-        callbackFnName:
-          'identity.createIdentityInternalAsyncAfterCreateRequestBlockchain',
-        callbackAdditionalArgs: [
-          {
-            reference_id,
-            callback_url,
-            mode,
-            accessor_type,
-            accessor_public_key,
-            accessor_id,
-            ial,
-          },
-          {
-            nodeId,
-            request_id,
-            generated_accessor_id,
-            reference_group_code,
-            existingNamespace,
-            existingIdentifier,
-            new_identity_list,
-          },
-        ],
-        saveForRetryOnChainDisabled: true,
-      },
-      { request_id }
-    );
+    if(min_idp === 0) {
+      await createIdentityAfterCloseConsentRequest({}, {
+        nodeId,
+        identity: {
+          type: 'RegisterIdentity',
+          reference_group_code,
+          new_identity_list,
+          ial,
+          mode,
+          accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
+          accessor_public_key,
+          accessor_type,
+          reference_id,
+        } 
+      }, {
+        callbackFnName: 'identity.afterIdentityOperationSuccess',
+        callbackAdditionalArgs: [{ nodeId }],
+      });
+    } else {
+      await common.createRequest(
+        {
+          node_id: nodeId,
+          namespace: existingNamespace
+            ? existingNamespace
+            : new_identity_list[0].namespace,
+          identifier: existingIdentifier
+            ? existingIdentifier
+            : new_identity_list[0].identifier,
+          reference_id,
+          idp_id_list: [],
+          callback_url: 'SYS_GEN_CREATE_IDENTITY',
+          data_request_list: [],
+          request_message:
+            request_message != null
+              ? request_message
+              : getRequestMessageForCreatingIdentity({
+                  namespace: existingNamespace,
+                  identifier: existingIdentifier,
+                  reference_id,
+                  node_id: config.nodeId,
+                }),
+          min_ial: 1.1,
+          min_aal: 1,
+          min_idp,
+          request_timeout: 86400,
+          mode,
+          purpose: 'RegisterIdentity',
+        },
+        {
+          synchronous: false,
+          sendCallbackToClient: false,
+          callbackFnName:
+            'identity.createIdentityInternalAsyncAfterCreateRequestBlockchain',
+          callbackAdditionalArgs: [
+            {
+              reference_id,
+              callback_url,
+              mode,
+              accessor_type,
+              accessor_public_key,
+              accessor_id,
+              ial,
+            },
+            {
+              nodeId,
+              request_id,
+              generated_accessor_id,
+              reference_group_code,
+              existingNamespace,
+              existingIdentifier,
+              new_identity_list,
+            },
+          ],
+          saveForRetryOnChainDisabled: true,
+        },
+        { request_id }
+      );
+    }
   } catch (error) {
     logger.error({
       message: 'Create identity internal async error',
