@@ -838,9 +838,10 @@ export async function getIdpNodesInfo({
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
-  if (!reference_group_code && (!namespace || !identifier)) {
-    throw new Error('Missing args');
-  }
+  // Commented out for mode 1
+  // if (!reference_group_code && (!namespace || !identifier)) {
+  //   throw new Error('Missing args');
+  // }
   try {
     const result = await tendermint.query('GetIdpNodesInfo', {
       reference_group_code,
