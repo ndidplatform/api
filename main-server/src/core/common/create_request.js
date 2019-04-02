@@ -182,7 +182,7 @@ async function checkAsListCondition({
 
         //filter potential AS to be only in as_id_list
         potential_as_list = potential_as_list.filter((as_node) => {
-          return as_id_list.include(as_node.node_id);
+          return as_id_list.includes(as_node.node_id);
         });
 
         if (potential_as_list.length !== as_id_list.length) {
@@ -192,7 +192,7 @@ async function checkAsListCondition({
         }
 
         potential_as_list = potential_as_list.filter((as_node) => {
-          return as_node.accepted_namespace_list.include(namespace);
+          return as_node.accepted_namespace_list.includes(namespace);
         });
 
         if (potential_as_list.length !== as_id_list.length) {
