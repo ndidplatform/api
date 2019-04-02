@@ -417,8 +417,6 @@ export default {
           request_message_type: {
             $ref: 'defs#/definitions/request_message_type',
           },
-          merge_to_namespace: { type: 'string', minLength: 1 },
-          merge_to_identifier: { type: 'string', minLength: 1 },
         },
         required: [
           'reference_id',
