@@ -195,10 +195,10 @@ export async function createResponseInternal(
     let signature;
     if (requestData.mode === 1) {
       // get signature for mode 1 - sign with node key
-      signature = await utils.createSignature(
+      signature = (await utils.createSignature(
         requestData.request_message,
         nodeId
-      );
+      )).toString('base64');
     } else if (requestData.mode === 2 || requestData.mode === 3) {
       signature = await accessorEncrypt({
         node_id: nodeId,
