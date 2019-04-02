@@ -121,6 +121,21 @@ export async function addAccessor(addAccessorParams) {
       });
     }
 
+    const identityOnNode = await getIdentityInfo({
+      nodeId: node_id,
+      namespace,
+      identifier,
+    });
+    if (identityOnNode == null) {
+      throw new CustomError({
+        errorType: errorType.IDENTITY_NOT_FOUND,
+        details: {
+          namespace,
+          identifier,
+        },
+      });
+    }
+
     // Get maximum mode for identity
     let mode;
     if (identityOnNode.mode_list.find((mode) => mode === 3) != null) {
@@ -144,21 +159,6 @@ export async function addAccessor(addAccessorParams) {
       request_id,
       accessor_id,
     });
-
-    const identityOnNode = await getIdentityInfo({
-      nodeId: node_id,
-      namespace,
-      identifier,
-    });
-    if (identityOnNode == null) {
-      throw new CustomError({
-        errorType: errorType.IDENTITY_NOT_FOUND,
-        details: {
-          namespace,
-          identifier,
-        },
-      });
-    }
 
     await cacheDb.setCallbackUrlByReferenceId(
       node_id,
