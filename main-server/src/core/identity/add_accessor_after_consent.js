@@ -34,10 +34,18 @@ export async function addAccessorAfterCloseConsentRequest(
 ) {
   try {
     if (error) throw error;
+
+    if (request_id) {
+      logger.debug({
+        message: 'Closed consent request',
+        nodeId,
+        request_id,
+      });
+    }
+
     logger.debug({
-      message: 'Closed consent request, adding accessor',
+      message: 'Adding accessor',
       nodeId,
-      request_id,
     });
 
     if (identity == null) {

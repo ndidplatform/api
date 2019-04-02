@@ -191,7 +191,10 @@ export async function createIdentity(createIdentityParams) {
       });
     }
 
-    const request_id = utils.createRequestId();
+    let request_id;
+    if (existingNamespace && existingIdentifier) {
+      request_id = utils.createRequestId();
+    }
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
       type: 'RegisterIdentity',
@@ -214,14 +217,12 @@ export async function createIdentity(createIdentityParams) {
       existingIdentifier,
       new_identity_list,
     });
-    let returnObject = { 
+
+    return {
+      request_id, // this prop exists only if consent request is needed (identity exists on platform)
+      exist: !!(existingNamespace && existingIdentifier),
       accessor_id,
-      exist: !!(existingNamespace && existingIdentifier) 
     };
-    if(createIdentityParams.mode === 3 && returnObject.exist) {
-      returnObject.request_id = request_id;
-    }
-    return returnObject;
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot create new identity',
@@ -274,24 +275,30 @@ async function createIdentityInternalAsync(
       min_idp = existingNamespace && existingIdentifier ? 1 : 0;
     }
 
-    if(min_idp === 0) {
-      await createIdentityAfterCloseConsentRequest({}, {
-        nodeId,
-        identity: {
-          type: 'RegisterIdentity',
-          reference_group_code,
-          new_identity_list,
-          ial,
-          mode,
-          accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
-          accessor_public_key,
-          accessor_type,
-          reference_id,
-        } 
-      }, {
-        callbackFnName: 'identity.afterIdentityOperationSuccess',
-        callbackAdditionalArgs: [{ nodeId }],
-      });
+    const identity = {
+      type: 'RegisterIdentity',
+      reference_group_code,
+      new_identity_list,
+      ial,
+      mode,
+      accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
+      accessor_public_key,
+      accessor_type,
+      reference_id,
+    };
+
+    if (min_idp === 0) {
+      createIdentityAfterCloseConsentRequest(
+        {},
+        {
+          nodeId,
+          identity,
+        },
+        {
+          callbackFnName: 'identity.afterIdentityOperationSuccess',
+          callbackAdditionalArgs: [{ nodeId }],
+        }
+      );
     } else {
       await common.createRequest(
         {
@@ -331,20 +338,15 @@ async function createIdentityInternalAsync(
             {
               reference_id,
               callback_url,
-              mode,
-              accessor_type,
-              accessor_public_key,
               accessor_id,
-              ial,
             },
             {
               nodeId,
               request_id,
               generated_accessor_id,
-              reference_group_code,
               existingNamespace,
               existingIdentifier,
-              new_identity_list,
+              identity,
             },
           ],
           saveForRetryOnChainDisabled: true,
@@ -387,23 +389,14 @@ async function createIdentityInternalAsync(
 
 export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
   { chainId, height, error },
-  {
-    reference_id,
-    callback_url,
-    mode,
-    accessor_type,
-    accessor_public_key,
-    accessor_id,
-    ial,
-  },
+  { reference_id, callback_url, accessor_id },
   {
     nodeId,
     request_id,
     generated_accessor_id,
-    reference_group_code,
     existingNamespace,
     existingIdentifier,
-    new_identity_list,
+    identity,
   }
 ) {
   try {
@@ -423,18 +416,6 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       },
       retry: true,
     });
-
-    const identity = {
-      type: 'RegisterIdentity',
-      reference_group_code,
-      new_identity_list,
-      ial,
-      mode,
-      accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
-      accessor_public_key,
-      accessor_type,
-      reference_id,
-    };
 
     // save data for later use after got consent from user (in mode 3)
     await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);

@@ -33,10 +33,18 @@ export async function createIdentityAfterCloseConsentRequest(
 ) {
   try {
     if (error) throw error;
+
+    if (request_id) {
+      logger.debug({
+        message: 'Closed consent request',
+        nodeId,
+        request_id,
+      });
+    }
+
     logger.debug({
-      message: 'Closed consent request, creating identity',
+      message: 'Creating identity',
       nodeId,
-      request_id,
     });
 
     if (identity == null) {

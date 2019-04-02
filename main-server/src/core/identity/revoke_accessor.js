@@ -123,7 +123,23 @@ export async function revokeAccessor(revokeAccessorParams) {
       });
     }
 
-    const request_id = utils.createRequestId();
+    // Get maximum mode for identity
+    let mode;
+    if (identityOnNode.mode_list.find((mode) => mode === 3) != null) {
+      mode = 3;
+    } else if (identityOnNode.mode_list.find((mode) => mode === 2) != null) {
+      mode = 2;
+    } else {
+      throw new CustomError({
+        message: 'no available mode',
+        // FIXME
+      });
+    }
+
+    let request_id;
+    if (mode === 3) {
+      request_id = utils.createRequestId();
+    }
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
       type: 'RevokeAccessor',
@@ -132,19 +148,6 @@ export async function revokeAccessor(revokeAccessorParams) {
       namespace,
       identifier,
     });
-
-    // Get maximum mode for identity
-    let mode;
-    if (identityOnNode.mode.find((mode) => mode === 3) != null) {
-      mode = 3;
-    } else if (identityOnNode.mode.find((mode) => mode === 2) != null) {
-      mode = 2;
-    } else {
-      throw new CustomError({
-        message: 'no available mode',
-        // FIXME
-      });
-    }
 
     await cacheDb.setCallbackUrlByReferenceId(
       node_id,
@@ -157,9 +160,7 @@ export async function revokeAccessor(revokeAccessorParams) {
       request_id,
       mode,
     });
-    return mode === 3 
-      ? { request_id }
-      : {};
+    return { request_id };
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot revoke identity',
@@ -202,22 +203,27 @@ async function createRequestToRevokeAccessor(
       min_idp = 1;
     }
 
-    if(min_idp === 0) {
-      await revokeAccessorAfterCloseConsentRequest({}, {
-        nodeId,
-        identity: {
-          type: 'RevokeAccessor',
-          namespace,
-          identifier,
-          accessor_id,
-          reference_id,
-        } 
-      }, {
-        callbackFnName: 'identity.afterIdentityOperationSuccess',
-        callbackAdditionalArgs: [{ nodeId }],
-      });
-    }
-    else {
+    const identity = {
+      type: 'RevokeAccessor',
+      namespace,
+      identifier,
+      accessor_id,
+      reference_id,
+    };
+
+    if (min_idp === 0) {
+      revokeAccessorAfterCloseConsentRequest(
+        {},
+        {
+          nodeId,
+          identity,
+        },
+        {
+          callbackFnName: 'identity.afterIdentityOperationSuccess',
+          callbackAdditionalArgs: [{ nodeId }],
+        }
+      );
+    } else {
       await common.createRequest(
         {
           node_id: nodeId,
@@ -248,19 +254,18 @@ async function createRequestToRevokeAccessor(
         {
           synchronous: false,
           sendCallbackToClient: false,
-          callbackFnName: 'identity.notifyResultOfCreateRequestToRevokeAccessor',
+          callbackFnName:
+            'identity.notifyResultOfCreateRequestToRevokeAccessor',
           callbackAdditionalArgs: [
             {
               reference_id,
               callback_url,
-              namespace,
-              identifier,
               accessor_id,
             },
             {
               nodeId,
               request_id,
-              mode,
+              identity,
             },
           ],
           saveForRetryOnChainDisabled: true,
@@ -302,8 +307,8 @@ async function createRequestToRevokeAccessor(
 
 export async function notifyResultOfCreateRequestToRevokeAccessor(
   { chainId, height, error },
-  { reference_id, callback_url, namespace, identifier, accessor_id },
-  { nodeId, request_id, mode }
+  { reference_id, callback_url, accessor_id },
+  { nodeId, request_id, identity }
 ) {
   try {
     if (error) throw error;
@@ -322,13 +327,6 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
       retry: true,
     });
 
-    const identity = {
-      type: 'RevokeAccessor',
-      namespace,
-      identifier,
-      accessor_id,
-      reference_id,
-    };
     // save data for later use after got consent from user (in mode 3)
     await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
   } catch (error) {

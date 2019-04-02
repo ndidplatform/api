@@ -113,7 +113,10 @@ export async function revokeIdentityAssociation(
       });
     }
 
-    const request_id = utils.createRequestId();
+    let request_id;
+    if (identityOnNode.mode_list.includes(3)) {
+      request_id = utils.createRequestId();
+    }
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
       type: 'RevokeIdentityAssociation',
@@ -131,9 +134,7 @@ export async function revokeIdentityAssociation(
       request_id,
       modeList: identityOnNode.mode_list,
     });
-    return identityOnNode.mode_list.includes(3) 
-      ? { request_id }
-      : {};
+    return { request_id };
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot revoke identity association',
@@ -165,21 +166,26 @@ async function revokeAssociationInternalAsync(
     const mode = modeList.includes(3) ? 3 : 2;
     const min_idp = mode === 3 ? 1 : 0;
 
-    if(min_idp === 0) {
-      await revokeIdentityAssociationAfterCloseConsentRequest({}, {
-        nodeId,
-        identity: {
-          type: 'RevokeIdentityAssociation',
-          namespace,
-          identifier,
-          reference_id,
+    const identity = {
+      type: 'RevokeIdentityAssociation',
+      namespace,
+      identifier,
+      reference_id,
+    };
+
+    if (min_idp === 0) {
+      revokeIdentityAssociationAfterCloseConsentRequest(
+        {},
+        {
+          nodeId,
+          identity,
+        },
+        {
+          callbackFnName: 'identity.afterIdentityOperationSuccess',
+          callbackAdditionalArgs: [{ nodeId }],
         }
-      }, {
-        callbackFnName: 'identity.afterIdentityOperationSuccess',
-        callbackAdditionalArgs: [{ nodeId }],
-      });
-    }
-    else {
+      );
+    } else {
       await common.createRequest(
         {
           node_id: nodeId,
@@ -214,13 +220,11 @@ async function revokeAssociationInternalAsync(
             {
               reference_id,
               callback_url,
-              namespace,
-              identifier,
-              mode,
             },
             {
               nodeId,
               request_id,
+              identity,
             },
           ],
           saveForRetryOnChainDisabled: true,
@@ -262,8 +266,8 @@ async function revokeAssociationInternalAsync(
 
 export async function revokeIdentityAssociationInternalAsyncAfterCreateRequestBlockchain(
   { chainId, height, error },
-  { reference_id, callback_url, namespace, identifier, mode },
-  { nodeId, request_id }
+  { reference_id, callback_url },
+  { nodeId, request_id, identity }
 ) {
   try {
     if (error) throw error;
@@ -281,12 +285,6 @@ export async function revokeIdentityAssociationInternalAsyncAfterCreateRequestBl
       retry: true,
     });
 
-    const identity = {
-      type: 'RevokeIdentityAssociation',
-      namespace,
-      identifier,
-      reference_id,
-    };
     // save data for later use after got consent from user (in mode 3)
     await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
   } catch (error) {
