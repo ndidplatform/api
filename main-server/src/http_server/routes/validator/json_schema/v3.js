@@ -147,7 +147,7 @@ export default {
         ],
       },
     },
-    '/rp/requests/close': {
+    '/rp/request_close': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
@@ -539,7 +539,7 @@ export default {
         },
       },
     },
-    '/identity/requests/close': {
+    '/identity_request/request_close': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
@@ -549,19 +549,6 @@ export default {
           request_id: { type: 'string', minLength: 1 },
         },
         required: ['reference_id', 'callback_url', 'request_id'],
-      },
-    },
-    '/identity/secret': {
-      body: {
-        $schema: 'http://json-schema.org/draft-07/schema#',
-        properties: {
-          node_id: { type: 'string', minLength: 1 },
-          accessor_id: { type: 'string', minLength: 1 },
-          namespace: { type: 'string', minLength: 1 },
-          identifier: { type: 'string', minLength: 1 },
-          reference_id: { type: 'string', minLength: 1 },
-        },
-        required: ['accessor_id', 'namespace', 'identifier'],
       },
     },
   },
