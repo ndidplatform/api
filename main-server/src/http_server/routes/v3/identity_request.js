@@ -61,21 +61,20 @@ router.get(
         node_id,
         reference_id
       );
-      const revokeIdentityData = await identity.getRevokeAccessorDataByReferenceId(
-        node_id,
-        reference_id
-      );
 
       if (identityRequestData != null) {
-        if (identityRequestData.type === 'RegisterIdentity') {
+        if (
+          identityRequestData.type === 'RegisterIdentity' ||
+          identityRequestData.type === 'AddAccessor' ||
+          identityRequestData.type === 'RevokeAccessor'
+        ) {
           res.status(200).json({
             request_id: identityRequestData.request_id,
             accessor_id: identityRequestData.accessor_id,
           });
-        } else if (identityRequestData.type === 'AddAccessor') {
+        } else if (identityRequestData.type === 'RevokeIdentityAssociation') {
           res.status(200).json({
-            request_id: revokeIdentityData.request_id,
-            accessor_id: revokeIdentityData.accessor_id,
+            request_id: identityRequestData.request_id,
           });
         } else {
           res.status(500).end(); // FIXME: ?
