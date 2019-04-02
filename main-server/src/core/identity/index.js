@@ -244,9 +244,6 @@ export async function afterIdentityOperationSuccess(
   try {
     if (error) throw error;
 
-    const requestData = await cacheDb.getRequestData(nodeId, request_id);
-    const reference_id = requestData.reference_id;
-
     await callbackToClient({
       callbackUrl,
       body: {
