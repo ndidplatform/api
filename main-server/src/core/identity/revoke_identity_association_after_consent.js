@@ -33,21 +33,24 @@ export async function revokeIdentityAssociationAfterCloseConsentRequest(
 ) {
   try {
     if (error) throw error;
+
+    if (request_id) {
+      logger.debug({
+        message: 'Closed consent request',
+        nodeId,
+        request_id,
+      });
+    }
+
     logger.debug({
-      message: 'Closed consent request, revoking identity association',
+      message: 'Revoking identity association',
       nodeId,
-      request_id,
     });
 
     if (identity == null) {
       identity = await cacheDb.getIdentityFromRequestId(nodeId, request_id);
     }
-    const {
-      type,
-      namespace,
-      identifier,
-      reference_id,
-    } = identity;
+    const { type, namespace, identifier, reference_id } = identity;
 
     await tendermintNdid.revokeIdentityAssociation(
       {

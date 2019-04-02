@@ -37,6 +37,7 @@ import logger from '../../logger';
 
 import * as config from '../../config';
 import { role } from '../../node';
+import { addAccessorAfterCloseConsentRequest } from './add_accessor_after_consent';
 
 // TODO: bring back synchronous?
 
@@ -120,7 +121,23 @@ export async function addAccessor(addAccessorParams) {
       });
     }
 
-    const request_id = utils.createRequestId();
+    // Get maximum mode for identity
+    let mode;
+    if (identityOnNode.mode_list.find((mode) => mode === 3) != null) {
+      mode = 3;
+    } else if (identityOnNode.mode_list.find((mode) => mode === 2) != null) {
+      mode = 2;
+    } else {
+      throw new CustomError({
+        message: 'no available mode',
+        // FIXME
+      });
+    }
+
+    let request_id;
+    if (mode === 3) {
+      request_id = utils.createRequestId();
+    }
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
       type: 'AddAccessor',
@@ -140,19 +157,6 @@ export async function addAccessor(addAccessorParams) {
           namespace,
           identifier,
         },
-      });
-    }
-
-    // Get maximum mode for identity
-    let mode;
-    if (identityOnNode.mode.find((mode) => mode === 3) != null) {
-      mode = 3;
-    } else if (identityOnNode.mode.find((mode) => mode === 2) != null) {
-      mode = 2;
-    } else {
-      throw new CustomError({
-        message: 'no available mode',
-        // FIXME
       });
     }
 
@@ -213,57 +217,77 @@ async function addAccessorInternalAsync(
       min_idp = 1;
     }
 
-    await common.createRequest(
-      {
-        node_id: nodeId,
-        namespace,
-        identifier,
-        reference_id,
-        idp_id_list: [],
-        callback_url: 'SYS_GEN_ADD_ACCESSOR',
-        data_request_list: [],
-        request_message:
-          request_message != null
-            ? request_message
-            : getRequestMessageForAddingAccessor({
-                namespace,
-                identifier,
-                reference_id,
-                node_id: config.nodeId,
-              }),
-        min_ial: 1.1,
-        min_aal: 1,
-        min_idp,
-        request_timeout: 86400,
-        mode,
-        purpose: 'AddAccessor',
-      },
-      {
-        synchronous: false,
-        sendCallbackToClient: false,
-        callbackFnName:
-          'identity.addAccessorInternalAsyncAfterCreateRequestBlockchain',
-        callbackAdditionalArgs: [
-          {
-            reference_id,
-            callback_url,
-            namespace,
-            identifier,
-            accessor_type,
-            accessor_public_key,
-            accessor_id,
-          },
-          {
-            nodeId,
-            request_id,
-            mode,
-            generated_accessor_id,
-          },
-        ],
-        saveForRetryOnChainDisabled: true,
-      },
-      { request_id }
-    );
+    const identity = {
+      type: 'AddAccessor',
+      namespace,
+      identifier,
+      accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
+      accessor_public_key,
+      accessor_type,
+      reference_id,
+    };
+
+    if (min_idp === 0) {
+      addAccessorAfterCloseConsentRequest(
+        {},
+        {
+          nodeId,
+          identity,
+        },
+        {
+          callbackFnName: 'identity.afterIdentityOperationSuccess',
+          callbackAdditionalArgs: [{ nodeId }],
+        }
+      );
+    } else {
+      await common.createRequest(
+        {
+          node_id: nodeId,
+          namespace,
+          identifier,
+          reference_id,
+          idp_id_list: [],
+          callback_url: 'SYS_GEN_ADD_ACCESSOR',
+          data_request_list: [],
+          request_message:
+            request_message != null
+              ? request_message
+              : getRequestMessageForAddingAccessor({
+                  namespace,
+                  identifier,
+                  reference_id,
+                  node_id: config.nodeId,
+                }),
+          min_ial: 1.1,
+          min_aal: 1,
+          min_idp,
+          request_timeout: 86400,
+          mode,
+          purpose: 'AddAccessor',
+        },
+        {
+          synchronous: false,
+          sendCallbackToClient: false,
+          callbackFnName:
+            'identity.addAccessorInternalAsyncAfterCreateRequestBlockchain',
+          callbackAdditionalArgs: [
+            {
+              reference_id,
+              callback_url,
+              accessor_id,
+            },
+            {
+              nodeId,
+              request_id,
+              generated_accessor_id,
+              identity,
+            },
+          ],
+          saveForRetryOnChainDisabled: true,
+        },
+        { request_id }
+      );
+    }
   } catch (error) {
     logger.error({
       message: 'Add accessor internal async error',
@@ -299,16 +323,8 @@ async function addAccessorInternalAsync(
 
 export async function addAccessorInternalAsyncAfterCreateRequestBlockchain(
   { chainId, height, error },
-  {
-    reference_id,
-    callback_url,
-    namespace,
-    identifier,
-    accessor_type,
-    accessor_public_key,
-    accessor_id,
-  },
-  { nodeId, request_id, mode, generated_accessor_id }
+  { reference_id, callback_url, accessor_id },
+  { nodeId, request_id, generated_accessor_id, identity }
 ) {
   try {
     if (error) throw error;
@@ -327,39 +343,8 @@ export async function addAccessorInternalAsyncAfterCreateRequestBlockchain(
       retry: true,
     });
 
-    const identity = {
-      type: 'AddAccessor',
-      namespace,
-      identifier,
-      accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
-      accessor_public_key,
-      accessor_type,
-      reference_id,
-    };
-    if (mode === 3) {
-      // save data for later use after got consent from user (in mode 2,3)
-      await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
-    } else {
-      await common.closeRequest(
-        {
-          node_id: nodeId,
-          request_id,
-        },
-        {
-          synchronous: false,
-          sendCallbackToClient: false,
-          callbackFnName: 'identity.addAccessorAfterCloseConsentRequest',
-          callbackAdditionalArgs: [
-            { nodeId, request_id, identity },
-            {
-              callbackFnName: 'identity.afterIdentityOperationSuccess',
-              callbackAdditionalArgs: [{ nodeId }],
-            },
-          ],
-          saveForRetryOnChainDisabled: true,
-        }
-      );
-    }
+    // save data for later use after got consent from user (in mode 3)
+    await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
   } catch (error) {
     logger.error({
       message: 'Add accessor internal async after create request error',

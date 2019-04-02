@@ -37,6 +37,8 @@ import logger from '../../logger';
 import * as config from '../../config';
 import { role } from '../../node';
 
+import { revokeAccessorAfterCloseConsentRequest } from './revoke_accessor_after_consent';
+
 /**
  * Revoke identity
  * Use in mode 2,3
@@ -121,7 +123,23 @@ export async function revokeAccessor(revokeAccessorParams) {
       });
     }
 
-    const request_id = utils.createRequestId();
+    // Get maximum mode for identity
+    let mode;
+    if (identityOnNode.mode_list.find((mode) => mode === 3) != null) {
+      mode = 3;
+    } else if (identityOnNode.mode_list.find((mode) => mode === 2) != null) {
+      mode = 2;
+    } else {
+      throw new CustomError({
+        message: 'no available mode',
+        // FIXME
+      });
+    }
+
+    let request_id;
+    if (mode === 3) {
+      request_id = utils.createRequestId();
+    }
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
       type: 'RevokeAccessor',
@@ -130,19 +148,6 @@ export async function revokeAccessor(revokeAccessorParams) {
       namespace,
       identifier,
     });
-
-    // Get maximum mode for identity
-    let mode;
-    if (identityOnNode.mode.find((mode) => mode === 3) != null) {
-      mode = 3;
-    } else if (identityOnNode.mode.find((mode) => mode === 2) != null) {
-      mode = 2;
-    } else {
-      throw new CustomError({
-        message: 'no available mode',
-        // FIXME
-      });
-    }
 
     await cacheDb.setCallbackUrlByReferenceId(
       node_id,
@@ -198,55 +203,76 @@ async function createRequestToRevokeAccessor(
       min_idp = 1;
     }
 
-    await common.createRequest(
-      {
-        node_id: nodeId,
-        namespace,
-        identifier,
-        reference_id,
-        idp_id_list: [nodeId], //only self
-        callback_url: 'SYS_GEN_REVOKE_ACCESSOR',
-        data_request_list: [],
-        request_message:
-          request_message != null
-            ? request_message
-            : getRequestMessageForRevokingAccessor({
-                namespace,
-                identifier,
-                reference_id,
-                node_id: config.nodeId,
-                accessor_id,
-              }),
-        // WHAT SHOULD THESE BE? (IAL, AAL, MIN_IDP)
-        min_ial: 1.1,
-        min_aal: 1,
-        min_idp,
-        request_timeout: 86400,
-        mode,
-        purpose: 'RevokeAccessor',
-      },
-      {
-        synchronous: false,
-        sendCallbackToClient: false,
-        callbackFnName: 'identity.notifyResultOfCreateRequestToRevokeAccessor',
-        callbackAdditionalArgs: [
-          {
-            reference_id,
-            callback_url,
-            namespace,
-            identifier,
-            accessor_id,
-          },
-          {
-            nodeId,
-            request_id,
-            mode,
-          },
-        ],
-        saveForRetryOnChainDisabled: true,
-      },
-      { request_id }
-    );
+    const identity = {
+      type: 'RevokeAccessor',
+      namespace,
+      identifier,
+      accessor_id,
+      reference_id,
+    };
+
+    if (min_idp === 0) {
+      revokeAccessorAfterCloseConsentRequest(
+        {},
+        {
+          nodeId,
+          identity,
+        },
+        {
+          callbackFnName: 'identity.afterIdentityOperationSuccess',
+          callbackAdditionalArgs: [{ nodeId }],
+        }
+      );
+    } else {
+      await common.createRequest(
+        {
+          node_id: nodeId,
+          namespace,
+          identifier,
+          reference_id,
+          idp_id_list: [nodeId], //only self
+          callback_url: 'SYS_GEN_REVOKE_ACCESSOR',
+          data_request_list: [],
+          request_message:
+            request_message != null
+              ? request_message
+              : getRequestMessageForRevokingAccessor({
+                  namespace,
+                  identifier,
+                  reference_id,
+                  node_id: config.nodeId,
+                  accessor_id,
+                }),
+          // WHAT SHOULD THESE BE? (IAL, AAL, MIN_IDP)
+          min_ial: 1.1,
+          min_aal: 1,
+          min_idp,
+          request_timeout: 86400,
+          mode,
+          purpose: 'RevokeAccessor',
+        },
+        {
+          synchronous: false,
+          sendCallbackToClient: false,
+          callbackFnName:
+            'identity.notifyResultOfCreateRequestToRevokeAccessor',
+          callbackAdditionalArgs: [
+            {
+              reference_id,
+              callback_url,
+              accessor_id,
+            },
+            {
+              nodeId,
+              request_id,
+              identity,
+            },
+          ],
+          saveForRetryOnChainDisabled: true,
+        },
+        { request_id }
+      );
+    }
   } catch (error) {
     logger.error({
       message: 'Revoke accessor internal async error',
@@ -281,8 +307,8 @@ async function createRequestToRevokeAccessor(
 
 export async function notifyResultOfCreateRequestToRevokeAccessor(
   { chainId, height, error },
-  { reference_id, callback_url, namespace, identifier, accessor_id },
-  { nodeId, request_id, mode }
+  { reference_id, callback_url, accessor_id },
+  { nodeId, request_id, identity }
 ) {
   try {
     if (error) throw error;
@@ -301,37 +327,8 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
       retry: true,
     });
 
-    const identity = {
-      type: 'RevokeAccessor',
-      namespace,
-      identifier,
-      accessor_id,
-      reference_id,
-    };
-    if (mode === 3) {
-      // save data for later use after got consent from user (in mode 2,3)
-      await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
-    } else {
-      await common.closeRequest(
-        {
-          node_id: nodeId,
-          request_id,
-        },
-        {
-          synchronous: false,
-          sendCallbackToClient: false,
-          callbackFnName: 'identity.revokeAccessorAfterCloseConsentRequest',
-          callbackAdditionalArgs: [
-            { nodeId, request_id, identity },
-            {
-              callbackFnName: 'identity.afterIdentityOperationSuccess',
-              callbackAdditionalArgs: [{ nodeId }],
-            },
-          ],
-          saveForRetryOnChainDisabled: true,
-        }
-      );
-    }
+    // save data for later use after got consent from user (in mode 3)
+    await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
   } catch (error) {
     logger.error({
       message: 'Revoke accessor internal async after create request error',

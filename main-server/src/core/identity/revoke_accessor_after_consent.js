@@ -20,8 +20,6 @@
  *
  */
 
-//==================== plain copy ===================================
-
 import { getFunction } from '../../functions';
 
 import logger from '../../logger';
@@ -36,10 +34,18 @@ export async function revokeAccessorAfterCloseConsentRequest(
 ) {
   try {
     if (error) throw error;
+
+    if (request_id) {
+      logger.debug({
+        message: 'Closed consent request',
+        nodeId,
+        request_id,
+      });
+    }
+
     logger.debug({
-      message: 'Closed consent request, revoking accessor',
+      message: 'Revoking accessor',
       nodeId,
-      request_id,
     });
 
     if (identity == null) {
