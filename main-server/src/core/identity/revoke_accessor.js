@@ -157,7 +157,9 @@ export async function revokeAccessor(revokeAccessorParams) {
       request_id,
       mode,
     });
-    return { request_id };
+    return mode === 3 
+      ? { request_id }
+      : {};
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot revoke identity',

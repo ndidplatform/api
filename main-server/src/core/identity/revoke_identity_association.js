@@ -131,7 +131,9 @@ export async function revokeIdentityAssociation(
       request_id,
       modeList: identityOnNode.mode_list,
     });
-    return { request_id };
+    return identityOnNode.mode_list.includes(3) 
+      ? { request_id }
+      : {};
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot revoke identity association',

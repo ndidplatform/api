@@ -214,7 +214,14 @@ export async function createIdentity(createIdentityParams) {
       existingIdentifier,
       new_identity_list,
     });
-    return { request_id, accessor_id };
+    let returnObject = { 
+      accessor_id,
+      exist: !!(existingNamespace && existingIdentifier) 
+    };
+    if(createIdentityParams.mode === 3 && returnObject.exist) {
+      returnObject.request_id = request_id;
+    }
+    return returnObject;
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot create new identity',

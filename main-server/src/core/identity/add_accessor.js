@@ -169,7 +169,11 @@ export async function addAccessor(addAccessorParams) {
       mode,
       generated_accessor_id: accessor_id,
     });
-    return { request_id, accessor_id };
+    let returnObject = {
+      accessor_id,
+    };
+    if(mode === 3) returnObject.request_id = request_id;
+    return returnObject;
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot add accessor',
