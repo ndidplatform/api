@@ -191,6 +191,13 @@ async function createRequestToRevokeAccessor(
   { nodeId, request_id, mode }
 ) {
   try {
+    let min_idp;
+    if (mode === 2) {
+      min_idp = 0;
+    } else if (mode === 3) {
+      min_idp = 1;
+    }
+
     await common.createRequest(
       {
         node_id: nodeId,
@@ -213,7 +220,7 @@ async function createRequestToRevokeAccessor(
         // WHAT SHOULD THESE BE? (IAL, AAL, MIN_IDP)
         min_ial: 1.1,
         min_aal: 1,
-        min_idp: 1,
+        min_idp,
         request_timeout: 86400,
         mode,
         purpose: 'RevokeAccessor',

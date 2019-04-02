@@ -54,68 +54,141 @@ export default {
   },
   [messageTypes.CONSENT_REQUEST]: {
     $schema: 'http://json-schema.org/draft-07/schema#',
-    properties: {
-      mode: { type: 'number', enum: [1, 2, 3] },
-      reference_group_code: { type: 'string', minLength: 1 },
-      request_id: { type: 'string', minLength: 1 },
-      min_ial: { $ref: 'defs#/definitions/ial' },
-      min_aal: { $ref: 'defs#/definitions/aal' },
-      request_timeout: { type: 'integer', minimum: 1 },
-      data_request_list: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            service_id: {
+    anyOf: [
+      // Mode 1
+      {
+        properties: {
+          mode: { type: 'number', enum: [1] },
+          namespace: { type: 'string', minLength: 1 },
+          identifier: { type: 'string', minLength: 1 },
+          request_id: { type: 'string', minLength: 1 },
+          min_ial: { $ref: 'defs#/definitions/ial' },
+          min_aal: { $ref: 'defs#/definitions/aal' },
+          request_timeout: { type: 'integer', minimum: 1 },
+          data_request_list: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                service_id: {
+                  type: 'string',
+                  minLength: 1,
+                },
+                as_id_list: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                    minimum: 1,
+                  },
+                },
+                min_as: {
+                  type: 'integer',
+                  minimum: 1,
+                },
+              },
+              required: ['service_id', 'min_as'],
+            },
+          },
+          data_request_params_salt_list: {
+            type: 'array',
+            items: {
               type: 'string',
               minLength: 1,
             },
-            as_id_list: {
-              type: 'array',
-              items: {
-                type: 'string',
-                minimum: 1,
+          },
+          request_message: { type: 'string' },
+          rp_id: { type: 'string', minLength: 1 },
+          request_message_salt: { type: 'string', minLength: 1 },
+          initial_salt: { type: 'string', minLength: 1 },
+          creation_time: { type: 'integer', minimum: 1 },
+          chain_id: { type: 'string', minLength: 1 },
+          height: { type: 'integer', minimum: 1 },
+        },
+        required: [
+          'mode',
+          'namespace',
+          'identifier',
+          'request_id',
+          'min_ial',
+          'min_aal',
+          'request_timeout',
+          'data_request_list',
+          'data_request_params_salt_list',
+          'request_message',
+          'rp_id',
+          'request_message_salt',
+          'initial_salt',
+          'creation_time',
+          'chain_id',
+          'height',
+        ],
+      },
+      // Mode 2,3
+      {
+        properties: {
+          mode: { type: 'number', enum: [2, 3] },
+          reference_group_code: { type: 'string', minLength: 1 },
+          request_id: { type: 'string', minLength: 1 },
+          min_ial: { $ref: 'defs#/definitions/ial' },
+          min_aal: { $ref: 'defs#/definitions/aal' },
+          request_timeout: { type: 'integer', minimum: 1 },
+          data_request_list: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                service_id: {
+                  type: 'string',
+                  minLength: 1,
+                },
+                as_id_list: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                    minimum: 1,
+                  },
+                },
+                min_as: {
+                  type: 'integer',
+                  minimum: 1,
+                },
               },
-            },
-            min_as: {
-              type: 'integer',
-              minimum: 1,
+              required: ['service_id', 'min_as'],
             },
           },
-          required: ['service_id', 'min_as'],
+          data_request_params_salt_list: {
+            type: 'array',
+            items: {
+              type: 'string',
+              minLength: 1,
+            },
+          },
+          request_message: { type: 'string' },
+          rp_id: { type: 'string', minLength: 1 },
+          request_message_salt: { type: 'string', minLength: 1 },
+          initial_salt: { type: 'string', minLength: 1 },
+          creation_time: { type: 'integer', minimum: 1 },
+          chain_id: { type: 'string', minLength: 1 },
+          height: { type: 'integer', minimum: 1 },
         },
+        required: [
+          'mode',
+          'reference_group_code',
+          'request_id',
+          'min_ial',
+          'min_aal',
+          'request_timeout',
+          'data_request_list',
+          'data_request_params_salt_list',
+          'request_message',
+          'rp_id',
+          'request_message_salt',
+          'initial_salt',
+          'creation_time',
+          'chain_id',
+          'height',
+        ],
       },
-      data_request_params_salt_list: {
-        type: 'array',
-        items: {
-          type: 'string',
-          minLength: 1,
-        },
-      },
-      request_message: { type: 'string' },
-      rp_id: { type: 'string', minLength: 1 },
-      request_message_salt: { type: 'string', minLength: 1 },
-      initial_salt: { type: 'string', minLength: 1 },
-      creation_time: { type: 'integer', minimum: 1 },
-      chain_id: { type: 'string', minLength: 1 },
-      height: { type: 'integer', minimum: 1 },
-    },
-    required: [
-      'mode',
-      'reference_group_code',
-      'request_id',
-      'min_ial',
-      'min_aal',
-      'request_timeout',
-      'data_request_list',
-      'data_request_params_salt_list',
-      'request_message',
-      'rp_id',
-      'request_message_salt',
-      'initial_salt',
-      'creation_time',
-      'chain_id',
-      'height',
     ],
   },
   [messageTypes.DATA_REQUEST]: {

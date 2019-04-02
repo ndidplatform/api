@@ -297,7 +297,9 @@ export async function createRequest(
   }
 
   try {
-    const { allowed_mode_list } = await tendermintNdid.getAllowedModeList(purpose);
+    const { allowed_mode_list } = await tendermintNdid.getAllowedModeList(
+      purpose
+    );
     if (!allowed_mode_list.includes(mode)) {
       throw new CustomError({
         errorType: errorType.UNSUPPORTED_MODE,
@@ -630,25 +632,35 @@ export async function createRequestInternalAsyncAfterBlockchain(
       }),
     };
 
-    const reference_group_code = await tendermintNdid.getReferenceGroupCode(
-      namespace,
-      identifier
-    );
+    let mqMessage;
+    if (requestData.mode === 1) {
+      mqMessage = {
+        type: privateMessageType.CONSENT_REQUEST,
+        namespace,
+        identifier,
+        ...requestDataWithoutDataRequestParams,
+        creation_time,
+        chain_id: tendermint.chainId,
+        height,
+      };
+    } else if (requestData.mode === 2 || requestData.mode === 3) {
+      const reference_group_code = await tendermintNdid.getReferenceGroupCode(
+        namespace,
+        identifier
+      );
+      mqMessage = {
+        type: privateMessageType.CONSENT_REQUEST,
+        reference_group_code,
+        ...requestDataWithoutDataRequestParams,
+        creation_time,
+        chain_id: tendermint.chainId,
+        height,
+      };
+    }
 
     // send request data to IDPs via message queue
     if (min_idp > 0) {
-      await mq.send(
-        receivers,
-        {
-          type: privateMessageType.CONSENT_REQUEST,
-          reference_group_code,
-          ...requestDataWithoutDataRequestParams,
-          creation_time,
-          chain_id: tendermint.chainId,
-          height,
-        },
-        node_id
-      );
+      await mq.send(receivers, mqMessage, node_id);
     }
 
     if (!synchronous) {
