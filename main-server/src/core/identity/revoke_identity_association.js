@@ -36,6 +36,7 @@ import logger from '../../logger';
 
 import * as config from '../../config';
 import { role } from '../../node';
+import { revokeIdentityAssociationAfterCloseConsentRequest } from './revoke_identity_association_after_consent';
 
 /**
  * Revoke identity-IdP association from the platform
@@ -162,53 +163,69 @@ async function revokeAssociationInternalAsync(
     const mode = modeList.includes(3) ? 3 : 2;
     const min_idp = mode === 3 ? 1 : 0;
 
-    await common.createRequest(
-      {
-        node_id: nodeId,
-        namespace,
-        identifier,
-        reference_id,
-        idp_id_list: [],
-        callback_url: 'SYS_GEN_REVOKE_ASSOCIATION',
-        data_request_list: [],
-        request_message:
-          request_message != null
-            ? request_message
-            : getRequestMessageForRevokingAssociation({
-                namespace,
-                identifier,
-                reference_id,
-                node_id: config.nodeId,
-              }),
-        min_ial: 1.1,
-        min_aal: 1,
-        min_idp,
-        request_timeout: 86400,
-        mode,
-        purpose: 'RevokeIdentityAssociation',
-      },
-      {
-        synchronous: false,
-        sendCallbackToClient: false,
-        callbackFnName:
-          'identity.revokeIdentityAssociationInternalAsyncAfterCreateRequestBlockchain',
-        callbackAdditionalArgs: [
-          {
-            reference_id,
-            callback_url,
-            namespace,
-            identifier,
-            mode,
-          },
-          {
-            nodeId,
-            request_id,
-          },
-        ],
-        saveForRetryOnChainDisabled: true,
-      },
-      { request_id }
-    );
+    if(min_idp === 0) {
+      await revokeIdentityAssociationAfterCloseConsentRequest({}, {
+        nodeId,
+        identity: {
+          type: 'RevokeIdentityAssociation',
+          namespace,
+          identifier,
+          reference_id,
+        }
+      }, {
+        callbackFnName: 'identity.afterIdentityOperationSuccess',
+        callbackAdditionalArgs: [{ nodeId }],
+      });
+    }
+    else {
+      await common.createRequest(
+        {
+          node_id: nodeId,
+          namespace,
+          identifier,
+          reference_id,
+          idp_id_list: [],
+          callback_url: 'SYS_GEN_REVOKE_ASSOCIATION',
+          data_request_list: [],
+          request_message:
+            request_message != null
+              ? request_message
+              : getRequestMessageForRevokingAssociation({
+                  namespace,
+                  identifier,
+                  reference_id,
+                  node_id: config.nodeId,
+                }),
+          min_ial: 1.1,
+          min_aal: 1,
+          min_idp,
+          request_timeout: 86400,
+          mode,
+          purpose: 'RevokeIdentityAssociation',
+        },
+        {
+          synchronous: false,
+          sendCallbackToClient: false,
+          callbackFnName:
+            'identity.revokeIdentityAssociationInternalAsyncAfterCreateRequestBlockchain',
+          callbackAdditionalArgs: [
+            {
+              reference_id,
+              callback_url,
+              namespace,
+              identifier,
+              mode,
+            },
+            {
+              nodeId,
+              request_id,
+            },
+          ],
+          saveForRetryOnChainDisabled: true,
+        },
+        { request_id }
+      );
+    }
   } catch (error) {
     logger.error({
       message: 'Revoke identity association internal async error',
@@ -268,30 +285,8 @@ export async function revokeIdentityAssociationInternalAsyncAfterCreateRequestBl
       identifier,
       reference_id,
     };
-    if (mode === 3) {
-      // save data for later use after got consent from user (in mode 2,3)
-      await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
-    } else {
-      await common.closeRequest(
-        {
-          node_id: nodeId,
-          request_id,
-        },
-        {
-          synchronous: false,
-          sendCallbackToClient: false,
-          callbackFnName: 'identity.revokeIdentityAssociationAfterCloseConsentRequest',
-          callbackAdditionalArgs: [
-            { nodeId, request_id, identity },
-            {
-              callbackFnName: 'identity.afterIdentityOperationSuccess',
-              callbackAdditionalArgs: [{ nodeId }],
-            },
-          ],
-          saveForRetryOnChainDisabled: true,
-        }
-      );
-    }
+    // save data for later use after got consent from user (in mode 3)
+    await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
   } catch (error) {
     logger.error({
       message:
