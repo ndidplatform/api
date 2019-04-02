@@ -32,6 +32,7 @@ import privateMessageType from '../../mq/message/type';
 import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
+import * as utils from '../../utils';
 import { getErrorObjectForClient } from '../../utils/error';
 import logger from '../../logger';
 
@@ -193,7 +194,11 @@ export async function createResponseInternal(
 
     let signature;
     if (requestData.mode === 1) {
-      // TODO: get signature for mode 1
+      // get signature for mode 1 - sign with node key
+      signature = await utils.createSignature(
+        requestData.request_message,
+        nodeId
+      );
     } else if (requestData.mode === 2 || requestData.mode === 3) {
       signature = await accessorEncrypt({
         node_id: nodeId,
