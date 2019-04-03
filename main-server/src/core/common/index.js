@@ -337,6 +337,7 @@ export async function getAndSaveIdpResponseValid({
   requestStatus,
   idpId,
   responseIal,
+  responseAal,
   requestDataFromMq,
 }) {
   logger.debug({
@@ -363,7 +364,7 @@ export async function getAndSaveIdpResponseValid({
     validSignature = null;
   } else if (requestStatus.mode === 2 || requestStatus.mode === 3) {
     // IAL check
-    if (responseIal === identityInfo.ial) {
+    if (responseIal === identityInfo.ial && responseIal >= requestData.min_ial) {
       validIal = true;
     } else {
       validIal = false;
@@ -426,6 +427,7 @@ export async function getAndSaveIdpResponseValid({
     idp_id: idpId,
     valid_signature: validSignature,
     valid_ial: validIal,
+    valid_aal: responseAal >= requestData.min_aal,
   };
 
   await cacheDb.addIdpResponseValidList(nodeId, requestId, responseValid);

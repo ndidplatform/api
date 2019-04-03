@@ -98,8 +98,8 @@ export function getErrorCallbackUrl() {
 
 export function isAllIdpResponsesValid(responseValidList) {
   for (let i = 0; i < responseValidList.length; i++) {
-    const { valid_ial } = responseValidList[i];
-    if (valid_ial !== true) {
+    const { valid_ial, valid_aal } = responseValidList[i];
+    if (valid_ial !== true || valid_aal !== true) {
       return false;
     }
   }
@@ -321,6 +321,9 @@ export async function processMessage(nodeId, messageId, message) {
           responseIal: requestDetail.response_list.find(
             (response) => response.idp_id === message.idp_id
           ).ial,
+          responseAal: requestDetail.response_list.find(
+            (response) => response.idp_id === message.idp_id
+          ).aal,
         });
 
         const responseValidList = savedResponseValidList.concat([

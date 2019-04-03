@@ -151,8 +151,8 @@ async function isCreateIdentityRequestValid(requestId) {
   }
 
   return requestDetail.response_list
-    .map(({ valid_ial, valid_signature }) => {
-      return valid_ial && valid_signature;
+    .map(({ valid_ial, valid_signature, valid_aal }) => {
+      return valid_ial && valid_signature && valid_aal;
     })
     .reduce((accum, pilot) => {
       return accum && pilot;
@@ -380,11 +380,12 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
       type: 'request_status',
       ...requestStatus,
       response_valid_list: requestDetail.response_list.map(
-        ({ idp_id, valid_signature, valid_ial }) => {
+        ({ idp_id, valid_signature, valid_ial, valid_aal }) => {
           return {
             idp_id,
             valid_signature,
             valid_ial,
+            valid_aal,
           };
         }
       ),

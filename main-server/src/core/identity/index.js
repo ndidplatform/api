@@ -121,10 +121,13 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
     responseIal: requestDetail.response_list.find(
       (response) => response.idp_id === message.idp_id
     ).ial,
+    responseAal: requestDetail.response_list.find(
+      (response) => response.idp_id === message.idp_id
+    ).aal,
   });
 
   let identityConsentRequestError;
-  if (!responseValid.valid_signature || !responseValid.valid_ial) {
+  if (!responseValid.valid_signature || !responseValid.valid_ial || !responseValid.valid_aal) {
     identityConsentRequestError = new CustomError({
       errorType: errorType.INVALID_RESPONSE,
     });
