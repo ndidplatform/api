@@ -75,11 +75,11 @@ export async function revokeAccessor(revokeAccessorParams) {
   }
 
   try {
-    const revokeAccessorData = await cacheDb.getRevokeAccessorDataByReferenceId(
+    const identityRequestData = await cacheDb.getIdentityRequestDataByReferenceId(
       node_id,
       reference_id
     );
-    if (revokeAccessorData) {
+    if (identityRequestData) {
       throw new CustomError({
         errorType: errorType.DUPLICATE_REFERENCE_ID,
       });
