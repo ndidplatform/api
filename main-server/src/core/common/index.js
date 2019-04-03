@@ -358,6 +358,7 @@ export async function getAndSaveIdpResponseValid({
     identifier: requestData.identifier,
     node_id: idpId,
   });
+  const { max_aal } = await tendermintNdid.getNodeInfo(idpId);
 
   if (requestStatus.mode === 1) {
     validIal = null; // Cannot check in mode 1
@@ -427,7 +428,8 @@ export async function getAndSaveIdpResponseValid({
     idp_id: idpId,
     valid_signature: validSignature,
     valid_ial: validIal,
-    valid_aal: responseAal >= requestData.min_aal,
+    valid_aal: (responseAal >= requestData.min_aal
+      && responseAal <= max_aal),
   };
 
   await cacheDb.addIdpResponseValidList(nodeId, requestId, responseValid);
