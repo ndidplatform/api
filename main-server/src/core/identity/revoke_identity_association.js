@@ -192,7 +192,7 @@ async function revokeAssociationInternalAsync(
           namespace,
           identifier,
           reference_id,
-          idp_id_list: [],
+          idp_id_list: [nodeId], //only self
           callback_url: 'SYS_GEN_REVOKE_ASSOCIATION',
           data_request_list: [],
           request_message:
