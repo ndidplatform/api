@@ -36,6 +36,8 @@ import logger from '../logger';
 
 import * as config from '../config';
 
+const masterId = randomBase64Bytes(8);
+
 let server;
 let stoppingWorkerCount = 0;
 
@@ -77,6 +79,7 @@ export function initialize() {
   const MASTER_SERVER_ADDRESS = `0.0.0.0:${config.masterServerPort}`;
 
   server.addService(proto.MasterWorker.service, {
+    getMasterId,
     subscribe,
     tasksBeforeShutdown,
     returnResultCall,
@@ -91,6 +94,12 @@ export function initialize() {
   logger.info({
     message: 'Master gRPC server initialzed',
   });
+}
+
+function getMasterId(call, done) {
+  const { workerId } = call.request;
+  logger.debug({ message: 'Get master ID', workerId });
+  done({ masterId });
 }
 
 function subscribe(call) {

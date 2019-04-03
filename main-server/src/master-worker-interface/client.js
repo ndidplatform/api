@@ -57,6 +57,7 @@ const MASTER_SERVER_ADDRESS = `${config.masterServerIp}:${
   config.masterServerPort
 }`;
 const workerId = randomBase64Bytes(8);
+let knownMasterId;
 
 let client = null;
 let connectivityState = null;
@@ -101,8 +102,8 @@ function watchForNextConnectivityStateChange() {
               message: 'Worker service gRPC reconnect',
               workerId,
             });
-            workerSubscribeChannel = client.subscribe({ workerId });
-            workerSubscribeChannel.on('data', onRecvData);
+            await checkMasterId();
+            subscribe();
           }
           connectivityState = newConnectivityState;
         }
@@ -160,8 +161,32 @@ export async function initialize() {
       'grpc.max_receive_message_length': -1,
     }
   );
-  watchForNextConnectivityStateChange();
   await waitForReady(client);
+  await checkMasterId();
+  subscribe();
+  watchForNextConnectivityStateChange();
+}
+
+async function checkMasterId() {
+  const masterId = await getMasterId();
+  if (knownMasterId != null && knownMasterId !== masterId) {
+    // TODO: clear everything as if process is restarted
+  }
+  knownMasterId = masterId;
+}
+
+function getMasterId() {
+  return new Promise((resolve, reject) => {
+    client.getMasterId({ workerId }, (error, { masterId }) => {
+      if (error) reject(error);
+      else resolve(masterId);
+    });
+  });
+}
+
+function subscribe() {
+  workerSubscribeChannel = client.subscribe({ workerId });
+  workerSubscribeChannel.on('data', onRecvData);
 }
 
 function workerStopping() {
