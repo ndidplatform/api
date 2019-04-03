@@ -66,13 +66,10 @@ router.post('/endInit', async (req, res, next) => {
 
 router.post('/setAllowedModeList', validateBody, async (req, res, next) => {
   try {
-    const {
-      purpose,
-      allowed_mode_list
-    } = req.body;
+    const { purpose, allowed_mode_list } = req.body;
     await ndid.setAllowedModeList({
       purpose,
-      allowed_mode_list
+      allowed_mode_list,
     });
     res.status(204).end();
     next();
@@ -471,18 +468,35 @@ router.post('/setLastBlock', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/setMinIalForFirstOnboard', validateBody, async(req, res, next) => {
-  try {
-    const { min_ial } = req.body;
-
-    await ndid.setMinIalForFirstOnboard({
-      min_ial,
-    });
-    res.status(204).end();
-    next();
-  } catch (error) {
-    next(error);
+router.get(
+  '/allowedMinIalForRegisterIdentityAtFirstIdp',
+  async (req, res, next) => {
+    try {
+      const min_ial = await ndid.getAllowedMinIalForRegisterIdentityAtFirstIdp();
+      res.status(200).json({ min_ial });
+      next();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
+
+router.post(
+  '/setAllowedMinIalForRegisterIdentityAtFirstIdp',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { min_ial } = req.body;
+
+      await ndid.setAllowedMinIalForRegisterIdentityAtFirstIdp({
+        min_ial,
+      });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

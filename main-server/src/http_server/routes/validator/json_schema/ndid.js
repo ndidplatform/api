@@ -270,24 +270,24 @@ export default {
         required: ['block_height'],
       },
     },
-    'setAllowedModeList': {
+    '/ndid/setAllowedModeList': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           purpose: { type: 'string', minLength: 1 },
           allowed_mode_list: {
             type: 'array',
-            items: { 
-              type: 'number', 
-              enum: [1, 2, 3] 
+            items: {
+              type: 'number',
+              enum: [1, 2, 3],
             },
             uniqueItems: true,
-          }
+          },
         },
         required: ['purpose', 'allowed_mode_list'],
       },
     },
-    'setMinIalForFirstOnboard': {
+    '/ndid/setAllowedMinIalForRegisterIdentityAtFirstIdp': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
