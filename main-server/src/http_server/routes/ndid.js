@@ -64,7 +64,7 @@ router.post('/endInit', async (req, res, next) => {
   }
 });
 
-router.post('/setAllowedModeList', async (req, res, next) => {
+router.post('/setAllowedModeList', validateBody, async (req, res, next) => {
   try {
     const {
       purpose,
@@ -463,6 +463,20 @@ router.post('/setLastBlock', validateBody, async (req, res, next) => {
 
     await ndid.setLastBlock({
       block_height,
+    });
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/setMinIalForFirstOnboard', validateBody, async(req, res, next) => {
+  try {
+    const { min_ial } = req.body;
+
+    await ndid.setMinIalForFirstOnboard({
+      min_ial,
     });
     res.status(204).end();
     next();

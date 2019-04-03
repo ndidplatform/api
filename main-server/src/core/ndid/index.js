@@ -356,6 +356,23 @@ export async function setAllowedModeList({
   }
 }
 
+export async function setMinIalForFirstOnboard({ 
+  min_ial 
+}) {
+  try {
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'SetAllowedMinIalForRegisterIdentityAtFirstIdp',
+      params: { 
+        min_ial
+      },
+    });
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
 export async function enableNode({ node_id }) {
   try {
     await tendermint.transact({

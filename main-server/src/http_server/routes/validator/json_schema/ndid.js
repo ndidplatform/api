@@ -270,5 +270,31 @@ export default {
         required: ['block_height'],
       },
     },
+    'setAllowedModeList': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          purpose: { type: 'string', minLength: 1 },
+          allowed_mode_list: {
+            type: 'array',
+            items: { 
+              type: 'number', 
+              enum: [1, 2, 3] 
+            },
+            uniqueItems: true,
+          }
+        },
+        required: ['purpose', 'allowed_mode_list'],
+      },
+    },
+    'setMinIalForFirstOnboard': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          min_ial: { $ref: 'defs#/definitions/ial' },
+        },
+        required: ['min_ial'],
+      },
+    },
   },
 };
