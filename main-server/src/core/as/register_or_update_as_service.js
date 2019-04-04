@@ -81,21 +81,23 @@ export async function registerOrUpdateASService(
       }
     }
 
-    const allowedNamespaces = await tendermintNdid.getNamespaceList();
-    accepted_namespace_list.forEach((namespace) => {
-      if (
-        allowedNamespaces.find(
-          ({ namespace: allowedNamespace }) => allowedNamespace === namespace
-        ) == null
-      ) {
-        throw new CustomError({
-          errorType: errorType.INVALID_NAMESPACE,
-          details: {
-            namespace,
-          },
-        });
-      }
-    });
+    if (accepted_namespace_list != null) {
+      const allowedNamespaces = await tendermintNdid.getNamespaceList();
+      accepted_namespace_list.forEach((namespace) => {
+        if (
+          allowedNamespaces.find(
+            ({ namespace: allowedNamespace }) => allowedNamespace === namespace
+          ) == null
+        ) {
+          throw new CustomError({
+            errorType: errorType.INVALID_NAMESPACE,
+            details: {
+              namespace,
+            },
+          });
+        }
+      });
+    }
 
     if (synchronous) {
       await registerOrUpdateASServiceInternalAsync(...arguments, {
