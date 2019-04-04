@@ -349,7 +349,8 @@ module.exports = {
   },
   CONDITION_TOO_LOW: {
     code: 20022,
-    message: '"min_ial" or "min_aal" too low for some services requested',
+    message:
+      'Minimum AS in some services requested cannot be met with some conditions (due to required "min_ial", "min_aal" or "namespace")',
     clientError: true,
   },
   MISSING_ARGUMENTS: {
