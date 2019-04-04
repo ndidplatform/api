@@ -169,7 +169,7 @@ export default {
           description: { type: 'string' },
           allowed_identifier_count_in_reference_group: {
             type: 'integer',
-            minimum: 0,
+            minimum: -1,
           },
         },
         required: ['namespace'],
@@ -182,7 +182,7 @@ export default {
           description: { type: 'string' },
           allowed_identifier_count_in_reference_group: {
             type: 'integer',
-            minimum: 0,
+            minimum: -1,
           },
         },
       },
