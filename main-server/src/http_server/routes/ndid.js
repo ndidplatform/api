@@ -224,21 +224,38 @@ router.post('/reduceNodeToken', validateBody, async (req, res, next) => {
 
 router.post('/namespaces', validateBody, async (req, res, next) => {
   try {
-    const { namespace, description } = req.body;
-
-    if (namespace === 'requests' || namespace === 'housekeeping') {
-      res.status(400).json({
-        message:
-          'Input namespace cannot be reserved words ("requests" and "housekeeping")',
-      });
-      return;
-    }
+    const {
+      namespace,
+      description,
+      allowed_identifier_count_in_reference_group,
+    } = req.body;
 
     await ndid.addNamespace({
       namespace,
       description,
+      allowed_identifier_count_in_reference_group,
     });
     res.status(201).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/namespaces/:namespace', validateBody, async (req, res, next) => {
+  try {
+    const { namespace } = req.params;
+    const {
+      description,
+      allowed_identifier_count_in_reference_group,
+    } = req.body;
+
+    await ndid.updateNamespace({
+      namespace,
+      description,
+      allowed_identifier_count_in_reference_group,
+    });
+    res.status(204).end();
     next();
   } catch (error) {
     next(error);

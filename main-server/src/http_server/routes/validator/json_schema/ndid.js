@@ -167,8 +167,24 @@ export default {
         properties: {
           namespace: { type: 'string', minLength: 1 },
           description: { type: 'string' },
+          allowed_identifier_count_in_reference_group: {
+            type: 'integer',
+            minimum: 0,
+          },
         },
         required: ['namespace'],
+      },
+    },
+    '/ndid/namespaces/:namespace': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          description: { type: 'string' },
+          allowed_identifier_count_in_reference_group: {
+            type: 'integer',
+            minimum: 0,
+          },
+        },
       },
     },
     '/ndid/services': {
