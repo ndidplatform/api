@@ -45,7 +45,6 @@ router.post(
         idp_id_list,
         data_request_list,
         request_message,
-        request_message_type,
         min_ial,
         min_aal,
         min_idp,

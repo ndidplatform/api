@@ -23,14 +23,6 @@
 export default {
   defsSchema: {
     definitions: {
-      requestMessageType: {
-        type: 'string',
-        enum: [
-          'text/plain',
-          'application/pdf;base64',
-          'application/octet-stream;base64',
-        ],
-      },
       ial: { type: 'number', enum: [1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3] },
       aal: { type: 'number', enum: [1, 2.1, 2.2, 3] },
       ialString: {
@@ -138,9 +130,6 @@ export default {
             uniqueItems: true,
           },
           request_message: { type: 'string' },
-          request_message_type: {
-            $ref: 'defs#/definitions/requestMessageType',
-          },
           min_ial: { $ref: 'defs#/definitions/ial' },
           min_aal: { $ref: 'defs#/definitions/aal' },
           min_idp: { type: 'integer', minimum: 1 },
@@ -337,6 +326,14 @@ export default {
           check_string: { type: 'string', minLength: 1 },
           signed_check_string: { type: 'string', minLength: 1 },
           master_signed_check_string: { type: 'string', minLength: 1 },
+          supported_request_message_type_list: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            minItems: 1,
+            uniqueItems: true,
+          },
         },
         anyOf: [
           {
@@ -414,9 +411,6 @@ export default {
           accessor_id: { type: 'string', minLength: 1 },
           ial: { $ref: 'defs#/definitions/ial' },
           request_message: { type: 'string' },
-          request_message_type: {
-            $ref: 'defs#/definitions/requestMessageType',
-          },
         },
         required: [
           'reference_id',
@@ -477,9 +471,6 @@ export default {
           accessor_public_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
           request_message: { type: 'string' },
-          request_message_type: {
-            $ref: 'defs#/definitions/requestMessageType',
-          },
         },
         required: [
           'reference_id',
@@ -498,9 +489,6 @@ export default {
           callback_url: { $ref: 'defs#/definitions/url' },
           accessor_id: { type: 'string', minLength: 1 },
           request_message: { type: 'string' },
-          request_message_type: {
-            $ref: 'defs#/definitions/requestMessageType',
-          },
         },
         required: ['reference_id', 'callback_url', 'accessor_id'],
       },
@@ -513,9 +501,6 @@ export default {
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           request_message: { type: 'string' },
-          request_message_type: {
-            $ref: 'defs#/definitions/requestMessageType',
-          },
         },
         required: ['reference_id', 'callback_url'],
       },
@@ -528,9 +513,6 @@ export default {
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           request_message: { type: 'string' },
-          request_message_type: {
-            $ref: 'defs#/definitions/requestMessageType',
-          },
         },
         required: ['reference_id', 'callback_url'],
       },
@@ -545,9 +527,6 @@ export default {
           namespace_to_merge: { type: 'string', minLength: 1 },
           identifier_to_merge: { type: 'string', minLength: 1 },
           request_message: { type: 'string' },
-          request_message_type: {
-            $ref: 'defs#/definitions/requestMessageType',
-          },
         },
         required: [
           'reference_id',
