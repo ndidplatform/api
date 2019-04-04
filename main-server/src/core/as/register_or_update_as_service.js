@@ -59,7 +59,7 @@ export async function registerOrUpdateASService(
 
   try {
     //check already register?
-    let registeredASList = await tendermintNdid.getAsNodesByServiceId({
+    const registeredASList = await tendermintNdid.getAsNodesByServiceId({
       service_id,
     });
     let isRegisterd = false;
@@ -80,6 +80,18 @@ export async function registerOrUpdateASService(
         });
       }
     }
+
+    const namespaces = await tendermintNdid.getNamespaceList();
+    accepted_namespace_list.forEach((namespace) => {
+      if (!namespaces.includes(namespace)) {
+        throw new CustomError({
+          errorType: errorType.INVALID_NAMESPACE,
+          details: {
+            namespace,
+          },
+        });
+      }
+    });
 
     if (synchronous) {
       await registerOrUpdateASServiceInternalAsync(...arguments, {
