@@ -277,7 +277,7 @@ router.post(
 );
 
 router.post(
-  '/:namespace/:identifier/revoke',
+  '/:namespace/:identifier/association_revoke',
   validateBody,
   async (req, res, next) => {
     try {
