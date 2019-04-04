@@ -27,6 +27,8 @@ import {
   removeTimeoutScheduler,
 } from '.';
 
+import parseDataURL from 'data-urls';
+
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
@@ -51,6 +53,7 @@ async function checkIdpListCondition({
   min_idp,
   idp_id_list,
   mode,
+  supported_request_message_type_list,
 }) {
   if (idp_id_list.length !== 0 && idp_id_list.length < min_idp) {
     throw new CustomError({
@@ -77,6 +80,7 @@ async function checkIdpListCondition({
     min_aal,
     idp_id_list,
     mode,
+    supported_request_message_type_list,
   });
 
   if (min_idp !== 0) {
@@ -90,6 +94,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
+          supported_request_message_type_list,
         },
       });
     }
@@ -104,6 +109,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
+          supported_request_message_type_list,
         },
       });
     }
@@ -118,6 +124,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
+          supported_request_message_type_list,
         },
       });
     }
@@ -325,6 +332,18 @@ export async function createRequest(
       });
     }
 
+    const dataUrlParsedRequestMessage = parseDataURL(request_message);
+    let requestMessageDataUrlPrefix;
+    let requestMessageBuffer;
+    let requestMessageMimeType;
+    if (dataUrlParsedRequestMessage != null) {
+      requestMessageMimeType = dataUrlParsedRequestMessage.mimeType.toString();
+
+      // Convert request message with base64 encoding to Buffer for transfer over MQ
+      requestMessageDataUrlPrefix = request_message.split(',')[0];
+      requestMessageBuffer = dataUrlParsedRequestMessage.body;
+    }
+
     const receivers = await checkIdpListCondition({
       namespace,
       identifier,
@@ -333,6 +352,7 @@ export async function createRequest(
       min_idp,
       idp_id_list,
       mode,
+      supported_request_message_type_list: [requestMessageMimeType],
     });
 
     if (data_request_list != null && data_request_list.length > 0) {
@@ -349,10 +369,6 @@ export async function createRequest(
         idp_id_list.push(node_id);
       });
     }
-
-    // TODO: check request message type if all IdPs in idp_id_list support it
-
-    // TODO: convert request message with base64 encoding to Buffer
 
     if (request_id == null) {
       request_id = utils.createRequestId();
@@ -405,6 +421,8 @@ export async function createRequest(
         data_request_params_salt_list,
         receivers,
         requestData,
+        requestMessageDataUrlPrefix,
+        requestMessageBuffer,
       });
     } else {
       createRequestInternalAsync(createRequestParams, options, {
@@ -414,6 +432,8 @@ export async function createRequest(
         data_request_params_salt_list,
         receivers,
         requestData,
+        requestMessageDataUrlPrefix,
+        requestMessageBuffer,
       });
     }
 
@@ -474,6 +494,8 @@ async function createRequestInternalAsync(
     data_request_params_salt_list,
     receivers,
     requestData,
+    requestMessageDataUrlPrefix,
+    requestMessageBuffer,
   } = additionalParams;
   try {
     const dataRequestListToBlockchain = data_request_list.map(
@@ -519,6 +541,8 @@ async function createRequestInternalAsync(
             request_timeout,
             receivers,
             requestData,
+            requestMessageDataUrlPrefix,
+            requestMessageBuffer,
           },
           {
             synchronous,
@@ -545,6 +569,8 @@ async function createRequestInternalAsync(
           request_timeout,
           receivers,
           requestData,
+          requestMessageDataUrlPrefix,
+          requestMessageBuffer,
         },
         {
           synchronous,
@@ -608,6 +634,8 @@ export async function createRequestInternalAsyncAfterBlockchain(
     request_timeout,
     receivers,
     requestData,
+    requestMessageDataUrlPrefix,
+    requestMessageBuffer,
   },
   {
     synchronous = false,
@@ -669,6 +697,14 @@ export async function createRequestInternalAsyncAfterBlockchain(
         creation_time,
         chain_id: tendermint.chainId,
         height,
+      };
+    }
+
+    if (requestMessageBuffer != null) {
+      mqMessage = {
+        ...mqMessage,
+        requestMessageDataUrlPrefix,
+        requestMessageBuffer,
       };
     }
 

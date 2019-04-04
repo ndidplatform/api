@@ -210,22 +210,25 @@ function moduloMultiplicativeInverse(a, modulo) {
 
 /**
  *
- * @param {string} messageToSign
+ * @param {string|Buffer} messageToSign
  * @param {string} nodeId
  * @param {boolean} useMasterKey
  * @return {Buffer} signature
  */
 export async function createSignature(messageToSign, nodeId, useMasterKey) {
-  if (typeof messageToSign !== 'string') {
+  if (typeof messageToSign === 'string') {
+    messageToSign = Buffer.from(messageToSign, 'utf8');
+  }
+  if (!Buffer.isBuffer(messageToSign)) {
     throw new CustomError({
-      message: 'Expected message to sign to be a string',
+      message: 'Expected message to sign to be a Buffer',
     });
   }
   const messageToSignHash = hash(messageToSign);
 
   if (config.useExternalCryptoService) {
     return await externalCryptoService.createSignature(
-      messageToSign,
+      messageToSign.toString('base64'),
       messageToSignHash,
       nodeId,
       useMasterKey
@@ -245,11 +248,20 @@ export async function createSignature(messageToSign, nodeId, useMasterKey) {
   });
 }
 
-export function verifySignature(signature, publicKey, plainText) {
+/**
+ *
+ * @param {string|Buffer} signature
+ * @param {string|Buffer} publicKey
+ * @param {string|Buffer} dataToVerify
+ */
+export function verifySignature(signature, publicKey, dataToVerify) {
   if (!Buffer.isBuffer(signature)) {
     signature = Buffer.from(signature, 'base64');
   }
-  return cryptoUtils.verifySignature(signature, publicKey, plainText);
+  if (!Buffer.isBuffer(dataToVerify)) {
+    dataToVerify = Buffer.from(dataToVerify, 'base64');
+  }
+  return cryptoUtils.verifySignature(signature, publicKey, dataToVerify);
 }
 
 function getDataHashWithCustomPadding(

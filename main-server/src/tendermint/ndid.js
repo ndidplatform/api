@@ -832,6 +832,7 @@ export async function getIdpNodesInfo({
   min_ial,
   min_aal,
   node_id_list,
+  supported_request_message_type_list,
 }) {
   if (reference_group_code && (namespace || identifier)) {
     throw new Error(
@@ -850,6 +851,7 @@ export async function getIdpNodesInfo({
       min_ial,
       min_aal,
       node_id_list,
+      supported_request_message_type_list,
     });
     return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {

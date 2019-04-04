@@ -423,6 +423,7 @@ export async function processRawMessage({
       messageSignature,
     });
 
+    // TODO
     const message = JSON.parse(messageStr);
 
     const { idp_id, rp_id, as_id } = message;
@@ -438,7 +439,7 @@ export async function processRawMessage({
     const signatureValid = utils.verifySignature(
       messageSignature,
       publicKey,
-      messageStr
+      messageBuffer
     );
 
     logger.debug({
@@ -563,6 +564,9 @@ export async function loadAndProcessBacklogMessages() {
   }
 }
 
+// TODO: add message type arg for message with non-default packaging
+// Type consent request must look for "requestMessageDataUrlPrefix" and "requestMessageBuffer"
+// if present then send request message as bytes rather than base64 encoded string
 export async function send(receivers, message, senderNodeId) {
   if (receivers.length === 0) {
     logger.debug({
@@ -575,9 +579,10 @@ export async function send(receivers, message, senderNodeId) {
   const timestamp = Date.now();
 
   const messageStr = JSON.stringify(message);
+  // TODO
   const messageBuffer = Buffer.from(messageStr, 'utf8');
   const messageSignatureBuffer = await utils.createSignature(
-    messageStr,
+    messageBuffer,
     senderNodeId
   );
   const mqMessageObject = {

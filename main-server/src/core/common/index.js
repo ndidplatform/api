@@ -170,6 +170,7 @@ export async function getIdpMQDestinations({
   min_aal,
   idp_id_list,
   mode,
+  supported_request_message_type_list,
 }) {
   const idpNodes = await tendermintNdid.getIdpNodesInfo({
     namespace: mode === 2 || mode === 3 ? namespace : undefined,
@@ -177,6 +178,7 @@ export async function getIdpMQDestinations({
     min_ial,
     min_aal,
     node_id_list: idp_id_list, // filter to include only nodes in this list if node ID exists
+    supported_request_message_type_list, // filter to include only nodes that support request message type in this list
   });
 
   const receivers = idpNodes

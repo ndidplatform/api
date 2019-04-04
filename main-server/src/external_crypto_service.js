@@ -512,7 +512,7 @@ export async function decryptAsymetricKey(nodeId, encryptedMessage) {
 }
 
 export async function createSignature(
-  message,
+  messageBase64,
   messageHash,
   nodeId,
   useMasterKey
@@ -536,7 +536,7 @@ export async function createSignature(
   }
   const body = {
     node_id: nodeId,
-    request_message: message,
+    request_message: messageBase64,
     request_message_hash: messageHash,
     hash_method: 'SHA256',
     key_type: 'RSA',

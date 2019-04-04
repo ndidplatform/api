@@ -6,3 +6,9 @@ message MqMessage {
   string receiver_node_id = 3;
   string sender_node_id = 4;
 }
+
+message ConsentRequestMqMessage {
+  string request_json = 1;
+  string request_message_data_url_prefix = 2;
+  bytes request_message_bytes = 3;
+}
