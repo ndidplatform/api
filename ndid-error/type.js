@@ -349,7 +349,8 @@ module.exports = {
   },
   CONDITION_TOO_LOW: {
     code: 20022,
-    message: '"min_ial" or "min_aal" too low for some services requested',
+    message:
+      'Minimum AS in some services requested cannot be met with some conditions (due to required "min_ial", "min_aal" or "namespace")',
     clientError: true,
   },
   MISSING_ARGUMENTS: {
@@ -598,12 +599,6 @@ module.exports = {
   IDENTITY_TO_MERGE_TO_DOES_NOT_EXIST: {
     code: 20068,
     message: 'Identity to merge to does not exist',
-    clientError: true,
-  },
-  SOME_AS_DO_NOT_ACCEPT_NAMESPACE: {
-    code: 20069,
-    message:
-      'Some AS IDs in some services in data request list do not accept provided namespace',
     clientError: true,
   },
 

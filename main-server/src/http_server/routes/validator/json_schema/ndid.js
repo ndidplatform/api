@@ -167,8 +167,24 @@ export default {
         properties: {
           namespace: { type: 'string', minLength: 1 },
           description: { type: 'string' },
+          allowed_identifier_count_in_reference_group: {
+            type: 'integer',
+            minimum: -1,
+          },
         },
         required: ['namespace'],
+      },
+    },
+    '/ndid/namespaces/:namespace': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          description: { type: 'string' },
+          allowed_identifier_count_in_reference_group: {
+            type: 'integer',
+            minimum: -1,
+          },
+        },
       },
     },
     '/ndid/services': {
@@ -268,6 +284,32 @@ export default {
           block_height: { type: 'integer', minimum: -1 },
         },
         required: ['block_height'],
+      },
+    },
+    '/ndid/setAllowedModeList': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          purpose: { type: 'string', minLength: 1 },
+          allowed_mode_list: {
+            type: 'array',
+            items: {
+              type: 'number',
+              enum: [1, 2, 3],
+            },
+            uniqueItems: true,
+          },
+        },
+        required: ['purpose', 'allowed_mode_list'],
+      },
+    },
+    '/ndid/setAllowedMinIalForRegisterIdentityAtFirstIdp': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          min_ial: { $ref: 'defs#/definitions/ial' },
+        },
+        required: ['min_ial'],
       },
     },
   },

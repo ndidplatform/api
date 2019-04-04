@@ -337,17 +337,14 @@ async function updateNodeInternalAsync(data, { synchronous = false } = {}) {
   }
 }
 
-export async function setAllowedModeList({ 
-  purpose,
-  allowed_mode_list 
-}) {
+export async function setAllowedModeList({ purpose, allowed_mode_list }) {
   try {
     await tendermint.transact({
       nodeId: config.nodeId,
       fnName: 'SetAllowedModeList',
-      params: { 
+      params: {
         purpose,
-        allowed_mode_list 
+        allowed_mode_list,
       },
     });
   } catch (error) {
@@ -382,12 +379,41 @@ export async function disableNode({ node_id }) {
   }
 }
 
-export async function addNamespace({ namespace, description }) {
+export async function addNamespace({
+  namespace,
+  description,
+  allowed_identifier_count_in_reference_group,
+}) {
   try {
     await tendermint.transact({
       nodeId: config.nodeId,
       fnName: 'AddNamespace',
-      params: { namespace, description },
+      params: {
+        namespace,
+        description,
+        allowed_identifier_count_in_reference_group,
+      },
+    });
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function updateNamespace({
+  namespace,
+  description,
+  allowed_identifier_count_in_reference_group,
+}) {
+  try {
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'UpdateNamespace',
+      params: {
+        namespace,
+        description,
+        allowed_identifier_count_in_reference_group,
+      },
     });
   } catch (error) {
     // TODO:
@@ -588,6 +614,29 @@ export async function setLastBlock({ block_height }) {
       fnName: 'SetLastBlock',
       params: { block_height },
     });
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function getAllowedMinIalForRegisterIdentityAtFirstIdp() {
+  try {
+    return await tendermintNdid.getAllowedMinIalForRegisterIdentityAtFirstIdp();
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function setAllowedMinIalForRegisterIdentityAtFirstIdp({
+  min_ial,
+}) {
+  try {
+    await tendermintNdid.setAllowedMinIalForRegisterIdentityAtFirstIdp(
+      { min_ial },
+      config.nodeId
+    );
   } catch (error) {
     // TODO:
     throw error;

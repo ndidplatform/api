@@ -64,15 +64,12 @@ router.post('/endInit', async (req, res, next) => {
   }
 });
 
-router.post('/setAllowedModeList', async (req, res, next) => {
+router.post('/setAllowedModeList', validateBody, async (req, res, next) => {
   try {
-    const {
-      purpose,
-      allowed_mode_list
-    } = req.body;
+    const { purpose, allowed_mode_list } = req.body;
     await ndid.setAllowedModeList({
       purpose,
-      allowed_mode_list
+      allowed_mode_list,
     });
     res.status(204).end();
     next();
@@ -227,21 +224,38 @@ router.post('/reduceNodeToken', validateBody, async (req, res, next) => {
 
 router.post('/namespaces', validateBody, async (req, res, next) => {
   try {
-    const { namespace, description } = req.body;
-
-    if (namespace === 'requests' || namespace === 'housekeeping') {
-      res.status(400).json({
-        message:
-          'Input namespace cannot be reserved words ("requests" and "housekeeping")',
-      });
-      return;
-    }
+    const {
+      namespace,
+      description,
+      allowed_identifier_count_in_reference_group,
+    } = req.body;
 
     await ndid.addNamespace({
       namespace,
       description,
+      allowed_identifier_count_in_reference_group,
     });
     res.status(201).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/namespaces/:namespace', validateBody, async (req, res, next) => {
+  try {
+    const { namespace } = req.params;
+    const {
+      description,
+      allowed_identifier_count_in_reference_group,
+    } = req.body;
+
+    await ndid.updateNamespace({
+      namespace,
+      description,
+      allowed_identifier_count_in_reference_group,
+    });
+    res.status(204).end();
     next();
   } catch (error) {
     next(error);
@@ -470,5 +484,36 @@ router.post('/setLastBlock', validateBody, async (req, res, next) => {
     next(error);
   }
 });
+
+router.get(
+  '/allowedMinIalForRegisterIdentityAtFirstIdp',
+  async (req, res, next) => {
+    try {
+      const min_ial = await ndid.getAllowedMinIalForRegisterIdentityAtFirstIdp();
+      res.status(200).json({ min_ial });
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/setAllowedMinIalForRegisterIdentityAtFirstIdp',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { min_ial } = req.body;
+
+      await ndid.setAllowedMinIalForRegisterIdentityAtFirstIdp({
+        min_ial,
+      });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

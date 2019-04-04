@@ -1259,3 +1259,45 @@ export async function removeNodeFromProxyNode(
     });
   }
 }
+
+export async function getAllowedMinIalForRegisterIdentityAtFirstIdp() {
+  try {
+    const result = await tendermint.query(
+      'GetAllowedMinIalForRegisterIdentityAtFirstIdp'
+    );
+    return result != null
+      ? result.min_ial != null
+        ? result.min_ial
+        : null
+      : null;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get allowed min IAL for registerIdentity at first IdP',
+      cause: error,
+    });
+  }
+}
+
+export async function setAllowedMinIalForRegisterIdentityAtFirstIdp(
+  { min_ial },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'SetAllowedMinIalForRegisterIdentityAtFirstIdp',
+      params: { min_ial },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot set allowed min IAL for registerIdentity at first IdP',
+      cause: error,
+    });
+  }
+}

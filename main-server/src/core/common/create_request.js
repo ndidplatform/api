@@ -190,17 +190,13 @@ async function checkAsListCondition({
             errorType: errorType.SOME_AS_DO_NOT_PROVIDE_SERVICE,
           });
         }
-
-        potential_as_list = potential_as_list.filter((as_node) => {
-          return as_node.accepted_namespace_list.includes(namespace);
-        });
-
-        if (potential_as_list.length !== as_id_list.length) {
-          throw new CustomError({
-            errorType: errorType.SOME_AS_DO_NOT_ACCEPT_NAMESPACE,
-          });
-        }
       }
+
+      // filter out ASes that don't support required namespace
+      potential_as_list = potential_as_list.filter((as_node) => {
+        return as_node.accepted_namespace_list.includes(namespace);
+      });
+
       //filter min_ial, min_aal
       potential_as_list = potential_as_list.filter((as_node) => {
         return as_node.min_ial <= min_ial && as_node.min_aal <= min_aal;
