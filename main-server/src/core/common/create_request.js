@@ -350,6 +350,10 @@ export async function createRequest(
       });
     }
 
+    // TODO: check request message type if all IdPs in idp_id_list support it
+
+    // TODO: convert request message with base64 encoding to Buffer
+
     if (request_id == null) {
       request_id = utils.createRequestId();
     }
