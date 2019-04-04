@@ -81,9 +81,13 @@ export async function registerOrUpdateASService(
       }
     }
 
-    const namespaces = await tendermintNdid.getNamespaceList();
+    const allowedNamespaces = await tendermintNdid.getNamespaceList();
     accepted_namespace_list.forEach((namespace) => {
-      if (!namespaces.includes(namespace)) {
+      if (
+        allowedNamespaces.find(
+          ({ namespace: allowedNamespace }) => allowedNamespace === namespace
+        ) == null
+      ) {
         throw new CustomError({
           errorType: errorType.INVALID_NAMESPACE,
           details: {
