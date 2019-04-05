@@ -259,7 +259,7 @@ export function verifySignature(signature, publicKey, dataToVerify) {
     signature = Buffer.from(signature, 'base64');
   }
   if (!Buffer.isBuffer(dataToVerify)) {
-    dataToVerify = Buffer.from(dataToVerify, 'base64');
+    dataToVerify = Buffer.from(dataToVerify, 'utf8');
   }
   return cryptoUtils.verifySignature(signature, publicKey, dataToVerify);
 }

@@ -87,10 +87,7 @@ export function deserializeMqMessage(messageType, messageBuffer) {
         request_message_bytes,
       } = decodedMessage;
       message = JSON.parse(request_json);
-      if (
-        request_message_data_url_prefix != null &&
-        request_message_bytes != null
-      ) {
+      if (request_message_data_url_prefix && request_message_bytes) {
         message = {
           ...message,
           request_message: `${request_message_data_url_prefix},${request_message_bytes.toString(

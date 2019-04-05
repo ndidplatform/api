@@ -346,7 +346,9 @@ export async function createRequest(
       min_idp,
       idp_id_list,
       mode,
-      supported_request_message_type_list: [requestMessageMimeType],
+      supported_request_message_type_list: requestMessageMimeType
+        ? [requestMessageMimeType]
+        : undefined,
     });
 
     if (data_request_list != null && data_request_list.length > 0) {
