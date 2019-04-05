@@ -17,6 +17,7 @@ BREAKING CHANGES:
     - POST `/identity/requests/close` to `/identity_request/request_close`
     - POST `/utility/private_messages/housekeeping` to `/utility/private_message_removal`
     - POST `/utility/private_messages/:request_id/housekeeping` to `/utility/private_message_removal/:request_id`
+  - Change `request_message` value type of DPKI sign callback from plain text string to base64 encoded data string
 - Change logging format.
 - Remove logging to file feature.
 - Remove logging environment variable options
@@ -27,7 +28,9 @@ BREAKING CHANGES:
 - Add logging environment variable option
   - `LOG_PRETTY_PRINT`: Default to `true` in development (`NODE_ENV` not set or set to `development`), `false` otherwise. If not set to `true`, log will be in JSON format.
 - Change allowed `LOG_LEVEL` option values to `fatal`, `error`, `warn`, `info`, `debug` and `trace`.
-- Change MQ message protocol format - change message ID type from int64 to string.
+- Change MQ message protocol format
+  - Change message ID type from int64 to string.
+  - Add message type.
 
 IMPROVEMENTS:
 
