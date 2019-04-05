@@ -290,7 +290,7 @@ export default {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
-          purpose: { type: 'string', minLength: 1 },
+          purpose: { type: 'string' },
           allowed_mode_list: {
             type: 'array',
             items: {

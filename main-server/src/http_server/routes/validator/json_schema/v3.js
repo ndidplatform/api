@@ -493,7 +493,7 @@ export default {
         required: ['reference_id', 'callback_url', 'accessor_id'],
       },
     },
-    '/identity/:namespace/:identifier/revoke': {
+    '/identity/:namespace/:identifier/association_revoke': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
