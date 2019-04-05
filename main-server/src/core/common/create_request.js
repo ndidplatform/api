@@ -333,15 +333,9 @@ export async function createRequest(
     }
 
     const dataUrlParsedRequestMessage = parseDataURL(request_message);
-    let requestMessageDataUrlPrefix;
-    let requestMessageBuffer;
     let requestMessageMimeType;
     if (dataUrlParsedRequestMessage != null) {
       requestMessageMimeType = dataUrlParsedRequestMessage.mimeType.toString();
-
-      // Convert request message with base64 encoding to Buffer for transfer over MQ
-      requestMessageDataUrlPrefix = request_message.split(',')[0];
-      requestMessageBuffer = dataUrlParsedRequestMessage.body;
     }
 
     const receivers = await checkIdpListCondition({
@@ -421,8 +415,6 @@ export async function createRequest(
         data_request_params_salt_list,
         receivers,
         requestData,
-        requestMessageDataUrlPrefix,
-        requestMessageBuffer,
       });
     } else {
       createRequestInternalAsync(createRequestParams, options, {
@@ -432,8 +424,6 @@ export async function createRequest(
         data_request_params_salt_list,
         receivers,
         requestData,
-        requestMessageDataUrlPrefix,
-        requestMessageBuffer,
       });
     }
 
@@ -494,8 +484,6 @@ async function createRequestInternalAsync(
     data_request_params_salt_list,
     receivers,
     requestData,
-    requestMessageDataUrlPrefix,
-    requestMessageBuffer,
   } = additionalParams;
   try {
     const dataRequestListToBlockchain = data_request_list.map(
@@ -541,8 +529,6 @@ async function createRequestInternalAsync(
             request_timeout,
             receivers,
             requestData,
-            requestMessageDataUrlPrefix,
-            requestMessageBuffer,
           },
           {
             synchronous,
@@ -569,8 +555,6 @@ async function createRequestInternalAsync(
           request_timeout,
           receivers,
           requestData,
-          requestMessageDataUrlPrefix,
-          requestMessageBuffer,
         },
         {
           synchronous,
@@ -634,8 +618,6 @@ export async function createRequestInternalAsyncAfterBlockchain(
     request_timeout,
     receivers,
     requestData,
-    requestMessageDataUrlPrefix,
-    requestMessageBuffer,
   },
   {
     synchronous = false,
@@ -697,14 +679,6 @@ export async function createRequestInternalAsyncAfterBlockchain(
         creation_time,
         chain_id: tendermint.chainId,
         height,
-      };
-    }
-
-    if (requestMessageBuffer != null) {
-      mqMessage = {
-        ...mqMessage,
-        requestMessageDataUrlPrefix,
-        requestMessageBuffer,
       };
     }
 

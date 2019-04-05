@@ -25,6 +25,8 @@ import EventEmitter from 'events';
 
 import protobuf from 'protobufjs';
 
+import { serializeMqMessage, deserializeMqMessage } from './message';
+
 import * as mqService from './grpc_client';
 import * as tendermint from '../tendermint';
 import * as tendermintNdid from '../tendermint/ndid';
@@ -349,6 +351,7 @@ export async function processRawMessage({
       outerLayerDecodedDecryptedMessage,
     });
 
+    let messageType;
     let messageBuffer;
     let messageSignature;
     let receiverNodeId;
@@ -401,10 +404,12 @@ export async function processRawMessage({
         decodedDecryptedMessage,
       });
 
+      messageType = decodedDecryptedMessage.message_type;
       messageBuffer = decodedDecryptedMessage.message;
       messageSignature = decodedDecryptedMessage.signature;
     } else {
       receiverNodeId = config.nodeId;
+      messageType = outerLayerDecodedDecryptedMessage.message_type;
       messageBuffer = outerLayerDecodedDecryptedMessage.message;
       messageSignature = outerLayerDecodedDecryptedMessage.signature;
     }
@@ -415,16 +420,7 @@ export async function processRawMessage({
       });
     }
 
-    const messageStr = messageBuffer.toString('utf8');
-
-    logger.debug({
-      message: 'Split message and signature',
-      messageStr,
-      messageSignature,
-    });
-
-    // TODO
-    const message = JSON.parse(messageStr);
+    const message = deserializeMqMessage(messageType, messageBuffer);
 
     const { idp_id, rp_id, as_id } = message;
     const nodeId = idp_id || rp_id || as_id;
@@ -444,10 +440,10 @@ export async function processRawMessage({
 
     logger.debug({
       message: 'Verifying signature',
+      messageBuffer,
       messageSignature,
       nodeId,
       publicKey,
-      messageStr,
       signatureValid,
     });
 
@@ -484,7 +480,7 @@ export async function processRawMessage({
       message.type,
       message.request_id,
       {
-        message: messageStr,
+        message,
         direction: longTermDb.MESSAGE_DIRECTIONS.INBOUND,
         source,
         signature: messageSignature.toString('base64'),
@@ -564,9 +560,22 @@ export async function loadAndProcessBacklogMessages() {
   }
 }
 
-// TODO: add message type arg for message with non-default packaging
-// Type consent request must look for "requestMessageDataUrlPrefix" and "requestMessageBuffer"
-// if present then send request message as bytes rather than base64 encoded string
+/**
+ *
+ * @param {Object[]} receivers
+ * @param {string} receivers[].node_id
+ * @param {string} receivers[].public_key
+ * @param {string} [receivers[].ip]
+ * @param {number} [receivers[].port]
+ * @param {Object} [receivers[].proxy]
+ * @param {string} receivers[].proxy.node_id
+ * @param {string} receivers[].proxy.public_key
+ * @param {string} receivers[].proxy.ip
+ * @param {number} receivers[].proxy.port
+ * @param {string} receivers[].proxy.config
+ * @param {Object} message
+ * @param {string} senderNodeId
+ */
 export async function send(receivers, message, senderNodeId) {
   if (receivers.length === 0) {
     logger.debug({
@@ -578,14 +587,13 @@ export async function send(receivers, message, senderNodeId) {
   }
   const timestamp = Date.now();
 
-  const messageStr = JSON.stringify(message);
-  // TODO
-  const messageBuffer = Buffer.from(messageStr, 'utf8');
+  const { messageType, messageBuffer } = serializeMqMessage(message);
   const messageSignatureBuffer = await utils.createSignature(
     messageBuffer,
     senderNodeId
   );
   const mqMessageObject = {
+    message_type: messageType,
     message: messageBuffer,
     signature: messageSignatureBuffer,
   };
@@ -729,7 +737,7 @@ export async function send(receivers, message, senderNodeId) {
     message.type,
     message.request_id,
     {
-      message: messageStr,
+      message,
       direction: longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
       destinations: receivers.map((receiver) => {
         if (receiver.proxy != null) {
