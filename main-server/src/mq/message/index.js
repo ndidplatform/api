@@ -29,7 +29,7 @@ import messageTypes from './type';
 
 const mqMessageProtobufRootInstance = new protobuf.Root();
 const mqMessageProtobufRoot = mqMessageProtobufRootInstance.loadSync(
-  path.join(__dirname, '..', '..', '..', 'protos', 'mq_message.proto'),
+  path.join(__dirname, '..', '..', '..', '..', 'protos', 'mq_message.proto'),
   { keepCase: true }
 );
 
@@ -41,10 +41,7 @@ export function serializeMqMessage(message) {
   let messageBuffer;
   switch (message.type) {
     case messageTypes.CONSENT_REQUEST: {
-      const {
-        request_message,
-        ...messageJson
-      } = message;
+      const { request_message, ...messageJson } = message;
       const dataUrlParsedRequestMessage = parseDataURL(request_message);
       let requestMessageDataUrlPrefix;
       let requestMessageBuffer;
