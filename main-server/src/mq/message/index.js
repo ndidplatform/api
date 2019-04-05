@@ -36,6 +36,11 @@ const mqMessageProtobufRoot = mqMessageProtobufRootInstance.loadSync(
 const ConsentRequestMqMessage = mqMessageProtobufRoot.lookupType(
   'ConsentRequestMqMessage'
 );
+const AsDataResponseMqMessage = mqMessageProtobufRoot.lookupType(
+  'AsDataResponseMqMessage'
+);
+
+const dataUrlRegex = /(^\s*data:\s*([a-z]+\/[a-z0-9-+.]+(\s*;\s*[a-z-]+=[a-z0-9-]+)?)?(\s*;\s*base64)?\s*,\s*)([a-z0-9!$&',()*+;=\-._~:@/?%\s]*)\s*$/i;
 
 export function serializeMqMessage(message) {
   let messageBuffer;
@@ -46,11 +51,15 @@ export function serializeMqMessage(message) {
       let requestMessageDataUrlPrefix;
       let requestMessageBuffer;
       if (dataUrlParsedRequestMessage != null) {
-        // Convert request message with data URL format to Buffer for transfer over MQ
-        // In case it is base64 encoded, MQ message payload size is reduced
-        requestMessageDataUrlPrefix = request_message.split(',')[0];
-        requestMessageBuffer = dataUrlParsedRequestMessage.body;
-      } else {
+        const match = request_message.match(dataUrlRegex);
+        if (match[4] && match[4].endsWith('base64')) {
+          // Convert request message with data URL format to Buffer for transfer over MQ
+          // In case it is base64 encoded, MQ message payload size is reduced
+          requestMessageDataUrlPrefix = match[1];
+          requestMessageBuffer = dataUrlParsedRequestMessage.body;
+        }
+      }
+      if (!requestMessageDataUrlPrefix && !requestMessageBuffer) {
         messageJson.request_message = request_message;
       }
       const request_json = JSON.stringify(messageJson);
@@ -63,6 +72,35 @@ export function serializeMqMessage(message) {
         consentRequestMqMessageObject
       );
       messageBuffer = ConsentRequestMqMessage.encode(protoMessage).finish();
+      break;
+    }
+    case messageTypes.AS_DATA_RESPONSE: {
+      const { data, ...messageJson } = message;
+      const dataUrlParsedData = parseDataURL(data);
+      let dataDataUrlPrefix;
+      let dataBuffer;
+      if (dataUrlParsedData != null) {
+        const match = data.match(dataUrlRegex);
+        if (match[4] && match[4].endsWith('base64')) {
+          // Convert data with data URL format to Buffer for transfer over MQ
+          // In case it is base64 encoded, MQ message payload size is reduced
+          dataDataUrlPrefix = match[1];
+          dataBuffer = dataUrlParsedData.body;
+        }
+      }
+      if (!dataDataUrlPrefix && !dataBuffer) {
+        messageJson.data = data;
+      }
+      const request_json = JSON.stringify(messageJson);
+      const asDataResponseMqMessageObject = {
+        request_json,
+        data_data_url_prefix: dataDataUrlPrefix,
+        data_bytes: dataBuffer,
+      };
+      const protoMessage = AsDataResponseMqMessage.create(
+        asDataResponseMqMessageObject
+      );
+      messageBuffer = AsDataResponseMqMessage.encode(protoMessage).finish();
       break;
     }
     default: {
@@ -90,9 +128,21 @@ export function deserializeMqMessage(messageType, messageBuffer) {
       if (request_message_data_url_prefix && request_message_bytes) {
         message = {
           ...message,
-          request_message: `${request_message_data_url_prefix},${request_message_bytes.toString(
+          request_message: `${request_message_data_url_prefix}${request_message_bytes.toString(
             'base64'
           )}`,
+        };
+      }
+      break;
+    }
+    case messageTypes.AS_DATA_RESPONSE: {
+      const decodedMessage = AsDataResponseMqMessage.decode(messageBuffer);
+      const { request_json, data_data_url_prefix, data_bytes } = decodedMessage;
+      message = JSON.parse(request_json);
+      if (data_data_url_prefix && data_bytes) {
+        message = {
+          ...message,
+          data: `${data_data_url_prefix}${data_bytes.toString('base64')}`,
         };
       }
       break;

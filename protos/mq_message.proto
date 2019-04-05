@@ -13,3 +13,9 @@ message ConsentRequestMqMessage {
   string request_message_data_url_prefix = 2;
   bytes request_message_bytes = 3;
 }
+
+message AsDataResponseMqMessage {
+  string request_json = 1;
+  string data_data_url_prefix = 2;
+  bytes data_bytes = 3;
+}
