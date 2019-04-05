@@ -52,6 +52,8 @@ IMPROVEMENTS:
 - Use `scan` stream instead of `keys` for redis operations.
 - Use `unlink` (if available - redis 4 or later) instead of `del` for redis delete by key operations.
 - Add error callback when error occurs at MQ.
+- Reduce MQ message size if `request_message` is in data URL format with base64 encoded data when sending request from RP to IdP.
+- Reduce MQ message size if `data` is in data URL format with base64 encoded data when AS send data response back to RP.
 
 BUG FIXES:
 
