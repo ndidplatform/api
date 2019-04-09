@@ -77,7 +77,7 @@ export async function checkCallbackUrls() {
 async function testSignCallback(url, publicKey, isMaster) {
   const body = {
     node_id: config.nodeId,
-    request_message: TEST_MESSAGE,
+    request_message: TEST_MESSAGE_BASE_64,
     request_message_hash: hash(TEST_MESSAGE),
     hash_method: 'SHA256',
     key_type: 'RSA',
