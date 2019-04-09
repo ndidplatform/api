@@ -53,7 +53,7 @@ async function checkIdpListCondition({
   min_idp,
   idp_id_list,
   mode,
-  supported_request_message_type_list,
+  supported_request_message_data_url_type_list,
 }) {
   if (idp_id_list.length !== 0 && idp_id_list.length < min_idp) {
     throw new CustomError({
@@ -80,7 +80,7 @@ async function checkIdpListCondition({
     min_aal,
     idp_id_list,
     mode,
-    supported_request_message_type_list,
+    supported_request_message_data_url_type_list,
   });
 
   if (min_idp !== 0) {
@@ -94,7 +94,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
-          supported_request_message_type_list,
+          supported_request_message_data_url_type_list,
         },
       });
     }
@@ -109,7 +109,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
-          supported_request_message_type_list,
+          supported_request_message_data_url_type_list,
         },
       });
     }
@@ -124,7 +124,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
-          supported_request_message_type_list,
+          supported_request_message_data_url_type_list,
         },
       });
     }
@@ -346,7 +346,7 @@ export async function createRequest(
       min_idp,
       idp_id_list,
       mode,
-      supported_request_message_type_list: requestMessageMimeType
+      supported_request_message_data_url_type_list: requestMessageMimeType
         ? [requestMessageMimeType]
         : undefined,
     });
