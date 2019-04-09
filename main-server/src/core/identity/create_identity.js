@@ -268,10 +268,30 @@ async function createIdentityInternalAsync(
 ) {
   try {
     let min_idp;
+    let requestMode;
     if (mode === 2) {
       min_idp = 0;
+      requestMode = 2;
     } else if (mode === 3) {
-      min_idp = existingNamespace && existingIdentifier ? 1 : 0;
+      if (existingNamespace && existingIdentifier) {
+        min_idp = 1;
+
+        const idpNodes = await tendermintNdid.getIdpNodes({
+          namespace: existingNamespace,
+          identifier: existingIdentifier,
+        });
+        requestMode = 2;
+        for (let i = 0; i < idpNodes.length; i++) {
+          const { mode_list } = idpNodes[i];
+          if (mode_list.includes(3)) {
+            requestMode = 3;
+            break;
+          }
+        }
+      } else {
+        min_idp = 0;
+        requestMode = 3;
+      }
     }
 
     const identity = {
@@ -325,7 +345,7 @@ async function createIdentityInternalAsync(
           min_aal: 1,
           min_idp,
           request_timeout: 86400,
-          mode,
+          mode: requestMode,
           purpose: 'RegisterIdentity',
         },
         {
