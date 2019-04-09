@@ -147,8 +147,7 @@ export async function createIdentity(createIdentityParams) {
           } else {
             if (reference_group_code !== identityReferenceGroupCode) {
               throw new CustomError({
-                // FIXME
-                message: 'Multiple reference group in identity list',
+                errorType: errorType.MULTIPLE_REFERENCE_GROUP_IN_IDENTITY_LIST,
               });
             }
           }

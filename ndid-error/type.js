@@ -232,6 +232,10 @@ module.exports = {
     code: 10049,
     message: 'Tendermint mempool is full',
   },
+  NO_MODE_AVAILABLE: {
+    code: 10050,
+    message: 'No mode available',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
@@ -599,6 +603,11 @@ module.exports = {
   IDENTITY_TO_MERGE_TO_DOES_NOT_EXIST: {
     code: 20068,
     message: 'Identity to merge to does not exist',
+    clientError: true,
+  },
+  MULTIPLE_REFERENCE_GROUP_IN_IDENTITY_LIST: {
+    code: 20069,
+    message: 'Multiple reference group in identity list',
     clientError: true,
   },
 

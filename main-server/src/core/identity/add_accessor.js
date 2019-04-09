@@ -144,8 +144,7 @@ export async function addAccessor(addAccessorParams) {
       mode = 2;
     } else {
       throw new CustomError({
-        message: 'no available mode',
-        // FIXME
+        errorType: errorType.NO_MODE_AVAILABLE,
       });
     }
 

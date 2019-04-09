@@ -131,8 +131,7 @@ export async function revokeAccessor(revokeAccessorParams) {
       mode = 2;
     } else {
       throw new CustomError({
-        message: 'no available mode',
-        // FIXME
+        errorType: errorType.NO_MODE_AVAILABLE,
       });
     }
 

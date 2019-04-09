@@ -129,8 +129,7 @@ export async function addIdentity(addIdentityParams) {
         if (identityReferenceGroupCode != null) {
           if (reference_group_code !== identityReferenceGroupCode) {
             throw new CustomError({
-              // FIXME
-              message: 'Multiple reference group in identity list',
+              errorType: errorType.MULTIPLE_REFERENCE_GROUP_IN_IDENTITY_LIST,
             });
           }
         }
@@ -150,8 +149,7 @@ export async function addIdentity(addIdentityParams) {
       mode = 2;
     } else {
       throw new CustomError({
-        message: 'no available mode',
-        // FIXME
+        errorType: errorType.NO_MODE_AVAILABLE,
       });
     }
 
