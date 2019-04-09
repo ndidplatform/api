@@ -23,7 +23,6 @@
 import EventEmitter from 'events';
 
 import CustomError from 'ndid-error/custom_error';
-import errorType from 'ndid-error/type';
 import logger from '../../logger';
 
 import * as tendermint from '../../tendermint';
@@ -35,13 +34,11 @@ import * as lt from '../../utils/long_timeout';
 import * as config from '../../config';
 import { getErrorObjectForClient } from '../../utils/error';
 import * as cacheDb from '../../db/cache';
-import privateMessageType from '../../mq/message/type';
 
 import { delegateToWorker } from '../../master-worker-interface/server';
 import { broadcastRemoveRequestTimeoutScheduler } from '../../master-worker-interface/client';
 
 import MODE from '../../mode';
-import ROLE from '../../role';
 import { getFunction } from '../../functions';
 
 export * from './create_request';
