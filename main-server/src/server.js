@@ -217,6 +217,11 @@ async function initialize() {
       }
       if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         await coreCommon.resumeTimeoutScheduler(nodeIds);
+        const retryTransactions = await cacheDb.getAllRetryTendermintTransaction(config.nodeId);
+        retryTransactions.forEach(async (txHash, data) => {
+          tendermint.transact(data);
+          await cacheDb.removeRetryTendermintTransaction(config.nodeId, txHash);
+        });
       }
     }
 

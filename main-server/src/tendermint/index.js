@@ -336,6 +336,7 @@ async function processExpectedTx(txHash, result, fromEvent) {
           handleTransactFail(null, retVal.error, txHash);
         }
       }
+      await cacheDb.removeRetryTendermintTransaction(config.nodeId, txHash);
       if (getTxResultCallbackFn != null) {
         if (callbackAdditionalArgs != null) {
           await getTxResultCallbackFn(callbackFnName)(
