@@ -45,6 +45,7 @@ import { sha256, randomBase64Bytes } from '../utils/crypto';
 import * as node from '../node';
 import MODE from '../mode';
 import * as config from '../config';
+import { notifyError } from '../core/common';
 
 const tendermintProtobufRootInstance = new protobuf.Root();
 const tendermintProtobufRoot = tendermintProtobufRootInstance.loadSync(
@@ -330,6 +331,9 @@ async function processExpectedTx(txHash, result, fromEvent) {
         ) {
           await handleBlockchainDisabled(transactParams);
           retVal = { chainDisabledRetryLater: true };
+        }
+        if(mempoolFullOrOutOfToken(retVal.error)) {
+          handleTransactFail(null, retVal.error, txHash);
         }
       }
       if (getTxResultCallbackFn != null) {
@@ -953,6 +957,61 @@ export async function query(fnName, params, height) {
   }
 }
 
+//========================== retry ===========================
+
+function mempoolFullOrOutOfToken(error) {
+  //TODO mempool full is not have code yet
+  return (error.errorType.code === errorType.ABCI_NOT_ENOUGH_TOKEN.code
+    || error.errorType.code === errorType
+  );
+}
+
+function dontRetry() {
+  return false;
+}
+
+async function handleTransactFail(args, error, txHash) {
+  //TODO get backoff time
+  const retryBackoff = 2000;
+  if(!args) {
+    args = await cacheDb.getRetryTendermintTransaction(config.nodeId, txHash);
+    if(args === null) return;
+  }
+  const {
+    nodeId,
+    fnName,
+    params,
+    callbackFnName,
+    callbackAdditionalArgs,
+    useMasterKey,
+    saveForRetryOnChainDisabled,
+    retryOnFail,
+    counter,
+  } = args;
+  notifyError({
+    nodeId,
+    getCallbackUrlFnName: config.role + '.getErrorCallbackUrl',
+    action: 'tendermintTx:' + fnName,
+    error: error,
+  }),
+  setTimeout(async () => {
+    transact({
+      nodeId,
+      fnName,
+      params,
+      callbackFnName,
+      callbackAdditionalArgs,
+      useMasterKey,
+      saveForRetryOnChainDisabled,
+      retryOnFail,
+      counter,
+    });
+    await cacheDb.removeRetryTendermintTransaction(config.nodeId, txHash);
+  }, retryBackoff);
+}
+
+//=====================================================
+
 /**
  *
  * @param {Object} transactParams
@@ -973,6 +1032,8 @@ export async function transact({
   callbackAdditionalArgs,
   useMasterKey = false,
   saveForRetryOnChainDisabled = false,
+  retryOnFail = false,
+  counter = 0,
 }) {
   if (nodeId == null || nodeId == '') {
     throw new CustomError({
@@ -1039,7 +1100,20 @@ export async function transact({
   };
   expectedTx[txHash] = metadata;
   incrementExpectedTxsCount();
-  await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, metadata);
+  await Promise.all([
+    cacheDb.setExpectedTxMetadata(config.nodeId, txHash, metadata),
+    cacheDb.setRetryTendermintTransaction(config.nodeId, txHash, {
+      nodeId,
+      fnName,
+      params,
+      callbackFnName,
+      callbackAdditionalArgs,
+      useMasterKey,
+      saveForRetryOnChainDisabled,
+      retryOnFail,
+      counter,
+    })
+  ]);
   expectedTxMetricsData[txHash] = {
     startTime: Date.now(),
     functionName: fnName,
@@ -1051,6 +1125,7 @@ export async function transact({
       promise = new Promise((resolve, reject) =>
         txEventEmitter.once(txHash, ({ error, ...rest }) => {
           if (error) {
+            //check retry
             reject(error);
             return;
           }
@@ -1080,7 +1155,18 @@ export async function transact({
       await handleBlockchainDisabled(transactParams);
       return { chainDisabledRetryLater: true };
     } else {
-      throw error;
+      const retryConditionFunction = retryOnFail
+        ? mempoolFullOrOutOfToken
+        : dontRetry;
+      if(retryConditionFunction(error, counter)) {
+        handleTransactFail({
+          ...arguments,
+          counter: counter++,
+        }, error, txHash);
+      }
+      else {
+        throw error;
+      }
     }
   }
 }

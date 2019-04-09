@@ -407,7 +407,8 @@ export async function closeRequest(
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
-  saveForRetryOnChainDisabled
+  saveForRetryOnChainDisabled,
+  retryOnFail = false,
 ) {
   try {
     const result = await tendermint.transact({
@@ -417,6 +418,7 @@ export async function closeRequest(
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
+      retryOnFail,
     });
     return result;
   } catch (error) {
@@ -433,7 +435,8 @@ export async function timeoutRequest(
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
-  saveForRetryOnChainDisabled
+  saveForRetryOnChainDisabled,
+  retryOnFail = false,
 ) {
   try {
     // FIXME: should not check here?
@@ -449,6 +452,7 @@ export async function timeoutRequest(
         callbackFnName,
         callbackAdditionalArgs,
         saveForRetryOnChainDisabled,
+        retryOnFail,
       });
     }
   } catch (error) {
@@ -464,7 +468,8 @@ export async function setDataReceived(
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
-  saveForRetryOnChainDisabled
+  saveForRetryOnChainDisabled,
+  retryOnFail = true,
 ) {
   try {
     const result = await tendermint.transact({
@@ -478,6 +483,7 @@ export async function setDataReceived(
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
+      retryOnFail,
     });
     return result;
   } catch (error) {

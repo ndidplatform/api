@@ -370,6 +370,7 @@ export async function processMessage(nodeId, messageId, message) {
               synchronous: false,
               sendCallbackToClient: false,
               saveForRetryOnChainDisabled: true,
+              retryOnFail: true,
             }
           );
         }

@@ -262,7 +262,8 @@ export async function timeoutRequest(nodeId, requestId) {
           requestId,
         },
       ],
-      true
+      true,
+      true,
     );
   } catch (error) {
     logger.error({

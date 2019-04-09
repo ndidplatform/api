@@ -1000,3 +1000,45 @@ export function removeAllTasksFromRequestProcessQueue(nodeId, requestId) {
     key: requestId,
   });
 }
+
+export function getAllRetryTendermintTransaction(nodeId) {
+  return db.getAll({
+    nodeId,
+    dbName,
+    name: 'tendermintTransaction',
+    keyName: 'txHash',
+    valueName: 'data',
+  });
+}
+
+export function getRetryTendermintTransaction(nodeId, txHash) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'tendermintTransaction',
+    keyName: 'txHash',
+    key: txHash,
+  });
+}
+
+export function setRetryTendermintTransaction(nodeId, txHash, data) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'tendermintTransaction',
+    keyName: 'txHash',
+    key: txHash,
+    valueName: 'data',
+    value: data,
+  });
+}
+
+export function removeRetryTendermintTransaction(nodeId, txHash) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'tendermintTransaction',
+    keyName: 'txHash',
+    key: txHash,
+  });
+}
