@@ -36,6 +36,8 @@ import { role } from '../../node';
 
 export * from './create_identity';
 export * from './create_identity_after_consent';
+export * from './add_identity';
+export * from './add_identity_after_consent';
 export * from './update_ial';
 export * from './add_accessor';
 export * from './add_accessor_after_consent';
@@ -164,6 +166,8 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
     let callbackFnName;
     if (requestDetail.purpose === 'RegisterIdentity') {
       callbackFnName = 'identity.createIdentityAfterCloseConsentRequest';
+    } else if (requestDetail.purpose === 'AddIdentity') {
+      callbackFnName = 'identity.addIdentityAfterCloseConsentRequest';
     } else if (requestDetail.purpose === 'AddAccessor') {
       callbackFnName = 'identity.addAccessorAfterCloseConsentRequest';
     } else if (requestDetail.purpose === 'RevokeAccessor') {
@@ -198,7 +202,7 @@ export async function afterIdentityOperationSuccess(
   { error, type, reference_group_code, accessor_id, reference_id, request_id },
   { nodeId }
 ) {
-  if (error && (type == null || accessor_id == null || reference_id == null)) {
+  if (error && (type == null || reference_id == null)) {
     await common.notifyError({
       nodeId,
       getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
@@ -234,6 +238,8 @@ export async function afterIdentityOperationSuccess(
   let typeCallback;
   if (type === 'RegisterIdentity') {
     typeCallback = 'create_identity_result';
+  } else if (type === 'AddIdentity') {
+    typeCallback = 'add_identity_result';
   } else if (type === 'AddAccessor') {
     typeCallback = 'add_accessor_result';
   } else if (type === 'RevokeAccessor') {

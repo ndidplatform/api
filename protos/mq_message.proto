@@ -1,8 +1,21 @@
 syntax = "proto3";
 
 message MqMessage {
-  bytes message = 1;
-  bytes signature = 2;
-  string receiver_node_id = 3;
-  string sender_node_id = 4;
+  string message_type = 1;
+  bytes message = 2;
+  bytes signature = 3;
+  string receiver_node_id = 4;
+  string sender_node_id = 5;
+}
+
+message ConsentRequestMqMessage {
+  string request_json = 1;
+  string request_message_data_url_prefix = 2;
+  bytes request_message_bytes = 3;
+}
+
+message AsDataResponseMqMessage {
+  string request_json = 1;
+  string data_data_url_prefix = 2;
+  bytes data_bytes = 3;
 }

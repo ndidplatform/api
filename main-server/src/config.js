@@ -159,6 +159,15 @@ export const createIdentityRequestMessageTemplateFilepath =
     'create_identity.mustache'
   );
 
+export const addIdentityRequestMessageTemplateFilepath =
+  process.env.ADD_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH ||
+  path.join(
+    __dirname,
+    '..',
+    'request_message_templates',
+    'add_identity.mustache'
+  );
+
 export const addAccessorRequestMessageTemplateFilepath =
   process.env.ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH ||
   path.join(

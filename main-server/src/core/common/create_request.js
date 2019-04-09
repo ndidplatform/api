@@ -27,6 +27,8 @@ import {
   removeTimeoutScheduler,
 } from '.';
 
+import parseDataURL from 'data-urls';
+
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as mq from '../../mq';
@@ -51,6 +53,7 @@ async function checkIdpListCondition({
   min_idp,
   idp_id_list,
   mode,
+  supported_request_message_data_url_type_list,
 }) {
   if (idp_id_list.length !== 0 && idp_id_list.length < min_idp) {
     throw new CustomError({
@@ -77,6 +80,7 @@ async function checkIdpListCondition({
     min_aal,
     idp_id_list,
     mode,
+    supported_request_message_data_url_type_list,
   });
 
   if (min_idp !== 0) {
@@ -90,6 +94,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
+          supported_request_message_data_url_type_list,
         },
       });
     }
@@ -104,6 +109,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
+          supported_request_message_data_url_type_list,
         },
       });
     }
@@ -118,6 +124,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
+          supported_request_message_data_url_type_list,
         },
       });
     }
@@ -190,17 +197,13 @@ async function checkAsListCondition({
             errorType: errorType.SOME_AS_DO_NOT_PROVIDE_SERVICE,
           });
         }
-
-        potential_as_list = potential_as_list.filter((as_node) => {
-          return as_node.accepted_namespace_list.includes(namespace);
-        });
-
-        if (potential_as_list.length !== as_id_list.length) {
-          throw new CustomError({
-            errorType: errorType.SOME_AS_DO_NOT_ACCEPT_NAMESPACE,
-          });
-        }
       }
+
+      // filter out ASes that don't support required namespace
+      potential_as_list = potential_as_list.filter((as_node) => {
+        return as_node.accepted_namespace_list.includes(namespace);
+      });
+
       //filter min_ial, min_aal
       potential_as_list = potential_as_list.filter((as_node) => {
         return as_node.min_ial <= min_ial && as_node.min_aal <= min_aal;
@@ -329,6 +332,12 @@ export async function createRequest(
       });
     }
 
+    const dataUrlParsedRequestMessage = parseDataURL(request_message);
+    let requestMessageMimeType;
+    if (dataUrlParsedRequestMessage != null) {
+      requestMessageMimeType = dataUrlParsedRequestMessage.mimeType.toString();
+    }
+
     const receivers = await checkIdpListCondition({
       namespace,
       identifier,
@@ -337,6 +346,9 @@ export async function createRequest(
       min_idp,
       idp_id_list,
       mode,
+      supported_request_message_data_url_type_list: requestMessageMimeType
+        ? [requestMessageMimeType]
+        : undefined,
     });
 
     if (data_request_list != null && data_request_list.length > 0) {

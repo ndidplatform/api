@@ -326,6 +326,14 @@ export default {
           check_string: { type: 'string', minLength: 1 },
           signed_check_string: { type: 'string', minLength: 1 },
           master_signed_check_string: { type: 'string', minLength: 1 },
+          supported_request_message_type_list: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            minItems: 1,
+            uniqueItems: true,
+          },
         },
         anyOf: [
           {
@@ -485,7 +493,7 @@ export default {
         required: ['reference_id', 'callback_url', 'accessor_id'],
       },
     },
-    '/identity/:namespace/:identifier/revoke': {
+    '/identity/:namespace/:identifier/association_revoke': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {

@@ -17,6 +17,7 @@ BREAKING CHANGES:
     - POST `/identity/requests/close` to `/identity_request/request_close`
     - POST `/utility/private_messages/housekeeping` to `/utility/private_message_removal`
     - POST `/utility/private_messages/:request_id/housekeeping` to `/utility/private_message_removal/:request_id`
+  - Change `request_message` value type of DPKI sign callback from plain text string to base64 encoded data string
 - Change logging format.
 - Remove logging to file feature.
 - Remove logging environment variable options
@@ -27,7 +28,9 @@ BREAKING CHANGES:
 - Add logging environment variable option
   - `LOG_PRETTY_PRINT`: Default to `true` in development (`NODE_ENV` not set or set to `development`), `false` otherwise. If not set to `true`, log will be in JSON format.
 - Change allowed `LOG_LEVEL` option values to `fatal`, `error`, `warn`, `info`, `debug` and `trace`.
-- Change MQ message protocol format - change message ID type from int64 to string.
+- Change MQ message protocol format
+  - Change message ID type from int64 to string.
+  - Add message type.
 
 IMPROVEMENTS:
 
@@ -49,6 +52,8 @@ IMPROVEMENTS:
 - Use `scan` stream instead of `keys` for redis operations.
 - Use `unlink` (if available - redis 4 or later) instead of `del` for redis delete by key operations.
 - Add error callback when error occurs at MQ.
+- Reduce MQ message size if `request_message` is in data URL format with base64 encoded data when sending request from RP to IdP.
+- Reduce MQ message size if `data` is in data URL format with base64 encoded data when AS send data response back to RP.
 
 BUG FIXES:
 

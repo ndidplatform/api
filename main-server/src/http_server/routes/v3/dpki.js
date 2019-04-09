@@ -92,6 +92,7 @@ router.post('/node/update', validateBody, async (req, res, next) => {
       check_string,
       signed_check_string,
       master_signed_check_string,
+      supported_request_message_type_list,
     } = req.body;
 
     //should we allow organization to update their node's name?

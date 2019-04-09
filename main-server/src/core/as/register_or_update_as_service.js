@@ -59,7 +59,7 @@ export async function registerOrUpdateASService(
 
   try {
     //check already register?
-    let registeredASList = await tendermintNdid.getAsNodesByServiceId({
+    const registeredASList = await tendermintNdid.getAsNodesByServiceId({
       service_id,
     });
     let isRegisterd = false;
@@ -79,6 +79,24 @@ export async function registerOrUpdateASService(
           errorType: errorType.MISSING_ARGUMENTS,
         });
       }
+    }
+
+    if (accepted_namespace_list != null) {
+      const allowedNamespaces = await tendermintNdid.getNamespaceList();
+      accepted_namespace_list.forEach((namespace) => {
+        if (
+          allowedNamespaces.find(
+            ({ namespace: allowedNamespace }) => allowedNamespace === namespace
+          ) == null
+        ) {
+          throw new CustomError({
+            errorType: errorType.INVALID_NAMESPACE,
+            details: {
+              namespace,
+            },
+          });
+        }
+      });
     }
 
     if (synchronous) {

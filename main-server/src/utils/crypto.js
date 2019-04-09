@@ -101,7 +101,7 @@ export function publicDecrypt(publicKey, ciphertext) {
 
 /**
  *
- * @param {string} message
+ * @param {string|Buffer} message
  * @param {({key: string, passphrase: string}|string)} privateKey
  * 
  * @returns {Buffer} signature
@@ -117,14 +117,14 @@ export function createSignature(message, privateKey) {
  * 
  * @param {Buffer} signature
  * @param {(string|Object)} publicKey 
- * @param {string} plainText 
+ * @param {string|Buffer} dataToVerify 
  * 
  * @returns {boolean}
  */
-export function verifySignature(signature, publicKey, plainText) {
+export function verifySignature(signature, publicKey, dataToVerify) {
   return crypto
     .createVerify('SHA256')
-    .update(plainText)
+    .update(dataToVerify)
     .verify(publicKey, signature);
 }
 

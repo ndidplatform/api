@@ -154,6 +154,40 @@ export async function registerIdentity(
   }
 }
 
+export async function addIdentity(
+  { reference_group_code, new_identity_list, request_id },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    new_identity_list = new_identity_list.map(({ namespace, identifier }) => ({
+      identity_namespace: namespace,
+      identity_identifier_hash: utils.hash(identifier),
+    }));
+
+    const result = await tendermint.transact({
+      nodeId,
+      fnName: 'AddIdentity',
+      params: {
+        reference_group_code,
+        new_identity_list,
+        request_id,
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot add identity to blockchain',
+      cause: error,
+    });
+  }
+}
+
 export async function addAccessor(
   {
     reference_group_code,
@@ -798,14 +832,13 @@ export async function getIdpNodes({
   min_ial,
   min_aal,
   node_id_list,
+  supported_request_message_type_list,
+  mode_list,
 }) {
   if (reference_group_code && (namespace || identifier)) {
     throw new Error(
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
-  }
-  if (!reference_group_code && (!namespace || !identifier)) {
-    throw new Error('Missing args');
   }
   try {
     const result = await tendermint.query('GetIdpNodes', {
@@ -815,6 +848,8 @@ export async function getIdpNodes({
       min_ial,
       min_aal,
       node_id_list,
+      supported_request_message_type_list,
+      mode_list,
     });
     return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {
@@ -832,16 +867,14 @@ export async function getIdpNodesInfo({
   min_ial,
   min_aal,
   node_id_list,
+  supported_request_message_type_list,
+  mode_list,
 }) {
   if (reference_group_code && (namespace || identifier)) {
     throw new Error(
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
-  // Commented out for mode 1
-  // if (!reference_group_code && (!namespace || !identifier)) {
-  //   throw new Error('Missing args');
-  // }
   try {
     const result = await tendermint.query('GetIdpNodesInfo', {
       reference_group_code,
@@ -850,6 +883,8 @@ export async function getIdpNodesInfo({
       min_ial,
       min_aal,
       node_id_list,
+      supported_request_message_type_list,
+      mode_list,
     });
     return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {

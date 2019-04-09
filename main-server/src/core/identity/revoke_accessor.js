@@ -131,8 +131,7 @@ export async function revokeAccessor(revokeAccessorParams) {
       mode = 2;
     } else {
       throw new CustomError({
-        message: 'no available mode',
-        // FIXME
+        errorType: errorType.NO_MODE_AVAILABLE,
       });
     }
 
@@ -230,7 +229,7 @@ async function createRequestToRevokeAccessor(
           namespace,
           identifier,
           reference_id,
-          idp_id_list: [nodeId], //only self
+          idp_id_list: [],
           callback_url: 'SYS_GEN_REVOKE_ACCESSOR',
           data_request_list: [],
           request_message:

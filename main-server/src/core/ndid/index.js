@@ -379,12 +379,41 @@ export async function disableNode({ node_id }) {
   }
 }
 
-export async function addNamespace({ namespace, description }) {
+export async function addNamespace({
+  namespace,
+  description,
+  allowed_identifier_count_in_reference_group,
+}) {
   try {
     await tendermint.transact({
       nodeId: config.nodeId,
       fnName: 'AddNamespace',
-      params: { namespace, description },
+      params: {
+        namespace,
+        description,
+        allowed_identifier_count_in_reference_group,
+      },
+    });
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function updateNamespace({
+  namespace,
+  description,
+  allowed_identifier_count_in_reference_group,
+}) {
+  try {
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'UpdateNamespace',
+      params: {
+        namespace,
+        description,
+        allowed_identifier_count_in_reference_group,
+      },
     });
   } catch (error) {
     // TODO:
