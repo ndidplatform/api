@@ -22,6 +22,8 @@
 
 import { getIdentityInfo } from '.';
 
+import uuidv4 from 'uuid/v4';
+
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
@@ -106,7 +108,7 @@ export async function addAccessor(addAccessorParams) {
     }
 
     if (!accessor_id) {
-      accessor_id = utils.randomBase64Bytes(32);
+      accessor_id = uuidv4();
     }
 
     let checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(

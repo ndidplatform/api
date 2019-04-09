@@ -22,6 +22,8 @@
 
 import { getIdentityInfo } from '.';
 
+import uuidv4 from 'uuid/v4';
+
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
@@ -160,7 +162,7 @@ export async function createIdentity(createIdentityParams) {
       })
     );
     if (reference_group_code == null) {
-      reference_group_code = utils.randomBase64Bytes(32);
+      reference_group_code = uuidv4();
     }
 
     //check ial
@@ -175,7 +177,7 @@ export async function createIdentity(createIdentityParams) {
     }
 
     if (!accessor_id) {
-      accessor_id = utils.randomBase64Bytes(32);
+      accessor_id = uuidv4();
     }
 
     const checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(
