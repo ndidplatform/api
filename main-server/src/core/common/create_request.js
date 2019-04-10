@@ -39,6 +39,7 @@ import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
+import { dataUrlRegex } from '../../data_url';
 
 import logger from '../../logger';
 
@@ -336,6 +337,16 @@ export async function createRequest(
     let requestMessageMimeType;
     if (dataUrlParsedRequestMessage != null) {
       requestMessageMimeType = dataUrlParsedRequestMessage.mimeType.toString();
+      const match = request_message.match(dataUrlRegex);
+      if (
+        match[4] &&
+        match[4].endsWith('base64') &&
+        request_message.search(/\s/) >= 0
+      ) {
+        throw new CustomError({
+          errorType: errorType.DATA_URL_BASE64_MUST_NOT_CONTAIN_WHITESPACES,
+        });
+      }
     }
 
     const receivers = await checkIdpListCondition({

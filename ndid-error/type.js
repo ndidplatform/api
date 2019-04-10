@@ -610,6 +610,11 @@ module.exports = {
     message: 'Multiple reference group in identity list',
     clientError: true,
   },
+  DATA_URL_BASE64_MUST_NOT_CONTAIN_WHITESPACES: {
+    code: 20070,
+    message: 'Data URL with base64 encoded data must not contain whitespaces',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
