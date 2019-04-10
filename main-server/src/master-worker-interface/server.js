@@ -96,10 +96,10 @@ export function initialize() {
   });
 }
 
-function getMasterId(call, done) {
+function getMasterId(call, callback) {
   const { workerId } = call.request;
   logger.debug({ message: 'Get master ID', workerId });
-  done({ masterId });
+  callback(null, { masterId });
 }
 
 function subscribe(call) {
@@ -416,6 +416,12 @@ export function remoteFnCallToWorkers({
 }
 
 export function shutdown() {
+  // Send signal to all connected workers
+  workerList.forEach((worker) => {
+    worker.connection.write({
+      eventName: 'master_shuting_down',
+    });
+  });
   server.tryShutdown(() => {
     logger.info({ message: 'Job master gRPC server shutdown' });
   });

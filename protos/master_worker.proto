@@ -26,6 +26,7 @@ message OutboundMessage {
   string fnName = 1;
   bytes args = 2;
   string grpcRefId = 3;
+  string eventName = 4;
 }
 
 message RemainingTasks {

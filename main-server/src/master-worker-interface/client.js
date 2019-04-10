@@ -275,10 +275,15 @@ function broadcastRemoveRequestTimeoutSchedulerInternal({ nodeId, requestId }) {
 }
 
 async function onRecvData(data) {
-  const { fnName, args, grpcRefId } = data;
+  const { fnName, args, grpcRefId, eventName } = data;
+
+  if (eventName === 'master_shuting_down') {
+    handleMasterShutdown();
+    return;
+  }
 
   logger.debug({
-    message: 'Worker received delegated work',
+    message: 'Worker received call from master',
     fnName,
     args,
     grpcRefId,
@@ -334,30 +339,42 @@ function handleShutdownTimerJobs(jobsDetail) {
   })();
 }
 
+function handleMasterShutdown() {
+  logger.info({
+    message: 'Received master shutdown',
+    masterId: knownMasterId,
+  });
+  knownMasterId = null;
+}
+
 export async function shutdown() {
   logger.info({
     message: 'Shutting down worker',
     workerId,
   });
   if (client) {
-    await gRPCRetry(workerStopping)();
+    if (knownMasterId != null) {
+      await gRPCRetry(workerStopping)();
+    }
     closing = true;
     await waitForAllJobDone();
-    const pendingTasks = [
-      {
-        type: 'requestTimeout',
-        tasks: getPendingRequestTimeout(),
-      },
-      {
-        type: 'callback',
-        tasks: getPendingCallback(),
-      },
-      {
-        type: 'mq',
-        tasks: getPendingOutboundMessageMsgIds(),
-      },
-    ];
-    await handleShutdownTimerJobs(pendingTasks);
+    if (knownMasterId != null) {
+      const pendingTasks = [
+        {
+          type: 'requestTimeout',
+          tasks: getPendingRequestTimeout(),
+        },
+        {
+          type: 'callback',
+          tasks: getPendingCallback(),
+        },
+        {
+          type: 'mq',
+          tasks: getPendingOutboundMessageMsgIds(),
+        },
+      ];
+      await handleShutdownTimerJobs(pendingTasks);
+    }
     if (workerSubscribeChannel) {
       workerSubscribeChannel.on('error', () => {
         //handle to suppress error log
