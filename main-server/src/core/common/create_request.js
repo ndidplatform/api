@@ -202,7 +202,7 @@ async function checkAsListCondition({
 
       // filter out ASes that don't support required namespace
       potential_as_list = potential_as_list.filter((as_node) => {
-        return as_node.accepted_namespace_list.includes(namespace);
+        return as_node.supported_namespace_list.includes(namespace);
       });
 
       //filter min_ial, min_aal

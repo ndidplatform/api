@@ -645,7 +645,7 @@ export async function signASData(
  * @param {number} params.min_aal
  * @param {number} params.min_ial
  * @param {string} params.service_id
- * @param {string[]} params.accepted_namespace_list
+ * @param {string[]} params.supported_namespace_list
  * @param {string} nodeId
  * @param {string} callbackFnName
  * @param {Array} callbackAdditionalArgs
@@ -681,7 +681,7 @@ export async function registerServiceDestination(
  * @param {number} params.min_aal
  * @param {number} params.min_ial
  * @param {string} params.service_id
- * @param {string[]} params.accepted_namespace_list
+ * @param {string[]} params.supported_namespace_list
  * @param {string} nodeId
  * @param {string} callbackFnName
  * @param {Array} callbackAdditionalArgs

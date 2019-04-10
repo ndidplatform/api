@@ -232,7 +232,7 @@ export default {
           url: {
             $ref: 'defs#/definitions/url',
           },
-          accepted_namespace_list: {
+          supported_namespace_list: {
             type: 'array',
             items: { type: 'string' },
             uniqueItems: true,

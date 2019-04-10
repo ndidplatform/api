@@ -499,7 +499,7 @@ export async function getServiceDetail(nodeId, service_id) {
     if (service == null) return null;
     return {
       url: await getServiceCallbackUrl(nodeId, service_id),
-      accepted_namespace_list: service.accepted_namespace_list,
+      supported_namespace_list: service.supported_namespace_list,
       min_ial: service.min_ial,
       min_aal: service.min_aal,
       active: service.active,
