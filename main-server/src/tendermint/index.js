@@ -961,9 +961,8 @@ export async function query(fnName, params, height) {
 //========================== retry ===========================
 
 function mempoolFullOrOutOfToken(error) {
-  //TODO mempool full is not have code yet
   return (error.errorType.code === errorType.ABCI_NOT_ENOUGH_TOKEN.code
-    || error.errorType.code === errorType
+    || error.errorType.code === errorType.TENDERMINT_MEMPOOL_FULL
   );
 }
 
