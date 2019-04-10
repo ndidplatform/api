@@ -102,7 +102,7 @@ async function notifyIdentityModification({
       getCallbackUrlFnName, // 'idp.getIdentityModificationNotificationCallbackUrl'
       body: {
         node_id: nodeId,
-        type: 'identity_change_notification',
+        type: 'identity_modification_notification',
         reference_group_code: referenceGroupCode,
         action,
         actor_node_id: actorNodeId,
