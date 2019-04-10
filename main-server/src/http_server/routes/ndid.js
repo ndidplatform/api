@@ -228,12 +228,14 @@ router.post('/namespaces', validateBody, async (req, res, next) => {
       namespace,
       description,
       allowed_identifier_count_in_reference_group,
+      allowed_active_identifier_count_in_reference_group,
     } = req.body;
 
     await ndid.addNamespace({
       namespace,
       description,
       allowed_identifier_count_in_reference_group,
+      allowed_active_identifier_count_in_reference_group,
     });
     res.status(201).end();
     next();
@@ -248,12 +250,14 @@ router.post('/namespaces/:namespace', validateBody, async (req, res, next) => {
     const {
       description,
       allowed_identifier_count_in_reference_group,
+      allowed_active_identifier_count_in_reference_group,
     } = req.body;
 
     await ndid.updateNamespace({
       namespace,
       description,
       allowed_identifier_count_in_reference_group,
+      allowed_active_identifier_count_in_reference_group,
     });
     res.status(204).end();
     next();
