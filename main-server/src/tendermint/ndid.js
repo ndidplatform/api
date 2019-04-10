@@ -60,7 +60,11 @@ export async function setMqAddresses(
 }
 
 export async function updateNode(
-  { public_key, master_public_key },
+  {
+    public_key,
+    master_public_key,
+    supported_request_message_data_url_type_list,
+  },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
@@ -73,6 +77,7 @@ export async function updateNode(
       params: {
         public_key,
         master_public_key,
+        supported_request_message_data_url_type_list,
       },
       callbackFnName,
       callbackAdditionalArgs,

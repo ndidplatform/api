@@ -326,7 +326,7 @@ export default {
           check_string: { type: 'string', minLength: 1 },
           signed_check_string: { type: 'string', minLength: 1 },
           master_signed_check_string: { type: 'string', minLength: 1 },
-          supported_request_message_type_list: {
+          supported_request_message_data_url_type_list: {
             type: 'array',
             items: {
               type: 'string',

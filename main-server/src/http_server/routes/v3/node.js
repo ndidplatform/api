@@ -92,11 +92,11 @@ router.post('/update', validateBody, async (req, res, next) => {
       check_string,
       signed_check_string,
       master_signed_check_string,
-      supported_request_message_type_list,
+      supported_request_message_data_url_type_list,
     } = req.body;
 
     //should we allow organization to update their node's name?
-    let result = await node.updateNode(
+    const result = await node.updateNode(
       {
         node_id,
         reference_id,
@@ -108,6 +108,7 @@ router.post('/update', validateBody, async (req, res, next) => {
         check_string,
         signed_check_string,
         master_signed_check_string,
+        supported_request_message_data_url_type_list,
       },
       { synchronous: false }
     );
