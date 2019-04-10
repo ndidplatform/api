@@ -164,7 +164,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
     parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
       const identityRequestsToProcess = {}; // For clean up closed or timed out create identity requests
       const incomingRequestsToProcessUpdate = {};
-      const identityChangesToCheckForNotification = [];
+      const identityModificationsToCheckForNotification = [];
 
       for (let i = 0; i < transactions.length; i++) {
         const transaction = transactions[i];
@@ -172,12 +172,13 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         if (
           [
             'RegisterIdentity',
+            'AddIdentity',
             'AddAccessor',
             'RevokeAccessor',
             'RevokeIdentityAssociation',
           ].includes(transaction.fnName)
         ) {
-          identityChangesToCheckForNotification.push(transaction);
+          identityModificationsToCheckForNotification.push(transaction);
           continue;
         }
 
@@ -240,28 +241,28 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
       });
 
       logger.debug({
-        message: 'Identity changes to check for notification',
-        identityChangesToCheckForNotification,
+        message: 'Identity modifications/changes to check for notification',
+        identityModificationsToCheckForNotification,
       });
 
       if (config.mode === MODE.STANDALONE) {
-        identityChangesToCheckForNotification.forEach((transaction) => {
-          identity.handleIdentityChangeTransactions({
+        identityModificationsToCheckForNotification.forEach((transaction) => {
+          identity.handleIdentityModificationTransactions({
             nodeId,
             getCallbackUrlFnName:
-              'idp.getIdentityChangeNotificationCallbackUrl',
+              'idp.getIdentityModificationNotificationCallbackUrl',
             transaction,
           });
         });
       } else if (config.mode === MODE.MASTER) {
-        identityChangesToCheckForNotification.forEach((transaction) => {
+        identityModificationsToCheckForNotification.forEach((transaction) => {
           delegateToWorker({
-            fnName: 'identity.handleIdentityChangeTransactions',
+            fnName: 'identity.handleIdentityModificationTransactions',
             args: [
               {
                 nodeId,
                 getCallbackUrlFnName:
-                  'idp.getIdentityChangeNotificationCallbackUrl',
+                  'idp.getIdentityModificationNotificationCallbackUrl',
                 transaction,
               },
             ],

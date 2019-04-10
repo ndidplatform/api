@@ -50,7 +50,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
     const {
       incoming_request_url,
       incoming_request_status_update_url,
-      identity_change_notification_url,
+      identity_modification_notification_url,
       accessor_encrypt_url,
       error_url,
     } = req.body;
@@ -58,7 +58,7 @@ router.post('/callback', validateBody, async (req, res, next) => {
     await idp.setCallbackUrls({
       incoming_request_url,
       incoming_request_status_update_url,
-      identity_change_notification_url,
+      identity_modification_notification_url,
       accessor_encrypt_url,
       error_url,
     });

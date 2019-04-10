@@ -112,8 +112,8 @@ export function getFunction(fnName) {
       return idp.getIncomingRequestCallbackUrl;
     case 'idp.getIncomingRequestStatusUpdateCallbackUrl':
       return idp.getIncomingRequestStatusUpdateCallbackUrl;
-    case 'idp.getIdentityChangeNotificationCallbackUrl':
-      return idp.getIdentityChangeNotificationCallbackUrl;
+    case 'idp.getIdentityModificationNotificationCallbackUrl':
+      return idp.getIdentityModificationNotificationCallbackUrl;
     case 'as.getCallbackUrls':
       return as.getCallbackUrls;
     case 'as.getErrorCallbackUrl':
@@ -124,8 +124,8 @@ export function getFunction(fnName) {
       return as.getIncomingRequestStatusUpdateCallbackUrl;
     case 'proxy.getErrorCallbackUrl':
       return proxy.getErrorCallbackUrl;
-    case 'identity.handleIdentityChangeTransactions':
-      return identity.handleIdentityChangeTransactions;
+    case 'identity.handleIdentityModificationTransactions':
+      return identity.handleIdentityModificationTransactions;
     // Core module - process task by request ID
     case 'rp.processMessage':
       return rp.processMessage;

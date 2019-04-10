@@ -32,7 +32,7 @@ const reference_group_code_base64 = Buffer.from(
   'reference_group_code'
 ).toString('base64');
 
-export async function handleIdentityChangeTransactions({
+export async function handleIdentityModificationTransactions({
   nodeId,
   getCallbackUrlFnName,
   transaction,
@@ -70,7 +70,7 @@ export async function handleIdentityChangeTransactions({
   ) {
     action = 'revoke_identity_association';
   }
-  notifyIdentityChange({
+  notifyIdentityModification({
     getCallbackUrlFnName,
     nodeId,
     referenceGroupCode,
@@ -79,7 +79,7 @@ export async function handleIdentityChangeTransactions({
   });
 }
 
-async function notifyIdentityChange({
+async function notifyIdentityModification({
   getCallbackUrlFnName,
   nodeId,
   referenceGroupCode,
@@ -87,18 +87,19 @@ async function notifyIdentityChange({
   actorNodeId,
 }) {
   logger.debug({
-    message: 'Notifying identity change through callback',
+    message: 'Notifying identity modification/change through callback',
   });
   try {
     const callbackUrl = await getFunction(getCallbackUrlFnName)();
     if (callbackUrl == null) {
       logger.warn({
-        message: 'Identity change notification callback URL has not been set',
+        message:
+          'Identity modification notification callback URL has not been set',
       });
       return;
     }
     await callbackToClient({
-      getCallbackUrlFnName, // 'idp.getIdentityChangeNotificationCallbackUrl'
+      getCallbackUrlFnName, // 'idp.getIdentityModificationNotificationCallbackUrl'
       body: {
         node_id: nodeId,
         type: 'identity_change_notification',
@@ -110,7 +111,8 @@ async function notifyIdentityChange({
     });
   } catch (error) {
     const err = new CustomError({
-      message: 'Error sending identity change notification callback',
+      message:
+        'Error sending identity modification/change notification callback',
       cause: error,
       details: {
         nodeId,
