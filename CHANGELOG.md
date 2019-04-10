@@ -17,6 +17,10 @@ BREAKING CHANGES:
     - POST `/identity/requests/close` to `/identity_request/request_close`
     - POST `/utility/private_messages/housekeeping` to `/utility/private_message_removal`
     - POST `/utility/private_messages/:request_id/housekeeping` to `/utility/private_message_removal/:request_id`
+    - POST `/dpki/node/create` to `/node/create`
+    - POST `/dpki/node/update` to `/node/update`
+    - GET `/dpki/node/callback` to `/node/callback`
+    - POST `/dpki/node/callback` to `/node/callback`
   - Change `request_message` value type of DPKI sign callback from plain text string to base64 encoded data string
 - Change logging format.
 - Remove logging to file feature.

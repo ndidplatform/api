@@ -26,7 +26,7 @@ import * as idp from './core/idp';
 import * as as from './core/as';
 import * as proxy from './core/proxy';
 import * as identity from './core/identity';
-import * as dpki from './core/dpki';
+import * as node from './core/node';
 import * as tendermint from './tendermint';
 import * as mq from './mq';
 import * as callback from './callback';
@@ -97,8 +97,8 @@ export function getFunction(fnName) {
       return identity.revokeIdentityAssociationAfterCloseConsentAndBlockchain;
     case 'rp.processAsDataAfterSetDataReceived':
       return rp.processAsDataAfterSetDataReceived;
-    case 'dpki.updateNodeInternalAsyncAfterBlockchain':
-      return dpki.updateNodeInternalAsyncAfterBlockchain;
+    case 'node.updateNodeInternalAsyncAfterBlockchain':
+      return node.updateNodeInternalAsyncAfterBlockchain;
     // Callback
     case 'rp.getCallbackUrls':
       return rp.getCallbackUrls;

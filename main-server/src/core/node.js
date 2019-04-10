@@ -84,7 +84,7 @@ async function updateNodeInternalAsync(
       await tendermintNdid.updateNode(
         { public_key, master_public_key },
         nodeId,
-        'dpki.updateNodeInternalAsyncAfterBlockchain',
+        'node.updateNodeInternalAsyncAfterBlockchain',
         [{ nodeId, reference_id, callback_url }, { synchronous }]
       );
     } else {

@@ -25,13 +25,13 @@ import express from 'express';
 import { validateBody } from '../middleware/validation';
 import { ndidOnlyHandler } from '../middleware/role_handler';
 import * as ndid from '../../../core/ndid';
-import * as dpki from '../../../core/dpki';
+import * as node from '../../../core/node';
 import * as externalCryptoService from '../../../external_crypto_service';
 
 const router = express.Router();
 
 router.post(
-  '/node/create',
+  '/create',
   ndidOnlyHandler,
   validateBody,
   async (req, res, next) => {
@@ -77,7 +77,7 @@ router.post(
   }
 );
 
-router.post('/node/update', validateBody, async (req, res, next) => {
+router.post('/update', validateBody, async (req, res, next) => {
   try {
     const {
       node_id,
@@ -96,7 +96,7 @@ router.post('/node/update', validateBody, async (req, res, next) => {
     } = req.body;
 
     //should we allow organization to update their node's name?
-    let result = await dpki.updateNode(
+    let result = await node.updateNode(
       {
         node_id,
         reference_id,
@@ -119,7 +119,7 @@ router.post('/node/update', validateBody, async (req, res, next) => {
   }
 });
 
-router.get('/node/callback', async (req, res, next) => {
+router.get('/callback', async (req, res, next) => {
   try {
     const urls = await externalCryptoService.getCallbackUrls();
 
@@ -134,7 +134,7 @@ router.get('/node/callback', async (req, res, next) => {
   }
 });
 
-router.post('/node/callback', validateBody, async (req, res, next) => {
+router.post('/callback', validateBody, async (req, res, next) => {
   try {
     const { sign_url, master_sign_url, decrypt_url } = req.body;
 

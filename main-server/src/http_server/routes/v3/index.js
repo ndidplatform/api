@@ -28,7 +28,7 @@ import asRouter from './as';
 import identityRouter from './identity';
 import identityRequestRouter from './identity_request';
 import utilityRouter from './utility';
-import dpkiRouter from './dpki';
+import nodeRouter from './node';
 
 const router = express.Router();
 
@@ -38,6 +38,6 @@ router.use('/as', asRouter);
 router.use('/identity', identityRouter);
 router.use('/identity_request', identityRequestRouter);
 router.use('/utility', utilityRouter);
-router.use('/dpki', dpkiRouter);
+router.use('/node', nodeRouter);
 
 export default router;

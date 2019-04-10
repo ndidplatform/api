@@ -277,7 +277,7 @@ export default {
         },
       },
     },
-    '/dpki/node/create': {
+    '/node/create': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
@@ -310,7 +310,7 @@ export default {
         ],
       },
     },
-    '/dpki/node/update': {
+    '/node/update': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
@@ -331,7 +331,6 @@ export default {
             items: {
               type: 'string',
             },
-            minItems: 1,
             uniqueItems: true,
           },
         },
@@ -357,7 +356,7 @@ export default {
         ],
       },
     },
-    '/dpki/node/callback': {
+    '/node/callback': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
