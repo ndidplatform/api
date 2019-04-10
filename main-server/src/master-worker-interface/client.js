@@ -83,7 +83,7 @@ function watchForNextConnectivityStateChange() {
         if (closing) return;
         if (error) {
           logger.error({
-            message: 'Worker service gRPC connectivity state watch error',
+            message: 'Master process gRPC connectivity state watch error',
             err: error,
           });
         } else {
@@ -91,7 +91,7 @@ function watchForNextConnectivityStateChange() {
             .getChannel()
             .getConnectivityState();
           logger.debug({
-            message: 'Worker service gRPC connectivity state changed',
+            message: 'Master process gRPC connectivity state changed',
             connectivityState,
             newConnectivityState,
           });
@@ -99,8 +99,7 @@ function watchForNextConnectivityStateChange() {
           // on reconnect (IF watchForNextConnectivityStateChange() this called after first waitForReady)
           if (connectivityState === 1 && newConnectivityState === 2) {
             logger.info({
-              message: 'Worker service gRPC reconnect',
-              workerId,
+              message: 'Master process gRPC reconnect',
             });
             await checkMasterId();
             subscribe();
@@ -149,6 +148,10 @@ function gRPCRetry(fn, timeout = config.callToMasterRetryTimeout) {
 }
 
 export async function initialize() {
+  logger.info({
+    message: 'Connecting to master process',
+    workerId,
+  });
   client = new proto.MasterWorker(
     MASTER_SERVER_ADDRESS,
     grpc.credentials.createInsecure(),
@@ -165,6 +168,9 @@ export async function initialize() {
   await checkMasterId();
   subscribe();
   watchForNextConnectivityStateChange();
+  logger.info({
+    message: 'Connected to master process',
+  });
 }
 
 async function checkMasterId() {
@@ -173,6 +179,10 @@ async function checkMasterId() {
     // TODO: clear everything as if process is restarted
   }
   knownMasterId = masterId;
+  logger.info({
+    message: 'Master ID',
+    masterId: knownMasterId,
+  });
 }
 
 function getMasterId() {

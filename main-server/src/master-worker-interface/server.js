@@ -93,6 +93,7 @@ export function initialize() {
 
   logger.info({
     message: 'Master gRPC server initialzed',
+    masterId,
   });
 }
 
