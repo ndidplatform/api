@@ -333,7 +333,7 @@ async function processExpectedTx(txHash, result, fromEvent) {
           retVal = { chainDisabledRetryLater: true };
         }
         if(mempoolFullOrOutOfToken(retVal.error)) {
-          handleTransactFail(null, retVal.error, txHash);
+          handleTransactFailMidFlow(null, retVal.error, txHash);
         }
       }
       await cacheDb.removeRetryTendermintTransaction(config.nodeId, txHash);
@@ -970,9 +970,18 @@ function dontRetry() {
   return false;
 }
 
-async function handleTransactFail(args, error, txHash) {
+async function handleTransactFailMidFlow(args, error, txHash) {
   //TODO get backoff time
-  const retryBackoff = 2000;
+  const backoff = new ExponentialBackoff({
+    min: 5000,
+    max: 180000,
+    factor: 2,
+    jitter: 0.2,
+  });
+  let retryBackoff;
+  for(let i = 0 ; i < counter ; i++) {
+    retryBackoff = backoff.next();
+  }
   if(!args) {
     args = await cacheDb.getRetryTendermintTransaction(config.nodeId, txHash);
     if(args === null) return;
@@ -1125,7 +1134,6 @@ export async function transact({
       promise = new Promise((resolve, reject) =>
         txEventEmitter.once(txHash, ({ error, ...rest }) => {
           if (error) {
-            //check retry
             reject(error);
             return;
           }
@@ -1159,7 +1167,7 @@ export async function transact({
         ? mempoolFullOrOutOfToken
         : dontRetry;
       if(retryConditionFunction(error, counter)) {
-        handleTransactFail({
+        handleTransactFailMidFlow({
           ...arguments,
           counter: counter++,
         }, error, txHash);
