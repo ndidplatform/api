@@ -20,6 +20,8 @@
  *
  */
 
+import operationTypes from './operation_type';
+
 import * as tendermintNdid from '../../tendermint/ndid';
 import { callbackToClient } from '../../callback';
 import { getFunction } from '../../functions';
@@ -55,13 +57,17 @@ export async function handleIdentityChangeTransactions({
   }
 
   let action;
-  if (transaction.fnName === 'RegisterIdentity') {
+  if (transaction.fnName === operationTypes.REGISTER_IDENTITY) {
     action = 'create_identity';
-  } else if (transaction.fnName === 'AddAccessor') {
+  } else if (transaction.fnName === operationTypes.ADD_IDENTITY) {
+    action = 'add_identity';
+  } else if (transaction.fnName === operationTypes.ADD_ACCESSOR) {
     action = 'add_accessor';
-  } else if (transaction.fnName === 'RevokeAccessor') {
+  } else if (transaction.fnName === operationTypes.REVOKE_ACCESSOR) {
     action = 'revoke_accessor';
-  } else if (transaction.fnName === 'RevokeIdentityAssociation') {
+  } else if (
+    transaction.fnName === operationTypes.REVOKE_IDENTITY_ASSOCIATION
+  ) {
     action = 'revoke_identity_association';
   }
   notifyIdentityChange({
