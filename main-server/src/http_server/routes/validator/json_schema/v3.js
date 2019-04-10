@@ -181,7 +181,7 @@ export default {
           incoming_request_status_update_url: {
             $ref: 'defs#/definitions/url',
           },
-          identity_change_notification_url: {
+          identity_modification_notification_url: {
             $ref: 'defs#/definitions/url',
           },
           accessor_encrypt_url: {

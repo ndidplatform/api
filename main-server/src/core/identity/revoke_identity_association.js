@@ -22,6 +22,8 @@
 
 import { getIdentityInfo } from '.';
 
+import operationTypes from './operation_type';
+
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
@@ -119,7 +121,7 @@ export async function revokeIdentityAssociation(
     }
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
-      type: 'RevokeIdentityAssociation',
+      type: operationTypes.REVOKE_IDENTITY_ASSOCIATION,
       request_id,
     });
 
@@ -167,7 +169,7 @@ async function revokeAssociationInternalAsync(
     const min_idp = mode === 3 ? 1 : 0;
 
     const identity = {
-      type: 'RevokeIdentityAssociation',
+      type: operationTypes.REVOKE_IDENTITY_ASSOCIATION,
       namespace,
       identifier,
       reference_id,
@@ -209,7 +211,7 @@ async function revokeAssociationInternalAsync(
           min_idp,
           request_timeout: 86400,
           mode,
-          purpose: 'RevokeIdentityAssociation',
+          purpose: operationTypes.REVOKE_IDENTITY_ASSOCIATION,
         },
         {
           synchronous: false,

@@ -36,6 +36,7 @@
     "protobufjs": "^6.8.8",
     "simple-backoff": "^1.1.0",
     "source-map-support": "^0.5.9",
+    "uuid": "^3.3.2",
     "ws": "^5.2.2"
   },
   "devDependencies": {

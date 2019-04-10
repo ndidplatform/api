@@ -171,6 +171,10 @@ export default {
             type: 'integer',
             minimum: -1,
           },
+          allowed_active_identifier_count_in_reference_group: {
+            type: 'integer',
+            minimum: -1,
+          },
         },
         required: ['namespace'],
       },
@@ -181,6 +185,10 @@ export default {
         properties: {
           description: { type: 'string' },
           allowed_identifier_count_in_reference_group: {
+            type: 'integer',
+            minimum: -1,
+          },
+          allowed_active_identifier_count_in_reference_group: {
             type: 'integer',
             minimum: -1,
           },

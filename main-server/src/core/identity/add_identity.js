@@ -22,6 +22,8 @@
 
 import { getIdentityInfo } from '.';
 
+import operationTypes from './operation_type';
+
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
@@ -159,7 +161,7 @@ export async function addIdentity(addIdentityParams) {
     }
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
-      type: 'AddIdentity',
+      type: operationTypes.ADD_IDENTITY,
       request_id,
     });
 
@@ -218,7 +220,7 @@ async function addIdentityInternalAsync(
     }
 
     const identity = {
-      type: 'AddIdentity',
+      type: operationTypes.ADD_IDENTITY,
       namespace,
       identifier,
       identity_list,
@@ -261,7 +263,7 @@ async function addIdentityInternalAsync(
           min_idp,
           request_timeout: 86400,
           mode,
-          purpose: 'AddIdentity',
+          purpose: operationTypes.ADD_IDENTITY,
         },
         {
           synchronous: false,

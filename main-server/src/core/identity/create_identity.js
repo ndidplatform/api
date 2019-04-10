@@ -22,6 +22,10 @@
 
 import { getIdentityInfo } from '.';
 
+import uuidv4 from 'uuid/v4';
+
+import operationTypes from './operation_type';
+
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
@@ -160,7 +164,7 @@ export async function createIdentity(createIdentityParams) {
       })
     );
     if (reference_group_code == null) {
-      reference_group_code = utils.randomBase64Bytes(32);
+      reference_group_code = uuidv4();
     }
 
     //check ial
@@ -175,7 +179,7 @@ export async function createIdentity(createIdentityParams) {
     }
 
     if (!accessor_id) {
-      accessor_id = utils.randomBase64Bytes(32);
+      accessor_id = uuidv4();
     }
 
     const checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(
@@ -196,7 +200,7 @@ export async function createIdentity(createIdentityParams) {
     }
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
-      type: 'RegisterIdentity',
+      type: operationTypes.REGISTER_IDENTITY,
       request_id,
       accessor_id,
     });
@@ -295,7 +299,7 @@ async function createIdentityInternalAsync(
     }
 
     const identity = {
-      type: 'RegisterIdentity',
+      type: operationTypes.REGISTER_IDENTITY,
       reference_group_code,
       new_identity_list,
       ial,
@@ -346,7 +350,7 @@ async function createIdentityInternalAsync(
           min_idp,
           request_timeout: 86400,
           mode: requestMode,
-          purpose: 'RegisterIdentity',
+          purpose: operationTypes.REGISTER_IDENTITY,
         },
         {
           synchronous: false,

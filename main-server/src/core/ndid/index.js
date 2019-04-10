@@ -383,6 +383,7 @@ export async function addNamespace({
   namespace,
   description,
   allowed_identifier_count_in_reference_group,
+  allowed_active_identifier_count_in_reference_group,
 }) {
   try {
     await tendermint.transact({
@@ -392,6 +393,7 @@ export async function addNamespace({
         namespace,
         description,
         allowed_identifier_count_in_reference_group,
+        allowed_active_identifier_count_in_reference_group,
       },
     });
   } catch (error) {
@@ -404,6 +406,7 @@ export async function updateNamespace({
   namespace,
   description,
   allowed_identifier_count_in_reference_group,
+  allowed_active_identifier_count_in_reference_group,
 }) {
   try {
     await tendermint.transact({
@@ -413,6 +416,7 @@ export async function updateNamespace({
         namespace,
         description,
         allowed_identifier_count_in_reference_group,
+        allowed_active_identifier_count_in_reference_group,
       },
     });
   } catch (error) {

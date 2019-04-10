@@ -22,6 +22,10 @@
 
 import { getIdentityInfo } from '.';
 
+import uuidv4 from 'uuid/v4';
+
+import operationTypes from './operation_type';
+
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
@@ -106,7 +110,7 @@ export async function addAccessor(addAccessorParams) {
     }
 
     if (!accessor_id) {
-      accessor_id = utils.randomBase64Bytes(32);
+      accessor_id = uuidv4();
     }
 
     let checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(
@@ -154,7 +158,7 @@ export async function addAccessor(addAccessorParams) {
     }
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
-      type: 'AddAccessor',
+      type: operationTypes.ADD_ACCESSOR,
       request_id,
       accessor_id,
     });
@@ -217,7 +221,7 @@ async function addAccessorInternalAsync(
     }
 
     const identity = {
-      type: 'AddAccessor',
+      type: operationTypes.ADD_ACCESSOR,
       namespace,
       identifier,
       accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
@@ -262,7 +266,7 @@ async function addAccessorInternalAsync(
           min_idp,
           request_timeout: 86400,
           mode,
-          purpose: 'AddAccessor',
+          purpose: operationTypes.ADD_ACCESSOR,
         },
         {
           synchronous: false,
