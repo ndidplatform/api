@@ -36,7 +36,7 @@ import { getPendingOutboundMessageMsgIds } from '../mq';
 
 import { getFunction } from '../functions';
 
-import { wait, randomBase64Bytes } from '../utils';
+import { wait, randomBase64Bytes, readFileAsync } from '../utils';
 import logger from '../logger';
 
 import * as config from '../config';
@@ -152,9 +152,27 @@ export async function initialize() {
     message: 'Connecting to master process',
     workerId,
   });
+  let grpcSslRootCert;
+  let grpcSslKey;
+  let grpcSslCert;
+  if (
+    config.grpcSslRootCertFilePath != null &&
+    config.grpcSslKeyFilePath != null &&
+    config.grpcSslCertFilePath != null
+  ) {
+    grpcSslRootCert = await readFileAsync(config.grpcSslRootCertFilePath);
+    grpcSslKey = await readFileAsync(config.grpcSslKeyFilePath);
+    grpcSslCert = await readFileAsync(config.grpcSslCertFilePath);
+  }
   client = new proto.MasterWorker(
     MASTER_SERVER_ADDRESS,
-    grpc.credentials.createInsecure(),
+    grpcSslRootCert != null && grpcSslKey != null && grpcSslCert != null
+      ? grpc.credentials.createSsl(
+          grpcSslRootCert,
+          grpcSslKey,
+          grpcSslCert
+        )
+      : grpc.credentials.createInsecure(),
     {
       'grpc.keepalive_time_ms': config.grpcPingInterval,
       'grpc.keepalive_timeout_ms': config.grpcPingTimeout,

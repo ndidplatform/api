@@ -30,7 +30,7 @@ import { getArgsProtobuf } from './message';
 
 import { getFunction } from '../functions';
 
-import { randomBase64Bytes } from '../utils';
+import { randomBase64Bytes, readFileAsync } from '../utils';
 import CustomError from 'ndid-error/custom_error';
 import logger from '../logger';
 
@@ -65,7 +65,20 @@ let grpcCallRefIdCounter = 0;
 
 const grpcCall = {};
 
-export function initialize() {
+export async function initialize() {
+  let grpcSslRootCert;
+  let grpcSslKey;
+  let grpcSslCert;
+  if (
+    config.grpcSslRootCertFilePath != null &&
+    config.grpcSslKeyFilePath != null &&
+    config.grpcSslCertFilePath != null
+  ) {
+    grpcSslRootCert = await readFileAsync(config.grpcSslRootCertFilePath);
+    grpcSslKey = await readFileAsync(config.grpcSslKeyFilePath);
+    grpcSslCert = await readFileAsync(config.grpcSslCertFilePath);
+  }
+
   server = new grpc.Server({
     'grpc.keepalive_time_ms': config.grpcPingInterval,
     'grpc.keepalive_timeout_ms': config.grpcPingTimeout,
@@ -88,7 +101,17 @@ export function initialize() {
     workerStoppingCall,
   });
 
-  server.bind(MASTER_SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
+  server.bind(
+    MASTER_SERVER_ADDRESS,
+    grpcSslRootCert != null && grpcSslKey != null && grpcSslCert != null
+      ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
+          {
+            cert_chain: grpcSslCert,
+            private_key: grpcSslKey,
+          },
+        ])
+      : grpc.ServerCredentials.createInsecure()
+  );
   server.start();
 
   logger.info({

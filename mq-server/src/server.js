@@ -37,6 +37,8 @@ import errorType from 'ndid-error/type';
 
 import * as prometheus from './prometheus';
 
+import { readFileAsync } from './utils';
+
 import logger from './logger';
 
 import { version } from './version';
@@ -190,7 +192,7 @@ function getInfo(call, callback) {
   });
 }
 
-function initialize() {
+async function initialize() {
   if (config.prometheusEnabled) {
     prometheus.initialize();
   }
@@ -269,6 +271,19 @@ function initialize() {
     message: 'Message queue initialized',
   });
 
+  let grpcSslRootCert;
+  let grpcSslKey;
+  let grpcSslCert;
+  if (
+    config.grpcSslRootCertFilePath != null &&
+    config.grpcSslKeyFilePath != null &&
+    config.grpcSslCertFilePath != null
+  ) {
+    grpcSslRootCert = await readFileAsync(config.grpcSslRootCertFilePath);
+    grpcSslKey = await readFileAsync(config.grpcSslKeyFilePath);
+    grpcSslCert = await readFileAsync(config.grpcSslCertFilePath);
+  }
+
   server.addService(proto.MessageQueue.service, {
     subscribeToRecvMessages,
     sendAckForRecvMessage,
@@ -276,7 +291,17 @@ function initialize() {
     getInfo,
   });
 
-  server.bind(SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
+  server.bind(
+    SERVER_ADDRESS,
+    grpcSslRootCert != null && grpcSslKey != null && grpcSslCert != null
+      ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
+          {
+            cert_chain: grpcSslCert,
+            private_key: grpcSslKey,
+          },
+        ])
+      : grpc.ServerCredentials.createInsecure()
+  );
 
   server.start();
 
