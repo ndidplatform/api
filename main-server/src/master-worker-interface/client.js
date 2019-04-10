@@ -354,6 +354,8 @@ function handleMasterShutdown() {
     message: 'Received master shutdown',
     masterId: knownMasterId,
   });
+  // TODO: clear everything as if process is restarted
+
   knownMasterId = null;
 }
 
