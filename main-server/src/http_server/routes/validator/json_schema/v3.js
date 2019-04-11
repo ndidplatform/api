@@ -33,6 +33,10 @@ export default {
         type: 'string',
         enum: ['1', '2.1', '2.2', '3'],
       },
+      modeString: {
+        type: 'string',
+        enum: ['2', '3'],
+      },
       url: {
         type: 'string',
         format: 'uri',
@@ -71,6 +75,9 @@ export default {
           },
           min_aal: {
             $ref: 'defs#/definitions/aalString',
+          },
+          mode: {
+            $ref: 'defs#/definitions/modeString',
           },
         },
       },
