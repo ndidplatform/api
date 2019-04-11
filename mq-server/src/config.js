@@ -48,6 +48,8 @@ export const grpcExpectedClientPingInterval = process.env
   ? parseInt(process.env.GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS)
   : 30000;
 
+export const grpcSsl = process.env.GRPC_SSL === 'true';
+
 export const grpcSslRootCertFilePath = process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
   ? process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
   : env === 'development'

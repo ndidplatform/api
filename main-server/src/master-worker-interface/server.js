@@ -69,11 +69,7 @@ export async function initialize() {
   let grpcSslRootCert;
   let grpcSslKey;
   let grpcSslCert;
-  if (
-    config.grpcSslRootCertFilePath != null &&
-    config.grpcSslKeyFilePath != null &&
-    config.grpcSslCertFilePath != null
-  ) {
+  if (config.grpcSsl) {
     grpcSslRootCert = await readFileAsync(config.grpcSslRootCertFilePath);
     grpcSslKey = await readFileAsync(config.grpcSslKeyFilePath);
     grpcSslCert = await readFileAsync(config.grpcSslCertFilePath);
@@ -103,7 +99,7 @@ export async function initialize() {
 
   server.bind(
     MASTER_SERVER_ADDRESS,
-    grpcSslRootCert != null && grpcSslKey != null && grpcSslCert != null
+    config.grpcSsl
       ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
           {
             cert_chain: grpcSslCert,

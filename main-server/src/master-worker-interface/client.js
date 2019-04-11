@@ -155,23 +155,15 @@ export async function initialize() {
   let grpcSslRootCert;
   let grpcSslKey;
   let grpcSslCert;
-  if (
-    config.grpcSslRootCertFilePath != null &&
-    config.grpcSslKeyFilePath != null &&
-    config.grpcSslCertFilePath != null
-  ) {
+  if (config.grpcSsl) {
     grpcSslRootCert = await readFileAsync(config.grpcSslRootCertFilePath);
     grpcSslKey = await readFileAsync(config.grpcSslKeyFilePath);
     grpcSslCert = await readFileAsync(config.grpcSslCertFilePath);
   }
   client = new proto.MasterWorker(
     MASTER_SERVER_ADDRESS,
-    grpcSslRootCert != null && grpcSslKey != null && grpcSslCert != null
-      ? grpc.credentials.createSsl(
-          grpcSslRootCert,
-          grpcSslKey,
-          grpcSslCert
-        )
+    config.grpcSsl
+      ? grpc.credentials.createSsl(grpcSslRootCert, grpcSslKey, grpcSslCert)
       : grpc.credentials.createInsecure(),
     {
       'grpc.keepalive_time_ms': config.grpcPingInterval,

@@ -24,6 +24,8 @@ import 'source-map-support/register';
 
 import 'dotenv/config';
 
+import './env_var_validate';
+
 import path from 'path';
 import EventEmitter from 'events';
 
@@ -274,11 +276,7 @@ async function initialize() {
   let grpcSslRootCert;
   let grpcSslKey;
   let grpcSslCert;
-  if (
-    config.grpcSslRootCertFilePath != null &&
-    config.grpcSslKeyFilePath != null &&
-    config.grpcSslCertFilePath != null
-  ) {
+  if (config.grpcSsl) {
     grpcSslRootCert = await readFileAsync(config.grpcSslRootCertFilePath);
     grpcSslKey = await readFileAsync(config.grpcSslKeyFilePath);
     grpcSslCert = await readFileAsync(config.grpcSslCertFilePath);
@@ -293,7 +291,7 @@ async function initialize() {
 
   server.bind(
     SERVER_ADDRESS,
-    grpcSslRootCert != null && grpcSslKey != null && grpcSslCert != null
+    config.grpcSsl
       ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
           {
             cert_chain: grpcSslCert,
