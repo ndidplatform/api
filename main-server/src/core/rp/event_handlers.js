@@ -141,17 +141,19 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
     parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
       const requestIdsToProcessUpdate = {};
       await Promise.all(
-        transactions.map(async (transaction) => {
-          const requestId = transaction.args.request_id;
-          if (requestId == null) return;
-          if (requestIdsToProcessUpdate[requestId] != null) return;
-          const requestData = await cacheDb.getRequestData(nodeId, requestId);
-          if (requestData == null) return; // This RP does not concern this request
-          requestIdsToProcessUpdate[requestId] = {
-            callbackUrl: requestData.callback_url,
-            referenceId: requestData.reference_id,
-          };
-        })
+        transactions
+          .filter((transaction) => transaction.success)
+          .map(async (transaction) => {
+            const requestId = transaction.args.request_id;
+            if (requestId == null) return;
+            if (requestIdsToProcessUpdate[requestId] != null) return;
+            const requestData = await cacheDb.getRequestData(nodeId, requestId);
+            if (requestData == null) return; // This RP does not concern this request
+            requestIdsToProcessUpdate[requestId] = {
+              callbackUrl: requestData.callback_url,
+              referenceId: requestData.reference_id,
+            };
+          })
       );
 
       await Promise.all(

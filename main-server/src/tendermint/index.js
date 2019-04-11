@@ -157,10 +157,10 @@ export function loadSavedData() {
 }
 
 export async function initialize() {
-  if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
-    tendermintWsClient.subscribeToNewBlockEvent();
-  }
-  tendermintWsClient.subscribeToTxEvent();
+  // if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+  tendermintWsClient.subscribeToNewBlockEvent();
+  // }
+  // tendermintWsClient.subscribeToTxEvent();
 }
 
 export async function connectWS() {
@@ -531,6 +531,9 @@ function checkForSetLastBlock(parsedTransactionsInBlocks) {
     const transactions = parsedTransactionsInBlocks[i].transactions;
     for (let j = transactions.length - 1; j >= 0; j--) {
       const transaction = transactions[j];
+      if (!transaction.success) {
+        continue;
+      }
       if (transaction.fnName === 'SetLastBlock') {
         if (
           transaction.args.block_height === -1 ||
@@ -547,10 +550,10 @@ function checkForSetLastBlock(parsedTransactionsInBlocks) {
 tendermintWsClient.on('connected', async () => {
   connected = true;
   if (reconnecting) {
-    if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
-      tendermintWsClient.subscribeToNewBlockEvent();
-    }
-    tendermintWsClient.subscribeToTxEvent();
+    // if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+    tendermintWsClient.subscribeToNewBlockEvent();
+    // }
+    // tendermintWsClient.subscribeToTxEvent();
     await tendermintWsPool.waitForAvailableConnection();
     const statusOnSync = await pollStatusUntilSynced();
     if (waitForInitEndedBeforeReady) {
@@ -596,22 +599,47 @@ tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(
     blockHeight,
   });
 
-  const appHash = getAppHashFromNewBlockEvent(result);
+  processTransactionsInBlocks(blockHeight);
 
-  await processNewBlock(blockHeight, appHash);
+  if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+    const appHash = getAppHashFromNewBlockEvent(result);
+    await processNewBlock(blockHeight, appHash);
+  }
   delete cacheBlocks[blockHeight - 1];
 });
 
-tendermintWsClient.on('tx#event', async function handleTxEvent(error, result) {
-  if (syncing !== false) {
-    return;
+// tendermintWsClient.on('tx#event', async function handleTxEvent(error, result) {
+//   if (syncing !== false) {
+//     return;
+//   }
+//   const txBase64 = result.data.value.TxResult.tx;
+//   const txBuffer = Buffer.from(txBase64, 'base64');
+//   const txHash = sha256(txBuffer).toString('hex');
+//   if (expectedTx[txHash] == null) return;
+//   await processExpectedTx(txHash, result, true);
+// });
+
+async function processTransactionsInBlocks(blockHeight) {
+  const parsedTransactionsInBlocks = (await getParsedTxsInBlocks(
+    blockHeight,
+    blockHeight,
+    true
+  )).filter(({ transactions }) => transactions.length >= 0);
+
+  if (parsedTransactionsInBlocks[0] != null) {
+    const { transactions } = parsedTransactionsInBlocks[0];
+    await Promise.all(
+      transactions.map(async ({ txHash, ...transaction }) => {
+        if (expectedTx[txHash] == null) return;
+        await processExpectedTx(
+          txHash,
+          { height: blockHeight, transaction },
+          true
+        );
+      })
+    );
   }
-  const txBase64 = result.data.value.TxResult.tx;
-  const txBuffer = Buffer.from(txBase64, 'base64');
-  const txHash = sha256(txBuffer).toString('hex');
-  if (expectedTx[txHash] == null) return;
-  await processExpectedTx(txHash, result, true);
-});
+}
 
 export async function processMissingBlocks(statusOnSync) {
   const blockHeight = statusOnSync.sync_info.latest_block_height;
@@ -636,46 +664,49 @@ async function processNewBlock(blockHeight, appHash) {
     }
 
     if (lastKnownAppHash !== appHash && missingBlockCount != null) {
+      // messages that arrived before 'NewBlock' event
+      // including messages between the start of missing block's height
+      // and the block before latest block height
+      // (not only just (current height - 1) in case 'NewBlock' events are missing)
+      // NOTE: Tendermint always create an ending empty block. A block with transactions and
+      // a block that signs the previous block which indicates that the previous block is valid
+      const fromHeight = blockHeight - 1 - missingBlockCount;
+      const toHeight = blockHeight - 1;
+
+      let processingBlocksStr;
+      if (fromHeight === toHeight) {
+        processingBlocksStr = `${fromHeight}`;
+      } else {
+        processingBlocksStr = `${fromHeight}-${toHeight}`;
+      }
+      processingBlocks[processingBlocksStr] = null;
+      const blocksToProcess = toHeight - fromHeight + 1;
+      addProcessingBlocksCount(blocksToProcess);
+
+      const parsedTransactionsInBlocks = (await getParsedTxsInBlocks(
+        fromHeight,
+        toHeight,
+        false
+      )).filter(({ transactions }) => transactions.length >= 0);
+      checkForSetLastBlock(parsedTransactionsInBlocks);
+
       if (handleTendermintNewBlock) {
-        // messages that arrived before 'NewBlock' event
-        // including messages between the start of missing block's height
-        // and the block before latest block height
-        // (not only just (current height - 1) in case 'NewBlock' events are missing)
-        // NOTE: Tendermint always create an ending empty block. A block with transactions and
-        // a block that signs the previous block which indicates that the previous block is valid
-        const fromHeight = blockHeight - 1 - missingBlockCount;
-        const toHeight = blockHeight - 1;
-
-        let processingBlocksStr;
-        if (fromHeight === toHeight) {
-          processingBlocksStr = `${fromHeight}`;
-        } else {
-          processingBlocksStr = `${fromHeight}-${toHeight}`;
-        }
-        processingBlocks[processingBlocksStr] = null;
-        const blocksToProcess = toHeight - fromHeight + 1;
-        addProcessingBlocksCount(blocksToProcess);
-
-        const parsedTransactionsInBlocks = (await getParsedTxsInBlocks(
-          fromHeight,
-          toHeight
-        )).filter(({ transactions }) => transactions.length >= 0);
-        checkForSetLastBlock(parsedTransactionsInBlocks);
         await handleTendermintNewBlock(
           fromHeight,
           toHeight,
           parsedTransactionsInBlocks
         );
-        delete processingBlocks[processingBlocksStr];
-        subtractProcessingBlocksCount(blocksToProcess);
       }
+
+      delete processingBlocks[processingBlocksStr];
+      subtractProcessingBlocksCount(blocksToProcess);
     }
     lastKnownAppHash = appHash;
     saveLatestBlockHeight(blockHeight);
   }
 }
 
-async function getParsedTxsInBlocks(fromHeight, toHeight) {
+async function getParsedTxsInBlocks(fromHeight, toHeight, withTxHash) {
   const [blocks, blockResults] = await Promise.all([
     getBlocks(fromHeight, toHeight),
     getBlockResults(fromHeight, toHeight),
@@ -683,30 +714,34 @@ async function getParsedTxsInBlocks(fromHeight, toHeight) {
   const parsedTransactionsInBlocks = blocks.map((block, blockIndex) => {
     const height = parseInt(block.header.height);
 
-    const transactions = getTransactionListFromBlock(block);
+    const transactions = getTransactionListFromBlock(block, withTxHash);
 
-    const successTransactions = transactions
-      .map((transaction, index) => {
+    const transactionsWithDeliverTxResult = transactions.map(
+      (transaction, index) => {
         const deliverTxResult =
           blockResults[blockIndex].results.DeliverTx[index];
-        return {
-          ...transaction,
-          deliverTxResult,
-        };
-      })
-      .filter(({ deliverTxResult }) => {
+
+        let success;
         const successTag = deliverTxResult.tags.find(
           (tag) => tag.key === successBase64
         );
         if (successTag) {
-          return successTag.value === trueBase64;
+          success = successTag.value === trueBase64;
+        } else {
+          success = false;
         }
-        return false;
-      });
+
+        return {
+          ...transaction,
+          deliverTxResult,
+          success,
+        };
+      }
+    );
 
     return {
       height,
-      transactions: successTransactions,
+      transactions: transactionsWithDeliverTxResult,
     };
   });
   return parsedTransactionsInBlocks;
@@ -808,12 +843,10 @@ function getTransactResultFromTx(result, fromEvent) {
     result,
   });
 
-  const height = parseInt(
-    fromEvent ? result.data.value.TxResult.height : result.height
-  );
+  const height = parseInt(result.height);
 
   const deliverTxResult = fromEvent
-    ? result.data.value.TxResult.result
+    ? result.transaction.deliverTxResult
     : result.tx_result;
 
   if (deliverTxResult.log !== 'success') {
@@ -1098,7 +1131,7 @@ async function saveTransactRequestForRetry(transactParams) {
   }
 }
 
-export function getTransactionListFromBlock(block) {
+function getTransactionListFromBlock(block, withTxHash) {
   const txs = block.data.txs; // array of transactions in the block base64 encoded
   // const height = parseInt(block.header.height);
 
@@ -1106,29 +1139,34 @@ export function getTransactionListFromBlock(block) {
     return [];
   }
 
-  const transactions = txs.map((tx) => {
-    const txProtoBuffer = Buffer.from(tx, 'base64');
+  const transactions = txs.map((txBase64) => {
+    const txProtoBuffer = Buffer.from(txBase64, 'base64');
     const txObject = TendermintTx.decode(txProtoBuffer);
     const args = JSON.parse(txObject.params);
+    let txHash;
+    if (withTxHash) {
+      txHash = sha256(txProtoBuffer).toString('hex');
+    }
     return {
       fnName: txObject.method,
       args,
       nodeId: txObject.node_id,
+      txHash,
     };
   });
 
   return transactions;
 }
 
-export function getBlockHeightFromNewBlockHeaderEvent(result) {
+function getBlockHeightFromNewBlockHeaderEvent(result) {
   return parseInt(result.data.value.header.height);
 }
 
-export function getBlockHeightFromNewBlockEvent(result) {
+function getBlockHeightFromNewBlockEvent(result) {
   return parseInt(result.data.value.block.header.height);
 }
 
-export function getAppHashFromNewBlockEvent(result) {
+function getAppHashFromNewBlockEvent(result) {
   return result.data.value.block.header.app_hash;
 }
 

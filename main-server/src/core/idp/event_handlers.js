@@ -168,6 +168,9 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
       for (let i = 0; i < transactions.length; i++) {
         const transaction = transactions[i];
+        if (!transaction.success) {
+          continue;
+        }
 
         if (
           [
