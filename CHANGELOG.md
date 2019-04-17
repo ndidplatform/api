@@ -2,6 +2,16 @@
 
 ## TBD
 
+There are a number of significant changes in this release. Some of major changes:
+
+- Introduces mode 2 which is closely similar to mode 3 but without the need for consent request when modifying identity (e.g. create identity/onboarding, add/revoke accessor) on the platform, instead IdPs will get notifications on what kind of modification of which identity has occured on the platform.
+- Support for multiple namespaces+identifiers or SIDs as a single identity called reference group.
+- API version 1 and 2 have been removed as they are not compatible with multiple SIDs, new mode 2 and 3 flows and other changes such as supported namespaces declared by AS for each service.
+- Changes to API route names to fix route collision issues for example, `/rp/requests/housekeeping/data` has been changed to `/rp/request_data_removal` since it collides with `/rp/requests/:namespace/:identifier`.
+- Load balancing support for high request throughput.
+- Changes to logging.
+- Prometheus support.
+
 BREAKING CHANGES:
 
 - Remove API v1.
