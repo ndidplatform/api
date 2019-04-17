@@ -158,6 +158,8 @@ export function getFunction(fnName) {
       return tendermint.loadExpectedTxOnWorker;
     case 'tendermint.retryBacklogTransactRequest':
       return tendermint.retryBacklogTransactRequest;
+    case 'tendermint.retryTransact':
+      return tendermint.retryTransact;
     default:
       throw new CustomError({
         message: 'Unknown function name',

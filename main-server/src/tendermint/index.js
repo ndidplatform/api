@@ -527,6 +527,30 @@ export async function retryBacklogTransactRequest(transactRequest) {
   await cacheDb.removeTransactRequestForRetry(config.nodeId, id);
 }
 
+export async function loadAndRetryTransact() {
+  const retryTransactions = await cacheDb.getAllRetryTendermintTransaction(
+    config.nodeId
+  );
+  if (config.mode === MODE.STANDALONE) {
+    await Promise.all(
+      retryTransactions.map((txHash, transactParams) =>
+        retryTransact(transactParams)
+      )
+    );
+  } else if (config.mode === MODE.MASTER) {
+    retryTransactions.forEach((txHash, transactParams) =>
+      delegateToWorker({
+        fnName: 'tendermint.retryTransact',
+        args: [transactParams],
+      })
+    );
+  }
+}
+
+export async function retryTransact(transactParams) {
+  return transact(transactParams);
+}
+
 function checkForSetLastBlock(parsedTransactionsInBlocks) {
   for (let i = parsedTransactionsInBlocks.length - 1; i >= 0; i--) {
     const transactions = parsedTransactionsInBlocks[i].transactions;
@@ -1049,20 +1073,21 @@ async function retryOnTransactFail(txHash, transactParams, error) {
     nextRetry,
   });
 
-  setTimeout(async () => {
-    transact({
-      nodeId,
-      fnName,
-      params,
-      callbackFnName,
-      callbackAdditionalArgs,
-      useMasterKey,
-      saveForRetryOnChainDisabled,
-      retryOnFail,
-      counter,
-    });
-    await cacheDb.removeRetryTendermintTransaction(config.nodeId, txHash);
-  }, nextRetry);
+  setTimeout(
+    () =>
+      transact({
+        nodeId,
+        fnName,
+        params,
+        callbackFnName,
+        callbackAdditionalArgs,
+        useMasterKey,
+        saveForRetryOnChainDisabled,
+        retryOnFail,
+        counter,
+      }),
+    nextRetry
+  );
 }
 
 //=====================================================
