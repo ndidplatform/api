@@ -22,6 +22,18 @@ BREAKING CHANGES:
     - GET `/dpki/node/callback` to `/node/callback`
     - POST `/dpki/node/callback` to `/node/callback`
   - Change `request_message` value type of DPKI sign callback from plain text string to base64 encoded data string
+  - Add `reference_group_code` property in IdP request callback (for requests in mode 2 and 3).
+  - Remove `namespace` and `identifier` properties in IdP request callback (for requests in mode 2 and 3).
+  - Remove `valid_proof` property in `response_valid_list` from request status update callback.
+  - Remove `valid_proof`, `identity_proof`, and `private_proof_hash` properties in `response_list` from GET `/utility/requests/:request_id`.
+  - Add `supported_namespace_list` required property to POST `/as/service/:service_id`.
+  - Add `supported_namespace_list` property to GET `/as/service/:service_id`.
+  - Add `supported_namespace_list` property to GET `/utility/as/:service_id`.
+  - Add `reference_group_code` property to create identity result callback when successfully created identity to the platform.
+  - Remove `signature` required property from POST `/idp/response`.
+  - Change success response code of GET `/identity/:namespace/:identifier` to `200` with `reference_group_code` property in response body.
+- Mode 1 IdP response `signature` will be obtained by signing a request message with node's key, calling node sign callback when using external crypto service.
+- Identity modifications in mode 3 no longer create consent request when it is not necessary, resulting in no callback with type `*_request_result` e.g. `create_identity_request_result`.
 - Change logging format.
 - Remove logging to file feature.
 - Remove logging environment variable options
@@ -38,8 +50,21 @@ BREAKING CHANGES:
 
 IMPROVEMENTS:
 
-- (Experimental) Load balancing support by setting `MODE` to `master` on one process and `worker` on other processes with the same Node ID.
+- Mode 2 support.
+  - Requests
+  - Identity creation and modifications e.g. add/revoke accessor
+  - Identity modification notification.
+- API v3
+  - Support `request_message` in data URL format (depends on destination IdPs).
+  - Add `supported_request_message_data_url_type_list` property to POST `/node/update` for IdPs.
+  - Add `supported_request_message_data_url_type_list` property to GET `/utility/nodes/:node_id` for IdP nodes.
+  - Add `supported_request_message_data_url_type_list` property to GET `/utility/idp`.
+  - Add `supported_request_message_data_url_type_list` and `mode_list` properties to GET `/utility/idp/:namespace/:identifier`.
+  - Add identity-IdP association revocation support (opposite of create identity).
+- Use UUIDv4 when auto generating accessor IDs.
+- Load balancing support by setting `MODE` to `master` on one process and `worker` on other processes with the same Node ID.
 - Refactor request process flow.
+- Refactor comitted Txs check.
 - Add Prometheus support.
 - Add new environment variable options
   - `PROMETHEUS`: Enable prometheus metrics and HTTP server for querying metrics
@@ -58,6 +83,7 @@ IMPROVEMENTS:
 - Add error callback when error occurs at MQ.
 - Reduce MQ message size if `request_message` is in data URL format with base64 encoded data when sending request from RP to IdP.
 - Reduce MQ message size if `data` is in data URL format with base64 encoded data when AS send data response back to RP.
+- gRPC SSL connection support.
 
 BUG FIXES:
 
