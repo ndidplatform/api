@@ -60,7 +60,11 @@ export async function setMqAddresses(
 }
 
 export async function updateNode(
-  { public_key, master_public_key },
+  {
+    public_key,
+    master_public_key,
+    supported_request_message_data_url_type_list,
+  },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
@@ -73,6 +77,7 @@ export async function updateNode(
       params: {
         public_key,
         master_public_key,
+        supported_request_message_data_url_type_list,
       },
       callbackFnName,
       callbackAdditionalArgs,
@@ -149,6 +154,40 @@ export async function registerIdentity(
   } catch (error) {
     throw new CustomError({
       message: 'Cannot register identity to blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function addIdentity(
+  { reference_group_code, new_identity_list, request_id },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    new_identity_list = new_identity_list.map(({ namespace, identifier }) => ({
+      identity_namespace: namespace,
+      identity_identifier_hash: utils.hash(identifier),
+    }));
+
+    const result = await tendermint.transact({
+      nodeId,
+      fnName: 'AddIdentity',
+      params: {
+        reference_group_code,
+        new_identity_list,
+        request_id,
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot add identity to blockchain',
       cause: error,
     });
   }
@@ -612,7 +651,7 @@ export async function signASData(
  * @param {number} params.min_aal
  * @param {number} params.min_ial
  * @param {string} params.service_id
- * @param {string[]} params.accepted_namespace_list
+ * @param {string[]} params.supported_namespace_list
  * @param {string} nodeId
  * @param {string} callbackFnName
  * @param {Array} callbackAdditionalArgs
@@ -648,7 +687,7 @@ export async function registerServiceDestination(
  * @param {number} params.min_aal
  * @param {number} params.min_ial
  * @param {string} params.service_id
- * @param {string[]} params.accepted_namespace_list
+ * @param {string[]} params.supported_namespace_list
  * @param {string} nodeId
  * @param {string} callbackFnName
  * @param {Array} callbackAdditionalArgs
@@ -804,6 +843,8 @@ export async function getIdpNodes({
   min_ial,
   min_aal,
   node_id_list,
+  supported_request_message_type_list,
+  mode_list,
 }) {
   if (reference_group_code && (namespace || identifier)) {
     throw new Error(
@@ -818,6 +859,8 @@ export async function getIdpNodes({
       min_ial,
       min_aal,
       node_id_list,
+      supported_request_message_type_list,
+      mode_list,
     });
     return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {
@@ -836,6 +879,7 @@ export async function getIdpNodesInfo({
   min_aal,
   node_id_list,
   supported_request_message_type_list,
+  mode_list,
 }) {
   if (reference_group_code && (namespace || identifier)) {
     throw new Error(
@@ -851,6 +895,7 @@ export async function getIdpNodesInfo({
       min_aal,
       node_id_list,
       supported_request_message_type_list,
+      mode_list,
     });
     return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {

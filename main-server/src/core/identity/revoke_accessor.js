@@ -22,6 +22,8 @@
 
 import { getIdentityInfo } from '.';
 
+import operationTypes from './operation_type';
+
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
 import * as tendermintNdid from '../../tendermint/ndid';
@@ -131,8 +133,7 @@ export async function revokeAccessor(revokeAccessorParams) {
       mode = 2;
     } else {
       throw new CustomError({
-        message: 'no available mode',
-        // FIXME
+        errorType: errorType.NO_MODE_AVAILABLE,
       });
     }
 
@@ -142,7 +143,7 @@ export async function revokeAccessor(revokeAccessorParams) {
     }
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
-      type: 'RevokeAccessor',
+      type: operationTypes.REVOKE_ACCESSOR,
       request_id,
       accessor_id,
       namespace,
@@ -204,7 +205,7 @@ async function createRequestToRevokeAccessor(
     }
 
     const identity = {
-      type: 'RevokeAccessor',
+      type: operationTypes.REVOKE_ACCESSOR,
       namespace,
       identifier,
       accessor_id,
@@ -249,7 +250,7 @@ async function createRequestToRevokeAccessor(
           min_idp,
           request_timeout: 86400,
           mode,
-          purpose: 'RevokeAccessor',
+          purpose: operationTypes.REVOKE_ACCESSOR,
         },
         {
           synchronous: false,

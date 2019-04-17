@@ -20,6 +20,8 @@
  *
  */
 
+import operationTypes from './operation_type';
+
 import * as tendermintNdid from '../../tendermint/ndid';
 import { callbackToClient } from '../../callback';
 import { getFunction } from '../../functions';
@@ -30,7 +32,7 @@ const reference_group_code_base64 = Buffer.from(
   'reference_group_code'
 ).toString('base64');
 
-export async function handleIdentityChangeTransactions({
+export async function handleIdentityModificationTransactions({
   nodeId,
   getCallbackUrlFnName,
   transaction,
@@ -55,16 +57,20 @@ export async function handleIdentityChangeTransactions({
   }
 
   let action;
-  if (transaction.fnName === 'RegisterIdentity') {
+  if (transaction.fnName === operationTypes.REGISTER_IDENTITY) {
     action = 'create_identity';
-  } else if (transaction.fnName === 'AddAccessor') {
+  } else if (transaction.fnName === operationTypes.ADD_IDENTITY) {
+    action = 'add_identity';
+  } else if (transaction.fnName === operationTypes.ADD_ACCESSOR) {
     action = 'add_accessor';
-  } else if (transaction.fnName === 'RevokeAccessor') {
+  } else if (transaction.fnName === operationTypes.REVOKE_ACCESSOR) {
     action = 'revoke_accessor';
-  } else if (transaction.fnName === 'RevokeIdentityAssociation') {
+  } else if (
+    transaction.fnName === operationTypes.REVOKE_IDENTITY_ASSOCIATION
+  ) {
     action = 'revoke_identity_association';
   }
-  notifyIdentityChange({
+  notifyIdentityModification({
     getCallbackUrlFnName,
     nodeId,
     referenceGroupCode,
@@ -73,7 +79,7 @@ export async function handleIdentityChangeTransactions({
   });
 }
 
-async function notifyIdentityChange({
+async function notifyIdentityModification({
   getCallbackUrlFnName,
   nodeId,
   referenceGroupCode,
@@ -81,21 +87,22 @@ async function notifyIdentityChange({
   actorNodeId,
 }) {
   logger.debug({
-    message: 'Notifying identity change through callback',
+    message: 'Notifying identity modification/change through callback',
   });
   try {
     const callbackUrl = await getFunction(getCallbackUrlFnName)();
     if (callbackUrl == null) {
       logger.warn({
-        message: 'Identity change notification callback URL has not been set',
+        message:
+          'Identity modification notification callback URL has not been set',
       });
       return;
     }
     await callbackToClient({
-      getCallbackUrlFnName, // 'idp.getIdentityChangeNotificationCallbackUrl'
+      getCallbackUrlFnName, // 'idp.getIdentityModificationNotificationCallbackUrl'
       body: {
         node_id: nodeId,
-        type: 'identity_change_notification',
+        type: 'identity_modification_notification',
         reference_group_code: referenceGroupCode,
         action,
         actor_node_id: actorNodeId,
@@ -104,7 +111,8 @@ async function notifyIdentityChange({
     });
   } catch (error) {
     const err = new CustomError({
-      message: 'Error sending identity change notification callback',
+      message:
+        'Error sending identity modification/change notification callback',
       cause: error,
       details: {
         nodeId,

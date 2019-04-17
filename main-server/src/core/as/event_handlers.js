@@ -143,6 +143,9 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
       for (let i = 0; i < transactions.length; i++) {
         const transaction = transactions[i];
+        if (!transaction.success) {
+          continue;
+        }
 
         const requestId = transaction.args.request_id;
         if (requestId == null) continue;

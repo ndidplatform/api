@@ -40,6 +40,7 @@ export async function updateNode(
     check_string,
     signed_check_string,
     master_signed_check_string,
+    supported_request_message_data_url_type_list,
   },
   { synchronous = false } = {}
 ) {
@@ -75,21 +76,35 @@ export async function updateNode(
 }
 
 async function updateNodeInternalAsync(
-  { reference_id, callback_url, public_key, master_public_key },
+  {
+    reference_id,
+    callback_url,
+    public_key,
+    master_public_key,
+    supported_request_message_data_url_type_list,
+  },
   { synchronous = false } = {},
   { nodeId }
 ) {
   try {
     if (!synchronous) {
       await tendermintNdid.updateNode(
-        { public_key, master_public_key },
+        {
+          public_key,
+          master_public_key,
+          supported_request_message_data_url_type_list,
+        },
         nodeId,
-        'dpki.updateNodeInternalAsyncAfterBlockchain',
+        'node.updateNodeInternalAsyncAfterBlockchain',
         [{ nodeId, reference_id, callback_url }, { synchronous }]
       );
     } else {
       await tendermintNdid.updateNode(
-        { public_key, master_public_key },
+        {
+          public_key,
+          master_public_key,
+          supported_request_message_data_url_type_list,
+        },
         nodeId
       );
       await updateNodeInternalAsyncAfterBlockchain(

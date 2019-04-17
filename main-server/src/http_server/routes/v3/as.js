@@ -40,7 +40,7 @@ router.post('/service/:service_id', validateBody, async (req, res, next) => {
       min_ial,
       min_aal,
       url,
-      accepted_namespace_list,
+      supported_namespace_list,
     } = req.body;
 
     await as.registerOrUpdateASService(
@@ -52,7 +52,7 @@ router.post('/service/:service_id', validateBody, async (req, res, next) => {
         min_aal,
         min_ial,
         url,
-        accepted_namespace_list,
+        supported_namespace_list,
       },
       { synchronous: false }
     );

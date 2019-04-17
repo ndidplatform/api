@@ -159,6 +159,15 @@ export const createIdentityRequestMessageTemplateFilepath =
     'create_identity.mustache'
   );
 
+export const addIdentityRequestMessageTemplateFilepath =
+  process.env.ADD_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH ||
+  path.join(
+    __dirname,
+    '..',
+    'request_message_templates',
+    'add_identity.mustache'
+  );
+
 export const addAccessorRequestMessageTemplateFilepath =
   process.env.ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH ||
   path.join(
@@ -196,6 +205,14 @@ export const maxIntervalTendermintSyncCheck = process.env
   ? parseInt(process.env.MAX_INTERVAL_TENDERMINT_SYNC_CHECK)
   : 15000;
 
+export const mode = process.env.MODE
+  ? process.env.MODE.toLowerCase()
+  : 'standalone';
+export const masterServerPort = process.env.MASTER_SERVER_PORT || 7000;
+export const masterServerIp = process.env.MASTER_SERVER_IP || 'localhost';
+export const callToMasterRetryTimeout =
+  process.env.CALL_TO_MASTER_RETRY_TIMEOUT_MS || 120000;
+
 export const grpcPingInterval = process.env.GRPC_PING_INTERVAL_MS
   ? parseInt(process.env.GRPC_PING_INTERVAL_MS)
   : 60000;
@@ -213,13 +230,39 @@ export const grpcCallTimeout = process.env.GRPC_CALL_TIMEOUT_MS
   ? parseInt(process.env.GRPC_CALL_TIMEOUT_MS)
   : 60000;
 
-export const mode = process.env.MODE
-  ? process.env.MODE.toLowerCase()
-  : 'standalone';
-export const masterServerPort = process.env.MASTER_SERVER_PORT || 7000;
-export const masterServerIp = process.env.MASTER_SERVER_IP || 'localhost';
-export const callToMasterRetryTimeout =
-  process.env.CALL_TO_MASTER_RETRY_TIMEOUT_MS || 120000;
+export const grpcSsl = process.env.GRPC_SSL === 'true';
+
+export const grpcSslRootCertFilePath = process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
+  ? process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
+  : env === 'development'
+  ? path.join(__dirname, '..', '..', 'dev_cert', 'grpc', 'ca.crt')
+  : null;
+
+export const grpcSslKeyFilePath = process.env.GRPC_SSL_KEY_FILE_PATH
+  ? process.env.GRPC_SSL_KEY_FILE_PATH
+  : env === 'development'
+  ? path.join(
+      __dirname,
+      '..',
+      '..',
+      'dev_cert',
+      'grpc',
+      mode === 'worker' ? 'client.key' : 'server.key'
+    )
+  : null;
+
+export const grpcSslCertFilePath = process.env.GRPC_SSL_CERT_FILE_PATH
+  ? process.env.GRPC_SSL_CERT_FILE_PATH
+  : env === 'development'
+  ? path.join(
+      __dirname,
+      '..',
+      '..',
+      'dev_cert',
+      'grpc',
+      mode === 'worker' ? 'client.crt' : 'server.crt'
+    )
+  : null;
 
 export const prometheusEnabled = process.env.PROMETHEUS === 'true';
 

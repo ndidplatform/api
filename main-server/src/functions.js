@@ -26,7 +26,7 @@ import * as idp from './core/idp';
 import * as as from './core/as';
 import * as proxy from './core/proxy';
 import * as identity from './core/identity';
-import * as dpki from './core/dpki';
+import * as node from './core/node';
 import * as tendermint from './tendermint';
 import * as mq from './mq';
 import * as callback from './callback';
@@ -67,6 +67,12 @@ export function getFunction(fnName) {
       return identity.createIdentityAfterCloseConsentRequest;
     case 'identity.createIdentityAfterCloseConsentAndBlockchain':
       return identity.createIdentityAfterCloseConsentAndBlockchain;
+    case 'identity.addIdentityInternalAsyncAfterCreateRequestBlockchain':
+      return identity.addIdentityInternalAsyncAfterCreateRequestBlockchain;
+    case 'identity.addIdentityAfterCloseConsentRequest':
+      return identity.addIdentityAfterCloseConsentRequest;
+    case 'identity.addIdentityAfterConsentAndBlockchain':
+      return identity.addIdentityAfterConsentAndBlockchain;
     case 'identity.addAccessorInternalAsyncAfterCreateRequestBlockchain':
       return identity.addAccessorInternalAsyncAfterCreateRequestBlockchain;
     case 'identity.addAccessorAfterCloseConsentRequest':
@@ -91,8 +97,8 @@ export function getFunction(fnName) {
       return identity.revokeIdentityAssociationAfterCloseConsentAndBlockchain;
     case 'rp.processAsDataAfterSetDataReceived':
       return rp.processAsDataAfterSetDataReceived;
-    case 'dpki.updateNodeInternalAsyncAfterBlockchain':
-      return dpki.updateNodeInternalAsyncAfterBlockchain;
+    case 'node.updateNodeInternalAsyncAfterBlockchain':
+      return node.updateNodeInternalAsyncAfterBlockchain;
     // Callback
     case 'rp.getCallbackUrls':
       return rp.getCallbackUrls;
@@ -106,8 +112,8 @@ export function getFunction(fnName) {
       return idp.getIncomingRequestCallbackUrl;
     case 'idp.getIncomingRequestStatusUpdateCallbackUrl':
       return idp.getIncomingRequestStatusUpdateCallbackUrl;
-    case 'idp.getIdentityChangeNotificationCallbackUrl':
-      return idp.getIdentityChangeNotificationCallbackUrl;
+    case 'idp.getIdentityModificationNotificationCallbackUrl':
+      return idp.getIdentityModificationNotificationCallbackUrl;
     case 'as.getCallbackUrls':
       return as.getCallbackUrls;
     case 'as.getErrorCallbackUrl':
@@ -118,8 +124,8 @@ export function getFunction(fnName) {
       return as.getIncomingRequestStatusUpdateCallbackUrl;
     case 'proxy.getErrorCallbackUrl':
       return proxy.getErrorCallbackUrl;
-    case 'identity.handleIdentityChangeTransactions':
-      return identity.handleIdentityChangeTransactions;
+    case 'identity.handleIdentityModificationTransactions':
+      return identity.handleIdentityModificationTransactions;
     // Core module - process task by request ID
     case 'rp.processMessage':
       return rp.processMessage;

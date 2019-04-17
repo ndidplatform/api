@@ -20,6 +20,8 @@
  *
  */
 
+import operationTypes from './operation_type';
+
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
@@ -36,6 +38,8 @@ import { role } from '../../node';
 
 export * from './create_identity';
 export * from './create_identity_after_consent';
+export * from './add_identity';
+export * from './add_identity_after_consent';
 export * from './update_ial';
 export * from './add_accessor';
 export * from './add_accessor_after_consent';
@@ -162,13 +166,17 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
     requestStatus.status === 'completed'
   ) {
     let callbackFnName;
-    if (requestDetail.purpose === 'RegisterIdentity') {
+    if (requestDetail.purpose === operationTypes.REGISTER_IDENTITY) {
       callbackFnName = 'identity.createIdentityAfterCloseConsentRequest';
-    } else if (requestDetail.purpose === 'AddAccessor') {
+    } else if (requestDetail.purpose === operationTypes.ADD_IDENTITY) {
+      callbackFnName = 'identity.addIdentityAfterCloseConsentRequest';
+    } else if (requestDetail.purpose === operationTypes.ADD_ACCESSOR) {
       callbackFnName = 'identity.addAccessorAfterCloseConsentRequest';
-    } else if (requestDetail.purpose === 'RevokeAccessor') {
+    } else if (requestDetail.purpose === operationTypes.REVOKE_ACCESSOR) {
       callbackFnName = 'identity.revokeAccessorAfterCloseConsentRequest';
-    } else if (requestDetail.purpose === 'RevokeIdentityAssociation') {
+    } else if (
+      requestDetail.purpose === operationTypes.REVOKE_IDENTITY_ASSOCIATION
+    ) {
       callbackFnName =
         'identity.revokeIdentityAssociationAfterCloseConsentRequest';
     }
@@ -198,7 +206,7 @@ export async function afterIdentityOperationSuccess(
   { error, type, reference_group_code, accessor_id, reference_id, request_id },
   { nodeId }
 ) {
-  if (error && (type == null || accessor_id == null || reference_id == null)) {
+  if (error && (type == null || reference_id == null)) {
     await common.notifyError({
       nodeId,
       getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
@@ -232,13 +240,15 @@ export async function afterIdentityOperationSuccess(
   }
 
   let typeCallback;
-  if (type === 'RegisterIdentity') {
+  if (type === operationTypes.REGISTER_IDENTITY) {
     typeCallback = 'create_identity_result';
-  } else if (type === 'AddAccessor') {
+  } else if (type === operationTypes.ADD_IDENTITY) {
+    typeCallback = 'add_identity_result';
+  } else if (type === operationTypes.ADD_ACCESSOR) {
     typeCallback = 'add_accessor_result';
-  } else if (type === 'RevokeAccessor') {
+  } else if (type === operationTypes.REVOKE_ACCESSOR) {
     typeCallback = 'revoke_accessor_result';
-  } else if (type === 'RevokeIdentityAssociation') {
+  } else if (type === operationTypes.REVOKE_IDENTITY_ASSOCIATION) {
     typeCallback = 'revoke_identity_association_result';
   }
   try {
@@ -307,13 +317,15 @@ export async function afterCloseFailedIdentityConsentRequest(
       throw err;
     }
     let type;
-    if (identityData.type === 'RegisterIdentity') {
+    if (identityData.type === operationTypes.REGISTER_IDENTITY) {
       type = 'create_identity_result';
-    } else if (identityData.type === 'AddAccessor') {
+    } else if (identityData.type === operationTypes.ADD_IDENTITY) {
+      type = 'add_identity_result';
+    } else if (identityData.type === operationTypes.ADD_ACCESSOR) {
       type = 'add_accessor_result';
-    } else if (identityData.type === 'RevokeAccessor') {
+    } else if (identityData.type === operationTypes.REVOKE_ACCESSOR) {
       type = 'revoke_accessor_result';
-    } else if (type === 'RevokeIdentityAssociation') {
+    } else if (type === operationTypes.REVOKE_IDENTITY_ASSOCIATION) {
       type = 'revoke_identity_association_result';
     }
     await callbackToClient({

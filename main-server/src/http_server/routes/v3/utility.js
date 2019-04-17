@@ -50,13 +50,14 @@ router.get(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { min_ial = 0, min_aal = 0 } = req.query;
+      const { min_ial = 0, min_aal = 0, mode } = req.query;
 
       const idpNodes = await tendermintNdid.getIdpNodes({
         namespace,
         identifier,
         min_ial: parseFloat(min_ial),
         min_aal: parseFloat(min_aal),
+        mode_list: mode ? [mode] : undefined,
       });
 
       res.status(200).json(idpNodes);

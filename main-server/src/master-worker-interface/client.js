@@ -36,7 +36,7 @@ import { getPendingOutboundMessageMsgIds } from '../mq';
 
 import { getFunction } from '../functions';
 
-import { wait, randomBase64Bytes } from '../utils';
+import { wait, randomBase64Bytes, readFileAsync } from '../utils';
 import logger from '../logger';
 
 import * as config from '../config';
@@ -57,6 +57,7 @@ const MASTER_SERVER_ADDRESS = `${config.masterServerIp}:${
   config.masterServerPort
 }`;
 const workerId = randomBase64Bytes(8);
+let knownMasterId;
 
 let client = null;
 let connectivityState = null;
@@ -82,7 +83,7 @@ function watchForNextConnectivityStateChange() {
         if (closing) return;
         if (error) {
           logger.error({
-            message: 'Worker service gRPC connectivity state watch error',
+            message: 'Master process gRPC connectivity state watch error',
             err: error,
           });
         } else {
@@ -90,7 +91,7 @@ function watchForNextConnectivityStateChange() {
             .getChannel()
             .getConnectivityState();
           logger.debug({
-            message: 'Worker service gRPC connectivity state changed',
+            message: 'Master process gRPC connectivity state changed',
             connectivityState,
             newConnectivityState,
           });
@@ -98,11 +99,10 @@ function watchForNextConnectivityStateChange() {
           // on reconnect (IF watchForNextConnectivityStateChange() this called after first waitForReady)
           if (connectivityState === 1 && newConnectivityState === 2) {
             logger.info({
-              message: 'Worker service gRPC reconnect',
-              workerId,
+              message: 'Master process gRPC reconnect',
             });
-            workerSubscribeChannel = client.subscribe({ workerId });
-            workerSubscribeChannel.on('data', onRecvData);
+            await checkMasterId();
+            subscribe();
           }
           connectivityState = newConnectivityState;
         }
@@ -148,9 +148,23 @@ function gRPCRetry(fn, timeout = config.callToMasterRetryTimeout) {
 }
 
 export async function initialize() {
+  logger.info({
+    message: 'Connecting to master process',
+    workerId,
+  });
+  let grpcSslRootCert;
+  let grpcSslKey;
+  let grpcSslCert;
+  if (config.grpcSsl) {
+    grpcSslRootCert = await readFileAsync(config.grpcSslRootCertFilePath);
+    grpcSslKey = await readFileAsync(config.grpcSslKeyFilePath);
+    grpcSslCert = await readFileAsync(config.grpcSslCertFilePath);
+  }
   client = new proto.MasterWorker(
     MASTER_SERVER_ADDRESS,
-    grpc.credentials.createInsecure(),
+    config.grpcSsl
+      ? grpc.credentials.createSsl(grpcSslRootCert, grpcSslKey, grpcSslCert)
+      : grpc.credentials.createInsecure(),
     {
       'grpc.keepalive_time_ms': config.grpcPingInterval,
       'grpc.keepalive_timeout_ms': config.grpcPingTimeout,
@@ -160,8 +174,39 @@ export async function initialize() {
       'grpc.max_receive_message_length': -1,
     }
   );
-  watchForNextConnectivityStateChange();
   await waitForReady(client);
+  await checkMasterId();
+  subscribe();
+  watchForNextConnectivityStateChange();
+  logger.info({
+    message: 'Connected to master process',
+  });
+}
+
+async function checkMasterId() {
+  const masterId = await getMasterId();
+  if (knownMasterId != null && knownMasterId !== masterId) {
+    // TODO: clear everything as if process is restarted
+  }
+  knownMasterId = masterId;
+  logger.info({
+    message: 'Master ID',
+    masterId: knownMasterId,
+  });
+}
+
+function getMasterId() {
+  return new Promise((resolve, reject) => {
+    client.getMasterId({ workerId }, (error, { masterId }) => {
+      if (error) reject(error);
+      else resolve(masterId);
+    });
+  });
+}
+
+function subscribe() {
+  workerSubscribeChannel = client.subscribe({ workerId });
+  workerSubscribeChannel.on('data', onRecvData);
 }
 
 function workerStopping() {
@@ -250,10 +295,15 @@ function broadcastRemoveRequestTimeoutSchedulerInternal({ nodeId, requestId }) {
 }
 
 async function onRecvData(data) {
-  const { fnName, args, grpcRefId } = data;
+  const { fnName, args, grpcRefId, eventName } = data;
+
+  if (eventName === 'master_shuting_down') {
+    handleMasterShutdown();
+    return;
+  }
 
   logger.debug({
-    message: 'Worker received delegated work',
+    message: 'Worker received call from master',
     fnName,
     args,
     grpcRefId,
@@ -309,30 +359,44 @@ function handleShutdownTimerJobs(jobsDetail) {
   })();
 }
 
+function handleMasterShutdown() {
+  logger.info({
+    message: 'Received master shutdown',
+    masterId: knownMasterId,
+  });
+  // TODO: clear everything as if process is restarted
+
+  knownMasterId = null;
+}
+
 export async function shutdown() {
   logger.info({
     message: 'Shutting down worker',
     workerId,
   });
   if (client) {
-    await gRPCRetry(workerStopping)();
+    if (knownMasterId != null) {
+      await gRPCRetry(workerStopping)();
+    }
     closing = true;
     await waitForAllJobDone();
-    const pendingTasks = [
-      {
-        type: 'requestTimeout',
-        tasks: getPendingRequestTimeout(),
-      },
-      {
-        type: 'callback',
-        tasks: getPendingCallback(),
-      },
-      {
-        type: 'mq',
-        tasks: getPendingOutboundMessageMsgIds(),
-      },
-    ];
-    await handleShutdownTimerJobs(pendingTasks);
+    if (knownMasterId != null) {
+      const pendingTasks = [
+        {
+          type: 'requestTimeout',
+          tasks: getPendingRequestTimeout(),
+        },
+        {
+          type: 'callback',
+          tasks: getPendingCallback(),
+        },
+        {
+          type: 'mq',
+          tasks: getPendingOutboundMessageMsgIds(),
+        },
+      ];
+      await handleShutdownTimerJobs(pendingTasks);
+    }
     if (workerSubscribeChannel) {
       workerSubscribeChannel.on('error', () => {
         //handle to suppress error log

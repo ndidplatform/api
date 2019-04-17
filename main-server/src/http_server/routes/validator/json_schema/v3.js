@@ -33,6 +33,10 @@ export default {
         type: 'string',
         enum: ['1', '2.1', '2.2', '3'],
       },
+      modeString: {
+        type: 'string',
+        enum: ['2', '3'],
+      },
       url: {
         type: 'string',
         format: 'uri',
@@ -71,6 +75,9 @@ export default {
           },
           min_aal: {
             $ref: 'defs#/definitions/aalString',
+          },
+          mode: {
+            $ref: 'defs#/definitions/modeString',
           },
         },
       },
@@ -181,7 +188,7 @@ export default {
           incoming_request_status_update_url: {
             $ref: 'defs#/definitions/url',
           },
-          identity_change_notification_url: {
+          identity_modification_notification_url: {
             $ref: 'defs#/definitions/url',
           },
           accessor_encrypt_url: {
@@ -232,7 +239,7 @@ export default {
           url: {
             $ref: 'defs#/definitions/url',
           },
-          accepted_namespace_list: {
+          supported_namespace_list: {
             type: 'array',
             items: { type: 'string' },
             uniqueItems: true,
@@ -277,7 +284,7 @@ export default {
         },
       },
     },
-    '/dpki/node/create': {
+    '/node/create': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
@@ -310,7 +317,7 @@ export default {
         ],
       },
     },
-    '/dpki/node/update': {
+    '/node/update': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
@@ -326,12 +333,11 @@ export default {
           check_string: { type: 'string', minLength: 1 },
           signed_check_string: { type: 'string', minLength: 1 },
           master_signed_check_string: { type: 'string', minLength: 1 },
-          supported_request_message_type_list: {
+          supported_request_message_data_url_type_list: {
             type: 'array',
             items: {
               type: 'string',
             },
-            minItems: 1,
             uniqueItems: true,
           },
         },
@@ -357,7 +363,7 @@ export default {
         ],
       },
     },
-    '/dpki/node/callback': {
+    '/node/callback': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {

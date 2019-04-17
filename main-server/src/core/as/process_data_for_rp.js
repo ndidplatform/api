@@ -20,6 +20,8 @@
  *
  */
 
+import parseDataURL from 'data-urls';
+
 import validateData from './data_validator';
 import * as tendermint from '../../tendermint';
 
@@ -35,6 +37,7 @@ import * as config from '../../config';
 import * as cacheDb from '../../db/cache';
 import { getErrorObjectForClient } from '../../utils/error';
 import privateMessageType from '../../mq/message/type';
+import { dataUrlRegex } from '../../data_url';
 
 import { role } from '../../node';
 
@@ -119,6 +122,16 @@ export async function processDataForRP(
         errorType: errorType.DATA_VALIDATION_FAILED,
         details: dataValidationResult,
       });
+    }
+
+    const dataUrlParsedData = parseDataURL(data);
+    if (dataUrlParsedData != null) {
+      const match = data.match(dataUrlRegex);
+      if (match[4] && match[4].endsWith('base64') && data.search(/\s/) >= 0) {
+        throw new CustomError({
+          errorType: errorType.DATA_URL_BASE64_MUST_NOT_CONTAIN_WHITESPACES,
+        });
+      }
     }
 
     if (synchronous) {

@@ -42,7 +42,7 @@ export * from './event_handlers';
 const CALLBACK_URL_NAME = {
   INCOMING_REQUEST: 'incoming_request_url',
   INCOMING_REQUEST_STATUS_UPDATE: 'incoming_request_status_update_url',
-  IDENTITY_CHANGE_NOTIFICATION: 'identity_change_notification_url',
+  IDENTITY_MODIFICATION_NOTIFICATION: 'identity_modification_notification_url',
   ACCESSOR_ENCRYPT: 'accessor_encrypt_url',
   ERROR: 'error_url',
 };
@@ -68,7 +68,7 @@ export async function checkCallbackUrls() {
 export async function setCallbackUrls({
   incoming_request_url,
   incoming_request_status_update_url,
-  identity_change_notification_url,
+  identity_modification_notification_url,
   accessor_encrypt_url,
   error_url,
 }) {
@@ -91,12 +91,12 @@ export async function setCallbackUrls({
       )
     );
   }
-  if (identity_change_notification_url != null) {
+  if (identity_modification_notification_url != null) {
     promises.push(
       dataDb.setCallbackUrl(
         config.nodeId,
-        `idp.${CALLBACK_URL_NAME.IDENTITY_CHANGE_NOTIFICATION}`,
-        identity_change_notification_url
+        `idp.${CALLBACK_URL_NAME.IDENTITY_MODIFICATION_NOTIFICATION}`,
+        identity_modification_notification_url
       )
     );
   }
@@ -158,10 +158,10 @@ export function getIncomingRequestStatusUpdateCallbackUrl() {
   );
 }
 
-export function getIdentityChangeNotificationCallbackUrl() {
+export function getIdentityModificationNotificationCallbackUrl() {
   return dataDb.getCallbackUrl(
     config.nodeId,
-    `idp.${CALLBACK_URL_NAME.IDENTITY_CHANGE_NOTIFICATION}`
+    `idp.${CALLBACK_URL_NAME.IDENTITY_MODIFICATION_NOTIFICATION}`
   );
 }
 

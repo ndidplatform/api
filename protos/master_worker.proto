@@ -1,6 +1,7 @@
 syntax = "proto3";
  
 service MasterWorker {
+  rpc getMasterId(WorkerId) returns (MasterId){}
   rpc subscribe(WorkerId) returns (stream OutboundMessage){}
   /*rpc mqRetryCall(InboundMessageForTimerJob) returns(Empty){}
   rpc callbackRetryCall(InboundMessageForTimerJob) returns(Empty){}
@@ -17,10 +18,15 @@ message WorkerId {
   string workerId = 1;
 }
 
+message MasterId {
+  string masterId = 1;
+}
+
 message OutboundMessage {
   string fnName = 1;
   bytes args = 2;
   string grpcRefId = 3;
+  string eventName = 4;
 }
 
 message RemainingTasks {

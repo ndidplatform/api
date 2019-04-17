@@ -20,24 +20,16 @@
  *
  */
 
-import express from 'express';
+import fs from 'fs';
 
-import rpRouter from './rp';
-import idpRouter from './idp';
-import asRouter from './as';
-import identityRouter from './identity';
-import identityRequestRouter from './identity_request';
-import utilityRouter from './utility';
-import nodeRouter from './node';
-
-const router = express.Router();
-
-router.use('/rp', rpRouter);
-router.use('/idp', idpRouter);
-router.use('/as', asRouter);
-router.use('/identity', identityRouter);
-router.use('/identity_request', identityRequestRouter);
-router.use('/utility', utilityRouter);
-router.use('/node', nodeRouter);
-
-export default router;
+export function readFileAsync(path, opts) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path, opts, (err, data) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(data);
+    });
+  });
+}

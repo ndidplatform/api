@@ -232,6 +232,10 @@ module.exports = {
     code: 10049,
     message: 'Tendermint mempool is full',
   },
+  NO_MODE_AVAILABLE: {
+    code: 10050,
+    message: 'No mode available',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
@@ -601,6 +605,21 @@ module.exports = {
     message: 'Identity to merge to does not exist',
     clientError: true,
   },
+  MULTIPLE_REFERENCE_GROUP_IN_IDENTITY_LIST: {
+    code: 20069,
+    message: 'Multiple reference group in identity list',
+    clientError: true,
+  },
+  DATA_URL_BASE64_MUST_NOT_CONTAIN_WHITESPACES: {
+    code: 20070,
+    message: 'Data URL with base64 encoded data must not contain whitespaces',
+    clientError: true,
+  },
+  IDENTITY_NOT_FOUND_ON_IDP: {
+    code: 20071,
+    message: 'An identity for this user could not be found on this IdP',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
@@ -651,7 +670,7 @@ module.exports = {
   ABCI_INVALID_REQUEST_PURPOSE: {
     code: 15011,
     message: 'Invalid request purpose',
-  }, // Try to add accessor with request that is not a create identity request type
+  }, // e.g. try to add accessor with request that is not a create identity request type
   ABCI_NODE_ID_DOES_NOT_EXIST_IN_AS_LIST: {
     code: 15012,
     message: 'Node ID does not exist in AS ID list',
@@ -724,6 +743,14 @@ module.exports = {
   ABCI_CHAIN_NOT_INITIALIZED: {
     code: 15029,
     message: 'Blockchain is not initialized',
+  },
+  ABCI_DUPLICATE_NONCE: {
+    code: 15030,
+    message: 'Duplicate transaction nonce',
+  },
+  ABCI_REQUEST_IS_ALREADY_USED: {
+    code: 15031,
+    message: 'Request is already used',
   },
 
   // Client errors
@@ -992,6 +1019,86 @@ module.exports = {
   ABCI_NOT_AS: {
     code: 25053,
     message: 'This node ID does not belong to AS',
+    clientError: true,
+  },
+  ABCI_VALIDATOR_DOES_NOT_EXIST: {
+    code: 25054,
+    message: 'Validator does not exist',
+    clientError: true,
+  },
+  ABCI_IDENTITY_ALREADY_EXIST: {
+    code: 25055,
+    message: 'Identity already exist',
+    clientError: true,
+  },
+  ABCI_IDENTITY_CANNOT_BE_EMPTY: {
+    code: 25056,
+    message: 'Identity cannot be empty',
+    clientError: true,
+  },
+  ABCI_CANNOT_INPUT_BOTH_REF_GROUP_CODE_AND_IDENTITY: {
+    code: 25057,
+    message: 'Cannot input both reference group code and identity',
+    clientError: true,
+  },
+  ABCI_REF_GROUP_NOT_FOUND: {
+    code: 25058,
+    message: 'Reference group code could not be found',
+    clientError: true,
+  },
+  ABCI_IDENTITY_NOT_FOUND_ON_IDP: {
+    code: 25059,
+    message: 'Identity could not be found on input IdP',
+    clientError: true,
+  },
+  ABCI_REF_GROUP_CODE_CANNOT_BE_EMPTY: {
+    code: 25060,
+    message: 'Reference group code cannot be empty',
+    clientError: true,
+  },
+  ABCI_ALL_ACCESSOR_MUST_HAVE_SAME_REF_GROUP_CODE: {
+    code: 25061,
+    message: 'All accessors must have the same reference group code',
+    clientError: true,
+  },
+  ABCI_ACCESSOR_NOT_FOUND_ON_IDP: {
+    code: 25062,
+    message: 'Accessor could not be found on input IdP',
+    clientError: true,
+  },
+  ABCI_DUPLICATE_NAMESPACE_IN_IDENTITY_LIST: {
+    code: 25063,
+    message: 'Duplicate namespace in identity list',
+    clientError: true,
+  },
+  ABCI_ACCESSOR_ID_CANNOT_BE_EMPTY: {
+    code: 25064,
+    message: 'Accessor ID cannot be empty',
+    clientError: true,
+  },
+  ABCI_ACCESSOR_PUBLIC_KEY_CANNOT_BE_EMPTY: {
+    code: 25065,
+    message: 'Accessor public key cannot be empty',
+    clientError: true,
+  },
+  ABCI_ACCESSOR_TYPE_CANNOT_BE_EMPTY: {
+    code: 25066,
+    message: 'Accessor type cannot be empty',
+    clientError: true,
+  },
+  ABCI_INVALID_NAMESPACE: {
+    code: 25067,
+    message: 'Invalid namespace',
+    clientError: true,
+  },
+  ABCI_ALLOWED_IDENTIFIER_COUNT_EXCEEDED: {
+    code: 25068,
+    message: 'Exceed number of identifier allowed for namespace',
+    clientError: true,
+  },
+  ABCI_IAL_TOO_LOW_FOR_FIRST_IDP: {
+    code: 25069,
+    message: 'Too low IAL for first IdP',
     clientError: true,
   },
 

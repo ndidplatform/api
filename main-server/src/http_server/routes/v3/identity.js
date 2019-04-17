@@ -93,11 +93,25 @@ router.post(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { node_id, reference_id, callback_url, identity_list } = req.body;
+      const {
+        node_id,
+        reference_id,
+        callback_url,
+        identity_list,
+        request_message,
+      } = req.body;
 
-      // TODO
+      const result = await identity.addIdentity({
+        node_id,
+        reference_id,
+        callback_url,
+        namespace,
+        identifier,
+        identity_list,
+        request_message,
+      });
 
-      res.status(501).end();
+      res.status(202).json(result);
       next();
     } catch (error) {
       next(error);
@@ -281,12 +295,7 @@ router.post(
   validateBody,
   async (req, res, next) => {
     try {
-      const {
-        node_id,
-        reference_id,
-        callback_url,
-        request_message,
-      } = req.body;
+      const { node_id, reference_id, callback_url, request_message } = req.body;
 
       const { namespace, identifier } = req.params;
 
@@ -317,25 +326,13 @@ router.post(
   validateBody,
   async (req, res, next) => {
     try {
-      const {
-        node_id,
-        reference_id,
-        callback_url,
-        request_message,
-      } = req.body;
+      const { node_id, reference_id, callback_url, request_message } = req.body;
 
       const { namespace, identifier } = req.params;
 
-      // const result = await identity.({
-      //   node_id,
-      //   reference_id,
-      //   callback_url,
-      //   namespace,
-      //   identifier,
-      //   request_message,
-      // });
+      // Not Implemented
 
-      // res.status(202).json(result);
+      res.status(501).end();
       next();
     } catch (error) {
       if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
@@ -364,16 +361,9 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
-      // const result = await identity.({
-      //   node_id,
-      //   reference_id,
-      //   callback_url,
-      //   namespace,
-      //   identifier,
-      //   request_message,
-      // });
+      // Not Implemented
 
-      // res.status(202).json(result);
+      res.status(501).end();
       next();
     } catch (error) {
       if (error.code === errorType.IDENTITY_NOT_FOUND.code) {

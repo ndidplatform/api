@@ -44,7 +44,7 @@ export async function registerOrUpdateASService(
     min_ial,
     min_aal,
     url,
-    accepted_namespace_list,
+    supported_namespace_list,
   } = registerOrUpdateASServiceParams;
 
   if (role === 'proxy') {
@@ -73,7 +73,7 @@ export async function registerOrUpdateASService(
         !min_aal ||
         !min_ial ||
         !url ||
-        !accepted_namespace_list
+        !supported_namespace_list
       ) {
         throw new CustomError({
           errorType: errorType.MISSING_ARGUMENTS,
@@ -81,9 +81,9 @@ export async function registerOrUpdateASService(
       }
     }
 
-    if (accepted_namespace_list != null) {
+    if (supported_namespace_list != null) {
       const allowedNamespaces = await tendermintNdid.getNamespaceList();
-      accepted_namespace_list.forEach((namespace) => {
+      supported_namespace_list.forEach((namespace) => {
         if (
           allowedNamespaces.find(
             ({ namespace: allowedNamespace }) => allowedNamespace === namespace
@@ -133,7 +133,7 @@ async function registerOrUpdateASServiceInternalAsync(
     min_ial,
     min_aal,
     url,
-    accepted_namespace_list,
+    supported_namespace_list,
   },
   { synchronous = false } = {},
   { nodeId, isRegisterd }
@@ -146,7 +146,7 @@ async function registerOrUpdateASServiceInternalAsync(
             service_id,
             min_aal,
             min_ial,
-            accepted_namespace_list,
+            supported_namespace_list,
           },
           nodeId,
           'as.registerOrUpdateASServiceInternalAsyncAfterBlockchain',
@@ -161,7 +161,7 @@ async function registerOrUpdateASServiceInternalAsync(
             service_id,
             min_aal,
             min_ial,
-            accepted_namespace_list,
+            supported_namespace_list,
           },
           nodeId
         );
@@ -178,7 +178,7 @@ async function registerOrUpdateASServiceInternalAsync(
             service_id,
             min_aal,
             min_ial,
-            accepted_namespace_list,
+            supported_namespace_list,
           },
           nodeId,
           'as.registerOrUpdateASServiceInternalAsyncAfterBlockchain',
@@ -193,7 +193,7 @@ async function registerOrUpdateASServiceInternalAsync(
             service_id,
             min_aal,
             min_ial,
-            accepted_namespace_list,
+            supported_namespace_list,
           },
           nodeId
         );

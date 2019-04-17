@@ -24,6 +24,8 @@ import 'source-map-support/register';
 
 import 'dotenv/config';
 
+import './env_var_validate';
+
 import path from 'path';
 import EventEmitter from 'events';
 
@@ -36,6 +38,8 @@ import MQRecv from './mq_module/mq_recv_controller';
 import errorType from 'ndid-error/type';
 
 import * as prometheus from './prometheus';
+
+import { readFileAsync } from './utils';
 
 import logger from './logger';
 
@@ -190,7 +194,7 @@ function getInfo(call, callback) {
   });
 }
 
-function initialize() {
+async function initialize() {
   if (config.prometheusEnabled) {
     prometheus.initialize();
   }
@@ -269,6 +273,15 @@ function initialize() {
     message: 'Message queue initialized',
   });
 
+  let grpcSslRootCert;
+  let grpcSslKey;
+  let grpcSslCert;
+  if (config.grpcSsl) {
+    grpcSslRootCert = await readFileAsync(config.grpcSslRootCertFilePath);
+    grpcSslKey = await readFileAsync(config.grpcSslKeyFilePath);
+    grpcSslCert = await readFileAsync(config.grpcSslCertFilePath);
+  }
+
   server.addService(proto.MessageQueue.service, {
     subscribeToRecvMessages,
     sendAckForRecvMessage,
@@ -276,7 +289,17 @@ function initialize() {
     getInfo,
   });
 
-  server.bind(SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
+  server.bind(
+    SERVER_ADDRESS,
+    config.grpcSsl
+      ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
+          {
+            cert_chain: grpcSslCert,
+            private_key: grpcSslKey,
+          },
+        ])
+      : grpc.ServerCredentials.createInsecure()
+  );
 
   server.start();
 

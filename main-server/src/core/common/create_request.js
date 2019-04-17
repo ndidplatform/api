@@ -39,6 +39,7 @@ import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
+import { dataUrlRegex } from '../../data_url';
 
 import logger from '../../logger';
 
@@ -53,7 +54,7 @@ async function checkIdpListCondition({
   min_idp,
   idp_id_list,
   mode,
-  supported_request_message_type_list,
+  supported_request_message_data_url_type_list,
 }) {
   if (idp_id_list.length !== 0 && idp_id_list.length < min_idp) {
     throw new CustomError({
@@ -80,7 +81,7 @@ async function checkIdpListCondition({
     min_aal,
     idp_id_list,
     mode,
-    supported_request_message_type_list,
+    supported_request_message_data_url_type_list,
   });
 
   if (min_idp !== 0) {
@@ -94,7 +95,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
-          supported_request_message_type_list,
+          supported_request_message_data_url_type_list,
         },
       });
     }
@@ -109,7 +110,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
-          supported_request_message_type_list,
+          supported_request_message_data_url_type_list,
         },
       });
     }
@@ -124,7 +125,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
-          supported_request_message_type_list,
+          supported_request_message_data_url_type_list,
         },
       });
     }
@@ -201,7 +202,7 @@ async function checkAsListCondition({
 
       // filter out ASes that don't support required namespace
       potential_as_list = potential_as_list.filter((as_node) => {
-        return as_node.accepted_namespace_list.includes(namespace);
+        return as_node.supported_namespace_list.includes(namespace);
       });
 
       //filter min_ial, min_aal
@@ -336,6 +337,16 @@ export async function createRequest(
     let requestMessageMimeType;
     if (dataUrlParsedRequestMessage != null) {
       requestMessageMimeType = dataUrlParsedRequestMessage.mimeType.toString();
+      const match = request_message.match(dataUrlRegex);
+      if (
+        match[4] &&
+        match[4].endsWith('base64') &&
+        request_message.search(/\s/) >= 0
+      ) {
+        throw new CustomError({
+          errorType: errorType.DATA_URL_BASE64_MUST_NOT_CONTAIN_WHITESPACES,
+        });
+      }
     }
 
     const receivers = await checkIdpListCondition({
@@ -346,7 +357,7 @@ export async function createRequest(
       min_idp,
       idp_id_list,
       mode,
-      supported_request_message_type_list: requestMessageMimeType
+      supported_request_message_data_url_type_list: requestMessageMimeType
         ? [requestMessageMimeType]
         : undefined,
     });

@@ -28,6 +28,7 @@ import logger from '../logger';
 import * as config from '../config';
 
 let createIdentityTemplate;
+let addIdentityTemplate;
 let addAccessorTemplate;
 let revokeAccessorTemplate;
 let revokeAssociationTemplate;
@@ -35,6 +36,10 @@ let revokeAssociationTemplate;
 try {
   createIdentityTemplate = fs.readFileSync(
     config.createIdentityRequestMessageTemplateFilepath,
+    'utf8'
+  );
+  addIdentityTemplate = fs.readFileSync(
+    config.addIdentityRequestMessageTemplateFilepath,
     'utf8'
   );
   addAccessorTemplate = fs.readFileSync(
@@ -64,6 +69,22 @@ export function getRequestMessageForCreatingIdentity({
   node_name,
 }) {
   return mustache.render(createIdentityTemplate, {
+    reference_id,
+    namespace,
+    identifier,
+    node_id,
+    node_name,
+  });
+}
+
+export function getRequestMessageForAddingIdentity({
+  reference_id,
+  namespace,
+  identifier,
+  node_id,
+  node_name,
+}) {
+  return mustache.render(addIdentityTemplate, {
     reference_id,
     namespace,
     identifier,

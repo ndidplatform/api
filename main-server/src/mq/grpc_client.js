@@ -27,7 +27,7 @@ import grpc from 'grpc';
 import * as protoLoader from '@grpc/proto-loader';
 import { ExponentialBackoff } from 'simple-backoff';
 
-import { wait } from '../utils';
+import { wait, readFileAsync } from '../utils';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -133,9 +133,19 @@ export async function initialize() {
   logger.info({
     message: 'Connecting to MQ service server',
   });
+  let grpcSslRootCert;
+  let grpcSslKey;
+  let grpcSslCert;
+  if (config.grpcSsl) {
+    grpcSslRootCert = await readFileAsync(config.grpcSslRootCertFilePath);
+    grpcSslKey = await readFileAsync(config.grpcSslKeyFilePath);
+    grpcSslCert = await readFileAsync(config.grpcSslCertFilePath);
+  }
   client = new proto.MessageQueue(
     MQ_SERVICE_SERVER_ADDRESS,
-    grpc.credentials.createInsecure(),
+    config.grpcSsl
+      ? grpc.credentials.createSsl(grpcSslRootCert, grpcSslKey, grpcSslCert)
+      : grpc.credentials.createInsecure(),
     {
       'grpc.keepalive_time_ms': config.grpcPingInterval,
       'grpc.keepalive_timeout_ms': config.grpcPingTimeout,

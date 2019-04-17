@@ -27,6 +27,8 @@ import parseDataURL from 'data-urls';
 
 import messageTypes from './type';
 
+import { dataUrlRegex } from '../../data_url';
+
 const mqMessageProtobufRootInstance = new protobuf.Root();
 const mqMessageProtobufRoot = mqMessageProtobufRootInstance.loadSync(
   path.join(__dirname, '..', '..', '..', '..', 'protos', 'mq_message.proto'),
@@ -39,8 +41,6 @@ const ConsentRequestMqMessage = mqMessageProtobufRoot.lookupType(
 const AsDataResponseMqMessage = mqMessageProtobufRoot.lookupType(
   'AsDataResponseMqMessage'
 );
-
-const dataUrlRegex = /(^\s*data:\s*([a-z]+\/[a-z0-9-+.]+(\s*;\s*[a-z-]+=[a-z0-9-]+)?)?(\s*;\s*base64)?\s*,\s*)([a-z0-9!$&',()*+;=\-._~:@/?%\s]*)\s*$/i;
 
 export function serializeMqMessage(message) {
   let messageBuffer;
