@@ -154,19 +154,21 @@ export async function addIdentity(addIdentityParams) {
       });
     }
 
-    let mode;
-    if (identityOnNode.mode_list.find((mode) => mode === 3) != null) {
-      mode = 3;
-    } else if (identityOnNode.mode_list.find((mode) => mode === 2) != null) {
-      mode = 2;
-    } else {
-      throw new CustomError({
-        errorType: errorType.NO_MODE_AVAILABLE,
-      });
+    let consentRequestNeeded = false;
+    const idpNodes = await tendermintNdid.getIdpNodes({
+      namespace,
+      identifier,
+    });
+    for (let i = 0; i < idpNodes.length; i++) {
+      const { mode_list } = idpNodes[i];
+      if (mode_list.includes(3)) {
+        consentRequestNeeded = true;
+        break;
+      }
     }
 
     let request_id;
-    if (mode === 3) {
+    if (consentRequestNeeded) {
       request_id = utils.createRequestId();
     }
 
@@ -184,7 +186,7 @@ export async function addIdentity(addIdentityParams) {
     addIdentityInternalAsync(...arguments, {
       nodeId: node_id,
       request_id,
-      mode,
+      consentRequestNeeded,
     });
     return { request_id };
   } catch (error) {
@@ -219,14 +221,15 @@ async function addIdentityInternalAsync(
     identity_list,
     request_message,
   },
-  { nodeId, request_id, mode }
+  { nodeId, request_id, consentRequestNeeded }
 ) {
   try {
+    const requestMode = 2;
     let min_idp;
-    if (mode === 2) {
-      min_idp = 0;
-    } else if (mode === 3) {
+    if (consentRequestNeeded) {
       min_idp = 1;
+    } else {
+      min_idp = 0;
     }
 
     const identity = {
@@ -272,7 +275,7 @@ async function addIdentityInternalAsync(
           min_aal: 1,
           min_idp,
           request_timeout: 86400,
-          mode,
+          mode: requestMode,
           purpose: operationTypes.ADD_IDENTITY,
         },
         {
