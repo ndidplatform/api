@@ -615,6 +615,11 @@ module.exports = {
     message: 'Data URL with base64 encoded data must not contain whitespaces',
     clientError: true,
   },
+  IDENTITY_NOT_FOUND_ON_IDP: {
+    code: 20071,
+    message: 'An identity for this user could not be found on this IdP',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

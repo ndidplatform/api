@@ -144,6 +144,16 @@ export async function addIdentity(addIdentityParams) {
       identifier,
     });
 
+    if (identityOnNode == null) {
+      throw new CustomError({
+        errorType: errorType.IDENTITY_NOT_FOUND_ON_IDP,
+        details: {
+          namespace,
+          identifier,
+        },
+      });
+    }
+
     let mode;
     if (identityOnNode.mode_list.find((mode) => mode === 3) != null) {
       mode = 3;
