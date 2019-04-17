@@ -30,10 +30,13 @@ BREAKING CHANGES:
   - Add `supported_namespace_list` property to GET `/as/service/:service_id`.
   - Add `supported_namespace_list` property to GET `/utility/as/:service_id`.
   - Add `reference_group_code` property to create identity result callback when successfully created identity to the platform.
+  - Remove `secret` property from create identity result callback when successfully created identity to the platform.
   - Remove `signature` required property from POST `/idp/response`.
   - Change success response code of GET `/identity/:namespace/:identifier` to `200` with `reference_group_code` property in response body.
+  - Remove accessor sign callback.
 - Mode 1 IdP response `signature` will be obtained by signing a request message with node's key, calling node sign callback when using external crypto service.
 - Identity modifications in mode 3 no longer create consent request when it is not necessary, resulting in no callback with type `*_request_result` e.g. `create_identity_request_result`.
+- Change mode 2 and 3 request response accessor signing scheme.
 - Change logging format.
 - Remove logging to file feature.
 - Remove logging environment variable options
@@ -61,6 +64,8 @@ IMPROVEMENTS:
   - Add `supported_request_message_data_url_type_list` property to GET `/utility/idp`.
   - Add `supported_request_message_data_url_type_list` and `mode_list` properties to GET `/utility/idp/:namespace/:identifier`.
   - Add identity-IdP association revocation support (opposite of create identity).
+  - New callback for notifying identity modifications (for mode 2 and 3 on IdPs).
+  - New callback for encrypt with accessor key (for mode 2 and 3 on IdPs).
 - Use UUIDv4 when auto generating accessor IDs.
 - Load balancing support by setting `MODE` to `master` on one process and `worker` on other processes with the same Node ID.
 - Refactor request process flow.
