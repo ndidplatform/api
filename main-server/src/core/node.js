@@ -28,11 +28,29 @@ import logger from '../logger';
 
 import * as config from '../config';
 
+/**
+ * Update node
+ *
+ * @param {Object} updateNodeParams
+ * @param {string} [updateNodeParams.node_id]
+ * @param {string} updateNodeParams.reference_id
+ * @param {string} updateNodeParams.callback_url
+ * @param {string} [updateNodeParams.public_key]
+ * @param {string} [updateNodeParams.public_key_type]
+ * @param {string} [updateNodeParams.master_public_key]
+ * @param {string} [updateNodeParams.master_public_key_type]
+ * @param {string} [updateNodeParams.check_string]
+ * @param {string} [updateNodeParams.signed_check_string]
+ * @param {string} [updateNodeParams.master_signed_check_string]
+ * @param {string[]} [updateNodeParams.supported_request_message_data_url_type_list]
+ * @param {Object} [options]
+ * @param {boolean} [options.synchronous]
+ *
+ * @returns {Promise<Object>} Request ID and request message salt
+ */
 export async function updateNode(
   {
     node_id,
-    reference_id,
-    callback_url,
     public_key,
     public_key_type,
     master_public_key,
@@ -40,7 +58,6 @@ export async function updateNode(
     check_string,
     signed_check_string,
     master_signed_check_string,
-    supported_request_message_data_url_type_list,
   },
   { synchronous = false } = {}
 ) {

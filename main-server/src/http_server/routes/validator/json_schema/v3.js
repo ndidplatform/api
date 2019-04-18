@@ -360,6 +360,13 @@ export default {
               // 'node_master_sign_method',
             ],
           },
+          {
+            required: [
+              'reference_id',
+              'callback_url',
+              'supported_request_message_data_url_type_list',
+            ],
+          },
         ],
       },
     },
