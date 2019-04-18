@@ -1016,8 +1016,8 @@ export async function query(fnName, params, height) {
 
 function mempoolFullOrOutOfToken(error) {
   return (
-    error.errorType.code === errorType.ABCI_NOT_ENOUGH_TOKEN.code ||
-    error.errorType.code === errorType.TENDERMINT_MEMPOOL_FULL.code
+    error.code === errorType.ABCI_NOT_ENOUGH_TOKEN.code ||
+    error.code === errorType.TENDERMINT_MEMPOOL_FULL.code
   );
 }
 
