@@ -24,6 +24,8 @@ import * as tendermintNdid from '../tendermint/ndid';
 import { getErrorObjectForClient } from '../utils/error';
 import { validateKey, verifyNewKey } from '../utils/node_key';
 import { callbackToClient } from '../callback';
+import CustomError from 'ndid-error/custom_error';
+import errorType from 'ndid-error/type';
 import logger from '../logger';
 
 import * as config from '../config';
@@ -58,6 +60,7 @@ export async function updateNode(
     check_string,
     signed_check_string,
     master_signed_check_string,
+    supported_request_message_data_url_type_list,
   },
   { synchronous = false } = {}
 ) {
@@ -82,6 +85,23 @@ export async function updateNode(
         check_string,
         true
       );
+    }
+  }
+
+  if (supported_request_message_data_url_type_list != null) {
+    const nodeInfo = await tendermintNdid.getNodeInfo(node_id);
+    if (nodeInfo == null) {
+      throw new CustomError({
+        errorType: errorType.NODE_INFO_NOT_FOUND,
+        details: {
+          node_id,
+        },
+      });
+    }
+    if (nodeInfo.role.toLowerCase() !== 'idp') {
+      throw new CustomError({
+        errorType: errorType.MUST_BE_IDP_NODE,
+      });
     }
   }
 

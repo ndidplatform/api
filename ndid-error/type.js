@@ -620,6 +620,11 @@ module.exports = {
     message: 'An identity for this user could not be found on this IdP',
     clientError: true,
   },
+  MUST_BE_IDP_NODE: {
+    code: 20072,
+    message: 'Must be IdP node',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
