@@ -274,12 +274,10 @@ async function createIdentityInternalAsync(
     let min_idp;
     let requestMode;
     if (mode === 2) {
-      min_idp = 0;
       requestMode = 2;
+      min_idp = 0;
     } else if (mode === 3) {
       if (existingNamespace && existingIdentifier) {
-        min_idp = 1;
-
         const idpNodes = await tendermintNdid.getIdpNodes({
           namespace: existingNamespace,
           identifier: existingIdentifier,
@@ -292,9 +290,14 @@ async function createIdentityInternalAsync(
             break;
           }
         }
+        if (idpNodes.length > 0) {
+          min_idp = 1;
+        } else {
+          min_idp = 0;
+        }
       } else {
-        min_idp = 0;
         requestMode = 3;
+        min_idp = 0;
       }
     }
 
