@@ -38,9 +38,9 @@ export default class MQRecv extends EventEmitter {
     this.recvSocket.on(
       'message',
       function(identity, messageBuffer) {
-        let jsonMessage;
+        let msg;
         try {
-          jsonMessage = MQProtocol.extractMsg(messageBuffer);
+          msg = MQProtocol.extractMsg(messageBuffer);
         } catch (error) {
           this.emit(
             'error',
@@ -57,15 +57,15 @@ export default class MQRecv extends EventEmitter {
           return;
         }
         const ackMSG = MQProtocol.generateAckMsg(config.senderId, {
-          msgId: jsonMessage.retryspec.msgId,
-          seqId: jsonMessage.retryspec.seqId,
+          msgId: msg.retryspec.msgId,
+          seqId: msg.retryspec.seqId,
         });
 
         // this.recvSocket.send(identity, ackMSG);
         this.emit('message', {
-          message: jsonMessage.message,
-          msgId: jsonMessage.retryspec.msgId,
-          senderId: jsonMessage.senderId,
+          message: msg.message,
+          msgId: msg.retryspec.msgId,
+          senderId: msg.senderId,
           sendAck: () => this.recvSocket.send(identity, ackMSG),
         });
       }.bind(this)

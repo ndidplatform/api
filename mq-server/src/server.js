@@ -156,11 +156,7 @@ function onRecvError({ error }) {
 
 // Send
 function sendMessage(call, callback) {
-  const {
-    mq_address: mqAddress,
-    payload,
-    message_id: overriddenMsgId,
-  } = call.request;
+  const { mq_address: mqAddress, payload, message_id: msgId } = call.request;
   const { ip, port } = mqAddress;
 
   logger.debug({
@@ -168,8 +164,9 @@ function sendMessage(call, callback) {
     args: call.request,
   });
 
-  const msgId = mqSend.send({ ip, port }, payload, null, overriddenMsgId);
   sendCalls[msgId] = { call, callback };
+
+  mqSend.send({ ip, port }, payload, msgId);
 
   call.on('cancelled', () => {
     logger.debug({
@@ -210,7 +207,7 @@ async function initialize() {
     maxMsgSize: MQ_RECV_MAX_MESSAGE_SIZE,
   });
 
-  mqRecv.on('message', async ({ message, msgId, senderId, sendAck }) => {
+  mqRecv.on('message', ({ message, msgId, senderId, sendAck }) => {
     logger.debug({
       message: 'Inbound message',
       msgId,

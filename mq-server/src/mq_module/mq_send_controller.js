@@ -35,6 +35,7 @@ export default class MQSend extends EventEmitter {
     this.totalTimeout = config.totalTimeout || 120000;
     this.timeout = config.timeout || 30000;
     this.id = config.id || '';
+    this.callbacksAfterAck = {};
 
     this.logic = new MQLogic({
       totalTimeout: this.totalTimeout,
@@ -109,12 +110,14 @@ export default class MQSend extends EventEmitter {
       'message',
       function(messageBuffer) {
         const msg = MQProtocol.extractMsg(messageBuffer);
-        this.emit(
-          'debug',
-          'Received ACK for ' + msg.retryspec.msgId + '/' + msg.retryspec.seqId
-        );
-        this.logic.cleanUp(msg.retryspec.msgId);
-        this.emit('ack_received', msg.retryspec.msgId);
+        const { msgId, seqId } = msg.retryspec;
+        this.emit('debug', 'Received ACK for ' + msgId + '/' + seqId);
+        this.logic.cleanUp(msgId);
+        if (this.callbacksAfterAck[msgId]) {
+          this.callbacksAfterAck[msgId]();
+          delete this.callbacksAfterAck[msgId];
+        }
+        this.emit('ack_received', msgId);
       }.bind(this)
     );
 
@@ -140,12 +143,21 @@ export default class MQSend extends EventEmitter {
     }
   }
 
-  send(dest, payload, callbackAfterAck, msgId) {
+  send(dest, payload, msgId, callbackAfterAck) {
+    if (!msgId) {
+      throw new Error('Missing "msgId"');
+    }
     if (msgId && typeof msgId !== 'string') {
       throw new Error('"msgId" must be a string');
     }
+    if (callbackAfterAck) {
+      if (typeof callbackAfterAck !== 'function') {
+        throw new Error('"callbackAfterAck" must be a function');
+      }
+      this.callbacksAfterAck[msgId] = callbackAfterAck;
+    }
     // let the logic to dictate when\where it should send
-    return this.logic.send(dest, payload, callbackAfterAck, msgId);
+    this.logic.send(dest, payload, msgId);
   }
 
   stopSend(msgId) {

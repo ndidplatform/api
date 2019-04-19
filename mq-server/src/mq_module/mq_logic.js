@@ -29,10 +29,8 @@ export default class MQLogic extends EventEmitter {
     this.timeout = config.timeout || 30000;
     this.maxRetries = totalTimeout / this.timeout;
     this.maxSeqId = 0;
-    this.maxMsgId = Date.now();
     this.id = config.id || '';
     this.seqMap = new Map();
-    this.callbacksAfterAck = {};
   }
 
   _cleanUp(msgId) {
@@ -47,7 +45,6 @@ export default class MQLogic extends EventEmitter {
     for (let i = 0; i < itemToDelete.length; i++) {
       this.seqMap.delete(itemToDelete[i]);
     }
-    delete this.callbacksAfterAck[msgId];
   }
 
   _performSend(dest, payload, msgId, retryCount = 0) {
@@ -96,28 +93,21 @@ export default class MQLogic extends EventEmitter {
   }
 
   /**
-   * Should be called when ACK is received
-   * @param {number} msgId 
+   * Should be called when ACK is received or send cancelled
+   * @param {number} msgId
    */
   cleanUp(msgId) {
-    if (this.callbacksAfterAck[msgId]) {
-      this.callbacksAfterAck[msgId]();
-    }
     this._cleanUp(msgId);
   }
 
-  send(dest, payload, callbackAfterAck, msgId) {
+  send(dest, payload, msgId) {
     if (!Buffer.isBuffer(payload)) {
       throw new Error('Expect payload to be Buffer');
     }
     if (!msgId) {
-      msgId = this.maxMsgId++;
-    }
-    if (callbackAfterAck) {
-      this.callbacksAfterAck[msgId] = callbackAfterAck;
+      throw new Error('Missing "msgId"');
     }
     this._performSend(dest, payload, msgId);
-    return msgId;
   }
 
   stopAllRetries() {
