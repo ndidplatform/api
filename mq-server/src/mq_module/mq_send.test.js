@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import assert from 'assert';
@@ -10,6 +12,10 @@ import errorType from 'ndid-error/type';
 
 const expect = chai.expect;
 chai.use(chaiHttp);
+
+function getMsgId() {
+  return crypto.randomBytes(8).toString('base64');
+}
 
 let portIdx = 5555;
 let getPort = function(numports) {
@@ -40,7 +46,8 @@ describe('Functional Test for MQ Sender with real sockets', function() {
         ip: '127.0.0.1',
         port: ports[0],
       },
-      Buffer.from('test message 1')
+      Buffer.from('test message 1'),
+      getMsgId()
     );
   });
 
@@ -61,7 +68,8 @@ describe('Functional Test for MQ Sender with real sockets', function() {
         ip: '127.0.0.1',
         port: ports[0],
       },
-      Buffer.from('นี่คือเทสแมสเซจ')
+      Buffer.from('นี่คือเทสแมสเซจ'),
+      getMsgId()
     );
   });
 
@@ -85,9 +93,21 @@ describe('Functional Test for MQ Sender with real sockets', function() {
 
     let sendNode = new MQSend({});
 
-    sendNode.send({ ip: '127.0.0.1', port: ports[0] }, Buffer.from('111111'));
-    sendNode.send({ ip: '127.0.0.1', port: ports[0] }, Buffer.from('222222'));
-    sendNode.send({ ip: '127.0.0.1', port: ports[0] }, Buffer.from('333333'));
+    sendNode.send(
+      { ip: '127.0.0.1', port: ports[0] },
+      Buffer.from('111111'),
+      getMsgId()
+    );
+    sendNode.send(
+      { ip: '127.0.0.1', port: ports[0] },
+      Buffer.from('222222'),
+      getMsgId()
+    );
+    sendNode.send(
+      { ip: '127.0.0.1', port: ports[0] },
+      Buffer.from('333333'),
+      getMsgId()
+    );
   });
 
   it('should send data to 3 sources at the same time properly', function(done) {
@@ -143,9 +163,21 @@ describe('Functional Test for MQ Sender with real sockets', function() {
     });
 
     let mqNode = new MQSend({});
-    mqNode.send({ ip: '127.0.0.1', port: ports[0] }, Buffer.from('111111'));
-    mqNode.send({ ip: '127.0.0.1', port: ports[1] }, Buffer.from('222222'));
-    mqNode.send({ ip: '127.0.0.1', port: ports[2] }, Buffer.from('333333'));
+    mqNode.send(
+      { ip: '127.0.0.1', port: ports[0] },
+      Buffer.from('111111'),
+      getMsgId()
+    );
+    mqNode.send(
+      { ip: '127.0.0.1', port: ports[1] },
+      Buffer.from('222222'),
+      getMsgId()
+    );
+    mqNode.send(
+      { ip: '127.0.0.1', port: ports[2] },
+      Buffer.from('333333'),
+      getMsgId()
+    );
   });
 
   it('should retry and should resume sending if destination start up late but within time limit', function(done) {
@@ -161,7 +193,11 @@ describe('Functional Test for MQ Sender with real sockets', function() {
       assert.fail('this one should not fire error, but it fired: ' + error);
     });
 
-    mqNode.send({ ip: '127.0.0.1', port: ports[0] }, Buffer.from('test'));
+    mqNode.send(
+      { ip: '127.0.0.1', port: ports[0] },
+      Buffer.from('test'),
+      getMsgId()
+    );
 
     let id = setTimeout(function() {
       let mqNode2 = new MQRecv({ port: ports[0] });
@@ -203,7 +239,11 @@ describe('Functional Test for MQ Sender with real sockets', function() {
     mqNode.on('error', function(msgId, error) {
       assert.fail('this one should not fire error');
     });
-    mqNode.send({ ip: '127.0.0.1', port: ports[0] }, Buffer.from('test'));
+    mqNode.send(
+      { ip: '127.0.0.1', port: ports[0] },
+      Buffer.from('test'),
+      getMsgId()
+    );
 
     // create proper one later
     let id = setTimeout(function() {
@@ -246,7 +286,11 @@ describe('Functional Test for MQ Sender with real sockets', function() {
       done();
     });
 
-    mqNode.send({ ip: '127.0.0.1', port: ports[0] }, Buffer.from('test'));
+    mqNode.send(
+      { ip: '127.0.0.1', port: ports[0] },
+      Buffer.from('test'),
+      getMsgId()
+    );
   });
 
   it('should retry just like normal timeout and eventually timeout and fires MQERR_TIMEOUT error downstream if upstream return error due to size issue', function(done) {
@@ -263,7 +307,8 @@ describe('Functional Test for MQ Sender with real sockets', function() {
 
     mqNode.send(
       { ip: '127.0.0.1', port: ports[0] },
-      Buffer.from('testbigbig12345678901234567890')
+      Buffer.from('testbigbig12345678901234567890'),
+      getMsgId()
     );
   });
 
@@ -294,7 +339,11 @@ describe('Functional Test for MQ Sender with real sockets', function() {
       alreadyTimeout = true;
     });
 
-    mqNode.send({ ip: '127.0.0.1', port: ports[0] }, Buffer.from('test'));
+    mqNode.send(
+      { ip: '127.0.0.1', port: ports[0] },
+      Buffer.from('test'),
+      getMsgId()
+    );
 
     // create proper one later
     let id = setTimeout(function() {
@@ -341,7 +390,8 @@ describe.skip('mq extreme case. Keep it there but dont run by default', function
     for (let i = 0; i < 900; i++) {
       sendNode.send(
         { ip: '127.0.0.1', port: ports[0] },
-        Buffer.from('msg' + i)
+        Buffer.from('msg' + i),
+        getMsgId()
       );
     }
   });
@@ -366,7 +416,8 @@ describe.skip('mq extreme case. Keep it there but dont run by default', function
       for (let i = 0; i < 1800; i++)
         sendNode.send(
           { ip: '127.0.0.1', port: ports[0] },
-          Buffer.from('msg' + i)
+          Buffer.from('msg' + i),
+          getMsgId()
         );
     } catch (err) {
       expect(err.message).to.equal('Error: Too many open files');
@@ -387,7 +438,8 @@ describe.skip('mq extreme case. Keep it there but dont run by default', function
       for (let i = 0; i < 900; i++) {
         sendNode.send(
           { ip: '127.0.0.1', port: ports[0] },
-          Buffer.from('msg' + i)
+          Buffer.from('msg' + i),
+          getMsgId()
         );
       }
     };
@@ -434,7 +486,8 @@ describe.skip('mq extreme case. Keep it there but dont run by default', function
         ip: '127.0.0.1',
         port: ports[0],
       },
-      Buffer.from(str)
+      Buffer.from(str),
+      getMsgId()
     );
 
     // create proper one later

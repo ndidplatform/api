@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import assert from 'assert';
@@ -9,6 +11,10 @@ import errorType from 'ndid-error/type';
 
 const expect = chai.expect;
 chai.use(chaiHttp);
+
+function getMsgId() {
+  return crypto.randomBytes(8).toString('base64');
+}
 
 describe('Functional Test for MQ receiver with real socket', function() {
   let portIdx = 5655;
@@ -48,21 +54,24 @@ describe('Functional Test for MQ receiver with real socket', function() {
         ip: '127.0.0.1',
         port: ports[0],
       },
-      Buffer.from('1111111')
+      Buffer.from('1111111'),
+      getMsgId()
     );
     mqNode2.send(
       {
         ip: '127.0.0.1',
         port: ports[0],
       },
-      Buffer.from('222222')
+      Buffer.from('222222'),
+      getMsgId()
     );
     mqNode3.send(
       {
         ip: '127.0.0.1',
         port: ports[0],
       },
-      Buffer.from('333333')
+      Buffer.from('333333'),
+      getMsgId()
     );
   });
 
@@ -86,7 +95,8 @@ describe('Functional Test for MQ receiver with real socket', function() {
 
     mqNode.send(
       { ip: '127.0.0.1', port: ports[0] },
-      Buffer.from('testbigbig12345678901234567890')
+      Buffer.from('testbigbig12345678901234567890'),
+      getMsgId()
     );
   });
 
@@ -94,7 +104,9 @@ describe('Functional Test for MQ receiver with real socket', function() {
     let ports = getPort(1);
     let mqNodeRecv = new MQRecv({ port: ports[0] });
     mqNodeRecv.on('error', function(error) {
-      expect(error.getCode()).to.be.eql(errorType.WRONG_MESSAGE_QUEUE_PROTOCOL.code);
+      expect(error.getCode()).to.be.eql(
+        errorType.WRONG_MESSAGE_QUEUE_PROTOCOL.code
+      );
       sendingSocket.close();
       mqNodeRecv.close();
       done();
