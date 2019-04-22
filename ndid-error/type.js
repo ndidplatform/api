@@ -343,7 +343,7 @@ module.exports = {
   IDENTITY_NOT_FOUND: {
     code: 20020,
     message:
-      'An identity for this user could not be found. It may have not been created yet',
+      'An identity for this user could not be found. It may have not been created yet.',
     clientError: true,
   },
   MAXIMUM_IAL_EXCEED: {
@@ -617,7 +617,7 @@ module.exports = {
   },
   IDENTITY_NOT_FOUND_ON_IDP: {
     code: 20071,
-    message: 'An identity for this user could not be found on this IdP',
+    message: 'An identity associated with this IdP could not be found.',
     clientError: true,
   },
   MUST_BE_IDP_NODE: {

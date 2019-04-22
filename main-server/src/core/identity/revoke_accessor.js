@@ -94,7 +94,7 @@ export async function revokeAccessor(revokeAccessorParams) {
     });
     if (identityOnNode == null) {
       throw new CustomError({
-        errorType: errorType.IDENTITY_NOT_FOUND,
+        errorType: errorType.IDENTITY_NOT_FOUND_ON_IDP,
         details: {
           namespace,
           identifier,

@@ -20,14 +20,13 @@
  *
  */
 
-import { checkAssociated } from '.';
+import { getIdentityInfo } from '.';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
-import * as utils from '../../utils';
 import { callbackToClient } from '../../callback';
 import logger from '../../logger';
 
@@ -63,9 +62,14 @@ export async function updateIal(
 
   try {
     // check for created identity
-    if (!checkAssociated({ namespace, identifier })) {
+    const identityOnNode = await getIdentityInfo({
+      nodeId: node_id,
+      namespace,
+      identifier,
+    });
+    if (identityOnNode == null) {
       throw new CustomError({
-        errorType: errorType.IDENTITY_NOT_FOUND,
+        errorType: errorType.IDENTITY_NOT_FOUND_ON_IDP,
         details: {
           namespace,
           identifier,
