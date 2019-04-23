@@ -242,7 +242,7 @@ router.post(
       res.status(202).json(result);
       next();
     } catch (error) {
-      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
+      if (error.code === errorType.IDENTITY_NOT_FOUND_ON_IDP.code) {
         res.status(404).end();
         next();
         return;
@@ -280,7 +280,7 @@ router.post(
       res.status(202).json(result);
       next();
     } catch (error) {
-      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
+      if (error.code === errorType.IDENTITY_NOT_FOUND_ON_IDP.code) {
         res.status(404).end();
         next();
         return;
@@ -311,7 +311,7 @@ router.post(
       res.status(202).json(result);
       next();
     } catch (error) {
-      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
+      if (error.code === errorType.IDENTITY_NOT_FOUND_ON_IDP.code) {
         res.status(404).end();
         next();
         return;
@@ -335,7 +335,7 @@ router.post(
       res.status(501).end();
       next();
     } catch (error) {
-      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
+      if (error.code === errorType.IDENTITY_NOT_FOUND_ON_IDP.code) {
         res.status(404).end();
         next();
         return;
@@ -366,7 +366,7 @@ router.post(
       res.status(501).end();
       next();
     } catch (error) {
-      if (error.code === errorType.IDENTITY_NOT_FOUND.code) {
+      if (error.code === errorType.IDENTITY_NOT_FOUND_ON_IDP.code) {
         res.status(404).end();
         next();
         return;
