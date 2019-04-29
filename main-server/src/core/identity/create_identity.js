@@ -74,6 +74,7 @@ export async function createIdentity(createIdentityParams) {
     reference_id,
     callback_url,
     identity_list,
+    mode,
     accessor_type,
     accessor_public_key,
   } = createIdentityParams;
@@ -195,7 +196,7 @@ export async function createIdentity(createIdentityParams) {
     }
 
     let request_id;
-    if (existingNamespace && existingIdentifier) {
+    if (mode === 3 && existingNamespace && existingIdentifier) {
       request_id = utils.createRequestId();
     }
 
