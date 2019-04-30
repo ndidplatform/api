@@ -11,6 +11,9 @@ services:
       - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
       - NDID_NODE=true
+    entrypoint: /api/docker/start-api.sh
+    volumes:
+      - ./start-api.sh:/api/docker/start-api.sh:ro
     security_opt:
       - no-new-privileges
     ports:
@@ -30,6 +33,9 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-idp-1
       - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
+    entrypoint: /api/docker/start-api.sh
+    volumes:
+      - ./start-api.sh:/api/docker/start-api.sh:ro
     security_opt:
       - no-new-privileges
     ports:
@@ -49,6 +55,9 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-idp-2
       - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
+    entrypoint: /api/docker/start-api.sh
+    volumes:
+      - ./start-api.sh:/api/docker/start-api.sh:ro
     security_opt:
       - no-new-privileges
     ports:
@@ -68,6 +77,9 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-rp
       - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
+    entrypoint: /api/docker/start-api.sh
+    volumes:
+      - ./start-api.sh:/api/docker/start-api.sh:ro
     security_opt:
       - no-new-privileges
     ports:
@@ -87,6 +99,9 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-as
       - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
+    entrypoint: /api/docker/start-api.sh
+    volumes:
+      - ./start-api.sh:/api/docker/start-api.sh:ro
     security_opt:
       - no-new-privileges
     ports:
