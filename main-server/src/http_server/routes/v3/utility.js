@@ -57,7 +57,7 @@ router.get(
         identifier,
         min_ial: parseFloat(min_ial),
         min_aal: parseFloat(min_aal),
-        mode_list: mode ? [mode] : undefined,
+        mode_list: mode ? [parseInt(mode)] : undefined,
       });
 
       res.status(200).json(idpNodes);
