@@ -359,46 +359,30 @@ export async function processMessage(nodeId, messageId, message) {
           },
         });
       }
-      let dataToNotify;
-      if (message.mode === 1) {
-        dataToNotify = {
-          mode: message.mode,
-          request_id: message.request_id,
-          namespace: message.namespace,
-          identifier: message.identifier,
-          request_message: message.request_message,
-          request_message_hash: requestDetail.request_message_hash,
-          request_message_salt: message.request_message_salt,
-          requester_node_id: message.rp_id,
-          min_ial: message.min_ial,
-          min_aal: message.min_aal,
-          data_request_list: message.data_request_list,
-          initial_salt: message.initial_salt,
-          creation_time: message.creation_time,
-          creation_block_height: `${requestDetail.creation_chain_id}:${
-            requestDetail.creation_block_height
-          }`,
-          request_timeout: message.request_timeout,
-        };
-      } else if (message.mode === 2 || message.mode === 3) {
-        dataToNotify = {
-          mode: message.mode,
-          request_id: message.request_id,
-          reference_group_code: message.reference_group_code,
-          request_message: message.request_message,
-          request_message_hash: requestDetail.request_message_hash,
-          request_message_salt: message.request_message_salt,
-          requester_node_id: message.rp_id,
-          min_ial: message.min_ial,
-          min_aal: message.min_aal,
-          data_request_list: message.data_request_list,
-          initial_salt: message.initial_salt,
-          creation_time: message.creation_time,
-          creation_block_height: `${requestDetail.creation_chain_id}:${
-            requestDetail.creation_block_height
-          }`,
-          request_timeout: message.request_timeout,
-        };
+      let dataToNotify = {
+        mode: message.mode,
+        request_id: message.request_id,
+        request_message: message.request_message,
+        request_message_hash: requestDetail.request_message_hash,
+        request_message_salt: message.request_message_salt,
+        requester_node_id: message.rp_id,
+        min_ial: message.min_ial,
+        min_aal: message.min_aal,
+        data_request_list: message.data_request_list,
+        initial_salt: message.initial_salt,
+        creation_time: message.creation_time,
+        creation_block_height: `${requestDetail.creation_chain_id}:${
+          requestDetail.creation_block_height
+        }`,
+        request_timeout: message.request_timeout,
+      };
+      //already onboarded
+      if(message.reference_group_code) {
+        dataToNotify.reference_group_code = message.reference_group_code;
+      // mode 1 or on-the-fly onboard
+      } else {
+        dataToNotify.namespace = message.namespace;
+        dataToNotify.identifier = message.identifier;
       }
       notifyIncomingRequestByCallback(nodeId, dataToNotify);
     } else {
