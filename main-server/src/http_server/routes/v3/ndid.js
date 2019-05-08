@@ -22,15 +22,15 @@
 
 import express from 'express';
 
-import { validateBody } from './middleware/validation';
-import { ndidOnlyHandler } from './middleware/role_handler';
-import * as ndid from '../../core/ndid';
+import { validateBody } from '../middleware/validation';
+import { ndidOnlyHandler } from '../middleware/role_handler';
+import * as ndid from '../../../core/ndid';
 
 const router = express.Router();
 
 router.use(ndidOnlyHandler);
 
-router.post('/initNDID', validateBody, async (req, res, next) => {
+router.post('/init_ndid', validateBody, async (req, res, next) => {
   try {
     const {
       public_key,
@@ -54,7 +54,7 @@ router.post('/initNDID', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/endInit', async (req, res, next) => {
+router.post('/end_init', async (req, res, next) => {
   try {
     await ndid.endInit();
     res.status(204).end();
@@ -64,7 +64,7 @@ router.post('/endInit', async (req, res, next) => {
   }
 });
 
-router.post('/setAllowedModeList', validateBody, async (req, res, next) => {
+router.post('/set_allowed_mode_list', validateBody, async (req, res, next) => {
   try {
     const { purpose, allowed_mode_list } = req.body;
     await ndid.setAllowedModeList({
@@ -78,7 +78,7 @@ router.post('/setAllowedModeList', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/registerNode', validateBody, async (req, res, next) => {
+router.post('/register_node', validateBody, async (req, res, next) => {
   try {
     const {
       node_id,
@@ -116,7 +116,7 @@ router.post('/registerNode', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/updateNode', validateBody, async (req, res, next) => {
+router.post('/update_node', validateBody, async (req, res, next) => {
   try {
     const {
       node_id,
@@ -144,7 +144,7 @@ router.post('/updateNode', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/enableNode', validateBody, async (req, res, next) => {
+router.post('/enable_node', validateBody, async (req, res, next) => {
   try {
     const { node_id } = req.body;
 
@@ -159,7 +159,7 @@ router.post('/enableNode', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/disableNode', validateBody, async (req, res, next) => {
+router.post('/disable_node', validateBody, async (req, res, next) => {
   try {
     const { node_id } = req.body;
 
@@ -174,7 +174,7 @@ router.post('/disableNode', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/setNodeToken', validateBody, async (req, res, next) => {
+router.post('/set_node_token', validateBody, async (req, res, next) => {
   try {
     const { node_id, amount } = req.body;
 
@@ -190,7 +190,7 @@ router.post('/setNodeToken', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/addNodeToken', validateBody, async (req, res, next) => {
+router.post('/add_node_token', validateBody, async (req, res, next) => {
   try {
     const { node_id, amount } = req.body;
 
@@ -206,7 +206,7 @@ router.post('/addNodeToken', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/reduceNodeToken', validateBody, async (req, res, next) => {
+router.post('/reduce_node_token', validateBody, async (req, res, next) => {
   try {
     const { node_id, amount } = req.body;
 
@@ -222,7 +222,7 @@ router.post('/reduceNodeToken', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/namespaces', validateBody, async (req, res, next) => {
+router.post('/create_namespace', validateBody, async (req, res, next) => {
   try {
     const {
       namespace,
@@ -244,10 +244,10 @@ router.post('/namespaces', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/namespaces/:namespace', validateBody, async (req, res, next) => {
+router.post('/update_namespace', validateBody, async (req, res, next) => {
   try {
-    const { namespace } = req.params;
     const {
+      namespace,
       description,
       allowed_identifier_count_in_reference_group,
       allowed_active_identifier_count_in_reference_group,
@@ -266,9 +266,9 @@ router.post('/namespaces/:namespace', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/namespaces/:namespace/enable', async (req, res, next) => {
+router.post('/enable_namespace', validateBody, async (req, res, next) => {
   try {
-    const { namespace } = req.params;
+    const { namespace } = req.body;
 
     await ndid.enableNamespace({
       namespace,
@@ -280,9 +280,9 @@ router.post('/namespaces/:namespace/enable', async (req, res, next) => {
   }
 });
 
-router.post('/namespaces/:namespace/disable', async (req, res, next) => {
+router.post('/disable_namespace', validateBody, async (req, res, next) => {
   try {
-    const { namespace } = req.params;
+    const { namespace } = req.body;
 
     await ndid.disableNamespace({
       namespace,
@@ -294,7 +294,7 @@ router.post('/namespaces/:namespace/disable', async (req, res, next) => {
   }
 });
 
-router.post('/services', validateBody, async (req, res, next) => {
+router.post('/create_service', validateBody, async (req, res, next) => {
   try {
     const {
       service_id,
@@ -316,10 +316,14 @@ router.post('/services', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/services/:service_id', validateBody, async (req, res, next) => {
+router.post('/update_service', validateBody, async (req, res, next) => {
   try {
-    const { service_id } = req.params;
-    const { service_name, data_schema, data_schema_version } = req.body;
+    const {
+      service_id,
+      service_name,
+      data_schema,
+      data_schema_version,
+    } = req.body;
 
     await ndid.updateService({
       service_id,
@@ -334,9 +338,9 @@ router.post('/services/:service_id', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/services/:service_id/enable', async (req, res, next) => {
+router.post('/enable_service', validateBody, async (req, res, next) => {
   try {
-    const { service_id } = req.params;
+    const { service_id } = req.body;
 
     await ndid.enableService({
       service_id,
@@ -348,9 +352,9 @@ router.post('/services/:service_id/enable', async (req, res, next) => {
   }
 });
 
-router.post('/services/:service_id/disable', async (req, res, next) => {
+router.post('/disable_service', validateBody, async (req, res, next) => {
   try {
-    const { service_id } = req.params;
+    const { service_id } = req.body;
 
     await ndid.disableService({
       service_id,
@@ -362,7 +366,7 @@ router.post('/services/:service_id/disable', async (req, res, next) => {
   }
 });
 
-router.post('/validator', validateBody, async (req, res, next) => {
+router.post('/set_validator', validateBody, async (req, res, next) => {
   try {
     const { public_key, power } = req.body;
 
@@ -377,7 +381,7 @@ router.post('/validator', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/approveService', validateBody, async (req, res, next) => {
+router.post('/approve_service', validateBody, async (req, res, next) => {
   try {
     await ndid.approveService(req.body);
     res.status(204).end();
@@ -388,7 +392,7 @@ router.post('/approveService', validateBody, async (req, res, next) => {
 });
 
 router.post(
-  '/enableServiceDestination',
+  '/enable_service_destination',
   validateBody,
   async (req, res, next) => {
     try {
@@ -407,7 +411,7 @@ router.post(
 );
 
 router.post(
-  '/disableServiceDestination',
+  '/disable_service_destination',
   validateBody,
   async (req, res, next) => {
     try {
@@ -425,7 +429,7 @@ router.post(
   }
 );
 
-router.post('/addNodeToProxyNode', validateBody, async (req, res, next) => {
+router.post('/add_node_to_proxy_node', validateBody, async (req, res, next) => {
   try {
     const { node_id, proxy_node_id, config } = req.body;
 
@@ -441,7 +445,7 @@ router.post('/addNodeToProxyNode', validateBody, async (req, res, next) => {
   }
 });
 
-router.post('/updateNodeProxyNode', validateBody, async (req, res, next) => {
+router.post('/update_node_proxy_node', validateBody, async (req, res, next) => {
   try {
     const { node_id, proxy_node_id, config } = req.body;
 
@@ -458,7 +462,7 @@ router.post('/updateNodeProxyNode', validateBody, async (req, res, next) => {
 });
 
 router.post(
-  '/removeNodeFromProxyNode',
+  '/remove_node_from_proxy_node',
   validateBody,
   async (req, res, next) => {
     try {
@@ -475,7 +479,7 @@ router.post(
   }
 );
 
-router.post('/setLastBlock', validateBody, async (req, res, next) => {
+router.post('/set_last_block', validateBody, async (req, res, next) => {
   try {
     const { block_height } = req.body;
 
@@ -489,8 +493,8 @@ router.post('/setLastBlock', validateBody, async (req, res, next) => {
   }
 });
 
-router.get(
-  '/allowedMinIalForRegisterIdentityAtFirstIdp',
+router.post(
+  '/get_allowed_min_ial_for_register_identity_at_first_idp',
   async (req, res, next) => {
     try {
       const min_ial = await ndid.getAllowedMinIalForRegisterIdentityAtFirstIdp();
@@ -503,7 +507,7 @@ router.get(
 );
 
 router.post(
-  '/setAllowedMinIalForRegisterIdentityAtFirstIdp',
+  '/set_allowed_min_ial_for_register_identity_at_first_idp',
   validateBody,
   async (req, res, next) => {
     try {

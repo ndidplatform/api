@@ -22,6 +22,7 @@
 
 import express from 'express';
 
+import ndidRouter from './ndid';
 import rpRouter from './rp';
 import idpRouter from './idp';
 import asRouter from './as';
@@ -32,6 +33,7 @@ import nodeRouter from './node';
 
 const router = express.Router();
 
+router.use('/ndid', ndidRouter);
 router.use('/rp', rpRouter);
 router.use('/idp', idpRouter);
 router.use('/as', asRouter);

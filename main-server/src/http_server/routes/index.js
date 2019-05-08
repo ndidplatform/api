@@ -28,7 +28,6 @@ import logger from '../../logger';
 
 import readyHandler from './middleware/ready_handler';
 import errorHandler from './middleware/error_handler';
-import ndidRouter from './ndid';
 import apiV3Router from './v3';
 import serverInfo from './server_info';
 import reinitNodeKeys from './reinit_node_keys';
@@ -111,8 +110,6 @@ if (config.prometheusEnabled) {
 router.get('/reinit_node_keys', reinitNodeKeys);
 
 router.use(readyHandler);
-
-router.use('/ndid', ndidRouter);
 
 router.use(apiV3Router);
 router.use('/v3', apiV3Router);
