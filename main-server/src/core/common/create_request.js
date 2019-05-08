@@ -80,8 +80,8 @@ async function checkIdpListCondition({
     min_ial,
     min_aal,
     idp_id_list,
-    //comment out the line below for on the fly onboard (not filter mode)
-    //mode,
+    //bypass for on-the-fly onboard (not filter mode)
+    mode: idp_id_list.length === 0 ? mode : undefined,
     supported_request_message_data_url_type_list,
   });
 
@@ -702,21 +702,23 @@ export async function createRequestInternalAsyncAfterBlockchain(
     //split receivers and message into two set
     if(requestData.mode === 2 || requestData.mode === 3) {
       const {
-        min_ial,
-        min_aal,
         idp_id_list,
         mode,
         supported_request_message_data_url_type_list
       } = requestData;
-      receiversWithRefGroupCode = await getIdpMQDestinations({
+      const receiverIds = receivers.map(({ node_id }) => node_id);
+
+      receiversWithRefGroupCode = (await getIdpMQDestinations({
         namespace,
         identifier,
-        min_ial,
-        min_aal,
+        //bypass for on-the-fly uplift
+        min_ial: 1.1,
+        min_aal: 1,
         idp_id_list,
         mode,
         supported_request_message_data_url_type_list,
-      });
+      }).filter(({ node_id }) => receiverIds.indexOf(node_id) !== -1));
+      
       const receiverIdsWithRefGroupCode = receiversWithRefGroupCode.map(({ node_id }) => node_id);
       receiversWithSid = receivers.filter(({ node_id }) => 
         (receiverIdsWithRefGroupCode.indexOf(node_id) === -1)
