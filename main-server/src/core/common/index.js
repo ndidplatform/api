@@ -176,8 +176,7 @@ export async function getIdpMQDestinations({
     min_aal,
     node_id_list: idp_id_list, // filter to include only nodes in this list if node ID exists
     supported_request_message_data_url_type_list, // filter to include only nodes that support all request message types in this list
-    //comment out the line below for on the fly onboard (not filter mode)
-    //mode_list: mode === 2 || mode === 3 ? [mode] : undefined, //  filter to include only nodes that support all modes in this list
+    mode_list: mode === 2 || mode === 3 ? [mode] : undefined, //  filter to include only nodes that support all modes in this list
   });
 
   const receivers = idpNodes
