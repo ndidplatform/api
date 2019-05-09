@@ -265,6 +265,8 @@ async function checkAsListCondition({
  * @param {number} createRequestParams.min_aal
  * @param {number} createRequestParams.min_idp
  * @param {number} createRequestParams.request_timeout
+ * @param {string} createRequestParams.purpose
+ * @param {boolean} createRequestParams.create_without_identity_check
  * @param {Object} options
  * @param {boolean} [options.synchronous]
  * @param {boolean} [options.sendCallbackToClient]
@@ -673,10 +675,10 @@ export async function createRequestInternalAsyncAfterBlockchain(
       }),
     };
 
-    let mqMessageWithSid, 
-        mqMessageWithRefGroupCode, 
-        receiversWithSid, 
-        receiversWithRefGroupCode;
+    let mqMessageWithSid,
+      mqMessageWithRefGroupCode,
+      receiversWithSid,
+      receiversWithRefGroupCode;
 
     const reference_group_code = await tendermintNdid.getReferenceGroupCode(
       namespace,
@@ -703,39 +705,47 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
     //check if each idp is associated with user
     //split receivers and message into two set
-    if(requestData.mode === 2 || requestData.mode === 3) {
+    if (requestData.mode === 2 || requestData.mode === 3) {
       const {
         min_aal,
         idp_id_list,
         mode,
-        supported_request_message_data_url_type_list
+        supported_request_message_data_url_type_list,
       } = requestData;
       const receiverIds = receivers.map(({ node_id }) => node_id);
 
-      receiversWithRefGroupCode = (await getIdpMQDestinations({
+      receiversWithRefGroupCode = await getIdpMQDestinations({
         namespace,
         identifier,
         //bypass min_ial for on-the-fly uplift
-        min_ial: 1.1,
+        // min_ial: 1.1,
         min_aal,
         idp_id_list,
         mode,
         supported_request_message_data_url_type_list,
-      }).filter(({ node_id }) => receiverIds.indexOf(node_id) !== -1));
+      }).filter(({ node_id }) => receiverIds.indexOf(node_id) !== -1);
 
-      const receiverIdsWithRefGroupCode = receiversWithRefGroupCode.map(({ node_id }) => node_id);
-      receiversWithSid = receivers.filter(({ node_id }) => 
-        (receiverIdsWithRefGroupCode.indexOf(node_id) === -1)
+      const receiverIdsWithRefGroupCode = receiversWithRefGroupCode.map(
+        ({ node_id }) => node_id
+      );
+      receiversWithSid = receivers.filter(
+        ({ node_id }) => receiverIdsWithRefGroupCode.indexOf(node_id) === -1
       );
     }
 
     // send request data to IDPs via message queue
     if (min_idp > 0) {
+      const mqSendPromises = [];
       //mode 1 and on-the-fly onboard
-      await mq.send(receiversWithSid, mqMessageWithSid, node_id);
-      if(requestData.mode === 2 || requestData.mode === 3) {
-        await mq.send(receiversWithRefGroupCode, mqMessageWithRefGroupCode, node_id);
+      mqSendPromises[0] = mq.send(receiversWithSid, mqMessageWithSid, node_id);
+      if (requestData.mode === 2 || requestData.mode === 3) {
+        mqSendPromises[1] = mq.send(
+          receiversWithRefGroupCode,
+          mqMessageWithRefGroupCode,
+          node_id
+        );
       }
+      await Promise.all(mqSendPromises);
     }
 
     if (!synchronous) {

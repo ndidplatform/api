@@ -95,64 +95,129 @@ export default {
       },
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
-        properties: {
-          node_id: { type: 'string', minLength: 1 },
-          reference_id: { type: 'string', minLength: 1 },
-          callback_url: { $ref: 'defs#/definitions/url' },
-          mode: { type: 'number', enum: [1, 2, 3] },
-          idp_id_list: {
-            type: 'array',
-            items: {
-              type: 'string',
-              minLength: 1,
-            },
-            uniqueItems: true,
-          },
-          data_request_list: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                service_id: {
+        anyOf: [
+          // Mode 1
+          {
+            properties: {
+              node_id: { type: 'string', minLength: 1 },
+              reference_id: { type: 'string', minLength: 1 },
+              callback_url: { $ref: 'defs#/definitions/url' },
+              mode: { type: 'number', enum: [1] },
+              idp_id_list: {
+                type: 'array',
+                items: {
                   type: 'string',
                   minLength: 1,
                 },
-                as_id_list: {
-                  type: 'array',
-                  items: {
-                    type: 'string',
-                    minLength: 1,
-                  },
-                },
-                min_as: {
-                  type: 'integer',
-                  minimum: 1,
-                },
-                request_params: {
-                  type: 'string',
-                },
+                uniqueItems: true,
               },
-              required: ['service_id', 'min_as'],
+              data_request_list: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    service_id: {
+                      type: 'string',
+                      minLength: 1,
+                    },
+                    as_id_list: {
+                      type: 'array',
+                      items: {
+                        type: 'string',
+                        minLength: 1,
+                      },
+                    },
+                    min_as: {
+                      type: 'integer',
+                      minimum: 1,
+                    },
+                    request_params: {
+                      type: 'string',
+                    },
+                  },
+                  required: ['service_id', 'min_as'],
+                },
+                uniqueItems: true,
+              },
+              request_message: { type: 'string' },
+              min_ial: { $ref: 'defs#/definitions/ial' },
+              min_aal: { $ref: 'defs#/definitions/aal' },
+              min_idp: { type: 'integer', minimum: 1 },
+              request_timeout: { type: 'integer', minimum: 1 },
             },
-            uniqueItems: true,
+            required: [
+              'reference_id',
+              'callback_url',
+              'mode',
+              'request_message',
+              'min_ial',
+              'min_aal',
+              'min_idp',
+              'request_timeout',
+            ],
           },
-          request_message: { type: 'string' },
-          min_ial: { $ref: 'defs#/definitions/ial' },
-          min_aal: { $ref: 'defs#/definitions/aal' },
-          min_idp: { type: 'integer', minimum: 1 },
-          request_timeout: { type: 'integer', minimum: 1 },
-          create_without_identity_check: { type: 'boolean' }
-        },
-        required: [
-          'reference_id',
-          'callback_url',
-          'mode',
-          'request_message',
-          'min_ial',
-          'min_aal',
-          'min_idp',
-          'request_timeout',
-          'create_without_identity_check'
+          // Mode 2,3
+          {
+            properties: {
+              node_id: { type: 'string', minLength: 1 },
+              reference_id: { type: 'string', minLength: 1 },
+              callback_url: { $ref: 'defs#/definitions/url' },
+              mode: { type: 'number', enum: [2, 3] },
+              idp_id_list: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  minLength: 1,
+                },
+                uniqueItems: true,
+              },
+              data_request_list: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    service_id: {
+                      type: 'string',
+                      minLength: 1,
+                    },
+                    as_id_list: {
+                      type: 'array',
+                      items: {
+                        type: 'string',
+                        minLength: 1,
+                      },
+                    },
+                    min_as: {
+                      type: 'integer',
+                      minimum: 1,
+                    },
+                    request_params: {
+                      type: 'string',
+                    },
+                  },
+                  required: ['service_id', 'min_as'],
+                },
+                uniqueItems: true,
+              },
+              request_message: { type: 'string' },
+              min_ial: { $ref: 'defs#/definitions/ial' },
+              min_aal: { $ref: 'defs#/definitions/aal' },
+              min_idp: { type: 'integer', minimum: 1 },
+              request_timeout: { type: 'integer', minimum: 1 },
+              create_without_identity_check: { type: 'boolean' },
+            },
+            required: [
+              'reference_id',
+              'callback_url',
+              'mode',
+              'request_message',
+              'min_ial',
+              'min_aal',
+              'min_idp',
+              'request_timeout',
+              'create_without_identity_check',
+            ],
+          },
         ],
       },
     },
