@@ -706,9 +706,11 @@ export async function createRequestInternalAsyncAfterBlockchain(
       height,
     };
 
-    //check if each idp is associated with user
-    //split receivers and message into two set
-    if (requestData.mode === 2 || requestData.mode === 3) {
+    if (requestData.mode === 1) {
+      receiversWithSid = receivers;
+    } else if (requestData.mode === 2 || requestData.mode === 3) {
+      //check if each idp is associated with user
+      //split receivers and message into two set
       const {
         min_aal,
         idp_id_list,
