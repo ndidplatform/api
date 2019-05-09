@@ -141,6 +141,7 @@ export default {
           min_aal: { $ref: 'defs#/definitions/aal' },
           min_idp: { type: 'integer', minimum: 1 },
           request_timeout: { type: 'integer', minimum: 1 },
+          create_without_identity_check: { type: 'boolean' }
         },
         required: [
           'reference_id',
@@ -151,6 +152,7 @@ export default {
           'min_aal',
           'min_idp',
           'request_timeout',
+          'create_without_identity_check'
         ],
       },
     },

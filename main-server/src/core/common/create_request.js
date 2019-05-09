@@ -55,6 +55,7 @@ async function checkIdpListCondition({
   idp_id_list,
   mode,
   supported_request_message_data_url_type_list,
+  create_without_identity_check,
 }) {
   if (idp_id_list.length !== 0 && idp_id_list.length < min_idp) {
     throw new CustomError({
@@ -81,7 +82,7 @@ async function checkIdpListCondition({
     min_aal,
     idp_id_list,
     //bypass for on-the-fly onboard (not filter mode)
-    mode: idp_id_list.length === 0 ? mode : undefined,
+    mode: create_without_identity_check ? undefined : mode,
     supported_request_message_data_url_type_list,
   });
 
@@ -298,6 +299,7 @@ export async function createRequest(
     min_idp,
     request_timeout,
     purpose,
+    create_without_identity_check,
   } = createRequestParams;
   const { synchronous = false } = options;
   let {
@@ -361,6 +363,7 @@ export async function createRequest(
       supported_request_message_data_url_type_list: requestMessageMimeType
         ? [requestMessageMimeType]
         : undefined,
+      create_without_identity_check,
     });
 
     if (data_request_list != null && data_request_list.length > 0) {
