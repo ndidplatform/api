@@ -79,9 +79,9 @@ async function checkIdpListCondition({
   }
 
   const receivers = await getIdpMQDestinations({
-    namespace,
-    identifier,
-    min_ial,
+    namespace: create_without_identity_check ? undefined : namespace,
+    identifier: create_without_identity_check ? undefined : identifier,
+    min_ial: create_without_identity_check ? undefined : min_ial,
     min_aal,
     idp_id_list,
     //bypass for on-the-fly onboard (not filter mode)
@@ -135,7 +135,41 @@ async function checkIdpListCondition({
       });
     }
   }
-  return receivers;
+
+  let receiversWithSid, receiversWithRefGroupCode;
+  if (mode === 1) {
+    receiversWithSid = receivers;
+    receiversWithRefGroupCode = [];
+  } else if (mode === 2 || mode === 3) {
+    if (create_without_identity_check) {
+      receiversWithRefGroupCode = await getIdpMQDestinations({
+        namespace,
+        identifier,
+        // bypass min_ial for on-the-fly uplift
+        // min_ial: 1.1,
+        min_aal,
+        idp_id_list,
+        mode,
+        supported_request_message_data_url_type_list,
+      });
+      receiversWithSid = receivers.filter(
+        ({ node_id }) =>
+          receiversWithRefGroupCode.find(
+            ({ node_id: nodeWithRefGroupCodeNodeId }) =>
+              node_id === nodeWithRefGroupCodeNodeId
+          ) == null
+      );
+    } else {
+      receiversWithSid = [];
+      receiversWithRefGroupCode = receivers;
+    }
+  }
+
+  return {
+    receivers,
+    receiversWithSid,
+    receiversWithRefGroupCode,
+  };
 }
 
 async function checkAsListCondition({
@@ -357,7 +391,11 @@ export async function createRequest(
       }
     }
 
-    const receivers = await checkIdpListCondition({
+    const {
+      receivers,
+      receiversWithSid,
+      receiversWithRefGroupCode,
+    } = await checkIdpListCondition({
       namespace,
       identifier,
       min_ial,
@@ -435,7 +473,8 @@ export async function createRequest(
         request_id,
         request_message_salt,
         data_request_params_salt_list,
-        receivers,
+        receiversWithSid,
+        receiversWithRefGroupCode,
         requestData,
       });
     } else {
@@ -444,7 +483,8 @@ export async function createRequest(
         request_id,
         request_message_salt,
         data_request_params_salt_list,
-        receivers,
+        receiversWithSid,
+        receiversWithRefGroupCode,
         requestData,
       });
     }
@@ -504,7 +544,8 @@ async function createRequestInternalAsync(
     request_id,
     request_message_salt,
     data_request_params_salt_list,
-    receivers,
+    receiversWithSid,
+    receiversWithRefGroupCode,
     requestData,
   } = additionalParams;
   try {
@@ -549,7 +590,8 @@ async function createRequestInternalAsync(
             request_id,
             min_idp,
             request_timeout,
-            receivers,
+            receiversWithSid,
+            receiversWithRefGroupCode,
             requestData,
           },
           {
@@ -575,7 +617,8 @@ async function createRequestInternalAsync(
           request_id,
           min_idp,
           request_timeout,
-          receivers,
+          receiversWithSid,
+          receiversWithRefGroupCode,
           requestData,
         },
         {
@@ -638,7 +681,8 @@ export async function createRequestInternalAsyncAfterBlockchain(
     request_id,
     min_idp,
     request_timeout,
-    receivers,
+    receiversWithSid,
+    receiversWithRefGroupCode,
     requestData,
   },
   {
@@ -678,77 +722,46 @@ export async function createRequestInternalAsyncAfterBlockchain(
       }),
     };
 
-    let mqMessageWithSid,
-      mqMessageWithRefGroupCode,
-      receiversWithSid,
-      receiversWithRefGroupCode;
-
-    const reference_group_code = await tendermintNdid.getReferenceGroupCode(
-      namespace,
-      identifier
-    );
-
-    mqMessageWithSid = {
-      type: privateMessageType.CONSENT_REQUEST,
-      namespace,
-      identifier,
-      ...requestDataWithoutDataRequestParams,
-      creation_time,
-      chain_id: tendermint.chainId,
-      height,
-    };
-    mqMessageWithRefGroupCode = {
-      type: privateMessageType.CONSENT_REQUEST,
-      reference_group_code,
-      ...requestDataWithoutDataRequestParams,
-      creation_time,
-      chain_id: tendermint.chainId,
-      height,
-    };
-
-    if (requestData.mode === 1) {
-      receiversWithSid = receivers;
-    } else if (requestData.mode === 2 || requestData.mode === 3) {
-      //check if each idp is associated with user
-      //split receivers and message into two set
-      const {
-        min_aal,
-        idp_id_list,
-        mode,
-        supported_request_message_data_url_type_list,
-      } = requestData;
-      const receiverIds = receivers.map(({ node_id }) => node_id);
-
-      receiversWithRefGroupCode = await getIdpMQDestinations({
-        namespace,
-        identifier,
-        //bypass min_ial for on-the-fly uplift
-        // min_ial: 1.1,
-        min_aal,
-        idp_id_list,
-        mode,
-        supported_request_message_data_url_type_list,
-      }).filter(({ node_id }) => receiverIds.indexOf(node_id) !== -1);
-
-      const receiverIdsWithRefGroupCode = receiversWithRefGroupCode.map(
-        ({ node_id }) => node_id
-      );
-      receiversWithSid = receivers.filter(
-        ({ node_id }) => receiverIdsWithRefGroupCode.indexOf(node_id) === -1
-      );
-    }
-
     // send request data to IDPs via message queue
     if (min_idp > 0) {
       const mqSendPromises = [];
       //mode 1 and on-the-fly onboard
-      mqSendPromises[0] = mq.send(receiversWithSid, mqMessageWithSid, node_id);
-      if (requestData.mode === 2 || requestData.mode === 3) {
-        mqSendPromises[1] = mq.send(
-          receiversWithRefGroupCode,
-          mqMessageWithRefGroupCode,
+      if (receiversWithSid.length > 0) {
+        const mqMessageWithSid = {
+          type: privateMessageType.CONSENT_REQUEST,
+          namespace,
+          identifier,
+          ...requestDataWithoutDataRequestParams,
+          creation_time,
+          chain_id: tendermint.chainId,
+          height,
+        };
+        mqSendPromises[0] = mq.send(
+          receiversWithSid,
+          mqMessageWithSid,
           node_id
         );
+      }
+      if (requestData.mode === 2 || requestData.mode === 3) {
+        if (receiversWithRefGroupCode.length > 0) {
+          const reference_group_code = await tendermintNdid.getReferenceGroupCode(
+            namespace,
+            identifier
+          );
+          const mqMessageWithRefGroupCode = {
+            type: privateMessageType.CONSENT_REQUEST,
+            reference_group_code,
+            ...requestDataWithoutDataRequestParams,
+            creation_time,
+            chain_id: tendermint.chainId,
+            height,
+          };
+          mqSendPromises[1] = mq.send(
+            receiversWithRefGroupCode,
+            mqMessageWithRefGroupCode,
+            node_id
+          );
+        }
       }
       await Promise.all(mqSendPromises);
     }
