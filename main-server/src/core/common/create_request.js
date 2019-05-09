@@ -69,7 +69,10 @@ async function checkIdpListCondition({
     });
   }
 
-  if (mode === 1 && idp_id_list.length === 0) {
+  if (
+    (mode === 1 || create_without_identity_check) &&
+    idp_id_list.length === 0
+  ) {
     throw new CustomError({
       errorType: errorType.IDP_ID_LIST_NEEDED,
     });
