@@ -196,8 +196,35 @@ export async function createIdentity(createIdentityParams) {
     }
 
     let request_id;
-    if (mode === 3 && existingNamespace && existingIdentifier) {
-      request_id = utils.createRequestId();
+    let min_idp;
+    let requestMode;
+    if (mode === 2) {
+      requestMode = 2;
+      min_idp = 0;
+    } else if (mode === 3) {
+      if (existingNamespace && existingIdentifier) {
+        const idpNodes = await tendermintNdid.getIdpNodes({
+          namespace: existingNamespace,
+          identifier: existingIdentifier,
+        });
+        requestMode = 2;
+        for (let i = 0; i < idpNodes.length; i++) {
+          const { mode_list } = idpNodes[i];
+          if (mode_list.includes(3)) {
+            requestMode = 3;
+            break;
+          }
+        }
+        if (idpNodes.length > 0) {
+          min_idp = 1;
+          request_id = utils.createRequestId();
+        } else {
+          min_idp = 0;
+        }
+      } else {
+        requestMode = 3;
+        min_idp = 0;
+      }
     }
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
@@ -220,6 +247,8 @@ export async function createIdentity(createIdentityParams) {
       existingNamespace,
       existingIdentifier,
       new_identity_list,
+      requestMode,
+      min_idp,
     });
 
     return {
@@ -269,39 +298,11 @@ async function createIdentityInternalAsync(
     existingNamespace,
     existingIdentifier,
     new_identity_list,
+    requestMode,
+    min_idp,
   }
 ) {
   try {
-    let min_idp;
-    let requestMode;
-    if (mode === 2) {
-      requestMode = 2;
-      min_idp = 0;
-    } else if (mode === 3) {
-      if (existingNamespace && existingIdentifier) {
-        const idpNodes = await tendermintNdid.getIdpNodes({
-          namespace: existingNamespace,
-          identifier: existingIdentifier,
-        });
-        requestMode = 2;
-        for (let i = 0; i < idpNodes.length; i++) {
-          const { mode_list } = idpNodes[i];
-          if (mode_list.includes(3)) {
-            requestMode = 3;
-            break;
-          }
-        }
-        if (idpNodes.length > 0) {
-          min_idp = 1;
-        } else {
-          min_idp = 0;
-        }
-      } else {
-        requestMode = 3;
-        min_idp = 0;
-      }
-    }
-
     const identity = {
       type: operationTypes.REGISTER_IDENTITY,
       reference_group_code,

@@ -31,6 +31,36 @@ BREAKING CHANGES:
     - POST `/dpki/node/update` to `/node/update`
     - GET `/dpki/node/callback` to `/node/callback`
     - POST `/dpki/node/callback` to `/node/callback`
+    - Change all NDID only routes to simple function names in `snake_case` and use only `POST`
+      - `/ndid/initNDID` to `/ndid/init_ndid`
+      - `/ndid/endInit` to `/ndid/end_init`
+      - `/ndid/setAllowedModeList` to `/ndid/set_allowed_mode_list`
+      - `/ndid/registerNode` to `/ndid/register_node`
+      - `/ndid/updateNode` to `/ndid/update_node`
+      - `/ndid/enableNode` to `/ndid/enable_node`
+      - `/ndid/disableNode` to `/ndid/disable_node`
+      - `/ndid/setNodeToken` to `/ndid/set_node_token`
+      - `/ndid/addNodeToken` to `/ndid/add_node_token`
+      - `/ndid/reduceNodeToken` to `/ndid/reduce_node_token`
+      - `/ndid/namespaces` to `/ndid/create_namespace`
+      - `/ndid/namespaces/:namespace` to `/ndid/update_namespace`
+      - `/ndid/namespaces/:namespace/enable` to `/ndid/enable_namespace`
+      - `/ndid/namespaces/:namespace/disable` to `/ndid/disable_namespace`
+      - `/ndid/services` to `/ndid/create_service`
+      - `/ndid/services/:service_id` to `/ndid/update_service`
+      - `/ndid/services/:service_id/enable` to `/ndid/enable_service`
+      - `/ndid/services/:service_id/disable` to `/ndid/disable_service`
+      - `/ndid/validator` to `/ndid/set_validator`
+      - `/ndid/approveService` to `/ndid/approve_service`
+      - `/ndid/enableServiceDestination` to `/ndid/enable_service_destination`
+      - `/ndid/disableServiceDestination` to `/ndid/disable_service_destination`
+      - `/ndid/addNodeToProxyNode` to `/ndid/add_node_to_proxy_node`
+      - `/ndid/updateNodeProxyNode` to `/ndid/update_node_proxy_node`
+      - `/ndid/removeNodeFromProxyNode` to `/ndid/remove_node_from_proxy_node`
+      - `/ndid/setLastBlock` to `/ndid/set_last_block`
+      - GET `/ndid/allowedMinIalForRegisterIdentityAtFirstIdp` to POST `/ndid/get_allowed_min_ial_for_register_identity_at_first_idp`
+      - `/ndid/setAllowedMinIalForRegisterIdentityAtFirstIdp` to `/ndid/set_allowed_min_ial_for_register_identity_at_first_idp`
+  - Change return JSON property names to `snake_case` on GET `/info`.
   - Change `request_message` value type of DPKI sign callback from plain text string to base64 encoded data string
   - Add `reference_group_code` property in IdP request callback (for requests in mode 2 and 3).
   - Remove `namespace` and `identifier` properties in IdP request callback (for requests in mode 2 and 3).
@@ -44,6 +74,7 @@ BREAKING CHANGES:
   - Remove `signature` required property from POST `/idp/response`.
   - Change success response code of GET `/identity/:namespace/:identifier` to `200` with `reference_group_code` property in response body.
   - Remove accessor sign callback.
+- Move `/ndid` to API v3 router.
 - Mode 1 IdP response `signature` will be obtained by signing a request message with node's key, calling node sign callback when using external crypto service.
 - Identity modifications in mode 3 no longer create consent request when it is not necessary, resulting in no callback with type `*_request_result` e.g. `create_identity_request_result`.
 - Change mode 2 and 3 request response accessor signing scheme.
