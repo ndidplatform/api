@@ -585,6 +585,18 @@ export default {
         required: ['reference_id', 'callback_url'],
       },
     },
+    '/identity/:namespace/:identifier/mode': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+          callback_url: { $ref: 'defs#/definitions/url' },
+          request_message: { type: 'string' },
+        },
+        required: ['reference_id', 'callback_url'],
+      },
+    },
     '/identity/:namespace/:identifier/removal_from_reference_group': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
