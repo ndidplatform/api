@@ -18,14 +18,14 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-ndid-logger-dependencies-{{ checksum "ndid-logger/package.json" }}
+            - v1-ndid-logger-dependencies-{{ checksum "ndid-logger/package-lock.json" }}
             # fallback to using the latest cache if no exact match is found
-            - v1-ndid-logger-dependencies-
+            # - v1-ndid-logger-dependencies-
       - restore_cache:
           keys:
-            - v1-main-server-dependencies-{{ checksum "main-server/package.json" }}
+            - v1-main-server-dependencies-{{ checksum "main-server/package-lock.json" }}
             # fallback to using the latest cache if no exact match is found
-            - v1-main-server-dependencies-
+            # - v1-main-server-dependencies-
       - run:
           name: Install node modules for ndid-logger lib
           command: |
@@ -34,7 +34,7 @@ jobs:
       - save_cache:
           paths:
             - ndid-logger/node_modules
-          key: v1-ndid-logger-dependencies-{{ checksum "ndid-logger/package.json" }}
+          key: v1-ndid-logger-dependencies-{{ checksum "ndid-logger/package-lock.json" }}
       - run:
           name: Install node modules
           command: |
@@ -43,7 +43,7 @@ jobs:
       - save_cache:
           paths:
             - main-server/node_modules
-          key: v1-main-server-dependencies-{{ checksum "main-server/package.json" }}
+          key: v1-main-server-dependencies-{{ checksum "main-server/package-lock.json" }}
       - run:
           name: Set up Development Key
           command: |
