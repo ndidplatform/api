@@ -49,7 +49,7 @@ router.post(
         min_aal,
         min_idp,
         request_timeout,
-        create_without_identity_check,
+        bypass_identity_check,
       } = req.body;
 
       const result = await common.createRequest(
@@ -67,7 +67,7 @@ router.post(
           min_aal,
           min_idp,
           request_timeout,
-          create_without_identity_check,
+          bypass_identity_check,
         },
         { synchronous: false }
       );

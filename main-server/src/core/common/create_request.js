@@ -55,7 +55,7 @@ async function checkIdpListCondition({
   idp_id_list,
   mode,
   supported_request_message_data_url_type_list,
-  create_without_identity_check,
+  bypass_identity_check,
 }) {
   if (idp_id_list.length !== 0 && idp_id_list.length < min_idp) {
     throw new CustomError({
@@ -69,23 +69,20 @@ async function checkIdpListCondition({
     });
   }
 
-  if (
-    (mode === 1 || create_without_identity_check) &&
-    idp_id_list.length === 0
-  ) {
+  if ((mode === 1 || bypass_identity_check) && idp_id_list.length === 0) {
     throw new CustomError({
       errorType: errorType.IDP_ID_LIST_NEEDED,
     });
   }
 
   const receivers = await getIdpMQDestinations({
-    namespace: create_without_identity_check ? undefined : namespace,
-    identifier: create_without_identity_check ? undefined : identifier,
-    min_ial: create_without_identity_check ? undefined : min_ial,
+    namespace: bypass_identity_check ? undefined : namespace,
+    identifier: bypass_identity_check ? undefined : identifier,
+    min_ial: bypass_identity_check ? undefined : min_ial,
     min_aal,
     idp_id_list,
     //bypass for on-the-fly onboard (not filter mode)
-    mode: create_without_identity_check ? undefined : mode,
+    mode: bypass_identity_check ? undefined : mode,
     supported_request_message_data_url_type_list,
   });
 
@@ -141,7 +138,7 @@ async function checkIdpListCondition({
     receiversWithSid = receivers;
     receiversWithRefGroupCode = [];
   } else if (mode === 2 || mode === 3) {
-    if (create_without_identity_check) {
+    if (bypass_identity_check) {
       receiversWithRefGroupCode = await getIdpMQDestinations({
         namespace,
         identifier,
@@ -303,7 +300,7 @@ async function checkAsListCondition({
  * @param {number} createRequestParams.min_idp
  * @param {number} createRequestParams.request_timeout
  * @param {string} createRequestParams.purpose
- * @param {boolean} createRequestParams.create_without_identity_check
+ * @param {boolean} createRequestParams.bypass_identity_check
  * @param {Object} options
  * @param {boolean} [options.synchronous]
  * @param {boolean} [options.sendCallbackToClient]
@@ -338,7 +335,7 @@ export async function createRequest(
     min_idp,
     request_timeout,
     purpose,
-    create_without_identity_check,
+    bypass_identity_check,
   } = createRequestParams;
   const { synchronous = false } = options;
   let {
@@ -406,7 +403,7 @@ export async function createRequest(
       supported_request_message_data_url_type_list: requestMessageMimeType
         ? [requestMessageMimeType]
         : undefined,
-      create_without_identity_check,
+      bypass_identity_check,
     });
 
     if (data_request_list != null && data_request_list.length > 0) {
