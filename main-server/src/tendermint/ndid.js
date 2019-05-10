@@ -270,8 +270,8 @@ export async function revokeAccessor(
   }
 }
 
-export async function upgradeIdentityMode(
-  { reference_group_code, namespace, identifier, mode, request_id },
+export async function updateIdentityModeList(
+  { reference_group_code, namespace, identifier, mode_list, request_id },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
@@ -288,14 +288,14 @@ export async function upgradeIdentityMode(
   try {
     return await tendermint.transact({
       nodeId,
-      fnName: 'UpgradeIdentityMode',
+      fnName: 'UpdateIdentityModeList',
       params: {
         reference_group_code,
         identity_namespace: namespace,
         identity_identifier_hash: identifier
           ? utils.hash(identifier)
           : undefined,
-        mode,
+        mode_list,
         request_id,
       },
       callbackFnName,
@@ -304,7 +304,7 @@ export async function upgradeIdentityMode(
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot upgrade identity mode to blockchain',
+      message: 'Cannot update identity mode list to blockchain',
       cause: error,
     });
   }
@@ -447,7 +447,7 @@ export async function closeRequest(
   callbackFnName,
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled,
-  retryOnFail = false,
+  retryOnFail = false
 ) {
   try {
     const result = await tendermint.transact({
@@ -475,7 +475,7 @@ export async function timeoutRequest(
   callbackFnName,
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled,
-  retryOnFail = false,
+  retryOnFail = false
 ) {
   try {
     // FIXME: should not check here?
@@ -508,7 +508,7 @@ export async function setDataReceived(
   callbackFnName,
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled,
-  retryOnFail = true,
+  retryOnFail = true
 ) {
   try {
     const result = await tendermint.transact({

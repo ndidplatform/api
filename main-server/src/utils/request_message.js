@@ -32,6 +32,7 @@ let addIdentityTemplate;
 let addAccessorTemplate;
 let revokeAccessorTemplate;
 let revokeAssociationTemplate;
+let upgradeIdentityModeTemplate;
 
 try {
   createIdentityTemplate = fs.readFileSync(
@@ -52,6 +53,10 @@ try {
   );
   revokeAssociationTemplate = fs.readFileSync(
     config.revokeAssociationRequestMessageTemplateFilepath,
+    'utf8'
+  );
+  upgradeIdentityModeTemplate = fs.readFileSync(
+    config.upgradeIdentityModeRequestMessageTemplateFilepath,
     'utf8'
   );
 } catch (error) {
@@ -142,5 +147,21 @@ export function getRequestMessageForRevokingAssociation({
     node_id,
     node_name,
     accessor_id,
+  });
+}
+
+export function getRequestMessageForUpgradingIdentityMode({
+  reference_id,
+  namespace,
+  identifier,
+  node_id,
+  node_name,
+}) {
+  return mustache.render(upgradeIdentityModeTemplate, {
+    reference_id,
+    namespace,
+    identifier,
+    node_id,
+    node_name,
   });
 }

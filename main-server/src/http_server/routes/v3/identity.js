@@ -307,6 +307,33 @@ router.post(
 );
 
 router.post(
+  '/:namespace/:identifier/mode',
+  idpOnlyHandler,
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { namespace, identifier } = req.params;
+      const { node_id, reference_id, callback_url, request_message } = req.body;
+      await identity.upgradeIdentityMode(
+        {
+          node_id,
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          request_message,
+        },
+        { synchronous: false }
+      );
+      res.status(202).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
   '/:namespace/:identifier/removal_from_reference_group',
   validateBody,
   async (req, res, next) => {

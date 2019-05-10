@@ -95,6 +95,12 @@ export function getFunction(fnName) {
       return identity.revokeIdentityAssociationAfterCloseConsentRequest;
     case 'identity.revokeIdentityAssociationAfterCloseConsentAndBlockchain':
       return identity.revokeIdentityAssociationAfterCloseConsentAndBlockchain;
+    case 'identity.upgradeIdentityModeInternalAsyncAfterCreateRequestBlockchain':
+      return identity.upgradeIdentityModeInternalAsyncAfterCreateRequestBlockchain;
+    case 'identity.upgradeIdentityModeAfterCloseConsentRequest':
+      return identity.upgradeIdentityModeAfterCloseConsentRequest;
+    case 'identity.upgradeIdentityModeAfterConsentAndBlockchain':
+      return identity.upgradeIdentityModeAfterConsentAndBlockchain;
     case 'rp.processAsDataAfterSetDataReceived':
       return rp.processAsDataAfterSetDataReceived;
     case 'node.updateNodeInternalAsyncAfterBlockchain':

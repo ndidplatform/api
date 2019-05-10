@@ -625,6 +625,11 @@ module.exports = {
     message: 'Must be IdP node',
     clientError: true,
   },
+  MODE_ALREADY_UPGRADED: {
+    code: 20073,
+    message: 'Mode for this identity is already upgraded',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

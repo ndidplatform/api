@@ -47,6 +47,8 @@ export * from './revoke_accessor';
 export * from './revoke_accessor_after_consent';
 export * from './revoke_identity_association';
 export * from './revoke_identity_association_after_consent';
+export * from './upgrade_identity_mode';
+export * from './upgrade_identity_mode_after_consent';
 export * from './notification';
 
 export async function getIdentityRequestDataByReferenceId(nodeId, referenceId) {
@@ -179,6 +181,10 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
     ) {
       callbackFnName =
         'identity.revokeIdentityAssociationAfterCloseConsentRequest';
+    } else if (
+      requestDetail.purpose === operationTypes.UPDATE_IDENTITY_MODE_LIST
+    ) {
+      callbackFnName = 'identity.upgradeIdentityModeAfterCloseConsentRequest';
     }
     await common.closeRequest(
       {
@@ -250,6 +256,8 @@ export async function afterIdentityOperationSuccess(
     typeCallback = 'revoke_accessor_result';
   } else if (type === operationTypes.REVOKE_IDENTITY_ASSOCIATION) {
     typeCallback = 'revoke_identity_association_result';
+  } else if (type === operationTypes.UPDATE_IDENTITY_MODE_LIST) {
+    typeCallback = 'upgrade_identity_mode_result';
   }
   try {
     if (error) throw error;
@@ -327,6 +335,8 @@ export async function afterCloseFailedIdentityConsentRequest(
       type = 'revoke_accessor_result';
     } else if (type === operationTypes.REVOKE_IDENTITY_ASSOCIATION) {
       type = 'revoke_identity_association_result';
+    } else if (type === operationTypes.UPDATE_IDENTITY_MODE_LIST) {
+      type = 'upgrade_identity_mode_result';
     }
     await callbackToClient({
       callbackUrl,

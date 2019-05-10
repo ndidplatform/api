@@ -69,6 +69,8 @@ export async function handleIdentityModificationTransactions({
     transaction.fnName === operationTypes.REVOKE_IDENTITY_ASSOCIATION
   ) {
     action = 'revoke_identity_association';
+  } else if (transaction.fnName === operationTypes.UPDATE_IDENTITY_MODE_LIST) {
+    action = 'upgrade_identity_mode';
   }
   notifyIdentityModification({
     getCallbackUrlFnName,

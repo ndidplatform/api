@@ -195,6 +195,15 @@ export const revokeAssociationRequestMessageTemplateFilepath =
     'revoke_association.mustache'
   );
 
+export const upgradeIdentityModeRequestMessageTemplateFilepath =
+  process.env.UPGRADE_IDENTITY_MODE_REQUEST_MESSAGE_TEMPLATE_PATH ||
+  path.join(
+    __dirname,
+    '..',
+    'request_message_templates',
+    'upgrade_identity_mode.mustache'
+  );
+
 // Callback retry timeout in seconds
 export const callbackRetryTimeout = process.env.CALLBACK_RETRY_TIMEOUT
   ? parseInt(process.env.CALLBACK_RETRY_TIMEOUT)
