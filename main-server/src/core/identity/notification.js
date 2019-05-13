@@ -65,6 +65,8 @@ export async function handleIdentityModificationTransactions({
     action = 'add_accessor';
   } else if (transaction.fnName === operationTypes.REVOKE_ACCESSOR) {
     action = 'revoke_accessor';
+  } else if (transaction.fnName === operationTypes.REVOKE_AND_ADD_ACCESSOR) {
+    action = 'revoke_and_add_accessor';
   } else if (
     transaction.fnName === operationTypes.REVOKE_IDENTITY_ASSOCIATION
   ) {

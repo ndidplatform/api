@@ -186,6 +186,15 @@ export const revokeAccessorRequestMessageTemplateFilepath =
     'revoke_accessor.mustache'
   );
 
+export const revokeAndAddAccessorRequestMessageTemplateFilepath =
+  process.env.REVOKE_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH ||
+  path.join(
+    __dirname,
+    '..',
+    'request_message_templates',
+    'revoke_add_add_accessor.mustache'
+  );
+
 export const revokeAssociationRequestMessageTemplateFilepath =
   process.env.REVOKE_ASSOCIATION_REQUEST_MESSAGE_TEMPLATE_PATH ||
   path.join(

@@ -281,6 +281,45 @@ router.post(
 );
 
 router.post(
+  '/:namespace/:identifier/accessors_revoke_and_add',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const {
+        node_id,
+        reference_id,
+        callback_url,
+        revoking_accessor_id,
+        accessor_id,
+        accessor_public_key,
+        accessor_type,
+        request_message,
+      } = req.body;
+
+      const { namespace, identifier } = req.params;
+
+      const result = await identity.revokeAndAddAccessor({
+        node_id,
+        reference_id,
+        callback_url,
+        namespace,
+        identifier,
+        revoking_accessor_id,
+        accessor_id,
+        accessor_public_key,
+        accessor_type,
+        request_message,
+      });
+
+      res.status(202).json(result);
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
   '/:namespace/:identifier/association_revoke',
   validateBody,
   async (req, res, next) => {
@@ -314,17 +353,14 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const { node_id, reference_id, callback_url, request_message } = req.body;
-      const result = await identity.upgradeIdentityMode(
-        {
-          node_id,
-          reference_id,
-          callback_url,
-          namespace,
-          identifier,
-          request_message,
-        },
-        { synchronous: false }
-      );
+      const result = await identity.upgradeIdentityMode({
+        node_id,
+        reference_id,
+        callback_url,
+        namespace,
+        identifier,
+        request_message,
+      });
       res.status(202).json(result);
       next();
     } catch (error) {

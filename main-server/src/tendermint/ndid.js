@@ -270,6 +270,42 @@ export async function revokeAccessor(
   }
 }
 
+export async function revokeAndAddAccessor(
+  {
+    revoking_accessor_id,
+    accessor_id,
+    accessor_public_key,
+    accessor_type,
+    request_id,
+  },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    return await tendermint.transact({
+      nodeId,
+      fnName: 'RevokeAndAddAccessor',
+      params: {
+        revoking_accessor_id,
+        accessor_id,
+        accessor_public_key,
+        accessor_type,
+        request_id,
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot revoke and add accessor on blockchain',
+      cause: error,
+    });
+  }
+}
+
 export async function updateIdentityModeList(
   { reference_group_code, namespace, identifier, mode_list, request_id },
   nodeId,

@@ -25,8 +25,9 @@ const IDENTITY_OPERATION_TYPES = {
   ADD_IDENTITY: 'AddIdentity',
   ADD_ACCESSOR: 'AddAccessor',
   REVOKE_ACCESSOR: 'RevokeAccessor',
+  REVOKE_AND_ADD_ACCESSOR: 'RevokeAndAddAccessor',
   REVOKE_IDENTITY_ASSOCIATION: 'RevokeIdentityAssociation',
-  UPDATE_IDENTITY_MODE_LIST: 'UpdateIdentityModeList'
+  UPDATE_IDENTITY_MODE_LIST: 'UpdateIdentityModeList',
 };
 
 export default IDENTITY_OPERATION_TYPES;

@@ -22,49 +22,57 @@
 
 import { getIdentityInfo } from '.';
 
+import uuidv4 from 'uuid/v4';
+
 import operationTypes from './operation_type';
 
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
 import * as tendermintNdid from '../../tendermint/ndid';
-import { getRequestMessageForRevokingAccessor } from '../../utils/request_message';
+import { getRequestMessageForRevokingAndAddingAccessor } from '../../utils/request_message';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
 import * as utils from '../../utils';
+import { validateKey } from '../../utils/node_key';
 import { callbackToClient } from '../../callback';
 import logger from '../../logger';
 
 import * as config from '../../config';
 import { role } from '../../node';
 
-import { revokeAccessorAfterCloseConsentRequest } from './revoke_accessor_after_consent';
+import { revokeAndAddAccessorAfterCloseConsentRequest } from './revoke_and_add_accessor_after_consent';
 
 /**
- * Revoke accessor
+ * Revoke and add accessor (change accessor)
  * Use in mode 2,3
  *
- * @param {Object} revokeAccessorParams
- * @param {string} revokeAccessorParams.node_id
- * @param {string} revokeAccessorParams.reference_id
- * @param {string} revokeAccessorParams.callback_url
- * @param {string} revokeAccessorParams.namespace
- * @param {string} revokeAccessorParams.identifier
- * @param {string} revokeAccessorParams.accessor_id
- * @param {string} revokeAccessorParams.request_message
+ * @param {Object} revokeAndAddAccessorParams
+ * @param {string} revokeAndAddAccessorParams.node_id
+ * @param {string} revokeAndAddAccessorParams.reference_id
+ * @param {string} revokeAndAddAccessorParams.callback_url
+ * @param {string} revokeAndAddAccessorParams.namespace
+ * @param {string} revokeAndAddAccessorParams.identifier
+ * @param {string} revokeAndAddAccessorParams.revoking_accessor_id
+ * @param {string} revokeAndAddAccessorParams.accessor_id
+ * @param {string} revokeAndAddAccessorParams.accessor_public_key
+ * @param {string} revokeAndAddAccessorParams.accessor_type
+ * @param {string} revokeAndAddAccessorParams.request_message
  *
  * @returns {{ request_id: string }}
  */
-export async function revokeAccessor(revokeAccessorParams) {
-  let { node_id } = revokeAccessorParams;
+export async function revokeAndAddAccessor(revokeAndAddAccessorParams) {
+  let { node_id, accessor_id } = revokeAndAddAccessorParams;
   const {
-    accessor_id,
+    revoking_accessor_id,
+    accessor_public_key,
+    accessor_type,
     reference_id,
     callback_url,
     namespace,
     identifier,
-  } = revokeAccessorParams;
+  } = revokeAndAddAccessorParams;
 
   if (role === 'proxy') {
     if (node_id == null) {
@@ -87,6 +95,50 @@ export async function revokeAccessor(revokeAccessorParams) {
       });
     }
 
+    const existingAccessorPublicKey = await tendermintNdid.getAccessorKey(
+      revoking_accessor_id
+    );
+    if (existingAccessorPublicKey == null) {
+      throw new CustomError({
+        errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE,
+        details: {
+          revoking_accessor_id,
+        },
+      });
+    }
+
+    //check is accessor_id created by this idp?
+    const accessorOwner = await tendermintNdid.getAccessorOwner(
+      revoking_accessor_id
+    );
+    if (accessorOwner !== node_id) {
+      throw new CustomError({
+        errorType: errorType.NOT_OWNER_OF_ACCESSOR,
+        details: {
+          revoking_accessor_id,
+        },
+      });
+    }
+
+    // Add accessor validation
+    validateKey(accessor_public_key, accessor_type);
+
+    if (!accessor_id) {
+      accessor_id = uuidv4();
+    }
+
+    let checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(
+      accessor_id
+    );
+    if (checkDuplicateAccessorId != null) {
+      throw new CustomError({
+        errorType: errorType.DUPLICATE_ACCESSOR_ID,
+        details: {
+          accessor_id,
+        },
+      });
+    }
+
     const identityOnNode = await getIdentityInfo({
       nodeId: node_id,
       namespace,
@@ -98,29 +150,6 @@ export async function revokeAccessor(revokeAccessorParams) {
         details: {
           namespace,
           identifier,
-        },
-      });
-    }
-
-    const accessor_public_key = await tendermintNdid.getAccessorKey(
-      accessor_id
-    );
-    if (accessor_public_key == null) {
-      throw new CustomError({
-        errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE,
-        details: {
-          accessor_id,
-        },
-      });
-    }
-
-    //check is accessor_id created by this idp?
-    const accessorOwner = await tendermintNdid.getAccessorOwner(accessor_id);
-    if (accessorOwner !== node_id) {
-      throw new CustomError({
-        errorType: errorType.NOT_OWNER_OF_ACCESSOR,
-        details: {
-          accessor_id,
         },
       });
     }
@@ -143,8 +172,9 @@ export async function revokeAccessor(revokeAccessorParams) {
     }
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
-      type: operationTypes.REVOKE_ACCESSOR,
+      type: operationTypes.REVOKE_AND_ADD_ACCESSOR,
       request_id,
+      revoking_accessor_id,
       accessor_id,
       namespace,
       identifier,
@@ -156,15 +186,16 @@ export async function revokeAccessor(revokeAccessorParams) {
       callback_url
     );
 
-    createRequestToRevokeAccessor(...arguments, {
+    revokeAndAddAccessorInternalAsync(...arguments, {
       nodeId: node_id,
       request_id,
       mode,
+      generated_accessor_id: accessor_id,
     });
-    return { request_id };
+    return { request_id, accessor_id };
   } catch (error) {
     const err = new CustomError({
-      message: 'Cannot revoke accessor',
+      message: 'Cannot revoke and add accessor',
       cause: error,
     });
     logger.error({ err });
@@ -185,16 +216,19 @@ export async function revokeAccessor(revokeAccessorParams) {
   }
 }
 
-async function createRequestToRevokeAccessor(
+async function revokeAndAddAccessorInternalAsync(
   {
     reference_id,
     callback_url,
     namespace,
     identifier,
+    revoking_accessor_id,
     accessor_id,
+    accessor_public_key,
+    accessor_type,
     request_message,
   },
-  { nodeId, request_id, mode }
+  { nodeId, request_id, mode, generated_accessor_id }
 ) {
   try {
     let min_idp;
@@ -205,13 +239,16 @@ async function createRequestToRevokeAccessor(
     }
 
     const identity = {
-      type: operationTypes.REVOKE_ACCESSOR,
-      accessor_id,
+      type: operationTypes.REVOKE_AND_ADD_ACCESSOR,
+      revoking_accessor_id,
+      accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
+      accessor_public_key,
+      accessor_type,
       reference_id,
     };
 
     if (min_idp === 0) {
-      revokeAccessorAfterCloseConsentRequest(
+      revokeAndAddAccessorAfterCloseConsentRequest(
         {},
         {
           nodeId,
@@ -230,12 +267,12 @@ async function createRequestToRevokeAccessor(
           identifier,
           reference_id,
           idp_id_list: [],
-          callback_url: 'SYS_GEN_REVOKE_ACCESSOR',
+          callback_url: 'SYS_GEN_REVOKE_AND_ADD_ACCESSOR',
           data_request_list: [],
           request_message:
             request_message != null
               ? request_message
-              : getRequestMessageForRevokingAccessor({
+              : getRequestMessageForRevokingAndAddingAccessor({
                   namespace,
                   identifier,
                   reference_id,
@@ -248,17 +285,18 @@ async function createRequestToRevokeAccessor(
           min_idp,
           request_timeout: 86400,
           mode,
-          purpose: operationTypes.REVOKE_ACCESSOR,
+          purpose: operationTypes.REVOKE_AND_ADD_ACCESSOR,
         },
         {
           synchronous: false,
           sendCallbackToClient: false,
           callbackFnName:
-            'identity.notifyResultOfCreateRequestToRevokeAccessor',
+            'identity.revokeAndAddAccessorInternalAsyncAfterCreateRequestBlockchain',
           callbackAdditionalArgs: [
             {
               reference_id,
               callback_url,
+              revoking_accessor_id,
               accessor_id,
             },
             {
@@ -274,7 +312,7 @@ async function createRequestToRevokeAccessor(
     }
   } catch (error) {
     logger.error({
-      message: 'Revoke accessor internal async error',
+      message: 'Revoke and add accessor internal async error',
       originalArgs: arguments[0],
       additionalArgs: arguments[1],
       err: error,
@@ -284,7 +322,7 @@ async function createRequestToRevokeAccessor(
       callbackUrl: callback_url,
       body: {
         node_id: nodeId,
-        type: 'revoke_accessor_request_result',
+        type: 'revoke_and_add_accessor_request_result',
         success: false,
         reference_id,
         request_id,
@@ -294,7 +332,7 @@ async function createRequestToRevokeAccessor(
       retry: true,
     });
 
-    await revokeAccessorCleanUpOnError({
+    await cleanUpOnError({
       nodeId,
       requestId: request_id,
       referenceId: reference_id,
@@ -304,9 +342,9 @@ async function createRequestToRevokeAccessor(
   }
 }
 
-export async function notifyResultOfCreateRequestToRevokeAccessor(
+export async function revokeAndAddAccessorInternalAsyncAfterCreateRequestBlockchain(
   { chainId, height, error },
-  { reference_id, callback_url, accessor_id },
+  { reference_id, callback_url, revoking_accessor_id, accessor_id },
   { nodeId, request_id, identity }
 ) {
   try {
@@ -316,9 +354,10 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
       callbackUrl: callback_url,
       body: {
         node_id: nodeId,
-        type: 'revoke_accessor_request_result',
+        type: 'revoke_and_add_accessor_request_result',
         reference_id,
         request_id,
+        revoking_accessor_id,
         accessor_id,
         creation_block_height: `${chainId}:${height}`,
         success: true,
@@ -341,17 +380,18 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
       callbackUrl: callback_url,
       body: {
         node_id: nodeId,
-        type: 'revoke_accessor_request_result',
+        type: 'revoke_and_add_accessor_request_result',
         success: false,
         reference_id,
         request_id,
+        revoking_accessor_id,
         accessor_id,
         error: getErrorObjectForClient(error),
       },
       retry: true,
     });
 
-    await revokeAccessorCleanUpOnError({
+    await cleanUpOnError({
       nodeId,
       requestId: request_id,
       referenceId: reference_id,
@@ -361,11 +401,7 @@ export async function notifyResultOfCreateRequestToRevokeAccessor(
   }
 }
 
-async function revokeAccessorCleanUpOnError({
-  nodeId,
-  requestId,
-  referenceId,
-}) {
+async function cleanUpOnError({ nodeId, requestId, referenceId }) {
   await Promise.all([
     cacheDb.removeCallbackUrlByReferenceId(nodeId, referenceId),
     cacheDb.removeIdentityRequestDataByReferenceId(nodeId, referenceId),

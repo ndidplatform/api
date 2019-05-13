@@ -45,6 +45,8 @@ export * from './add_accessor';
 export * from './add_accessor_after_consent';
 export * from './revoke_accessor';
 export * from './revoke_accessor_after_consent';
+export * from './revoke_and_add_accessor';
+export * from './revoke_and_add_accessor_after_consent';
 export * from './revoke_identity_association';
 export * from './revoke_identity_association_after_consent';
 export * from './upgrade_identity_mode';
@@ -177,6 +179,10 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
     } else if (requestDetail.purpose === operationTypes.REVOKE_ACCESSOR) {
       callbackFnName = 'identity.revokeAccessorAfterCloseConsentRequest';
     } else if (
+      requestDetail.purpose === operationTypes.REVOKE_AND_ADD_ACCESSOR
+    ) {
+      callbackFnName = 'identity.revokeAndAddAccessorAfterCloseConsentRequest';
+    } else if (
       requestDetail.purpose === operationTypes.REVOKE_IDENTITY_ASSOCIATION
     ) {
       callbackFnName =
@@ -209,7 +215,15 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
 }
 
 export async function afterIdentityOperationSuccess(
-  { error, type, reference_group_code, accessor_id, reference_id, request_id },
+  {
+    error,
+    type,
+    reference_group_code,
+    accessor_id,
+    revoking_accessor_id,
+    reference_id,
+    request_id,
+  },
   { nodeId }
 ) {
   if (error && (type == null || reference_id == null)) {
@@ -254,6 +268,8 @@ export async function afterIdentityOperationSuccess(
     typeCallback = 'add_accessor_result';
   } else if (type === operationTypes.REVOKE_ACCESSOR) {
     typeCallback = 'revoke_accessor_result';
+  } else if (type === operationTypes.REVOKE_AND_ADD_ACCESSOR) {
+    typeCallback = 'revoke_and_add_accessor_result';
   } else if (type === operationTypes.REVOKE_IDENTITY_ASSOCIATION) {
     typeCallback = 'revoke_identity_association_result';
   } else if (type === operationTypes.UPDATE_IDENTITY_MODE_LIST) {
@@ -289,6 +305,7 @@ export async function afterIdentityOperationSuccess(
         success: false,
         reference_id,
         request_id,
+        revoking_accessor_id,
         accessor_id,
         error: getErrorObjectForClient(error),
       },
@@ -333,6 +350,8 @@ export async function afterCloseFailedIdentityConsentRequest(
       type = 'add_accessor_result';
     } else if (identityData.type === operationTypes.REVOKE_ACCESSOR) {
       type = 'revoke_accessor_result';
+    } else if (identityData.type === operationTypes.REVOKE_AND_ADD_ACCESSOR) {
+      type = 'revoke_and_add_accessor_result';
     } else if (type === operationTypes.REVOKE_IDENTITY_ASSOCIATION) {
       type = 'revoke_identity_association_result';
     } else if (type === operationTypes.UPDATE_IDENTITY_MODE_LIST) {

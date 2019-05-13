@@ -31,6 +31,7 @@ let createIdentityTemplate;
 let addIdentityTemplate;
 let addAccessorTemplate;
 let revokeAccessorTemplate;
+let revokeAndAddAccessorTemplate;
 let revokeAssociationTemplate;
 let upgradeIdentityModeTemplate;
 
@@ -49,6 +50,10 @@ try {
   );
   revokeAccessorTemplate = fs.readFileSync(
     config.revokeAccessorRequestMessageTemplateFilepath,
+    'utf8'
+  );
+  revokeAndAddAccessorTemplate = fs.readFileSync(
+    config.revokeAndAddAccessorRequestMessageTemplateFilepath,
     'utf8'
   );
   revokeAssociationTemplate = fs.readFileSync(
@@ -128,6 +133,26 @@ export function getRequestMessageForRevokingAccessor({
     identifier,
     node_id,
     node_name,
+    accessor_id,
+  });
+}
+
+export function getRequestMessageForRevokingAndAddingAccessor({
+  reference_id,
+  namespace,
+  identifier,
+  node_id,
+  node_name,
+  revoking_accessor_id,
+  accessor_id,
+}) {
+  return mustache.render(revokeAndAddAccessorTemplate, {
+    reference_id,
+    namespace,
+    identifier,
+    node_id,
+    node_name,
+    revoking_accessor_id,
     accessor_id,
   });
 }
