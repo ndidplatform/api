@@ -79,7 +79,7 @@ export async function handleIdentityModificationTransactions({
     nodeId,
     referenceGroupCode,
     action,
-    actorNodeId: transaction.node_id,
+    actorNodeId: transaction.nodeId,
   });
 }
 
