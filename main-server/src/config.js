@@ -187,7 +187,7 @@ export const revokeAccessorRequestMessageTemplateFilepath =
   );
 
 export const revokeAndAddAccessorRequestMessageTemplateFilepath =
-  process.env.REVOKE_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH ||
+  process.env.REVOKE_AND_ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH ||
   path.join(
     __dirname,
     '..',
