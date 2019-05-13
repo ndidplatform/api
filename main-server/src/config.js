@@ -192,7 +192,7 @@ export const revokeAndAddAccessorRequestMessageTemplateFilepath =
     __dirname,
     '..',
     'request_message_templates',
-    'revoke_add_add_accessor.mustache'
+    'revoke_and_add_accessor.mustache'
   );
 
 export const revokeAssociationRequestMessageTemplateFilepath =
