@@ -547,9 +547,9 @@ export default {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
+          accessor_id: { type: 'string', minLength: 1 },
           accessor_type: { $ref: 'defs#/definitions/keyType' },
           accessor_public_key: { type: 'string', minLength: 1 },
-          accessor_id: { type: 'string', minLength: 1 },
           request_message: { type: 'string' },
         },
         required: [
@@ -571,6 +571,28 @@ export default {
           request_message: { type: 'string' },
         },
         required: ['reference_id', 'callback_url', 'accessor_id'],
+      },
+    },
+    '/identity/:namespace/:identifier/accessors_revoke_and_add': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+          callback_url: { $ref: 'defs#/definitions/url' },
+          revoking_accessor_id: { type: 'string', minLength: 1 },
+          accessor_id: { type: 'string', minLength: 1 },
+          accessor_type: { $ref: 'defs#/definitions/keyType' },
+          accessor_public_key: { type: 'string', minLength: 1 },
+          request_message: { type: 'string' },
+        },
+        required: [
+          'reference_id',
+          'callback_url',
+          'revoking_accessor_id',
+          'accessor_type',
+          'accessor_public_key',
+        ],
       },
     },
     '/identity/:namespace/:identifier/association_revoke': {
