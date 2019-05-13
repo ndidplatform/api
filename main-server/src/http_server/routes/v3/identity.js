@@ -314,7 +314,7 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const { node_id, reference_id, callback_url, request_message } = req.body;
-      await identity.upgradeIdentityMode(
+      const result = await identity.upgradeIdentityMode(
         {
           node_id,
           reference_id,
@@ -325,7 +325,7 @@ router.post(
         },
         { synchronous: false }
       );
-      res.status(202).end();
+      res.status(202).json(result);
       next();
     } catch (error) {
       next(error);

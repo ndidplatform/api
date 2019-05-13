@@ -188,6 +188,7 @@ export async function upgradeIdentityMode(upgradeIdentityModeParams) {
 
 async function upgradeIdentityModeInternalAsync(
   { reference_id, callback_url, namespace, identifier, request_message },
+  { synchronous = false } = {},
   { nodeId, request_id, requestMode }
 ) {
   try {
