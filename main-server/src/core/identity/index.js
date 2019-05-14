@@ -70,6 +70,10 @@ export async function getIdentityRequestDataByReferenceId(nodeId, referenceId) {
       referenceId
     );
 
+    if (identityRequestData == null) {
+      return null;
+    }
+
     switch (identityRequestData.type) {
       case operationTypes.REGISTER_IDENTITY:
       case operationTypes.ADD_ACCESSOR:
