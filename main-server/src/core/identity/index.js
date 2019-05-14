@@ -65,13 +65,40 @@ export async function getIdentityRequestDataByReferenceId(nodeId, referenceId) {
       nodeId = config.nodeId;
     }
 
-    return await cacheDb.getIdentityRequestDataByReferenceId(
+    const identityRequestData = await cacheDb.getIdentityRequestDataByReferenceId(
       nodeId,
       referenceId
     );
+
+    switch (identityRequestData.type) {
+      case operationTypes.REGISTER_IDENTITY:
+      case operationTypes.ADD_ACCESSOR:
+      case operationTypes.REVOKE_ACCESSOR:
+        return {
+          request_id: identityRequestData.request_id,
+          accessor_id: identityRequestData.accessor_id,
+        };
+      case operationTypes.REVOKE_IDENTITY_ASSOCIATION:
+      case operationTypes.ADD_IDENTITY:
+      case operationTypes.UPDATE_IDENTITY_MODE_LIST:
+        return {
+          request_id: identityRequestData.request_id,
+        };
+      case operationTypes.REVOKE_AND_ADD_ACCESSOR:
+        return {
+          request_id: identityRequestData.request_id,
+          revoking_accessor_id: identityRequestData.revoking_accessor_id,
+          accessor_id: identityRequestData.accessor_id,
+        };
+      default:
+        throw new CustomError({
+          message: 'Unknown identity request data type',
+          type: identityRequestData.type,
+        });
+    }
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get create identity data by reference ID',
+      message: 'Cannot get identity request data by reference ID',
       cause: error,
     });
   }

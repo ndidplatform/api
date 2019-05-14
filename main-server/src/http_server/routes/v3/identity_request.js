@@ -63,22 +63,7 @@ router.get(
       );
 
       if (identityRequestData != null) {
-        if (
-          identityRequestData.type === 'RegisterIdentity' ||
-          identityRequestData.type === 'AddAccessor' ||
-          identityRequestData.type === 'RevokeAccessor'
-        ) {
-          res.status(200).json({
-            request_id: identityRequestData.request_id,
-            accessor_id: identityRequestData.accessor_id,
-          });
-        } else if (identityRequestData.type === 'RevokeIdentityAssociation') {
-          res.status(200).json({
-            request_id: identityRequestData.request_id,
-          });
-        } else {
-          res.status(500).end(); // FIXME: ?
-        }
+        res.status(200).json(identityRequestData);
       } else {
         res.status(404).end();
       }
