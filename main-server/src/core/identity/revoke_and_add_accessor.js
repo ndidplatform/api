@@ -302,6 +302,7 @@ async function revokeAndAddAccessorInternalAsync(
             {
               nodeId,
               request_id,
+              generated_accessor_id,
               identity,
             },
           ],
@@ -326,7 +327,8 @@ async function revokeAndAddAccessorInternalAsync(
         success: false,
         reference_id,
         request_id,
-        accessor_id,
+        revoking_accessor_id,
+        accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
         error: getErrorObjectForClient(error),
       },
       retry: true,
@@ -345,7 +347,7 @@ async function revokeAndAddAccessorInternalAsync(
 export async function revokeAndAddAccessorInternalAsyncAfterCreateRequestBlockchain(
   { chainId, height, error },
   { reference_id, callback_url, revoking_accessor_id, accessor_id },
-  { nodeId, request_id, identity }
+  { nodeId, request_id, generated_accessor_id, identity }
 ) {
   try {
     if (error) throw error;
@@ -358,7 +360,7 @@ export async function revokeAndAddAccessorInternalAsyncAfterCreateRequestBlockch
         reference_id,
         request_id,
         revoking_accessor_id,
-        accessor_id,
+        accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
         creation_block_height: `${chainId}:${height}`,
         success: true,
       },
@@ -385,7 +387,7 @@ export async function revokeAndAddAccessorInternalAsyncAfterCreateRequestBlockch
         reference_id,
         request_id,
         revoking_accessor_id,
-        accessor_id,
+        accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
         error: getErrorObjectForClient(error),
       },
       retry: true,
