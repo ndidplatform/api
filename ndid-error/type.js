@@ -321,7 +321,7 @@ module.exports = {
   },
   IDP_ID_LIST_NEEDED: {
     code: 20016,
-    message: '"idp_id_list" is required for mode 1',
+    message: '"idp_id_list" must be provided',
     clientError: true,
   },
   AS_LIST_LESS_THAN_MIN_AS: {
