@@ -115,13 +115,22 @@ export async function createResponse(createResponseParams) {
       if (requestData.reference_group_code != null) {
         referenceGroupCode = requestData.reference_group_code;
       } else {
-        // Incoming request without indentity onboard/created on the platform 
+        // Incoming request without indentity onboard/created on the platform
         // doesn't have reference group code
         // (on-the-fly onboard flow)
         referenceGroupCode = await tendermintNdid.getReferenceGroupCode(
           requestData.namespace,
           requestData.identifier
         );
+        if (referenceGroupCode == null) {
+          throw new CustomError({
+            errorType: errorType.IDENTITY_NOT_FOUND,
+            details: {
+              namespace: requestData.namespace,
+              identifier: requestData.identifier,
+            },
+          });
+        }
       }
       //check association mode list
       //idp associate with only mode 2 won't be able to response mode 3 request
@@ -129,6 +138,15 @@ export async function createResponse(createResponseParams) {
         nodeId: node_id,
         referenceGroupCode,
       });
+      if (identityInfo == null) {
+        throw new CustomError({
+          errorType: errorType.IDENTITY_NOT_FOUND_ON_IDP,
+          details: {
+            referenceGroupCode,
+            nodeId: node_id,
+          },
+        });
+      }
       const { mode_list, ial: declaredIal } = identityInfo;
       if (!mode_list.includes(request.mode)) {
         throw new CustomError({
