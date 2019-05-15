@@ -111,11 +111,23 @@ export async function createResponse(createResponseParams) {
 
     let accessorPublicKey;
     if (request.mode === 2 || request.mode === 3) {
+      let referenceGroupCode;
+      if (requestData.reference_group_code != null) {
+        referenceGroupCode = requestData.reference_group_code;
+      } else {
+        // Incoming request without indentity onboard/created on the platform 
+        // doesn't have reference group code
+        // (on-the-fly onboard flow)
+        referenceGroupCode = await tendermintNdid.getReferenceGroupCode(
+          requestData.namespace,
+          requestData.identifier
+        );
+      }
       //check association mode list
       //idp associate with only mode 2 won't be able to response mode 3 request
       const identityInfo = await getIdentityInfo({
         nodeId: node_id,
-        referenceGroupCode: requestData.reference_group_code,
+        referenceGroupCode,
       });
       const { mode_list, ial: declaredIal } = identityInfo;
       if (!mode_list.includes(request.mode)) {
