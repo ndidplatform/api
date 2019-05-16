@@ -146,7 +146,7 @@ async function checkIdpListCondition({
         // min_ial: 1.1,
         min_aal,
         idp_id_list,
-        mode,
+        mode: 2, // get all IdPs supporting both only mode 2 and 2,3
         supported_request_message_data_url_type_list,
       });
       receiversWithSid = receivers.filter(
