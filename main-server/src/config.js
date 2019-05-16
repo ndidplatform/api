@@ -150,69 +150,6 @@ export const nodeBehindProxyMasterPrivateKeyDirectoryPath = useExternalCryptoSer
 //in byte
 export const saltLength = 16;
 
-export const createIdentityRequestMessageTemplateFilepath =
-  process.env.CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH ||
-  path.join(
-    __dirname,
-    '..',
-    'request_message_templates',
-    'create_identity.mustache'
-  );
-
-export const addIdentityRequestMessageTemplateFilepath =
-  process.env.ADD_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH ||
-  path.join(
-    __dirname,
-    '..',
-    'request_message_templates',
-    'add_identity.mustache'
-  );
-
-export const addAccessorRequestMessageTemplateFilepath =
-  process.env.ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH ||
-  path.join(
-    __dirname,
-    '..',
-    'request_message_templates',
-    'add_accessor.mustache'
-  );
-
-export const revokeAccessorRequestMessageTemplateFilepath =
-  process.env.REVOKE_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH ||
-  path.join(
-    __dirname,
-    '..',
-    'request_message_templates',
-    'revoke_accessor.mustache'
-  );
-
-export const revokeAndAddAccessorRequestMessageTemplateFilepath =
-  process.env.REVOKE_AND_ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH ||
-  path.join(
-    __dirname,
-    '..',
-    'request_message_templates',
-    'revoke_and_add_accessor.mustache'
-  );
-
-export const revokeAssociationRequestMessageTemplateFilepath =
-  process.env.REVOKE_ASSOCIATION_REQUEST_MESSAGE_TEMPLATE_PATH ||
-  path.join(
-    __dirname,
-    '..',
-    'request_message_templates',
-    'revoke_association.mustache'
-  );
-
-export const upgradeIdentityModeRequestMessageTemplateFilepath =
-  process.env.UPGRADE_IDENTITY_MODE_REQUEST_MESSAGE_TEMPLATE_PATH ||
-  path.join(
-    __dirname,
-    '..',
-    'request_message_templates',
-    'upgrade_identity_mode.mustache'
-  );
-
 // Callback retry timeout in seconds
 export const callbackRetryTimeout = process.env.CALLBACK_RETRY_TIMEOUT
   ? parseInt(process.env.CALLBACK_RETRY_TIMEOUT)

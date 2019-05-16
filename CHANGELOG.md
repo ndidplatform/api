@@ -91,6 +91,7 @@ BREAKING CHANGES:
 - Change MQ message protocol format
   - Change message ID type from int64 to string.
   - Add message type.
+- Remove request message for identity operations (which needs consent request) templates. `request_message` is always required when consent request is needed.
 
 IMPROVEMENTS:
 

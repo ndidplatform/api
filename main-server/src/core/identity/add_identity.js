@@ -27,7 +27,6 @@ import operationTypes from './operation_type';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
-import { getRequestMessageForAddingIdentity } from '../../utils/request_message';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -65,6 +64,7 @@ export async function addIdentity(addIdentityParams) {
     namespace,
     identifier,
     identity_list,
+    request_message,
   } = addIdentityParams;
 
   if (role === 'proxy') {
@@ -170,6 +170,11 @@ export async function addIdentity(addIdentityParams) {
     let request_id;
     if (consentRequestNeeded) {
       request_id = utils.createRequestId();
+      if (request_message == null) {
+        throw new CustomError({
+          errorType: errorType.REQUEST_MESSAGE_NEEDED,
+        });
+      }
     }
 
     await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
@@ -262,15 +267,7 @@ async function addIdentityInternalAsync(
           idp_id_list: [],
           callback_url: 'SYS_GEN_ADD_IDENTITY',
           data_request_list: [],
-          request_message:
-            request_message != null
-              ? request_message
-              : getRequestMessageForAddingIdentity({
-                  namespace,
-                  identifier,
-                  reference_id,
-                  node_id: config.nodeId,
-                }),
+          request_message,
           min_ial: 1.1,
           min_aal: 1,
           min_idp,

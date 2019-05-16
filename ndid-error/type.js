@@ -630,6 +630,11 @@ module.exports = {
     message: 'Mode for this identity is already upgraded',
     clientError: true,
   },
+  REQUEST_MESSAGE_NEEDED: {
+    code: 20074,
+    message: 'Request message is required for consent request',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

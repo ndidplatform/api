@@ -27,7 +27,6 @@ import operationTypes from './operation_type';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
-import { getRequestMessageForUpgradingIdentityMode } from '../../utils/request_message';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -61,6 +60,7 @@ export async function upgradeIdentityMode(upgradeIdentityModeParams) {
     callback_url,
     namespace,
     identifier,
+    request_message,
   } = upgradeIdentityModeParams;
 
   if (role === 'proxy') {
@@ -131,6 +131,12 @@ export async function upgradeIdentityMode(upgradeIdentityModeParams) {
     }
 
     const request_id = utils.createRequestId();
+
+    if (request_message == null) {
+      throw new CustomError({
+        errorType: errorType.REQUEST_MESSAGE_NEEDED,
+      });
+    }
 
     let requestMode;
     const idpNodes = await tendermintNdid.getIdpNodes({
@@ -209,15 +215,7 @@ async function upgradeIdentityModeInternalAsync(
         idp_id_list: [],
         callback_url: 'SYS_GEN_UPGRADE_IDENTITY_MODE',
         data_request_list: [],
-        request_message:
-          request_message != null
-            ? request_message
-            : getRequestMessageForUpgradingIdentityMode({
-                namespace,
-                identifier,
-                reference_id,
-                node_id: config.nodeId,
-              }),
+        request_message,
         min_ial: 1.1,
         min_aal: 1,
         min_idp,

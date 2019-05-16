@@ -29,7 +29,6 @@ import operationTypes from './operation_type';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
-import { getRequestMessageForCreatingIdentity } from '../../utils/request_message';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -77,6 +76,7 @@ export async function createIdentity(createIdentityParams) {
     mode,
     accessor_type,
     accessor_public_key,
+    request_message,
   } = createIdentityParams;
 
   if (role === 'proxy') {
@@ -216,6 +216,11 @@ export async function createIdentity(createIdentityParams) {
           }
         }
         if (idpNodes.length > 0) {
+          if (request_message == null) {
+            throw new CustomError({
+              errorType: errorType.REQUEST_MESSAGE_NEEDED,
+            });
+          }
           min_idp = 1;
           request_id = utils.createRequestId();
         } else {
@@ -341,15 +346,7 @@ async function createIdentityInternalAsync(
           idp_id_list: [],
           callback_url: 'SYS_GEN_CREATE_IDENTITY',
           data_request_list: [],
-          request_message:
-            request_message != null
-              ? request_message
-              : getRequestMessageForCreatingIdentity({
-                  namespace: existingNamespace,
-                  identifier: existingIdentifier,
-                  reference_id,
-                  node_id: config.nodeId,
-                }),
+          request_message,
           min_ial: 1.1,
           min_aal: 1,
           min_idp,
