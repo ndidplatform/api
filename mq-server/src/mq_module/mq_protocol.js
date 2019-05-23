@@ -24,7 +24,7 @@ import path from 'path';
 
 import protobuf from 'protobufjs';
 
-const MQ_PROTOCOL_MESSAGE_VERSION = 1;
+const MQ_PROTOCOL_MESSAGE_VERSION = 1; // INCREMENT THIS WHENEVER SPEC CHANGES
 
 const protobufRootInstance = new protobuf.Root();
 const protobufRoot = protobufRootInstance.loadSync(

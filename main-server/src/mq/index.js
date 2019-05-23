@@ -44,7 +44,7 @@ import { role } from '../node';
 import MODE from '../mode';
 import * as config from '../config';
 
-const MQ_MESSAGE_VERSION = 1;
+const MQ_MESSAGE_VERSION = 1; // INCREMENT THIS WHENEVER SPEC CHANGES
 const MQ_SEND_TOTAL_TIMEOUT = 600000;
 
 const mqMessageProtobufRootInstance = new protobuf.Root();
