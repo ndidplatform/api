@@ -44,6 +44,7 @@ import { role } from '../node';
 import MODE from '../mode';
 import * as config from '../config';
 
+const MQ_MESSAGE_VERSION = 1;
 const MQ_SEND_TOTAL_TIMEOUT = 600000;
 
 const mqMessageProtobufRootInstance = new protobuf.Root();
@@ -166,8 +167,7 @@ export async function resumePendingOutboundMessageSendOnWorker(msgId) {
   await sendPendingOutboundMessage({ msgId, data });
 }
 
-async function sendPendingOutboundMessage({ msgId: msgIdStr, data }) {
-  const msgId = Number(msgIdStr);
+async function sendPendingOutboundMessage({ msgId, data }) {
   const { mqDestAddress, payloadBuffer: payloadBufferArr, sendTime } = data;
   if (sendTime + MQ_SEND_TOTAL_TIMEOUT > Date.now()) {
     const payloadBuffer = Buffer.from(payloadBufferArr);
@@ -351,6 +351,16 @@ export async function processRawMessage({
       outerLayerDecodedDecryptedMessage,
     });
 
+    if (outerLayerDecodedDecryptedMessage.version !== MQ_MESSAGE_VERSION) {
+      throw new CustomError({
+        errorType: errorType.MQ_MESSAGE_VERSION_MISMATCH,
+        details: {
+          expected: MQ_MESSAGE_VERSION,
+          got: outerLayerDecodedDecryptedMessage.version,
+        },
+      });
+    }
+
     let messageType;
     let messageBuffer;
     let messageSignature;
@@ -403,6 +413,16 @@ export async function processRawMessage({
         message: 'Decrypted message from message queue (inner layer)',
         decodedDecryptedMessage,
       });
+
+      if (decodedDecryptedMessage.version !== MQ_MESSAGE_VERSION) {
+        throw new CustomError({
+          errorType: errorType.MQ_MESSAGE_VERSION_MISMATCH,
+          details: {
+            expected: MQ_MESSAGE_VERSION,
+            got: decodedDecryptedMessage.version,
+          },
+        });
+      }
 
       messageType = decodedDecryptedMessage.message_type;
       messageBuffer = decodedDecryptedMessage.message;
@@ -593,6 +613,7 @@ export async function send(receivers, message, senderNodeId) {
     senderNodeId
   );
   const mqMessageObject = {
+    version: MQ_MESSAGE_VERSION,
     message_type: messageType,
     message: messageBuffer,
     signature: messageSignatureBuffer,
@@ -643,6 +664,7 @@ export async function send(receivers, message, senderNodeId) {
         );
 
         const proxyMqMessageObject = {
+          version: MQ_MESSAGE_VERSION,
           message: protoEncryptedBuffer,
           signature: proxySignatureBuffer,
           receiver_node_id: receiverNodeId,

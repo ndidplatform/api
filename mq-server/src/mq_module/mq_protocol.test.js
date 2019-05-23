@@ -21,6 +21,7 @@ describe('MQ Protocol Unit Test', function() {
     expect(result).to.be.instanceof(Buffer);
 
     const decodedResult = MqProtocolMessage.decode(result);
+    expect(decodedResult.version).to.be.a('number');
     expect(decodedResult.msgId).to.equal('test-1');
     expect(decodedResult.seqId).to.equal(22);
     expect(decodedResult.message).to.be.instanceof(Buffer);
@@ -30,6 +31,7 @@ describe('MQ Protocol Unit Test', function() {
 
   it('should perform ExtractMsg properly', function() {
     const payload = {
+      version: 1,
       msgId: 'test-1',
       seqId: 22,
       message: Buffer.from('test'),
@@ -39,6 +41,7 @@ describe('MQ Protocol Unit Test', function() {
 
     let result = MQProtocol.extractMsg(protoBuffer);
 
+    expect(result.version).to.equal(1);
     expect(result.retryspec.msgId).to.equal('test-1');
     expect(result.retryspec.seqId).to.equal(22);
     expect(result.message).to.be.instanceof(Buffer);
@@ -52,6 +55,7 @@ describe('MQ Protocol Unit Test', function() {
     let result = MQProtocol.generateAckMsg(senderId, retryspec);
 
     const decodedResult = MqProtocolMessage.decode(result);
+    expect(decodedResult.version).to.be.a('number');
     expect(decodedResult.msgId).to.equal('test-1');
     expect(decodedResult.seqId).to.equal(22);
     expect(decodedResult.message).to.be.instanceof(Buffer);

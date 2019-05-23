@@ -24,6 +24,8 @@ import path from 'path';
 
 import protobuf from 'protobufjs';
 
+const MQ_PROTOCOL_MESSAGE_VERSION = 1;
+
 const protobufRootInstance = new protobuf.Root();
 const protobufRoot = protobufRootInstance.loadSync(
   path.join(__dirname, '..', '..', '..', 'protos', 'mq_protocol_message.proto'),
@@ -31,8 +33,9 @@ const protobufRoot = protobufRootInstance.loadSync(
 );
 const MqProtocolMessage = protobufRoot.lookupType('MqProtocolMessage');
 
-function applyRetrySpec(senderId, message, retryspec) {
+function encodeMqProtocolMessage(senderId, message, retryspec) {
   const payload = {
+    version: MQ_PROTOCOL_MESSAGE_VERSION,
     msg_id: retryspec.msgId,
     seq_id: retryspec.seqId,
     message: message,
@@ -47,9 +50,10 @@ function applyRetrySpec(senderId, message, retryspec) {
   return protoBuffer;
 }
 
-function extractRetrySpec(message) {
+function decodeMqProtocolMessage(message) {
   const decodedMessage = MqProtocolMessage.decode(message);
   return {
+    version: decodedMessage.version,
     retryspec: {
       msgId: decodedMessage.msg_id,
       seqId: decodedMessage.seq_id,
@@ -61,16 +65,28 @@ function extractRetrySpec(message) {
 
 export function generateSendMsg(senderId, payload, retryspec) {
   let msg = payload;
-  msg = applyRetrySpec(senderId, msg, retryspec);
+  msg = encodeMqProtocolMessage(senderId, msg, retryspec);
   return msg;
 }
 
 export function extractMsg(payload) {
   const msg = payload;
-  return extractRetrySpec(msg);
+  const decodedMessage = decodeMqProtocolMessage(msg);
+  if (decodedMessage.version !== MQ_PROTOCOL_MESSAGE_VERSION) {
+    const error = new Error(
+      `MQ protocol message version mismatch. Expected ${MQ_PROTOCOL_MESSAGE_VERSION} ,got ${
+        decodedMessage.version
+      }`
+    );
+    error.code = 'VERMISMATCH';
+    error.expectedVersion = MQ_PROTOCOL_MESSAGE_VERSION;
+    error.gotVersion = decodedMessage.version;
+    throw error;
+  }
+  return decodedMessage;
 }
 
 export function generateAckMsg(senderId, retryspec) {
-  const ack = applyRetrySpec(senderId, Buffer.from(''), retryspec);
+  const ack = encodeMqProtocolMessage(senderId, Buffer.from(''), retryspec);
   return ack;
 }
