@@ -311,7 +311,7 @@ module.exports = {
   },
   ACCESSOR_ID_NEEDED: {
     code: 20014,
-    message: '"accessor_id" is required for mode 3',
+    message: '"accessor_id" must be provided',
     clientError: true,
   },
   SECRET_NEEDED: {

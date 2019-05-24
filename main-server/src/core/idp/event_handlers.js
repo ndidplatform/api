@@ -179,6 +179,8 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
             'AddAccessor',
             'RevokeAccessor',
             'RevokeIdentityAssociation',
+            'RevokeAndAddAccessor',
+            'UpdateIdentityModeList',
           ].includes(transaction.fnName)
         ) {
           identityModificationsToCheckForNotification.push(transaction);
