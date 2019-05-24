@@ -1,8 +1,9 @@
 syntax = "proto3";
 
 message MqProtocolMessage {
-  string msg_id = 1;
-  int32 seq_id = 2;
-  bytes message = 3;
-  string sender_id = 4;
+  int32 version = 1;
+  string msg_id = 2;
+  int32 seq_id = 3;
+  bytes message = 4;
+  string sender_id = 5;
 }

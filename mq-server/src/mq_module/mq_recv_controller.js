@@ -42,9 +42,18 @@ export default class MQRecv extends EventEmitter {
         try {
           msg = MQProtocol.extractMsg(messageBuffer);
         } catch (error) {
-          this.emit(
-            'error',
-            new CustomError({
+          let err;
+          if (error.code === 'VERMISMATCH') {
+            err = new CustomError({
+              errorType: errorType.MQ_PROTOCOL_MESSAGE_VERSION_MISMATCH,
+              details: {
+                expected: error.expectedVersion,
+                got: error.gotVersion,
+              },
+              cause: error,
+            });
+          } else {
+            err = new CustomError({
               errorType: errorType.WRONG_MESSAGE_QUEUE_PROTOCOL,
               details: {
                 messageBuffer: Buffer.isBuffer(messageBuffer)
@@ -52,8 +61,9 @@ export default class MQRecv extends EventEmitter {
                   : messageBuffer,
               },
               cause: error,
-            })
-          );
+            });
+          }
+          this.emit('error', err);
           return;
         }
         const ackMSG = MQProtocol.generateAckMsg(config.senderId, {

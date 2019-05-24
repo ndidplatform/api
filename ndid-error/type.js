@@ -236,6 +236,14 @@ module.exports = {
     code: 10050,
     message: 'No mode available',
   },
+  MQ_PROTOCOL_MESSAGE_VERSION_MISMATCH: {
+    code: 10051,
+    message: 'MQ protocol message version mismatch',
+  },
+  MQ_MESSAGE_VERSION_MISMATCH: {
+    code: 10052,
+    message: 'MQ message version mismatch',
+  },
 
   // Client errors
   PATH_PARAMS_VALIDATION_FAILED: {
