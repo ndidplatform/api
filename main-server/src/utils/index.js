@@ -22,7 +22,6 @@
 
 import fs from 'fs';
 import crypto from 'crypto';
-import constants from 'constants';
 
 import bignum from 'bignum';
 
@@ -138,7 +137,7 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
     rawMessageBuffer = cryptoUtils.publicDecrypt(
       {
         key: publicKey,
-        padding: constants.RSA_NO_PADDING,
+        padding: crypto.constants.RSA_NO_PADDING,
       },
       Buffer.from(cipher, 'base64')
     );
@@ -170,89 +169,6 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
   });
 
   return rawMessageBuffer.slice(0, padLength + 1).toString('base64');
-}
-
-export function generatedChallenges(idp_count) {
-  let challenges = [];
-  let offset = 0;
-  let longChallenge = randomBufferBytes(idp_count * 2 * config.challengeLength);
-
-  for (let i = 0; i < idp_count; i++) {
-    let startSecond = offset + config.challengeLength;
-    let endSecond = startSecond + config.challengeLength;
-    challenges.push([
-      longChallenge.slice(offset, startSecond).toString('base64'),
-      longChallenge.slice(startSecond, endSecond).toString('base64'),
-    ]);
-    offset = endSecond;
-  }
-  return challenges;
-}
-
-export function generatePublicProof(publicKey) {
-  let { n, e } = extractParameterFromPublicKey(publicKey);
-  let k = randomBase64Bytes(n.toBuffer().length - 1);
-  let kInt = stringToBigInt(k);
-  let blockchainProof = powerMod(kInt, e, n)
-    .toBuffer()
-    .toString('base64');
-  return [k, blockchainProof];
-}
-
-export function generateIdentityProof(data) {
-  logger.debug({
-    message: 'Generating proof',
-    data,
-  });
-
-  let signedHash = data.secret;
-  if (signedHash == null) {
-    throw new CustomError({
-      errorType: errorType.MALFORMED_SECRET_FORMAT,
-    });
-  }
-  let { n, e } = extractParameterFromPublicKey(data.publicKey);
-  // -1 to garantee k < n
-  let k = data.k; //randomBase64Bytes(n.toBuffer().length - 1);
-  let kInt = stringToBigInt(k);
-  let signedHashInt = stringToBigInt(signedHash);
-  let challenge = stringToBigInt(data.challenge);
-
-  let blockchainProof = powerMod(kInt, e, n)
-    .toBuffer()
-    .toString('base64');
-
-  let privateProof = kInt
-    .mul(powerMod(signedHashInt, challenge, n))
-    .mod(n)
-    .toBuffer()
-    .toString('base64');
-
-  let padding;
-  try {
-    padding = extractPaddingFromPrivateEncrypt(signedHash, data.publicKey);
-  } catch (error) {
-    throw error;
-  }
-
-  logger.debug({
-    message: 'Proof generated',
-    k: stringToBigInt(k),
-    bcInt: stringToBigInt(blockchainProof),
-    pvInt: stringToBigInt(privateProof),
-    n,
-    e,
-    signedHashInt,
-    challenge: stringToBigInt(data.challenge),
-    padding,
-    blockchainProof,
-  });
-
-  return {
-    blockchainProof,
-    privateProofValue: privateProof,
-    padding,
-  };
 }
 
 function extractParameterFromPublicKey(publicKey) {
@@ -291,134 +207,28 @@ function moduloMultiplicativeInverse(a, modulo) {
   if (!g.eq(1)) throw 'No modular inverse';
   return x.mod(modulo);
 }
-export function verifyZKProof(
-  publicKey,
-  challenges,
-  privateProofArray,
-  publicProofArray,
-  sid,
-  privateProofHash,
-  padding
-) {
-  logger.debug({
-    message: 'ZK List',
-    publicKey,
-    challenges,
-    privateProofArray,
-    publicProofArray,
-    sid,
-    privateProofHash,
-    padding,
-  });
-
-  if (
-    challenges.length !== privateProofArray.length ||
-    challenges.length !== publicProofArray.length
-  )
-    return false;
-
-  let result = hash(JSON.stringify(privateProofArray)) === privateProofHash;
-  logger.debug({
-    message: 'Check private proof hash',
-    result,
-  });
-  for (let i = 0; i < challenges.length; i++) {
-    logger.debug({
-      message: 'should call zk',
-      i,
-    });
-    result =
-      result &&
-      verifyZKProofSingle(
-        publicKey,
-        challenges[i],
-        privateProofArray[i],
-        publicProofArray[i],
-        sid,
-        //privateProofHash,
-        padding
-      );
-    logger.debug({
-      message: 'Loop ZK',
-      i,
-      result,
-    });
-  }
-  return result;
-}
-
-function verifyZKProofSingle(
-  publicKey,
-  challenge,
-  privateProof,
-  publicProof,
-  sid,
-  //privateProofHash,
-  padding
-) {
-  //if(privateProofHash !== hash(privateProof)) return false;
-
-  let { n, e } = extractParameterFromPublicKey(publicKey);
-  let hashedSid = hash(sid.namespace + ':' + sid.identifier);
-
-  const sha256SignatureEncoded = encodeSignature(
-    [2, 16, 840, 1, 101, 3, 4, 2, 1],
-    Buffer.from(hashedSid, 'base64')
-  );
-
-  let paddedHashedSid = Buffer.concat([
-    Buffer.from(padding, 'base64'),
-    sha256SignatureEncoded,
-  ]).toString('base64');
-
-  let inverseHashSid = moduloMultiplicativeInverse(
-    stringToBigInt(paddedHashedSid),
-    n
-  );
-  if (inverseHashSid.lt(bignum(0))) inverseHashSid = inverseHashSid.add(n);
-
-  let tmp1 = powerMod(stringToBigInt(privateProof), e, n);
-  let tmp2 = powerMod(inverseHashSid, stringToBigInt(challenge), n);
-
-  let tmp3 = tmp1.mul(tmp2).mod(n);
-
-  logger.debug({
-    message: 'ZK Verify result',
-    hashBigInt: stringToBigInt(hashedSid),
-    inverseHashSid,
-    n,
-    e,
-    tmp1,
-    tmp2,
-    tmp3,
-    publicProofBigInt: stringToBigInt(publicProof),
-    publicProof,
-    paddedHashedSid: stringToBigInt(paddedHashedSid),
-    hashedSid,
-    privateProof: stringToBigInt(privateProof),
-  });
-
-  return stringToBigInt(publicProof).eq(tmp3);
-}
 
 /**
  *
- * @param {string} messageToSign
+ * @param {string|Buffer} messageToSign
  * @param {string} nodeId
  * @param {boolean} useMasterKey
  * @return {Buffer} signature
  */
 export async function createSignature(messageToSign, nodeId, useMasterKey) {
-  if (typeof messageToSign !== 'string') {
+  if (typeof messageToSign === 'string') {
+    messageToSign = Buffer.from(messageToSign, 'utf8');
+  }
+  if (!Buffer.isBuffer(messageToSign)) {
     throw new CustomError({
-      message: 'Expected message to sign to be a string',
+      message: 'Expected message to sign to be a Buffer',
     });
   }
   const messageToSignHash = hash(messageToSign);
 
   if (config.useExternalCryptoService) {
     return await externalCryptoService.createSignature(
-      messageToSign,
+      messageToSign.toString('base64'),
       messageToSignHash,
       nodeId,
       useMasterKey
@@ -438,14 +248,28 @@ export async function createSignature(messageToSign, nodeId, useMasterKey) {
   });
 }
 
-export function verifySignature(signature, publicKey, plainText) {
+/**
+ *
+ * @param {string|Buffer} signature
+ * @param {string|Buffer} publicKey
+ * @param {string|Buffer} dataToVerify
+ */
+export function verifySignature(signature, publicKey, dataToVerify) {
   if (!Buffer.isBuffer(signature)) {
     signature = Buffer.from(signature, 'base64');
   }
-  return cryptoUtils.verifySignature(signature, publicKey, plainText);
+  if (!Buffer.isBuffer(dataToVerify)) {
+    dataToVerify = Buffer.from(dataToVerify, 'utf8');
+  }
+  return cryptoUtils.verifySignature(signature, publicKey, dataToVerify);
 }
 
-function generateCustomPadding(initialSalt, blockLength = 2048) {
+function getDataHashWithCustomPadding(
+  initialSalt,
+  keyModulus,
+  dataHash,
+  blockLength = 2048
+) {
   const hashLength = 256;
   const padLengthInbyte = parseInt(Math.floor((blockLength - hashLength) / 8));
   let paddingBuffer = Buffer.alloc(0);
@@ -462,17 +286,31 @@ function generateCustomPadding(initialSalt, blockLength = 2048) {
         .slice(0, config.saltLength),
     ]);
   }
-  //set most significant bit to 0
-  paddingBuffer[0] = paddingBuffer[0] & 0x7f;
-  return paddingBuffer;
+
+  const hashWithPaddingBeforeMod = Buffer.concat([paddingBuffer, dataHash]);
+
+  const hashWithPaddingBN = bignum.fromBuffer(hashWithPaddingBeforeMod);
+  const keyModulusBN = bignum.fromBuffer(keyModulus);
+
+  let hashWithPadding = hashWithPaddingBN.mod(keyModulusBN).toBuffer();
+
+  if (hashWithPadding.length < keyModulus.length) {
+    const zeros = Buffer.alloc(keyModulus.length - hashWithPadding.length);
+    hashWithPadding = Buffer.concat([zeros, hashWithPadding]);
+  }
+
+  return hashWithPadding;
 }
 
 export function hashRequestMessageForConsent(
   request_message,
   initial_salt,
-  request_id
+  request_id,
+  accessorPublicKey
 ) {
-  const paddingBuffer = generateCustomPadding(initial_salt);
+  const parsedKey = parseKey(accessorPublicKey);
+  const keyModulus = parsedKey.data.modulus.toBuffer();
+
   const derivedSalt = cryptoUtils
     .sha256(request_id + initial_salt)
     .slice(0, config.saltLength)
@@ -480,7 +318,14 @@ export function hashRequestMessageForConsent(
 
   const normalHashBuffer = cryptoUtils.sha256(request_message + derivedSalt);
 
-  return Buffer.concat([paddingBuffer, normalHashBuffer]).toString('base64');
+  //should find block length if use another sign method
+  const hashWithPadding = getDataHashWithCustomPadding(
+    initial_salt,
+    keyModulus,
+    normalHashBuffer
+  );
+
+  return hashWithPadding.toString('base64');
 }
 
 export function verifyResponseSignature(
@@ -490,29 +335,24 @@ export function verifyResponseSignature(
   initial_salt,
   request_id
 ) {
-  //should find block length if use another sign method
-  const paddingBuffer = generateCustomPadding(initial_salt);
-  const derivedSalt = cryptoUtils
-    .sha256(request_id + initial_salt)
-    .slice(0, config.saltLength)
-    .toString('base64');
-
-  const decryptedSignature = cryptoUtils
+  const decryptedSignatureBase64 = cryptoUtils
     .publicDecrypt(
       {
         key: publicKey,
-        padding: constants.RSA_NO_PADDING,
+        padding: crypto.constants.RSA_NO_PADDING,
       },
       Buffer.from(signature, 'base64')
     )
     .toString('base64');
 
-  const paddedBase64 = Buffer.concat([
-    paddingBuffer,
-    cryptoUtils.sha256(request_message + derivedSalt),
-  ]).toString('base64');
+  const hashWithPaddingBase64 = hashRequestMessageForConsent(
+    request_message,
+    initial_salt,
+    request_id,
+    publicKey
+  );
 
-  return paddedBase64 === decryptedSignature;
+  return hashWithPaddingBase64 === decryptedSignatureBase64;
 }
 
 export function createRequestId() {
@@ -628,7 +468,9 @@ export function getDetailedRequestStatus(requestDetail) {
         responseCount.reject === 0 &&
         (responseCount.accept > 0 ||
           (responseCount.accept === 0 &&
-            requestDetail.purpose === 'AddAccessor'))
+            ['RegisterIdentity', 'AddAccessor', 'RevokeAccessor'].includes(
+              requestDetail.purpose
+            )))
       ) {
         status = 'completed';
       }

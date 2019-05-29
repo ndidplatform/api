@@ -26,7 +26,7 @@ import * as idp from './core/idp';
 import * as as from './core/as';
 import * as proxy from './core/proxy';
 import * as identity from './core/identity';
-import * as dpki from './core/dpki';
+import * as node from './core/node';
 import * as tendermint from './tendermint';
 import * as mq from './mq';
 import * as callback from './callback';
@@ -49,8 +49,6 @@ export function getFunction(fnName) {
       return common.runTimeoutScheduler;
     case 'common.removeTimeoutSchedulerInternal':
       return common.removeTimeoutSchedulerInternal;
-    case 'idp.requestChallengeAfterBlockchain':
-      return idp.requestChallengeAfterBlockchain;
     case 'idp.createResponseAfterBlockchain':
       return idp.createResponseAfterBlockchain;
     case 'idp.processIdpResponseAfterAddAccessor':
@@ -65,32 +63,54 @@ export function getFunction(fnName) {
       return identity.updateIalInternalAsyncAfterBlockchain;
     case 'identity.createIdentityInternalAsyncAfterCreateRequestBlockchain':
       return identity.createIdentityInternalAsyncAfterCreateRequestBlockchain;
-    case 'identity.createIdentityInternalAsyncAfterBlockchain':
-      return identity.createIdentityInternalAsyncAfterBlockchain;
-    case 'identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain':
-      return identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain;
-    case 'identity.checkForExistedIdentityAfterBlockchain':
-      return identity.checkForExistedIdentityAfterBlockchain;
-    case 'identity.createIdentityInternalAsyncAfterClearRegisterIdentityTimeout':
-      return identity.createIdentityInternalAsyncAfterClearRegisterIdentityTimeout;
+    case 'identity.createIdentityAfterCloseConsentRequest':
+      return identity.createIdentityAfterCloseConsentRequest;
+    case 'identity.createIdentityAfterCloseConsentAndBlockchain':
+      return identity.createIdentityAfterCloseConsentAndBlockchain;
+    case 'identity.addIdentityInternalAsyncAfterCreateRequestBlockchain':
+      return identity.addIdentityInternalAsyncAfterCreateRequestBlockchain;
+    case 'identity.addIdentityAfterCloseConsentRequest':
+      return identity.addIdentityAfterCloseConsentRequest;
+    case 'identity.addIdentityAfterConsentAndBlockchain':
+      return identity.addIdentityAfterConsentAndBlockchain;
+    case 'identity.addAccessorInternalAsyncAfterCreateRequestBlockchain':
+      return identity.addAccessorInternalAsyncAfterCreateRequestBlockchain;
     case 'identity.addAccessorAfterCloseConsentRequest':
       return identity.addAccessorAfterCloseConsentRequest;
-    case 'identity.addAccessorAfterConsentAfterAddAccessorMethod':
-      return identity.addAccessorAfterConsentAfterAddAccessorMethod;
-    case 'identity.addAccessorAfterConsentAfterRegisterMqDest':
-      return identity.addAccessorAfterConsentAfterRegisterMqDest;
+    case 'identity.addAccessorAfterConsentAndBlockchain':
+      return identity.addAccessorAfterConsentAndBlockchain;
     case 'identity.notifyResultOfCreateRequestToRevokeAccessor':
       return identity.notifyResultOfCreateRequestToRevokeAccessor;
     case 'identity.revokeAccessorAfterCloseConsentRequest':
       return identity.revokeAccessorAfterCloseConsentRequest;
-    case 'identity.notifyRevokeAccessorAfterConsent':
-      return identity.notifyRevokeAccessorAfterConsent;
-    case 'idp.processIdpResponseAfterRevokeAccessor':
-      return idp.processIdpResponseAfterRevokeAccessor;
+    case 'identity.revokeAccessorAfterConsentAndBlockchain':
+      return identity.revokeAccessorAfterConsentAndBlockchain;
+    case 'identity.revokeAndAddAccessorInternalAsyncAfterCreateRequestBlockchain':
+      return identity.revokeAndAddAccessorInternalAsyncAfterCreateRequestBlockchain;
+    case 'identity.revokeAndAddAccessorAfterCloseConsentRequest':
+      return identity.revokeAndAddAccessorAfterCloseConsentRequest;
+    case 'identity.revokeAndAddAccessorAfterConsentAndBlockchain':
+      return identity.revokeAndAddAccessorAfterConsentAndBlockchain;
+    case 'identity.afterIdentityOperationSuccess':
+      return identity.afterIdentityOperationSuccess;
+    case 'identity.afterCloseFailedIdentityConsentRequest':
+      return identity.afterCloseFailedIdentityConsentRequest;
+    case 'identity.revokeIdentityAssociationInternalAsyncAfterCreateRequestBlockchain':
+      return identity.revokeIdentityAssociationInternalAsyncAfterCreateRequestBlockchain;
+    case 'identity.revokeIdentityAssociationAfterCloseConsentRequest':
+      return identity.revokeIdentityAssociationAfterCloseConsentRequest;
+    case 'identity.revokeIdentityAssociationAfterCloseConsentAndBlockchain':
+      return identity.revokeIdentityAssociationAfterCloseConsentAndBlockchain;
+    case 'identity.upgradeIdentityModeInternalAsyncAfterCreateRequestBlockchain':
+      return identity.upgradeIdentityModeInternalAsyncAfterCreateRequestBlockchain;
+    case 'identity.upgradeIdentityModeAfterCloseConsentRequest':
+      return identity.upgradeIdentityModeAfterCloseConsentRequest;
+    case 'identity.upgradeIdentityModeAfterConsentAndBlockchain':
+      return identity.upgradeIdentityModeAfterConsentAndBlockchain;
     case 'rp.processAsDataAfterSetDataReceived':
       return rp.processAsDataAfterSetDataReceived;
-    case 'dpki.updateNodeInternalAsyncAfterBlockchain':
-      return dpki.updateNodeInternalAsyncAfterBlockchain;
+    case 'node.updateNodeInternalAsyncAfterBlockchain':
+      return node.updateNodeInternalAsyncAfterBlockchain;
     // Callback
     case 'rp.getCallbackUrls':
       return rp.getCallbackUrls;
@@ -104,6 +124,8 @@ export function getFunction(fnName) {
       return idp.getIncomingRequestCallbackUrl;
     case 'idp.getIncomingRequestStatusUpdateCallbackUrl':
       return idp.getIncomingRequestStatusUpdateCallbackUrl;
+    case 'idp.getIdentityModificationNotificationCallbackUrl':
+      return idp.getIdentityModificationNotificationCallbackUrl;
     case 'as.getCallbackUrls':
       return as.getCallbackUrls;
     case 'as.getErrorCallbackUrl':
@@ -114,6 +136,8 @@ export function getFunction(fnName) {
       return as.getIncomingRequestStatusUpdateCallbackUrl;
     case 'proxy.getErrorCallbackUrl':
       return proxy.getErrorCallbackUrl;
+    case 'identity.handleIdentityModificationTransactions':
+      return identity.handleIdentityModificationTransactions;
     // Core module - process task by request ID
     case 'rp.processMessage':
       return rp.processMessage;
@@ -123,8 +147,8 @@ export function getFunction(fnName) {
       return idp.processMessage;
     case 'idp.processRequestUpdate':
       return idp.processRequestUpdate;
-    case 'idp.processCreateIdentityRequest':
-      return idp.processCreateIdentityRequest;
+    case 'idp.processIdentityRequest':
+      return idp.processIdentityRequest;
     case 'as.processMessage':
       return as.processMessage;
     case 'as.processRequestUpdate':
@@ -146,6 +170,8 @@ export function getFunction(fnName) {
       return tendermint.loadExpectedTxOnWorker;
     case 'tendermint.retryBacklogTransactRequest':
       return tendermint.retryBacklogTransactRequest;
+    case 'tendermint.retryTransact':
+      return tendermint.retryTransact;
     default:
       throw new CustomError({
         message: 'Unknown function name',

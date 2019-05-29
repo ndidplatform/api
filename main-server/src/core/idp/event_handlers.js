@@ -20,10 +20,7 @@
  *
  */
 
-import {
-  getErrorCallbackUrl,
-  getIncomingRequestStatusUpdateCallbackUrl,
-} from '.';
+import { getIncomingRequestStatusUpdateCallbackUrl } from '.';
 
 import * as utils from '../../utils';
 import { callbackToClient } from '../../callback';
@@ -33,12 +30,15 @@ import { getErrorObjectForClient } from '../../utils/error';
 import logger from '../../logger';
 
 import * as common from '../common';
+import * as identity from '../identity';
 import * as requestProcessManager from '../request_process_manager';
+import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
-import privateMessageType from '../../mq/message/type';
+
+import { delegateToWorker } from '../../master-worker-interface/server';
 
 import * as config from '../../config';
-import * as tendermintNdid from '../../tendermint/ndid';
+import MODE from '../../mode';
 
 export async function handleMessageFromQueue(
   messageId,
@@ -61,8 +61,13 @@ export async function handleMessageFromQueue(
   const requestId = message.request_id;
 
   try {
-    //if message is challenge for response, no need to wait for blockchain
-    if (message.type === privateMessageType.CHALLENGE_RESPONSE) {
+    const addToProcessQueue = await requestProcessManager.handleMessageFromMqWithBlockWait(
+      messageId,
+      message,
+      nodeId
+    );
+
+    if (addToProcessQueue) {
       await requestProcessManager.addMqMessageTaskToQueue({
         nodeId,
         messageId,
@@ -74,30 +79,11 @@ export async function handleMessageFromQueue(
         startTime
       );
     } else {
-      const addToProcessQueue = await requestProcessManager.handleMessageFromMqWithBlockWait(
-        messageId,
-        message,
-        nodeId
+      // Save message to redis cache time
+      common.notifyMetricsInboundMessageProcessTime(
+        'wait_for_block',
+        startTime
       );
-
-      if (addToProcessQueue) {
-        await requestProcessManager.addMqMessageTaskToQueue({
-          nodeId,
-          messageId,
-          message,
-          processMessageFnName: 'idp.processMessage',
-        });
-        common.notifyMetricsInboundMessageProcessTime(
-          'does_not_wait_for_block',
-          startTime
-        );
-      } else {
-        // Save message to redis cache time
-        common.notifyMetricsInboundMessageProcessTime(
-          'wait_for_block',
-          startTime
-        );
-      }
     }
   } catch (error) {
     const err = new CustomError({
@@ -165,8 +151,8 @@ async function isCreateIdentityRequestValid(requestId) {
   }
 
   return requestDetail.response_list
-    .map(({ valid_proof, valid_ial, valid_signature }) => {
-      return valid_proof && valid_ial && valid_signature;
+    .map(({ valid_ial, valid_signature }) => {
+      return valid_ial && valid_signature;
     })
     .reduce((accum, pilot) => {
       return accum && pilot;
@@ -176,11 +162,31 @@ async function isCreateIdentityRequestValid(requestId) {
 function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
   return Promise.all(
     parsedTransactionsInBlocks.map(async ({ height, transactions }) => {
-      const createIdentityRequestsToProcess = {}; // For clean up closed or timed out create identity requests
+      const identityRequestsToProcess = {}; // For clean up closed or timed out create identity requests
       const incomingRequestsToProcessUpdate = {};
+      const identityModificationsToCheckForNotification = [];
 
       for (let i = 0; i < transactions.length; i++) {
         const transaction = transactions[i];
+        if (!transaction.success) {
+          continue;
+        }
+
+        if (
+          [
+            'RegisterIdentity',
+            'AddIdentity',
+            'AddAccessor',
+            'RevokeAccessor',
+            'RevokeIdentityAssociation',
+            'RevokeAndAddAccessor',
+            'UpdateIdentityModeList',
+          ].includes(transaction.fnName)
+        ) {
+          identityModificationsToCheckForNotification.push(transaction);
+          continue;
+        }
+
         const requestId = transaction.args.request_id;
         if (requestId == null) continue;
         if (transaction.fnName === 'CloseRequest') {
@@ -194,7 +200,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
               continue;
             }
 
-            createIdentityRequestsToProcess[requestId] = {
+            identityRequestsToProcess[requestId] = {
               requestId,
               action: 'close',
             };
@@ -206,15 +212,13 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
           const requestData = await cacheDb.getRequestData(nodeId, requestId);
 
           if (requestData != null) {
-            createIdentityRequestsToProcess[requestId] = {
+            identityRequestsToProcess[requestId] = {
               requestId,
               action: 'timeout',
             };
             continue;
           }
         }
-
-        if (transaction.fnName === 'DeclareIdentityProof') continue;
 
         const requestReceivedFromMQ = await cacheDb.getRequestReceivedFromMQ(
           nodeId,
@@ -233,7 +237,7 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
       logger.debug({
         message: 'Create identity requests to process',
-        createIdentityRequestsToProcess,
+        identityRequestsToProcess,
       });
 
       logger.debug({
@@ -241,13 +245,42 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
         incomingRequestsToProcessUpdate,
       });
 
+      logger.debug({
+        message: 'Identity modifications/changes to check for notification',
+        identityModificationsToCheckForNotification,
+      });
+
+      if (config.mode === MODE.STANDALONE) {
+        identityModificationsToCheckForNotification.forEach((transaction) => {
+          identity.handleIdentityModificationTransactions({
+            nodeId,
+            getCallbackUrlFnName:
+              'idp.getIdentityModificationNotificationCallbackUrl',
+            transaction,
+          });
+        });
+      } else if (config.mode === MODE.MASTER) {
+        identityModificationsToCheckForNotification.forEach((transaction) => {
+          delegateToWorker({
+            fnName: 'identity.handleIdentityModificationTransactions',
+            args: [
+              {
+                nodeId,
+                getCallbackUrlFnName:
+                  'idp.getIdentityModificationNotificationCallbackUrl',
+                transaction,
+              },
+            ],
+          });
+        });
+      }
       await Promise.all([
-        ...Object.values(createIdentityRequestsToProcess).map(
+        ...Object.values(identityRequestsToProcess).map(
           ({ requestId, action }) =>
             requestProcessManager.addTaskToQueue({
               nodeId,
               requestId,
-              callbackFnName: 'idp.processCreateIdentityRequest',
+              callbackFnName: 'idp.processIdentityRequest',
               callbackArgs: [nodeId, requestId, action],
             })
         ),
@@ -265,15 +298,13 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
   );
 }
 
-export async function processCreateIdentityRequest(nodeId, requestId, action) {
+export async function processIdentityRequest(nodeId, requestId, action) {
   const requestData = await cacheDb.getRequestData(nodeId, requestId);
   const referenceId = requestData.reference_id;
   const identityCallbackUrl = await cacheDb.getCallbackUrlByReferenceId(
     nodeId,
     referenceId
   );
-
-  let identityPromise, type;
 
   logger.debug({
     message: 'Cleanup associated requestId',
@@ -282,26 +313,26 @@ export async function processCreateIdentityRequest(nodeId, requestId, action) {
   });
 
   //check type
-  const [createIdentityData, revokeAccessorData] = await Promise.all([
-    cacheDb.getCreateIdentityDataByReferenceId(nodeId, referenceId),
-    cacheDb.getRevokeAccessorDataByReferenceId(nodeId, referenceId),
-  ]);
+  const identityRequestData = await cacheDb.getIdentityRequestDataByReferenceId(
+    nodeId,
+    referenceId
+  );
 
-  if (createIdentityData) {
-    type = createIdentityData.associated
-      ? 'add_accessor_result'
-      : 'create_identity_result';
-
-    identityPromise = cacheDb.removeCreateIdentityDataByReferenceId(
+  let type;
+  if (identityRequestData != null) {
+    if (identityRequestData.type === 'RegisterIdentity') {
+      type = 'create_identity_result';
+    } else if (identityRequestData.type === 'AddAccessor') {
+      type = 'add_accessor_result';
+    } else if (identityRequestData.type === 'RevokeAccessor') {
+      type = 'revoke_accessor_result';
+    }
+  } else {
+    throw new CustomError({
+      message: 'Cannot find identity request data',
       nodeId,
-      referenceId
-    );
-  } else if (revokeAccessorData) {
-    type = 'revoke_accessor_result';
-    identityPromise = cacheDb.removeRevokeAccessorDataByReferenceId(
-      nodeId,
-      referenceId
-    );
+      referenceId,
+    });
   }
 
   if (identityCallbackUrl != null) {
@@ -333,10 +364,9 @@ export async function processCreateIdentityRequest(nodeId, requestId, action) {
   await Promise.all([
     cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
     cacheDb.removeRequestData(nodeId, requestId),
-    cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
     cacheDb.removeIdpResponseValidList(nodeId, requestId),
     cacheDb.removeRequestCreationMetadata(nodeId, requestId),
-    identityPromise,
+    cacheDb.removeIdentityRequestDataByReferenceId(nodeId, referenceId),
     cacheDb.removeIdentityFromRequestId(nodeId, requestId),
   ]);
 }
@@ -356,11 +386,10 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
       type: 'request_status',
       ...requestStatus,
       response_valid_list: requestDetail.response_list.map(
-        ({ idp_id, valid_signature, valid_proof, valid_ial }) => {
+        ({ idp_id, valid_signature, valid_ial }) => {
           return {
             idp_id,
             valid_signature,
-            valid_proof,
             valid_ial,
           };
         }
@@ -377,10 +406,6 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
 
   // Clean up when request is timed out or closed before IdP response
   if (cleanUp) {
-    await Promise.all([
-      cacheDb.removeRequestReceivedFromMQ(nodeId, requestId),
-      cacheDb.removeRPIdFromRequestId(nodeId, requestId),
-      cacheDb.removeRequestMessage(nodeId, requestId),
-    ]);
+    await cacheDb.removeRequestReceivedFromMQ(nodeId, requestId);
   }
 }

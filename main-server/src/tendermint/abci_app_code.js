@@ -23,91 +23,108 @@
 import errorType from 'ndid-error/type';
 
 // Response codes from ABCI app
-// OK                                        uint32 = 0
-// EncodingError                             uint32 = 1
-// DecodingError                             uint32 = 2
-// BadNonce                                  uint32 = 3
-// Unauthorized                              uint32 = 4
-// UnmarshalError                            uint32 = 5
-// MarshalError                              uint32 = 6
-// RequestIDNotFound                         uint32 = 7
-// RequestIsClosed                           uint32 = 8
-// RequestIsTimedOut                         uint32 = 9
-// RequestIsCompleted                        uint32 = 10
-// DuplicateServiceID                        uint32 = 11
-// TokenAccountNotFound                      uint32 = 12
-// TokenNotEnough                            uint32 = 13
-// InvalidTransactionFormat                  uint32 = 14
-// MethodCanNotBeEmpty                       uint32 = 15
-// DuplicateResponse                         uint32 = 16
-// AALError                                  uint32 = 17
-// IALError                                  uint32 = 18
-// DuplicateNodeID                           uint32 = 19
-// WrongRole                                 uint32 = 20
-// DuplicateNamespace                        uint32 = 21
-// NamespaceNotFound                         uint32 = 22
-// DuplicateRequestID                        uint32 = 23
-// NodeIDNotFound                            uint32 = 24
-// DuplicatePublicKey                        uint32 = 25
-// DuplicateAccessorID                       uint32 = 26
-// DuplicateAccessorGroupID                  uint32 = 27
-// AccessorGroupIDNotFound                   uint32 = 28
-// RequestIsNotCompleted                     uint32 = 29
-// RequestIsNotSpecial                       uint32 = 30
-// InvalidMinIdp                             uint32 = 31
-// NodeIDDoesNotExistInASList                uint32 = 32
-// AsIDDoesNotExistInASList                  uint32 = 33
-// ServiceIDNotFound                         uint32 = 34
-// InvalidMode                               uint32 = 35
-// HashIDNotFound                            uint32 = 36
-// DuplicateIdentityProof                    uint32 = 37
-// WrongIdentityProof                        uint32 = 38
-// DuplicateASInDataRequest                  uint32 = 39
-// DuplicateAnsweredAsIDList                 uint32 = 40
-// DuplicateServiceIDInDataRequest           uint32 = 41
-// ServiceDestinationNotFound                uint32 = 42
-// DataRequestIsCompleted                    uint32 = 43
-// NotFirstIdP                               uint32 = 44
-// AccessorIDNotFound                        uint32 = 45
-// NotOwnerOfAccessor                        uint32 = 46
-// NoPermissionForRegisterServiceDestination uint32 = 47
-// IncompleteValidList                       uint32 = 48
-// UnknownMethod                             uint32 = 49
-// InvalidKeyFormat                          uint32 = 50
-// UnsupportedKeyType                        uint32 = 51
-// UnknownKeyType                            uint32 = 52
-// NDIDisAlreadyExisted                      uint32 = 53
-// NoPermissionForSetMqAddresses             uint32 = 54
-// NoPermissionForCallNDIDMethod             uint32 = 55
-// NoPermissionForCallIdPMethod              uint32 = 56
-// NoPermissionForCallASMethod               uint32 = 57
-// NoPermissionForCallRPorASMethod           uint32 = 58
-// VerifySignatureError                      uint32 = 59
-// NotOwnerOfRequest                         uint32 = 60
-// CannotGetPublicKeyFromParam               uint32 = 61
-// CannotGetMasterPublicKeyFromNodeID        uint32 = 62
-// CannotGetPublicKeyFromNodeID              uint32 = 63
-// TimeOutBlockIsMustGreaterThanZero         uint32 = 64
-// RSAKeyLengthTooShort                      uint32 = 65
-// RegisterIdentityIsTimedOut                uint32 = 66
-// AmountMustBeGreaterOrEqualToZero          uint32 = 67
-// NodeIsNotActive                           uint32 = 68
-// ServiceIsNotActive                        uint32 = 69
-// ServiceDestinationIsNotActive             uint32 = 70
-// ServiceDestinationIsNotApprovedByNDID     uint32 = 71
-// NodeIDIsAlreadyAssociatedWithProxyNode    uint32 = 72
-// NodeIDisProxyNode                         uint32 = 73
-// NodeIDHasNotBeenAssociatedWithProxyNode   uint32 = 74
-// ProxyNodeNotFound                         uint32 = 75
-// NodeIDDoesNotExistInIdPList               uint32 = 76
-// ProxyNodeIsNotActive                      uint32 = 77
-// NodeIDInIdPListIsNotActive                uint32 = 78
-// NodeIDInASListIsNotActive                 uint32 = 79
-// RoleIsNotAS                               uint32 = 80
-// RequestIsNotClosed                        uint32 = 81
-// ChainIsDisabled                           uint32 = 82
-// ChainIsNotInitialized                     uint32 = 83
-// UnknownError                              uint32 = 999
+// OK                                                 uint32 = 0
+// EncodingError                                      uint32 = 1
+// DecodingError                                      uint32 = 2
+// BadNonce                                           uint32 = 3
+// Unauthorized                                       uint32 = 4
+// UnmarshalError                                     uint32 = 5
+// MarshalError                                       uint32 = 6
+// RequestIDNotFound                                  uint32 = 7
+// RequestIsClosed                                    uint32 = 8
+// RequestIsTimedOut                                  uint32 = 9
+// RequestIsCompleted                                 uint32 = 10
+// DuplicateServiceID                                 uint32 = 11
+// TokenAccountNotFound                               uint32 = 12
+// TokenNotEnough                                     uint32 = 13
+// InvalidTransactionFormat                           uint32 = 14
+// MethodCanNotBeEmpty                                uint32 = 15
+// DuplicateResponse                                  uint32 = 16
+// AALError                                           uint32 = 17
+// IALError                                           uint32 = 18
+// DuplicateNodeID                                    uint32 = 19
+// WrongRole                                          uint32 = 20
+// DuplicateNamespace                                 uint32 = 21
+// NamespaceNotFound                                  uint32 = 22
+// DuplicateRequestID                                 uint32 = 23
+// NodeIDNotFound                                     uint32 = 24
+// DuplicatePublicKey                                 uint32 = 25
+// DuplicateAccessorID                                uint32 = 26
+// DuplicateAccessorGroupID                           uint32 = 27
+// AccessorGroupIDNotFound                            uint32 = 28
+// RequestIsNotCompleted                              uint32 = 29
+// RequestIsNotSpecial                                uint32 = 30
+// InvalidMinIdp                                      uint32 = 31
+// NodeIDDoesNotExistInASList                         uint32 = 32
+// AsIDDoesNotExistInASList                           uint32 = 33
+// ServiceIDNotFound                                  uint32 = 34
+// InvalidMode                                        uint32 = 35
+// HashIDNotFound                                     uint32 = 36
+// DuplicateASInDataRequest                           uint32 = 39
+// DuplicateAnsweredAsIDList                          uint32 = 40
+// DuplicateServiceIDInDataRequest                    uint32 = 41
+// ServiceDestinationNotFound                         uint32 = 42
+// DataRequestIsCompleted                             uint32 = 43
+// NotFirstIdP                                        uint32 = 44
+// AccessorIDNotFound                                 uint32 = 45
+// NotOwnerOfAccessor                                 uint32 = 46
+// NoPermissionForRegisterServiceDestination          uint32 = 47
+// IncompleteValidList                                uint32 = 48
+// UnknownMethod                                      uint32 = 49
+// InvalidKeyFormat                                   uint32 = 50
+// UnsupportedKeyType                                 uint32 = 51
+// UnknownKeyType                                     uint32 = 52
+// NDIDisAlreadyExisted                               uint32 = 53
+// NoPermissionForSetMqAddresses                      uint32 = 54
+// NoPermissionForCallNDIDMethod                      uint32 = 55
+// NoPermissionForCallIdPMethod                       uint32 = 56
+// NoPermissionForCallASMethod                        uint32 = 57
+// NoPermissionForCallRPandIdPMethod                  uint32 = 58
+// VerifySignatureError                               uint32 = 59
+// NotOwnerOfRequest                                  uint32 = 60
+// CannotGetPublicKeyFromParam                        uint32 = 61
+// CannotGetMasterPublicKeyFromNodeID                 uint32 = 62
+// CannotGetPublicKeyFromNodeID                       uint32 = 63
+// TimeOutBlockIsMustGreaterThanZero                  uint32 = 64
+// RSAKeyLengthTooShort                               uint32 = 65
+// RegisterIdentityIsTimedOut                         uint32 = 66
+// AmountMustBeGreaterOrEqualToZero                   uint32 = 67
+// NodeIsNotActive                                    uint32 = 68
+// ServiceIsNotActive                                 uint32 = 69
+// ServiceDestinationIsNotActive                      uint32 = 70
+// ServiceDestinationIsNotApprovedByNDID              uint32 = 71
+// NodeIDIsAlreadyAssociatedWithProxyNode             uint32 = 72
+// NodeIDisProxyNode                                  uint32 = 73
+// NodeIDHasNotBeenAssociatedWithProxyNode            uint32 = 74
+// ProxyNodeNotFound                                  uint32 = 75
+// NodeIDDoesNotExistInIdPList                        uint32 = 76
+// ProxyNodeIsNotActive                               uint32 = 77
+// NodeIDInIdPListIsNotActive                         uint32 = 78
+// NodeIDInASListIsNotActive                          uint32 = 79
+// RoleIsNotAS                                        uint32 = 80
+// RequestIsNotClosed                                 uint32 = 81
+// ChainIsDisabled                                    uint32 = 82
+// ChainIsNotInitialized                              uint32 = 83
+// DuplicateNonce                                     uint32 = 84
+// NotExistValidator                                  uint32 = 85
+// IdentityAlreadyExisted                             uint32 = 86
+// IdentityCannotBeEmpty                              uint32 = 87
+// GotRefGroupCodeAndIdentity                         uint32 = 88
+// RefGroupNotFound                                   uint32 = 89
+// IdentityNotFoundInThisIdP                          uint32 = 90
+// InvalidPurpose                                     uint32 = 91
+// RequestIsAlreadyUsed                               uint32 = 92
+// RefGroupCodeCannotBeEmpty                          uint32 = 93
+// AllAccessorMustHaveSameRefGroupCode                uint32 = 94
+// AccessorNotFoundInThisIdP                          uint32 = 95
+// DuplicatedNamespaceInIdentityList                  uint32 = 96
+// AccessorIDCannotBeEmpty                            uint32 = 97
+// AccessorPublicKeyCannotBeEmpty                     uint32 = 98
+// AccessorTypeCannotBeEmpty                          uint32 = 99
+// InvalidNamespace                                   uint32 = 100
+// IdentifierCountIsGreaterThanAllowedIdentifierCount uint32 = 101
+// IalMustBeGreaterOrEqualMinIal                      uint32 = 102
+// UnknownError                                       uint32 = 999
 
 const codeMapping = {
   1: errorType.ABCI_ENCODING_ERROR, // Not used in API (calls from API won't generate this error)
@@ -193,6 +210,25 @@ const codeMapping = {
   81: errorType.ABCI_REQUEST_IS_NOT_CLOSED,
   82: errorType.ABCI_CHAIN_DISABLED,
   83: errorType.ABCI_CHAIN_NOT_INITIALIZED,
+  84: errorType.ABCI_DUPLICATE_NONCE,
+  85: errorType.ABCI_VALIDATOR_DOES_NOT_EXIST,
+  86: errorType.ABCI_IDENTITY_ALREADY_EXIST,
+  87: errorType.ABCI_IDENTITY_CANNOT_BE_EMPTY,
+  88: errorType.ABCI_CANNOT_INPUT_BOTH_REF_GROUP_CODE_AND_IDENTITY,
+  89: errorType.ABCI_REF_GROUP_NOT_FOUND,
+  90: errorType.ABCI_IDENTITY_NOT_FOUND_ON_IDP,
+  91: errorType.ABCI_INVALID_REQUEST_PURPOSE,
+  92: errorType.ABCI_REQUEST_IS_ALREADY_USED,
+  93: errorType.ABCI_REF_GROUP_CODE_CANNOT_BE_EMPTY,
+  94: errorType.ABCI_ALL_ACCESSOR_MUST_HAVE_SAME_REF_GROUP_CODE,
+  95: errorType.ABCI_ACCESSOR_NOT_FOUND_ON_IDP,
+  96: errorType.ABCI_DUPLICATE_NAMESPACE_IN_IDENTITY_LIST,
+  97: errorType.ABCI_ACCESSOR_ID_CANNOT_BE_EMPTY,
+  98: errorType.ABCI_ACCESSOR_PUBLIC_KEY_CANNOT_BE_EMPTY,
+  99: errorType.ABCI_ACCESSOR_TYPE_CANNOT_BE_EMPTY,
+  100: errorType.ABCI_INVALID_NAMESPACE,
+  101: errorType.ABCI_ALLOWED_IDENTIFIER_COUNT_EXCEEDED,
+  102: errorType.ABCI_IAL_TOO_LOW_FOR_FIRST_IDP,
   999: errorType.UNKNOWN_ERROR,
 };
 

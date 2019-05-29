@@ -94,6 +94,7 @@ async function closeRequestInternalAsync(
     callbackFnName,
     callbackAdditionalArgs,
     saveForRetryOnChainDisabled,
+    retryOnFail,
   } = options;
   const { node_id } = additionalParams;
   try {
@@ -134,7 +135,8 @@ async function closeRequestInternalAsync(
             callbackAdditionalArgs,
           },
         ],
-        saveForRetryOnChainDisabled
+        saveForRetryOnChainDisabled,
+        retryOnFail,
       );
     } else {
       await tendermintNdid.closeRequest(

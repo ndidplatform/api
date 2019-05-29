@@ -1,6 +1,6 @@
 {
   "name": "ndid-api",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "",
   "license": "AGPL-3.0-or-later",
   "scripts": {
@@ -21,6 +21,7 @@
     "asn1.js": "^5.0.1",
     "bignum": "^0.13.0",
     "body-parser": "^1.18.2",
+    "data-urls": "^1.1.0",
     "dotenv": "^6.0.0",
     "express": "^4.16.3",
     "grpc": "^1.15.1",
@@ -35,6 +36,7 @@
     "protobufjs": "^6.8.8",
     "simple-backoff": "^1.1.0",
     "source-map-support": "^0.5.9",
+    "uuid": "^3.3.2",
     "ws": "^5.2.2"
   },
   "devDependencies": {

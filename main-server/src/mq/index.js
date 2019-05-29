@@ -25,6 +25,8 @@ import EventEmitter from 'events';
 
 import protobuf from 'protobufjs';
 
+import { serializeMqMessage, deserializeMqMessage } from './message';
+
 import * as mqService from './grpc_client';
 import * as tendermint from '../tendermint';
 import * as tendermintNdid from '../tendermint/ndid';
@@ -42,6 +44,7 @@ import { role } from '../node';
 import MODE from '../mode';
 import * as config from '../config';
 
+const MQ_MESSAGE_VERSION = 1; // INCREMENT THIS WHENEVER SPEC CHANGES
 const MQ_SEND_TOTAL_TIMEOUT = 600000;
 
 const mqMessageProtobufRootInstance = new protobuf.Root();
@@ -164,8 +167,7 @@ export async function resumePendingOutboundMessageSendOnWorker(msgId) {
   await sendPendingOutboundMessage({ msgId, data });
 }
 
-async function sendPendingOutboundMessage({ msgId: msgIdStr, data }) {
-  const msgId = Number(msgIdStr);
+async function sendPendingOutboundMessage({ msgId, data }) {
   const { mqDestAddress, payloadBuffer: payloadBufferArr, sendTime } = data;
   if (sendTime + MQ_SEND_TOTAL_TIMEOUT > Date.now()) {
     const payloadBuffer = Buffer.from(payloadBufferArr);
@@ -349,6 +351,17 @@ export async function processRawMessage({
       outerLayerDecodedDecryptedMessage,
     });
 
+    if (outerLayerDecodedDecryptedMessage.version !== MQ_MESSAGE_VERSION) {
+      throw new CustomError({
+        errorType: errorType.MQ_MESSAGE_VERSION_MISMATCH,
+        details: {
+          expected: MQ_MESSAGE_VERSION,
+          got: outerLayerDecodedDecryptedMessage.version,
+        },
+      });
+    }
+
+    let messageType;
     let messageBuffer;
     let messageSignature;
     let receiverNodeId;
@@ -401,10 +414,22 @@ export async function processRawMessage({
         decodedDecryptedMessage,
       });
 
+      if (decodedDecryptedMessage.version !== MQ_MESSAGE_VERSION) {
+        throw new CustomError({
+          errorType: errorType.MQ_MESSAGE_VERSION_MISMATCH,
+          details: {
+            expected: MQ_MESSAGE_VERSION,
+            got: decodedDecryptedMessage.version,
+          },
+        });
+      }
+
+      messageType = decodedDecryptedMessage.message_type;
       messageBuffer = decodedDecryptedMessage.message;
       messageSignature = decodedDecryptedMessage.signature;
     } else {
       receiverNodeId = config.nodeId;
+      messageType = outerLayerDecodedDecryptedMessage.message_type;
       messageBuffer = outerLayerDecodedDecryptedMessage.message;
       messageSignature = outerLayerDecodedDecryptedMessage.signature;
     }
@@ -415,15 +440,7 @@ export async function processRawMessage({
       });
     }
 
-    const messageStr = messageBuffer.toString('utf8');
-
-    logger.debug({
-      message: 'Split message and signature',
-      messageStr,
-      messageSignature,
-    });
-
-    const message = JSON.parse(messageStr);
+    const message = deserializeMqMessage(messageType, messageBuffer);
 
     const { idp_id, rp_id, as_id } = message;
     const nodeId = idp_id || rp_id || as_id;
@@ -438,15 +455,15 @@ export async function processRawMessage({
     const signatureValid = utils.verifySignature(
       messageSignature,
       publicKey,
-      messageStr
+      messageBuffer
     );
 
     logger.debug({
       message: 'Verifying signature',
+      messageBuffer,
       messageSignature,
       nodeId,
       publicKey,
-      messageStr,
       signatureValid,
     });
 
@@ -483,7 +500,7 @@ export async function processRawMessage({
       message.type,
       message.request_id,
       {
-        message: messageStr,
+        message,
         direction: longTermDb.MESSAGE_DIRECTIONS.INBOUND,
         source,
         signature: messageSignature.toString('base64'),
@@ -563,6 +580,22 @@ export async function loadAndProcessBacklogMessages() {
   }
 }
 
+/**
+ *
+ * @param {Object[]} receivers
+ * @param {string} receivers[].node_id
+ * @param {string} receivers[].public_key
+ * @param {string} [receivers[].ip]
+ * @param {number} [receivers[].port]
+ * @param {Object} [receivers[].proxy]
+ * @param {string} receivers[].proxy.node_id
+ * @param {string} receivers[].proxy.public_key
+ * @param {string} receivers[].proxy.ip
+ * @param {number} receivers[].proxy.port
+ * @param {string} receivers[].proxy.config
+ * @param {Object} message
+ * @param {string} senderNodeId
+ */
 export async function send(receivers, message, senderNodeId) {
   if (receivers.length === 0) {
     logger.debug({
@@ -574,13 +607,14 @@ export async function send(receivers, message, senderNodeId) {
   }
   const timestamp = Date.now();
 
-  const messageStr = JSON.stringify(message);
-  const messageBuffer = Buffer.from(messageStr, 'utf8');
+  const { messageType, messageBuffer } = serializeMqMessage(message);
   const messageSignatureBuffer = await utils.createSignature(
-    messageStr,
+    messageBuffer,
     senderNodeId
   );
   const mqMessageObject = {
+    version: MQ_MESSAGE_VERSION,
+    message_type: messageType,
     message: messageBuffer,
     signature: messageSignatureBuffer,
   };
@@ -630,6 +664,7 @@ export async function send(receivers, message, senderNodeId) {
         );
 
         const proxyMqMessageObject = {
+          version: MQ_MESSAGE_VERSION,
           message: protoEncryptedBuffer,
           signature: proxySignatureBuffer,
           receiver_node_id: receiverNodeId,
@@ -724,7 +759,7 @@ export async function send(receivers, message, senderNodeId) {
     message.type,
     message.request_id,
     {
-      message: messageStr,
+      message,
       direction: longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
       destinations: receivers.map((receiver) => {
         if (receiver.proxy != null) {

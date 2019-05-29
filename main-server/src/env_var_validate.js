@@ -20,8 +20,6 @@
  *
  */
 
-import path from 'path';
-
 if (process.env.NODE_ENV == null || process.env.NODE_ENV === '') {
   console.warn(
     '"NODE_ENV" environment variable is not set. Default to "development"'
@@ -75,42 +73,18 @@ if (process.env.MQ_CONTACT_IP == null) {
 
 if (
   process.env.LOG_LEVEL != null &&
+  process.env.LOG_LEVEL !== 'fatal' &&
   process.env.LOG_LEVEL !== 'error' &&
   process.env.LOG_LEVEL !== 'warn' &&
   process.env.LOG_LEVEL !== 'info' &&
-  process.env.LOG_LEVEL !== 'verbose' &&
   process.env.LOG_LEVEL !== 'debug' &&
-  process.env.LOG_LEVEL !== 'silly'
+  process.env.LOG_LEVEL !== 'trace'
 ) {
   console.error(
     'ERROR:',
-    'Unsupported "LOG_LEVEL" environment variable value. Only "error", "warn", "info", "verbose", "debug", and "silly" are allowed. Process will now exit.'
+    'Unsupported "LOG_LEVEL" environment variable value. Only "fatal", "error", "warn", "info", "debug", and "trace" are allowed. Process will now exit.'
   );
   process.exit(1);
-}
-
-if (
-  process.env.LOG_TARGET != null &&
-  process.env.LOG_TARGET !== 'console' &&
-  process.env.LOG_TARGET !== 'file'
-) {
-  console.error(
-    'ERROR:',
-    'Unsupported "LOG_TARGET" environment variable value. Only "console" and "file" are allowed. Process will now exit.'
-  );
-  process.exit(1);
-}
-
-if (process.env.LOG_TARGET === 'file') {
-  if (process.env.LOG_DIRECTORY_PATH == null) {
-    console.warn(
-      `"LOG_DIRECTORY_PATH" environment variable is not set. Default to "${path.join(
-        __dirname,
-        '..',
-        'log'
-      )}"`
-    );
-  }
 }
 
 if (process.env.NODE_ENV === 'production') {
@@ -137,28 +111,6 @@ if (process.env.NODE_ENV === 'production') {
     process.exit(1);
   }
 
-  // if (
-  //   process.env.ROLE === 'idp' &&
-  //   process.env.CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH == null
-  // ) {
-  //   console.error(
-  //     'ERROR:',
-  //     '"CREATE_IDENTITY_REQUEST_MESSAGE_TEMPLATE_PATH" environment variable is not set. Process will now exit.'
-  //   );
-  //   process.exit(1);
-  // }
-
-  // if (
-  //   process.env.ROLE === 'idp' &&
-  //   process.env.ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH == null
-  // ) {
-  //   console.error(
-  //     'ERROR:',
-  //     '"ADD_ACCESSOR_REQUEST_MESSAGE_TEMPLATE_PATH" environment variable is not set. Process will now exit.'
-  //   );
-  //   process.exit(1);
-  // }
-
   if (
     process.env.PROMETHEUS_HTTPS === 'true' &&
     (!process.env.PROMETHEUS_HTTPS_KEY_PATH ||
@@ -167,6 +119,19 @@ if (process.env.NODE_ENV === 'production') {
     console.error(
       'ERROR:',
       '"PROMETHEUS_HTTPS_KEY_PATH" and "PROMETHEUS_HTTPS_CERT_PATH" environment variables are not set when "PROMETHEUS_HTTPS" is set to true. Process will now exit.'
+    );
+    process.exit(1);
+  }
+
+  if (
+    process.env.GRPC_SSL === 'true' &&
+    (!process.env.GRPC_SSL_ROOT_CERT_FILE_PATH ||
+      !process.env.GRPC_SSL_KEY_FILE_PATH ||
+      !process.env.GRPC_SSL_CERT_FILE_PATH)
+  ) {
+    console.error(
+      'ERROR:',
+      '"GRPC_SSL_ROOT_CERT_FILE_PATH", "GRPC_SSL_KEY_FILE_PATH", and "GRPC_SSL_CERT_FILE_PATH" environment variables are not set when "GRPC_SSL" is set to true. Process will now exit.'
     );
     process.exit(1);
   }

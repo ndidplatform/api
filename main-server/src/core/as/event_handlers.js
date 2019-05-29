@@ -20,10 +20,7 @@
  *
  */
 
-import {
-  getErrorCallbackUrl,
-  getIncomingRequestStatusUpdateCallbackUrl,
-} from '.';
+import { getIncomingRequestStatusUpdateCallbackUrl } from '.';
 
 import CustomError from 'ndid-error/custom_error';
 import logger from '../../logger';
@@ -146,10 +143,12 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
       for (let i = 0; i < transactions.length; i++) {
         const transaction = transactions[i];
+        if (!transaction.success) {
+          continue;
+        }
 
         const requestId = transaction.args.request_id;
         if (requestId == null) continue;
-        if (transaction.fnName === 'DeclareIdentityProof') continue;
 
         const initialSalt = await cacheDb.getInitialSalt(nodeId, requestId);
         if (initialSalt != null) {
@@ -192,11 +191,10 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
       type: 'request_status',
       ...requestStatus,
       response_valid_list: requestDetail.response_list.map(
-        ({ idp_id, valid_signature, valid_proof, valid_ial }) => {
+        ({ idp_id, valid_signature, valid_ial }) => {
           return {
             idp_id,
             valid_signature,
-            valid_proof,
             valid_ial,
           };
         }

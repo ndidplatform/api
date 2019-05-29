@@ -22,10 +22,12 @@
 
 import { getFunction } from '../../functions';
 import {
-  getIdpsMsqDestination,
+  getIdpMQDestinations,
   setTimeoutScheduler,
   removeTimeoutScheduler,
 } from '.';
+
+import parseDataURL from 'data-urls';
 
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
@@ -37,6 +39,7 @@ import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
+import { dataUrlRegex } from '../../data_url';
 
 import logger from '../../logger';
 
@@ -51,6 +54,8 @@ async function checkIdpListCondition({
   min_idp,
   idp_id_list,
   mode,
+  supported_request_message_data_url_type_list,
+  bypass_identity_check,
 }) {
   if (idp_id_list.length !== 0 && idp_id_list.length < min_idp) {
     throw new CustomError({
@@ -64,19 +69,21 @@ async function checkIdpListCondition({
     });
   }
 
-  if (mode === 1 && idp_id_list.length === 0) {
+  if ((mode === 1 || bypass_identity_check) && idp_id_list.length === 0) {
     throw new CustomError({
       errorType: errorType.IDP_ID_LIST_NEEDED,
     });
   }
 
-  const receivers = await getIdpsMsqDestination({
-    namespace,
-    identifier,
-    min_ial,
+  const receivers = await getIdpMQDestinations({
+    namespace: bypass_identity_check ? undefined : namespace,
+    identifier: bypass_identity_check ? undefined : identifier,
+    min_ial: bypass_identity_check ? undefined : min_ial,
     min_aal,
     idp_id_list,
-    mode,
+    //bypass for on-the-fly onboard (not filter mode)
+    mode: bypass_identity_check ? undefined : mode,
+    supported_request_message_data_url_type_list,
   });
 
   if (min_idp !== 0) {
@@ -90,6 +97,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
+          supported_request_message_data_url_type_list,
         },
       });
     }
@@ -104,6 +112,7 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
+          supported_request_message_data_url_type_list,
         },
       });
     }
@@ -118,14 +127,54 @@ async function checkIdpListCondition({
           min_ial,
           min_aal,
           mode,
+          supported_request_message_data_url_type_list,
         },
       });
     }
   }
-  return receivers;
+
+  let receiversWithSid, receiversWithRefGroupCode;
+  if (mode === 1) {
+    receiversWithSid = receivers;
+    receiversWithRefGroupCode = [];
+  } else if (mode === 2 || mode === 3) {
+    if (bypass_identity_check) {
+      receiversWithRefGroupCode = await getIdpMQDestinations({
+        namespace,
+        identifier,
+        // bypass min_ial for on-the-fly uplift
+        // min_ial: 1.1,
+        min_aal,
+        idp_id_list,
+        mode: 2, // get all IdPs supporting both only mode 2 and 2,3
+        supported_request_message_data_url_type_list,
+      });
+      receiversWithSid = receivers.filter(
+        ({ node_id }) =>
+          receiversWithRefGroupCode.find(
+            ({ node_id: nodeWithRefGroupCodeNodeId }) =>
+              node_id === nodeWithRefGroupCodeNodeId
+          ) == null
+      );
+    } else {
+      receiversWithSid = [];
+      receiversWithRefGroupCode = receivers;
+    }
+  }
+
+  return {
+    receivers,
+    receiversWithSid,
+    receiversWithRefGroupCode,
+  };
 }
 
-async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
+async function checkAsListCondition({
+  data_request_list,
+  namespace,
+  min_ial,
+  min_aal,
+}) {
   const serviceIds = data_request_list.map(
     (dataRequest) => dataRequest.service_id
   );
@@ -177,7 +226,7 @@ async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
 
         //filter potential AS to be only in as_id_list
         potential_as_list = potential_as_list.filter((as_node) => {
-          return as_id_list.indexOf(as_node.node_id) !== -1;
+          return as_id_list.includes(as_node.node_id);
         });
 
         if (potential_as_list.length !== as_id_list.length) {
@@ -186,6 +235,12 @@ async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
           });
         }
       }
+
+      // filter out ASes that don't support required namespace
+      potential_as_list = potential_as_list.filter((as_node) => {
+        return as_node.supported_namespace_list.includes(namespace);
+      });
+
       //filter min_ial, min_aal
       potential_as_list = potential_as_list.filter((as_node) => {
         return as_node.min_ial <= min_ial && as_node.min_aal <= min_aal;
@@ -244,6 +299,8 @@ async function checkAsListCondition({ data_request_list, min_ial, min_aal }) {
  * @param {number} createRequestParams.min_aal
  * @param {number} createRequestParams.min_idp
  * @param {number} createRequestParams.request_timeout
+ * @param {string} createRequestParams.purpose
+ * @param {boolean} createRequestParams.bypass_identity_check
  * @param {Object} options
  * @param {boolean} [options.synchronous]
  * @param {boolean} [options.sendCallbackToClient]
@@ -277,6 +334,8 @@ export async function createRequest(
     min_aal,
     min_idp,
     request_timeout,
+    purpose,
+    bypass_identity_check,
   } = createRequestParams;
   const { synchronous = false } = options;
   let {
@@ -294,6 +353,15 @@ export async function createRequest(
   }
 
   try {
+    const { allowed_mode_list } = await tendermintNdid.getAllowedModeList(
+      purpose
+    );
+    if (!allowed_mode_list.includes(mode)) {
+      throw new CustomError({
+        errorType: errorType.UNSUPPORTED_MODE,
+      });
+    }
+
     const requestId = await cacheDb.getRequestIdByReferenceId(
       node_id,
       reference_id
@@ -304,7 +372,27 @@ export async function createRequest(
       });
     }
 
-    const receivers = await checkIdpListCondition({
+    const dataUrlParsedRequestMessage = parseDataURL(request_message);
+    let requestMessageMimeType;
+    if (dataUrlParsedRequestMessage != null) {
+      requestMessageMimeType = dataUrlParsedRequestMessage.mimeType.toString();
+      const match = request_message.match(dataUrlRegex);
+      if (
+        match[4] &&
+        match[4].endsWith('base64') &&
+        request_message.search(/\s/) >= 0
+      ) {
+        throw new CustomError({
+          errorType: errorType.DATA_URL_BASE64_MUST_NOT_CONTAIN_WHITESPACES,
+        });
+      }
+    }
+
+    const {
+      receivers,
+      receiversWithSid,
+      receiversWithRefGroupCode,
+    } = await checkIdpListCondition({
       namespace,
       identifier,
       min_ial,
@@ -312,11 +400,16 @@ export async function createRequest(
       min_idp,
       idp_id_list,
       mode,
+      supported_request_message_data_url_type_list: requestMessageMimeType
+        ? [requestMessageMimeType]
+        : undefined,
+      bypass_identity_check,
     });
 
     if (data_request_list != null && data_request_list.length > 0) {
       await checkAsListCondition({
         data_request_list,
+        namespace,
         min_ial,
         min_aal,
       });
@@ -331,12 +424,6 @@ export async function createRequest(
     if (request_id == null) {
       request_id = utils.createRequestId();
     }
-
-    const challenge = {};
-    const generatedChallenges = utils.generatedChallenges(receivers.length);
-    receivers.forEach(({ node_id }, index) => {
-      challenge[node_id] = generatedChallenges[index];
-    });
 
     const initial_salt = utils.randomBase64Bytes(config.saltLength);
     const request_message_salt = utils.generateRequestMessageSalt(initial_salt);
@@ -364,8 +451,6 @@ export async function createRequest(
       data_request_list,
       data_request_params_salt_list,
       request_message,
-      // for zk proof
-      challenge,
       rp_id: node_id,
       request_message_salt,
       initial_salt,
@@ -374,7 +459,6 @@ export async function createRequest(
     };
 
     // save request data to DB to send to AS via mq when authen complete
-    // and for zk proof
     await Promise.all([
       cacheDb.setRequestData(node_id, request_id, requestData),
       cacheDb.setRequestIdByReferenceId(node_id, reference_id, request_id),
@@ -386,7 +470,8 @@ export async function createRequest(
         request_id,
         request_message_salt,
         data_request_params_salt_list,
-        receivers,
+        receiversWithSid,
+        receiversWithRefGroupCode,
         requestData,
       });
     } else {
@@ -395,7 +480,8 @@ export async function createRequest(
         request_id,
         request_message_salt,
         data_request_params_salt_list,
-        receivers,
+        receiversWithSid,
+        receiversWithRefGroupCode,
         requestData,
       });
     }
@@ -455,7 +541,8 @@ async function createRequestInternalAsync(
     request_id,
     request_message_salt,
     data_request_params_salt_list,
-    receivers,
+    receiversWithSid,
+    receiversWithRefGroupCode,
     requestData,
   } = additionalParams;
   try {
@@ -500,7 +587,8 @@ async function createRequestInternalAsync(
             request_id,
             min_idp,
             request_timeout,
-            receivers,
+            receiversWithSid,
+            receiversWithRefGroupCode,
             requestData,
           },
           {
@@ -526,7 +614,8 @@ async function createRequestInternalAsync(
           request_id,
           min_idp,
           request_timeout,
-          receivers,
+          receiversWithSid,
+          receiversWithRefGroupCode,
           requestData,
         },
         {
@@ -589,7 +678,8 @@ export async function createRequestInternalAsyncAfterBlockchain(
     request_id,
     min_idp,
     request_timeout,
-    receivers,
+    receiversWithSid,
+    receiversWithRefGroupCode,
     requestData,
   },
   {
@@ -613,13 +703,14 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
     const {
       min_idp: _1, // eslint-disable-line no-unused-vars
-      challenge: _2, // eslint-disable-line no-unused-vars
       reference_id: _3, // eslint-disable-line no-unused-vars
       callback_url: _4, // eslint-disable-line no-unused-vars
-      ...requestDataWithoutLocalSpecificProps
+      namespace,
+      identifier,
+      ...requestDataWithoutLocalProps
     } = requestData;
     const requestDataWithoutDataRequestParams = {
-      ...requestDataWithoutLocalSpecificProps,
+      ...requestDataWithoutLocalProps,
       data_request_list: requestData.data_request_list.map((dataRequest) => {
         const { request_params, ...dataRequestWithoutParams } = dataRequest; // eslint-disable-line no-unused-vars
         return {
@@ -630,17 +721,46 @@ export async function createRequestInternalAsyncAfterBlockchain(
 
     // send request data to IDPs via message queue
     if (min_idp > 0) {
-      await mq.send(
-        receivers,
-        {
+      const mqSendPromises = [];
+      //mode 1 and on-the-fly onboard
+      if (receiversWithSid.length > 0) {
+        const mqMessageWithSid = {
           type: privateMessageType.CONSENT_REQUEST,
+          namespace,
+          identifier,
           ...requestDataWithoutDataRequestParams,
           creation_time,
           chain_id: tendermint.chainId,
           height,
-        },
-        node_id
-      );
+        };
+        mqSendPromises[0] = mq.send(
+          receiversWithSid,
+          mqMessageWithSid,
+          node_id
+        );
+      }
+      if (requestData.mode === 2 || requestData.mode === 3) {
+        if (receiversWithRefGroupCode.length > 0) {
+          const reference_group_code = await tendermintNdid.getReferenceGroupCode(
+            namespace,
+            identifier
+          );
+          const mqMessageWithRefGroupCode = {
+            type: privateMessageType.CONSENT_REQUEST,
+            reference_group_code,
+            ...requestDataWithoutDataRequestParams,
+            creation_time,
+            chain_id: tendermint.chainId,
+            height,
+          };
+          mqSendPromises[1] = mq.send(
+            receiversWithRefGroupCode,
+            mqMessageWithRefGroupCode,
+            node_id
+          );
+        }
+      }
+      await Promise.all(mqSendPromises);
     }
 
     if (!synchronous) {
@@ -716,7 +836,6 @@ export async function createRequestInternalAsyncAfterBlockchain(
 async function createRequestCleanUpOnError({ nodeId, requestId, referenceId }) {
   await Promise.all([
     cacheDb.removeRequestData(nodeId, requestId),
-    cacheDb.removePrivateProofObjectListInRequest(nodeId, requestId),
     cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
     cacheDb.removeRequestCreationMetadata(nodeId, requestId),
   ]);

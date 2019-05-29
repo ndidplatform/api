@@ -24,6 +24,8 @@ import 'source-map-support/register';
 
 import 'dotenv/config';
 
+import './env_var_validate';
+
 import path from 'path';
 import EventEmitter from 'events';
 
@@ -36,6 +38,8 @@ import MQRecv from './mq_module/mq_recv_controller';
 import errorType from 'ndid-error/type';
 
 import * as prometheus from './prometheus';
+
+import { readFileAsync } from './utils';
 
 import logger from './logger';
 
@@ -152,11 +156,7 @@ function onRecvError({ error }) {
 
 // Send
 function sendMessage(call, callback) {
-  const {
-    mq_address: mqAddress,
-    payload,
-    message_id: overriddenMsgId,
-  } = call.request;
+  const { mq_address: mqAddress, payload, message_id: msgId } = call.request;
   const { ip, port } = mqAddress;
 
   logger.debug({
@@ -164,8 +164,9 @@ function sendMessage(call, callback) {
     args: call.request,
   });
 
-  const msgId = mqSend.send({ ip, port }, payload, null, overriddenMsgId);
   sendCalls[msgId] = { call, callback };
+
+  mqSend.send({ ip, port }, payload, msgId);
 
   call.on('cancelled', () => {
     logger.debug({
@@ -190,7 +191,7 @@ function getInfo(call, callback) {
   });
 }
 
-function initialize() {
+async function initialize() {
   if (config.prometheusEnabled) {
     prometheus.initialize();
   }
@@ -206,7 +207,7 @@ function initialize() {
     maxMsgSize: MQ_RECV_MAX_MESSAGE_SIZE,
   });
 
-  mqRecv.on('message', async ({ message, msgId, senderId, sendAck }) => {
+  mqRecv.on('message', ({ message, msgId, senderId, sendAck }) => {
     logger.debug({
       message: 'Inbound message',
       msgId,
@@ -269,6 +270,15 @@ function initialize() {
     message: 'Message queue initialized',
   });
 
+  let grpcSslRootCert;
+  let grpcSslKey;
+  let grpcSslCert;
+  if (config.grpcSsl) {
+    grpcSslRootCert = await readFileAsync(config.grpcSslRootCertFilePath);
+    grpcSslKey = await readFileAsync(config.grpcSslKeyFilePath);
+    grpcSslCert = await readFileAsync(config.grpcSslCertFilePath);
+  }
+
   server.addService(proto.MessageQueue.service, {
     subscribeToRecvMessages,
     sendAckForRecvMessage,
@@ -276,7 +286,17 @@ function initialize() {
     getInfo,
   });
 
-  server.bind(SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
+  server.bind(
+    SERVER_ADDRESS,
+    config.grpcSsl
+      ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
+          {
+            cert_chain: grpcSslCert,
+            private_key: grpcSslKey,
+          },
+        ])
+      : grpc.ServerCredentials.createInsecure()
+  );
 
   server.start();
 

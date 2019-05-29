@@ -21,83 +21,68 @@
  */
 
 import { getFunction } from '../../functions';
-import { closeRequest } from '../common';
 
 import logger from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 
-export async function closeConsentRequestThenAddAccessor(
-  { nodeId, request_id, old_accessor_id },
-  { callbackFnName, callbackAdditionalArgs }
-) {
-  await closeRequest(
-    {
-      node_id: nodeId,
-      request_id: request_id,
-    },
-    {
-      synchronous: false,
-      sendCallbackToClient: false,
-      callbackFnName: 'identity.addAccessorAfterCloseConsentRequest',
-      callbackAdditionalArgs: [
-        { nodeId, request_id, old_accessor_id },
-        { callbackFnName, callbackAdditionalArgs },
-      ],
-      saveForRetryOnChainDisabled: true,
-    }
-  );
-}
-
 export async function addAccessorAfterCloseConsentRequest(
   { error },
-  { nodeId, request_id, old_accessor_id },
+  { nodeId, request_id, identity },
   { callbackFnName, callbackAdditionalArgs }
 ) {
   try {
     if (error) throw error;
-    //NOTE: zero knowledge proof cannot be verify by blockchain, hence,
-    //if this idp call to add their accessor it's imply that zk proof is verified by them
+
+    if (request_id) {
+      logger.debug({
+        message: 'Closed consent request',
+        nodeId,
+        request_id,
+      });
+    }
+
     logger.debug({
-      message: 'Got consent, adding accessor',
+      message: 'Adding accessor',
       nodeId,
-      request_id,
-      old_accessor_id,
     });
 
-    const accessor_group_id = await tendermintNdid.getAccessorGroupId(
-      old_accessor_id
-    );
+    if (identity == null) {
+      identity = await cacheDb.getIdentityFromRequestId(nodeId, request_id);
+    }
     const {
-      hash_id,
-      ial,
-      accessor_type,
-      accessor_public_key,
+      type,
+      namespace,
+      identifier,
       accessor_id,
-      sid,
-      associated,
-      secret,
-    } = await cacheDb.getIdentityFromRequestId(nodeId, request_id);
+      accessor_public_key,
+      accessor_type,
+      reference_id,
+    } = identity;
 
-    await tendermintNdid.addAccessorMethod(
+    const reference_group_code = await tendermintNdid.getReferenceGroupCode(
+      namespace,
+      identifier
+    );
+
+    await tendermintNdid.addAccessor(
       {
-        request_id,
-        accessor_group_id,
-        accessor_type,
+        reference_group_code,
         accessor_id,
         accessor_public_key,
+        accessor_type,
+        request_id,
       },
       nodeId,
-      'identity.addAccessorAfterConsentAfterAddAccessorMethod',
+      'identity.addAccessorAfterConsentAndBlockchain',
       [
         {
           nodeId,
+          type,
+          accessor_id,
+          reference_id,
           request_id,
-          hash_id,
-          ial,
-          secret,
-          associated,
         },
         { callbackFnName, callbackAdditionalArgs },
       ],
@@ -114,82 +99,23 @@ export async function addAccessorAfterCloseConsentRequest(
 
     if (callbackFnName != null) {
       if (callbackAdditionalArgs != null) {
-        getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        getFunction(callbackFnName)(
+          { error, request_id },
+          ...callbackAdditionalArgs
+        );
       } else {
-        getFunction(callbackFnName)({ error });
+        getFunction(callbackFnName)({ error, request_id });
       }
     }
   }
 }
 
-export async function addAccessorAfterConsentAfterAddAccessorMethod(
-  { error },
-  { nodeId, request_id, hash_id, ial, secret, associated },
+export async function addAccessorAfterConsentAndBlockchain(
+  { error, chainDisabledRetryLater },
+  { nodeId, type, accessor_id, reference_id, request_id },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
-  try {
-    if (error) throw error;
-    //no ial means old idp add new accessor
-    if (ial) {
-      await tendermintNdid.registerIdentity(
-        {
-          users: [
-            {
-              hash_id,
-              ial,
-            },
-          ],
-        },
-        nodeId,
-        'identity.addAccessorAfterConsentAfterRegisterMqDest',
-        [
-          {
-            nodeId,
-            request_id,
-            secret,
-            associated,
-          },
-          { callbackFnName, callbackAdditionalArgs },
-        ],
-        true
-      );
-    } else {
-      await addAccessorAfterConsentAfterRegisterMqDest(
-        {},
-        {
-          nodeId,
-          request_id,
-          secret,
-          associated,
-        },
-        { callbackFnName, callbackAdditionalArgs }
-      );
-    }
-  } catch (error) {
-    logger.error({
-      message:
-        'Add accessor after consent after add accessor method to blockchain error',
-      tendermintResult: arguments[0],
-      additionalArgs: arguments[1],
-      options: arguments[2],
-      err: error,
-    });
-
-    if (callbackFnName != null) {
-      if (callbackAdditionalArgs != null) {
-        getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
-      } else {
-        getFunction(callbackFnName)({ error });
-      }
-    }
-  }
-}
-
-export async function addAccessorAfterConsentAfterRegisterMqDest(
-  { error },
-  { nodeId, request_id, secret, associated },
-  { callbackFnName, callbackAdditionalArgs } = {}
-) {
+  if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 
@@ -197,21 +123,24 @@ export async function addAccessorAfterConsentAfterRegisterMqDest(
     if (callbackAdditionalArgs != null) {
       getFunction(callbackFnName)(
         {
-          secret,
-          associated,
+          type,
+          accessor_id,
+          reference_id,
+          request_id,
         },
         ...callbackAdditionalArgs
       );
     } else {
       getFunction(callbackFnName)({
-        secret,
-        associated,
+        type,
+        accessor_id,
+        reference_id,
+        request_id,
       });
     }
   } catch (error) {
     logger.error({
-      message:
-        'Add accessor after consent after add register message queue address to blockchain error',
+      message: 'Add accessor after consent and blockchain error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
@@ -220,9 +149,18 @@ export async function addAccessorAfterConsentAfterRegisterMqDest(
 
     if (callbackFnName != null) {
       if (callbackAdditionalArgs != null) {
-        getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        getFunction(callbackFnName)(
+          { error, type, accessor_id, reference_id, request_id },
+          ...callbackAdditionalArgs
+        );
       } else {
-        getFunction(callbackFnName)({ error });
+        getFunction(callbackFnName)({
+          error,
+          type,
+          accessor_id,
+          reference_id,
+          request_id,
+        });
       }
     }
   }

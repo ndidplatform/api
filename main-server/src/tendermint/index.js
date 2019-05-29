@@ -157,10 +157,7 @@ export function loadSavedData() {
 }
 
 export async function initialize() {
-  if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
-    tendermintWsClient.subscribeToNewBlockEvent();
-  }
-  tendermintWsClient.subscribeToTxEvent();
+  tendermintWsClient.subscribeToNewBlockEvent();
 }
 
 export async function connectWS() {
@@ -331,7 +328,11 @@ async function processExpectedTx(txHash, result, fromEvent) {
           await handleBlockchainDisabled(transactParams);
           retVal = { chainDisabledRetryLater: true };
         }
+        if (mempoolFullOrOutOfToken(retVal.error)) {
+          retryOnTransactFail(txHash, null, retVal.error);
+        }
       }
+      await cacheDb.removeRetryTendermintTransaction(config.nodeId, txHash);
       if (getTxResultCallbackFn != null) {
         if (callbackAdditionalArgs != null) {
           await getTxResultCallbackFn(callbackFnName)(
@@ -526,11 +527,38 @@ export async function retryBacklogTransactRequest(transactRequest) {
   await cacheDb.removeTransactRequestForRetry(config.nodeId, id);
 }
 
+export async function loadAndRetryTransact() {
+  const retryTransactions = await cacheDb.getAllRetryTendermintTransaction(
+    config.nodeId
+  );
+  if (config.mode === MODE.STANDALONE) {
+    await Promise.all(
+      retryTransactions.map((txHash, transactParams) =>
+        retryTransact(transactParams)
+      )
+    );
+  } else if (config.mode === MODE.MASTER) {
+    retryTransactions.forEach((txHash, transactParams) =>
+      delegateToWorker({
+        fnName: 'tendermint.retryTransact',
+        args: [transactParams],
+      })
+    );
+  }
+}
+
+export async function retryTransact(transactParams) {
+  return transact(transactParams);
+}
+
 function checkForSetLastBlock(parsedTransactionsInBlocks) {
   for (let i = parsedTransactionsInBlocks.length - 1; i >= 0; i--) {
     const transactions = parsedTransactionsInBlocks[i].transactions;
     for (let j = transactions.length - 1; j >= 0; j--) {
       const transaction = transactions[j];
+      if (!transaction.success) {
+        continue;
+      }
       if (transaction.fnName === 'SetLastBlock') {
         if (
           transaction.args.block_height === -1 ||
@@ -547,10 +575,7 @@ function checkForSetLastBlock(parsedTransactionsInBlocks) {
 tendermintWsClient.on('connected', async () => {
   connected = true;
   if (reconnecting) {
-    if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
-      tendermintWsClient.subscribeToNewBlockEvent();
-    }
-    tendermintWsClient.subscribeToTxEvent();
+    tendermintWsClient.subscribeToNewBlockEvent();
     await tendermintWsPool.waitForAvailableConnection();
     const statusOnSync = await pollStatusUntilSynced();
     if (waitForInitEndedBeforeReady) {
@@ -585,33 +610,64 @@ tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(
   error,
   result
 ) {
+  if (error) {
+    logger.error({
+      message: 'Tendermint NewBlock event subscription error',
+      err: error,
+    });
+    return;
+  }
+
   if (syncing !== false) {
     return;
   }
   const blockHeight = getBlockHeightFromNewBlockEvent(result);
-  cacheBlocks[blockHeight] = result.data.value.block;
+  const block = result.data.value.block;
+  cacheBlocks[blockHeight] = block;
 
   logger.debug({
     message: 'Tendermint NewBlock event received',
     blockHeight,
   });
 
-  const appHash = getAppHashFromNewBlockEvent(result);
+  processTransactionsInBlock(blockHeight, block);
 
-  await processNewBlock(blockHeight, appHash);
+  if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+    const appHash = getAppHashFromNewBlockEvent(result);
+    await processNewBlock(blockHeight, appHash);
+  }
   delete cacheBlocks[blockHeight - 1];
 });
 
-tendermintWsClient.on('tx#event', async function handleTxEvent(error, result) {
-  if (syncing !== false) {
+async function processTransactionsInBlock(blockHeight, block) {
+  const blockResults = await getBlockResults(blockHeight, blockHeight);
+  const blockResult = blockResults[0];
+
+  const txs = block.data.txs;
+
+  if (txs == null) {
     return;
   }
-  const txBase64 = result.data.value.TxResult.tx;
-  const txBuffer = Buffer.from(txBase64, 'base64');
-  const txHash = sha256(txBuffer).toString('hex');
-  if (expectedTx[txHash] == null) return;
-  await processExpectedTx(txHash, result, true);
-});
+  if (txs.length === 0) {
+    return;
+  }
+
+  await Promise.all(
+    txs.map(async (txBase64, index) => {
+      const txProtoBuffer = Buffer.from(txBase64, 'base64');
+      const txHash = sha256(txProtoBuffer).toString('hex');
+      if (expectedTx[txHash] == null) return;
+      await processExpectedTx(
+        txHash,
+        {
+          height: blockHeight,
+          deliverTxResult: blockResult.results.DeliverTx[index],
+        },
+        true
+      );
+    })
+  );
+}
 
 export async function processMissingBlocks(statusOnSync) {
   const blockHeight = statusOnSync.sync_info.latest_block_height;
@@ -636,46 +692,49 @@ async function processNewBlock(blockHeight, appHash) {
     }
 
     if (lastKnownAppHash !== appHash && missingBlockCount != null) {
+      // messages that arrived before 'NewBlock' event
+      // including messages between the start of missing block's height
+      // and the block before latest block height
+      // (not only just (current height - 1) in case 'NewBlock' events are missing)
+      // NOTE: Tendermint always create an ending empty block. A block with transactions and
+      // a block that signs the previous block which indicates that the previous block is valid
+      const fromHeight = blockHeight - 1 - missingBlockCount;
+      const toHeight = blockHeight - 1;
+
+      let processingBlocksStr;
+      if (fromHeight === toHeight) {
+        processingBlocksStr = `${fromHeight}`;
+      } else {
+        processingBlocksStr = `${fromHeight}-${toHeight}`;
+      }
+      processingBlocks[processingBlocksStr] = null;
+      const blocksToProcess = toHeight - fromHeight + 1;
+      addProcessingBlocksCount(blocksToProcess);
+
+      const parsedTransactionsInBlocks = (await getParsedTxsInBlocks(
+        fromHeight,
+        toHeight,
+        false
+      )).filter(({ transactions }) => transactions.length >= 0);
+      checkForSetLastBlock(parsedTransactionsInBlocks);
+
       if (handleTendermintNewBlock) {
-        // messages that arrived before 'NewBlock' event
-        // including messages between the start of missing block's height
-        // and the block before latest block height
-        // (not only just (current height - 1) in case 'NewBlock' events are missing)
-        // NOTE: Tendermint always create an ending empty block. A block with transactions and
-        // a block that signs the previous block which indicates that the previous block is valid
-        const fromHeight = blockHeight - 1 - missingBlockCount;
-        const toHeight = blockHeight - 1;
-
-        let processingBlocksStr;
-        if (fromHeight === toHeight) {
-          processingBlocksStr = `${fromHeight}`;
-        } else {
-          processingBlocksStr = `${fromHeight}-${toHeight}`;
-        }
-        processingBlocks[processingBlocksStr] = null;
-        const blocksToProcess = toHeight - fromHeight + 1;
-        addProcessingBlocksCount(blocksToProcess);
-
-        const parsedTransactionsInBlocks = (await getParsedTxsInBlocks(
-          fromHeight,
-          toHeight
-        )).filter(({ transactions }) => transactions.length >= 0);
-        checkForSetLastBlock(parsedTransactionsInBlocks);
         await handleTendermintNewBlock(
           fromHeight,
           toHeight,
           parsedTransactionsInBlocks
         );
-        delete processingBlocks[processingBlocksStr];
-        subtractProcessingBlocksCount(blocksToProcess);
       }
+
+      delete processingBlocks[processingBlocksStr];
+      subtractProcessingBlocksCount(blocksToProcess);
     }
     lastKnownAppHash = appHash;
     saveLatestBlockHeight(blockHeight);
   }
 }
 
-async function getParsedTxsInBlocks(fromHeight, toHeight) {
+async function getParsedTxsInBlocks(fromHeight, toHeight, withTxHash) {
   const [blocks, blockResults] = await Promise.all([
     getBlocks(fromHeight, toHeight),
     getBlockResults(fromHeight, toHeight),
@@ -683,22 +742,34 @@ async function getParsedTxsInBlocks(fromHeight, toHeight) {
   const parsedTransactionsInBlocks = blocks.map((block, blockIndex) => {
     const height = parseInt(block.header.height);
 
-    const transactions = getTransactionListFromBlock(block);
+    const transactions = getTransactionListFromBlock(block, withTxHash);
 
-    const successTransactions = transactions.filter((transaction, index) => {
-      const deliverTxResult = blockResults[blockIndex].results.DeliverTx[index];
-      const successTag = deliverTxResult.tags.find(
-        (tag) => tag.key === successBase64
-      );
-      if (successTag) {
-        return successTag.value === trueBase64;
+    const transactionsWithDeliverTxResult = transactions.map(
+      (transaction, index) => {
+        const deliverTxResult =
+          blockResults[blockIndex].results.DeliverTx[index];
+
+        let success;
+        const successTag = deliverTxResult.tags.find(
+          (tag) => tag.key === successBase64
+        );
+        if (successTag) {
+          success = successTag.value === trueBase64;
+        } else {
+          success = false;
+        }
+
+        return {
+          ...transaction,
+          deliverTxResult,
+          success,
+        };
       }
-      return false;
-    });
+    );
 
     return {
       height,
-      transactions: successTransactions,
+      transactions: transactionsWithDeliverTxResult,
     };
   });
   return parsedTransactionsInBlocks;
@@ -800,13 +871,9 @@ function getTransactResultFromTx(result, fromEvent) {
     result,
   });
 
-  const height = parseInt(
-    fromEvent ? result.data.value.TxResult.height : result.height
-  );
+  const height = parseInt(result.height);
 
-  const deliverTxResult = fromEvent
-    ? result.data.value.TxResult.result
-    : result.tx_result;
+  const deliverTxResult = fromEvent ? result.deliverTxResult : result.tx_result;
 
   if (deliverTxResult.log !== 'success') {
     if (deliverTxResult.code != null) {
@@ -945,6 +1012,86 @@ export async function query(fnName, params, height) {
   }
 }
 
+//========================== retry ===========================
+
+function mempoolFullOrOutOfToken(error) {
+  return (
+    error.code === errorType.ABCI_NOT_ENOUGH_TOKEN.code ||
+    error.code === errorType.TENDERMINT_MEMPOOL_FULL.code
+  );
+}
+
+async function retryOnTransactFail(txHash, transactParams, error) {
+  logger.warn({
+    message: 'Transact with retry error',
+    err: error,
+  });
+
+  if (!transactParams) {
+    transactParams = await cacheDb.getRetryTendermintTransaction(
+      config.nodeId,
+      txHash
+    );
+    if (transactParams === null) return;
+  }
+
+  const {
+    nodeId,
+    fnName,
+    params,
+    callbackFnName,
+    callbackAdditionalArgs,
+    useMasterKey,
+    saveForRetryOnChainDisabled,
+    retryOnFail,
+    counter,
+  } = transactParams;
+
+  const backoff = new ExponentialBackoff({
+    min: 5000,
+    max: 180000,
+    factor: 2,
+    jitter: 0.2,
+  });
+  let nextRetry;
+  for (let i = 0; i < counter; i++) {
+    nextRetry = backoff.next();
+  }
+
+  // notifyError({
+  //   nodeId,
+  //   getCallbackUrlFnName: node.role + '.getErrorCallbackUrl',
+  //   action: 'tendermintTx:' + fnName,
+  //   error: error,
+  // });
+
+  logger.info({
+    message: 'Retrying transact',
+    txHash,
+    nodeId,
+    fnName,
+    nextRetry,
+  });
+
+  setTimeout(
+    () =>
+      transact({
+        nodeId,
+        fnName,
+        params,
+        callbackFnName,
+        callbackAdditionalArgs,
+        useMasterKey,
+        saveForRetryOnChainDisabled,
+        retryOnFail,
+        counter,
+      }),
+    nextRetry
+  );
+}
+
+//=====================================================
+
 /**
  *
  * @param {Object} transactParams
@@ -965,6 +1112,8 @@ export async function transact({
   callbackAdditionalArgs,
   useMasterKey = false,
   saveForRetryOnChainDisabled = false,
+  retryOnFail = false,
+  counter = 0,
 }) {
   if (nodeId == null || nodeId == '') {
     throw new CustomError({
@@ -1037,6 +1186,14 @@ export async function transact({
     functionName: fnName,
   };
 
+  if (retryOnFail && counter === 0) {
+    await cacheDb.setRetryTendermintTransaction(config.nodeId, txHash, {
+      ...transactParams,
+      retryOnFail,
+      counter,
+    });
+  }
+
   try {
     let promise;
     if (waitForCommit) {
@@ -1071,6 +1228,16 @@ export async function transact({
     ) {
       await handleBlockchainDisabled(transactParams);
       return { chainDisabledRetryLater: true };
+    } else if (retryOnFail && mempoolFullOrOutOfToken(error)) {
+      return retryOnTransactFail(
+        txHash,
+        {
+          ...transactParams,
+          retryOnFail,
+          counter,
+        },
+        error
+      );
     } else {
       throw error;
     }
@@ -1090,7 +1257,7 @@ async function saveTransactRequestForRetry(transactParams) {
   }
 }
 
-export function getTransactionListFromBlock(block) {
+function getTransactionListFromBlock(block, withTxHash) {
   const txs = block.data.txs; // array of transactions in the block base64 encoded
   // const height = parseInt(block.header.height);
 
@@ -1098,29 +1265,34 @@ export function getTransactionListFromBlock(block) {
     return [];
   }
 
-  const transactions = txs.map((tx) => {
-    const txProtoBuffer = Buffer.from(tx, 'base64');
+  const transactions = txs.map((txBase64) => {
+    const txProtoBuffer = Buffer.from(txBase64, 'base64');
     const txObject = TendermintTx.decode(txProtoBuffer);
     const args = JSON.parse(txObject.params);
+    let txHash;
+    if (withTxHash) {
+      txHash = sha256(txProtoBuffer).toString('hex');
+    }
     return {
       fnName: txObject.method,
       args,
       nodeId: txObject.node_id,
+      txHash,
     };
   });
 
   return transactions;
 }
 
-export function getBlockHeightFromNewBlockHeaderEvent(result) {
+function getBlockHeightFromNewBlockHeaderEvent(result) {
   return parseInt(result.data.value.header.height);
 }
 
-export function getBlockHeightFromNewBlockEvent(result) {
+function getBlockHeightFromNewBlockEvent(result) {
   return parseInt(result.data.value.block.header.height);
 }
 
-export function getAppHashFromNewBlockEvent(result) {
+function getAppHashFromNewBlockEvent(result) {
   return result.data.value.block.header.app_hash;
 }
 

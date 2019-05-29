@@ -1,9 +1,85 @@
 # Changelog
 
-## TBD
+## 2.0.0 (May 29, 2019)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v3.0.0_
+
+There are a number of significant changes in this release. Some of major changes:
+
+- Introduces mode 2 which is closely similar to mode 3 but without the need for consent request when modifying identity (e.g. create identity/onboarding, add/revoke accessor) on the platform, instead IdPs will get notifications on what kind of modification of which identity has occured on the platform.
+- Support for multiple namespaces+identifiers or SIDs as a single identity called reference group.
+- API version 1 and 2 have been removed as they are not compatible with multiple SIDs, new mode 2 and 3 flows and other changes such as supported namespaces declared by AS for each service.
+- Changes to API route names to fix route collision issues for example, `/rp/requests/housekeeping/data` has been changed to `/rp/request_data_removal` since it collides with `/rp/requests/:namespace/:identifier`.
+- Load balancing support for high request throughput.
+- Changes to logging.
+- Prometheus support.
 
 BREAKING CHANGES:
 
+- Remove API v1.
+- Remove API v2.
+- API v3.
+  - Route changes
+    - POST `/rp/requests/housekeeping/data/:request_id` to `/rp/request_data_removal/:request_id`
+    - POST `/rp/requests/housekeeping/data` to `/rp/request_data_removal`
+    - GET `/rp/requests/reference/:reference_id` to `/rp/request_references/:reference_id`
+    - GET `/rp/requests/data/:request_id` to `/rp/request_data/:request_id`
+    - POST `/rp/requests/close` to `/rp/request_close`
+    - GET `/identity/requests/reference/:reference_id` to `/identity_request/request_references/:reference_id`
+    - POST `/identity/requests/close` to `/identity_request/request_close`
+    - POST `/utility/private_messages/housekeeping` to `/utility/private_message_removal`
+    - POST `/utility/private_messages/:request_id/housekeeping` to `/utility/private_message_removal/:request_id`
+    - POST `/dpki/node/create` to `/node/create`
+    - POST `/dpki/node/update` to `/node/update`
+    - GET `/dpki/node/callback` to `/node/callback`
+    - POST `/dpki/node/callback` to `/node/callback`
+    - Change all NDID only routes to simple function names in `snake_case` and use only `POST`
+      - `/ndid/initNDID` to `/ndid/init_ndid`
+      - `/ndid/endInit` to `/ndid/end_init`
+      - `/ndid/setAllowedModeList` to `/ndid/set_allowed_mode_list`
+      - `/ndid/registerNode` to `/ndid/register_node`
+      - `/ndid/updateNode` to `/ndid/update_node`
+      - `/ndid/enableNode` to `/ndid/enable_node`
+      - `/ndid/disableNode` to `/ndid/disable_node`
+      - `/ndid/setNodeToken` to `/ndid/set_node_token`
+      - `/ndid/addNodeToken` to `/ndid/add_node_token`
+      - `/ndid/reduceNodeToken` to `/ndid/reduce_node_token`
+      - `/ndid/namespaces` to `/ndid/create_namespace`
+      - `/ndid/namespaces/:namespace` to `/ndid/update_namespace`
+      - `/ndid/namespaces/:namespace/enable` to `/ndid/enable_namespace`
+      - `/ndid/namespaces/:namespace/disable` to `/ndid/disable_namespace`
+      - `/ndid/services` to `/ndid/create_service`
+      - `/ndid/services/:service_id` to `/ndid/update_service`
+      - `/ndid/services/:service_id/enable` to `/ndid/enable_service`
+      - `/ndid/services/:service_id/disable` to `/ndid/disable_service`
+      - `/ndid/validator` to `/ndid/set_validator`
+      - `/ndid/approveService` to `/ndid/approve_service`
+      - `/ndid/enableServiceDestination` to `/ndid/enable_service_destination`
+      - `/ndid/disableServiceDestination` to `/ndid/disable_service_destination`
+      - `/ndid/addNodeToProxyNode` to `/ndid/add_node_to_proxy_node`
+      - `/ndid/updateNodeProxyNode` to `/ndid/update_node_proxy_node`
+      - `/ndid/removeNodeFromProxyNode` to `/ndid/remove_node_from_proxy_node`
+      - `/ndid/setLastBlock` to `/ndid/set_last_block`
+      - GET `/ndid/allowedMinIalForRegisterIdentityAtFirstIdp` to POST `/ndid/get_allowed_min_ial_for_register_identity_at_first_idp`
+      - `/ndid/setAllowedMinIalForRegisterIdentityAtFirstIdp` to `/ndid/set_allowed_min_ial_for_register_identity_at_first_idp`
+  - Change return JSON property names to `snake_case` on GET `/info`.
+  - Change `request_message` value type of DPKI sign callback from plain text string to base64 encoded data string
+  - Add `reference_group_code` property in IdP request callback (for requests in mode 2 and 3).
+  - Remove `namespace` and `identifier` properties in IdP request callback (for requests in mode 2 and 3).
+  - Remove `valid_proof` property in `response_valid_list` from request status update callback.
+  - Remove `valid_proof`, `identity_proof`, and `private_proof_hash` properties in `response_list` from GET `/utility/requests/:request_id`.
+  - Add `supported_namespace_list` required property to POST `/as/service/:service_id`.
+  - Add `supported_namespace_list` property to GET `/as/service/:service_id`.
+  - Add `supported_namespace_list` property to GET `/utility/as/:service_id`.
+  - Add `reference_group_code` property to create identity result callback when successfully created identity to the platform.
+  - Remove `secret` property from create identity result callback when successfully created identity to the platform.
+  - Remove `signature` required property from POST `/idp/response`.
+  - Change success response code of GET `/identity/:namespace/:identifier` to `200` with `reference_group_code` property in response body.
+  - Remove accessor sign callback.
+- Move `/ndid` to API v3 router.
+- Mode 1 IdP response `signature` will be obtained by signing a request message with node's key, calling node sign callback when using external crypto service.
+- Identity modifications in mode 3 no longer create consent request when it is not necessary, resulting in no callback with type `*_request_result` e.g. `create_identity_request_result`.
+- Change mode 2 and 3 request response accessor signing scheme.
 - Change logging format.
 - Remove logging to file feature.
 - Remove logging environment variable options
@@ -14,12 +90,31 @@ BREAKING CHANGES:
 - Add logging environment variable option
   - `LOG_PRETTY_PRINT`: Default to `true` in development (`NODE_ENV` not set or set to `development`), `false` otherwise. If not set to `true`, log will be in JSON format.
 - Change allowed `LOG_LEVEL` option values to `fatal`, `error`, `warn`, `info`, `debug` and `trace`.
-- Change MQ message protocol format - change message ID type from int64 to string.
+- Change MQ message protocol format
+  - Change message ID type from int64 to string.
+  - Add message type.
+  - Add message version.
+- Remove request message for identity operations (which needs consent request) templates. `request_message` is always required when consent request is needed.
 
 IMPROVEMENTS:
 
-- (Experimental) Load balancing support by setting `MODE` to `master` on one process and `worker` on other processes with the same Node ID.
+- Mode 2 support.
+  - Requests
+  - Identity creation and modifications e.g. add/revoke accessor
+  - Identity modification notification.
+- API v3
+  - Support `request_message` in data URL format (depends on destination IdPs).
+  - Add `supported_request_message_data_url_type_list` property to POST `/node/update` for IdPs.
+  - Add `supported_request_message_data_url_type_list` property to GET `/utility/nodes/:node_id` for IdP nodes.
+  - Add `supported_request_message_data_url_type_list` property to GET `/utility/idp`.
+  - Add `supported_request_message_data_url_type_list` and `mode_list` properties to GET `/utility/idp/:namespace/:identifier`.
+  - Add identity-IdP association revocation support (opposite of create identity).
+  - New callback for notifying identity modifications (for mode 2 and 3 on IdPs).
+  - New callback for encrypt with accessor key (for mode 2 and 3 on IdPs).
+- Use UUIDv4 when auto generating accessor IDs.
+- Load balancing support by setting `MODE` to `master` on one process and `worker` on other processes with the same Node ID.
 - Refactor request process flow.
+- Refactor comitted Txs check.
 - Add Prometheus support.
 - Add new environment variable options
   - `PROMETHEUS`: Enable prometheus metrics and HTTP server for querying metrics
@@ -36,6 +131,9 @@ IMPROVEMENTS:
 - Use `scan` stream instead of `keys` for redis operations.
 - Use `unlink` (if available - redis 4 or later) instead of `del` for redis delete by key operations.
 - Add error callback when error occurs at MQ.
+- Reduce MQ message size if `request_message` is in data URL format with base64 encoded data when sending request from RP to IdP.
+- Reduce MQ message size if `data` is in data URL format with base64 encoded data when AS send data response back to RP.
+- gRPC SSL connection support.
 
 BUG FIXES:
 
@@ -46,7 +144,7 @@ BUG FIXES:
 
 ## 1.0.2 (February 8, 2019)
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0-v2.0.0_
 
 IMPROVEMENTS:
 
@@ -68,7 +166,7 @@ BUG FIXES:
 
 ## 1.0.1 (January 24, 2019)
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0-v2.0.0_
 
 IMPROVEMENTS:
 
@@ -98,7 +196,7 @@ BUG FIXES:
 
 ## 1.0.0 (December 7, 2018)
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0-v2.0.0_
 
 IMPROVEMENTS:
 

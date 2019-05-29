@@ -30,11 +30,13 @@ import { getArgsProtobuf } from './message';
 
 import { getFunction } from '../functions';
 
-import { randomBase64Bytes } from '../utils';
+import { randomBase64Bytes, readFileAsync } from '../utils';
 import CustomError from 'ndid-error/custom_error';
 import logger from '../logger';
 
 import * as config from '../config';
+
+const masterId = randomBase64Bytes(8);
 
 let server;
 let stoppingWorkerCount = 0;
@@ -63,7 +65,16 @@ let grpcCallRefIdCounter = 0;
 
 const grpcCall = {};
 
-export function initialize() {
+export async function initialize() {
+  let grpcSslRootCert;
+  let grpcSslKey;
+  let grpcSslCert;
+  if (config.grpcSsl) {
+    grpcSslRootCert = await readFileAsync(config.grpcSslRootCertFilePath);
+    grpcSslKey = await readFileAsync(config.grpcSslKeyFilePath);
+    grpcSslCert = await readFileAsync(config.grpcSslCertFilePath);
+  }
+
   server = new grpc.Server({
     'grpc.keepalive_time_ms': config.grpcPingInterval,
     'grpc.keepalive_timeout_ms': config.grpcPingTimeout,
@@ -77,6 +88,7 @@ export function initialize() {
   const MASTER_SERVER_ADDRESS = `0.0.0.0:${config.masterServerPort}`;
 
   server.addService(proto.MasterWorker.service, {
+    getMasterId,
     subscribe,
     tasksBeforeShutdown,
     returnResultCall,
@@ -85,12 +97,29 @@ export function initialize() {
     workerStoppingCall,
   });
 
-  server.bind(MASTER_SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
+  server.bind(
+    MASTER_SERVER_ADDRESS,
+    config.grpcSsl
+      ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
+          {
+            cert_chain: grpcSslCert,
+            private_key: grpcSslKey,
+          },
+        ])
+      : grpc.ServerCredentials.createInsecure()
+  );
   server.start();
 
   logger.info({
     message: 'Master gRPC server initialzed',
+    masterId,
   });
+}
+
+function getMasterId(call, callback) {
+  const { workerId } = call.request;
+  logger.debug({ message: 'Get master ID', workerId });
+  callback(null, { masterId });
 }
 
 function subscribe(call) {
@@ -407,6 +436,12 @@ export function remoteFnCallToWorkers({
 }
 
 export function shutdown() {
+  // Send signal to all connected workers
+  workerList.forEach((worker) => {
+    worker.connection.write({
+      eventName: 'master_shuting_down',
+    });
+  });
   server.tryShutdown(() => {
     logger.info({ message: 'Job master gRPC server shutdown' });
   });

@@ -96,7 +96,7 @@ init_ndid() {
 
   local PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
   local MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${MASTER_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
-  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/initNDID \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/init_ndid \
     -H "Content-Type: application/json" \
     -d "{\"public_key\":\"${PUBLIC_KEY}\",\"master_public_key\":\"${MASTER_PUBLIC_KEY}\"}" \
     -w '%{http_code}' \
@@ -114,7 +114,7 @@ init_ndid() {
 end_init() {
   echo "Finishing Initialization..."
 
-  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/endInit \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/end_init \
     -H "Content-Type: application/json" \
     -w '%{http_code}' \
     -o /dev/null)
@@ -141,7 +141,7 @@ register_node_id() {
     REQUEST_BODY="{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\"}"
   fi
 
-  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/registerNode \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/register_node \
     -H "Content-Type: application/json" \
     -d "${REQUEST_BODY}" \
     -w '%{http_code}' \
@@ -160,7 +160,7 @@ set_token_for_node_id() {
   local AMOUNT=$1
   echo "Giving ${AMOUNT} tokens to ${NODE_ID} node..."
 
-  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/addNodeToken \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/add_node_token \
     -H "Content-Type: application/json" \
     -d "{\"node_id\":\"${NODE_ID}\",\"amount\":${AMOUNT}}" \
     -w '%{http_code}' \
@@ -193,7 +193,7 @@ register_namespace() {
   local DESCRIPTION=$2
   echo "Registering namespace ${NAMESPACE} (${DESCRIPTION}) node..."
 
-  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/namespaces \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/create_namespace \
     -H "Content-Type: application/json" \
     -d "{\"namespace\":\"${NAMESPACE}\",\"description\":\"${DESCRIPTION}\"}" \
     -w '%{http_code}' \
@@ -213,7 +213,7 @@ register_service() {
   local SERVICE_NAME=$2
   echo "Registering service ${SERVICE_ID} (${SERVICE_NAME}) node..."
 
-  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/services \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/create_service \
     -H "Content-Type: application/json" \
     -d "{\"service_id\":\"${SERVICE_ID}\",\"service_name\":\"${SERVICE_NAME}\"}" \
     -w '%{http_code}' \
@@ -232,7 +232,7 @@ approve_service() {
   local SERVICE_ID=$1
   echo "Approving service ${SERVICE_ID} for node ${NODE_ID}..."
 
-  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/approveService \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/approve_service \
     -H "Content-Type: application/json" \
     -d "{\"service_id\":\"${SERVICE_ID}\",\"node_id\":\"${NODE_ID}\"}" \
     -w '%{http_code}' \
@@ -285,7 +285,7 @@ tendermint_add_validator() {
 
   echo "Adding node as a validator..."
 
-  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/validator \
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/set_validator \
     -H "Content-Type: application/json" \
     -d "{\"public_key\":\"${PUBKEY}\",\"power\":10}" \
     -w '%{http_code}' \

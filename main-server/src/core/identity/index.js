@@ -20,214 +20,40 @@
  *
  */
 
-import { createIdentity } from './create_identity';
-import { revokeAccessor } from './revoke_accessor';
-
-import { getFunction } from '../../functions';
+import operationTypes from './operation_type';
 
 import * as tendermintNdid from '../../tendermint/ndid';
+import * as common from '../common';
 import * as cacheDb from '../../db/cache';
+import { callbackToClient } from '../../callback';
+import * as utils from '../../utils';
+import { getErrorObjectForClient } from '../../utils/error';
+import logger from '../../logger';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
-import * as utils from '../../utils';
-import { validateKey } from '../../utils/node_key';
-import logger from '../../logger';
 
 import * as config from '../../config';
 import { role } from '../../node';
 
 export * from './create_identity';
+export * from './create_identity_after_consent';
+export * from './add_identity';
+export * from './add_identity_after_consent';
 export * from './update_ial';
+export * from './add_accessor';
 export * from './add_accessor_after_consent';
 export * from './revoke_accessor';
 export * from './revoke_accessor_after_consent';
+export * from './revoke_and_add_accessor';
+export * from './revoke_and_add_accessor_after_consent';
+export * from './revoke_identity_association';
+export * from './revoke_identity_association_after_consent';
+export * from './upgrade_identity_mode';
+export * from './upgrade_identity_mode_after_consent';
+export * from './notification';
 
-export async function checkAssociated({ node_id, namespace, identifier }) {
-  let idpList = await tendermintNdid.getIdpNodes({
-    namespace,
-    identifier,
-    min_aal: 1,
-    min_ial: 1.1,
-  });
-  for (let i = 0; i < idpList.length; i++) {
-    if (idpList[i].node_id === node_id) return true;
-  }
-  return false;
-}
-
-export async function addAccessorMethodForAssociatedIdp(
-  {
-    node_id,
-    reference_id,
-    callback_url,
-    namespace,
-    identifier,
-    accessor_type,
-    accessor_public_key,
-    accessor_id,
-    request_message,
-  },
-  { synchronous = false, apiVersion } = {}
-) {
-  if (role === 'proxy') {
-    if (node_id == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
-  } else {
-    node_id = config.nodeId;
-  }
-
-  validateKey(accessor_public_key, accessor_type);
-
-  const associated = await checkAssociated({
-    node_id,
-    namespace,
-    identifier,
-  });
-
-  if (!associated) {
-    throw new CustomError({
-      errorType: errorType.IDENTITY_NOT_FOUND,
-      details: {
-        namespace,
-        identifier,
-      },
-    });
-  }
-
-  const result = await createIdentity(
-    {
-      node_id,
-      reference_id,
-      callback_url,
-      namespace,
-      identifier,
-      accessor_type,
-      accessor_public_key,
-      accessor_id,
-      request_message,
-      addAccessor: true,
-    },
-    { synchronous, apiVersion }
-  );
-  return result;
-}
-
-export async function checkForExistedIdentity(
-  { node_id, namespace, identifier, ial },
-  { callbackFnName, callbackAdditionalArgs, saveForRetryOnChainDisabled } = {}
-) {
-  const sid = namespace + ':' + identifier;
-  const hash_id = utils.hash(sid);
-
-  let exist = await tendermintNdid.checkExistingIdentity(hash_id);
-  if (!exist) {
-    if (callbackFnName != null) {
-      await tendermintNdid.registerIdentity(
-        {
-          users: [
-            {
-              hash_id,
-              ial,
-              first: true,
-            },
-          ],
-        },
-        node_id,
-        'identity.checkForExistedIdentityAfterBlockchain',
-        [
-          {
-            hash_id,
-            exist,
-          },
-          {
-            callbackFnName,
-            callbackAdditionalArgs,
-          },
-        ],
-        saveForRetryOnChainDisabled
-      );
-    } else {
-      try {
-        await tendermintNdid.registerIdentity(
-          {
-            users: [
-              {
-                hash_id,
-                ial,
-                first: true,
-              },
-            ],
-          },
-          node_id
-        );
-      } catch (error) {
-        if (
-          error.getCode &&
-          error.getCode() === errorType.ABCI_NOT_FIRST_IDP.code
-        ) {
-          logger.debug({
-            message:
-              'Unable to register identity as the first IdP. Switching to ask for consent mode.',
-            hash_id,
-          });
-          exist = true;
-        } else {
-          throw error;
-        }
-      }
-      return exist;
-    }
-  } else {
-    if (callbackFnName != null) {
-      checkForExistedIdentityAfterBlockchain(
-        {},
-        { hash_id, exist },
-        { callbackFnName, callbackAdditionalArgs }
-      );
-    } else {
-      return exist;
-    }
-  }
-}
-
-export function checkForExistedIdentityAfterBlockchain(
-  { error },
-  { hash_id, exist },
-  { callbackFnName, callbackAdditionalArgs } = {}
-) {
-  let errorToReturn;
-  if (error) {
-    if (
-      error.getCode &&
-      error.getCode() === errorType.ABCI_NOT_FIRST_IDP.code
-    ) {
-      logger.debug({
-        message:
-          'Unable to register message queue destination for an identity as the first IdP. Switching to ask for consent mode.',
-        hash_id,
-      });
-      exist = true;
-    } else {
-      errorToReturn = error;
-    }
-  }
-  if (callbackFnName != null) {
-    if (callbackAdditionalArgs != null) {
-      getFunction(callbackFnName)(
-        { exist, error: errorToReturn },
-        ...callbackAdditionalArgs
-      );
-    } else {
-      getFunction(callbackFnName)({ exist, error: errorToReturn });
-    }
-  }
-}
-
-export async function getCreateIdentityDataByReferenceId(nodeId, referenceId) {
+export async function getIdentityRequestDataByReferenceId(nodeId, referenceId) {
   try {
     if (role === 'proxy') {
       if (nodeId == null) {
@@ -239,19 +65,55 @@ export async function getCreateIdentityDataByReferenceId(nodeId, referenceId) {
       nodeId = config.nodeId;
     }
 
-    return await cacheDb.getCreateIdentityDataByReferenceId(
+    const identityRequestData = await cacheDb.getIdentityRequestDataByReferenceId(
       nodeId,
       referenceId
     );
+
+    if (identityRequestData == null) {
+      return null;
+    }
+
+    switch (identityRequestData.type) {
+      case operationTypes.REGISTER_IDENTITY:
+      case operationTypes.ADD_ACCESSOR:
+      case operationTypes.REVOKE_ACCESSOR:
+        return {
+          request_id: identityRequestData.request_id,
+          accessor_id: identityRequestData.accessor_id,
+        };
+      case operationTypes.REVOKE_IDENTITY_ASSOCIATION:
+      case operationTypes.ADD_IDENTITY:
+      case operationTypes.UPDATE_IDENTITY_MODE_LIST:
+        return {
+          request_id: identityRequestData.request_id,
+        };
+      case operationTypes.REVOKE_AND_ADD_ACCESSOR:
+        return {
+          request_id: identityRequestData.request_id,
+          revoking_accessor_id: identityRequestData.revoking_accessor_id,
+          accessor_id: identityRequestData.accessor_id,
+        };
+      default:
+        throw new CustomError({
+          message: 'Unknown identity request data type',
+          type: identityRequestData.type,
+        });
+    }
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get create identity data by reference ID',
+      message: 'Cannot get identity request data by reference ID',
       cause: error,
     });
   }
 }
 
-export async function getRevokeAccessorDataByReferenceId(nodeId, referenceId) {
+export async function getIdentityInfo({
+  nodeId,
+  referenceGroupCode,
+  namespace,
+  identifier,
+}) {
   try {
     if (role === 'proxy') {
       if (nodeId == null) {
@@ -263,35 +125,12 @@ export async function getRevokeAccessorDataByReferenceId(nodeId, referenceId) {
       nodeId = config.nodeId;
     }
 
-    return await cacheDb.getRevokeAccessorDataByReferenceId(
-      nodeId,
-      referenceId
-    );
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get revoke accessor data by reference ID',
-      cause: error,
-    });
-  }
-}
-
-export async function getIdentityInfo({ nodeId, namespace, identifier }) {
-  try {
-    if (role === 'proxy') {
-      if (nodeId == null) {
-        throw new CustomError({
-          errorType: errorType.MISSING_NODE_ID,
-        });
-      }
-    } else {
-      nodeId = config.nodeId;
-    }
-
-    const identityInfo = await tendermintNdid.getIdentityInfo(
+    const identityInfo = await tendermintNdid.getIdentityInfo({
+      reference_group_code: referenceGroupCode,
       namespace,
       identifier,
-      nodeId
-    );
+      node_id: nodeId,
+    });
     return identityInfo;
   } catch (error) {
     throw new CustomError({
@@ -301,70 +140,298 @@ export async function getIdentityInfo({ nodeId, namespace, identifier }) {
   }
 }
 
-export async function revokeAccessorMethodForAssociatedIdp({
-  node_id,
-  reference_id,
-  callback_url,
-  namespace,
-  identifier,
-  accessor_id,
-  request_message,
-}) {
-  if (role === 'proxy') {
-    if (node_id == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
+export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
+  const requestId = message.request_id;
+
+  const request = await cacheDb.getRequestData(nodeId, requestId);
+  if (request == null) return; //request not found
+
+  const requestDetail = await tendermintNdid.getRequestDetail({
+    requestId,
+  });
+
+  const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+
+  const responseValid = await common.getAndSaveIdpResponseValid({
+    nodeId,
+    requestStatus,
+    idpId: message.idp_id,
+    requestDataFromMq: message,
+    responseIal: requestDetail.response_list.find(
+      (response) => response.idp_id === message.idp_id
+    ).ial,
+  });
+
+  let identityConsentRequestError;
+  if (!responseValid.valid_signature || !responseValid.valid_ial) {
+    identityConsentRequestError = new CustomError({
+      errorType: errorType.INVALID_RESPONSE,
+    });
+  }
+
+  const response = requestDetail.response_list[0];
+  if (response.status !== 'accept') {
+    identityConsentRequestError = new CustomError({
+      errorType: errorType.USER_REJECTED,
+    });
+  }
+
+  if (identityConsentRequestError != null) {
+    await common.closeRequest(
+      {
+        node_id: nodeId,
+        request_id: requestId,
+      },
+      {
+        synchronous: false,
+        sendCallbackToClient: false,
+        callbackFnName: 'identity.afterCloseFailedIdentityConsentRequest',
+        callbackAdditionalArgs: [
+          { nodeId, requestId, identityConsentRequestError },
+        ],
+        saveForRetryOnChainDisabled: true,
+      }
+    );
+    return;
+  }
+
+  // Check if request is completed.
+  if (
+    requestStatus.answered_idp_count === requestStatus.min_idp &&
+    requestStatus.status === 'completed'
+  ) {
+    let callbackFnName;
+    if (requestDetail.purpose === operationTypes.REGISTER_IDENTITY) {
+      callbackFnName = 'identity.createIdentityAfterCloseConsentRequest';
+    } else if (requestDetail.purpose === operationTypes.ADD_IDENTITY) {
+      callbackFnName = 'identity.addIdentityAfterCloseConsentRequest';
+    } else if (requestDetail.purpose === operationTypes.ADD_ACCESSOR) {
+      callbackFnName = 'identity.addAccessorAfterCloseConsentRequest';
+    } else if (requestDetail.purpose === operationTypes.REVOKE_ACCESSOR) {
+      callbackFnName = 'identity.revokeAccessorAfterCloseConsentRequest';
+    } else if (
+      requestDetail.purpose === operationTypes.REVOKE_AND_ADD_ACCESSOR
+    ) {
+      callbackFnName = 'identity.revokeAndAddAccessorAfterCloseConsentRequest';
+    } else if (
+      requestDetail.purpose === operationTypes.REVOKE_IDENTITY_ASSOCIATION
+    ) {
+      callbackFnName =
+        'identity.revokeIdentityAssociationAfterCloseConsentRequest';
+    } else if (
+      requestDetail.purpose === operationTypes.UPDATE_IDENTITY_MODE_LIST
+    ) {
+      callbackFnName = 'identity.upgradeIdentityModeAfterCloseConsentRequest';
     }
-  } else {
-    node_id = config.nodeId;
-  }
-
-  const associated = await checkAssociated({
-    node_id,
-    namespace,
-    identifier,
-  });
-
-  if (!associated) {
-    throw new CustomError({
-      errorType: errorType.IDENTITY_NOT_FOUND,
-      details: {
-        namespace,
-        identifier,
+    await common.closeRequest(
+      {
+        node_id: nodeId,
+        request_id: requestId,
       },
-    });
+      {
+        synchronous: false,
+        sendCallbackToClient: false,
+        callbackFnName,
+        callbackAdditionalArgs: [
+          { nodeId, request_id: requestId },
+          {
+            callbackFnName: 'identity.afterIdentityOperationSuccess',
+            callbackAdditionalArgs: [{ nodeId }],
+          },
+        ],
+        saveForRetryOnChainDisabled: true,
+      }
+    );
   }
+}
 
-  let accessor_public_key = await tendermintNdid.getAccessorKey(accessor_id);
-  if (accessor_public_key == null) {
-    throw new CustomError({
-      errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE,
-      details: {
-        accessor_id,
-      },
-    });
-  }
-
-  //check is accessor_id created by this idp?
-  const accessorOwner = await tendermintNdid.getAccessorOwner(accessor_id);
-  if (accessorOwner !== node_id) {
-    throw new CustomError({
-      errorType: errorType.NOT_OWNER_OF_ACCESSOR,
-      details: {
-        accessor_id,
-      },
-    });
-  }
-
-  const result = await revokeAccessor({
-    node_id,
-    reference_id,
-    callback_url,
-    namespace,
-    identifier,
+export async function afterIdentityOperationSuccess(
+  {
+    error,
+    type,
+    reference_group_code,
     accessor_id,
-    request_message,
-  });
-  return result;
+    revoking_accessor_id,
+    reference_id,
+    request_id,
+  },
+  { nodeId }
+) {
+  if (error && (type == null || reference_id == null)) {
+    await common.notifyError({
+      nodeId,
+      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
+      action: 'afterIdentityOperationSuccess',
+      error,
+      requestId: request_id,
+    });
+    return;
+  }
+
+  let callbackUrl;
+  try {
+    callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
+      nodeId,
+      reference_id
+    );
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Cannot get callback URL after identity operation success',
+      cause: error,
+    });
+    logger.error({ err });
+    await common.notifyError({
+      nodeId,
+      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
+      action: 'afterIdentityOperationSuccess',
+      error: err,
+      requestId: request_id,
+    });
+    return;
+  }
+
+  let typeCallback;
+  if (type === operationTypes.REGISTER_IDENTITY) {
+    typeCallback = 'create_identity_result';
+  } else if (type === operationTypes.ADD_IDENTITY) {
+    typeCallback = 'add_identity_result';
+  } else if (type === operationTypes.ADD_ACCESSOR) {
+    typeCallback = 'add_accessor_result';
+  } else if (type === operationTypes.REVOKE_ACCESSOR) {
+    typeCallback = 'revoke_accessor_result';
+  } else if (type === operationTypes.REVOKE_AND_ADD_ACCESSOR) {
+    typeCallback = 'revoke_and_add_accessor_result';
+  } else if (type === operationTypes.REVOKE_IDENTITY_ASSOCIATION) {
+    typeCallback = 'revoke_identity_association_result';
+  } else if (type === operationTypes.UPDATE_IDENTITY_MODE_LIST) {
+    typeCallback = 'upgrade_identity_mode_result';
+  }
+  try {
+    if (error) throw error;
+
+    await callbackToClient({
+      callbackUrl,
+      body: {
+        node_id: nodeId,
+        type: typeCallback,
+        success: true,
+        reference_id,
+        request_id,
+        reference_group_code, // For create_identity_result
+      },
+      retry: true,
+    });
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error processing after identity operation success',
+      cause: error,
+    });
+    logger.error({ err });
+
+    await callbackToClient({
+      callbackUrl,
+      body: {
+        node_id: nodeId,
+        type: typeCallback,
+        success: false,
+        reference_id,
+        request_id,
+        revoking_accessor_id,
+        accessor_id,
+        error: getErrorObjectForClient(error),
+      },
+      retry: true,
+    });
+  } finally {
+    cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
+    cleanUpRequestData(nodeId, request_id, reference_id);
+    cacheDb.removeIdentityRequestDataByReferenceId(nodeId, reference_id);
+  }
+}
+
+export async function afterCloseFailedIdentityConsentRequest(
+  { error },
+  { nodeId, requestId, identityConsentRequestError }
+) {
+  try {
+    if (error) throw error;
+    const [identityData, requestData] = await Promise.all([
+      cacheDb.getIdentityFromRequestId(nodeId, requestId),
+      cacheDb.getRequestData(nodeId, requestId),
+    ]);
+    const reference_id = requestData.reference_id;
+    const callbackUrl = await cacheDb.getCallbackUrlByReferenceId(
+      nodeId,
+      reference_id
+    );
+    if (identityData == null) {
+      const err = new CustomError({
+        message: 'Cannot get identity data',
+        details: { requestId },
+      });
+      logger.error({ err });
+      throw err;
+    }
+    let type;
+    if (identityData.type === operationTypes.REGISTER_IDENTITY) {
+      type = 'create_identity_result';
+    } else if (identityData.type === operationTypes.ADD_IDENTITY) {
+      type = 'add_identity_result';
+    } else if (identityData.type === operationTypes.ADD_ACCESSOR) {
+      type = 'add_accessor_result';
+    } else if (identityData.type === operationTypes.REVOKE_ACCESSOR) {
+      type = 'revoke_accessor_result';
+    } else if (identityData.type === operationTypes.REVOKE_AND_ADD_ACCESSOR) {
+      type = 'revoke_and_add_accessor_result';
+    } else if (type === operationTypes.REVOKE_IDENTITY_ASSOCIATION) {
+      type = 'revoke_identity_association_result';
+    } else if (type === operationTypes.UPDATE_IDENTITY_MODE_LIST) {
+      type = 'upgrade_identity_mode_result';
+    }
+    await callbackToClient({
+      callbackUrl,
+      body: {
+        node_id: nodeId,
+        type,
+        success: false,
+        reference_id,
+        request_id: requestId,
+        error: getErrorObjectForClient(identityConsentRequestError),
+      },
+      retry: true,
+    });
+    cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
+    cacheDb.removeIdentityRequestDataByReferenceId(nodeId, reference_id);
+
+    logger.debug({
+      message: 'Identity consent request failed',
+      err: identityConsentRequestError,
+    });
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error reporting unsuccessful identity consent request result',
+      cause: error,
+    });
+    logger.error({ err });
+    await common.notifyError({
+      nodeId,
+      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
+      action: 'afterCloseFailedIdentityConsentRequest',
+      error: err,
+      requestId,
+    });
+  }
+
+  // logger.debug({
+  //   message: 'Create identity request response valid and consented',
+  // });
+}
+
+async function cleanUpRequestData(nodeId, requestId, referenceId) {
+  return Promise.all([
+    cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
+    cacheDb.removeRequestData(nodeId, requestId),
+    cacheDb.removeIdpResponseValidList(nodeId, requestId),
+    cacheDb.removeRequestCreationMetadata(nodeId, requestId),
+  ]);
 }

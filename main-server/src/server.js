@@ -110,30 +110,35 @@ async function initialize() {
     if (role === ROLE.RP) {
       if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         mq.setMessageHandlerFunction(rp.handleMessageFromQueue);
+        tendermint.setTendermintNewBlockEventHandler(
+          rp.handleTendermintNewBlock
+        );
       }
-      tendermint.setTendermintNewBlockEventHandler(rp.handleTendermintNewBlock);
       await rp.checkCallbackUrls();
     } else if (role === ROLE.IDP) {
       if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         mq.setMessageHandlerFunction(idp.handleMessageFromQueue);
+        tendermint.setTendermintNewBlockEventHandler(
+          idp.handleTendermintNewBlock
+        );
       }
-      tendermint.setTendermintNewBlockEventHandler(
-        idp.handleTendermintNewBlock
-      );
       await idp.checkCallbackUrls();
     } else if (role === ROLE.AS) {
       if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         mq.setMessageHandlerFunction(as.handleMessageFromQueue);
+        tendermint.setTendermintNewBlockEventHandler(
+          as.handleTendermintNewBlock
+        );
       }
-      tendermint.setTendermintNewBlockEventHandler(as.handleTendermintNewBlock);
+
       await as.checkCallbackUrls();
     } else if (role === ROLE.PROXY) {
       if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         mq.setMessageHandlerFunction(proxy.handleMessageFromQueue);
+        tendermint.setTendermintNewBlockEventHandler(
+          proxy.handleTendermintNewBlock
+        );
       }
-      tendermint.setTendermintNewBlockEventHandler(
-        proxy.handleTendermintNewBlock
-      );
       await rp.checkCallbackUrls();
       await idp.checkCallbackUrls();
       await as.checkCallbackUrls();
@@ -238,6 +243,7 @@ async function initialize() {
       tendermint.processMissingBlocks(tendermintStatusOnSync);
       await tendermint.loadExpectedTxFromDB();
       tendermint.loadAndRetryBacklogTransactRequests();
+      tendermint.loadAndRetryTransact();
 
       callbackUtil.resumeCallbackToClient();
     }

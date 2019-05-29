@@ -20,14 +20,13 @@
  *
  */
 
-import { checkAssociated } from '.';
+import { getIdentityInfo } from '.';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
-import * as utils from '../../utils';
 import { callbackToClient } from '../../callback';
 import logger from '../../logger';
 
@@ -63,9 +62,14 @@ export async function updateIal(
 
   try {
     // check for created identity
-    if (!checkAssociated({ namespace, identifier })) {
+    const identityOnNode = await getIdentityInfo({
+      nodeId: node_id,
+      namespace,
+      identifier,
+    });
+    if (identityOnNode == null) {
       throw new CustomError({
-        errorType: errorType.IDENTITY_NOT_FOUND,
+        errorType: errorType.IDENTITY_NOT_FOUND_ON_IDP,
         details: {
           namespace,
           identifier,
@@ -107,16 +111,15 @@ async function updateIalInternalAsync(
   { nodeId }
 ) {
   try {
-    const hash_id = utils.hash(namespace + ':' + identifier);
     if (!synchronous) {
       await tendermintNdid.updateIal(
-        { hash_id, ial },
+        { namespace, identifier, ial },
         nodeId,
         'identity.updateIalInternalAsyncAfterBlockchain',
         [{ nodeId, reference_id, callback_url }, { synchronous }]
       );
     } else {
-      await tendermintNdid.updateIal({ hash_id, ial }, nodeId);
+      await tendermintNdid.updateIal({ namespace, identifier, ial }, nodeId);
       await updateIalInternalAsyncAfterBlockchain(
         {},
         { nodeId, reference_id, callback_url },

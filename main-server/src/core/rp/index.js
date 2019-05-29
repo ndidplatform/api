@@ -35,7 +35,6 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
 
-import ROLE from '../../role';
 import * as config from '../../config';
 import { role } from '../../node';
 
@@ -99,8 +98,8 @@ export function getErrorCallbackUrl() {
 
 export function isAllIdpResponsesValid(responseValidList) {
   for (let i = 0; i < responseValidList.length; i++) {
-    const { valid_proof, valid_ial } = responseValidList[i];
-    if (valid_proof !== true || valid_ial !== true) {
+    const { valid_ial } = responseValidList[i];
+    if (valid_ial !== true) {
       return false;
     }
   }
@@ -120,10 +119,11 @@ export function isAllIdpRespondedAndValid({
     0
   );
   if (asAnswerCount === 0) {
-    // Send request to AS only when all IdP responses' proof and IAL are valid in mode 3
+    // Send request to AS only when all IdP responses' IAL are valid in mode 3
     if (
       requestStatus.mode === 1 ||
-      (requestStatus.mode === 3 && isAllIdpResponsesValid(responseValidList))
+      ((requestStatus.mode === 2 || requestStatus.mode === 3) &&
+        isAllIdpResponsesValid(responseValidList))
     ) {
       return true;
     }
@@ -181,9 +181,12 @@ export async function sendRequestToAS(nodeId, requestData, height) {
   if (requestData.data_request_list == null) return;
   if (requestData.data_request_list.length === 0) return;
 
-  const [privateProofObjectList, requestCreationMetadata] = await Promise.all([
-    cacheDb.getPrivateProofObjectListInRequest(nodeId, requestData.request_id),
+  const [requestCreationMetadata, responsePrivateDataList] = await Promise.all([
     cacheDb.getRequestCreationMetadata(nodeId, requestData.request_id),
+    cacheDb.getResponsePrivateDataListForRequest(
+      nodeId,
+      requestData.request_id
+    ),
   ]);
 
   const dataToSendByNodeId = {};
@@ -251,10 +254,9 @@ export async function sendRequestToAS(nodeId, requestData, height) {
             service_data_request_list,
             request_message: requestData.request_message,
             request_message_salt: requestData.request_message_salt,
+            response_private_data_list: responsePrivateDataList,
             creation_time: requestCreationMetadata.creation_time,
             request_timeout: requestData.request_timeout,
-            challenge: requestData.challenge,
-            privateProofObjectList,
             rp_id: requestData.rp_id,
             initial_salt: requestData.initial_salt,
             chain_id: tendermint.chainId,
@@ -276,33 +278,21 @@ export async function processMessage(nodeId, messageId, message) {
   });
 
   try {
-    if (message.type === privateMessageType.CHALLENGE_REQUEST) {
-      await common.handleChallengeRequest({
-        nodeId,
-        role: ROLE.RP,
-        request_id: message.request_id,
-        idp_id: message.idp_id,
-        public_proof: message.public_proof,
-      });
-    } else if (message.type === privateMessageType.IDP_RESPONSE) {
+    if (message.type === privateMessageType.IDP_RESPONSE) {
       const requestData = await cacheDb.getRequestData(
         nodeId,
         message.request_id
       );
       if (requestData != null) {
-        // "accessor_id" and private proof are present only in mode 3
-        if (message.mode === 3) {
-          //store private parameter from EACH idp to request, to pass along to as
-          await cacheDb.addPrivateProofObjectInRequest(
+        // "accessor_id" is present only in mode 2,3
+        if (message.mode === 2 || message.mode === 3) {
+          //store accessor_id from EACH IdP, to pass along to AS
+          await cacheDb.addResponsePrivateDataForRequest(
             nodeId,
             message.request_id,
             {
               idp_id: message.idp_id,
-              privateProofObject: {
-                privateProofValue: message.privateProofValueArray,
-                accessor_id: message.accessor_id,
-                padding: message.padding,
-              },
+              accessor_id: message.accessor_id,
             }
           );
         }
@@ -314,12 +304,16 @@ export async function processMessage(nodeId, messageId, message) {
 
         const requestStatus = utils.getDetailedRequestStatus(requestDetail);
 
+        if (requestStatus.closed || requestStatus.timed_out) {
+          return;
+        }
+
         const savedResponseValidList = await cacheDb.getIdpResponseValidList(
           nodeId,
           message.request_id
         );
 
-        const responseValid = await common.checkIdpResponse({
+        const responseValid = await common.getAndSaveIdpResponseValid({
           nodeId,
           requestStatus,
           idpId: message.idp_id,
@@ -363,7 +357,7 @@ export async function processMessage(nodeId, messageId, message) {
           !requestStatus.closed &&
           !requestStatus.timed_out &&
           (requestStatus.mode === 1 ||
-            (requestStatus.mode === 3 &&
+            ((requestStatus.mode === 2 || requestStatus.mode === 3) &&
               isAllIdpResponsesValid(responseValidList)))
         ) {
           logger.debug({
@@ -376,6 +370,7 @@ export async function processMessage(nodeId, messageId, message) {
               synchronous: false,
               sendCallbackToClient: false,
               saveForRetryOnChainDisabled: true,
+              retryOnFail: true,
             }
           );
         }

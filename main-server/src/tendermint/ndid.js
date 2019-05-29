@@ -60,7 +60,11 @@ export async function setMqAddresses(
 }
 
 export async function updateNode(
-  { public_key, master_public_key },
+  {
+    public_key,
+    master_public_key,
+    supported_request_message_data_url_type_list,
+  },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
@@ -73,6 +77,7 @@ export async function updateNode(
       params: {
         public_key,
         master_public_key,
+        supported_request_message_data_url_type_list,
       },
       callbackFnName,
       callbackAdditionalArgs,
@@ -88,73 +93,58 @@ export async function updateNode(
   }
 }
 
-export async function registerAccessor(
-  { accessor_type, accessor_public_key, accessor_id, accessor_group_id },
-  nodeId,
-  callbackFnName,
-  callbackAdditionalArgs,
-  saveForRetryOnChainDisabled
-) {
-  try {
-    return await tendermint.transact({
-      nodeId,
-      fnName: 'RegisterAccessor',
-      params: {
-        accessor_type,
-        accessor_public_key,
-        accessor_id,
-        accessor_group_id,
-      },
-      callbackFnName,
-      callbackAdditionalArgs,
-      saveForRetryOnChainDisabled,
-    });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot register accessor to blockchain',
-      cause: error,
-    });
-  }
-}
-
-export async function clearRegisterIdentityTimeout(
-  hash_id,
-  nodeId,
-  callbackFnName,
-  callbackAdditionalArgs,
-  saveForRetryOnChainDisabled
-) {
-  try {
-    const result = await tendermint.transact({
-      nodeId,
-      fnName: 'ClearRegisterIdentityTimeout',
-      params: { hash_id },
-      callbackFnName,
-      callbackAdditionalArgs,
-      saveForRetryOnChainDisabled,
-    });
-    return result;
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot mark register identity as success to blockchain',
-      cause: error,
-    });
-  }
-}
-
+/**
+ *
+ * @param {Object} identity
+ * @param {string} identity.reference_group_code
+ * @param {Object[]} identity.new_identity_list
+ * @param {string} identity.new_identity_list[].namespace
+ * @param {string} identity.new_identity_list[].identifier
+ * @param {string} identity.ial
+ * @param {string} identity.mode_list
+ * @param {string} identity.accessor_id
+ * @param {string} identity.accessor_public_key
+ * @param {string} identity.accessor_type
+ * @param {string} identity.request_id
+ * @param {string} nodeId
+ * @param {string} callbackFnName
+ * @param {Array} callbackAdditionalArgs
+ * @param {boolean} saveForRetryOnChainDisabled
+ */
 export async function registerIdentity(
-  { users },
+  {
+    reference_group_code,
+    new_identity_list,
+    ial,
+    mode_list,
+    accessor_id,
+    accessor_public_key,
+    accessor_type,
+    request_id,
+  },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
   try {
+    new_identity_list = new_identity_list.map(({ namespace, identifier }) => ({
+      identity_namespace: namespace,
+      identity_identifier_hash: utils.hash(identifier),
+    }));
+
     const result = await tendermint.transact({
       nodeId,
       fnName: 'RegisterIdentity',
       params: {
-        users,
+        reference_group_code,
+        new_identity_list,
+        ial,
+        mode_list,
+        accessor_id,
+        accessor_public_key,
+        accessor_type,
+        request_id,
       },
       callbackFnName,
       callbackAdditionalArgs,
@@ -169,29 +159,77 @@ export async function registerIdentity(
   }
 }
 
-export async function addAccessorMethod(
-  {
-    request_id,
-    accessor_group_id,
-    accessor_type,
-    accessor_id,
-    accessor_public_key,
-  },
+export async function addIdentity(
+  { reference_group_code, new_identity_list, request_id },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
   try {
+    new_identity_list = new_identity_list.map(({ namespace, identifier }) => ({
+      identity_namespace: namespace,
+      identity_identifier_hash: utils.hash(identifier),
+    }));
+
+    const result = await tendermint.transact({
+      nodeId,
+      fnName: 'AddIdentity',
+      params: {
+        reference_group_code,
+        new_identity_list,
+        request_id,
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot add identity to blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function addAccessor(
+  {
+    reference_group_code,
+    namespace,
+    identifier,
+    accessor_id,
+    accessor_public_key,
+    accessor_type,
+    request_id,
+  },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  if (reference_group_code && (namespace || identifier)) {
+    throw new Error(
+      'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
+    );
+  }
+  if (!reference_group_code && (!namespace || !identifier)) {
+    throw new Error('Missing args');
+  }
+  try {
     return await tendermint.transact({
       nodeId,
-      fnName: 'AddAccessorMethod',
+      fnName: 'AddAccessor',
       params: {
-        request_id,
-        accessor_group_id,
-        accessor_type,
+        reference_group_code,
+        identity_namespace: namespace,
+        identity_identifier_hash: identifier
+          ? utils.hash(identifier)
+          : undefined,
         accessor_id,
         accessor_public_key,
+        accessor_type,
+        request_id,
       },
       callbackFnName,
       callbackAdditionalArgs,
@@ -199,13 +237,13 @@ export async function addAccessorMethod(
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot add accessor method to blockchain',
+      message: 'Cannot add accessor to blockchain',
       cause: error,
     });
   }
 }
 
-export async function revokeAccessorMethod(
+export async function revokeAccessor(
   { request_id, accessor_id },
   nodeId,
   callbackFnName,
@@ -215,7 +253,7 @@ export async function revokeAccessorMethod(
   try {
     return await tendermint.transact({
       nodeId,
-      fnName: 'RevokeAccessorMethod',
+      fnName: 'RevokeAccessor',
       params: {
         request_id,
         accessor_id_list: [accessor_id],
@@ -226,7 +264,190 @@ export async function revokeAccessorMethod(
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot revoke accessor method from blockchain',
+      message: 'Cannot revoke accessor from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function revokeAndAddAccessor(
+  {
+    revoking_accessor_id,
+    accessor_id,
+    accessor_public_key,
+    accessor_type,
+    request_id,
+  },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    return await tendermint.transact({
+      nodeId,
+      fnName: 'RevokeAndAddAccessor',
+      params: {
+        revoking_accessor_id,
+        accessor_id,
+        accessor_public_key,
+        accessor_type,
+        request_id,
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot revoke and add accessor on blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function updateIdentityModeList(
+  { reference_group_code, namespace, identifier, mode_list, request_id },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  if (reference_group_code && (namespace || identifier)) {
+    throw new Error(
+      'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
+    );
+  }
+  if (!reference_group_code && (!namespace || !identifier)) {
+    throw new Error('Missing args');
+  }
+  try {
+    return await tendermint.transact({
+      nodeId,
+      fnName: 'UpdateIdentityModeList',
+      params: {
+        reference_group_code,
+        identity_namespace: namespace,
+        identity_identifier_hash: identifier
+          ? utils.hash(identifier)
+          : undefined,
+        mode_list,
+        request_id,
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot update identity mode list to blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function revokeIdentityAssociation(
+  { reference_group_code, namespace, identifier, request_id },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  if (reference_group_code && (namespace || identifier)) {
+    throw new Error(
+      'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
+    );
+  }
+  if (!reference_group_code && (!namespace || !identifier)) {
+    throw new Error('Missing args');
+  }
+  try {
+    return await tendermint.transact({
+      nodeId,
+      fnName: 'RevokeIdentityAssociation',
+      params: {
+        reference_group_code,
+        identity_namespace: namespace,
+        identity_identifier_hash: identifier
+          ? utils.hash(identifier)
+          : undefined,
+        request_id,
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot revoke identity from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function mergeReferenceGroup(
+  {
+    reference_group_code,
+    namespace,
+    identifier,
+    reference_group_code_to_merge,
+    namespace_to_merge,
+    identifier_to_merge,
+    request_id,
+  },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  if (reference_group_code && (namespace || identifier)) {
+    throw new Error(
+      'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
+    );
+  }
+  if (!reference_group_code && (!namespace || !identifier)) {
+    throw new Error('Missing args');
+  }
+
+  if (
+    reference_group_code_to_merge &&
+    (namespace_to_merge || identifier_to_merge)
+  ) {
+    throw new Error(
+      'Cannot have both "reference_group_code_to_merge" and "namespace_to_merge"+"identifier_to_merge" in args'
+    );
+  }
+  if (
+    !reference_group_code_to_merge &&
+    (!namespace_to_merge || identifier_to_merge)
+  ) {
+    throw new Error('Missing args');
+  }
+
+  try {
+    return await tendermint.transact({
+      nodeId,
+      fnName: 'MergeReferenceGroup',
+      params: {
+        reference_group_code,
+        identity_namespace: namespace,
+        identity_identifier_hash: identifier
+          ? utils.hash(identifier)
+          : undefined,
+        reference_group_code_to_merge,
+        identity_namespace_to_merge: namespace_to_merge,
+        identity_identifier_hash_to_merge: identifier_to_merge
+          ? utils.hash(identifier_to_merge)
+          : undefined,
+        request_id,
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot merge reference group in blockchain',
       cause: error,
     });
   }
@@ -261,7 +482,8 @@ export async function closeRequest(
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
-  saveForRetryOnChainDisabled
+  saveForRetryOnChainDisabled,
+  retryOnFail = false
 ) {
   try {
     const result = await tendermint.transact({
@@ -271,6 +493,7 @@ export async function closeRequest(
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
+      retryOnFail,
     });
     return result;
   } catch (error) {
@@ -287,7 +510,8 @@ export async function timeoutRequest(
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
-  saveForRetryOnChainDisabled
+  saveForRetryOnChainDisabled,
+  retryOnFail = false
 ) {
   try {
     // FIXME: should not check here?
@@ -303,6 +527,7 @@ export async function timeoutRequest(
         callbackFnName,
         callbackAdditionalArgs,
         saveForRetryOnChainDisabled,
+        retryOnFail,
       });
     }
   } catch (error) {
@@ -318,7 +543,8 @@ export async function setDataReceived(
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
-  saveForRetryOnChainDisabled
+  saveForRetryOnChainDisabled,
+  retryOnFail = true
 ) {
   try {
     const result = await tendermint.transact({
@@ -332,6 +558,7 @@ export async function setDataReceived(
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
+      retryOnFail,
     });
     return result;
   } catch (error) {
@@ -346,18 +573,30 @@ export async function setDataReceived(
 }
 
 export async function updateIal(
-  { hash_id, ial },
+  { reference_group_code, namespace, identifier, ial },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
+  if (reference_group_code && (namespace || identifier)) {
+    throw new Error(
+      'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
+    );
+  }
+  if (!reference_group_code && (!namespace || !identifier)) {
+    throw new Error('Missing args');
+  }
   try {
     await tendermint.transact({
       nodeId,
       fnName: 'UpdateIdentity',
       params: {
-        hash_id,
+        reference_group_code,
+        identity_namespace: namespace,
+        identity_identifier_hash: identifier
+          ? utils.hash(identifier)
+          : undefined,
         ial,
       },
       callbackFnName,
@@ -368,40 +607,27 @@ export async function updateIal(
     throw new CustomError({
       message: 'Cannot update Ial',
       cause: error,
-      hash_id,
+      reference_group_code,
+      namespace,
+      identifier,
       ial,
     });
   }
 }
 
-export async function declareIdentityProof(
-  { request_id, identity_proof },
-  nodeId,
-  callbackFnName,
-  callbackAdditionalArgs,
-  saveForRetryOnChainDisabled
-) {
-  try {
-    return await tendermint.transact({
-      nodeId,
-      fnName: 'DeclareIdentityProof',
-      params: {
-        request_id,
-        identity_proof,
-        idp_id: nodeId,
-      },
-      callbackFnName,
-      callbackAdditionalArgs,
-      saveForRetryOnChainDisabled,
-    });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot declare identity proof to blockchain',
-      cause: error,
-    });
-  }
-}
-
+/**
+ *
+ * @param {Object} responseDataToBlockchain
+ * @param {number} responseDataToBlockchain.aal
+ * @param {number} responseDataToBlockchain.ial
+ * @param {string} responseDataToBlockchain.request_id
+ * @param {string} responseDataToBlockchain.signature
+ * @param {string} responseDataToBlockchain.status
+ * @param {stirng} nodeId
+ * @param {string} callbackFnName
+ * @param {Array} callbackAdditionalArgs
+ * @param {boolean} saveForRetryOnChainDisabled
+ */
 export async function createIdpResponse(
   responseDataToBlockchain,
   nodeId,
@@ -455,6 +681,18 @@ export async function signASData(
   }
 }
 
+/**
+ *
+ * @param {Object} params
+ * @param {number} params.min_aal
+ * @param {number} params.min_ial
+ * @param {string} params.service_id
+ * @param {string[]} params.supported_namespace_list
+ * @param {string} nodeId
+ * @param {string} callbackFnName
+ * @param {Array} callbackAdditionalArgs
+ * @param {boolean} saveForRetryOnChainDisabled
+ */
 export async function registerServiceDestination(
   params,
   nodeId,
@@ -479,6 +717,18 @@ export async function registerServiceDestination(
   }
 }
 
+/**
+ *
+ * @param {Object} params
+ * @param {number} params.min_aal
+ * @param {number} params.min_ial
+ * @param {string} params.service_id
+ * @param {string[]} params.supported_namespace_list
+ * @param {string} nodeId
+ * @param {string} callbackFnName
+ * @param {Array} callbackAdditionalArgs
+ * @param {boolean} saveForRetryOnChainDisabled
+ */
 export async function updateServiceDestination(
   params,
   nodeId,
@@ -506,6 +756,17 @@ export async function updateServiceDestination(
 //
 // Query
 //
+export async function getAllowedModeList(purpose = '') {
+  try {
+    const result = await tendermint.query('GetAllowedModeList', { purpose });
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get allowed mode list',
+      cause: error,
+    });
+  }
+}
 
 export async function getChainHistory() {
   try {
@@ -611,15 +872,31 @@ export async function getRequestDetail({ requestId, height }) {
   }
 }
 
-export async function getIdpNodes({ namespace, identifier, min_ial, min_aal }) {
+export async function getIdpNodes({
+  reference_group_code,
+  namespace,
+  identifier,
+  min_ial,
+  min_aal,
+  node_id_list,
+  supported_request_message_type_list,
+  mode_list,
+}) {
+  if (reference_group_code && (namespace || identifier)) {
+    throw new Error(
+      'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
+    );
+  }
   try {
     const result = await tendermint.query('GetIdpNodes', {
-      hash_id:
-        namespace && identifier
-          ? utils.hash(namespace + ':' + identifier)
-          : undefined,
+      reference_group_code,
+      identity_namespace: namespace,
+      identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
       min_ial,
       min_aal,
+      node_id_list,
+      supported_request_message_type_list,
+      mode_list,
     });
     return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {
@@ -631,21 +908,30 @@ export async function getIdpNodes({ namespace, identifier, min_ial, min_aal }) {
 }
 
 export async function getIdpNodesInfo({
+  reference_group_code,
   namespace,
   identifier,
   min_ial,
   min_aal,
   node_id_list,
+  supported_request_message_data_url_type_list,
+  mode_list,
 }) {
+  if (reference_group_code && (namespace || identifier)) {
+    throw new Error(
+      'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
+    );
+  }
   try {
     const result = await tendermint.query('GetIdpNodesInfo', {
-      hash_id:
-        namespace && identifier
-          ? utils.hash(namespace + ':' + identifier)
-          : undefined,
+      reference_group_code,
+      identity_namespace: namespace,
+      identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
       min_ial,
       min_aal,
       node_id_list,
+      supported_request_message_data_url_type_list,
+      mode_list,
     });
     return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {
@@ -656,10 +942,11 @@ export async function getIdpNodesInfo({
   }
 }
 
-export async function getAsNodesByServiceId({ service_id }) {
+export async function getAsNodesByServiceId({ service_id, node_id_list }) {
   try {
     const result = await tendermint.query('GetAsNodesByServiceId', {
       service_id,
+      node_id_list,
     });
     return result != null ? (result.node != null ? result.node : []) : [];
   } catch (error) {
@@ -754,10 +1041,24 @@ export async function getAccessorOwner(accessor_id) {
   }
 }
 
-export async function checkExistingIdentity(hash_id) {
+export async function checkExistingIdentity({
+  reference_group_code,
+  namespace,
+  identifier,
+}) {
+  if (reference_group_code && (namespace || identifier)) {
+    throw new Error(
+      'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
+    );
+  }
+  if (!reference_group_code && (!namespace || !identifier)) {
+    throw new Error('Missing args');
+  }
   try {
     const result = await tendermint.query('CheckExistingIdentity', {
-      hash_id,
+      reference_group_code,
+      identity_namespace: namespace,
+      identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
     });
     if (result == null) {
       return null;
@@ -771,13 +1072,25 @@ export async function checkExistingIdentity(hash_id) {
   }
 }
 
-export async function getIdentityInfo(namespace, identifier, node_id) {
+export async function getIdentityInfo({
+  reference_group_code,
+  namespace,
+  identifier,
+  node_id,
+}) {
+  if (reference_group_code && (namespace || identifier)) {
+    throw new Error(
+      'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
+    );
+  }
+  if (!reference_group_code && (!namespace || !identifier)) {
+    throw new Error('Missing args');
+  }
   try {
-    const sid = namespace + ':' + identifier;
-    const hash_id = utils.hash(sid);
-
     return await tendermint.query('GetIdentityInfo', {
-      hash_id,
+      reference_group_code,
+      identity_namespace: namespace,
+      identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
       node_id,
     });
   } catch (error) {
@@ -788,19 +1101,36 @@ export async function getIdentityInfo(namespace, identifier, node_id) {
   }
 }
 
-export async function getIdentityProof(request_id, idp_id) {
+export async function getReferenceGroupCode(namespace, identifier) {
   try {
-    const result = await tendermint.query('GetIdentityProof', {
-      request_id,
-      idp_id,
+    const result = await tendermint.query('GetReferenceGroupCode', {
+      identity_namespace: namespace,
+      identity_identifier_hash: utils.hash(identifier),
     });
     if (result == null) {
       return null;
     }
-    return result.identity_proof;
+    return result.reference_group_code;
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get identity proof from blockchain',
+      message: 'Cannot get reference group code from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function getReferenceGroupCodeByAccessorId(accessor_id) {
+  try {
+    const result = await tendermint.query('GetReferenceGroupCodeByAccessorID', {
+      accessor_id,
+    });
+    if (result == null) {
+      return null;
+    }
+    return result.reference_group_code;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get reference group code by accessor ID from blockchain',
       cause: error,
     });
   }
@@ -1007,6 +1337,48 @@ export async function removeNodeFromProxyNode(
   } catch (error) {
     throw new CustomError({
       message: 'Cannot remove node from proxy node',
+      cause: error,
+    });
+  }
+}
+
+export async function getAllowedMinIalForRegisterIdentityAtFirstIdp() {
+  try {
+    const result = await tendermint.query(
+      'GetAllowedMinIalForRegisterIdentityAtFirstIdp'
+    );
+    return result != null
+      ? result.min_ial != null
+        ? result.min_ial
+        : null
+      : null;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get allowed min IAL for registerIdentity at first IdP',
+      cause: error,
+    });
+  }
+}
+
+export async function setAllowedMinIalForRegisterIdentityAtFirstIdp(
+  { min_ial },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'SetAllowedMinIalForRegisterIdentityAtFirstIdp',
+      params: { min_ial },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot set allowed min IAL for registerIdentity at first IdP',
       cause: error,
     });
   }

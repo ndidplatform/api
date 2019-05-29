@@ -20,20 +20,15 @@
  *
  */
 
-import { checkAssociated, checkForExistedIdentity } from '.';
+import { getIdentityInfo } from '.';
+
+import uuidv4 from 'uuid/v4';
+
+import operationTypes from './operation_type';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as cacheDb from '../../db/cache';
-import {
-  isAccessorSignCallbackUrlSet,
-  notifyCreateIdentityResultByCallback,
-  accessorSign,
-} from '../idp';
-import {
-  getRequestMessageForCreatingIdentity,
-  getRequestMessageForAddingAccessor,
-} from '../../utils/request_message';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -46,9 +41,13 @@ import logger from '../../logger';
 import * as config from '../../config';
 import { role } from '../../node';
 
+import { createIdentityAfterCloseConsentRequest } from './create_identity_after_consent';
+
+// TODO: bring back synchronous?
+
 /**
- * Create identity
- * Use in mode 3
+ * Register identity to the platform
+ * Use in mode 2,3
  *
  * @param {Object} createIdentityParams
  * @param {string} createIdentityParams.node_id
@@ -56,32 +55,28 @@ import { role } from '../../node';
  * @param {string} createIdentityParams.callback_url
  * @param {string} createIdentityParams.namespace
  * @param {string} createIdentityParams.identifier
+ * @param {Object[]} createIdentityParams.identity_list
+ * @param {string} createIdentityParams.identity_list[].namespace
+ * @param {string} createIdentityParams.identity_list[].identifier
+ * @param {string} createIdentityParams.mode
  * @param {string} createIdentityParams.accessor_type
  * @param {string} createIdentityParams.accessor_public_key
  * @param {string} createIdentityParams.accessor_id
  * @param {number} createIdentityParams.ial
  * @param {string} createIdentityParams.request_message
- * @param {boolean} createIdentityParams.addAccessor
- * @param {Object} options
- * @param {boolean} options.synchronous
- * @param {number} options.apiVersion
  *
- * @returns {{ request_id: string, exist: boolean, accessor_id: string }}
- * Remark: "exist" property is present only when using with synchronous mode
+ * @returns {{ request_id: string, accessor_id: string }}
  */
-export async function createIdentity(
-  createIdentityParams,
-  { synchronous = false, apiVersion } = {}
-) {
+export async function createIdentity(createIdentityParams) {
   let { node_id, ial, accessor_id } = createIdentityParams;
   const {
     reference_id,
     callback_url,
-    namespace,
-    identifier,
+    identity_list,
+    mode,
     accessor_type,
     accessor_public_key,
-    addAccessor,
+    request_message,
   } = createIdentityParams;
 
   if (role === 'proxy') {
@@ -95,70 +90,100 @@ export async function createIdentity(
   }
 
   try {
-    validateKey(accessor_public_key, accessor_type);
-
-    const createIdentityData = await cacheDb.getCreateIdentityDataByReferenceId(
+    const identityRequestData = await cacheDb.getIdentityRequestDataByReferenceId(
       node_id,
       reference_id
     );
-    if (createIdentityData) {
+    if (identityRequestData) {
       throw new CustomError({
         errorType: errorType.DUPLICATE_REFERENCE_ID,
       });
     }
 
+    validateKey(accessor_public_key, accessor_type);
+
     ial = parseFloat(ial);
 
     const namespaceDetails = await tendermintNdid.getNamespaceList();
-    const valid = namespaceDetails.find(
-      (namespaceDetail) => namespaceDetail.namespace === namespace
-    );
-    if (!valid) {
-      throw new CustomError({
-        errorType: errorType.INVALID_NAMESPACE,
-        details: {
-          namespace,
-        },
-      });
-    }
+    let reference_group_code;
+    let existingNamespace;
+    let existingIdentifier;
+    const new_identity_list = [];
+    await Promise.all(
+      identity_list.map(async ({ namespace, identifier }) => {
+        const valid = namespaceDetails.find(
+          (namespaceDetail) => namespaceDetail.namespace === namespace
+        );
+        if (!valid) {
+          throw new CustomError({
+            errorType: errorType.INVALID_NAMESPACE,
+            details: {
+              namespace,
+            },
+          });
+        }
 
-    let associated = await checkAssociated({
-      node_id,
-      namespace,
-      identifier,
-    });
-    //already created identity for this user
-    if (!addAccessor && associated) {
-      throw new CustomError({
-        errorType: errorType.IDENTITY_ALREADY_CREATED,
-        details: {
+        const identityOnNode = await getIdentityInfo({
+          nodeId: node_id,
           namespace,
           identifier,
-        },
-      });
+        });
+        //already created identity for this user
+        if (identityOnNode != null) {
+          throw new CustomError({
+            errorType: errorType.IDENTITY_ALREADY_CREATED,
+            details: {
+              namespace,
+              identifier,
+            },
+          });
+        }
+
+        const identityReferenceGroupCode = await tendermintNdid.getReferenceGroupCode(
+          namespace,
+          identifier
+        );
+
+        if (identityReferenceGroupCode != null) {
+          if (reference_group_code == null) {
+            reference_group_code = identityReferenceGroupCode;
+            existingNamespace = namespace;
+            existingIdentifier = identifier;
+          } else {
+            if (reference_group_code !== identityReferenceGroupCode) {
+              throw new CustomError({
+                errorType: errorType.MULTIPLE_REFERENCE_GROUP_IN_IDENTITY_LIST,
+              });
+            }
+          }
+        } else {
+          new_identity_list.push({
+            namespace,
+            identifier,
+          });
+        }
+      })
+    );
+    if (reference_group_code == null) {
+      reference_group_code = uuidv4();
     }
 
     //check ial
-    let { max_ial } = await tendermintNdid.getNodeInfo(node_id);
+    const { max_ial } = await tendermintNdid.getNodeInfo(node_id);
     if (ial > max_ial) {
       throw new CustomError({
         errorType: errorType.MAXIMUM_IAL_EXCEED,
         details: {
-          namespace,
-          identifier,
+          ial,
         },
       });
     }
 
-    if (!accessor_id) accessor_id = utils.randomBase64Bytes(32);
-
-    if (!(await isAccessorSignCallbackUrlSet())) {
-      throw new CustomError({
-        errorType: errorType.SIGN_WITH_ACCESSOR_KEY_URL_NOT_SET,
-      });
+    if (!accessor_id) {
+      accessor_id = uuidv4();
     }
 
-    let checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(
+    const checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(
       accessor_id
     );
     if (checkDuplicateAccessorId != null) {
@@ -170,54 +195,72 @@ export async function createIdentity(
       });
     }
 
-    const request_id = utils.createRequestId();
+    let request_id;
+    let min_idp;
+    let requestMode;
+    if (mode === 2) {
+      requestMode = 2;
+      min_idp = 0;
+    } else if (mode === 3) {
+      if (existingNamespace && existingIdentifier) {
+        const idpNodes = await tendermintNdid.getIdpNodes({
+          namespace: existingNamespace,
+          identifier: existingIdentifier,
+        });
+        requestMode = 2;
+        for (let i = 0; i < idpNodes.length; i++) {
+          const { mode_list } = idpNodes[i];
+          if (mode_list.includes(3)) {
+            requestMode = 3;
+            break;
+          }
+        }
+        if (idpNodes.length > 0) {
+          if (request_message == null) {
+            throw new CustomError({
+              errorType: errorType.REQUEST_MESSAGE_NEEDED,
+            });
+          }
+          min_idp = 1;
+          request_id = utils.createRequestId();
+        } else {
+          min_idp = 0;
+        }
+      } else {
+        requestMode = 3;
+        min_idp = 0;
+      }
+    }
 
-    await cacheDb.setCreateIdentityDataByReferenceId(node_id, reference_id, {
+    await cacheDb.setIdentityRequestDataByReferenceId(node_id, reference_id, {
+      type: operationTypes.REGISTER_IDENTITY,
       request_id,
       accessor_id,
-      associated,
     });
 
-    if (synchronous) {
-      const sid = namespace + ':' + identifier;
-      const hash_id = utils.hash(sid);
-      const secret = await createSecret({
-        node_id,
-        sid,
-        hash_id,
-        accessor_id,
-        reference_id,
-        accessor_public_key,
-      });
-      const exist = await checkForExistedIdentity({
-        namespace,
-        identifier,
-        ial,
-      });
-      createIdentityInternalAsync(...arguments, {
-        nodeId: node_id,
-        request_id,
-        associated,
-        generated_accessor_id: accessor_id,
-        exist,
-        secret,
-      });
-      return { request_id, exist, accessor_id };
-    } else {
-      await cacheDb.setCallbackUrlByReferenceId(
-        node_id,
-        reference_id,
-        callback_url
-      );
+    await cacheDb.setCallbackUrlByReferenceId(
+      node_id,
+      reference_id,
+      callback_url
+    );
 
-      createIdentityInternalAsync(...arguments, {
-        nodeId: node_id,
-        request_id,
-        associated,
-        generated_accessor_id: accessor_id,
-      });
-      return { request_id, accessor_id };
-    }
+    createIdentityInternalAsync(...arguments, {
+      nodeId: node_id,
+      request_id,
+      generated_accessor_id: accessor_id,
+      reference_group_code,
+      existingNamespace,
+      existingIdentifier,
+      new_identity_list,
+      requestMode,
+      min_idp,
+    });
+
+    return {
+      request_id, // this prop exists only if consent request is needed (identity exists on platform)
+      exist: !!(existingNamespace && existingIdentifier),
+      accessor_id,
+    };
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot create new identity',
@@ -232,7 +275,7 @@ export async function createIdentity(
       )
     ) {
       await Promise.all([
-        cacheDb.removeCreateIdentityDataByReferenceId(node_id, reference_id),
+        cacheDb.removeIdentityRequestDataByReferenceId(node_id, reference_id),
         cacheDb.removeCallbackUrlByReferenceId(node_id, reference_id),
       ]);
     }
@@ -245,97 +288,95 @@ async function createIdentityInternalAsync(
   {
     reference_id,
     callback_url,
-    namespace,
-    identifier,
+    mode,
     accessor_type,
     accessor_public_key,
     accessor_id,
     ial,
     request_message,
-    addAccessor,
   },
-  { synchronous = false, apiVersion } = {},
-  { nodeId, request_id, associated, generated_accessor_id, exist, secret }
+  {
+    nodeId,
+    request_id,
+    generated_accessor_id,
+    reference_group_code,
+    existingNamespace,
+    existingIdentifier,
+    new_identity_list,
+    requestMode,
+    min_idp,
+  }
 ) {
   try {
-    if (accessor_id == null) {
-      accessor_id = generated_accessor_id;
-    }
+    const identity = {
+      type: operationTypes.REGISTER_IDENTITY,
+      reference_group_code,
+      new_identity_list,
+      ial,
+      mode,
+      accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
+      accessor_public_key,
+      accessor_type,
+      reference_id,
+    };
 
-    const sid = namespace + ':' + identifier;
-    const hash_id = utils.hash(sid);
-
-    if (secret == null) {
-      secret = await createSecret({
-        node_id: nodeId,
-        sid,
-        hash_id,
-        accessor_id,
-        reference_id,
-        accessor_public_key,
-      });
-    }
-
-    if (exist == null) {
-      // async mode
-      await checkForExistedIdentity(
-        { node_id: nodeId, namespace, identifier, ial },
+    if (min_idp === 0) {
+      createIdentityAfterCloseConsentRequest(
+        {},
         {
+          nodeId,
+          identity,
+        },
+        {
+          callbackFnName: 'identity.afterIdentityOperationSuccess',
+          callbackAdditionalArgs: [{ nodeId }],
+        }
+      );
+    } else {
+      await common.createRequest(
+        {
+          node_id: nodeId,
+          namespace: existingNamespace
+            ? existingNamespace
+            : new_identity_list[0].namespace,
+          identifier: existingIdentifier
+            ? existingIdentifier
+            : new_identity_list[0].identifier,
+          reference_id,
+          idp_id_list: [],
+          callback_url: 'SYS_GEN_CREATE_IDENTITY',
+          data_request_list: [],
+          request_message,
+          min_ial: 1.1,
+          min_aal: 1,
+          min_idp,
+          request_timeout: 86400,
+          mode: requestMode,
+          purpose: operationTypes.REGISTER_IDENTITY,
+        },
+        {
+          synchronous: false,
+          sendCallbackToClient: false,
           callbackFnName:
-            'identity.createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain',
+            'identity.createIdentityInternalAsyncAfterCreateRequestBlockchain',
           callbackAdditionalArgs: [
             {
               reference_id,
               callback_url,
-              namespace,
-              identifier,
-              accessor_type,
-              accessor_public_key,
               accessor_id,
-              ial,
-              request_message,
-              addAccessor,
             },
-            { synchronous, apiVersion },
             {
               nodeId,
               request_id,
-              associated,
               generated_accessor_id,
-              secret,
-              sid,
-              hash_id,
+              existingNamespace,
+              existingIdentifier,
+              identity,
             },
           ],
           saveForRetryOnChainDisabled: true,
-        }
-      );
-    } else {
-      // sync mode
-      await createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain(
-        { exist },
-        {
-          reference_id,
-          callback_url,
-          namespace,
-          identifier,
-          accessor_type,
-          accessor_public_key,
-          accessor_id,
-          ial,
-          request_message,
-          addAccessor,
         },
-        { synchronous, apiVersion },
-        {
-          nodeId,
-          request_id,
-          associated,
-          generated_accessor_id,
-          secret,
-          sid,
-          hash_id,
-        }
+        { request_id }
       );
     }
   } catch (error) {
@@ -347,219 +388,19 @@ async function createIdentityInternalAsync(
       err: error,
     });
 
-    if (!synchronous) {
-      await callbackToClient({
-        callbackUrl: callback_url,
-        body: {
-          node_id: nodeId,
-          type: addAccessor
-            ? 'add_accessor_request_result'
-            : 'create_identity_request_result',
-          success: false,
-          reference_id,
-          request_id,
-          accessor_id:
-            accessor_id != null ? accessor_id : generated_accessor_id,
-          error: getErrorObjectForClient(error),
-        },
-        retry: true,
-      });
-    }
-
-    await createIdentityCleanUpOnError({
-      nodeId,
-      requestId: request_id,
-      referenceId: reference_id,
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
+        node_id: nodeId,
+        type: 'create_identity_request_result',
+        success: false,
+        reference_id,
+        request_id,
+        accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
+        error: getErrorObjectForClient(error),
+      },
+      retry: true,
     });
-
-    throw error;
-  }
-}
-
-export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockchain(
-  { exist, error },
-  {
-    reference_id,
-    callback_url,
-    namespace,
-    identifier,
-    accessor_type,
-    accessor_public_key,
-    accessor_id,
-    ial,
-    request_message,
-    addAccessor,
-  },
-  { synchronous = false, apiVersion } = {},
-  {
-    nodeId,
-    request_id,
-    associated,
-    generated_accessor_id,
-    secret,
-    sid,
-    hash_id,
-  }
-) {
-  try {
-    if (error) throw error;
-
-    if (!synchronous) {
-      await common.createRequest(
-        {
-          node_id: nodeId,
-          namespace,
-          identifier,
-          reference_id,
-          idp_id_list: [],
-          callback_url: 'SYS_GEN_CREATE_IDENTITY',
-          data_request_list: [],
-          request_message:
-            request_message != null
-              ? request_message
-              : addAccessor
-              ? getRequestMessageForAddingAccessor({
-                  namespace,
-                  identifier,
-                  reference_id,
-                  node_id: config.nodeId,
-                })
-              : getRequestMessageForCreatingIdentity({
-                  namespace,
-                  identifier,
-                  reference_id,
-                  node_id: config.nodeId,
-                }),
-          min_ial: 1.1,
-          min_aal: 1,
-          min_idp: exist ? 1 : 0,
-          request_timeout: 86400,
-          mode: 3,
-          purpose: 'AddAccessor',
-        },
-        {
-          synchronous: false,
-          sendCallbackToClient: false,
-          callbackFnName:
-            'identity.createIdentityInternalAsyncAfterCreateRequestBlockchain',
-          callbackAdditionalArgs: [
-            {
-              reference_id,
-              callback_url,
-              namespace,
-              identifier,
-              accessor_type,
-              accessor_public_key,
-              accessor_id,
-              ial,
-              addAccessor,
-            },
-            { synchronous, apiVersion },
-            {
-              nodeId,
-              exist,
-              request_id,
-              sid,
-              hash_id,
-              generated_accessor_id,
-              associated,
-              secret,
-            },
-          ],
-          saveForRetryOnChainDisabled: true,
-        },
-        { request_id }
-      );
-    } else {
-      const { chainId, height } = await common.createRequest(
-        {
-          node_id: nodeId,
-          namespace,
-          identifier,
-          reference_id,
-          idp_id_list: [],
-          callback_url: 'SYS_GEN_CREATE_IDENTITY',
-          data_request_list: [],
-          request_message:
-            request_message != null
-              ? request_message
-              : addAccessor
-              ? getRequestMessageForAddingAccessor({
-                  namespace,
-                  identifier,
-                  reference_id,
-                  node_id: config.nodeId,
-                })
-              : getRequestMessageForCreatingIdentity({
-                  namespace,
-                  identifier,
-                  reference_id,
-                  node_id: config.nodeId,
-                }),
-          min_ial: 1.1,
-          min_aal: 1,
-          min_idp: exist ? 1 : 0,
-          request_timeout: 86400,
-          mode: 3,
-          purpose: 'AddAccessor',
-        },
-        { synchronous: true },
-        { request_id }
-      );
-      await createIdentityInternalAsyncAfterCreateRequestBlockchain(
-        { chainId, height },
-        {
-          reference_id,
-          callback_url,
-          namespace,
-          identifier,
-          accessor_type,
-          accessor_public_key,
-          accessor_id,
-          ial,
-          addAccessor,
-        },
-        { synchronous, apiVersion },
-        {
-          nodeId,
-          exist,
-          request_id,
-          sid,
-          hash_id,
-          generated_accessor_id,
-          associated,
-          secret,
-        }
-      );
-    }
-  } catch (error) {
-    logger.error({
-      message:
-        'Create identity internal async after existed identity check error',
-      originalArgs: arguments[0],
-      options: arguments[1],
-      additionalArgs: arguments[2],
-      err: error,
-    });
-
-    if (!synchronous) {
-      await callbackToClient({
-        callbackUrl: callback_url,
-        body: {
-          node_id: nodeId,
-          type: addAccessor
-            ? 'add_accessor_request_result'
-            : 'create_identity_request_result',
-          success: false,
-          reference_id,
-          request_id,
-          accessor_id:
-            accessor_id != null ? accessor_id : generated_accessor_id,
-          error: getErrorObjectForClient(error),
-        },
-        retry: true,
-      });
-    }
 
     await createIdentityCleanUpOnError({
       nodeId,
@@ -573,156 +414,36 @@ export async function createIdentityInternalAsyncAfterExistedIdentityCheckBlockc
 
 export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
   { chainId, height, error },
-  {
-    reference_id,
-    callback_url,
-    namespace,
-    identifier,
-    accessor_type,
-    accessor_public_key,
-    accessor_id,
-    ial,
-    addAccessor,
-  },
-  { synchronous = false, apiVersion } = {},
+  { reference_id, callback_url, accessor_id },
   {
     nodeId,
-    exist,
     request_id,
-    sid,
-    hash_id,
     generated_accessor_id,
-    associated,
-    secret,
+    existingNamespace,
+    existingIdentifier,
+    identity,
   }
 ) {
   try {
     if (error) throw error;
 
-    if (exist) {
-      if (!synchronous) {
-        await callbackToClient({
-          callbackUrl: callback_url,
-          body: addAccessor
-            ? {
-                node_id: nodeId,
-                type: 'add_accessor_request_result',
-                reference_id,
-                request_id,
-                accessor_id,
-                creation_block_height: `${chainId}:${height}`,
-                success: true,
-              }
-            : {
-                node_id: nodeId,
-                type: 'create_identity_request_result',
-                reference_id,
-                request_id,
-                accessor_id,
-                creation_block_height: `${chainId}:${height}`,
-                success: true,
-                exist: true,
-              },
-          retry: true,
-        });
-      }
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
+        node_id: nodeId,
+        type: 'create_identity_request_result',
+        reference_id,
+        request_id,
+        accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
+        creation_block_height: `${chainId}:${height}`,
+        success: true,
+        exist: !!(existingNamespace && existingIdentifier),
+      },
+      retry: true,
+    });
 
-      //save data for add accessor to persistent
-      await cacheDb.setIdentityFromRequestId(nodeId, request_id, {
-        accessor_type,
-        accessor_id,
-        accessor_public_key,
-        hash_id,
-        ial,
-        sid,
-        associated,
-        secret,
-      });
-    } else {
-      if (!synchronous) {
-        await callbackToClient({
-          callbackUrl: callback_url,
-          body: addAccessor
-            ? {
-                node_id: nodeId,
-                type: 'add_accessor_request_result',
-                reference_id,
-                request_id,
-                accessor_id,
-                creation_block_height: `${chainId}:${height}`,
-                success: true,
-              }
-            : {
-                node_id: nodeId,
-                type: 'create_identity_request_result',
-                reference_id,
-                request_id,
-                accessor_id,
-                creation_block_height: `${chainId}:${height}`,
-                success: true,
-                exist: false,
-              },
-          retry: true,
-        });
-      }
-
-      const accessor_group_id = utils.randomBase64Bytes(32);
-
-      if (!synchronous) {
-        await tendermintNdid.registerAccessor(
-          {
-            accessor_type,
-            accessor_public_key,
-            accessor_id,
-            accessor_group_id,
-          },
-          nodeId,
-          'identity.createIdentityInternalAsyncAfterBlockchain',
-          [
-            {
-              nodeId,
-              reference_id,
-              callback_url,
-              request_id,
-              namespace,
-              identifier,
-              secret,
-              addAccessor,
-              accessor_id,
-              generated_accessor_id,
-            },
-            { synchronous, apiVersion },
-          ],
-          true
-        );
-      } else {
-        await tendermintNdid.registerAccessor(
-          {
-            accessor_type,
-            accessor_public_key,
-            accessor_id,
-            accessor_group_id,
-          },
-          nodeId
-        );
-        await createIdentityInternalAsyncAfterBlockchain(
-          {},
-          {
-            nodeId,
-            reference_id,
-            callback_url,
-            request_id,
-            namespace,
-            identifier,
-            secret,
-            addAccessor,
-            accessor_id,
-            generated_accessor_id,
-          },
-          { synchronous, apiVersion }
-        );
-      }
-    }
+    // save data for later use after got consent from user (in mode 3)
+    await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
   } catch (error) {
     logger.error({
       message: 'Create identity internal async after create request error',
@@ -733,216 +454,19 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
       err: error,
     });
 
-    if (!synchronous) {
-      await callbackToClient({
-        callbackUrl: callback_url,
-        body: {
-          node_id: nodeId,
-          type: addAccessor
-            ? 'add_accessor_request_result'
-            : 'create_identity_request_result',
-          success: false,
-          reference_id,
-          request_id,
-          accessor_id:
-            accessor_id != null ? accessor_id : generated_accessor_id,
-          error: getErrorObjectForClient(error),
-        },
-        retry: true,
-      });
-    }
-
-    await createIdentityCleanUpOnError({
-      nodeId,
-      requestId: request_id,
-      referenceId: reference_id,
-    });
-
-    throw error;
-  }
-}
-
-export async function createIdentityInternalAsyncAfterBlockchain(
-  { error },
-  {
-    nodeId,
-    reference_id,
-    callback_url,
-    request_id,
-    namespace,
-    identifier,
-    secret,
-    addAccessor,
-    accessor_id,
-    generated_accessor_id,
-  },
-  { synchronous = true, apiVersion } = {}
-) {
-  try {
-    if (error) throw error;
-
-    const hash_id = utils.hash(namespace + ':' + identifier);
-    if (!synchronous) {
-      await tendermintNdid.clearRegisterIdentityTimeout(
-        hash_id,
-        nodeId,
-        'identity.createIdentityInternalAsyncAfterClearRegisterIdentityTimeout',
-        [
-          {
-            nodeId,
-            reference_id,
-            callback_url,
-            request_id,
-            namespace,
-            identifier,
-            secret,
-            addAccessor,
-            accessor_id,
-            generated_accessor_id,
-          },
-          { synchronous, apiVersion },
-        ],
-        true
-      );
-    } else {
-      await tendermintNdid.clearRegisterIdentityTimeout(hash_id, nodeId);
-      await createIdentityInternalAsyncAfterClearRegisterIdentityTimeout(
-        {},
-        {
-          nodeId,
-          reference_id,
-          callback_url,
-          request_id,
-          namespace,
-          identifier,
-          secret,
-          addAccessor,
-          accessor_id,
-          generated_accessor_id,
-        },
-        { synchronous, apiVersion }
-      );
-    }
-  } catch (error) {
-    logger.error({
-      message: 'Create identity internal async after blockchain error',
-      tendermintResult: arguments[0],
-      additionalArgs: arguments[1],
-      options: arguments[2],
-      err: error,
-    });
-
-    if (!synchronous) {
-      await callbackToClient({
-        callbackUrl: callback_url,
-        body: {
-          node_id: nodeId,
-          type: addAccessor
-            ? 'add_accessor_request_result'
-            : 'create_identity_request_result',
-          success: false,
-          reference_id,
-          request_id,
-          accessor_id:
-            accessor_id != null ? accessor_id : generated_accessor_id,
-          error: getErrorObjectForClient(error),
-        },
-        retry: true,
-      });
-    }
-
-    await createIdentityCleanUpOnError({
-      nodeId,
-      requestId: request_id,
-      referenceId: reference_id,
-    });
-
-    throw error;
-  }
-}
-
-export async function createIdentityInternalAsyncAfterClearRegisterIdentityTimeout(
-  { error },
-  {
-    nodeId,
-    reference_id,
-    callback_url,
-    request_id,
-    secret,
-    addAccessor,
-    accessor_id,
-    generated_accessor_id,
-  },
-  { synchronous = true, apiVersion } = {}
-) {
-  try {
-    if (error) throw error;
-
-    if (apiVersion === 1) {
-      notifyCreateIdentityResultByCallback({
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
+        node_id: nodeId,
+        type: 'create_identity_request_result',
+        success: false,
         reference_id,
         request_id,
-        success: true,
-        secret,
-      });
-    } else {
-      await callbackToClient({
-        callbackUrl: callback_url,
-        body: {
-          node_id: nodeId,
-          type: 'create_identity_result',
-          success: true,
-          reference_id,
-          request_id,
-          secret,
-        },
-        retry: true,
-      });
-      cacheDb.removeCallbackUrlByReferenceId(nodeId, reference_id);
-      await common.closeRequest(
-        {
-          node_id: nodeId,
-          request_id,
-        },
-        {
-          synchronous: false,
-          sendCallbackToClient: false,
-          saveForRetryOnChainDisabled: true,
-        }
-      );
-    }
-    cacheDb.removeCreateIdentityDataByReferenceId(nodeId, reference_id);
-    cacheDb.removeRequestIdByReferenceId(nodeId, reference_id);
-    cacheDb.removeRequestData(nodeId, request_id);
-    cacheDb.removeRequestCreationMetadata(nodeId, request_id);
-  } catch (error) {
-    logger.error({
-      message:
-        'Create identity internal async after clear MQ dest. timeout error',
-      tendermintResult: arguments[0],
-      additionalArgs: arguments[1],
-      options: arguments[2],
-      err: error,
+        accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
+        error: getErrorObjectForClient(error),
+      },
+      retry: true,
     });
-
-    if (!synchronous) {
-      await callbackToClient({
-        callbackUrl: callback_url,
-        body: {
-          node_id: nodeId,
-          type: addAccessor
-            ? 'add_accessor_request_result'
-            : 'create_identity_request_result',
-          success: false,
-          reference_id,
-          request_id,
-          accessor_id:
-            accessor_id != null ? accessor_id : generated_accessor_id,
-          error: getErrorObjectForClient(error),
-        },
-        retry: true,
-      });
-    }
 
     await createIdentityCleanUpOnError({
       nodeId,
@@ -961,76 +485,7 @@ async function createIdentityCleanUpOnError({
 }) {
   await Promise.all([
     cacheDb.removeCallbackUrlByReferenceId(nodeId, referenceId),
-    cacheDb.removeCreateIdentityDataByReferenceId(nodeId, referenceId),
+    cacheDb.removeIdentityRequestDataByReferenceId(nodeId, referenceId),
     cacheDb.removeIdentityFromRequestId(nodeId, requestId),
   ]);
-}
-
-async function createSecret({
-  node_id,
-  sid,
-  hash_id,
-  accessor_id,
-  reference_id,
-  accessor_public_key,
-}) {
-  return await accessorSign({
-    node_id,
-    sid,
-    hash_id,
-    accessor_id,
-    accessor_public_key,
-    reference_id,
-  });
-}
-
-export async function calculateSecret({
-  node_id,
-  accessor_id,
-  namespace,
-  identifier,
-  reference_id,
-}) {
-  if (role === 'proxy') {
-    if (node_id == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_NODE_ID,
-      });
-    }
-  } else {
-    node_id = config.nodeId;
-  }
-
-  const sid = namespace + ':' + identifier;
-  const hash_id = utils.hash(sid);
-  const accessor_public_key = await tendermintNdid.getAccessorKey(accessor_id);
-
-  if (accessor_public_key == null) {
-    throw new CustomError({
-      errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE,
-      details: {
-        accessor_id,
-      },
-    });
-  }
-
-  const isAssociate = await checkAssociated({ node_id, namespace, identifier });
-  if (!isAssociate) {
-    throw new CustomError({
-      errorType: errorType.IDENTITY_NOT_FOUND,
-      details: {
-        namespace,
-        identifier,
-      },
-    });
-  }
-
-  return await createSecret({
-    node_id,
-    sid,
-    hash_id,
-    accessor_id,
-    reference_id,
-    accessor_public_key,
-  });
 }

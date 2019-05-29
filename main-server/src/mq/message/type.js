@@ -21,10 +21,8 @@
  */
 
 const TYPES = {
-  CHALLENGE_REQUEST: 'challenge_request',
   IDP_RESPONSE: 'idp_response',
   AS_DATA_RESPONSE: 'as_data_response',
-  CHALLENGE_RESPONSE: 'challenge_response',
   CONSENT_REQUEST: 'consent_request',
   DATA_REQUEST: 'data_request',
 };

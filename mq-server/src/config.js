@@ -48,6 +48,26 @@ export const grpcExpectedClientPingInterval = process.env
   ? parseInt(process.env.GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS)
   : 30000;
 
+export const grpcSsl = process.env.GRPC_SSL === 'true';
+
+export const grpcSslRootCertFilePath = process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
+  ? process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
+  : env === 'development'
+  ? path.join(__dirname, '..', '..', 'dev_cert', 'grpc', 'ca.crt')
+  : null;
+
+export const grpcSslKeyFilePath = process.env.GRPC_SSL_KEY_FILE_PATH
+  ? process.env.GRPC_SSL_KEY_FILE_PATH
+  : env === 'development'
+  ? path.join(__dirname, '..', '..', 'dev_cert', 'grpc', 'server.key')
+  : null;
+
+export const grpcSslCertFilePath = process.env.GRPC_SSL_CERT_FILE_PATH
+  ? process.env.GRPC_SSL_CERT_FILE_PATH
+  : env === 'development'
+  ? path.join(__dirname, '..', '..', 'dev_cert', 'grpc', 'server.crt')
+  : null;
+
 export const nodeId = process.env.NODE_ID;
 
 export const logLevel =

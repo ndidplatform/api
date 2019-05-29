@@ -28,9 +28,7 @@ import logger from '../../logger';
 
 import readyHandler from './middleware/ready_handler';
 import errorHandler from './middleware/error_handler';
-import ndidRouter from './ndid';
-import apiV1Router from './v1';
-import apiV2Router from './v2';
+import apiV3Router from './v3';
 import serverInfo from './server_info';
 import reinitNodeKeys from './reinit_node_keys';
 import {
@@ -113,11 +111,8 @@ router.get('/reinit_node_keys', reinitNodeKeys);
 
 router.use(readyHandler);
 
-router.use('/ndid', ndidRouter);
-
-router.use(apiV2Router);
-router.use('/v1', apiV1Router);
-router.use('/v2', apiV2Router);
+router.use(apiV3Router);
+router.use('/v3', apiV3Router);
 
 router.use(errorHandler);
 

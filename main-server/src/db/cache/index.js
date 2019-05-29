@@ -625,80 +625,6 @@ export function removeIdpResponseValidList(nodeId, requestId) {
   });
 }
 
-export function getPublicProofReceivedFromMQ(nodeId, responseId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'publicProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-    valueName: 'publicProofArray',
-  });
-}
-
-export function setPublicProofReceivedFromMQ(
-  nodeId,
-  responseId,
-  publicProofArray
-) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'publicProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-    valueName: 'publicProofArray',
-    value: publicProofArray,
-  });
-}
-
-export function removePublicProofReceivedFromMQ(nodeId, responseId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'publicProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-  });
-}
-
-export function getPrivateProofReceivedFromMQ(nodeId, responseId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'privateProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-    valueName: 'privateProofObject',
-  });
-}
-
-export function setPrivateProofReceivedFromMQ(
-  nodeId,
-  responseId,
-  privateProofObject
-) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'privateProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-    valueName: 'privateProofObject',
-    value: privateProofObject,
-  });
-}
-
-export function removePrivateProofReceivedFromMQ(nodeId, responseId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'privateProofReceivedFromMQ',
-    keyName: 'responseId',
-    key: responseId,
-  });
-}
-
 export function getRequestCreationMetadata(nodeId, requestId) {
   return db.get({
     nodeId,
@@ -735,43 +661,6 @@ export function removeRequestCreationMetadata(nodeId, requestId) {
 //
 // Used by RP
 //
-
-export function getPrivateProofObjectListInRequest(nodeId, requestId) {
-  return db.getList({
-    nodeId,
-    dbName,
-    name: 'privateProofObjectListInRequest',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'privateProofObjectList',
-  });
-}
-
-export function addPrivateProofObjectInRequest(
-  nodeId,
-  requestId,
-  privateProofObject
-) {
-  return db.pushToList({
-    nodeId,
-    dbName,
-    name: 'privateProofObjectListInRequest',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'privateProofObjectList',
-    value: privateProofObject,
-  });
-}
-
-export function removePrivateProofObjectListInRequest(nodeId, requestId) {
-  return db.removeList({
-    nodeId,
-    dbName,
-    name: 'privateProofObjectListInRequest',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
 
 export function getDataResponsefromAS(nodeId, asResponseId) {
   return db.get({
@@ -856,6 +745,43 @@ export function removeAllDataFromAS(nodeId) {
   });
 }
 
+export function getResponsePrivateDataListForRequest(nodeId, requestId) {
+  return db.getList({
+    nodeId,
+    dbName,
+    name: 'responsePrivateDataForRequest',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'responsePrivateDataList',
+  });
+}
+
+export function addResponsePrivateDataForRequest(
+  nodeId,
+  requestId,
+  responsePrivateData
+) {
+  return db.pushToList({
+    nodeId,
+    dbName,
+    name: 'responsePrivateDataForRequest',
+    keyName: 'requestId',
+    key: requestId,
+    valueName: 'responsePrivateDataList',
+    value: responsePrivateData,
+  });
+}
+
+export function removeResponsePrivateDataListForRequest(nodeId, requestId) {
+  return db.removeList({
+    nodeId,
+    dbName,
+    name: 'responsePrivateDataForRequest',
+    keyName: 'requestId',
+    key: requestId,
+  });
+}
+
 //
 // Used by IdP
 //
@@ -888,109 +814,6 @@ export function removeRequestToProcessReceivedFromMQ(nodeId, requestId) {
     nodeId,
     dbName,
     name: 'requestToProcessReceivedFromMQ',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
-export function getAccessorIdToRevokeFromRequestId(nodeId, requestId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'accessorIdToRevokeFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'accessorId',
-  });
-}
-
-export function setAccessorIdToRevokeFromRequestId(
-  nodeId,
-  requestId,
-  accessorId
-) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'accessorIdToRevokeFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'accessorId',
-    value: accessorId,
-  });
-}
-
-export function removeAccessorIdToRevokeFromRequestId(nodeId, requestId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'accessorIdToRevokeFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
-export function getResponseFromRequestId(nodeId, requestId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'responseDataFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'response',
-  });
-}
-
-export function setResponseFromRequestId(nodeId, requestId, response) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'responseDataFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'response',
-    value: response,
-  });
-}
-
-export function removeResponseFromRequestId(nodeId, requestId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'responseDataFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-  });
-}
-
-export function getRPIdFromRequestId(nodeId, requestId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'rpIdFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'rp_id',
-  });
-}
-
-export function setRPIdFromRequestId(nodeId, requestId, rp_id) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'rpIdFromRequestId',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'rp_id',
-    value: rp_id,
-  });
-}
-
-export function removeRPIdFromRequestId(nodeId, requestId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'rpIdFromRequestId',
     keyName: 'requestId',
     key: requestId,
   });
@@ -1029,110 +852,40 @@ export function removeIdentityFromRequestId(nodeId, requestId) {
   });
 }
 
-export function getCreateIdentityDataByReferenceId(nodeId, referenceId) {
+export function getIdentityRequestDataByReferenceId(nodeId, referenceId) {
   return db.get({
     nodeId,
     dbName,
-    name: 'createIdentityDataReferenceIdMapping',
+    name: 'identityRequestDataReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
-    valueName: 'createIdentityData',
+    valueName: 'identityRequestData',
   });
 }
 
-export function setCreateIdentityDataByReferenceId(
+export function setIdentityRequestDataByReferenceId(
   nodeId,
   referenceId,
-  createIdentityData
+  identityRequestData
 ) {
   return db.set({
     nodeId,
     dbName,
-    name: 'createIdentityDataReferenceIdMapping',
+    name: 'identityRequestDataReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
-    valueName: 'createIdentityData',
-    value: createIdentityData,
+    valueName: 'identityRequestData',
+    value: identityRequestData,
   });
 }
 
-export function removeCreateIdentityDataByReferenceId(nodeId, referenceId) {
+export function removeIdentityRequestDataByReferenceId(nodeId, referenceId) {
   return db.remove({
     nodeId,
     dbName,
-    name: 'createIdentityDataReferenceIdMapping',
+    name: 'identityRequestDataReferenceIdMapping',
     keyName: 'referenceId',
     key: referenceId,
-  });
-}
-
-export function getRevokeAccessorDataByReferenceId(nodeId, referenceId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'revokeAccessorDataReferenceIdMapping',
-    keyName: 'referenceId',
-    key: referenceId,
-    valueName: 'revokeAccessorData',
-  });
-}
-
-export function setRevokeAccessorDataByReferenceId(
-  nodeId,
-  referenceId,
-  revokeAccessorData
-) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'revokeAccessorDataReferenceIdMapping',
-    keyName: 'referenceId',
-    key: referenceId,
-    valueName: 'revokeAccessorData',
-    value: revokeAccessorData,
-  });
-}
-
-export function removeRevokeAccessorDataByReferenceId(nodeId, referenceId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'revokeAccessorDataReferenceIdMapping',
-    keyName: 'referenceId',
-    key: referenceId,
-  });
-}
-
-export function getRequestMessage(nodeId, requestId) {
-  return db.get({
-    nodeId,
-    dbName,
-    name: 'requestMessage',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'requestMessageAndSalt',
-  });
-}
-
-export function setRequestMessage(nodeId, requestId, requestMessageAndSalt) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'requestMessage',
-    keyName: 'requestId',
-    key: requestId,
-    valueName: 'requestMessageAndSalt',
-    value: requestMessageAndSalt,
-  });
-}
-
-export function removeRequestMessage(nodeId, requestId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'requestMessage',
-    keyName: 'requestId',
-    key: requestId,
   });
 }
 
@@ -1245,5 +998,47 @@ export function removeAllTasksFromRequestProcessQueue(nodeId, requestId) {
     name: 'persistentRequestProcessQueue',
     keyName: 'requestId',
     key: requestId,
+  });
+}
+
+export function getAllRetryTendermintTransaction(nodeId) {
+  return db.getAll({
+    nodeId,
+    dbName,
+    name: 'tendermintTransaction',
+    keyName: 'txHash',
+    valueName: 'data',
+  });
+}
+
+export function getRetryTendermintTransaction(nodeId, txHash) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'tendermintTransaction',
+    keyName: 'txHash',
+    key: txHash,
+  });
+}
+
+export function setRetryTendermintTransaction(nodeId, txHash, data) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'tendermintTransaction',
+    keyName: 'txHash',
+    key: txHash,
+    valueName: 'data',
+    value: data,
+  });
+}
+
+export function removeRetryTendermintTransaction(nodeId, txHash) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'tendermintTransaction',
+    keyName: 'txHash',
+    key: txHash,
   });
 }

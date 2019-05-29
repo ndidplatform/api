@@ -20,32 +20,28 @@
  *
  */
 
+import { accessorEncrypt } from '.';
+
+import { getIdentityInfo } from '../identity';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as tendermint from '../../tendermint';
 import * as cacheDb from '../../db/cache';
 import * as mq from '../../mq';
 import privateMessageType from '../../mq/message/type';
 
-import * as utils from '../../utils';
 import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
+import * as utils from '../../utils';
 import { getErrorObjectForClient } from '../../utils/error';
 import logger from '../../logger';
 
 import * as config from '../../config';
 import { role } from '../../node';
 
-export async function requestChallengeAndCreateResponse(createResponseParams) {
+export async function createResponse(createResponseParams) {
   let { node_id } = createResponseParams;
-  const {
-    request_id,
-    ial,
-    aal,
-    signature,
-    secret,
-    accessor_id,
-  } = createResponseParams;
+  const { request_id, ial, aal, accessor_id } = createResponseParams;
 
   if (role === 'proxy') {
     if (node_id == null) {
@@ -103,23 +99,68 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
       });
     }
 
-    const savedRpId = await cacheDb.getRPIdFromRequestId(node_id, request_id);
-    if (!savedRpId) {
+    const requestData = await cacheDb.getRequestReceivedFromMQ(
+      node_id,
+      request_id
+    );
+    if (!requestData) {
       throw new CustomError({
         errorType: errorType.UNKNOWN_CONSENT_REQUEST,
       });
     }
 
-    if (request.mode === 3) {
+    let accessorPublicKey;
+    if (request.mode === 2 || request.mode === 3) {
+      let referenceGroupCode;
+      if (requestData.reference_group_code != null) {
+        referenceGroupCode = requestData.reference_group_code;
+      } else {
+        // Incoming request without indentity onboard/created on the platform
+        // doesn't have reference group code
+        // (on-the-fly onboard flow)
+        referenceGroupCode = await tendermintNdid.getReferenceGroupCode(
+          requestData.namespace,
+          requestData.identifier
+        );
+        if (referenceGroupCode == null) {
+          throw new CustomError({
+            errorType: errorType.IDENTITY_NOT_FOUND,
+            details: {
+              namespace: requestData.namespace,
+              identifier: requestData.identifier,
+            },
+          });
+        }
+      }
+      //check association mode list
+      //idp associate with only mode 2 won't be able to response mode 3 request
+      const identityInfo = await getIdentityInfo({
+        nodeId: node_id,
+        referenceGroupCode,
+      });
+      if (identityInfo == null) {
+        throw new CustomError({
+          errorType: errorType.IDENTITY_NOT_FOUND_ON_IDP,
+          details: {
+            referenceGroupCode,
+            nodeId: node_id,
+          },
+        });
+      }
+      const { mode_list, ial: declaredIal } = identityInfo;
+      if (!mode_list.includes(request.mode)) {
+        throw new CustomError({
+          errorType: errorType.IDENTITY_MODE_MISMATCH,
+        });
+      }
+
       if (accessor_id == null) {
         throw new CustomError({
           errorType: errorType.ACCESSOR_ID_NEEDED,
         });
       }
 
-      const accessorPublicKey = await tendermintNdid.getAccessorKey(
-        accessor_id
-      );
+      accessorPublicKey = await tendermintNdid.getAccessorKey(accessor_id);
       if (accessorPublicKey == null) {
         throw new CustomError({
           errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE,
@@ -129,114 +170,24 @@ export async function requestChallengeAndCreateResponse(createResponseParams) {
         });
       }
 
-      // Verify accessor signature
-      const { request_message, initial_salt } = await cacheDb.getRequestMessage(
-        node_id,
-        request_id
-      );
-      const signatureValid = utils.verifyResponseSignature(
-        signature,
-        accessorPublicKey,
-        request_message,
-        initial_salt,
-        request_id
-      );
-      if (!signatureValid) {
-        throw new CustomError({
-          errorType: errorType.INVALID_ACCESSOR_SIGNATURE,
-        });
-      }
-
-      if (secret == null) {
-        throw new CustomError({
-          errorType: errorType.SECRET_NEEDED,
-        });
-      }
-
-      //check secret
-      await utils.extractPaddingFromPrivateEncrypt(secret, accessorPublicKey);
-
-      await cacheDb.setResponseFromRequestId(node_id, request_id, {
-        ...createResponseParams,
-        node_id,
-      });
-
-      const requestData = await cacheDb.getRequestReceivedFromMQ(
-        node_id,
-        request_id
-      );
-      const declareIal = (await tendermintNdid.getIdentityInfo(
-        requestData.namespace,
-        requestData.identifier,
-        node_id
-      )).ial;
-      if (ial !== declareIal) {
+      if (ial !== declaredIal) {
         throw new CustomError({
           errorType: errorType.WRONG_IAL,
         });
       }
     }
-    requestChallengeAndCreateResponseInternalAsync(
-      createResponseParams,
-      request,
-      node_id
-    );
+    createResponseInternal(createResponseParams, {
+      nodeId: node_id,
+      requestData,
+      accessorPublicKey,
+    });
   } catch (error) {
     const err = new CustomError({
-      message: 'Cannot request challenge and create IdP response',
+      message: 'Cannot create IdP response',
       cause: error,
     });
     logger.error({ err });
     throw err;
-  }
-}
-
-/**
- *
- * @param {Object} createResponseParams
- * @param {Object} request
- * @param {number} request.mode
- * @param {string} request.request_message_hash
- * @param {boolean} request.closed
- * @param {boolean} request.timed_out
- */
-async function requestChallengeAndCreateResponseInternalAsync(
-  createResponseParams,
-  request,
-  nodeId
-) {
-  const {
-    reference_id,
-    callback_url,
-    request_id,
-    accessor_id,
-  } = createResponseParams;
-  try {
-    if (request.mode === 3) {
-      await requestChallenge({
-        nodeId,
-        reference_id,
-        callback_url,
-        request_id,
-        accessor_id,
-      });
-    } else if (request.mode === 1) {
-      await createResponse(createResponseParams, { nodeId });
-    }
-  } catch (error) {
-    await callbackToClient({
-      callbackUrl: callback_url,
-      body: {
-        node_id: nodeId,
-        type: 'response_result',
-        success: false,
-        reference_id,
-        request_id,
-        error: getErrorObjectForClient(error),
-      },
-      retry: true,
-    });
-    await cacheDb.removeResponseFromRequestId(request_id);
   }
 }
 
@@ -251,88 +202,52 @@ async function requestChallengeAndCreateResponseInternalAsync(
  * @param {number} createResponseParams.aal
  * @param {number} createResponseParams.ial
  * @param {string} createResponseParams.status
- * @param {string} createResponseParams.signature
  * @param {string} createResponseParams.accessor_id
- * @param {string} createResponseParams.secret
  */
-export async function createResponse(
+export async function createResponseInternal(
   createResponseParams,
   additionalParams = {}
 ) {
+  const {
+    reference_id,
+    callback_url,
+    request_id,
+    aal,
+    ial,
+    status,
+    accessor_id,
+  } = createResponseParams;
+  const { nodeId, requestData, accessorPublicKey } = additionalParams;
   try {
-    const {
-      reference_id,
-      callback_url,
+    const request = await tendermintNdid.getRequest({ requestId: request_id });
+    const mode = request.mode;
+
+    let signature;
+    if (requestData.mode === 1) {
+      // get signature for mode 1 - sign with node key
+      signature = (await utils.createSignature(
+        requestData.request_message,
+        nodeId
+      )).toString('base64');
+    } else if (requestData.mode === 2 || requestData.mode === 3) {
+      signature = await accessorEncrypt({
+        node_id: nodeId,
+        request_message: requestData.request_message,
+        initial_salt: requestData.initial_salt,
+        accessor_id,
+        accessor_public_key: accessorPublicKey,
+        reference_id,
+        request_id,
+      });
+    }
+
+    const dataToBlockchain = {
       request_id,
       aal,
       ial,
       status,
       signature,
-      accessor_id,
-      secret,
-    } = createResponseParams;
-    const { nodeId } = additionalParams;
-
-    const request = await tendermintNdid.getRequest({ requestId: request_id });
-    const mode = request.mode;
-
-    let dataToBlockchain, privateProofObject;
-
-    if (mode === 3) {
-      let blockchainProofArray = [],
-        privateProofValueArray = [],
-        samePadding;
-      const requestFromMq = await cacheDb.getRequestReceivedFromMQ(
-        nodeId,
-        request_id
-      );
-
-      logger.debug({
-        message: 'To generate proof',
-        requestFromMq,
-      });
-
-      for (let i = 0; i < requestFromMq.challenge.length; i++) {
-        let {
-          blockchainProof,
-          privateProofValue,
-          padding,
-        } = utils.generateIdentityProof({
-          publicKey: await tendermintNdid.getAccessorKey(accessor_id),
-          challenge: requestFromMq.challenge[i],
-          k: requestFromMq.k[i],
-          secret,
-        });
-        blockchainProofArray.push(blockchainProof);
-        privateProofValueArray.push(privateProofValue);
-        samePadding = padding;
-      }
-
-      privateProofObject = {
-        privateProofValueArray,
-        accessor_id,
-        padding: samePadding,
-      };
-
-      dataToBlockchain = {
-        request_id,
-        aal,
-        ial,
-        status,
-        signature,
-        //accessor_id,
-        identity_proof: JSON.stringify(blockchainProofArray),
-        private_proof_hash: utils.hash(JSON.stringify(privateProofValueArray)),
-      };
-    } else if (mode === 1) {
-      dataToBlockchain = {
-        request_id,
-        aal,
-        ial,
-        status,
-        signature,
-      };
-    }
+    };
 
     await tendermintNdid.createIdpResponse(
       dataToBlockchain,
@@ -345,7 +260,8 @@ export async function createResponse(
           callback_url,
           request_id,
           mode,
-          privateProofObject,
+          accessor_id,
+          rp_id: requestData.rp_id,
         },
       ],
       true
@@ -356,25 +272,37 @@ export async function createResponse(
       cause: error,
     });
     logger.error({ err });
-    throw err;
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
+        node_id: nodeId,
+        type: 'response_result',
+        success: false,
+        reference_id,
+        request_id,
+        error: getErrorObjectForClient(err),
+      },
+      retry: true,
+    });
   }
 }
 
 export async function createResponseAfterBlockchain(
   { height, error, chainDisabledRetryLater },
-  { nodeId, reference_id, callback_url, request_id, mode, privateProofObject }
+  { nodeId, reference_id, callback_url, request_id, mode, accessor_id, rp_id }
 ) {
   if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 
-    await sendResponseToRP(
+    await sendResponseToRP({
       nodeId,
       request_id,
       mode,
-      privateProofObject,
-      height
-    );
+      accessor_id,
+      rp_id,
+      height,
+    });
 
     await callbackToClient({
       callbackUrl: callback_url,
@@ -387,8 +315,6 @@ export async function createResponseAfterBlockchain(
       },
       retry: true,
     });
-    cacheDb.removeRPIdFromRequestId(nodeId, request_id);
-    cacheDb.removeResponseFromRequestId(nodeId, request_id);
   } catch (error) {
     logger.error({
       message: 'Create IdP response after blockchain error',
@@ -412,182 +338,14 @@ export async function createResponseAfterBlockchain(
   }
 }
 
-async function requestChallenge({
-  nodeId,
-  reference_id,
-  callback_url,
-  request_id,
-  accessor_id,
-}) {
-  //query public key from accessor_id
-  const public_key = await tendermintNdid.getAccessorKey(accessor_id);
-  //gen public proof
-  const [k1, publicProof1] = utils.generatePublicProof(public_key);
-  const [k2, publicProof2] = utils.generatePublicProof(public_key);
-
-  //save k to request
-  const request = await cacheDb.getRequestReceivedFromMQ(nodeId, request_id);
-  if (!request) {
-    throw new CustomError({
-      errorType: errorType.NO_INCOMING_REQUEST,
-      details: {
-        request_id,
-      },
-    });
-  }
-  request.k = [k1, k2];
-  logger.debug({
-    message: 'Save K to request',
-    request,
-  });
-  await cacheDb.setRequestReceivedFromMQ(nodeId, request_id, request);
-  //declare public proof to blockchain
-  await tendermintNdid.declareIdentityProof(
-    {
-      request_id,
-      identity_proof: JSON.stringify([publicProof1, publicProof2]),
-    },
-    nodeId,
-    'idp.requestChallengeAfterBlockchain',
-    [
-      {
-        nodeId,
-        reference_id,
-        callback_url,
-        request_id,
-        accessor_id,
-        publicProof1,
-        publicProof2,
-        rp_id: request.rp_id,
-      },
-    ],
-    true
-  );
-}
-
-export async function requestChallengeAfterBlockchain(
-  { height, error, chainDisabledRetryLater },
-  {
-    nodeId,
-    reference_id,
-    callback_url,
-    request_id,
-    accessor_id,
-    publicProof1,
-    publicProof2,
-    rp_id,
-  }
-) {
-  if (chainDisabledRetryLater) return;
-  try {
-    if (error) throw error;
-    //send message queue with public proof
-
-    const nodeInfo = await tendermintNdid.getNodeInfo(rp_id);
-    if (nodeInfo == null) {
-      throw new CustomError({
-        errorType: errorType.NODE_INFO_NOT_FOUND,
-        details: {
-          request_id,
-          accessor_id,
-        },
-      });
-    }
-
-    let receivers;
-    if (nodeInfo.proxy != null) {
-      if (nodeInfo.proxy.mq == null) {
-        throw new CustomError({
-          errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
-          details: {
-            request_id,
-            accessor_id,
-            nodeId: rp_id,
-          },
-        });
-      }
-
-      receivers = [
-        {
-          node_id: rp_id,
-          public_key: nodeInfo.public_key,
-          proxy: {
-            node_id: nodeInfo.proxy.node_id,
-            public_key: nodeInfo.proxy.public_key,
-            ip: nodeInfo.proxy.mq[0].ip,
-            port: nodeInfo.proxy.mq[0].port,
-            config: nodeInfo.proxy.config,
-          },
-        },
-      ];
-    } else {
-      if (nodeInfo.mq == null) {
-        throw new CustomError({
-          errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
-          details: {
-            request_id,
-            accessor_id,
-            nodeId: rp_id,
-          },
-        });
-      }
-
-      receivers = [
-        {
-          node_id: rp_id,
-          public_key: nodeInfo.public_key,
-          ip: nodeInfo.mq[0].ip,
-          port: nodeInfo.mq[0].port,
-        },
-      ];
-    }
-    await mq.send(
-      receivers,
-      {
-        type: privateMessageType.CHALLENGE_REQUEST,
-        request_id: request_id,
-        idp_id: nodeId,
-        public_proof: [publicProof1, publicProof2],
-        chain_id: tendermint.chainId,
-        height,
-      },
-      nodeId
-    );
-  } catch (error) {
-    logger.error({
-      message: 'Request challenge after blockchain error',
-      tendermintResult: arguments[0],
-      additionalArgs: arguments[1],
-      err: error,
-    });
-
-    await callbackToClient({
-      callbackUrl: callback_url,
-      body: {
-        node_id: nodeId,
-        type: 'response_result',
-        success: false,
-        reference_id: reference_id,
-        request_id: request_id,
-        error: getErrorObjectForClient(error),
-      },
-      retry: true,
-    });
-    await cacheDb.removeResponseFromRequestId(nodeId, request_id);
-  }
-}
-
-async function sendResponseToRP(
+async function sendResponseToRP({
   nodeId,
   request_id,
   mode,
-  privateProofObject,
-  height
-) {
-  //mode 1
-  if (!privateProofObject) privateProofObject = {};
-  const rp_id = await cacheDb.getRPIdFromRequestId(nodeId, request_id);
-
+  accessor_id,
+  rp_id,
+  height,
+}) {
   logger.info({
     message: 'Query MQ destination for RP',
   });
@@ -602,7 +360,6 @@ async function sendResponseToRP(
       errorType: errorType.NODE_INFO_NOT_FOUND,
       details: {
         request_id,
-        privateProofObject,
         height,
       },
     });
@@ -657,7 +414,7 @@ async function sendResponseToRP(
       type: privateMessageType.IDP_RESPONSE,
       request_id,
       mode,
-      ...privateProofObject,
+      accessor_id,
       idp_id: nodeId,
       chain_id: tendermint.chainId,
       height,

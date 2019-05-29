@@ -337,6 +337,22 @@ async function updateNodeInternalAsync(data, { synchronous = false } = {}) {
   }
 }
 
+export async function setAllowedModeList({ purpose, allowed_mode_list }) {
+  try {
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'SetAllowedModeList',
+      params: {
+        purpose,
+        allowed_mode_list,
+      },
+    });
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
 export async function enableNode({ node_id }) {
   try {
     await tendermint.transact({
@@ -363,12 +379,45 @@ export async function disableNode({ node_id }) {
   }
 }
 
-export async function addNamespace({ namespace, description }) {
+export async function addNamespace({
+  namespace,
+  description,
+  allowed_identifier_count_in_reference_group,
+  allowed_active_identifier_count_in_reference_group,
+}) {
   try {
     await tendermint.transact({
       nodeId: config.nodeId,
       fnName: 'AddNamespace',
-      params: { namespace, description },
+      params: {
+        namespace,
+        description,
+        allowed_identifier_count_in_reference_group,
+        allowed_active_identifier_count_in_reference_group,
+      },
+    });
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function updateNamespace({
+  namespace,
+  description,
+  allowed_identifier_count_in_reference_group,
+  allowed_active_identifier_count_in_reference_group,
+}) {
+  try {
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'UpdateNamespace',
+      params: {
+        namespace,
+        description,
+        allowed_identifier_count_in_reference_group,
+        allowed_active_identifier_count_in_reference_group,
+      },
     });
   } catch (error) {
     // TODO:
@@ -495,19 +544,6 @@ export async function setValidator({ public_key, power }) {
   }
 }
 
-export async function setTimeoutBlockRegisterIdentity({ blocks_to_timeout }) {
-  try {
-    await tendermint.transact({
-      nodeId: config.nodeId,
-      fnName: 'SetTimeOutBlockRegisterIdentity',
-      params: { time_out_block: blocks_to_timeout },
-    });
-  } catch (error) {
-    // TODO:
-    throw error;
-  }
-}
-
 export async function enableServiceDestination({ service_id, node_id }) {
   try {
     await tendermint.transact({
@@ -582,6 +618,29 @@ export async function setLastBlock({ block_height }) {
       fnName: 'SetLastBlock',
       params: { block_height },
     });
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function getAllowedMinIalForRegisterIdentityAtFirstIdp() {
+  try {
+    return await tendermintNdid.getAllowedMinIalForRegisterIdentityAtFirstIdp();
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function setAllowedMinIalForRegisterIdentityAtFirstIdp({
+  min_ial,
+}) {
+  try {
+    await tendermintNdid.setAllowedMinIalForRegisterIdentityAtFirstIdp(
+      { min_ial },
+      config.nodeId
+    );
   } catch (error) {
     // TODO:
     throw error;

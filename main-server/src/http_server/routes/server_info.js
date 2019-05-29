@@ -56,31 +56,31 @@ router.get('/info', async function getInfo(req, res, next) {
     res.status(200).json({
       env: config.env,
       version: version == null ? null : version,
-      apiVersion: '2.4',
-      nodeId: config.nodeId,
-      nodeName: nodeInfo != null ? nodeInfo.node_name : undefined,
-      nodePublicKey: nodeInfo != null ? nodeInfo.public_key : undefined,
+      api_version: '3.0',
+      node_id: config.nodeId,
+      node_name: nodeInfo != null ? nodeInfo.node_name : undefined,
+      node_public_key: nodeInfo != null ? nodeInfo.public_key : undefined,
       role: nodeInfo != null ? nodeInfo.role : undefined,
-      serverListenPort: config.serverPort,
-      dbIp: config.dbIp,
-      dbPort: config.dbPort,
-      messageQueueIp: config.mqIp,
-      messageQueuePort: config.mqPort,
-      messageQueueServiceServer: {
+      server_listen_port: config.serverPort,
+      db_ip: config.dbIp,
+      db_port: config.dbPort,
+      message_queue_ip: config.mqIp,
+      message_queue_port: config.mqPort,
+      message_queue_service_server: {
         ip: config.mqServiceServerIp,
         port: config.mqServiceServerPort,
-        serverInfo:
+        server_info:
           mqServiceServerInfo != null
             ? {
-                nodeId: mqServiceServerInfo.node_id,
-                messageQueuePort: mqServiceServerInfo.mq_binding_port,
+                node_id: mqServiceServerInfo.node_id,
+                message_queue_port: mqServiceServerInfo.mq_binding_port,
               }
             : null,
       },
-      tendermintAddress: config.tendermintAddress,
-      tendermintWebSocketConnected: tendermint.connected,
-      lastKnownChainId: tendermint.chainId,
-      lastKnownBlockHeight: tendermint.latestBlockHeight,
+      tendermint_address: config.tendermintAddress,
+      tendermint_web_socket_connected: tendermint.connected,
+      last_known_chain_id: tendermint.chainId,
+      last_known_block_height: tendermint.latestBlockHeight,
     });
     next();
   } catch (error) {

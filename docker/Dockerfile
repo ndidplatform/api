@@ -43,14 +43,12 @@ WORKDIR /api/main-server
 RUN npm run build && npm prune --production
 
 COPY ./protos /api/protos
+COPY ./dev_cert /api/dev_cert
 COPY COPYING /api/main-server/build
 COPY VERSION /api/
-
-COPY ./docker/start-api.sh /api/docker/
 
 # Change owner to nobodoy:nogroup and permission to 640
 RUN chown -R nobody:nogroup /api
 RUN chmod -R 640 /api
-RUN chmod -R 740 /api/docker/start-api.sh
 
-ENTRYPOINT [ "/api/docker/start-api.sh" ]
+ENTRYPOINT [ "node", "/api/main-server/build/server.js" ]

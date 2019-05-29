@@ -20,64 +20,52 @@
  *
  */
 
-//==================== plain copy ===================================
-
 import { getFunction } from '../../functions';
-import { closeRequest } from '../common';
 
 import logger from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 
-export async function closeConsentRequestThenRevokeAccessor(
-  { nodeId, request_id, old_accessor_id, revoking_accessor_id },
-  { callbackFnName, callbackAdditionalArgs }
-) {
-  await closeRequest(
-    {
-      node_id: nodeId,
-      request_id: request_id,
-    },
-    {
-      synchronous: false,
-      sendCallbackToClient: false,
-      callbackFnName: 'identity.revokeAccessorAfterCloseConsentRequest',
-      callbackAdditionalArgs: [
-        { nodeId, request_id, old_accessor_id, revoking_accessor_id },
-        { callbackFnName, callbackAdditionalArgs },
-      ],
-      saveForRetryOnChainDisabled: true,
-    }
-  );
-}
-
 export async function revokeAccessorAfterCloseConsentRequest(
   { error },
-  { nodeId, request_id, old_accessor_id, revoking_accessor_id },
+  { nodeId, request_id, identity },
   { callbackFnName, callbackAdditionalArgs }
 ) {
   try {
     if (error) throw error;
-    //NOTE: zero knowledge proof cannot be verify by blockchain, hence,
-    //if this idp call to add their accessor it's imply that zk proof is verified by them
+
+    if (request_id) {
+      logger.debug({
+        message: 'Closed consent request',
+        nodeId,
+        request_id,
+      });
+    }
+
     logger.debug({
-      message: 'Got consent, revoking accessor',
+      message: 'Revoking accessor',
       nodeId,
-      request_id,
-      old_accessor_id,
     });
 
-    await tendermintNdid.revokeAccessorMethod(
+    if (identity == null) {
+      identity = await cacheDb.getIdentityFromRequestId(nodeId, request_id);
+    }
+    const { type, accessor_id, reference_id } = identity;
+
+    await tendermintNdid.revokeAccessor(
       {
         request_id,
-        accessor_id: revoking_accessor_id,
+        accessor_id,
       },
       nodeId,
-      'identity.notifyRevokeAccessorAfterConsent',
+      'identity.revokeAccessorAfterConsentAndBlockchain',
       [
         {
           nodeId,
+          type,
+          accessor_id,
+          reference_id,
           request_id,
         },
         { callbackFnName, callbackAdditionalArgs },
@@ -95,32 +83,43 @@ export async function revokeAccessorAfterCloseConsentRequest(
 
     if (callbackFnName != null) {
       if (callbackAdditionalArgs != null) {
-        getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        getFunction(callbackFnName)(
+          { error, request_id },
+          ...callbackAdditionalArgs
+        );
       } else {
-        getFunction(callbackFnName)({ error });
+        getFunction(callbackFnName)({ error, request_id });
       }
     }
   }
 }
 
-export async function notifyRevokeAccessorAfterConsent(
+export async function revokeAccessorAfterConsentAndBlockchain(
   { error, chainDisabledRetryLater },
-  { nodeId, request_id },
+  { nodeId, type, accessor_id, reference_id, request_id },
   { callbackFnName, callbackAdditionalArgs } = {}
 ) {
   if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 
-    await cacheDb.removeAccessorIdToRevokeFromRequestId(nodeId, request_id);
+    await cacheDb.removeIdentityFromRequestId(nodeId, request_id);
     if (callbackAdditionalArgs != null) {
-      getFunction(callbackFnName)({}, ...callbackAdditionalArgs);
+      getFunction(callbackFnName)(
+        { type, accessor_id, reference_id, request_id },
+        ...callbackAdditionalArgs
+      );
     } else {
-      getFunction(callbackFnName)({});
+      getFunction(callbackFnName)({
+        type,
+        accessor_id,
+        reference_id,
+        request_id,
+      });
     }
   } catch (error) {
     logger.error({
-      message: 'Revoke accessor after consent error',
+      message: 'Revoke accessor after consent and blockchain error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
@@ -129,9 +128,18 @@ export async function notifyRevokeAccessorAfterConsent(
 
     if (callbackFnName != null) {
       if (callbackAdditionalArgs != null) {
-        getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        getFunction(callbackFnName)(
+          { error, type, accessor_id, reference_id, request_id },
+          ...callbackAdditionalArgs
+        );
       } else {
-        getFunction(callbackFnName)({ error });
+        getFunction(callbackFnName)({
+          error,
+          type,
+          accessor_id,
+          reference_id,
+          request_id,
+        });
       }
     }
   }
