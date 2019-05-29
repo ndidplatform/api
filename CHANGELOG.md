@@ -1,6 +1,8 @@
 # Changelog
 
-## TBD
+## 2.0.0 (May 29, 2019)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v3.0.0_
 
 There are a number of significant changes in this release. Some of major changes:
 
@@ -91,6 +93,7 @@ BREAKING CHANGES:
 - Change MQ message protocol format
   - Change message ID type from int64 to string.
   - Add message type.
+  - Add message version.
 - Remove request message for identity operations (which needs consent request) templates. `request_message` is always required when consent request is needed.
 
 IMPROVEMENTS:
@@ -141,7 +144,7 @@ BUG FIXES:
 
 ## 1.0.2 (February 8, 2019)
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0-v2.0.0_
 
 IMPROVEMENTS:
 
@@ -163,7 +166,7 @@ BUG FIXES:
 
 ## 1.0.1 (January 24, 2019)
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0-v2.0.0_
 
 IMPROVEMENTS:
 
@@ -193,7 +196,7 @@ BUG FIXES:
 
 ## 1.0.0 (December 7, 2018)
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0-v2.0.0_
 
 IMPROVEMENTS:
 

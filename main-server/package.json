@@ -1,6 +1,6 @@
 {
   "name": "ndid-api",
-  "version": "2.0.0-dev",
+  "version": "2.0.0",
   "description": "",
   "license": "AGPL-3.0-or-later",
   "scripts": {
