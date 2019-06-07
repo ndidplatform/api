@@ -27,6 +27,7 @@ import * as as from './core/as';
 import * as proxy from './core/proxy';
 import * as identity from './core/identity';
 import * as node from './core/node';
+import * as nodeCallback from './core/node_callback';
 import * as tendermint from './tendermint';
 import * as mq from './mq';
 import * as callback from './callback';
@@ -153,6 +154,9 @@ export function getFunction(fnName) {
       return as.processMessage;
     case 'as.processRequestUpdate':
       return as.processRequestUpdate;
+    // Node Callback
+    case 'nodeCallback.getMessageQueueSendSuccessCallbackUrl':
+      return nodeCallback.getMessageQueueSendSuccessCallbackUrl;
     // MQ
     case 'mq.processRawMessage':
       return mq.processRawMessage;

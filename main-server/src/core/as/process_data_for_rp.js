@@ -31,6 +31,7 @@ import errorType from 'ndid-error/type';
 import logger from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
+import * as nodeCallback from '../node_callback';
 import * as mq from '../../mq';
 import * as utils from '../../utils';
 import * as config from '../../config';
@@ -405,5 +406,16 @@ async function sendDataToRP(nodeId, rpId, data) {
       height: data.height,
     },
     senderNodeId: nodeId,
+    onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+      nodeCallback.notifyMessageQueueSuccessSend({
+        nodeId,
+        getCallbackUrlFnName:
+          'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
+        destNodeId: receiverNodeId,
+        destIp: mqDestAddress.ip,
+        destPort: mqDestAddress.port,
+        requestId: data.request_id,
+      });
+    },
   });
 }

@@ -25,6 +25,7 @@ import { processAsData } from './process_as_data';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as tendermint from '../../tendermint';
 import * as common from '../common';
+import * as nodeCallback from '../node_callback';
 import * as utils from '../../utils';
 import * as mq from '../../mq';
 import * as cacheDb from '../../db/cache';
@@ -263,6 +264,17 @@ export async function sendRequestToAS(nodeId, requestData, height) {
             height,
           },
           senderNodeId: nodeId,
+          onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+            nodeCallback.notifyMessageQueueSuccessSend({
+              nodeId,
+              getCallbackUrlFnName:
+                'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
+              destNodeId: receiverNodeId,
+              destIp: mqDestAddress.ip,
+              destPort: mqDestAddress.port,
+              requestId: requestData.request_id,
+            });
+          },
         })
     )
   );

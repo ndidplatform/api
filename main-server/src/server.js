@@ -35,6 +35,7 @@ import * as idp from './core/idp';
 import * as as from './core/as';
 import * as proxy from './core/proxy';
 import * as requestProcessManager from './core/request_process_manager';
+import * as nodeCallback from './core/node_callback';
 import * as nodeKey from './utils/node_key';
 import { getFunction } from './functions';
 
@@ -142,6 +143,14 @@ async function initialize() {
       await rp.checkCallbackUrls();
       await idp.checkCallbackUrls();
       await as.checkCallbackUrls();
+    }
+    if (
+      role === ROLE.RP ||
+      role === ROLE.IDP ||
+      role === ROLE.AS ||
+      role === ROLE.PROXY
+    ) {
+      await nodeCallback.checkCallbackUrls();
     }
 
     callbackUtil.setShouldRetryFnGetter(getFunction);

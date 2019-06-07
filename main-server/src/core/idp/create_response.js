@@ -26,6 +26,7 @@ import { getIdentityInfo } from '../identity';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as tendermint from '../../tendermint';
 import * as cacheDb from '../../db/cache';
+import * as nodeCallback from '../node_callback';
 import * as mq from '../../mq';
 import privateMessageType from '../../mq/message/type';
 
@@ -420,5 +421,16 @@ async function sendResponseToRP({
       height,
     },
     senderNodeId: nodeId,
+    onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+      nodeCallback.notifyMessageQueueSuccessSend({
+        nodeId,
+        getCallbackUrlFnName:
+          'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
+        destNodeId: receiverNodeId,
+        destIp: mqDestAddress.ip,
+        destPort: mqDestAddress.port,
+        requestId: request_id,
+      });
+    },
   });
 }

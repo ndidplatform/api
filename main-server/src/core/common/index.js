@@ -27,7 +27,6 @@ import logger from '../../logger';
 
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
-import * as mq from '../../mq';
 import { callbackToClient } from '../../callback';
 import * as utils from '../../utils';
 import * as lt from '../../utils/long_timeout';
@@ -474,38 +473,6 @@ export async function notifyError({
       action,
       request_id: requestId,
       error: getErrorObjectForClient(error),
-    },
-    retry: false,
-  });
-}
-
-export async function notifyMessageQueueSuccessSend({
-  nodeId,
-  getCallbackUrlFnName,
-  destNodeId,
-  destIp,
-  destPort,
-  requestId,
-}) {
-  logger.debug({
-    message: 'Notifying message queue success send through callback',
-  });
-  const callbackUrl = await getFunction(getCallbackUrlFnName)();
-  if (callbackUrl == null) {
-    logger.warn({
-      message: 'MQ success send callback URL has not been set',
-    });
-    return;
-  }
-  await callbackToClient({
-    getCallbackUrlFnName,
-    body: {
-      node_id: nodeId,
-      type: 'message_queue_send_success',
-      destination_node_id: destNodeId,
-      destination_ip: destIp,
-      destination_port: destPort,
-      request_id: requestId,
     },
     retry: false,
   });

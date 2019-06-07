@@ -31,6 +31,7 @@ import parseDataURL from 'data-urls';
 
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
+import * as nodeCallback from '../node_callback';
 import * as mq from '../../mq';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../../mq/message/type';
@@ -737,6 +738,17 @@ export async function createRequestInternalAsyncAfterBlockchain(
           receivers: receiversWithSid,
           message: mqMessageWithSid,
           senderNodeId: node_id,
+          onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+            nodeCallback.notifyMessageQueueSuccessSend({
+              nodeId: node_id,
+              getCallbackUrlFnName:
+                'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
+              destNodeId: receiverNodeId,
+              destIp: mqDestAddress.ip,
+              destPort: mqDestAddress.port,
+              requestId: request_id,
+            });
+          },
         });
       }
       if (requestData.mode === 2 || requestData.mode === 3) {
@@ -757,6 +769,17 @@ export async function createRequestInternalAsyncAfterBlockchain(
             receivers: receiversWithRefGroupCode,
             message: mqMessageWithRefGroupCode,
             senderNodeId: node_id,
+            onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+              nodeCallback.notifyMessageQueueSuccessSend({
+                nodeId: node_id,
+                getCallbackUrlFnName:
+                  'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
+                destNodeId: receiverNodeId,
+                destIp: mqDestAddress.ip,
+                destPort: mqDestAddress.port,
+                requestId: request_id,
+              });
+            },
           });
         }
       }

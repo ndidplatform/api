@@ -26,6 +26,7 @@ import { validateBody } from '../middleware/validation';
 import { ndidOnlyHandler } from '../middleware/role_handler';
 import * as ndid from '../../../core/ndid';
 import * as node from '../../../core/node';
+import * as nodeCallback from '../../../core/node_callback';
 import * as externalCryptoService from '../../../external_crypto_service';
 
 const router = express.Router();
@@ -122,7 +123,18 @@ router.post('/update', validateBody, async (req, res, next) => {
 
 router.get('/callback', async (req, res, next) => {
   try {
-    const urls = await externalCryptoService.getCallbackUrls();
+    const [
+      externalCryptoServiceCallbackUrls,
+      nodeCallbackUrls,
+    ] = await Promise.all([
+      externalCryptoService.getCallbackUrls(),
+      nodeCallback.getCallbackUrls(),
+    ]);
+
+    const urls = {
+      ...externalCryptoServiceCallbackUrls,
+      ...nodeCallbackUrls,
+    };
 
     if (Object.keys(urls).length > 0) {
       res.status(200).json(urls);
@@ -137,13 +149,23 @@ router.get('/callback', async (req, res, next) => {
 
 router.post('/callback', validateBody, async (req, res, next) => {
   try {
-    const { sign_url, master_sign_url, decrypt_url } = req.body;
+    const {
+      sign_url,
+      master_sign_url,
+      decrypt_url,
+      message_queue_send_success_url,
+    } = req.body;
 
-    await externalCryptoService.setCallbackUrls({
-      signCallbackUrl: sign_url,
-      masterSignCallbackUrl: master_sign_url,
-      decryptCallbackUrl: decrypt_url,
-    });
+    await Promise.all([
+      externalCryptoService.setCallbackUrls({
+        signCallbackUrl: sign_url,
+        masterSignCallbackUrl: master_sign_url,
+        decryptCallbackUrl: decrypt_url,
+      }),
+      nodeCallback.setCallbackUrls({
+        message_queue_send_success_url,
+      }),
+    ]);
     res.status(204).end();
     next();
   } catch (error) {

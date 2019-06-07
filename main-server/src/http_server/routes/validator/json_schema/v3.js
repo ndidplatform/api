@@ -451,6 +451,9 @@ export default {
           decrypt_url: {
             $ref: 'defs#/definitions/url',
           },
+          message_queue_send_success_url: {
+            $ref: 'defs#/definitions/url',
+          },
         },
         anyOf: [
           {
@@ -461,6 +464,9 @@ export default {
           },
           {
             required: ['decrypt_url'],
+          },
+          {
+            required: ['message_queue_send_success_url'],
           },
         ],
       },
