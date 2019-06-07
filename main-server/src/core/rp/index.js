@@ -243,9 +243,9 @@ export async function sendRequestToAS(nodeId, requestData, height) {
   await Promise.all(
     Object.values(dataToSendByNodeIdAndServiceList).map(
       ({ receivers, service_data_request_list }) =>
-        mq.send(
+        mq.send({
           receivers,
-          {
+          message: {
             type: privateMessageType.DATA_REQUEST,
             request_id: requestData.request_id,
             mode: requestData.mode,
@@ -262,8 +262,8 @@ export async function sendRequestToAS(nodeId, requestData, height) {
             chain_id: tendermint.chainId,
             height,
           },
-          nodeId
-        )
+          senderNodeId: nodeId,
+        })
     )
   );
 }

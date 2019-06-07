@@ -391,9 +391,9 @@ async function sendDataToRP(nodeId, rpId, data) {
       },
     ];
   }
-  await mq.send(
+  await mq.send({
     receivers,
-    {
+    message: {
       type: privateMessageType.AS_DATA_RESPONSE,
       request_id: data.request_id,
       as_id: data.as_id,
@@ -404,6 +404,6 @@ async function sendDataToRP(nodeId, rpId, data) {
       chain_id: tendermint.chainId,
       height: data.height,
     },
-    nodeId
-  );
+    senderNodeId: nodeId,
+  });
 }

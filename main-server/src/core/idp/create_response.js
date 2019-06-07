@@ -408,9 +408,9 @@ async function sendResponseToRP({
       },
     ];
   }
-  await mq.send(
+  await mq.send({
     receivers,
-    {
+    message: {
       type: privateMessageType.IDP_RESPONSE,
       request_id,
       mode,
@@ -419,6 +419,6 @@ async function sendResponseToRP({
       chain_id: tendermint.chainId,
       height,
     },
-    nodeId
-  );
+    senderNodeId: nodeId,
+  });
 }

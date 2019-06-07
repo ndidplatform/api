@@ -733,11 +733,11 @@ export async function createRequestInternalAsyncAfterBlockchain(
           chain_id: tendermint.chainId,
           height,
         };
-        mqSendPromises[0] = mq.send(
-          receiversWithSid,
-          mqMessageWithSid,
-          node_id
-        );
+        mqSendPromises[0] = mq.send({
+          receivers: receiversWithSid,
+          message: mqMessageWithSid,
+          senderNodeId: node_id,
+        });
       }
       if (requestData.mode === 2 || requestData.mode === 3) {
         if (receiversWithRefGroupCode.length > 0) {
@@ -753,11 +753,11 @@ export async function createRequestInternalAsyncAfterBlockchain(
             chain_id: tendermint.chainId,
             height,
           };
-          mqSendPromises[1] = mq.send(
-            receiversWithRefGroupCode,
-            mqMessageWithRefGroupCode,
-            node_id
-          );
+          mqSendPromises[1] = mq.send({
+            receivers: receiversWithRefGroupCode,
+            message: mqMessageWithRefGroupCode,
+            senderNodeId: node_id,
+          });
         }
       }
       await Promise.all(mqSendPromises);

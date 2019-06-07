@@ -596,7 +596,7 @@ export async function loadAndProcessBacklogMessages() {
  * @param {Object} message
  * @param {string} senderNodeId
  */
-export async function send(receivers, message, senderNodeId) {
+export async function send({ receivers, message, senderNodeId, onSuccess }) {
   if (receivers.length === 0) {
     logger.debug({
       message: 'No receivers for message queue to send to',
@@ -727,6 +727,7 @@ export async function send(receivers, message, senderNodeId) {
           MQ_SEND_TOTAL_TIMEOUT
         )
         .then(() => {
+          onSuccess({ msgId, mqDestAddress, receiverNodeId: receiver.node_id });
           metricsEventEmitter.emit(
             'mqSendMessageTime',
             Date.now() - pendingOutboundMessages[msgId].sendTime

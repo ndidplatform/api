@@ -479,6 +479,38 @@ export async function notifyError({
   });
 }
 
+export async function notifyMessageQueueSuccessSend({
+  nodeId,
+  getCallbackUrlFnName,
+  destNodeId,
+  destIp,
+  destPort,
+  requestId,
+}) {
+  logger.debug({
+    message: 'Notifying message queue success send through callback',
+  });
+  const callbackUrl = await getFunction(getCallbackUrlFnName)();
+  if (callbackUrl == null) {
+    logger.warn({
+      message: 'MQ success send callback URL has not been set',
+    });
+    return;
+  }
+  await callbackToClient({
+    getCallbackUrlFnName,
+    body: {
+      node_id: nodeId,
+      type: 'message_queue_send_success',
+      destination_node_id: destNodeId,
+      destination_ip: destIp,
+      destination_port: destPort,
+      request_id: requestId,
+    },
+    retry: false,
+  });
+}
+
 export function incrementProcessingInboundMessagesCount() {
   processingInboundMessagesCount++;
   metricsEventEmitter.emit(
