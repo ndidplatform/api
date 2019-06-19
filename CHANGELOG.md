@@ -7,6 +7,10 @@ IMPROVEMENTS:
 - API v3.1
   - New callback for notifying message queue message send success (ACK from destination node received). Callback URL can be set using POST `/node/callback` with property `message_queue_send_success_url`.
 
+BUG FIXES:
+
+- Fix incorrect `request_params_hash` when `request_params` is provided.
+
 ## 2.0.0 (May 29, 2019)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v3.0.0_
