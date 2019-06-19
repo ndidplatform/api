@@ -461,7 +461,7 @@ function checkServiceRequestParamsIntegrity(requestId, request, requestDetail) {
     );
 
     const requestParamsHash = utils.hash(
-      request_params != null ? request_params : '' + request_params_salt
+      (request_params != null ? request_params : '') + request_params_salt
     );
     const dataRequestParamsValid =
       dataRequest.request_params_hash === requestParamsHash;
