@@ -554,9 +554,9 @@ async function createRequestInternalAsync(
           as_id_list: dataRequest.as_id_list,
           min_as: dataRequest.min_as,
           request_params_hash: utils.hash(
-            dataRequest.request_params != null
+            (dataRequest.request_params != null
               ? dataRequest.request_params
-              : '' + data_request_params_salt_list[index]
+              : '') + data_request_params_salt_list[index]
           ),
         };
       }
