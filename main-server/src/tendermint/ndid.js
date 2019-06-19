@@ -1383,3 +1383,17 @@ export async function setAllowedMinIalForRegisterIdentityAtFirstIdp(
     });
   }
 }
+
+export async function getNodeIdList(role) {
+  try {
+    const result = await tendermint.query('GetNodeIDList', {
+      role,
+    });
+    return result.node_id_list;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get node ID list',
+      cause: error,
+    });
+  }
+}

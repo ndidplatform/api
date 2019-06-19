@@ -524,4 +524,16 @@ router.post(
   }
 );
 
+router.post('/get_node_id_list', validateBody, async (req, res, next) => {
+  try {
+    const { role } = req.body;
+
+    const node_id_list = await ndid.getNodeIdList(role);
+    res.status(200).json({ node_id_list });
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

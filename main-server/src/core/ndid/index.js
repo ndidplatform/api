@@ -646,3 +646,12 @@ export async function setAllowedMinIalForRegisterIdentityAtFirstIdp({
     throw error;
   }
 }
+
+export async function getNodeIdList(role) {
+  try {
+    return await tendermintNdid.getNodeIdList(role);
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}

@@ -359,5 +359,13 @@ export default {
         required: ['min_ial'],
       },
     },
+    '/ndid/get_node_id_list': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          role: { type: 'string', enum: ['', 'rp', 'idp', 'as'] },
+        },
+      },
+    },
   },
 };
