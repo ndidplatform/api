@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix incorrect `request_params_hash` when `request_params` is provided.
+
 ## 2.0.0 (May 29, 2019)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v3.0.0_
