@@ -1,8 +1,16 @@
 # Changelog
 
+## 1.0.3 (June 24, 2019)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0-v2.0.0_
+
+BUG FIXES:
+
+- Fix incorrect `request_params_hash` when `request_params` is provided.
+
 ## 1.0.2 (February 8, 2019)
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0-v2.0.0_
 
 IMPROVEMENTS:
 
@@ -24,7 +32,7 @@ BUG FIXES:
 
 ## 1.0.1 (January 24, 2019)
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0-v2.0.0_
 
 IMPROVEMENTS:
 
@@ -54,7 +62,7 @@ BUG FIXES:
 
 ## 1.0.0 (December 7, 2018)
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v1.0.0-v2.0.0_
 
 IMPROVEMENTS:
 
