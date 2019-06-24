@@ -1,6 +1,6 @@
 # Changelog
 
-## TBD
+## 2.0.1 (June 24, 2019)
 
 BUG FIXES:
 
