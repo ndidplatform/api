@@ -2,6 +2,8 @@
 
 ## 2.0.1 (June 24, 2019)
 
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v3.0.0_
+
 BUG FIXES:
 
 - Fix incorrect `request_params_hash` when `request_params` is provided.
