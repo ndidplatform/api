@@ -10,6 +10,7 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - Fix incorrect `request_params_hash` when `request_params` is provided.
+- Fix missing request status update callback (request closed, request timed out) on IdP side for identity related requests.
 
 ## 2.0.0 (May 29, 2019)
 
