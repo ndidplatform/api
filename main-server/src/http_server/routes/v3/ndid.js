@@ -137,7 +137,7 @@ router.post('/update_node', validateBody, async (req, res, next) => {
       { synchronous: true }
     );
 
-    res.status(200).end();
+    res.status(204).end();
     next();
   } catch (error) {
     next(error);
@@ -152,7 +152,7 @@ router.post('/enable_node', validateBody, async (req, res, next) => {
       node_id,
     });
 
-    res.status(200).end();
+    res.status(204).end();
     next();
   } catch (error) {
     next(error);
@@ -167,7 +167,7 @@ router.post('/disable_node', validateBody, async (req, res, next) => {
       node_id,
     });
 
-    res.status(200).end();
+    res.status(204).end();
     next();
   } catch (error) {
     next(error);
