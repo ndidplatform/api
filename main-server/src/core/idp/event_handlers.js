@@ -189,6 +189,21 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
 
         const requestId = transaction.args.request_id;
         if (requestId == null) continue;
+
+        const requestReceivedFromMQ = await cacheDb.getRequestReceivedFromMQ(
+          nodeId,
+          requestId
+        );
+
+        if (requestReceivedFromMQ != null) {
+          incomingRequestsToProcessUpdate[requestId] = {
+            requestId,
+            cleanUp:
+              transaction.fnName === 'CloseRequest' ||
+              transaction.fnName === 'TimeOutRequest',
+          };
+        }
+
         if (transaction.fnName === 'CloseRequest') {
           // When IdP act as an RP (create identity)
           const requestData = await cacheDb.getRequestData(nodeId, requestId);
@@ -218,20 +233,6 @@ function processTasksInBlocks(parsedTransactionsInBlocks, nodeId) {
             };
             continue;
           }
-        }
-
-        const requestReceivedFromMQ = await cacheDb.getRequestReceivedFromMQ(
-          nodeId,
-          requestId
-        );
-
-        if (requestReceivedFromMQ != null) {
-          incomingRequestsToProcessUpdate[requestId] = {
-            requestId,
-            cleanUp:
-              transaction.fnName === 'CloseRequest' ||
-              transaction.fnName === 'TimeOutRequest',
-          };
         }
       }
 
