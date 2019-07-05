@@ -9,6 +9,7 @@ IMPROVEMENTS:
 - API v3.1
   - New callback for notifying message queue message send success (ACK from destination node received). Callback URL can be set using POST `/node/callback` with property `message_queue_send_success_url`.
   - Change NDID APIs (`/ndid/update_node`, `/ndid/enable_node`, and  `/ndid/disable_node`) HTTP success response status code from 200 to 204.
+  - New API: GET `/idp/request_message_padded_hash` for getting `request_message_padded_hash` used for mode 2 and 3 request signature (signed with accessor private key without padding) on response.
 
 BUG FIXES:
 

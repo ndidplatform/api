@@ -22,7 +22,7 @@
 
 import express from 'express';
 
-import { validateBody } from '../middleware/validation';
+import { validateBody, validateQuery } from '../middleware/validation';
 import { idpOnlyHandler } from '../middleware/role_handler';
 import * as idp from '../../../core/idp';
 
@@ -83,7 +83,7 @@ router.post('/response', validateBody, async (req, res, next) => {
       aal,
       status,
       accessor_id,
-      //request_message,
+      signature,
     } = req.body;
 
     await idp.createResponse(
@@ -98,7 +98,7 @@ router.post('/response', validateBody, async (req, res, next) => {
         aal,
         status,
         accessor_id,
-        //request_message,
+        signature,
       },
       { synchronous: false }
     );
@@ -109,5 +109,30 @@ router.post('/response', validateBody, async (req, res, next) => {
     next(error);
   }
 });
+
+router.get(
+  '/request_message_padded_hash',
+  validateQuery,
+  async (req, res, next) => {
+    try {
+      const { node_id, request_id, accessor_id } = req.query;
+
+      const request_message_padded_hash = await idp.getRequestMessagePaddedHash(
+        {
+          node_id,
+          request_id,
+          accessor_id,
+        }
+      );
+
+      res.status(200).json({
+        request_message_padded_hash,
+      });
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

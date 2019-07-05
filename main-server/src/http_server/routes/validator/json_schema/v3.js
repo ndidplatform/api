@@ -82,6 +82,17 @@ export default {
         },
       },
     },
+    '/idp/request_message_padded_hash': {
+      query: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          request_id: { type: 'string', minLength: 1 },
+          accessor_id: { type: 'string', minLength: 1 },
+        },
+        required: ['request_id', 'accessor_id'],
+      },
+    },
   },
   POST: {
     '/rp/requests/:namespace/:identifier': {
@@ -282,6 +293,7 @@ export default {
             enum: ['accept', 'reject'],
           },
           accessor_id: { type: 'string' },
+          signature: { type: 'string', minLength: 1 },
         },
         required: [
           'reference_id',

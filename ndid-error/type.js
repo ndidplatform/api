@@ -643,6 +643,16 @@ module.exports = {
     message: 'Request message is required for consent request',
     clientError: true,
   },
+  NOT_MODE_2_OR_3_REQUEST: {
+    code: 20075,
+    message: 'Not mode 2 or 3 request',
+    clientError: true,
+  },
+  INVALID_SIGNATURE: {
+    code: 20076,
+    message: 'Invalid signature',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

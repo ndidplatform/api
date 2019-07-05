@@ -42,7 +42,7 @@ import { role } from '../../node';
 
 export async function createResponse(createResponseParams) {
   let { node_id } = createResponseParams;
-  const { request_id, ial, aal, accessor_id } = createResponseParams;
+  const { request_id, ial, aal, accessor_id, signature } = createResponseParams;
 
   if (role === 'proxy') {
     if (node_id == null) {
@@ -177,6 +177,45 @@ export async function createResponse(createResponseParams) {
         });
       }
     }
+
+    if (signature != null) {
+      if (request.mode === 1) {
+        const nodeInfo = await tendermintNdid.getNodeInfo(node_id);
+        const publicKey = nodeInfo.public_key;
+        if (
+          !utils.verifySignature(
+            signature,
+            publicKey,
+            requestData.request_message
+          )
+        ) {
+          throw new CustomError({
+            errorType: errorType.INVALID_SIGNATURE,
+            details: {
+              requestId: request_id,
+            },
+          });
+        }
+      } else if (request.mode === 2 || request.mode === 3) {
+        if (
+          !utils.verifyResponseSignature(
+            signature,
+            accessorPublicKey,
+            requestData.request_message,
+            requestData.initial_salt,
+            request_id
+          )
+        ) {
+          throw new CustomError({
+            errorType: errorType.INVALID_ACCESSOR_SIGNATURE,
+            details: {
+              requestId: request_id,
+            },
+          });
+        }
+      }
+    }
+
     createResponseInternal(createResponseParams, {
       nodeId: node_id,
       requestData,
@@ -218,28 +257,30 @@ export async function createResponseInternal(
     status,
     accessor_id,
   } = createResponseParams;
+  let { signature } = createResponseParams;
   const { nodeId, requestData, accessorPublicKey } = additionalParams;
   try {
     const request = await tendermintNdid.getRequest({ requestId: request_id });
     const mode = request.mode;
 
-    let signature;
-    if (requestData.mode === 1) {
-      // get signature for mode 1 - sign with node key
-      signature = (await utils.createSignature(
-        requestData.request_message,
-        nodeId
-      )).toString('base64');
-    } else if (requestData.mode === 2 || requestData.mode === 3) {
-      signature = await accessorEncrypt({
-        node_id: nodeId,
-        request_message: requestData.request_message,
-        initial_salt: requestData.initial_salt,
-        accessor_id,
-        accessor_public_key: accessorPublicKey,
-        reference_id,
-        request_id,
-      });
+    if (signature == null) {
+      if (requestData.mode === 1) {
+        // get signature for mode 1 - sign with node key
+        signature = (await utils.createSignature(
+          requestData.request_message,
+          nodeId
+        )).toString('base64');
+      } else if (requestData.mode === 2 || requestData.mode === 3) {
+        signature = await accessorEncrypt({
+          node_id: nodeId,
+          request_message: requestData.request_message,
+          initial_salt: requestData.initial_salt,
+          accessor_id,
+          accessor_public_key: accessorPublicKey,
+          reference_id,
+          request_id,
+        });
+      }
     }
 
     const dataToBlockchain = {

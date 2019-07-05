@@ -38,6 +38,7 @@ import privateMessageType from '../../mq/message/type';
 
 export * from './create_response';
 export * from './event_handlers';
+export * from './request_message_padded_hash';
 
 const CALLBACK_URL_NAME = {
   INCOMING_REQUEST: 'incoming_request_url',
@@ -377,9 +378,9 @@ export async function processMessage(nodeId, messageId, message) {
         request_timeout: message.request_timeout,
       };
       //already onboarded
-      if(message.reference_group_code) {
+      if (message.reference_group_code) {
         dataToNotify.reference_group_code = message.reference_group_code;
-      // mode 1 or on-the-fly onboard
+        // mode 1 or on-the-fly onboard
       } else {
         dataToNotify.namespace = message.namespace;
         dataToNotify.identifier = message.identifier;
