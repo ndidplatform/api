@@ -1,6 +1,8 @@
 # Changelog
 
-## TBD
+## 2.0.1 (June 24, 2019)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v3.0.0_
 
 IMPROVEMENTS:
 
