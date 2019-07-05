@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.1 (June 24, 2019)
+## TBD
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v3.0.0_
 
@@ -12,8 +12,15 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
-- Fix incorrect `request_params_hash` when `request_params` is provided.
 - Fix missing request status update callback (request closed, request timed out) on IdP side for identity related requests.
+
+## 2.0.1 (June 24, 2019)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v3.0.0_
+
+BUG FIXES:
+
+- Fix incorrect `request_params_hash` when `request_params` is provided.
 
 ## 2.0.0 (May 29, 2019)
 
