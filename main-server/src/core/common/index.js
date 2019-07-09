@@ -260,7 +260,7 @@ export async function timeoutRequest(nodeId, requestId) {
         },
       ],
       true,
-      true,
+      true
     );
   } catch (error) {
     logger.error({
@@ -377,40 +377,48 @@ export async function getAndSaveIdpResponseValid({
     const responseReferenceGroupCode = await tendermintNdid.getReferenceGroupCodeByAccessorId(
       requestDataFromMq.accessor_id
     );
-    if (requestReferenceGroupCode !== responseReferenceGroupCode) {
-      validSignature = false;
-    }
-
-    const accessor_public_key = await tendermintNdid.getAccessorKey(
-      requestDataFromMq.accessor_id
-    );
-
-    if (accessor_public_key) {
-      const response_list = (await tendermintNdid.getRequestDetail({
-        requestId: requestStatus.request_id,
-      })).response_list;
-      const response = response_list.find(
-        (response) => response.idp_id === idpId
+    if (requestReferenceGroupCode === responseReferenceGroupCode) {
+      const accessor_public_key = await tendermintNdid.getAccessorKey(
+        requestDataFromMq.accessor_id
       );
 
-      const { request_message, initial_salt, request_id } = requestData;
-      const signature = response.signature;
+      if (accessor_public_key) {
+        const response_list = (await tendermintNdid.getRequestDetail({
+          requestId: requestStatus.request_id,
+        })).response_list;
+        const response = response_list.find(
+          (response) => response.idp_id === idpId
+        );
 
-      logger.debug({
-        message: 'Verifying signature',
-        request_message,
-        initial_salt,
-        accessor_public_key,
-        signature,
-      });
+        const { request_message, initial_salt, request_id } = requestData;
+        const signature = response.signature;
 
-      validSignature = utils.verifyResponseSignature(
-        signature,
-        accessor_public_key,
-        request_message,
-        initial_salt,
-        request_id
-      );
+        logger.debug({
+          message: 'Verifying signature',
+          request_message,
+          initial_salt,
+          accessor_public_key,
+          signature,
+        });
+
+        validSignature = utils.verifyResponseSignature(
+          signature,
+          accessor_public_key,
+          request_message,
+          initial_salt,
+          request_id
+        );
+      } else {
+        logger.debug({
+          message:
+            "Accessor in response is not in identity's (SID) reference group",
+          requestReferenceGroupCode,
+          responseReferenceGroupCode,
+          accessorId: requestDataFromMq.accessor_id,
+        });
+
+        validSignature = false;
+      }
     } else {
       logger.debug({
         message: 'Accessor key not found or inactive',

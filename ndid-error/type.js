@@ -653,6 +653,11 @@ module.exports = {
     message: 'Invalid signature',
     clientError: true,
   },
+  ACCESSOR_IS_NOT_IN_REQUEST_REFERENCE_GROUP: {
+    code: 20077,
+    message: 'Accessor is not in request reference grouop',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

@@ -161,6 +161,21 @@ export async function createResponse(createResponseParams) {
         });
       }
 
+      const accessorReferenceGroupCode = await tendermintNdid.getReferenceGroupCodeByAccessorId(
+        accessor_id
+      );
+
+      if (referenceGroupCode !== accessorReferenceGroupCode) {
+        throw new CustomError({
+          errorType: errorType.ACCESSOR_IS_NOT_IN_REQUEST_REFERENCE_GROUP,
+          details: {
+            referenceGroupCode,
+            accessorReferenceGroupCode,
+            accessor_id,
+          },
+        });
+      }
+
       accessorPublicKey = await tendermintNdid.getAccessorKey(accessor_id);
       if (accessorPublicKey == null) {
         throw new CustomError({
