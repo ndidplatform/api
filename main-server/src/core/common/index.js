@@ -410,20 +410,20 @@ export async function getAndSaveIdpResponseValid({
         );
       } else {
         logger.debug({
-          message:
-            "Accessor in response is not in identity's (SID) reference group",
-          requestReferenceGroupCode,
-          responseReferenceGroupCode,
+          message: 'Accessor key not found or inactive',
           accessorId: requestDataFromMq.accessor_id,
+          idpId,
         });
 
         validSignature = false;
       }
     } else {
       logger.debug({
-        message: 'Accessor key not found or inactive',
+        message:
+          "Accessor in response is not in identity's (SID) reference group",
+        requestReferenceGroupCode,
+        responseReferenceGroupCode,
         accessorId: requestDataFromMq.accessor_id,
-        idpId,
       });
 
       validSignature = false;
