@@ -76,6 +76,7 @@ let pollingStatus = false;
 let cacheBlocks = {};
 let lastKnownAppHash;
 
+let tendermintVersion;
 export let syncing = null;
 export let connected = false;
 
@@ -370,6 +371,23 @@ export function setTxResultCallbackFnGetter(fn) {
   getTxResultCallbackFn = fn;
 }
 
+function setTendermintVersion(versionStr) {
+  const [majorStr, minorStr, patchStr] = versionStr.split('.');
+  const major = parseInt(majorStr);
+  const minor = parseInt(minorStr);
+  const patch = parseInt(patchStr);
+  tendermintVersion = {
+    major,
+    minor,
+    patch,
+  };
+  logger.info({
+    message: 'Tendermint version',
+    versionStr,
+    parsedVersion: tendermintVersion,
+  });
+}
+
 /**
  * Poll tendermint status until syncing === false
  */
@@ -403,6 +421,8 @@ async function pollStatusUntilSynced() {
         continue;
       }
       syncing = status.sync_info.catching_up;
+      const tendermintVersionStr = status.node_info.version;
+      setTendermintVersion(tendermintVersionStr);
       if (syncing === false) {
         logger.info({
           message: 'Tendermint blockchain synced',
@@ -657,11 +677,17 @@ async function processTransactionsInBlock(blockHeight, block) {
       const txProtoBuffer = Buffer.from(txBase64, 'base64');
       const txHash = sha256(txProtoBuffer).toString('hex');
       if (expectedTx[txHash] == null) return;
+      let deliverTxResult;
+      if (tendermintVersion.minor < 32) {
+        deliverTxResult = blockResult.results.DeliverTx[index];
+      } else {
+        deliverTxResult = blockResult.results.deliver_tx[index];
+      }
       await processExpectedTx(
         txHash,
         {
           height: blockHeight,
-          deliverTxResult: blockResult.results.DeliverTx[index],
+          deliverTxResult,
         },
         true
       );
@@ -746,17 +772,28 @@ async function getParsedTxsInBlocks(fromHeight, toHeight, withTxHash) {
 
     const transactionsWithDeliverTxResult = transactions.map(
       (transaction, index) => {
-        const deliverTxResult =
-          blockResults[blockIndex].results.DeliverTx[index];
-
+        let deliverTxResult;
         let success;
-        const successTag = deliverTxResult.tags.find(
-          (tag) => tag.key === successBase64
-        );
-        if (successTag) {
-          success = successTag.value === trueBase64;
+        if (tendermintVersion.minor < 32) {
+          deliverTxResult = blockResults[blockIndex].results.DeliverTx[index];
+          const successTag = deliverTxResult.tags.find(
+            (tag) => tag.key === successBase64
+          );
+          if (successTag) {
+            success = successTag.value === trueBase64;
+          } else {
+            success = false;
+          }
         } else {
-          success = false;
+          deliverTxResult = blockResults[blockIndex].results.deliver_tx[index];
+          const successAttribute = deliverTxResult.events
+            .find((event) => event.type === 'did.result')
+            .attributes.find((attribute) => attribute.key === successBase64);
+          if (successAttribute) {
+            success = successAttribute.value === trueBase64;
+          } else {
+            success = false;
+          }
         }
 
         return {
