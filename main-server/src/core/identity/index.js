@@ -115,15 +115,15 @@ export async function getIdentityInfo({
   identifier,
 }) {
   try {
-    if (nodeId == null) {
-      if (role === 'proxy') {
+    if (role === 'proxy') {
+      if (nodeId == null) {
         throw new CustomError({
           errorType: errorType.MISSING_NODE_ID,
         });
-      } else {
-        nodeId = config.nodeId;
       }
-    } 
+    } else {
+      nodeId = config.nodeId;
+    }
 
     const identityInfo = await tendermintNdid.getIdentityInfo({
       reference_group_code: referenceGroupCode,
