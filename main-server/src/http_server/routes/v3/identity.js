@@ -66,7 +66,7 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
   }
 });
 
-router.get('/:namespace/:identifier', async (req, res, next) => {
+router.get('/:namespace/:identifier', idpOnlyHandler,  async (req, res, next) => {
   try {
     const { namespace, identifier } = req.params;
 
@@ -119,7 +119,7 @@ router.post(
   }
 );
 
-router.get('/:namespace/:identifier/ial', async (req, res, next) => {
+router.get('/:namespace/:identifier/ial', idpOnlyHandler, async (req, res, next) => {
   try {
     const { node_id } = req.query;
     const { namespace, identifier } = req.params;
@@ -249,6 +249,7 @@ router.post(
 
 router.post(
   '/:namespace/:identifier/accessors_revoke',
+  idpOnlyHandler,
   validateBody,
   async (req, res, next) => {
     try {
@@ -282,6 +283,7 @@ router.post(
 
 router.post(
   '/:namespace/:identifier/accessors_revoke_and_add',
+  idpOnlyHandler,
   validateBody,
   async (req, res, next) => {
     try {
@@ -321,6 +323,7 @@ router.post(
 
 router.post(
   '/:namespace/:identifier/association_revoke',
+  idpOnlyHandler,
   validateBody,
   async (req, res, next) => {
     try {
@@ -371,6 +374,7 @@ router.post(
 
 router.post(
   '/:namespace/:identifier/removal_from_reference_group',
+  idpOnlyHandler,
   validateBody,
   async (req, res, next) => {
     try {
@@ -390,6 +394,7 @@ router.post(
 
 router.post(
   '/:namespace/:identifier/reference_group_merge',
+  idpOnlyHandler,
   validateBody,
   async (req, res, next) => {
     try {
