@@ -28,7 +28,7 @@ import logger from '../../logger';
 
 import readyHandler from './middleware/ready_handler';
 import errorHandler from './middleware/error_handler';
-import apiV3Router from './v3';
+import apiV4Router from './v4';
 import serverInfo from './server_info';
 import reinitNodeKeys from './reinit_node_keys';
 import {
@@ -111,8 +111,8 @@ router.get('/reinit_node_keys', reinitNodeKeys);
 
 router.use(readyHandler);
 
-router.use(apiV3Router);
-router.use('/v3', apiV3Router);
+router.use(apiV4Router);
+router.use('/v4', apiV4Router);
 
 router.use(errorHandler);
 

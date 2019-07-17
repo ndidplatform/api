@@ -44,7 +44,6 @@ const CALLBACK_URL_NAME = {
   INCOMING_REQUEST: 'incoming_request_url',
   INCOMING_REQUEST_STATUS_UPDATE: 'incoming_request_status_update_url',
   IDENTITY_MODIFICATION_NOTIFICATION: 'identity_modification_notification_url',
-  ACCESSOR_ENCRYPT: 'accessor_encrypt_url',
   ERROR: 'error_url',
 };
 const CALLBACK_URL_NAME_ARR = Object.values(CALLBACK_URL_NAME);
@@ -70,7 +69,6 @@ export async function setCallbackUrls({
   incoming_request_url,
   incoming_request_status_update_url,
   identity_modification_notification_url,
-  accessor_encrypt_url,
   error_url,
 }) {
   const promises = [];
@@ -98,15 +96,6 @@ export async function setCallbackUrls({
         config.nodeId,
         `idp.${CALLBACK_URL_NAME.IDENTITY_MODIFICATION_NOTIFICATION}`,
         identity_modification_notification_url
-      )
-    );
-  }
-  if (accessor_encrypt_url != null) {
-    promises.push(
-      dataDb.setCallbackUrl(
-        config.nodeId,
-        `idp.${CALLBACK_URL_NAME.ACCESSOR_ENCRYPT}`,
-        accessor_encrypt_url
       )
     );
   }
@@ -164,109 +153,6 @@ export function getIdentityModificationNotificationCallbackUrl() {
     config.nodeId,
     `idp.${CALLBACK_URL_NAME.IDENTITY_MODIFICATION_NOTIFICATION}`
   );
-}
-
-function getAccessorEncryptCallbackUrl() {
-  return dataDb.getCallbackUrl(
-    config.nodeId,
-    `idp.${CALLBACK_URL_NAME.ACCESSOR_ENCRYPT}`
-  );
-}
-
-export async function isAccessorEncryptCallbackUrlSet() {
-  const callbackUrl = await getAccessorEncryptCallbackUrl();
-  return callbackUrl != null;
-}
-
-export async function accessorEncrypt({
-  node_id,
-  request_message,
-  initial_salt,
-  accessor_id,
-  accessor_public_key,
-  reference_id,
-  request_id,
-}) {
-  const request_message_padded_hash = utils.hashRequestMessageForConsent(
-    request_message,
-    initial_salt,
-    request_id,
-    accessor_public_key
-  );
-
-  const data = {
-    node_id,
-    type: 'accessor_encrypt',
-    accessor_id,
-    key_type: 'RSA',
-    padding: 'none',
-    request_message_padded_hash,
-    reference_id,
-    request_id,
-  };
-
-  const accessorEncryptCallbackUrl = await getAccessorEncryptCallbackUrl();
-  if (accessorEncryptCallbackUrl == null) {
-    throw new CustomError({
-      errorType: errorType.ENCRYPT_WITH_ACCESSOR_KEY_URL_NOT_SET,
-    });
-  }
-
-  logger.debug({
-    message: 'Callback to accessor sign',
-    url: accessorEncryptCallbackUrl,
-    reference_id,
-    request_id,
-    accessor_id,
-    accessor_public_key,
-    request_message_padded_hash,
-  });
-
-  try {
-    const response = await fetch(accessorEncryptCallbackUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    const responseBody = await response.text();
-    logger.info({
-      message: 'Accessor encrypt response',
-      httpStatusCode: response.status,
-    });
-    logger.debug({
-      message: 'Accessor encrypt response body',
-      body: responseBody,
-    });
-    const signatureObj = JSON.parse(responseBody);
-    const signature = signatureObj.signature;
-    if (
-      !utils.verifyResponseSignature(
-        signature,
-        accessor_public_key,
-        request_message,
-        initial_salt,
-        request_id
-      )
-    ) {
-      throw new CustomError({
-        errorType: errorType.INVALID_ACCESSOR_SIGNATURE,
-      });
-    }
-    return signature;
-  } catch (error) {
-    throw new CustomError({
-      errorType: errorType.ENCRYPT_WITH_ACCESSOR_KEY_FAILED,
-      cause: error,
-      details: {
-        callbackUrl: accessorEncryptCallbackUrl,
-        accessor_id,
-        request_message_padded_hash,
-      },
-    });
-  }
 }
 
 export async function notifyIncomingRequestByCallback(

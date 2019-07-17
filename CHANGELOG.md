@@ -4,12 +4,19 @@
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v3.0.0_
 
+BREAKING CHANGES:
+
+- Remove API v3.
+- API v4.0
+  - `signature` is required for POST `/idp/response`.
+  - Remove accessor encrypt callback (mode 2, 3) and sign callback (mode 1) when IdP creating response.
+  - New API: GET `/idp/request_message_padded_hash` for getting `request_message_padded_hash` used for creating mode 2 and 3 request signature (signed with accessor private key without padding) on response.
+  - Change NDID APIs (`/ndid/update_node`, `/ndid/enable_node`, and  `/ndid/disable_node`) HTTP success response status code from 200 to 204.
+
 IMPROVEMENTS:
 
-- API v3.1
+- API v4.0
   - New callback for notifying message queue message send success (ACK from destination node received). Callback URL can be set using POST `/node/callback` with property `message_queue_send_success_url`.
-  - Change NDID APIs (`/ndid/update_node`, `/ndid/enable_node`, and  `/ndid/disable_node`) HTTP success response status code from 200 to 204.
-  - New API: GET `/idp/request_message_padded_hash` for getting `request_message_padded_hash` used for creating mode 2 and 3 request signature (signed with accessor private key without padding) on response.
 - Add accessor in request reference group validation on IdP responses.
 - Support Tendermint 0.32 (Block result spec change).
 

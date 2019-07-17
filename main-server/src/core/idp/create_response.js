@@ -20,8 +20,6 @@
  *
  */
 
-import { accessorEncrypt } from '.';
-
 import { getIdentityInfo } from '../identity';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as tendermint from '../../tendermint';
@@ -191,43 +189,22 @@ export async function createResponse(createResponseParams) {
           errorType: errorType.WRONG_IAL,
         });
       }
-    }
 
-    if (signature != null) {
-      if (request.mode === 1) {
-        const nodeInfo = await tendermintNdid.getNodeInfo(node_id);
-        const publicKey = nodeInfo.public_key;
-        if (
-          !utils.verifySignature(
-            signature,
-            publicKey,
-            requestData.request_message
-          )
-        ) {
-          throw new CustomError({
-            errorType: errorType.INVALID_SIGNATURE,
-            details: {
-              requestId: request_id,
-            },
-          });
-        }
-      } else if (request.mode === 2 || request.mode === 3) {
-        if (
-          !utils.verifyResponseSignature(
-            signature,
-            accessorPublicKey,
-            requestData.request_message,
-            requestData.initial_salt,
-            request_id
-          )
-        ) {
-          throw new CustomError({
-            errorType: errorType.INVALID_ACCESSOR_SIGNATURE,
-            details: {
-              requestId: request_id,
-            },
-          });
-        }
+      if (
+        !utils.verifyResponseSignature(
+          signature,
+          accessorPublicKey,
+          requestData.request_message,
+          requestData.initial_salt,
+          request_id
+        )
+      ) {
+        throw new CustomError({
+          errorType: errorType.INVALID_ACCESSOR_SIGNATURE,
+          details: {
+            requestId: request_id,
+          },
+        });
       }
     }
 
@@ -258,6 +235,7 @@ export async function createResponse(createResponseParams) {
  * @param {number} createResponseParams.ial
  * @param {string} createResponseParams.status
  * @param {string} createResponseParams.accessor_id
+ * @param {string} createResponseParams.signature
  */
 export async function createResponseInternal(
   createResponseParams,
@@ -271,32 +249,12 @@ export async function createResponseInternal(
     ial,
     status,
     accessor_id,
+    signature,
   } = createResponseParams;
-  let { signature } = createResponseParams;
-  const { nodeId, requestData, accessorPublicKey } = additionalParams;
+  const { nodeId, requestData } = additionalParams;
   try {
     const request = await tendermintNdid.getRequest({ requestId: request_id });
     const mode = request.mode;
-
-    if (signature == null) {
-      if (requestData.mode === 1) {
-        // get signature for mode 1 - sign with node key
-        signature = (await utils.createSignature(
-          requestData.request_message,
-          nodeId
-        )).toString('base64');
-      } else if (requestData.mode === 2 || requestData.mode === 3) {
-        signature = await accessorEncrypt({
-          node_id: nodeId,
-          request_message: requestData.request_message,
-          initial_salt: requestData.initial_salt,
-          accessor_id,
-          accessor_public_key: accessorPublicKey,
-          reference_id,
-          request_id,
-        });
-      }
-    }
 
     const dataToBlockchain = {
       request_id,

@@ -269,9 +269,6 @@ export default {
           identity_modification_notification_url: {
             $ref: 'defs#/definitions/url',
           },
-          accessor_encrypt_url: {
-            $ref: 'defs#/definitions/url',
-          },
           error_url: {
             $ref: 'defs#/definitions/url',
           },
@@ -303,6 +300,7 @@ export default {
           'aal',
           'status',
           // 'accessor_id', Not required in mode 1
+          'signature',
         ],
       },
     },
