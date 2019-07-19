@@ -76,7 +76,7 @@ let pollingStatus = false;
 let cacheBlocks = {};
 let lastKnownAppHash;
 
-let tendermintVersion;
+export let tendermintVersion;
 export let syncing = null;
 export let connected = false;
 
@@ -678,7 +678,7 @@ async function processTransactionsInBlock(blockHeight, block) {
       const txHash = sha256(txProtoBuffer).toString('hex');
       if (expectedTx[txHash] == null) return;
       let deliverTxResult;
-      if (tendermintVersion.minor < 32) {
+      if (tendermintVersion.major === 0 && tendermintVersion.minor < 32) {
         deliverTxResult = blockResult.results.DeliverTx[index];
       } else {
         deliverTxResult = blockResult.results.deliver_tx[index];
@@ -774,7 +774,7 @@ async function getParsedTxsInBlocks(fromHeight, toHeight, withTxHash) {
       (transaction, index) => {
         let deliverTxResult;
         let success;
-        if (tendermintVersion.minor < 32) {
+        if (tendermintVersion.major === 0 && tendermintVersion.minor < 32) {
           deliverTxResult = blockResults[blockIndex].results.DeliverTx[index];
           const successTag = deliverTxResult.tags.find(
             (tag) => tag.key === successBase64

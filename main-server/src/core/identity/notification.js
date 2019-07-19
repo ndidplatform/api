@@ -22,6 +22,7 @@
 
 import operationTypes from './operation_type';
 
+import { tendermintVersion } from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import { callbackToClient } from '../../callback';
 import { getFunction } from '../../functions';
@@ -41,12 +42,25 @@ export async function handleIdentityModificationTransactions({
     return;
   }
 
-  const referenceGroupCode = Buffer.from(
-    transaction.deliverTxResult.tags.find(
-      (tag) => tag.key === reference_group_code_base64
-    ).value,
-    'base64'
-  ).toString();
+  let referenceGroupCode;
+  if (tendermintVersion.major === 0 && tendermintVersion.minor < 32) {
+    referenceGroupCode = Buffer.from(
+      transaction.deliverTxResult.tags.find(
+        (tag) => tag.key === reference_group_code_base64
+      ).value,
+      'base64'
+    ).toString();
+  } else {
+    referenceGroupCode = Buffer.from(
+      transaction.deliverTxResult.events
+        .find((event) => event.type === 'did.result')
+        .attributes.find(
+          (attribute) => attribute.key === reference_group_code_base64
+        ).value,
+      'base64'
+    ).toString();
+  }
+
   // Check if associated with nodeId
   const identityInfo = await tendermintNdid.getIdentityInfo({
     reference_group_code: referenceGroupCode,
