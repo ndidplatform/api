@@ -19,6 +19,7 @@ services:
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
+    user: root
     ports:
       - "8080:${API_PORT:-8080}"
     networks:
@@ -44,6 +45,7 @@ services:
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
+    user: root
     #ports:
     #  - "8100:${API_PORT:-8080}"
     networks:
@@ -67,6 +69,7 @@ services:
       - "8100:${API_PORT:-8080}"
     security_opt:
       - no-new-privileges
+    user: root
     networks:
       - ndidplatform
     volumes:
@@ -95,6 +98,7 @@ services:
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
+    user: root
     #ports:
     #  - "8101:${API_PORT:-8080}"
     networks:
@@ -116,6 +120,7 @@ services:
       - MODE=worker
     security_opt:
       - no-new-privileges
+    user: root
     networks:
       - ndidplatform
     volumes:
@@ -146,6 +151,7 @@ services:
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
+    user: root
     #ports:
     #  - "8102:${API_PORT:-8080}"
     networks:
@@ -167,6 +173,7 @@ services:
       - MODE=worker
     security_opt:
       - no-new-privileges
+    user: root
     networks:
       - ndidplatform
     volumes:
@@ -197,6 +204,7 @@ services:
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
+    user: root
     #ports:
     #  - "8200:${API_PORT:-8080}"
     networks:
@@ -218,6 +226,7 @@ services:
       - MODE=worker
     security_opt:
       - no-new-privileges
+    user: root
     networks:
       - ndidplatform
     volumes:
@@ -245,6 +254,7 @@ services:
       - SKIP=true
     security_opt:
       - no-new-privileges
+    user: root
     networks:
       - ndidplatform
     volumes:
@@ -275,6 +285,7 @@ services:
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
+    user: root
     #ports:
     #  - "8300:${API_PORT:-8080}"
     networks:
@@ -296,6 +307,7 @@ services:
       - MODE=worker
     security_opt:
       - no-new-privileges
+    user: root
     networks:
       - ndidplatform
     volumes:
@@ -326,6 +338,7 @@ services:
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
+    user: root
     #ports:
     #  - "8301:${API_PORT:-8080}"
     networks:
@@ -347,6 +360,7 @@ services:
       - MODE=worker
     security_opt:
       - no-new-privileges
+    user: root
     networks:
       - ndidplatform
     volumes:
@@ -378,6 +392,7 @@ services:
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
+    user: root
     #ports:
     #  - "8400:${API_PORT:-8080}"
     networks:
@@ -404,6 +419,7 @@ services:
       - ./start-api-test.sh:/api/start-api-test.sh
     security_opt:
       - no-new-privileges
+    user: root
     networks:
       - ndidplatform
     entrypoint: /api/start-api-test.sh
@@ -431,6 +447,7 @@ services:
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
+    user: root
     #ports:
     #  - "8401:${API_PORT:-8080}"
     networks:
@@ -457,6 +474,7 @@ services:
       - ./start-api-test.sh:/api/start-api-test.sh
     security_opt:
       - no-new-privileges
+    user: root
     networks:
       - ndidplatform
     entrypoint: /api/start-api-test.sh

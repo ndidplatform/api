@@ -24,7 +24,6 @@ ENV TERM=xterm-256color
 RUN umask 027 && echo "umask 0027" >> /etc/profile
 
 RUN apt-get update && apt-get install -y \
-  jq \
   openssl \
   curl \
   --no-install-recommends && rm -r /var/lib/apt/lists/*
@@ -49,8 +48,9 @@ COPY ./protos /api/protos
 COPY COPYING /api/
 COPY VERSION /api/
 
-# Change owner to nobodoy:nogroup and permission to 640
+# Change owner to nobodoy:nogroup and permission to 740
 RUN chown -R nobody:nogroup /api
-RUN chmod -R 640 /api
+RUN chmod -R 740 /api
 
+USER nobody
 ENTRYPOINT [ "node", "/api/mq-server/build/server.js" ]

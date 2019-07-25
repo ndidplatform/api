@@ -17,6 +17,7 @@ services:
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
+    user: root
     ports:
       - "8080:${API_PORT:-8080}"
     networks:
@@ -40,6 +41,7 @@ services:
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
+    user: root
     ports:
       - "8100:${API_PORT:-8080}"
     networks:
@@ -63,6 +65,7 @@ services:
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
+    user: root
     ports:
       - "8101:${API_PORT:-8080}"
     networks:
@@ -86,6 +89,7 @@ services:
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
+    user: root
     ports:
       - "8102:${API_PORT:-8080}"
     networks:
@@ -109,6 +113,7 @@ services:
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
+    user: root
     ports:
       - "8200:${API_PORT:-8080}"
     networks:
@@ -132,6 +137,7 @@ services:
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
+    user: root
     ports:
       - "8300:${API_PORT:-8080}"
     networks:
@@ -155,6 +161,7 @@ services:
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
+    user: root
     ports:
       - "8301:${API_PORT:-8080}"
     networks:
@@ -178,6 +185,7 @@ services:
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
+    user: root
     ports:
       - "8400:${API_PORT:-8080}"
     networks:
@@ -201,6 +209,7 @@ services:
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
+    user: root
     ports:
       - "8401:${API_PORT:-8080}"
     networks:

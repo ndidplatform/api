@@ -1,5 +1,17 @@
 #!/bin/sh
 
+if ! which su-exec; then
+  rm -rf /var/cache/apk
+  mkdir -p /var/cache/apk
+  apk update
+  apk add 'su-exec>=0.2' jq;
+fi
+
+if [ "$(id -u)" = '0' ]; then
+  exec su-exec 65534 "$0" "$@"
+  exit 0;
+fi
+
 TENDERMINT_PORT=${TENDERMINT_PORT:-45000}
 MQ_BINDING_PORT=${MQ_BINDING_PORT:-5555}
 SERVER_PORT=${SERVER_PORT:-8080}
