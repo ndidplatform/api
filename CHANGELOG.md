@@ -19,11 +19,16 @@ IMPROVEMENTS:
   - New callback for notifying message queue message send success (ACK from destination node received). Callback URL can be set using POST `/node/callback` with property `message_queue_send_success_url`.
 - Add accessor in request reference group validation on IdP responses.
 - Support Tendermint 0.32 (Block result spec change).
+- [Docker] User `nobody` user as default.
 
 BUG FIXES:
 
 - Fix missing request status update callback (request closed, request timed out) on IdP side for identity related requests.
 - Fix invalid IdP response signature check on RP and IdP nodes when signature is cryptographically valid but signed with accessor that is not in request reference group.
+
+OTHERS:
+
+- [Docker] Remove `jq` from docker image.
 
 ## 2.0.1 (June 24, 2019)
 
