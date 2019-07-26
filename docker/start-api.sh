@@ -1,16 +1,13 @@
 #!/bin/sh
 
-if ! which su-exec; then
-  rm -rf /var/cache/apk
+# Install jq and curl as they are required by this script
+if ! which jq || ! which curl; then
   mkdir -p /var/cache/apk
   apk update
-  apk add 'su-exec>=0.2' jq;
+  apk add --no-cache curl jq
+  rm -rf /var/cache/apk
 fi
 
-if [ "$(id -u)" = '0' ]; then
-  exec su-exec 65534 "$0" "$@"
-  exit 0;
-fi
 
 TENDERMINT_PORT=${TENDERMINT_PORT:-45000}
 MQ_BINDING_PORT=${MQ_BINDING_PORT:-5555}

@@ -19,7 +19,10 @@ IMPROVEMENTS:
   - New callback for notifying message queue message send success (ACK from destination node received). Callback URL can be set using POST `/node/callback` with property `message_queue_send_success_url`.
 - Add accessor in request reference group validation on IdP responses.
 - Support Tendermint 0.32 (Block result spec change).
-- [Docker] User `nobody` user as default.
+- [Docker] Reduce image size.
+- [Docker] Remove default owner and permission settings.
+- [Docker] Remove `TERM` env.
+- [Docker-API] Add docker-entrypoint.sh as image entrypoint which will check existence and owner of `DATA_DIRECTORY_PATH`.
 
 BUG FIXES:
 
@@ -28,7 +31,12 @@ BUG FIXES:
 
 OTHERS:
 
-- [Docker] Remove `jq` from docker image.
+- [Docker] Remove `jq` and `curl` from docker image.
+
+NOTES:
+
+- [Docker] Docker container may be run with `-u` or `--user` flag (e.g. `-u 65534:65534`). In case you are using docker-compose, `user` may be specified in docker-compose file (e.g. `user: 65534:65534`) (see [Compose file reference](https://docs.docker.com/compose/compose-file/#domainname-hostname-ipc-mac_address-privileged-read_only-shm_size-stdin_open-tty-user-working_dir) for more detail).
+- [Docker-API] When running docker container with non-root user, source directories that will be mounted into the container as `DATA_DIRECTORY_PATH` must be created beforehand with the non-root user as owner.
 
 ## 2.0.1 (June 24, 2019)
 
