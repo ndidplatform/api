@@ -11,6 +11,9 @@ BREAKING CHANGES:
   - `signature` is required for POST `/idp/response`.
   - Remove accessor encrypt callback (mode 2, 3) and sign callback (mode 1) when IdP creating response.
   - New API: GET `/idp/request_message_padded_hash` for getting `request_message_padded_hash` used for creating mode 2 and 3 request signature (signed with accessor private key without padding) on response.
+  - Change API route names
+    - `/identity/:namespace/:identifier/accessors_revoke` to `/identity/:namespace/:identifier/accessor_revoke`
+    - `/identity/:namespace/:identifier/accessors_revoke_and_add` to `/identity/:namespace/:identifier/accessor_revoke_and_add`
   - Change NDID APIs (`/ndid/update_node`, `/ndid/enable_node`, and  `/ndid/disable_node`) HTTP success response status code from 200 to 204.
 
 IMPROVEMENTS:
