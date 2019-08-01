@@ -2,7 +2,7 @@
 
 ## 3.0.0 (August 1, 2019)
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v3.0.0_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v4.0.0_
 
 BREAKING CHANGES:
 
