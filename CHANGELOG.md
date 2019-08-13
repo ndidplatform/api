@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix does not use all websocket connections in connection pool.
+
 ## 3.0.0 (August 1, 2019)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v4.0.0_
