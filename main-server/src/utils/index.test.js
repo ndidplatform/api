@@ -103,6 +103,29 @@ ZwIDAQAB
 -----END PUBLIC KEY-----`;
 
 describe('Test hash with custom padding for accessor encrypt (request response signature)', () => {
+  it('should create hash correctly', () => {
+    const requestId = '8a1cef0f345655c1597c2158b7d25a6866c4baf9d3e543dd3abc4982e3905f04';
+    const requestMessage = 'test';
+    const initialSalt = 'd9UV7tfs38e+s/5RAtcAfw==';
+
+    const requestMessageForConsentHash = utils.hashRequestMessageForConsent(
+      requestMessage,
+      initialSalt,
+      requestId,
+      publicKey
+    );
+
+    const expectedRequestMessageForConsentHash = 'A/nQfv5vp/BVym2F2J36n9NEJjPIMMgYUQrl1cKTi5h1+iV1bnwNU5mfksEdPGIC6uNfW5eIrtzfTN9pFGDE/myQL/PBBfFMiCMmf6CBV2S0z6HjSbnqS4HVnf+O6KLpvJYwLitdQr/Z/TPFQV+j4ZoOXvwlHffrRj9F2UXK63Xx3BgqlpvwXX7IpFluYYFC+UXRCh9PggOdewc4vXXi4GEHqc5Jv3Q7VMjdaaQv0iZHD/MBYRnHrenBUeLh7RD1+mwRpUVcgH/sKILscWuaXrZ1wn6G/1j0CFPQFWHYQhxkEXOdLfeV3wOktaOWikNzEzV5ByDNoOKI13uJo9Fi5g==';
+
+    // return type is Buffer
+    expect(requestMessageForConsentHash).to.be.equals(expectedRequestMessageForConsentHash);
+    const requestMessageForConsentHashBuffer = Buffer.from(
+      requestMessageForConsentHash,
+      'base64'
+    );
+    expect(requestMessageForConsentHashBuffer).to.have.lengthOf.at.most(256);
+  });
+
   it('should create hash then sign and verify correctly', () => {
     const requestId = utils.createRequestId();
     const requestMessage = 'test';
@@ -120,7 +143,7 @@ describe('Test hash with custom padding for accessor encrypt (request response s
       requestMessageForConsentHash,
       'base64'
     );
-    expect(requestMessageForConsentHashBuffer).to.have.lengthOf.at.most(2048);
+    expect(requestMessageForConsentHashBuffer).to.have.lengthOf.at.most(256);
 
     const signature = crypto
       .privateEncrypt(
@@ -167,7 +190,7 @@ describe('Test hash with custom padding for accessor encrypt (request response s
       requestMessageForConsentHash,
       'base64'
     );
-    expect(requestMessageForConsentHashBuffer).to.have.lengthOf.at.most(2048);
+    expect(requestMessageForConsentHashBuffer).to.have.lengthOf.at.most(256);
 
     const signature = crypto
       .privateEncrypt(
