@@ -23,7 +23,8 @@
 import fs from 'fs';
 import crypto from 'crypto';
 
-import bignum from 'bignum';
+// import BN from 'bn.js';
+import { toBigIntBE, toBufferBE } from 'bigint-buffer';
 
 import * as cryptoUtils from './crypto';
 import { parseKey, encodeSignature } from './asn1parser';
@@ -171,42 +172,42 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
   return rawMessageBuffer.slice(0, padLength + 1).toString('base64');
 }
 
-function extractParameterFromPublicKey(publicKey) {
-  const parsedKey = parseKey(publicKey);
-  return {
-    n: stringToBigInt(parsedKey.data.modulus.toBuffer().toString('base64')),
-    e: bignum(parsedKey.data.publicExponent.toString(10)),
-  };
-}
+// function extractParameterFromPublicKey(publicKey) {
+//   const parsedKey = parseKey(publicKey);
+//   return {
+//     n: stringToBigInt(parsedKey.data.modulus.toBuffer().toString('base64')),
+//     e: bignum(parsedKey.data.publicExponent.toString(10)),
+//   };
+// }
 
-function powerMod(base, exponent, modulus) {
-  return base.powm(exponent, modulus);
-}
+// function powerMod(base, exponent, modulus) {
+//   return base.powm(exponent, modulus);
+// }
 
-function stringToBigInt(string) {
-  return bignum.fromBuffer(Buffer.from(string, 'base64'));
-}
+// function stringToBigInt(string) {
+//   return bignum.fromBuffer(Buffer.from(string, 'base64'));
+// }
 
-function euclideanGCD(a, b) {
-  if (a.eq(bignum('0'))) return [b, bignum('0'), bignum('1')];
-  let [g, y, x] = euclideanGCD(b.mod(a), a);
-  return [
-    g,
-    x.sub(
-      b
-        .sub(b.mod(a))
-        .div(a)
-        .mul(y)
-    ),
-    y,
-  ];
-}
+// function euclideanGCD(a, b) {
+//   if (a.eq(bignum('0'))) return [b, bignum('0'), bignum('1')];
+//   let [g, y, x] = euclideanGCD(b.mod(a), a);
+//   return [
+//     g,
+//     x.sub(
+//       b
+//         .sub(b.mod(a))
+//         .div(a)
+//         .mul(y)
+//     ),
+//     y,
+//   ];
+// }
 
-function moduloMultiplicativeInverse(a, modulo) {
-  let [g, x, y] = euclideanGCD(a, modulo);
-  if (!g.eq(1)) throw 'No modular inverse';
-  return x.mod(modulo);
-}
+// function moduloMultiplicativeInverse(a, modulo) {
+//   let [g, x, y] = euclideanGCD(a, modulo);
+//   if (!g.eq(1)) throw 'No modular inverse';
+//   return x.mod(modulo);
+// }
 
 /**
  *
@@ -268,10 +269,10 @@ function getDataHashWithCustomPadding(
   initialSalt,
   keyModulus,
   dataHash,
-  blockLength = 2048
+  blockLengthBits = 2048
 ) {
   const hashLength = 256;
-  const padLengthInbyte = parseInt(Math.floor((blockLength - hashLength) / 8));
+  const padLengthInbyte = parseInt(Math.floor((blockLengthBits - hashLength) / 8));
   let paddingBuffer = Buffer.alloc(0);
 
   for (
@@ -289,15 +290,23 @@ function getDataHashWithCustomPadding(
 
   const hashWithPaddingBeforeMod = Buffer.concat([paddingBuffer, dataHash]);
 
-  const hashWithPaddingBN = bignum.fromBuffer(hashWithPaddingBeforeMod);
-  const keyModulusBN = bignum.fromBuffer(keyModulus);
+  const hashWithPaddingBN = toBigIntBE(hashWithPaddingBeforeMod);
+  const keyModulusBN = toBigIntBE(keyModulus);
 
-  let hashWithPadding = hashWithPaddingBN.mod(keyModulusBN).toBuffer();
+  const hashWithPaddingModKeyModulusBN = hashWithPaddingBN % keyModulusBN;
+  const hashWithPadding = toBufferBE(
+    hashWithPaddingModKeyModulusBN,
+    blockLengthBits / 8
+  ); // Zeros padded in-front
 
-  if (hashWithPadding.length < keyModulus.length) {
-    const zeros = Buffer.alloc(keyModulus.length - hashWithPadding.length);
-    hashWithPadding = Buffer.concat([zeros, hashWithPadding]);
-  }
+  // const hashWithPaddingBN = new BN(hashWithPaddingBeforeMod);
+  // const keyModulusBN = new BN(keyModulus);
+
+  // let hashWithPadding = hashWithPaddingBN.mod(keyModulusBN).toBuffer();
+  // if (hashWithPadding.length < keyModulus.length) {
+  //   const zeros = Buffer.alloc(keyModulus.length - hashWithPadding.length);
+  //   hashWithPadding = Buffer.concat([zeros, hashWithPadding]);
+  // }
 
   return hashWithPadding;
 }
@@ -335,15 +344,23 @@ export function verifyResponseSignature(
   initial_salt,
   request_id
 ) {
-  const decryptedSignatureBase64 = cryptoUtils
-    .publicDecrypt(
-      {
-        key: publicKey,
-        padding: crypto.constants.RSA_NO_PADDING,
-      },
-      Buffer.from(signature, 'base64')
-    )
-    .toString('base64');
+  let decryptedSignatureBase64;
+  try {
+    decryptedSignatureBase64 = cryptoUtils
+      .publicDecrypt(
+        {
+          key: publicKey,
+          padding: crypto.constants.RSA_NO_PADDING,
+        },
+        Buffer.from(signature, 'base64')
+      )
+      .toString('base64');
+  } catch (error) {
+    if (error.code === 'ERR_OSSL_RSA_DATA_TOO_LARGE_FOR_MODULUS') {
+      return false;
+    }
+    throw error;
+  }
 
   const hashWithPaddingBase64 = hashRequestMessageForConsent(
     request_message,

@@ -1,6 +1,20 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v4.x.x_
+
+IMPROVEMENTS:
+
+- Support Node.js 12.
+
+BUG FIXES:
+
+- Fix verifying response signature error when input signature cannot be decrypt due to data too large for key modulus. Now correctly return false.
+
 ## 3.0.1 (November 21, 2019)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v4.x.x_
 
 BUG FIXES:
 
@@ -8,7 +22,7 @@ BUG FIXES:
 
 ## 3.0.0 (August 1, 2019)
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v4.0.0_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v4.x.x_
 
 BREAKING CHANGES:
 
