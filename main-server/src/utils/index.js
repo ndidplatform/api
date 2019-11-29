@@ -172,43 +172,6 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
   return rawMessageBuffer.slice(0, padLength + 1).toString('base64');
 }
 
-// function extractParameterFromPublicKey(publicKey) {
-//   const parsedKey = parseKey(publicKey);
-//   return {
-//     n: stringToBigInt(parsedKey.data.modulus.toBuffer().toString('base64')),
-//     e: bignum(parsedKey.data.publicExponent.toString(10)),
-//   };
-// }
-
-// function powerMod(base, exponent, modulus) {
-//   return base.powm(exponent, modulus);
-// }
-
-// function stringToBigInt(string) {
-//   return bignum.fromBuffer(Buffer.from(string, 'base64'));
-// }
-
-// function euclideanGCD(a, b) {
-//   if (a.eq(bignum('0'))) return [b, bignum('0'), bignum('1')];
-//   let [g, y, x] = euclideanGCD(b.mod(a), a);
-//   return [
-//     g,
-//     x.sub(
-//       b
-//         .sub(b.mod(a))
-//         .div(a)
-//         .mul(y)
-//     ),
-//     y,
-//   ];
-// }
-
-// function moduloMultiplicativeInverse(a, modulo) {
-//   let [g, x, y] = euclideanGCD(a, modulo);
-//   if (!g.eq(1)) throw 'No modular inverse';
-//   return x.mod(modulo);
-// }
-
 /**
  *
  * @param {string|Buffer} messageToSign
