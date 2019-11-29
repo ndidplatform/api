@@ -500,7 +500,7 @@ export async function processRawMessage({
       message.type,
       message.request_id,
       {
-        message,
+        message: messageBuffer.toString('base64'),
         direction: longTermDb.MESSAGE_DIRECTIONS.INBOUND,
         source,
         signature: messageSignature.toString('base64'),
@@ -760,7 +760,7 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
     message.type,
     message.request_id,
     {
-      message,
+      message: messageBuffer.toString('base64'),
       direction: longTermDb.MESSAGE_DIRECTIONS.OUTBOUND,
       destinations: receivers.map((receiver) => {
         if (receiver.proxy != null) {

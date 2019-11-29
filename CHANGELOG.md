@@ -1,5 +1,11 @@
 # Changelog
 
+## TBD
+
+BUG FIXES:
+
+- Fix wrong data type (object) of `message` in private messages stored to long-term Redis cache. (Change to string)
+
 ## 3.0.1 (November 21, 2019)
 
 BUG FIXES:
