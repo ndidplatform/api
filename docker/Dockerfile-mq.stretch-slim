@@ -1,4 +1,4 @@
-FROM node:10-stretch-slim as build
+FROM node:12-stretch-slim as build
 
 WORKDIR /tmp
 
@@ -25,7 +25,7 @@ COPY ./mq-server /tmp/api/mq-server
 RUN npm run build && npm prune --production
 
 
-FROM node:10-stretch-slim
+FROM node:12-stretch-slim
 LABEL maintainer="NDID IT Team <it@ndid.co.th>"
 
 # Set umask to 027
