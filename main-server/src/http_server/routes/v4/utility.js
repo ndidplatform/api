@@ -201,6 +201,24 @@ router.get('/services/:service_id', async (req, res, next) => {
   }
 });
 
+router.get('/idp_error_codes', async (req, res, next) => {
+  try {
+    res.status(200).json(await tendermintNdid.getErrorCodeList('idp'));
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/as_error_codes', async (req, res, next) => {
+  try {
+    res.status(200).json(await tendermintNdid.getErrorCodeList('as'));
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 // NOTE: Should not be able to get all since it might run into trouble
 // and crash the server if the number of messages are too much to handle
 // (e.g. run out of memory)

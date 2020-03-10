@@ -1207,6 +1207,19 @@ export async function getNodeInfo(node_id) {
   }
 }
 
+export async function getErrorCodeList(type) {
+  try {
+    return await tendermint.query('GetErrorCodeList', {
+      type,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get error code list from blockchain',
+      cause: error,
+    });
+  }
+}
+
 export async function checkExistingAccessorID(accessor_id) {
   try {
     const result = await tendermint.query('CheckExistingAccessorID', {
