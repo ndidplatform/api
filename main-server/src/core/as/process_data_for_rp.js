@@ -166,7 +166,7 @@ export async function processDataForRP(
 
 async function processDataForRPInternalAsync(
   data,
-  { reference_id, callback_url, requestId, serviceId, rpId },
+  { reference_id, callback_url, requestId, serviceId, rpId, error_code },
   { synchronous = false } = {},
   { nodeId, savedRpId }
 ) {
@@ -189,6 +189,7 @@ async function processDataForRPInternalAsync(
           request_id: requestId,
           signature,
           service_id: serviceId,
+          error_code,
         },
         nodeId,
         'as.processDataForRPInternalAsyncAfterBlockchain',
@@ -213,6 +214,7 @@ async function processDataForRPInternalAsync(
           request_id: requestId,
           signature,
           service_id: serviceId,
+          error_code,
         },
         nodeId
       );

@@ -108,6 +108,48 @@ router.post('/response', validateBody, async (req, res, next) => {
   }
 });
 
+router.post('/error_response', validateBody, async (req, res, next) => {
+  try {
+    const {
+      node_id,
+      reference_id,
+      callback_url,
+      request_id,
+      //namespace,
+      //identifier,
+      ial,
+      aal,
+      status,
+      accessor_id,
+      signature,
+      error_code,
+    } = req.body;
+
+    await idp.createResponse(
+      {
+        node_id,
+        reference_id,
+        callback_url,
+        request_id,
+        //namespace,
+        //identifier,
+        ial,
+        aal,
+        status,
+        accessor_id,
+        signature,
+        error_code,
+      },
+      { synchronous: false }
+    );
+
+    res.status(202).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get(
   '/request_message_padded_hash',
   validateQuery,

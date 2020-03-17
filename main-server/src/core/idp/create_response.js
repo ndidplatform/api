@@ -250,6 +250,7 @@ export async function createResponseInternal(
     status,
     accessor_id,
     signature,
+    error_code,
   } = createResponseParams;
   const { nodeId, requestData } = additionalParams;
   try {
@@ -262,6 +263,7 @@ export async function createResponseInternal(
       ial,
       status,
       signature,
+      error_code,
     };
 
     await tendermintNdid.createIdpResponse(
