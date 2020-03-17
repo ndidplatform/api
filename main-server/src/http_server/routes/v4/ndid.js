@@ -536,4 +536,26 @@ router.post('/get_node_id_list', validateBody, async (req, res, next) => {
   }
 });
 
+router.post('/add_error_code', validateBody, async (req, res, next) => {
+  try {
+    const { error_code, type, description, fatal } = req.body;
+    await ndid.addErrorCode({ error_code, type, description, fatal })
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/remove_error_code', validateBody, async (req, res, next) => {
+  try {
+    const { error_code, type } = req.body;
+    await ndid.removeErrorCode({ error_code, type });
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

@@ -367,5 +367,24 @@ export default {
         },
       },
     },
+    '/ndid/add_error_code': {
+      body: {
+        properties: {
+          error_code: { type: 'string', minLength: 1},
+          type: { type: 'string', enum: ['idp', 'as']},
+          description: { type: 'string' },
+          fatal: { type: 'boolean' }
+        },
+        required: ['error_code', 'type', 'description', 'fatal']
+      }
+    },
+    '/ndid/remove_error_code': {
+      body: {
+        properties: {
+          error_code: { type: 'string', minLength: 1},
+        },
+        required: ['error_code'],
+      }
+    }
   },
 };

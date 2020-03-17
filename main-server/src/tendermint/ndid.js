@@ -1410,3 +1410,51 @@ export async function getNodeIdList(role) {
     });
   }
 }
+
+export async function addErrorCode(
+  { error_code, type, description, fatal },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'AddErrorCode',
+      params: { error_code, type, description, fatal },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot add error code',
+      cause: error,
+    });
+  }
+}
+
+export async function removeErrorCode(
+  { error_code, type, },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'RemoveErrorCode',
+      params: { error_code, type },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove error code',
+      cause: error,
+    });
+  }
+}
