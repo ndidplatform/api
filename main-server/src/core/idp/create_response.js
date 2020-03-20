@@ -279,6 +279,7 @@ export async function createResponseInternal(
           mode,
           accessor_id,
           rp_id: requestData.rp_id,
+          error_code,
         },
       ],
       true
@@ -306,7 +307,7 @@ export async function createResponseInternal(
 
 export async function createResponseAfterBlockchain(
   { height, error, chainDisabledRetryLater },
-  { nodeId, reference_id, callback_url, request_id, mode, accessor_id, rp_id }
+  { nodeId, reference_id, callback_url, request_id, mode, accessor_id, rp_id, error_code }
 ) {
   if (chainDisabledRetryLater) return;
   try {
@@ -319,6 +320,7 @@ export async function createResponseAfterBlockchain(
       accessor_id,
       rp_id,
       height,
+      error_code,
     });
 
     await callbackToClient({
@@ -362,6 +364,7 @@ async function sendResponseToRP({
   accessor_id,
   rp_id,
   height,
+  error_code,
 }) {
   logger.info({
     message: 'Query MQ destination for RP',
@@ -433,6 +436,7 @@ async function sendResponseToRP({
       mode,
       accessor_id,
       idp_id: nodeId,
+      error_code,
       chain_id: tendermint.chainId,
       height,
     },

@@ -229,6 +229,7 @@ async function processDataForRPInternalAsync(
           signature,
           data_salt,
           rpId,
+          error_code,
         },
         { synchronous },
         { nodeId, savedRpId }
@@ -274,6 +275,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     signature,
     data_salt,
     rpId,
+    error_code,
   },
   { synchronous = false } = {},
   { nodeId, savedRpId }
@@ -294,6 +296,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
       service_id: serviceId,
       data,
       height,
+      error_code,
     });
 
     if (!synchronous) {
