@@ -92,6 +92,9 @@ router.post('/register_node', validateBody, async (req, res, next) => {
       role,
       max_aal,
       max_ial,
+      agent,
+      node_id_whitelist_active,
+      node_id_whitelist,
     } = req.body;
 
     await ndid.registerNode(
@@ -105,6 +108,9 @@ router.post('/register_node', validateBody, async (req, res, next) => {
         role,
         max_aal,
         max_ial,
+        agent,
+        node_id_whitelist_active,
+        node_id_whitelist,
       },
       { synchronous: true }
     );
@@ -124,6 +130,9 @@ router.post('/update_node', validateBody, async (req, res, next) => {
       // role,
       max_aal,
       max_ial,
+      agent,
+      node_id_whitelist_active,
+      node_id_whitelist,
     } = req.body;
 
     await ndid.updateNode(
@@ -133,6 +142,9 @@ router.post('/update_node', validateBody, async (req, res, next) => {
         // role,
         max_aal,
         max_ial,
+        agent,
+        node_id_whitelist_active,
+        node_id_whitelist,
       },
       { synchronous: true }
     );
@@ -530,6 +542,28 @@ router.post('/get_node_id_list', validateBody, async (req, res, next) => {
 
     const node_id_list = await ndid.getNodeIdList(role);
     res.status(200).json({ node_id_list });
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/add_error_code', validateBody, async (req, res, next) => {
+  try {
+    const { error_code, type, description, fatal } = req.body;
+    await ndid.addErrorCode({ error_code, type, description, fatal })
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/remove_error_code', validateBody, async (req, res, next) => {
+  try {
+    const { error_code, type } = req.body;
+    await ndid.removeErrorCode({ error_code, type });
+    res.status(204).end();
     next();
   } catch (error) {
     next(error);
