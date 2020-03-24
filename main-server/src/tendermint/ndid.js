@@ -23,6 +23,7 @@
 import * as tendermint from '.';
 import * as utils from '../utils';
 import * as config from '../config';
+import { role } from '../node';
 
 import CustomError from 'ndid-error/custom_error';
 
@@ -887,11 +888,13 @@ export async function getIdpNodes({
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
+  const isRP = (role === "rp");
   try {
     const result = await tendermint.query('GetIdpNodes', {
       reference_group_code,
       identity_namespace: namespace,
       identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
+      filter_for_rp: (isRP ? config.nodeId : undefined),
       min_ial,
       min_aal,
       node_id_list,
@@ -922,11 +925,13 @@ export async function getIdpNodesInfo({
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
+  const isRP = (role === "rp");
   try {
     const result = await tendermint.query('GetIdpNodesInfo', {
       reference_group_code,
       identity_namespace: namespace,
       identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
+      filter_for_rp: (isRP ? config.nodeId : undefined),
       min_ial,
       min_aal,
       node_id_list,

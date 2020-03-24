@@ -92,6 +92,9 @@ router.post('/register_node', validateBody, async (req, res, next) => {
       role,
       max_aal,
       max_ial,
+      agent,
+      node_id_whitelist_active,
+      node_id_whitelist,
     } = req.body;
 
     await ndid.registerNode(
@@ -105,6 +108,9 @@ router.post('/register_node', validateBody, async (req, res, next) => {
         role,
         max_aal,
         max_ial,
+        agent,
+        node_id_whitelist_active,
+        node_id_whitelist,
       },
       { synchronous: true }
     );
@@ -124,6 +130,9 @@ router.post('/update_node', validateBody, async (req, res, next) => {
       // role,
       max_aal,
       max_ial,
+      agent,
+      node_id_whitelist_active,
+      node_id_whitelist,
     } = req.body;
 
     await ndid.updateNode(
@@ -133,6 +142,9 @@ router.post('/update_node', validateBody, async (req, res, next) => {
         // role,
         max_aal,
         max_ial,
+        agent,
+        node_id_whitelist_active,
+        node_id_whitelist,
       },
       { synchronous: true }
     );
