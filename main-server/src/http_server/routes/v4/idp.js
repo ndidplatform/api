@@ -114,18 +114,11 @@ router.post('/error_response', validateBody, async (req, res, next) => {
       node_id,
       reference_id,
       callback_url,
+      error_code, 
       request_id,
-      //namespace,
-      //identifier,
-      ial,
-      aal,
-      status,
-      accessor_id,
-      signature,
-      error_code,
     } = req.body;
 
-    await idp.createResponse(
+    await idp.createErrorResponse(
       {
         node_id,
         reference_id,
@@ -133,11 +126,7 @@ router.post('/error_response', validateBody, async (req, res, next) => {
         request_id,
         //namespace,
         //identifier,
-        ial,
-        aal,
         status,
-        accessor_id,
-        signature,
         error_code,
       },
       { synchronous: false }

@@ -40,7 +40,7 @@ import { role } from '../../node';
 
 export async function createResponse(createResponseParams) {
   let { node_id } = createResponseParams;
-  const { request_id, ial, aal, accessor_id, signature } = createResponseParams;
+  const { request_id, ial, aal, accessor_id, signature, error_code } = createResponseParams;
 
   if (role === 'proxy') {
     if (node_id == null) {
@@ -79,6 +79,10 @@ export async function createResponse(createResponseParams) {
           requestId: request_id,
         },
       });
+    }
+
+    if (error_code) {
+
     }
 
     if (ial < request.min_ial) {
@@ -250,7 +254,6 @@ export async function createResponseInternal(
     status,
     accessor_id,
     signature,
-    error_code,
   } = createResponseParams;
   const { nodeId, requestData } = additionalParams;
   try {
@@ -279,7 +282,62 @@ export async function createResponseInternal(
           mode,
           accessor_id,
           rp_id: requestData.rp_id,
+        },
+      ],
+      true
+    );
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Cannot create IdP response',
+      cause: error,
+    });
+    logger.error({ err });
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
+        node_id: nodeId,
+        type: 'response_result',
+        success: false,
+        reference_id,
+        request_id,
+        error: getErrorObjectForClient(err),
+      },
+      retry: true,
+    });
+  }
+}
+
+export async function createErrorResponseInternal(
+  createResponseParams,
+  additionalParams = {}
+) {
+  const {
+    reference_id,
+    callback_url,
+    request_id,
+    status,
+    error_code,
+  } = createResponseParams;
+  const { nodeId, requestData } = additionalParams;
+  try {
+    const dataToBlockchain = {
+      request_id,
+      status,
+      error_code,
+    };
+
+    await tendermintNdid.createIdpResponse(
+      dataToBlockchain,
+      nodeId,
+      'idp.createResponseAfterBlockchain',
+      [
+        {
+          nodeId,
+          reference_id,
+          callback_url,
+          request_id,
           error_code,
+          rp_id: requestData.rp_id,
         },
       ],
       true
