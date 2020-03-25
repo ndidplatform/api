@@ -658,6 +658,11 @@ module.exports = {
     message: 'Accessor is not in request reference grouop',
     clientError: true,
   },
+  INVALID_ERROR_CODE: {
+    code: 20078,
+    message: 'ErrorCode is invalid',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

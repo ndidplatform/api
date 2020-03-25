@@ -304,6 +304,24 @@ export default {
         ],
       },
     },
+    '/idp/error_response': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+          callback_url: { $ref: 'defs#/definitions/url' },
+          request_id: { type: 'string', minLength: 1 },
+          error_code: { type: 'string', minLength: 1 },
+        },
+        required: [
+          'reference_id',
+          'callback_url',
+          'request_id',
+          'error_code',
+        ],
+      },
+    },
     '/as/service/:service_id': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
