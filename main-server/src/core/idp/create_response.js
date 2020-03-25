@@ -91,10 +91,10 @@ export async function createResponse(createResponseParams) {
       });
     }
 
-    if (error_code != undefined) {
+    if (error_code != null) {
       // check if error code exists
       const error_code_list = await tendermintNdid.getErrorCodeList('idp');
-      if (error_code_list.find(error => error.error_code === error_code) == undefined) {
+      if (error_code_list.find(error => error.error_code === error_code) == null) {
         throw new CustomError({
           errorType: errorType.INVALID_ERROR_CODE,
         });
