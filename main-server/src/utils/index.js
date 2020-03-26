@@ -446,12 +446,12 @@ export function getDetailedRequestStatus(requestDetail) {
 
   const serviceList = requestDetail.data_request_list.map((service) => {
     const signedAnswerCount =
-      service.answered_as_id_list != null
-        ? service.answered_as_id_list.length
+      service.response_list != null
+        ? service.response_list.filter(response => response.signed === true).length
         : 0;
     const receivedDataCount =
-      service.received_data_from_list != null
-        ? service.received_data_from_list.length
+      service.response_list != null
+        ? service.response_list.filter(response => response.received_data === true).length
         : 0;
     return {
       service_id: service.service_id,

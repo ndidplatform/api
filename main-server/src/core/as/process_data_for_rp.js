@@ -54,6 +54,7 @@ export async function processDataForRP(
     requestId,
     serviceId,
     rpId,
+    error_code,
   } = processDataForRPParams;
 
   if (role === 'proxy') {
@@ -117,23 +118,25 @@ export async function processDataForRP(
       });
     }
 
-    const dataValidationResult = await validateData({ serviceId, data });
-    if (dataValidationResult.valid === false) {
-      throw new CustomError({
-        errorType: errorType.DATA_VALIDATION_FAILED,
-        details: dataValidationResult,
-      });
-    }
-
-    const dataUrlParsedData = parseDataURL(data);
-    if (dataUrlParsedData != null) {
-      const match = data.match(dataUrlRegex);
-      if (match[4] && match[4].endsWith('base64') && data.search(/\s/) >= 0) {
+    if (error_code == null) {
+      const dataValidationResult = await validateData({ serviceId, data });
+      if (dataValidationResult.valid === false) {
         throw new CustomError({
-          errorType: errorType.DATA_URL_BASE64_MUST_NOT_CONTAIN_WHITESPACES,
+          errorType: errorType.DATA_VALIDATION_FAILED,
+          details: dataValidationResult,
         });
       }
-    }
+
+      const dataUrlParsedData = parseDataURL(data);
+      if (dataUrlParsedData != null) {
+        const match = data.match(dataUrlRegex);
+        if (match[4] && match[4].endsWith('base64') && data.search(/\s/) >= 0) {
+          throw new CustomError({
+            errorType: errorType.DATA_URL_BASE64_MUST_NOT_CONTAIN_WHITESPACES,
+          });
+        }
+      }
+    } 
 
     if (synchronous) {
       await processDataForRPInternalAsync(...arguments, {
@@ -239,6 +242,7 @@ async function processDataForRPInternalAsync(
     logger.error({
       message: 'Send data to RP internal async error',
       data,
+      error_code,
       originalArgs: arguments[1],
       options: arguments[2],
       additionalArgs: arguments[3],

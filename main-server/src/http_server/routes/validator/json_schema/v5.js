@@ -362,9 +362,9 @@ export default {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
-          data: { type: 'string', minLength: 1 },
+          error_code: { type: 'string', minLength: 1 },
         },
-        required: ['reference_id', 'callback_url', 'data'],
+        required: ['reference_id', 'callback_url', 'error_code'],
       },
     },
     '/as/callback': {
