@@ -136,7 +136,17 @@ export async function processDataForRP(
           });
         }
       }
-    } 
+    } else {
+      const error_code_list = await tendermintNdid.getErrorCodeList('as');
+      if (error_code_list.find(error => error.error_code === error_code) == null) {
+        throw new CustomError({
+          errorType: errorType.INVALID_ERROR_CODE,
+          details: {
+            as_error_code: error_code,
+          }
+        });
+      }
+    }
 
     if (synchronous) {
       await processDataForRPInternalAsync(...arguments, {

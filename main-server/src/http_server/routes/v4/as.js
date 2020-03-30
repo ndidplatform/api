@@ -110,35 +110,6 @@ router.post(
   }
 );
 
-router.post(
-  '/error/:request_id/:service_id',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const { request_id, service_id } = req.params;
-      const { node_id, reference_id, callback_url, error_code } = req.body;
-
-      await as.processDataForRP(
-        {},
-        {
-          node_id,
-          reference_id,
-          callback_url,
-          requestId: request_id,
-          serviceId: service_id,
-          error_code,
-        },
-        { synchronous: false }
-      );
-
-      res.status(202).end();
-      next();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
 router.get('/callback', async (req, res, next) => {
   try {
     const urls = await as.getCallbackUrls();

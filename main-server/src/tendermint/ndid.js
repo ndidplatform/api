@@ -664,6 +664,7 @@ export async function signASData(
     request_id: data.request_id,
     signature: data.signature,
     service_id: data.service_id,
+    error_code: data.error_code,
   };
   try {
     return await tendermint.transact({
