@@ -63,6 +63,9 @@ export default {
           min_aal: {
             $ref: 'defs#/definitions/aalString',
           },
+          agent: { 
+            type: 'boolean',
+          },
         },
       },
     },

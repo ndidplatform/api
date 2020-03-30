@@ -30,11 +30,12 @@ const router = express.Router();
 
 router.get('/idp', validateQuery, async (req, res, next) => {
   try {
-    const { min_ial = 0, min_aal = 0 } = req.query;
+    const { min_ial = 0, min_aal = 0, agent } = req.query;
 
     const idpNodes = await tendermintNdid.getIdpNodes({
       min_ial: parseFloat(min_ial),
       min_aal: parseFloat(min_aal),
+      agent,
     });
 
     res.status(200).json(idpNodes);
