@@ -50,6 +50,10 @@ export default {
         type: 'string',
         enum: ['RSA-SHA256'],
       },
+      booleanString: {
+        type: 'string',
+        enum: ['false', 'true'],
+      },
     },
   },
   GET: {
@@ -64,7 +68,7 @@ export default {
             $ref: 'defs#/definitions/aalString',
           },
           agent: { 
-            type: 'boolean',
+            $ref: 'defs#/definitions/booleanString',
           },
         },
       },
