@@ -216,6 +216,7 @@ async function processDataForRPInternalAsync(
             signature,
             data_salt,
             rpId,
+            error_code,
           },
           { synchronous },
           { nodeId, savedRpId },

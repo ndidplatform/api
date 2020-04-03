@@ -116,10 +116,10 @@ router.post(
   async (req, res, next) => {
     try {
       const { request_id, service_id } = req.params;
-      const { node_id, reference_id, callback_url, data, error_code } = req.body;
+      const { node_id, reference_id, callback_url, error_code } = req.body;
 
       await as.processDataForRP(
-        data,
+        undefined,
         {
           node_id,
           reference_id,
