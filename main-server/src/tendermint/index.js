@@ -626,10 +626,12 @@ tendermintWsClient.on('disconnected', () => {
   metricsEventEmitter.emit('mainWSDisconnected');
 });
 
-tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(
-  error,
-  result
-) {
+// Tendermint < 0.33.x
+tendermintWsClient.on('newBlock_event#event', handleNewBlockEvent);
+// Tendermint >= 0.33.x
+tendermintWsClient.on('newBlock_event', handleNewBlockEvent);
+
+async function handleNewBlockEvent(error, result) {
   if (error) {
     logger.error({
       message: 'Tendermint NewBlock event subscription error',
@@ -657,7 +659,7 @@ tendermintWsClient.on('newBlock#event', async function handleNewBlockEvent(
     await processNewBlock(blockHeight, appHash);
   }
   delete cacheBlocks[blockHeight - 1];
-});
+}
 
 async function processTransactionsInBlock(blockHeight, block) {
   const blockResults = await getBlockResults(blockHeight, blockHeight);
@@ -678,10 +680,15 @@ async function processTransactionsInBlock(blockHeight, block) {
       const txHash = sha256(txProtoBuffer).toString('hex');
       if (expectedTx[txHash] == null) return;
       let deliverTxResult;
-      if (tendermintVersion.major === 0 && tendermintVersion.minor < 32) {
-        deliverTxResult = blockResult.results.DeliverTx[index];
-      } else {
+      if (tendermintVersion.major === 0 && tendermintVersion.minor >= 33) {
+        deliverTxResult = blockResult.txs_results[index];
+      } else if (
+        tendermintVersion.major === 0 &&
+        tendermintVersion.minor === 32
+      ) {
         deliverTxResult = blockResult.results.deliver_tx[index];
+      } else {
+        deliverTxResult = blockResult.results.DeliverTx[index];
       }
       await processExpectedTx(
         txHash,
@@ -737,11 +744,9 @@ async function processNewBlock(blockHeight, appHash) {
       const blocksToProcess = toHeight - fromHeight + 1;
       addProcessingBlocksCount(blocksToProcess);
 
-      const parsedTransactionsInBlocks = (await getParsedTxsInBlocks(
-        fromHeight,
-        toHeight,
-        false
-      )).filter(({ transactions }) => transactions.length >= 0);
+      const parsedTransactionsInBlocks = (
+        await getParsedTxsInBlocks(fromHeight, toHeight, false)
+      ).filter(({ transactions }) => transactions.length >= 0);
       checkForSetLastBlock(parsedTransactionsInBlocks);
 
       if (handleTendermintNewBlock) {
@@ -774,23 +779,36 @@ async function getParsedTxsInBlocks(fromHeight, toHeight, withTxHash) {
       (transaction, index) => {
         let deliverTxResult;
         let success;
-        if (tendermintVersion.major === 0 && tendermintVersion.minor < 32) {
-          deliverTxResult = blockResults[blockIndex].results.DeliverTx[index];
-          const successTag = deliverTxResult.tags.find(
-            (tag) => tag.key === successBase64
-          );
-          if (successTag) {
-            success = successTag.value === trueBase64;
+        if (tendermintVersion.major === 0 && tendermintVersion.minor >= 33) {
+          deliverTxResult = blockResults[blockIndex].txs_results[index];
+          const successAttribute = deliverTxResult.events
+            .find((event) => event.type === 'did.result')
+            .attributes.find((attribute) => attribute.key === successBase64);
+          if (successAttribute) {
+            success = successAttribute.value === trueBase64;
           } else {
             success = false;
           }
-        } else {
+        } else if (
+          tendermintVersion.major === 0 &&
+          tendermintVersion.minor === 32
+        ) {
           deliverTxResult = blockResults[blockIndex].results.deliver_tx[index];
           const successAttribute = deliverTxResult.events
             .find((event) => event.type === 'did.result')
             .attributes.find((attribute) => attribute.key === successBase64);
           if (successAttribute) {
             success = successAttribute.value === trueBase64;
+          } else {
+            success = false;
+          }
+        } else {
+          deliverTxResult = blockResults[blockIndex].results.DeliverTx[index];
+          const successTag = deliverTxResult.tags.find(
+            (tag) => tag.key === successBase64
+          );
+          if (successTag) {
+            success = successTag.value === trueBase64;
           } else {
             success = false;
           }

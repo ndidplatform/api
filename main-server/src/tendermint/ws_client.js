@@ -260,7 +260,7 @@ export default class TendermintWsClient extends EventEmitter {
           jsonrpc: '2.0',
           method: 'subscribe',
           params: ["tm.event = 'NewBlockHeader'"],
-          id: 'newBlockHeader',
+          id: 'newBlockHeader_event',
         })
       );
     }
@@ -273,7 +273,7 @@ export default class TendermintWsClient extends EventEmitter {
           jsonrpc: '2.0',
           method: 'subscribe',
           params: ["tm.event = 'NewBlock'"],
-          id: 'newBlock',
+          id: 'newBlock_event',
         })
       );
     }
@@ -286,7 +286,7 @@ export default class TendermintWsClient extends EventEmitter {
           jsonrpc: '2.0',
           method: 'subscribe',
           params: ["tm.event = 'Tx'"],
-          id: 'tx',
+          id: 'tx_event',
         })
       );
     }

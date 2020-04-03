@@ -7,6 +7,7 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 IMPROVEMENTS:
 
 - Support Node.js 12.
+- Support Tendermint 0.33 (Block result spec change).
 - [Docker] Change Node.js version used in images from 10 to 12.
 
 BUG FIXES:
