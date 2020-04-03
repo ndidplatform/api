@@ -122,7 +122,7 @@ export function getConnection() {
     }
     wsClientIndex = nextConnectedConnectionClientIndex;
   }
-  return wsClients[wsClientIndex];
+  return wsClients[wsClientIndex++];
 }
 
 export function closeAllConnections() {

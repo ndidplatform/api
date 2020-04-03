@@ -2,7 +2,28 @@
 
 ## TBD
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v3.0.0_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v4.x.x_
+
+IMPROVEMENTS:
+
+- Support Node.js 12.
+- [Docker] Change Node.js version used in images from 10 to 12.
+
+BUG FIXES:
+
+- Fix verifying response signature error when input signature cannot be decrypt due to data too large for key modulus. Now correctly return false.
+
+## 3.0.1 (November 21, 2019)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v4.x.x_
+
+BUG FIXES:
+
+- Fix does not use all websocket connections in connection pool.
+
+## 3.0.0 (August 1, 2019)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v4.x.x_
 
 BREAKING CHANGES:
 
@@ -11,6 +32,9 @@ BREAKING CHANGES:
   - `signature` is required for POST `/idp/response`.
   - Remove accessor encrypt callback (mode 2, 3) and sign callback (mode 1) when IdP creating response.
   - New API: GET `/idp/request_message_padded_hash` for getting `request_message_padded_hash` used for creating mode 2 and 3 request signature (signed with accessor private key without padding) on response.
+  - Change API route names
+    - `/identity/:namespace/:identifier/accessors_revoke` to `/identity/:namespace/:identifier/accessor_revoke`
+    - `/identity/:namespace/:identifier/accessors_revoke_and_add` to `/identity/:namespace/:identifier/accessor_revoke_and_add`
   - Change NDID APIs (`/ndid/update_node`, `/ndid/enable_node`, and  `/ndid/disable_node`) HTTP success response status code from 200 to 204.
 
 IMPROVEMENTS:
@@ -19,11 +43,24 @@ IMPROVEMENTS:
   - New callback for notifying message queue message send success (ACK from destination node received). Callback URL can be set using POST `/node/callback` with property `message_queue_send_success_url`.
 - Add accessor in request reference group validation on IdP responses.
 - Support Tendermint 0.32 (Block result spec change).
+- [Docker] Reduce image size.
+- [Docker] Remove default owner and permission settings.
+- [Docker] Remove `TERM` env.
+- [Docker-API] Add docker-entrypoint.sh as image entrypoint which will check existence and owner of `DATA_DIRECTORY_PATH`.
 
 BUG FIXES:
 
 - Fix missing request status update callback (request closed, request timed out) on IdP side for identity related requests.
 - Fix invalid IdP response signature check on RP and IdP nodes when signature is cryptographically valid but signed with accessor that is not in request reference group.
+
+OTHERS:
+
+- [Docker] Remove `jq` and `curl` from docker image.
+
+NOTES:
+
+- [Docker] Docker container may be run with `-u` or `--user` flag (e.g. `-u 65534:65534`). In case you are using docker-compose, `user` may be specified in docker-compose file (e.g. `user: 65534:65534`) (see [Compose file reference](https://docs.docker.com/compose/compose-file/#domainname-hostname-ipc-mac_address-privileged-read_only-shm_size-stdin_open-tty-user-working_dir) for more detail).
+- [Docker-API] When running docker container with non-root user, source directories that will be mounted into the container as `DATA_DIRECTORY_PATH` must be created beforehand with the non-root user as owner.
 
 ## 2.0.1 (June 24, 2019)
 

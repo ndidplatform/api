@@ -103,6 +103,60 @@ ZwIDAQAB
 -----END PUBLIC KEY-----`;
 
 describe('Test hash with custom padding for accessor encrypt (request response signature)', () => {
+  it('should create hash correctly', () => {
+    const requestId =
+      '8a1cef0f345655c1597c2158b7d25a6866c4baf9d3e543dd3abc4982e3905f04';
+    const requestMessage = 'test';
+    const initialSalt = 'd9UV7tfs38e+s/5RAtcAfw==';
+
+    const requestMessageForConsentHash = utils.hashRequestMessageForConsent(
+      requestMessage,
+      initialSalt,
+      requestId,
+      publicKey
+    );
+
+    const expectedRequestMessageForConsentHash =
+      'A/nQfv5vp/BVym2F2J36n9NEJjPIMMgYUQrl1cKTi5h1+iV1bnwNU5mfksEdPGIC6uNfW5eIrtzfTN9pFGDE/myQL/PBBfFMiCMmf6CBV2S0z6HjSbnqS4HVnf+O6KLpvJYwLitdQr/Z/TPFQV+j4ZoOXvwlHffrRj9F2UXK63Xx3BgqlpvwXX7IpFluYYFC+UXRCh9PggOdewc4vXXi4GEHqc5Jv3Q7VMjdaaQv0iZHD/MBYRnHrenBUeLh7RD1+mwRpUVcgH/sKILscWuaXrZ1wn6G/1j0CFPQFWHYQhxkEXOdLfeV3wOktaOWikNzEzV5ByDNoOKI13uJo9Fi5g==';
+
+    // return type is Buffer
+    expect(requestMessageForConsentHash).to.be.equals(
+      expectedRequestMessageForConsentHash
+    );
+    const requestMessageForConsentHashBuffer = Buffer.from(
+      requestMessageForConsentHash,
+      'base64'
+    );
+    expect(requestMessageForConsentHashBuffer).to.have.lengthOf.at.most(256);
+  });
+
+  it('should create hash correctly (zero-pad needed)', () => {
+    const requestId =
+      '9516e0657638d6c724da0f8a6b387612fdef14feb2e5427eb10fab247fb04c50';
+    const requestMessage = 'test';
+    const initialSalt = '1As/8IJU0erEGm9tna0C+Q==';
+
+    const requestMessageForConsentHash = utils.hashRequestMessageForConsent(
+      requestMessage,
+      initialSalt,
+      requestId,
+      publicKey
+    );
+
+    const expectedRequestMessageForConsentHash =
+      'AKwl1BSr4yIISCvmgJ2CJXmm67wOe63gcQ5usSOVHy+D/FcryU2+idIsfXCtfjUKtCcyNOSPwDgJ4Urw0rPB+z8WC+mVbYuN0lmeB3W1Ss/GDK+mq3YhjH+bNJ25Kn4UKk6qmH0rQtF1qFcZVJo7E46GEpI+rWyQhKd4JyPSQiG1RhmqcEIHI7Zn8u6fXeXh3825yUheB8KOkj83Bcucs3P8AB87Kvs6FJAmj5fm8NijkcjhW2Hci+9dXrX+N3gH65gmzED7RN1Ynxe4BEnYgtR4s+iBUOy6MEjvgKdKWN3Zz5vfeui1O+jo5HqJHkbeo3ZeZc3pVCEqAhoQHpGuWw==';
+
+    // return type is Buffer
+    expect(requestMessageForConsentHash).to.be.equals(
+      expectedRequestMessageForConsentHash
+    );
+    const requestMessageForConsentHashBuffer = Buffer.from(
+      requestMessageForConsentHash,
+      'base64'
+    );
+    expect(requestMessageForConsentHashBuffer).to.have.lengthOf.at.most(256);
+  });
+
   it('should create hash then sign and verify correctly', () => {
     const requestId = utils.createRequestId();
     const requestMessage = 'test';
@@ -120,7 +174,7 @@ describe('Test hash with custom padding for accessor encrypt (request response s
       requestMessageForConsentHash,
       'base64'
     );
-    expect(requestMessageForConsentHashBuffer).to.have.lengthOf.at.most(2048);
+    expect(requestMessageForConsentHashBuffer).to.have.lengthOf.at.most(256);
 
     const signature = crypto
       .privateEncrypt(
@@ -167,7 +221,7 @@ describe('Test hash with custom padding for accessor encrypt (request response s
       requestMessageForConsentHash,
       'base64'
     );
-    expect(requestMessageForConsentHashBuffer).to.have.lengthOf.at.most(2048);
+    expect(requestMessageForConsentHashBuffer).to.have.lengthOf.at.most(256);
 
     const signature = crypto
       .privateEncrypt(
@@ -255,4 +309,43 @@ describe('Test hash with custom padding for accessor encrypt (request response s
     );
     expect(valid).to.be.false;
   });
+
+  it('should verify invalid signature (larger than key modulo) correctly', () => {
+    const requestId =
+      '48f5fbc9c70b1ff9968532cac6e1b3c2f7c43aa7eb8d59478c4e87d00e99134b';
+    const requestMessage = 'test';
+    const initialSalt = 'WZokj3gUnP0K87vNsPQMyw==';
+
+    const signature =
+      'uvBn59C90vp4VZOHz8tqXA/f4H3+rT121xGEfg1Fxm36BVQqtBBWdf1jAi/mZ/BBT/Z0xdY03FK7ueIKiZzRwbt80pBHB4ZKTpQuuIFc5DSpvts6fYEE8B76DebzMBQ56I0G/L8RIZk/zJQLBQX9HS9L6LaeyjWQt1uKBPXZYzzv4n0vGkFs5V7d61YZImMJVc4Ogm7ED4lCImrEPC2kdDizldWylKB3V9cptHsz15hA1lk8BPo8mGH37SgHyJqSS0C3m1lLv/uwdjQA7A3IXjvFg0npdrQOy6E3e1E69cqUDu3YoSq5+YaAF+arEnmN0Q7+ZDvemqLKwnYUFdnCyA==';
+
+    // signature larger than key modulo
+
+    const valid = utils.verifyResponseSignature(
+      signature,
+      publicKey,
+      requestMessage,
+      initialSalt,
+      requestId
+    );
+    expect(valid).to.be.false;
+  });
 });
+
+// first byte = 0
+// publicKey
+// >>> req msg: 9516e0657638d6c724da0f8a6b387612fdef14feb2e5427eb10fab247fb04c50
+// >>> salt: 1As/8IJU0erEGm9tna0C+Q==
+// >>> req id: 9516e0657638d6c724da0f8a6b387612fdef14feb2e5427eb10fab247fb04c50
+
+// first byte = 0
+// publicKey2
+// >>> req msg: test
+// >>> salt: 1As/8IJU0erEGm9tna0C+Q==
+// >>> req id: 9516e0657638d6c724da0f8a6b387612fdef14feb2e5427eb10fab247fb04c50
+
+// first byte = 0
+// publicKey
+// >>> req msg: test
+// >>> salt: 1As/8IJU0erEGm9tna0C+Q==
+// >>> req id: 9516e0657638d6c724da0f8a6b387612fdef14feb2e5427eb10fab247fb04c50

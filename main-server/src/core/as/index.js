@@ -389,13 +389,13 @@ async function getDataAndSendBackToRP(
         body: {
           node_id: nodeId,
           type: 'data_request',
-          request_id: request.request_id,
-          mode: request.mode,
+          request_id: requestDetail.request_id,
+          mode: requestDetail.mode,
           namespace: request.namespace,
           identifier: request.identifier,
           service_id,
           request_params,
-          requester_node_id: request.rp_id,
+          requester_node_id: requestDetail.requester_node_id, // message.rp_id
           response_signature_list: responseDetails.response_signature_list,
           max_aal: responseDetails.max_aal,
           max_ial: responseDetails.max_ial,
@@ -403,7 +403,7 @@ async function getDataAndSendBackToRP(
           creation_block_height: `${requestDetail.creation_chain_id}:${
             requestDetail.creation_block_height
           }`,
-          request_timeout: request.request_timeout,
+          request_timeout: requestDetail.request_timeout,
         },
         retry: true,
         shouldRetryFnName: 'common.isRequestClosedOrTimedOut',

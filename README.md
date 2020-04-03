@@ -194,6 +194,8 @@ docker-compose -f docker/docker-compose.yml up
 
 - To run docker container without building image, run command show in **Run** section (no building required). It will run docker container with image from Dockerhub (https://hub.docker.com/r/ndidplatform/api/).
 - To pull latest image from Dockerhub, run `docker pull ndidplatform/api` and `docker pull ndidplatform/mq`
+- Docker container can be run with `-u` or `--user` flag (e.g. `-u 65534:65534`). In case you are using docker-compose, `user` can be specified in docker-compose file (e.g. `user: 65534:65534`) (see [Compose file reference](https://docs.docker.com/compose/compose-file/#domainname-hostname-ipc-mac_address-privileged-read_only-shm_size-stdin_open-tty-user-working_dir) for more detail).
+- When running docker container with non-root user, source directories that will be mounted into the container as `DATA_DIRECTORY_PATH` must be created beforehand with the non-root user as owner.
 
 ## Logging
 
