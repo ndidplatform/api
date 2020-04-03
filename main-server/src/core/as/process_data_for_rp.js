@@ -54,6 +54,7 @@ export async function processDataForRP(
     requestId,
     serviceId,
     rpId,
+    error_code,
   } = processDataForRPParams;
 
   if (role === 'proxy') {
@@ -117,20 +118,32 @@ export async function processDataForRP(
       });
     }
 
-    const dataValidationResult = await validateData({ serviceId, data });
-    if (dataValidationResult.valid === false) {
-      throw new CustomError({
-        errorType: errorType.DATA_VALIDATION_FAILED,
-        details: dataValidationResult,
-      });
-    }
-
-    const dataUrlParsedData = parseDataURL(data);
-    if (dataUrlParsedData != null) {
-      const match = data.match(dataUrlRegex);
-      if (match[4] && match[4].endsWith('base64') && data.search(/\s/) >= 0) {
+    if (error_code == null) {
+      const dataValidationResult = await validateData({ serviceId, data });
+      if (dataValidationResult.valid === false) {
         throw new CustomError({
-          errorType: errorType.DATA_URL_BASE64_MUST_NOT_CONTAIN_WHITESPACES,
+          errorType: errorType.DATA_VALIDATION_FAILED,
+          details: dataValidationResult,
+        });
+      }
+
+      const dataUrlParsedData = parseDataURL(data);
+      if (dataUrlParsedData != null) {
+        const match = data.match(dataUrlRegex);
+        if (match[4] && match[4].endsWith('base64') && data.search(/\s/) >= 0) {
+          throw new CustomError({
+            errorType: errorType.DATA_URL_BASE64_MUST_NOT_CONTAIN_WHITESPACES,
+          });
+        }
+      }
+    } else {
+      const error_code_list = await tendermintNdid.getErrorCodeList('as');
+      if (error_code_list.find(error => error.error_code === error_code) == null) {
+        throw new CustomError({
+          errorType: errorType.INVALID_ERROR_CODE,
+          details: {
+            as_error_code: error_code,
+          }
         });
       }
     }
@@ -166,7 +179,7 @@ export async function processDataForRP(
 
 async function processDataForRPInternalAsync(
   data,
-  { reference_id, callback_url, requestId, serviceId, rpId },
+  { reference_id, callback_url, requestId, serviceId, rpId, error_code },
   { synchronous = false } = {},
   { nodeId, savedRpId }
 ) {
@@ -189,6 +202,7 @@ async function processDataForRPInternalAsync(
           request_id: requestId,
           signature,
           service_id: serviceId,
+          error_code,
         },
         nodeId,
         'as.processDataForRPInternalAsyncAfterBlockchain',
@@ -202,6 +216,7 @@ async function processDataForRPInternalAsync(
             signature,
             data_salt,
             rpId,
+            error_code,
           },
           { synchronous },
           { nodeId, savedRpId },
@@ -213,6 +228,7 @@ async function processDataForRPInternalAsync(
           request_id: requestId,
           signature,
           service_id: serviceId,
+          error_code,
         },
         nodeId
       );
@@ -227,6 +243,7 @@ async function processDataForRPInternalAsync(
           signature,
           data_salt,
           rpId,
+          error_code,
         },
         { synchronous },
         { nodeId, savedRpId }
@@ -236,6 +253,7 @@ async function processDataForRPInternalAsync(
     logger.error({
       message: 'Send data to RP internal async error',
       data,
+      error_code,
       originalArgs: arguments[1],
       options: arguments[2],
       additionalArgs: arguments[3],
@@ -272,6 +290,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     signature,
     data_salt,
     rpId,
+    error_code,
   },
   { synchronous = false } = {},
   { nodeId, savedRpId }
@@ -292,6 +311,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
       service_id: serviceId,
       data,
       height,
+      error_code,
     });
 
     if (!synchronous) {

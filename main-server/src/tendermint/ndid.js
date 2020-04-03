@@ -23,6 +23,7 @@
 import * as tendermint from '.';
 import * as utils from '../utils';
 import * as config from '../config';
+import { role } from '../node';
 
 import CustomError from 'ndid-error/custom_error';
 
@@ -663,6 +664,7 @@ export async function signASData(
     request_id: data.request_id,
     signature: data.signature,
     service_id: data.service_id,
+    error_code: data.error_code,
   };
   try {
     return await tendermint.transact({
@@ -876,6 +878,7 @@ export async function getIdpNodes({
   reference_group_code,
   namespace,
   identifier,
+  agent,
   min_ial,
   min_aal,
   node_id_list,
@@ -887,11 +890,14 @@ export async function getIdpNodes({
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
+  const isRP = (role === "rp");
   try {
     const result = await tendermint.query('GetIdpNodes', {
       reference_group_code,
       identity_namespace: namespace,
       identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
+      filter_for_rp: (isRP ? config.nodeId : undefined),
+      agent,
       min_ial,
       min_aal,
       node_id_list,
@@ -922,11 +928,13 @@ export async function getIdpNodesInfo({
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
+  const isRP = (role === "rp");
   try {
     const result = await tendermint.query('GetIdpNodesInfo', {
       reference_group_code,
       identity_namespace: namespace,
       identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
+      filter_for_rp: (isRP ? config.nodeId : undefined),
       min_ial,
       min_aal,
       node_id_list,
@@ -1207,6 +1215,19 @@ export async function getNodeInfo(node_id) {
   }
 }
 
+export async function getErrorCodeList(type) {
+  try {
+    return await tendermint.query('GetErrorCodeList', {
+      type,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get error code list from blockchain',
+      cause: error,
+    });
+  }
+}
+
 export async function checkExistingAccessorID(accessor_id) {
   try {
     const result = await tendermint.query('CheckExistingAccessorID', {
@@ -1393,6 +1414,54 @@ export async function getNodeIdList(role) {
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get node ID list',
+      cause: error,
+    });
+  }
+}
+
+export async function addErrorCode(
+  { error_code, type, description, fatal },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'AddErrorCode',
+      params: { error_code, type, description, fatal },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot add error code',
+      cause: error,
+    });
+  }
+}
+
+export async function removeErrorCode(
+  { error_code, type, },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'RemoveErrorCode',
+      params: { error_code, type },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove error code',
       cause: error,
     });
   }

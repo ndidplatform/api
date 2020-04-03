@@ -41,7 +41,7 @@ function getBaseUrlAndApiVersion(req) {
     baseUrl = splittedBaseUrl.join('/');
     apiVersion = parseInt(matchedPath[1]);
   } else {
-    apiVersion = 4;
+    apiVersion = 5;
   }
   return {
     baseUrl,

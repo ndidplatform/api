@@ -40,7 +40,7 @@ import { role } from '../../node';
 
 export async function createResponse(createResponseParams) {
   let { node_id } = createResponseParams;
-  const { request_id, ial, aal, accessor_id, signature } = createResponseParams;
+  const { request_id, ial, aal, accessor_id, signature, error_code } = createResponseParams;
 
   if (role === 'proxy') {
     if (node_id == null) {
@@ -81,23 +81,6 @@ export async function createResponse(createResponseParams) {
       });
     }
 
-    if (ial < request.min_ial) {
-      throw new CustomError({
-        errorType: errorType.IAL_IS_LESS_THAN_REQUEST_MIN_IAL,
-        details: {
-          requestId: request_id,
-        },
-      });
-    }
-    if (aal < request.min_aal) {
-      throw new CustomError({
-        errorType: errorType.AAL_IS_LESS_THAN_REQUEST_MIN_AAL,
-        details: {
-          requestId: request_id,
-        },
-      });
-    }
-
     const requestData = await cacheDb.getRequestReceivedFromMQ(
       node_id,
       request_id
@@ -108,111 +91,143 @@ export async function createResponse(createResponseParams) {
       });
     }
 
-    let accessorPublicKey;
-    if (request.mode === 2 || request.mode === 3) {
-      let referenceGroupCode;
-      if (requestData.reference_group_code != null) {
-        referenceGroupCode = requestData.reference_group_code;
-      } else {
-        // Incoming request without indentity onboard/created on the platform
-        // doesn't have reference group code
-        // (on-the-fly onboard flow)
-        referenceGroupCode = await tendermintNdid.getReferenceGroupCode(
-          requestData.namespace,
-          requestData.identifier
-        );
-        if (referenceGroupCode == null) {
-          throw new CustomError({
-            errorType: errorType.IDENTITY_NOT_FOUND,
-            details: {
-              namespace: requestData.namespace,
-              identifier: requestData.identifier,
-            },
-          });
-        }
+    if (error_code != null) {
+      // check if error code exists
+      const error_code_list = await tendermintNdid.getErrorCodeList('idp');
+      if (error_code_list.find(error => error.error_code === error_code) == null) {
+        throw new CustomError({
+          errorType: errorType.INVALID_ERROR_CODE,
+        });
       }
-      //check association mode list
-      //idp associate with only mode 2 won't be able to response mode 3 request
-      const identityInfo = await getIdentityInfo({
+
+      createErrorResponseInternal(createResponseParams, {
         nodeId: node_id,
-        referenceGroupCode,
+        requestData,
       });
-      if (identityInfo == null) {
+    } else {
+      if (ial < request.min_ial) {
         throw new CustomError({
-          errorType: errorType.IDENTITY_NOT_FOUND_ON_IDP,
-          details: {
-            referenceGroupCode,
-            nodeId: node_id,
-          },
-        });
-      }
-      const { mode_list, ial: declaredIal } = identityInfo;
-      if (!mode_list.includes(request.mode)) {
-        throw new CustomError({
-          errorType: errorType.IDENTITY_MODE_MISMATCH,
-        });
-      }
-
-      if (accessor_id == null) {
-        throw new CustomError({
-          errorType: errorType.ACCESSOR_ID_NEEDED,
-        });
-      }
-
-      const accessorReferenceGroupCode = await tendermintNdid.getReferenceGroupCodeByAccessorId(
-        accessor_id
-      );
-
-      if (referenceGroupCode !== accessorReferenceGroupCode) {
-        throw new CustomError({
-          errorType: errorType.ACCESSOR_IS_NOT_IN_REQUEST_REFERENCE_GROUP,
-          details: {
-            referenceGroupCode,
-            accessorReferenceGroupCode,
-            accessor_id,
-          },
-        });
-      }
-
-      accessorPublicKey = await tendermintNdid.getAccessorKey(accessor_id);
-      if (accessorPublicKey == null) {
-        throw new CustomError({
-          errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE,
-          details: {
-            accessor_id,
-          },
-        });
-      }
-
-      if (ial !== declaredIal) {
-        throw new CustomError({
-          errorType: errorType.WRONG_IAL,
-        });
-      }
-
-      if (
-        !utils.verifyResponseSignature(
-          signature,
-          accessorPublicKey,
-          requestData.request_message,
-          requestData.initial_salt,
-          request_id
-        )
-      ) {
-        throw new CustomError({
-          errorType: errorType.INVALID_ACCESSOR_SIGNATURE,
+          errorType: errorType.IAL_IS_LESS_THAN_REQUEST_MIN_IAL,
           details: {
             requestId: request_id,
           },
         });
       }
-    }
+      if (aal < request.min_aal) {
+        throw new CustomError({
+          errorType: errorType.AAL_IS_LESS_THAN_REQUEST_MIN_AAL,
+          details: {
+            requestId: request_id,
+          },
+        });
+      }
 
-    createResponseInternal(createResponseParams, {
-      nodeId: node_id,
-      requestData,
-      accessorPublicKey,
-    });
+      let accessorPublicKey;
+      if (request.mode === 2 || request.mode === 3) {
+        let referenceGroupCode;
+        if (requestData.reference_group_code != null) {
+          referenceGroupCode = requestData.reference_group_code;
+        } else {
+          // Incoming request without indentity onboard/created on the platform
+          // doesn't have reference group code
+          // (on-the-fly onboard flow)
+          referenceGroupCode = await tendermintNdid.getReferenceGroupCode(
+            requestData.namespace,
+            requestData.identifier
+          );
+          if (referenceGroupCode == null) {
+            throw new CustomError({
+              errorType: errorType.IDENTITY_NOT_FOUND,
+              details: {
+                namespace: requestData.namespace,
+                identifier: requestData.identifier,
+              },
+            });
+          }
+        }
+        //check association mode list
+        //idp associate with only mode 2 won't be able to response mode 3 request
+        const identityInfo = await getIdentityInfo({
+          nodeId: node_id,
+          referenceGroupCode,
+        });
+        if (identityInfo == null) {
+          throw new CustomError({
+            errorType: errorType.IDENTITY_NOT_FOUND_ON_IDP,
+            details: {
+              referenceGroupCode,
+              nodeId: node_id,
+            },
+          });
+        }
+        const { mode_list, ial: declaredIal } = identityInfo;
+        if (!mode_list.includes(request.mode)) {
+          throw new CustomError({
+            errorType: errorType.IDENTITY_MODE_MISMATCH,
+          });
+        }
+
+        if (accessor_id == null) {
+          throw new CustomError({
+            errorType: errorType.ACCESSOR_ID_NEEDED,
+          });
+        }
+
+        const accessorReferenceGroupCode = await tendermintNdid.getReferenceGroupCodeByAccessorId(
+          accessor_id
+        );
+
+        if (referenceGroupCode !== accessorReferenceGroupCode) {
+          throw new CustomError({
+            errorType: errorType.ACCESSOR_IS_NOT_IN_REQUEST_REFERENCE_GROUP,
+            details: {
+              referenceGroupCode,
+              accessorReferenceGroupCode,
+              accessor_id,
+            },
+          });
+        }
+
+        accessorPublicKey = await tendermintNdid.getAccessorKey(accessor_id);
+        if (accessorPublicKey == null) {
+          throw new CustomError({
+            errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE,
+            details: {
+              accessor_id,
+            },
+          });
+        }
+
+        if (ial !== declaredIal) {
+          throw new CustomError({
+            errorType: errorType.WRONG_IAL,
+          });
+        }
+
+        if (
+          !utils.verifyResponseSignature(
+            signature,
+            accessorPublicKey,
+            requestData.request_message,
+            requestData.initial_salt,
+            request_id
+          )
+        ) {
+          throw new CustomError({
+            errorType: errorType.INVALID_ACCESSOR_SIGNATURE,
+            details: {
+              requestId: request_id,
+            },
+          });
+        }
+      }
+
+      createResponseInternal(createResponseParams, {
+        nodeId: node_id,
+        requestData,
+        accessorPublicKey,
+      });
+    }
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot create IdP response',
@@ -302,9 +317,63 @@ export async function createResponseInternal(
   }
 }
 
+export async function createErrorResponseInternal(
+  createResponseParams,
+  additionalParams = {}
+) {
+  const {
+    reference_id,
+    callback_url,
+    request_id,
+    error_code,
+  } = createResponseParams;
+  const { nodeId, requestData } = additionalParams;
+  try {
+    const dataToBlockchain = {
+      request_id,
+      error_code,
+    };
+
+    await tendermintNdid.createIdpResponse(
+      dataToBlockchain,
+      nodeId,
+      'idp.createResponseAfterBlockchain',
+      [
+        {
+          nodeId,
+          reference_id,
+          callback_url,
+          request_id,
+          error_code,
+          rp_id: requestData.rp_id,
+        },
+      ],
+      true
+    );
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Cannot create IdP response',
+      cause: error,
+    });
+    logger.error({ err });
+    await callbackToClient({
+      callbackUrl: callback_url,
+      body: {
+        node_id: nodeId,
+        type: 'response_result',
+        success: false,
+        reference_id,
+        request_id,
+        error: getErrorObjectForClient(err),
+      },
+      retry: true,
+    });
+  }
+}
+
 export async function createResponseAfterBlockchain(
   { height, error, chainDisabledRetryLater },
-  { nodeId, reference_id, callback_url, request_id, mode, accessor_id, rp_id }
+  { nodeId, reference_id, callback_url, request_id, mode, accessor_id, rp_id, error_code }
 ) {
   if (chainDisabledRetryLater) return;
   try {
@@ -317,6 +386,7 @@ export async function createResponseAfterBlockchain(
       accessor_id,
       rp_id,
       height,
+      error_code,
     });
 
     await callbackToClient({
@@ -360,6 +430,7 @@ async function sendResponseToRP({
   accessor_id,
   rp_id,
   height,
+  error_code,
 }) {
   logger.info({
     message: 'Query MQ destination for RP',
@@ -431,6 +502,7 @@ async function sendResponseToRP({
       mode,
       accessor_id,
       idp_id: nodeId,
+      error_code,
       chain_id: tendermint.chainId,
       height,
     },

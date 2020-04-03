@@ -87,6 +87,9 @@ export default {
           role: { type: 'string', enum: ['rp', 'idp', 'as', 'proxy'] },
           max_ial: { $ref: 'defs#/definitions/ial' },
           max_aal: { $ref: 'defs#/definitions/aal' },
+          agent: { type: 'boolean' },
+          node_id_whitelist_active: { type: 'boolean' },
+          node_id_whitelist: { type: 'array', items: { type: 'string', minLength: 1 } },
         },
         required: [
           'node_id',
@@ -109,6 +112,9 @@ export default {
           node_name: { type: 'string', minLength: 1 },
           max_ial: { $ref: 'defs#/definitions/ial' },
           max_aal: { $ref: 'defs#/definitions/aal' },
+          agent: { type: 'boolean' },
+          node_id_whitelist_active: { type: 'boolean' },
+          node_id_whitelist: { type: 'array', items: { type: 'string', minLength: 1 } },
         },
         required: ['node_id'],
       },
@@ -367,5 +373,24 @@ export default {
         },
       },
     },
+    '/ndid/add_error_code': {
+      body: {
+        properties: {
+          error_code: { type: 'string', minLength: 1},
+          type: { type: 'string', enum: ['idp', 'as']},
+          description: { type: 'string' },
+          fatal: { type: 'boolean' }
+        },
+        required: ['error_code', 'type', 'description', 'fatal']
+      }
+    },
+    '/ndid/remove_error_code': {
+      body: {
+        properties: {
+          error_code: { type: 'string', minLength: 1},
+        },
+        required: ['error_code'],
+      }
+    }
   },
 };

@@ -23,6 +23,7 @@
 import Ajv from 'ajv';
 
 import schemasV4 from './json_schema/v4';
+import schemasV5 from './json_schema/v5';
 import ndidSchemas from './json_schema/ndid';
 
 const ajvOptions = {
@@ -53,6 +54,9 @@ function validate({ ndidApi, apiVersion, method, path, params, query, body }) {
     if (apiVersion === 4) {
       ajv.addSchema(schemasV4.defsSchema, 'defs');
     }
+    if (apiVersion === 5) {
+      ajv.addSchema(schemasV5.defsSchema, 'defs');
+    }
   }
 
   const jsonSchema = getJSONSchema(ndidApi, apiVersion, method, path, dataType);
@@ -72,6 +76,9 @@ function getJSONSchema(ndidApi, apiVersion, method, path, dataType) {
     } else {
       if (apiVersion === 4) {
         return schemasV4[method][path][dataType];
+      }
+      if (apiVersion === 5) {
+        return schemasV5[method][path][dataType];
       }
     }
   } catch (error) {

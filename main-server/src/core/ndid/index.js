@@ -655,3 +655,30 @@ export async function getNodeIdList(role) {
     throw error;
   }
 }
+
+export async function addErrorCode({
+  error_code, 
+  type, 
+  description, 
+  fatal 
+}) {
+  try {
+    await tendermintNdid.addErrorCode(
+      {error_code, type, description, fatal},
+      config.nodeId
+    );
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function removeErrorCode({ error_code, type }) {
+  try {
+    await tendermintNdid.removeErrorCode(
+      { error_code, type },
+      config.nodeId
+    );
+  } catch (error) {
+    throw error;
+  }
+}
