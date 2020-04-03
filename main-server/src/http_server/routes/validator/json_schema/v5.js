@@ -54,6 +54,10 @@ export default {
         type: 'string',
         enum: ['false', 'true'],
       },
+      errorCode: {
+        type: 'integer',
+        minimum: 1,
+      }
     },
   },
   GET: {
@@ -319,7 +323,7 @@ export default {
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           request_id: { type: 'string', minLength: 1 },
-          error_code: { type: 'string', minLength: 1 },
+          error_code: { $ref: 'defs#/definitions/errorCode' },
         },
         required: [
           'reference_id',
@@ -369,7 +373,7 @@ export default {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
-          error_code: { type: 'string', minLength: 1 },
+          error_code: { $ref: 'defs#/definitions/errorCode' },
         },
         required: ['reference_id', 'callback_url', 'error_code'],
       },

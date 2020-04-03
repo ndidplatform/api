@@ -50,6 +50,10 @@ export default {
         type: 'string',
         enum: ['KEY_ON_PROXY', 'KEY_ON_NODE'],
       },
+      errorCode: {
+        type: 'integer',
+        minimum: 1,
+      }
     },
   },
   GET: {},
@@ -376,20 +380,20 @@ export default {
     '/ndid/add_error_code': {
       body: {
         properties: {
-          error_code: { type: 'string', minLength: 1},
+          error_code: { $ref: 'defs#/definitions/errorCode' },
           type: { type: 'string', enum: ['idp', 'as']},
           description: { type: 'string' },
-          fatal: { type: 'boolean' }
         },
-        required: ['error_code', 'type', 'description', 'fatal']
+        required: ['error_code', 'type', 'description']
       }
     },
     '/ndid/remove_error_code': {
       body: {
         properties: {
-          error_code: { type: 'string', minLength: 1},
+          error_code: { $ref: 'defs#/definitions/errorCode' },
+          type: { type: 'string', enum: ['idp', 'as']},
         },
-        required: ['error_code'],
+        required: ['error_code', 'type'],
       }
     }
   },
