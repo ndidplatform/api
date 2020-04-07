@@ -20,7 +20,7 @@
  *
  */
 
-import { processAsData } from './process_as_data';
+import { processAsResponse } from './process_as_data';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as tendermint from '../../tendermint';
@@ -388,7 +388,7 @@ export async function processMessage(nodeId, messageId, message) {
         }
       }
     } else if (message.type === privateMessageType.AS_DATA_RESPONSE) {
-      await processAsData({
+      await processAsResponse({
         nodeId,
         requestId: message.request_id,
         serviceId: message.service_id,
@@ -396,6 +396,7 @@ export async function processMessage(nodeId, messageId, message) {
         signature: message.signature,
         dataSalt: message.data_salt,
         data: message.data,
+        errorCode: message.error_code,
       });
     } else {
       logger.warn({

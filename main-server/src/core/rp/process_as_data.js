@@ -28,7 +28,7 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
 
-export async function processAsData({
+export async function processAsResponse({
   nodeId,
   requestId,
   serviceId,
@@ -36,6 +36,7 @@ export async function processAsData({
   signature,
   dataSalt,
   data,
+  errorCode,
 }) {
   logger.debug({
     message: 'Processing AS data response',
@@ -46,10 +47,16 @@ export async function processAsData({
     signature,
     dataSalt,
     data,
+    errorCode,
   });
 
   const asResponseId =
     nodeId + ':' + requestId + ':' + serviceId + ':' + asNodeId;
+
+  if (!(errorCode == null || errorCode === "")) {
+    cleanUpDataResponseFromAS(nodeId, asResponseId);
+    return;
+  }
 
   const signatureFromBlockchain = await tendermintNdid.getDataSignature({
     request_id: requestId,
@@ -81,7 +88,7 @@ export async function processAsData({
     await common.notifyError({
       nodeId,
       getCallbackUrlFnName: 'rp.getErrorCallbackUrl',
-      action: 'processAsData',
+      action: 'processAsResponse',
       error: err,
       requestId,
     });
@@ -126,7 +133,7 @@ export async function processAsData({
     await common.notifyError({
       nodeId,
       getCallbackUrlFnName: 'rp.getErrorCallbackUrl',
-      action: 'processAsData',
+      action: 'processAsResponse',
       error: err,
       requestId,
     });
