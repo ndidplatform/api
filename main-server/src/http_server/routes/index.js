@@ -56,7 +56,7 @@ if (config.env === 'development') {
     });
 
     const end = res.end;
-    res.end = function(chunk, encoding) {
+    res.end = function (chunk, encoding) {
       res.end = end;
       res.end(chunk, encoding);
 
@@ -112,7 +112,11 @@ router.get('/reinit_node_keys', reinitNodeKeys);
 
 router.use(readyHandler);
 
-router.use(apiV5Router);
+if (config.defaultApiVersion === 4) {
+  router.use(apiV4Router);
+} else {
+  router.use(apiV5Router);
+}
 router.use('/v4', apiV4Router);
 router.use('/v5', apiV5Router);
 
@@ -124,7 +128,7 @@ if (config.prometheusEnabled) {
 }
 
 // All other paths besides stated above are invalid
-router.use('*', function(req, res) {
+router.use('*', function (req, res) {
   if (!res.headersSent) {
     res.status(404).end();
   }

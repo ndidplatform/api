@@ -653,31 +653,25 @@ export async function createIdpResponse(
   }
 }
 
-export async function signASData(
-  data,
+export async function createAsResponse(
+  responseDataToBlockchain,
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
-  const dataToBlockchain = {
-    request_id: data.request_id,
-    signature: data.signature,
-    service_id: data.service_id,
-    error_code: data.error_code,
-  };
   try {
     return await tendermint.transact({
       nodeId,
-      fnName: 'SignData',
-      params: dataToBlockchain,
+      fnName: 'CreateAsResponse',
+      params: responseDataToBlockchain,
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot sign AS data',
+      message: 'Cannot create AS response to blockchain',
       cause: error,
     });
   }

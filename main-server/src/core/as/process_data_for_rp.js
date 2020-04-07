@@ -138,12 +138,14 @@ export async function processDataForRP(
       }
     } else {
       const error_code_list = await tendermintNdid.getErrorCodeList('as');
-      if (error_code_list.find(error => error.error_code === error_code) == null) {
+      if (
+        error_code_list.find((error) => error.error_code === error_code) == null
+      ) {
         throw new CustomError({
           errorType: errorType.INVALID_ERROR_CODE,
           details: {
             as_error_code: error_code,
-          }
+          },
         });
       }
     }
@@ -184,20 +186,24 @@ async function processDataForRPInternalAsync(
   { nodeId, savedRpId }
 ) {
   try {
-    const initial_salt = await cacheDb.getInitialSalt(nodeId, requestId);
-    const data_salt = utils.generateDataSalt({
-      request_id: requestId,
-      service_id: serviceId,
-      initial_salt,
-    });
-    const signatureBuffer = await utils.createSignature(
-      data + data_salt,
-      nodeId
-    );
-    const signature = signatureBuffer.toString('base64');
+    let data_salt;
+    let signature;
+    if (error_code == null) {
+      const initial_salt = await cacheDb.getInitialSalt(nodeId, requestId);
+      data_salt = utils.generateDataSalt({
+        request_id: requestId,
+        service_id: serviceId,
+        initial_salt,
+      });
+      const signatureBuffer = await utils.createSignature(
+        data + data_salt,
+        nodeId
+      );
+      signature = signatureBuffer.toString('base64');
+    }
 
     if (!synchronous) {
-      await tendermintNdid.signASData(
+      await tendermintNdid.createAsResponse(
         {
           request_id: requestId,
           signature,
@@ -223,7 +229,7 @@ async function processDataForRPInternalAsync(
         ]
       );
     } else {
-      const { height } = await tendermintNdid.signASData(
+      const { height } = await tendermintNdid.createAsResponse(
         {
           request_id: requestId,
           signature,

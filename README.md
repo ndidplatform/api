@@ -95,6 +95,8 @@
 - `NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy private keys and passphrases [Default: use pre-generated development key in development mode]
 - `NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy master private keys and passphrases [Default: use pre-generated development key in development mode]
 - `DATA_DIRECTORY_PATH`: Directory path for persistence data files [Default: `__dirname/../data` (`data` directory in repository's directory)]
+- `DEFAULT_API_VERSION`: API version to serve on default path (without version path prefix) [Default: `5`]
+- `CALLBACK_API_VERSION`: Callback API version [Default: `5`]
 - `DB_IP`: IP address of DB (redis) server [Default: `localhost`]
 - `DB_PORT`: Port of DB (redis) server [Default: `6379`]
 - `DB_PASSWORD`: Authentication password for DB (redis) connection
