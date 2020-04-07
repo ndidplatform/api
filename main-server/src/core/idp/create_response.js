@@ -81,6 +81,21 @@ export async function createResponse(createResponseParams) {
       });
     }
 
+    // check current responses with min_idp
+    const { idp_id_list, response_list, min_idp } = request;
+    if (idp_id_list.length > 0) {
+      const num_accepted_idps = response_list
+        .filter(({error_code}) => (error_code == null) || (error_code === ""))
+        .length;
+      const num_remaining_idps = idp_id_list.length - response_list.length;
+      if (num_accepted_idps + num_remaining_idps < min_idp) {
+        throw new CustomError({
+          errorType: errorType.NOT_ENOUGH_IDP,
+          message: "Remaining IdPs are not enough to fulfill the request",
+        });
+      }
+    }
+
     const requestData = await cacheDb.getRequestReceivedFromMQ(
       node_id,
       request_id
