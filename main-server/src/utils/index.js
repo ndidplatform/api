@@ -428,6 +428,7 @@ export function getRequestStatus(requestDetail) {
   ) {
     // request can never be fulfilled
     status = 'errored';
+    return status;
   } else {
     if (responseCount.accept > 0 && responseCount.reject === 0) {
       status = 'confirmed';
@@ -438,65 +439,65 @@ export function getRequestStatus(requestDetail) {
     }
   }
 
-  let totalMinAsInDataRequestList = 0;
-  let totalSignedDataCount = 0;
-  let totalReceivedDataCount = 0;
-  for (let i = 0; i < requestDetail.data_request_list.length; i++) {
-    const service = requestDetail.data_request_list[i];
-
-    totalMinAsInDataRequestList += service.min_as;
-
-    const signedAnswerCount =
-      service.response_list != null
-        ? service.response_list.filter((response) => response.signed === true)
-            .length
-        : 0;
-    totalSignedDataCount += signedAnswerCount;
-
-    const receivedDataCount =
-      service.response_list != null
-        ? service.response_list.filter(
-            (response) => response.received_data === true
-          ).length
-        : 0;
-    totalReceivedDataCount += receivedDataCount;
-
-    const errorCount =
-      service.response_list != null
-        ? service.response_list.filter(
-            (response) => response.error_code != null
-          ).length
-        : 0;
-    if (errorCount > service.as_id_list.length - requestDetail.min_as) {
-      // request can never be fulfilled
-      status = 'errored';
-    }
-  }
-
-  if (status !== 'errored') {
-    if (requestDetail.data_request_list.length === 0) {
-      // No data request
-      if (requestDetail.response_list.length === requestDetail.min_idp) {
-        if (
-          responseCount.reject === 0 &&
-          (responseCount.accept > 0 ||
-            (responseCount.accept === 0 &&
-              ['RegisterIdentity', 'AddAccessor', 'RevokeAccessor'].includes(
-                requestDetail.purpose
-              )))
-        ) {
-          status = 'completed';
-        }
-      }
-    } else if (requestDetail.data_request_list.length > 0) {
+  if (requestDetail.data_request_list.length === 0) {
+    // No data request
+    if (requestDetail.response_list.length === requestDetail.min_idp) {
       if (
-        totalMinAsInDataRequestList === totalSignedDataCount &&
-        totalSignedDataCount === totalReceivedDataCount
+        responseCount.reject === 0 &&
+        (responseCount.accept > 0 ||
+          (responseCount.accept === 0 &&
+            ['RegisterIdentity', 'AddAccessor', 'RevokeAccessor'].includes(
+              requestDetail.purpose
+            )))
       ) {
         status = 'completed';
       }
     }
+  } else {
+    let totalMinAsInDataRequestList = 0;
+    let totalSignedDataCount = 0;
+    let totalReceivedDataCount = 0;
+    for (let i = 0; i < requestDetail.data_request_list.length; i++) {
+      const service = requestDetail.data_request_list[i];
+
+      totalMinAsInDataRequestList += service.min_as;
+
+      const signedAnswerCount =
+        service.response_list != null
+          ? service.response_list.filter((response) => response.signed === true)
+              .length
+          : 0;
+      totalSignedDataCount += signedAnswerCount;
+
+      const receivedDataCount =
+        service.response_list != null
+          ? service.response_list.filter(
+              (response) => response.received_data === true
+            ).length
+          : 0;
+      totalReceivedDataCount += receivedDataCount;
+
+      const errorCount =
+        service.response_list != null
+          ? service.response_list.filter(
+              (response) => response.error_code != null
+            ).length
+          : 0;
+      if (errorCount > service.as_id_list.length - requestDetail.min_as) {
+        // request can never be fulfilled
+        status = 'errored';
+        return status;
+      }
+    }
+
+    if (
+      totalMinAsInDataRequestList === totalSignedDataCount &&
+      totalSignedDataCount === totalReceivedDataCount
+    ) {
+      status = 'completed';
+    }
   }
+
   return status;
 }
 
