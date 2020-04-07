@@ -150,11 +150,11 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
     requestId,
   });
 
-  const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+  const requestStatus = utils.getRequestStatus(requestDetail);
 
   const responseValid = await common.getAndSaveIdpResponseValid({
     nodeId,
-    requestStatus,
+    requestDetail,
     idpId: message.idp_id,
     requestDataFromMq: message,
     responseIal: requestDetail.response_list.find(
@@ -196,9 +196,10 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
   }
 
   // Check if request is completed.
+  const answeredIdPCount = requestDetail.response_list.length;
   if (
-    requestStatus.answered_idp_count === requestStatus.min_idp &&
-    requestStatus.status === 'completed'
+    answeredIdPCount === requestDetail.min_idp &&
+    requestStatus === 'completed'
   ) {
     let callbackFnName;
     if (requestDetail.purpose === operationTypes.REGISTER_IDENTITY) {

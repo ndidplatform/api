@@ -334,14 +334,14 @@ export async function removeTimeoutSchedulerInternal(nodeId, requestId) {
 
 export async function getAndSaveIdpResponseValid({
   nodeId,
-  requestStatus,
+  requestDetail,
   idpId,
   responseIal,
   requestDataFromMq,
 }) {
   logger.debug({
     message: 'Checking IdP response (IAL)',
-    requestStatus,
+    requestDetail,
     idpId,
     responseIal,
     requestDataFromMq,
@@ -349,7 +349,7 @@ export async function getAndSaveIdpResponseValid({
 
   let validIal, validSignature;
 
-  const requestId = requestStatus.request_id;
+  const requestId = requestDetail.request_id;
 
   const requestData = await cacheDb.getRequestData(nodeId, requestId);
   const identityInfo = await tendermintNdid.getIdentityInfo({
@@ -358,10 +358,10 @@ export async function getAndSaveIdpResponseValid({
     node_id: idpId,
   });
 
-  if (requestStatus.mode === 1) {
+  if (requestDetail.mode === 1) {
     validIal = null; // Cannot check in mode 1
     validSignature = null;
-  } else if (requestStatus.mode === 2 || requestStatus.mode === 3) {
+  } else if (requestDetail.mode === 2 || requestDetail.mode === 3) {
     // IAL check
     if (responseIal === identityInfo.ial) {
       validIal = true;
@@ -384,7 +384,7 @@ export async function getAndSaveIdpResponseValid({
 
       if (accessor_public_key) {
         const response_list = (await tendermintNdid.getRequestDetail({
-          requestId: requestStatus.request_id,
+          requestId: requestDetail.request_id,
         })).response_list;
         const response = response_list.find(
           (response) => response.idp_id === idpId

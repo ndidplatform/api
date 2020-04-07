@@ -184,21 +184,35 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
 
   const callbackUrl = await getIncomingRequestStatusUpdateCallbackUrl();
   if (callbackUrl != null) {
-    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+    let requestDetailsForCallback;
+    if (config.callbackApiVersion === 4) {
+      const detailedRequestStatus = utils.getDetailedRequestStatusLegacy(requestDetail);
+
+      requestDetailsForCallback = {
+        ...detailedRequestStatus,
+        response_valid_list: requestDetail.response_list.map(
+          ({ idp_id, valid_signature, valid_ial }) => {
+            return {
+              idp_id,
+              valid_signature,
+              valid_ial,
+            };
+          }
+        ),
+      };
+    } else {
+      const requestStatus = utils.getRequestStatus(requestDetail);
+
+      requestDetailsForCallback = {
+        ...requestDetail,
+        status: requestStatus,
+      };
+    }
 
     const eventDataForCallback = {
       node_id: nodeId,
       type: 'request_status',
-      ...requestStatus,
-      response_valid_list: requestDetail.response_list.map(
-        ({ idp_id, valid_signature, valid_ial }) => {
-          return {
-            idp_id,
-            valid_signature,
-            valid_ial,
-          };
-        }
-      ),
+      ...requestDetailsForCallback,
       block_height: `${requestDetail.creation_chain_id}:${height}`,
     };
 

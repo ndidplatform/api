@@ -380,21 +380,35 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
       height,
     });
 
-    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+    let requestDetailsForCallback;
+    if (config.callbackApiVersion === 4) {
+      const requestStatus = utils.getDetailedRequestStatusLegacy(requestDetail);
+
+      requestDetailsForCallback = {
+        ...requestStatus,
+        response_valid_list: requestDetail.response_list.map(
+          ({ idp_id, valid_signature, valid_ial }) => {
+            return {
+              idp_id,
+              valid_signature,
+              valid_ial,
+            };
+          }
+        ),
+      };
+    } else {
+      const requestStatus = utils.getRequestStatus(requestDetail);
+
+      requestDetailsForCallback = {
+        ...requestDetail,
+        status: requestStatus,
+      };
+    }
 
     const eventDataForCallback = {
       node_id: nodeId,
       type: 'request_status',
-      ...requestStatus,
-      response_valid_list: requestDetail.response_list.map(
-        ({ idp_id, valid_signature, valid_ial }) => {
-          return {
-            idp_id,
-            valid_signature,
-            valid_ial,
-          };
-        }
-      ),
+      ...requestDetailsForCallback,
       block_height: `${requestDetail.creation_chain_id}:${height}`,
     };
 
