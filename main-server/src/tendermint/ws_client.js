@@ -155,7 +155,7 @@ export default class TendermintWsClient extends EventEmitter {
         return;
       }
 
-      const rpcId = parseInt(message.id);
+      const rpcId = message.id;
       if (this.queue[rpcId]) {
         if (message.error) {
           let error;
@@ -215,7 +215,7 @@ export default class TendermintWsClient extends EventEmitter {
    * @returns {Promise<Object>}
    */
   status() {
-    return this._call('status', []);
+    return this._call(null, 'status', []);
   }
 
   /**
@@ -224,15 +224,15 @@ export default class TendermintWsClient extends EventEmitter {
    * @returns {Promise<Object>}
    */
   block(height) {
-    return this._call('block', [`${height}`]);
+    return this._call(null, 'block', [`${height}`]);
   }
 
   blockResults(height) {
-    return this._call('block_results', [`${height}`]);
+    return this._call(null, 'block_results', [`${height}`]);
   }
 
   tx(hash, prove) {
-    return this._call('tx', { hash: hash.toString('base64'), prove });
+    return this._call(null, 'tx', { hash: hash.toString('base64'), prove });
   }
 
   abciQuery(data, height) {
@@ -242,53 +242,38 @@ export default class TendermintWsClient extends EventEmitter {
     if (height) {
       params.height = `${height}`;
     }
-    return this._call('abci_query', params);
+    return this._call(null, 'abci_query', params);
   }
 
   broadcastTxCommit(tx) {
-    return this._call('broadcast_tx_commit', { tx: tx.toString('base64') });
+    return this._call(null, 'broadcast_tx_commit', {
+      tx: tx.toString('base64'),
+    });
   }
 
   broadcastTxSync(tx) {
-    return this._call('broadcast_tx_sync', { tx: tx.toString('base64') });
+    return this._call(null, 'broadcast_tx_sync', { tx: tx.toString('base64') });
   }
 
   subscribeToNewBlockHeaderEvent() {
     if (this.connected) {
-      this.ws.send(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'subscribe',
-          params: ["tm.event = 'NewBlockHeader'"],
-          id: 'newBlockHeader_event',
-        })
-      );
+      return this._call('newBlockHeader_event', 'subscribe', [
+        "tm.event = 'NewBlockHeader'",
+      ]);
     }
   }
 
   subscribeToNewBlockEvent() {
     if (this.connected) {
-      this.ws.send(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'subscribe',
-          params: ["tm.event = 'NewBlock'"],
-          id: 'newBlock_event',
-        })
-      );
+      return this._call('newBlock_event', 'subscribe', [
+        "tm.event = 'NewBlock'",
+      ]);
     }
   }
 
   subscribeToTxEvent() {
     if (this.connected) {
-      this.ws.send(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'subscribe',
-          params: ["tm.event = 'Tx'"],
-          id: 'tx_event',
-        })
-      );
+      return this._call('tx_event', 'subscribe', ["tm.event = 'Tx'"]);
     }
   }
 
@@ -300,7 +285,7 @@ export default class TendermintWsClient extends EventEmitter {
     this.ws.close();
   }
 
-  _call(method, params, wsOpts) {
+  _call(callId, method, params, wsOpts) {
     return new Promise((resolve, reject) => {
       if (!this.connected) {
         return reject(
@@ -313,12 +298,21 @@ export default class TendermintWsClient extends EventEmitter {
         );
       }
 
-      const id = ++this.rpcId;
+      let id;
+      if (callId != null) {
+        if (typeof callId !== 'string') {
+          id = callId.toString();
+        } else {
+          id = callId;
+        }
+      } else {
+        id = (++this.rpcId).toString();
+      }
       const message = {
         jsonrpc: '2.0',
         method: method,
         params: params || null,
-        id: id.toString(),
+        id,
       };
 
       logger.debug({
@@ -326,8 +320,10 @@ export default class TendermintWsClient extends EventEmitter {
         connectionName: this.name,
         payload: message,
       });
+      this.queue[id] = { promise: [resolve, reject] };
       this.ws.send(JSON.stringify(message), wsOpts, (error) => {
         if (error) {
+          delete this.queue[id];
           return reject(
             new CustomError({
               message: 'Tendermint WS send error',
@@ -338,8 +334,6 @@ export default class TendermintWsClient extends EventEmitter {
             })
           );
         }
-
-        this.queue[id] = { promise: [resolve, reject] };
       });
     });
   }
