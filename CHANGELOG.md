@@ -2,7 +2,11 @@
 
 ## TBD
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v4.x.x_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+FEATURES:
+
+- API v5.0
 
 IMPROVEMENTS:
 
