@@ -247,9 +247,16 @@ export async function processRequestUpdate(
         response_valid_list: responseValidList,
       };
     } else {
+      const {
+        purpose, // eslint-disable-line no-unused-vars
+        creation_chain_id, // eslint-disable-line no-unused-vars
+        creation_block_height, // eslint-disable-line no-unused-vars
+        ...filteredRequestDetail
+      } = requestDetail;
+
       requestDetailsForCallback = {
-        ...requestDetail,
-        response_valid_list: requestDetail.response_list.map((response) => {
+        ...filteredRequestDetail,
+        response_list: requestDetail.response_list.map((response) => {
           const responseValid = responseValidList.find(
             (responseValid) => responseValid.idp_id === response.idp_id
           );

@@ -203,8 +203,15 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
     } else {
       const requestStatus = utils.getRequestStatus(requestDetail);
 
+      const {
+        purpose, // eslint-disable-line no-unused-vars
+        creation_chain_id, // eslint-disable-line no-unused-vars
+        creation_block_height, // eslint-disable-line no-unused-vars
+        ...filteredRequestDetail
+      } = requestDetail;
+
       requestDetailsForCallback = {
-        ...requestDetail,
+        ...filteredRequestDetail,
         status: requestStatus,
       };
     }
