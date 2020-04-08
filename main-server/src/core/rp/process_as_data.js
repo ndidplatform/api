@@ -53,7 +53,7 @@ export async function processAsResponse({
   const asResponseId =
     nodeId + ':' + requestId + ':' + serviceId + ':' + asNodeId;
 
-  if (!(errorCode == null || errorCode === "")) {
+  if (!(errorCode == null || errorCode === '')) {
     cleanUpDataResponseFromAS(nodeId, asResponseId);
     return;
   }

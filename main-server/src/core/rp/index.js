@@ -108,12 +108,14 @@ export function isAllIdpResponsesValid(responseValidList) {
 }
 
 export function isAllIdpRespondedAndValid({
+  requestDetail,
   requestStatus,
   responseValidList,
 }) {
-  if (requestStatus.status !== 'confirmed') return false;
-  if (requestStatus.answered_idp_count !== requestStatus.min_idp) return false;
-  if (requestStatus.closed === true || requestStatus.timed_out === true)
+  const answeredIdPCount = requestDetail.response_list.length;
+  if (requestStatus !== 'confirmed') return false;
+  if (answeredIdPCount !== requestDetail.min_idp) return false;
+  if (requestDetail.closed === true || requestDetail.timed_out === true)
     return false;
   const asAnswerCount = requestStatus.service_list.reduce(
     (total, service) => total + service.signed_data_count,
@@ -122,8 +124,8 @@ export function isAllIdpRespondedAndValid({
   if (asAnswerCount === 0) {
     // Send request to AS only when all IdP responses' IAL are valid in mode 3
     if (
-      requestStatus.mode === 1 ||
-      ((requestStatus.mode === 2 || requestStatus.mode === 3) &&
+      requestDetail.mode === 1 ||
+      ((requestDetail.mode === 2 || requestDetail.mode === 3) &&
         isAllIdpResponsesValid(responseValidList))
     ) {
       return true;
@@ -314,9 +316,9 @@ export async function processMessage(nodeId, messageId, message) {
           height: message.height,
         });
 
-        const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+        const requestStatus = utils.getRequestStatus(requestDetail);
 
-        if (requestStatus.closed || requestStatus.timed_out) {
+        if (requestDetail.closed || requestDetail.timed_out) {
           return;
         }
 
@@ -327,7 +329,7 @@ export async function processMessage(nodeId, messageId, message) {
 
         const responseValid = await common.getAndSaveIdpResponseValid({
           nodeId,
-          requestStatus,
+          requestDetail,
           idpId: message.idp_id,
           requestDataFromMq: message,
           responseIal: requestDetail.response_list.find(
@@ -339,11 +341,44 @@ export async function processMessage(nodeId, messageId, message) {
           responseValid,
         ]);
 
+        let requestDetailsForCallback;
+        if (config.callbackApiVersion === 4) {
+          const detailedRequestStatus = utils.getDetailedRequestStatusLegacy(
+            requestDetail
+          );
+
+          requestDetailsForCallback = {
+            ...detailedRequestStatus,
+            response_valid_list: responseValidList,
+          };
+        } else {
+          const {
+            purpose, // eslint-disable-line no-unused-vars
+            creation_chain_id, // eslint-disable-line no-unused-vars
+            creation_block_height, // eslint-disable-line no-unused-vars
+            ...filteredRequestDetail
+          } = requestDetail;
+
+          requestDetailsForCallback = {
+            ...filteredRequestDetail,
+            response_list: requestDetail.response_list.map((response) => {
+              const responseValid = responseValidList.find(
+                (responseValid) => responseValid.idp_id === response.idp_id
+              );
+              return {
+                ...response,
+                valid_signature: responseValid.valid_signature,
+                valid_ial: responseValid.valid_ial,
+              };
+            }),
+            status: requestStatus,
+          };
+        }
+
         const eventDataForCallback = {
           node_id: nodeId,
           type: 'request_status',
-          ...requestStatus,
-          response_valid_list: responseValidList,
+          ...requestDetailsForCallback,
           block_height: `${requestDetail.creation_chain_id}:${message.height}`,
         };
 
@@ -354,7 +389,13 @@ export async function processMessage(nodeId, messageId, message) {
           retry: true,
         });
 
-        if (isAllIdpRespondedAndValid({ requestStatus, responseValidList })) {
+        if (
+          isAllIdpRespondedAndValid({
+            requestDetail,
+            requestStatus,
+            responseValidList,
+          })
+        ) {
           const requestData = await cacheDb.getRequestData(
             nodeId,
             message.request_id
@@ -365,12 +406,13 @@ export async function processMessage(nodeId, messageId, message) {
         }
 
         if (
-          requestStatus.status === 'completed' &&
-          !requestStatus.closed &&
-          !requestStatus.timed_out &&
-          (requestStatus.mode === 1 ||
-            ((requestStatus.mode === 2 || requestStatus.mode === 3) &&
-              isAllIdpResponsesValid(responseValidList)))
+          !requestDetail.closed &&
+          !requestDetail.timed_out &&
+          (requestStatus === 'errored' ||
+            (requestStatus === 'completed' &&
+              (requestDetail.mode === 1 ||
+                ((requestDetail.mode === 2 || requestDetail.mode === 3) &&
+                  isAllIdpResponsesValid(responseValidList)))))
         ) {
           logger.debug({
             message: 'Automatically closing request',

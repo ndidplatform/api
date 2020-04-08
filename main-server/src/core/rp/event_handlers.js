@@ -201,19 +201,26 @@ export async function processRequestUpdate(
     height,
   });
 
-  const requestStatus = utils.getDetailedRequestStatus(requestDetail);
+  const requestStatus = utils.getRequestStatus(requestDetail);
+
+  const answeredIdPCount = requestDetail.response_list.length;
 
   let idpResponse = false;
   if (
-    requestStatus.status !== 'pending' &&
-    !requestStatus.closed &&
-    !requestStatus.timed_out
+    requestStatus !== 'pending' &&
+    !requestDetail.closed &&
+    !requestDetail.timed_out
   ) {
-    if (requestStatus.answered_idp_count < requestStatus.min_idp) {
+    if (answeredIdPCount < requestDetail.min_idp) {
       idpResponse = true;
-    } else if (requestStatus.answered_idp_count === requestStatus.min_idp) {
-      const asAnswerCount = requestStatus.service_list.reduce(
-        (total, service) => total + service.signed_data_count,
+    } else if (answeredIdPCount === requestDetail.min_idp) {
+      const asAnswerCount = requestDetail.data_request_list.reduce(
+        (total, service) => {
+          const answerCount =
+            service.response_list != null ? service.response_list.length : 0;
+
+          return total + answerCount;
+        },
         0
       );
       if (asAnswerCount === 0) {
@@ -229,11 +236,44 @@ export async function processRequestUpdate(
       requestId
     );
 
+    let requestDetailsForCallback;
+    if (config.callbackApiVersion === 4) {
+      const detailedRequestStatus = utils.getDetailedRequestStatusLegacy(
+        requestDetail
+      );
+
+      requestDetailsForCallback = {
+        ...detailedRequestStatus,
+        response_valid_list: responseValidList,
+      };
+    } else {
+      const {
+        purpose, // eslint-disable-line no-unused-vars
+        creation_chain_id, // eslint-disable-line no-unused-vars
+        creation_block_height, // eslint-disable-line no-unused-vars
+        ...filteredRequestDetail
+      } = requestDetail;
+
+      requestDetailsForCallback = {
+        ...filteredRequestDetail,
+        response_list: requestDetail.response_list.map((response) => {
+          const responseValid = responseValidList.find(
+            (responseValid) => responseValid.idp_id === response.idp_id
+          );
+          return {
+            ...response,
+            valid_signature: responseValid.valid_signature,
+            valid_ial: responseValid.valid_ial,
+          };
+        }),
+        status: requestStatus,
+      };
+    }
+
     const eventDataForCallback = {
       node_id: nodeId,
       type: 'request_status',
-      ...requestStatus,
-      response_valid_list: responseValidList,
+      ...requestDetailsForCallback,
       block_height: `${requestDetail.creation_chain_id}:${height}`,
     };
 
@@ -244,12 +284,13 @@ export async function processRequestUpdate(
     });
 
     if (
-      requestStatus.status === 'completed' &&
-      !requestStatus.closed &&
-      !requestStatus.timed_out &&
-      (requestStatus.mode === 1 ||
-        ((requestStatus.mode === 2 || requestStatus.mode === 3) &&
-          isAllIdpResponsesValid(responseValidList)))
+      !requestDetail.closed &&
+      !requestDetail.timed_out &&
+      (requestStatus === 'errored' ||
+        (requestStatus === 'completed' &&
+          (requestDetail.mode === 1 ||
+            ((requestDetail.mode === 2 || requestDetail.mode === 3) &&
+              isAllIdpResponsesValid(responseValidList)))))
     ) {
       logger.debug({
         message: 'Automatically closing request',
@@ -266,7 +307,7 @@ export async function processRequestUpdate(
     }
   }
 
-  if (requestStatus.closed || requestStatus.timed_out) {
+  if (requestDetail.closed || requestDetail.timed_out) {
     // Clean up
     // Clear callback url mapping, reference ID mapping, and request data to send to AS
     // since the request is no longer going to have further events

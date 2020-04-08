@@ -235,7 +235,9 @@ function getDataHashWithCustomPadding(
   blockLengthBits = 2048
 ) {
   const hashLength = 256;
-  const padLengthInbyte = parseInt(Math.floor((blockLengthBits - hashLength) / 8));
+  const padLengthInbyte = parseInt(
+    Math.floor((blockLengthBits - hashLength) / 8)
+  );
   let paddingBuffer = Buffer.alloc(0);
 
   for (
@@ -375,6 +377,132 @@ export function generateDataSalt({ request_id, service_id, initial_salt }) {
  * @property {number} service_list.received_data_count
  */
 /**
+ * Get request status for API v5
+ *
+ * @param {Object} requestDetail
+ * @param {string} requestDetail.request_id
+ * @param {number} requestDetail.min_idp
+ * @param {number} requestDetail.min_ial
+ * @param {number} requestDetail.min_aal
+ * @param {number} requestDetail.request_timeout
+ * @param {Array.<Object>} requestDetail.data_request_list
+ * @param {string} requestDetail.request_message_hash
+ * @param {Array.<Object>} requestDetail.response_list
+ * @param {boolean} requestDetail.closed
+ * @param {boolean} requestDetail.timed_out
+ * @returns {string} requestStatus
+ */
+export function getRequestStatus(requestDetail) {
+  if (requestDetail.data_request_list == null) {
+    requestDetail.data_request_list = [];
+  }
+  if (requestDetail.response_list == null) {
+    requestDetail.response_list = [];
+  }
+
+  let status;
+  if (requestDetail.response_list.length === 0) {
+    status = 'pending';
+  }
+  // Check response's status
+  const responseCount = requestDetail.response_list.reduce(
+    (count, response) => {
+      if (response.status === 'accept') {
+        count.accept++;
+      } else if (response.status === 'reject') {
+        count.reject++;
+      } else if (response.error_code != null) {
+        count.error++;
+      }
+      return count;
+    },
+    {
+      accept: 0,
+      reject: 0,
+      error: 0,
+    }
+  );
+  if (
+    responseCount.error >
+    requestDetail.idp_id_list.length - requestDetail.min_idp
+  ) {
+    // request can never be fulfilled
+    status = 'errored';
+    return status;
+  } else {
+    if (responseCount.accept > 0 && responseCount.reject === 0) {
+      status = 'confirmed';
+    } else if (responseCount.accept === 0 && responseCount.reject > 0) {
+      status = 'rejected';
+    } else if (responseCount.accept > 0 && responseCount.reject > 0) {
+      status = 'complicated';
+    }
+  }
+
+  if (requestDetail.data_request_list.length === 0) {
+    // No data request
+    if (requestDetail.response_list.length === requestDetail.min_idp) {
+      if (
+        responseCount.reject === 0 &&
+        (responseCount.accept > 0 ||
+          (responseCount.accept === 0 &&
+            ['RegisterIdentity', 'AddAccessor', 'RevokeAccessor'].includes(
+              requestDetail.purpose
+            )))
+      ) {
+        status = 'completed';
+      }
+    }
+  } else {
+    let totalMinAsInDataRequestList = 0;
+    let totalSignedDataCount = 0;
+    let totalReceivedDataCount = 0;
+    for (let i = 0; i < requestDetail.data_request_list.length; i++) {
+      const service = requestDetail.data_request_list[i];
+
+      totalMinAsInDataRequestList += service.min_as;
+
+      const signedAnswerCount =
+        service.response_list != null
+          ? service.response_list.filter((response) => response.signed === true)
+              .length
+          : 0;
+      totalSignedDataCount += signedAnswerCount;
+
+      const receivedDataCount =
+        service.response_list != null
+          ? service.response_list.filter(
+              (response) => response.received_data === true
+            ).length
+          : 0;
+      totalReceivedDataCount += receivedDataCount;
+
+      const errorCount =
+        service.response_list != null
+          ? service.response_list.filter(
+              (response) => response.error_code != null
+            ).length
+          : 0;
+      if (errorCount > service.as_id_list.length - requestDetail.min_as) {
+        // request can never be fulfilled
+        status = 'errored';
+        return status;
+      }
+    }
+
+    if (
+      totalMinAsInDataRequestList === totalSignedDataCount &&
+      totalSignedDataCount === totalReceivedDataCount
+    ) {
+      status = 'completed';
+    }
+  }
+
+  return status;
+}
+
+/**
+ * Get detailed request status for API v4
  *
  * @param {Object} requestDetail
  * @param {string} requestDetail.request_id
@@ -389,7 +517,7 @@ export function generateDataSalt({ request_id, service_id, initial_salt }) {
  * @param {boolean} requestDetail.timed_out
  * @returns {RequestStatus} requestStatus
  */
-export function getDetailedRequestStatus(requestDetail) {
+export function getDetailedRequestStatusLegacy(requestDetail) {
   if (requestDetail.data_request_list == null) {
     requestDetail.data_request_list = [];
   }
@@ -427,11 +555,14 @@ export function getDetailedRequestStatus(requestDetail) {
   const serviceList = requestDetail.data_request_list.map((service) => {
     const signedAnswerCount =
       service.response_list != null
-        ? service.response_list.filter(response => response.signed === true).length
+        ? service.response_list.filter((response) => response.signed === true)
+            .length
         : 0;
     const receivedDataCount =
       service.response_list != null
-        ? service.response_list.filter(response => response.received_data === true).length
+        ? service.response_list.filter(
+            (response) => response.received_data === true
+          ).length
         : 0;
     return {
       service_id: service.service_id,

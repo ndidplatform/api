@@ -855,11 +855,7 @@ export async function getRequestDetail({ requestId, height }) {
     if (requestDetail == null) {
       return null;
     }
-    const requestStatus = utils.getDetailedRequestStatus(requestDetail);
-    return {
-      ...requestDetail,
-      status: requestStatus.status,
-    };
+    return requestDetail;
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get request details from blockchain',

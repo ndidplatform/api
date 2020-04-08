@@ -24,6 +24,7 @@ import express from 'express';
 
 import { validateQuery } from '../middleware/validation';
 import * as tendermintNdid from '../../../tendermint/ndid';
+import * as coreRequest from '../../../core/request';
 import * as privateMessage from '../../../core/common/private_message';
 
 const router = express.Router();
@@ -97,27 +98,15 @@ router.get('/requests/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
 
-    const requestDetail = await tendermintNdid.getRequestDetail({
+    const request = await coreRequest.getRequestDetails({
       requestId: request_id,
     });
 
-    if (requestDetail == null) {
+    if (request == null) {
       res.status(404).end();
       next();
       return;
     }
-
-    const {
-      purpose, // eslint-disable-line no-unused-vars
-      creation_chain_id,
-      creation_block_height,
-      ...filteredRequestDetail
-    } = requestDetail;
-
-    const request = {
-      ...filteredRequestDetail,
-      creation_block_height: `${creation_chain_id}:${creation_block_height}`,
-    };
 
     res.status(200).json(request);
     next();
