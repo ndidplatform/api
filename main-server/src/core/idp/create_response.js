@@ -83,7 +83,7 @@ export async function createResponse(createResponseParams) {
 
     // check current responses with min_idp
     const { idp_id_list, response_list, min_idp } = request;
-    if (idp_id_list.length > 0) {
+    if (response_list && idp_id_list.length > 0) {
       const num_accepted_idps = response_list
         .filter(({error_code}) => (error_code == null) || (error_code === ""))
         .length;
