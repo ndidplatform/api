@@ -202,14 +202,24 @@ async function processDataForRPInternalAsync(
       signature = signatureBuffer.toString('base64');
     }
 
+    let dataToBlockchain;
+    if (error_code == null) {
+      dataToBlockchain = {
+        request_id: requestId,
+        signature,
+        service_id: serviceId,
+      };
+    } else {
+      dataToBlockchain = {
+        request_id: requestId,
+        service_id: serviceId,
+        error_code,
+      };
+    }
+
     if (!synchronous) {
       await tendermintNdid.createAsResponse(
-        {
-          request_id: requestId,
-          signature,
-          service_id: serviceId,
-          error_code,
-        },
+        dataToBlockchain,
         nodeId,
         'as.processDataForRPInternalAsyncAfterBlockchain',
         [
@@ -309,16 +319,28 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
       rpId = savedRpId;
     }
 
-    await sendDataToRP(nodeId, rpId, {
-      request_id: requestId,
-      as_id: nodeId,
-      signature,
-      data_salt,
-      service_id: serviceId,
-      data,
-      height,
-      error_code,
-    });
+    let dataToSendToRP;
+    if (error_code == null) {
+      dataToSendToRP = {
+        request_id: requestId,
+        as_id: nodeId,
+        signature,
+        data_salt,
+        service_id: serviceId,
+        data,
+        height,
+      };
+    } else {
+      dataToSendToRP = {
+        request_id: requestId,
+        as_id: nodeId,
+        service_id: serviceId,
+        error_code,
+        height,
+      };
+    }
+
+    await sendDataToRP(nodeId, rpId, dataToSendToRP);
 
     if (!synchronous) {
       await callbackToClient({
