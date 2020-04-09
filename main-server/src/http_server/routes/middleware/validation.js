@@ -27,6 +27,12 @@ import errorType from 'ndid-error/type';
 
 function getBaseUrlAndApiVersion(req) {
   let baseUrl = req.baseUrl;
+  if (baseUrl.startsWith('/config')) {
+    return {
+      configApi: true,
+      baseUrl,
+    };
+  }
   if (baseUrl.startsWith('/ndid')) {
     return {
       ndidApi: true,
@@ -91,8 +97,9 @@ export function validateQuery(req, res, next) {
 }
 
 export function validateBody(req, res, next) {
-  const { ndidApi, baseUrl, apiVersion } = getBaseUrlAndApiVersion(req);
+  const { configApi, ndidApi, baseUrl, apiVersion } = getBaseUrlAndApiVersion(req);
   const bodyValidationResult = validate({
+    configApi,
     ndidApi,
     apiVersion,
     method: req.method,
