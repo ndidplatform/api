@@ -550,6 +550,9 @@ export function getDetailedRequestStatusLegacy(requestDetail) {
     status = 'rejected';
   } else if (responseCount.accept > 0 && responseCount.reject > 0) {
     status = 'complicated';
+  } else if (responseCount.accept === 0 && responseCount.reject === 0) {
+    // support error response
+    status = 'pending';
   }
 
   const serviceList = requestDetail.data_request_list.map((service) => {
