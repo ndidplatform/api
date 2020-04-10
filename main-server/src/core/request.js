@@ -33,6 +33,37 @@ export async function getRequestDetails({ requestId, legacy }) {
   let request;
   if (legacy) {
     const requestStatus = utils.getDetailedRequestStatusLegacy(requestDetail);
+
+    // Convert request details for legacy API (v4)
+    requestDetail.response_list = requestDetail.response_list.map(
+      (response) => {
+        const {
+          error_code, // eslint-disable-line no-unused-vars
+          ...filteredResponse
+        } = response;
+
+        return filteredResponse;
+      }
+    );
+    requestDetail.data_request_list = requestDetail.data_request_list.map(
+      (service) => {
+        const { response_list, ...filteredDataRequest } = service;
+
+        const answered_as_id_list = response_list.map(
+          (response) => response.as_id
+        );
+        const received_data_from_list = response_list
+          .filter((response) => response.received_data)
+          .map((response) => response.as_id);
+
+        return {
+          ...filteredDataRequest,
+          answered_as_id_list,
+          received_data_from_list,
+        };
+      }
+    );
+
     request = {
       ...requestDetail,
       status: requestStatus.status,
