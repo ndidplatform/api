@@ -143,7 +143,7 @@ async function getASReceiverList(data_request) {
   const receivers = asNodes
     .map((asNode) => {
       if (asNode.proxy != null) {
-        if (asNode.proxy.mq == null) {
+        if (asNode.proxy.mq == null || asNode.proxy.mq.length === 0) {
           return null;
         }
         return {
@@ -158,7 +158,7 @@ async function getASReceiverList(data_request) {
           },
         };
       } else {
-        if (asNode.mq == null) {
+        if (asNode.mq == null || asNode.mq.length === 0) {
           return null;
         }
         return {

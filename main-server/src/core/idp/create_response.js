@@ -468,7 +468,7 @@ async function sendResponseToRP({
 
   let receivers;
   if (nodeInfo.proxy != null) {
-    if (nodeInfo.proxy.mq == null) {
+    if (nodeInfo.proxy.mq == null || nodeInfo.proxy.mq.length === 0) {
       throw new CustomError({
         errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
         details: {
@@ -491,7 +491,7 @@ async function sendResponseToRP({
       },
     ];
   } else {
-    if (nodeInfo.mq == null) {
+    if (nodeInfo.mq == null || nodeInfo.mq.length === 0) {
       throw new CustomError({
         errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
         details: {

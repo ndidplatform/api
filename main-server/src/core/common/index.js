@@ -181,7 +181,7 @@ export async function getIdpMQDestinations({
   const receivers = idpNodes
     .map((idpNode) => {
       if (idpNode.proxy != null) {
-        if (idpNode.proxy.mq == null) {
+        if (idpNode.proxy.mq == null || idpNode.proxy.mq.length === 0) {
           return null;
         }
         return {
@@ -196,7 +196,7 @@ export async function getIdpMQDestinations({
           },
         };
       } else {
-        if (idpNode.mq == null) {
+        if (idpNode.mq == null || idpNode.mq.length === 0) {
           return null;
         }
         return {
