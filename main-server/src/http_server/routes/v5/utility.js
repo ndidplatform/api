@@ -31,12 +31,13 @@ const router = express.Router();
 
 router.get('/idp', validateQuery, async (req, res, next) => {
   try {
-    const { min_ial = 0, min_aal = 0, agent } = req.query;
+    const { min_ial = 0, min_aal = 0, agent, filter_for_node_id } = req.query;
 
     const idpNodes = await tendermintNdid.getIdpNodes({
       min_ial: parseFloat(min_ial),
       min_aal: parseFloat(min_aal),
       agent: agent === 'true',
+      filter_for_node_id,
     });
 
     res.status(200).json(idpNodes);
@@ -52,7 +53,7 @@ router.get(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { min_ial = 0, min_aal = 0, mode } = req.query;
+      const { min_ial = 0, min_aal = 0, mode, filter_for_node_id } = req.query;
 
       const idpNodes = await tendermintNdid.getIdpNodes({
         namespace,
@@ -60,6 +61,7 @@ router.get(
         min_ial: parseFloat(min_ial),
         min_aal: parseFloat(min_aal),
         mode_list: mode ? [parseInt(mode)] : undefined,
+        filter_for_node_id,
       });
 
       res.status(200).json(idpNodes);

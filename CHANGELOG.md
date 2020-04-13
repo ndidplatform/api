@@ -4,7 +4,7 @@
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
 
-FEATURES:
+BREAKING CHANGES:
 
 - API v5.0
 

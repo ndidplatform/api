@@ -874,19 +874,22 @@ export async function getIdpNodes({
   node_id_list,
   supported_request_message_type_list,
   mode_list,
+  filter_for_node_id, // Result IdP nodes must be included in node's whitelist
 }) {
   if (reference_group_code && (namespace || identifier)) {
     throw new Error(
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
-  const isRP = (role === "rp");
   try {
     const result = await tendermint.query('GetIdpNodes', {
       reference_group_code,
       identity_namespace: namespace,
       identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
-      filter_for_rp: (isRP ? config.nodeId : undefined),
+      filter_for_node_id:
+        filter_for_node_id != null && filter_for_node_id !== ''
+          ? filter_for_node_id
+          : config.nodeId,
       agent,
       min_ial,
       min_aal,
@@ -912,19 +915,22 @@ export async function getIdpNodesInfo({
   node_id_list,
   supported_request_message_data_url_type_list,
   mode_list,
+  filter_for_node_id, // Result IdP nodes must be included in node's whitelist
 }) {
   if (reference_group_code && (namespace || identifier)) {
     throw new Error(
       'Cannot have both "reference_group_code" and "namespace"+"identifier" in args'
     );
   }
-  const isRP = (role === "rp");
   try {
     const result = await tendermint.query('GetIdpNodesInfo', {
       reference_group_code,
       identity_namespace: namespace,
       identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
-      filter_for_rp: (isRP ? config.nodeId : undefined),
+      filter_for_node_id:
+        filter_for_node_id != null && filter_for_node_id !== ''
+          ? filter_for_node_id
+          : config.nodeId,
       min_ial,
       min_aal,
       node_id_list,
@@ -1434,7 +1440,7 @@ export async function addErrorCode(
 }
 
 export async function removeErrorCode(
-  { error_code, type, },
+  { error_code, type },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
