@@ -31,6 +31,7 @@ import errorHandler from './middleware/error_handler';
 import apiV4Router from './v4';
 import apiV5Router from './v5';
 import serverInfo from './server_info';
+import configRouter from './config';
 import reinitNodeKeys from './reinit_node_keys';
 import {
   setHttpRequestStartTime,
@@ -102,6 +103,9 @@ router.get('/source', (req, res) => {
 });
 
 router.use(serverInfo);
+if (config.enableConfigHttpRoutePath) {
+  router.use('/config', configRouter);
+}
 
 // Prometheus
 if (config.prometheusEnabled) {

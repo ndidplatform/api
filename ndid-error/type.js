@@ -668,6 +668,11 @@ module.exports = {
     message: 'node id is not in whitelist',
     clientError: true,
   },
+  INVALID_ERROR_CODE_TYPE_IN_AS_RESPONSE: {
+    code: 20080,
+    message: 'Invalid error code data type in AS response. Expected number.',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

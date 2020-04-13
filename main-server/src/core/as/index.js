@@ -285,6 +285,8 @@ export async function afterGotDataFromCallback(
         },
       });
     }
+
+    // Response with 200
     let result;
     try {
       result = JSON.parse(body);
@@ -302,24 +304,36 @@ export async function afterGotDataFromCallback(
         cause: error,
       });
     }
-    if (result.data == null) {
-      throw new CustomError({
-        errorType: errorType.MISSING_DATA_IN_AS_DATA_RESPONSE,
-        details: {
-          result,
-        },
-      });
-    }
-    if (typeof result.data !== 'string') {
-      throw new CustomError({
-        errorType: errorType.INVALID_DATA_TYPE_IN_AS_DATA_RESPONSE,
-        details: {
-          dataType: typeof result.data,
-        },
-      });
+    if (result.error_code == null) {
+      if (result.data == null) {
+        throw new CustomError({
+          errorType: errorType.MISSING_DATA_IN_AS_DATA_RESPONSE,
+          details: {
+            result,
+          },
+        });
+      }
+      if (typeof result.data !== 'string') {
+        throw new CustomError({
+          errorType: errorType.INVALID_DATA_TYPE_IN_AS_DATA_RESPONSE,
+          details: {
+            dataType: typeof result.data,
+          },
+        });
+      }
+    } else {
+      if (typeof result.error_code !== 'number') {
+        throw new CustomError({
+          errorType: errorType.INVALID_ERROR_CODE_TYPE_IN_AS_RESPONSE,
+          details: {
+            errorCodeType: typeof result.error_code,
+          },
+        });
+      }
     }
     additionalData.reference_id = result.reference_id;
     additionalData.callback_url = result.callback_url;
+    additionalData.error_code = result.error_code;
     const synchronous =
       !additionalData.reference_id || !additionalData.callback_url;
     await processDataForRP(result.data, additionalData, { synchronous });
@@ -400,9 +414,7 @@ async function getDataAndSendBackToRP(
           max_aal: responseDetails.max_aal,
           max_ial: responseDetails.max_ial,
           creation_time: request.creation_time,
-          creation_block_height: `${requestDetail.creation_chain_id}:${
-            requestDetail.creation_block_height
-          }`,
+          creation_block_height: `${requestDetail.creation_chain_id}:${requestDetail.creation_block_height}`,
           request_timeout: requestDetail.request_timeout,
         },
         retry: true,
@@ -548,9 +560,11 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
     }
   }
 
-  const response_list = (await tendermintNdid.getRequestDetail({
-    requestId: request_id,
-  })).response_list;
+  const response_list = (
+    await tendermintNdid.getRequestDetail({
+      requestId: request_id,
+    })
+  ).response_list;
   let valid = true;
   for (let i = 0; i < response_private_data_list.length; i++) {
     const accessor_public_key = await tendermintNdid.getAccessorKey(

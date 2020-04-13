@@ -117,8 +117,8 @@ export function isAllIdpRespondedAndValid({
   if (answeredIdPCount !== requestDetail.min_idp) return false;
   if (requestDetail.closed === true || requestDetail.timed_out === true)
     return false;
-  const asAnswerCount = requestStatus.service_list.reduce(
-    (total, service) => total + service.signed_data_count,
+  const asAnswerCount = requestDetail.data_request_list.reduce(
+    (total, service) => total + service.response_list.length,
     0
   );
   if (asAnswerCount === 0) {

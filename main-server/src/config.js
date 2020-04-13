@@ -226,6 +226,9 @@ export const grpcSslCertFilePath = process.env.GRPC_SSL_CERT_FILE_PATH
     )
   : null;
 
+export const enableConfigHttpRoutePath =
+  process.env.ENABLE_CONFIG_HTTP_ROUTE_PATH === 'true';
+
 export const prometheusEnabled = process.env.PROMETHEUS === 'true';
 
 export const prometheusServerPort = process.env.PROMETHEUS_SERVER_PORT

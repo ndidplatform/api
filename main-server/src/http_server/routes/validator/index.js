@@ -25,6 +25,7 @@ import Ajv from 'ajv';
 import schemasV4 from './json_schema/v4';
 import schemasV5 from './json_schema/v5';
 import ndidSchemas from './json_schema/ndid';
+import configSchemas from './json_schema/config';
 
 const ajvOptions = {
   allErrors: true,
@@ -32,7 +33,16 @@ const ajvOptions = {
 
 const ajv = new Ajv(ajvOptions);
 
-function validate({ ndidApi, apiVersion, method, path, params, query, body }) {
+function validate({
+  configApi,
+  ndidApi,
+  apiVersion,
+  method,
+  path,
+  params,
+  query,
+  body,
+}) {
   let data;
   let dataType;
   if (typeof params === 'object') {
@@ -48,7 +58,9 @@ function validate({ ndidApi, apiVersion, method, path, params, query, body }) {
 
   ajv.removeSchema('defs');
 
-  if (ndidApi) {
+  if (configApi) {
+    //
+  } else if (ndidApi) {
     ajv.addSchema(ndidSchemas.defsSchema, 'defs');
   } else {
     if (apiVersion === 4) {
@@ -59,7 +71,14 @@ function validate({ ndidApi, apiVersion, method, path, params, query, body }) {
     }
   }
 
-  const jsonSchema = getJSONSchema(ndidApi, apiVersion, method, path, dataType);
+  const jsonSchema = getJSONSchema({
+    configApi,
+    ndidApi,
+    apiVersion,
+    method,
+    path,
+    dataType,
+  });
   const validate = ajv.compile(jsonSchema);
   const valid = validate(data);
 
@@ -69,17 +88,28 @@ function validate({ ndidApi, apiVersion, method, path, params, query, body }) {
   };
 }
 
-function getJSONSchema(ndidApi, apiVersion, method, path, dataType) {
+function getJSONSchema({
+  configApi,
+  ndidApi,
+  apiVersion,
+  method,
+  path,
+  dataType,
+}) {
   try {
+    if (configApi) {
+      return configSchemas[method][path][dataType];
+    }
+
     if (ndidApi) {
       return ndidSchemas[method][path][dataType];
-    } else {
-      if (apiVersion === 4) {
-        return schemasV4[method][path][dataType];
-      }
-      if (apiVersion === 5) {
-        return schemasV5[method][path][dataType];
-      }
+    }
+
+    if (apiVersion === 4) {
+      return schemasV4[method][path][dataType];
+    }
+    if (apiVersion === 5) {
+      return schemasV5[method][path][dataType];
     }
   } catch (error) {
     throw new Error('Cannot find JSON schema for validation');
