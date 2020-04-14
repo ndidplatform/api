@@ -24,6 +24,7 @@ import * as tendermint from '.';
 import * as utils from '../utils';
 import * as config from '../config';
 import { role } from '../node';
+import ROLE from '../role';
 
 import CustomError from 'ndid-error/custom_error';
 
@@ -889,7 +890,7 @@ export async function getIdpNodes({
       filter_for_node_id:
         filter_for_node_id != null && filter_for_node_id !== ''
           ? filter_for_node_id
-          : config.nodeId,
+          : (role === ROLE.RP ? config.nodeId : undefined),
       agent,
       min_ial,
       min_aal,
@@ -930,7 +931,7 @@ export async function getIdpNodesInfo({
       filter_for_node_id:
         filter_for_node_id != null && filter_for_node_id !== ''
           ? filter_for_node_id
-          : config.nodeId,
+          : (role === ROLE.RP ? config.nodeId : undefined),
       min_ial,
       min_aal,
       node_id_list,
