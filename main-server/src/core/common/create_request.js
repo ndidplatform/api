@@ -293,7 +293,7 @@ async function checkWhitelistCondition({
   } = await tendermintNdid.getNodeInfo(node_id);
 
   if (active && idp_id_list.length == 0) {
-    idp_id_list = whitelist;
+    idp_id_list.push(...whitelist);
   }
 
   await Promise.all(idp_id_list.map(async (idp_node_id) => {
@@ -324,8 +324,6 @@ async function checkWhitelistCondition({
       });
     }
   }));
-
-  return idp_id_list;
 }
 
 /**
@@ -434,7 +432,7 @@ export async function createRequest(
       }
     }
 
-    idp_id_list = await checkWhitelistCondition({
+    await checkWhitelistCondition({
       node_id,
       idp_id_list,
     });
