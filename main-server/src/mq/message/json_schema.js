@@ -333,7 +333,6 @@ export default {
       {
         properties: {
           request_id: { type: 'string', minLength: 1 },
-          mode: { type: 'number', enum: [2, 3] },
           idp_id: { type: 'string', minLength: 1 },
           error_code: { type: 'number', minimum: 1 },
           chain_id: { type: 'string', minLength: 1 },
@@ -341,7 +340,6 @@ export default {
         },
         required: [
           'request_id',
-          'mode',
           'idp_id',
           'error_code',
           'chain_id',
