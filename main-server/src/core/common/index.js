@@ -354,7 +354,7 @@ export async function getAndSaveIdpResponseValid({
     response,
   });
 
-  if (response.error_code == null) {
+  if (response.error_code != null) {
     validIal = null;
     validSignature = null;
   } else if (requestDetail.mode === 1) {
