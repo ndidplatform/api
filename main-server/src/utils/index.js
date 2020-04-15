@@ -436,6 +436,12 @@ export function getRequestStatus(requestDetail) {
       status = 'rejected';
     } else if (responseCount.accept > 0 && responseCount.reject > 0) {
       status = 'complicated';
+    } else if (
+      responseCount.accept === 0 &&
+      responseCount.reject === 0 &&
+      responseCount.error > 0
+    ) {
+      status = 'pending';
     }
   }
 
