@@ -335,35 +335,41 @@ export async function removeTimeoutSchedulerInternal(nodeId, requestId) {
 export async function getAndSaveIdpResponseValid({
   nodeId,
   requestDetail,
-  idpId,
-  responseIal,
   requestDataFromMq,
 }) {
   logger.debug({
-    message: 'Checking IdP response (IAL)',
+    message: 'Get and save IdP response valid',
     requestDetail,
-    idpId,
-    responseIal,
     requestDataFromMq,
   });
 
   let validIal, validSignature;
 
   const requestId = requestDetail.request_id;
-
-  const requestData = await cacheDb.getRequestData(nodeId, requestId);
-  const identityInfo = await tendermintNdid.getIdentityInfo({
-    namespace: requestData.namespace,
-    identifier: requestData.identifier,
-    node_id: idpId,
+  const response = requestDetail.response_list.find(
+    (response) => response.idp_id === requestDataFromMq.idp_id
+  );
+  logger.debug({
+    message: 'Checking IdP response',
+    response,
   });
 
-  if (requestDetail.mode === 1) {
+  if (response.error_code == null) {
+    validIal = null;
+    validSignature = null;
+  } else if (requestDetail.mode === 1) {
     validIal = null; // Cannot check in mode 1
     validSignature = null;
   } else if (requestDetail.mode === 2 || requestDetail.mode === 3) {
+    const requestData = await cacheDb.getRequestData(nodeId, requestId);
+    const identityInfo = await tendermintNdid.getIdentityInfo({
+      namespace: requestData.namespace,
+      identifier: requestData.identifier,
+      node_id: response.idp_id,
+    });
+
     // IAL check
-    if (responseIal === identityInfo.ial) {
+    if (response.ial === identityInfo.ial) {
       validIal = true;
     } else {
       validIal = false;
@@ -383,13 +389,6 @@ export async function getAndSaveIdpResponseValid({
       );
 
       if (accessor_public_key) {
-        const response_list = (await tendermintNdid.getRequestDetail({
-          requestId: requestDetail.request_id,
-        })).response_list;
-        const response = response_list.find(
-          (response) => response.idp_id === idpId
-        );
-
         const { request_message, initial_salt, request_id } = requestData;
         const signature = response.signature;
 
@@ -412,7 +411,7 @@ export async function getAndSaveIdpResponseValid({
         logger.debug({
           message: 'Accessor key not found or inactive',
           accessorId: requestDataFromMq.accessor_id,
-          idpId,
+          idpId: response.idp_id,
         });
 
         validSignature = false;
@@ -431,7 +430,7 @@ export async function getAndSaveIdpResponseValid({
   }
 
   const responseValid = {
-    idp_id: idpId,
+    idp_id: response.idp_id,
     valid_signature: validSignature,
     valid_ial: validIal,
   };

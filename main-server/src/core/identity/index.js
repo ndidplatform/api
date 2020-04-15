@@ -155,11 +155,7 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
   const responseValid = await common.getAndSaveIdpResponseValid({
     nodeId,
     requestDetail,
-    idpId: message.idp_id,
     requestDataFromMq: message,
-    responseIal: requestDetail.response_list.find(
-      (response) => response.idp_id === message.idp_id
-    ).ial,
   });
 
   let identityConsentRequestError;

@@ -74,22 +74,25 @@ export function serializeMqMessage(message) {
       messageBuffer = ConsentRequestMqMessage.encode(protoMessage).finish();
       break;
     }
-    case messageTypes.AS_DATA_RESPONSE: {
+    case messageTypes.AS_RESPONSE: {
       const { data, ...messageJson } = message;
-      const dataUrlParsedData = parseDataURL(data);
       let dataDataUrlPrefix;
       let dataBuffer;
-      if (dataUrlParsedData != null) {
-        const match = data.match(dataUrlRegex);
-        if (match[4] && match[4].endsWith('base64')) {
-          // Convert data with data URL format to Buffer for transfer over MQ
-          // In case it is base64 encoded, MQ message payload size is reduced
-          dataDataUrlPrefix = match[1];
-          dataBuffer = dataUrlParsedData.body;
+      if (data != null) {
+        // Data is present if it's not an error response
+        const dataUrlParsedData = parseDataURL(data);
+        if (dataUrlParsedData != null) {
+          const match = data.match(dataUrlRegex);
+          if (match[4] && match[4].endsWith('base64')) {
+            // Convert data with data URL format to Buffer for transfer over MQ
+            // In case it is base64 encoded, MQ message payload size is reduced
+            dataDataUrlPrefix = match[1];
+            dataBuffer = dataUrlParsedData.body;
+          }
         }
-      }
-      if (!dataDataUrlPrefix && !dataBuffer) {
-        messageJson.data = data;
+        if (!dataDataUrlPrefix && !dataBuffer) {
+          messageJson.data = data;
+        }
       }
       const request_json = JSON.stringify(messageJson);
       const asDataResponseMqMessageObject = {
@@ -135,7 +138,7 @@ export function deserializeMqMessage(messageType, messageBuffer) {
       }
       break;
     }
-    case messageTypes.AS_DATA_RESPONSE: {
+    case messageTypes.AS_RESPONSE: {
       const decodedMessage = AsDataResponseMqMessage.decode(messageBuffer);
       const { request_json, data_data_url_prefix, data_bytes } = decodedMessage;
       message = JSON.parse(request_json);

@@ -120,7 +120,7 @@ export async function processDataForRP(
 
     // check current responses with min_as
     const nonErrorResponseCount = serviceInRequest.response_list.filter(
-      ({ error_code }) => error_code == null || error_code === ''
+      ({ error_code }) => error_code == null
     ).length;
     if (nonErrorResponseCount >= serviceInRequest.min_as) {
       throw new CustomError({
@@ -464,13 +464,14 @@ async function sendDataToRP(nodeId, rpId, data) {
   await mq.send({
     receivers,
     message: {
-      type: privateMessageType.AS_DATA_RESPONSE,
+      type: privateMessageType.AS_RESPONSE,
       request_id: data.request_id,
       as_id: data.as_id,
       service_id: data.service_id,
       signature: data.signature,
       data_salt: data.data_salt,
       data: data.data,
+      error_code: data.error_code,
       chain_id: tendermint.chainId,
       height: data.height,
     },

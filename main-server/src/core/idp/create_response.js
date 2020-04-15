@@ -90,7 +90,7 @@ export async function createResponse(createResponseParams) {
 
     // check current responses with min_idp
     const nonErrorResponseCount = request.response_list.filter(
-      ({ error_code }) => error_code == null || error_code === ''
+      ({ error_code }) => error_code == null
     ).length;
     if (nonErrorResponseCount >= request.min_idp) {
       throw new CustomError({

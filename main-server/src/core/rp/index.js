@@ -298,17 +298,19 @@ export async function processMessage(nodeId, messageId, message) {
         message.request_id
       );
       if (requestData != null) {
-        // "accessor_id" is present only in mode 2,3
-        if (message.mode === 2 || message.mode === 3) {
-          //store accessor_id from EACH IdP, to pass along to AS
-          await cacheDb.addResponsePrivateDataForRequest(
-            nodeId,
-            message.request_id,
-            {
-              idp_id: message.idp_id,
-              accessor_id: message.accessor_id,
-            }
-          );
+        if (message.error_code == null) {
+          // "accessor_id" is present only in mode 2,3
+          if (message.mode === 2 || message.mode === 3) {
+            //store accessor_id from EACH IdP, to pass along to AS
+            await cacheDb.addResponsePrivateDataForRequest(
+              nodeId,
+              message.request_id,
+              {
+                idp_id: message.idp_id,
+                accessor_id: message.accessor_id,
+              }
+            );
+          }
         }
 
         const requestDetail = await tendermintNdid.getRequestDetail({
@@ -330,11 +332,7 @@ export async function processMessage(nodeId, messageId, message) {
         const responseValid = await common.getAndSaveIdpResponseValid({
           nodeId,
           requestDetail,
-          idpId: message.idp_id,
           requestDataFromMq: message,
-          responseIal: requestDetail.response_list.find(
-            (response) => response.idp_id === message.idp_id
-          ).ial,
         });
 
         const responseValidList = savedResponseValidList.concat([
@@ -429,7 +427,7 @@ export async function processMessage(nodeId, messageId, message) {
           );
         }
       }
-    } else if (message.type === privateMessageType.AS_DATA_RESPONSE) {
+    } else if (message.type === privateMessageType.AS_RESPONSE) {
       await processAsResponse({
         nodeId,
         requestId: message.request_id,
