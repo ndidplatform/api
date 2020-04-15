@@ -192,9 +192,11 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
   }
 
   // Check if request is completed.
-  const answeredIdPCount = requestDetail.response_list.length;
+  const nonErrorAnsweredIdPCount = requestDetail.response_list.filter(
+    (response) => response.error_code == null
+  ).length;
   if (
-    answeredIdPCount === requestDetail.min_idp &&
+    nonErrorAnsweredIdPCount === requestDetail.min_idp &&
     requestStatus === 'completed'
   ) {
     let callbackFnName;

@@ -290,7 +290,7 @@ export async function processRequestUpdate(
         (requestStatus === 'completed' &&
           (requestDetail.mode === 1 ||
             ((requestDetail.mode === 2 || requestDetail.mode === 3) &&
-              isAllIdpResponsesValid(responseValidList)))))
+              isAllIdpResponsesValid(responseValidList, requestDetail)))))
     ) {
       logger.debug({
         message: 'Automatically closing request',
