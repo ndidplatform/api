@@ -441,7 +441,10 @@ export function getRequestStatus(requestDetail) {
 
   if (requestDetail.data_request_list.length === 0) {
     // No data request
-    if (requestDetail.response_list.length === requestDetail.min_idp) {
+    const nonErrorAnsweredIdPCount = requestDetail.response_list.filter(
+      (response) => response.error_code == null
+    ).length;
+    if (nonErrorAnsweredIdPCount === requestDetail.min_idp) {
       if (
         responseCount.reject === 0 &&
         (responseCount.accept > 0 ||
@@ -577,7 +580,10 @@ export function getDetailedRequestStatusLegacy(requestDetail) {
 
   if (requestDetail.data_request_list.length === 0) {
     // No data request
-    if (requestDetail.response_list.length === requestDetail.min_idp) {
+    const nonErrorAnsweredIdPCount = requestDetail.response_list.filter(
+      (response) => response.error_code == null
+    ).length;
+    if (nonErrorAnsweredIdPCount === requestDetail.min_idp) {
       if (
         responseCount.reject === 0 &&
         (responseCount.accept > 0 ||
