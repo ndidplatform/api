@@ -342,7 +342,6 @@ export default {
         required: [
           'request_id',
           'mode',
-          'accessor_id',
           'idp_id',
           'error_code',
           'chain_id',
