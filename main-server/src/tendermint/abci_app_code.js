@@ -124,6 +124,14 @@ import errorType from 'ndid-error/type';
 // InvalidNamespace                                   uint32 = 100
 // IdentifierCountIsGreaterThanAllowedIdentifierCount uint32 = 101
 // IalMustBeGreaterOrEqualMinIal                      uint32 = 102
+// CannotRevokeAllAccessorsInThisIdP                  uint32 = 103
+// DuplicateIdentifier                                uint32 = 104
+// NewModeListMustBeHigherThanCurrentModeList         uint32 = 105
+// InvalidErrorCode                                   uint32 = 106
+// NodeNotInWhitelist                                 uint32 = 107
+// AppStateError                                      uint32 = 108
+// RequestCannotBeFulfilled                           uint32 = 109
+// DataRequestCannotBeFulfilled                       uint32 = 110
 // UnknownError                                       uint32 = 999
 
 const codeMapping = {
@@ -229,6 +237,14 @@ const codeMapping = {
   100: errorType.ABCI_INVALID_NAMESPACE,
   101: errorType.ABCI_ALLOWED_IDENTIFIER_COUNT_EXCEEDED,
   102: errorType.ABCI_IAL_TOO_LOW_FOR_FIRST_IDP,
+  103: errorType.ABCI_CANNOT_REVOKE_ALL_ACCESSORS_IN_THIS_IDP,
+  104: errorType.ABCI_DUPLICATE_IDENTIFIER,
+  105: errorType.ABCI_NEW_MODE_LIST_MUST_BE_HIGHER_THAN_CURRENT_MODE_LIST,
+  106: errorType.ABCI_INVALID_ERROR_CODE,
+  107: errorType.ABCI_NODE_NOT_IN_WHITELIST,
+  108: errorType.ABCI_APP_STATE_ERROR,
+  109: errorType.ABCI_REQUEST_CANNOT_BE_FULFILLED,
+  110: errorType.ABCI_DATA_REQUEST_CANNOT_BE_FULFILLED,
   999: errorType.UNKNOWN_ERROR,
 };
 
