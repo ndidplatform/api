@@ -89,20 +89,23 @@ export async function createResponse(createResponseParams) {
     }
 
     // check current responses with min_idp
-    if (request.idp_id_list.length > 0) {
-      const nonErrorResponseCount = request.response_list.filter(
-        ({ error_code }) => error_code == null || error_code === ''
-      ).length;
-      const remainingPossibleResponseCount =
-        request.idp_id_list.length - request.response_list.length;
-      if (
-        nonErrorResponseCount + remainingPossibleResponseCount <
-        request.min_idp
-      ) {
-        throw new CustomError({
-          errorType: errorType.ENOUGH_IDP_RESPONSE,
-        });
-      }
+    const nonErrorResponseCount = request.response_list.filter(
+      ({ error_code }) => error_code == null || error_code === ''
+    ).length;
+    if (nonErrorResponseCount >= request.min_idp) {
+      throw new CustomError({
+        errorType: errorType.ENOUGH_IDP_RESPONSE,
+      });
+    }
+    const remainingPossibleResponseCount =
+      request.idp_id_list.length - request.response_list.length;
+    if (
+      nonErrorResponseCount + remainingPossibleResponseCount <
+      request.min_idp
+    ) {
+      throw new CustomError({
+        errorType: errorType.ENOUGH_IDP_RESPONSE,
+      });
     }
 
     const requestData = await cacheDb.getRequestReceivedFromMQ(
