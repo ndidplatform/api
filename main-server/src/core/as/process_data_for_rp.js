@@ -97,10 +97,10 @@ export async function processDataForRP(
     }
 
     // Check if there is an input service ID in the request
-    const serviceIdInRequest = requestDetail.data_request_list.find(
+    const serviceInRequest = requestDetail.data_request_list.find(
       (dataRequest) => dataRequest.service_id === serviceId
     );
-    if (serviceIdInRequest == null) {
+    if (serviceInRequest == null) {
       throw new CustomError({
         errorType: errorType.SERVICE_ID_NOT_FOUND_IN_REQUEST,
       });
@@ -116,6 +116,24 @@ export async function processDataForRP(
       throw new CustomError({
         errorType: errorType.UNKNOWN_DATA_REQUEST,
       });
+    }
+
+    // check current responses with min_as
+    if (serviceInRequest.as_id_list.length > 0) {
+      const nonErrorResponseCount = serviceInRequest.response_list.filter(
+        ({ error_code }) => error_code == null || error_code === ''
+      ).length;
+      const remainingPossibleResponseCount =
+        serviceInRequest.as_id_list.length -
+        serviceInRequest.response_list.length;
+      if (
+        nonErrorResponseCount + remainingPossibleResponseCount <
+        serviceInRequest.min_as
+      ) {
+        throw new CustomError({
+          errorType: errorType.ENOUGH_AS_RESPONSE,
+        });
+      }
     }
 
     if (error_code == null) {

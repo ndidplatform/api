@@ -673,6 +673,16 @@ module.exports = {
     message: 'Invalid error code data type in AS response. Expected number.',
     clientError: true,
   },
+  ENOUGH_IDP_RESPONSE: {
+    code: 20081,
+    message: 'Request has enough IdP responses',
+    clientError: true,
+  },
+  ENOUGH_AS_RESPONSE: {
+    code: 20082,
+    message: 'Request has enough AS responses',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

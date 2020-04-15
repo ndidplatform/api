@@ -40,7 +40,14 @@ import { role } from '../../node';
 
 export async function createResponse(createResponseParams) {
   let { node_id } = createResponseParams;
-  const { request_id, ial, aal, accessor_id, signature, error_code } = createResponseParams;
+  const {
+    request_id,
+    ial,
+    aal,
+    accessor_id,
+    signature,
+    error_code,
+  } = createResponseParams;
 
   if (role === 'proxy') {
     if (node_id == null) {
@@ -82,16 +89,18 @@ export async function createResponse(createResponseParams) {
     }
 
     // check current responses with min_idp
-    const { idp_id_list, response_list, min_idp } = request;
-    if (response_list && idp_id_list.length > 0) {
-      const num_accepted_idps = response_list
-        .filter(({error_code}) => (error_code == null) || (error_code === ""))
-        .length;
-      const num_remaining_idps = idp_id_list.length - response_list.length;
-      if (num_accepted_idps + num_remaining_idps < min_idp) {
+    if (request.idp_id_list.length > 0) {
+      const nonErrorResponseCount = request.response_list.filter(
+        ({ error_code }) => error_code == null || error_code === ''
+      ).length;
+      const remainingPossibleResponseCount =
+        request.idp_id_list.length - request.response_list.length;
+      if (
+        nonErrorResponseCount + remainingPossibleResponseCount <
+        request.min_idp
+      ) {
         throw new CustomError({
-          errorType: errorType.NOT_ENOUGH_IDP,
-          message: "Remaining IdPs are not enough to fulfill the request",
+          errorType: errorType.ENOUGH_IDP_RESPONSE,
         });
       }
     }
@@ -109,7 +118,9 @@ export async function createResponse(createResponseParams) {
     if (error_code != null) {
       // check if error code exists
       const error_code_list = await tendermintNdid.getErrorCodeList('idp');
-      if (error_code_list.find(error => error.error_code === error_code) == null) {
+      if (
+        error_code_list.find((error) => error.error_code === error_code) == null
+      ) {
         throw new CustomError({
           errorType: errorType.INVALID_ERROR_CODE,
         });
@@ -388,7 +399,16 @@ export async function createErrorResponseInternal(
 
 export async function createResponseAfterBlockchain(
   { height, error, chainDisabledRetryLater },
-  { nodeId, reference_id, callback_url, request_id, mode, accessor_id, rp_id, error_code }
+  {
+    nodeId,
+    reference_id,
+    callback_url,
+    request_id,
+    mode,
+    accessor_id,
+    rp_id,
+    error_code,
+  }
 ) {
   if (chainDisabledRetryLater) return;
   try {
