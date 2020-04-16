@@ -890,7 +890,7 @@ export async function getIdpNodes({
       filter_for_node_id:
         filter_for_node_id != null && filter_for_node_id !== ''
           ? filter_for_node_id
-          : (role === ROLE.RP ? config.nodeId : undefined),
+          : undefined,
       agent,
       min_ial,
       min_aal,
@@ -931,7 +931,7 @@ export async function getIdpNodesInfo({
       filter_for_node_id:
         filter_for_node_id != null && filter_for_node_id !== ''
           ? filter_for_node_id
-          : (role === ROLE.RP ? config.nodeId : undefined),
+          : undefined,
       min_ial,
       min_aal,
       node_id_list,
