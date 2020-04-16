@@ -473,12 +473,15 @@ export function getRequestStatus(requestDetail) {
 
       const responseCount = service.response_list.reduce(
         (count, response) => {
-          if (response.signed) {
-            count.signed++;
-          } else if (response.received_data) {
-            count.receivedData++;
-          } else if (response.error_code != null) {
+          if (response.error_code != null) {
             count.error++;
+          } else {
+            if (response.signed) {
+              count.signed++;
+            }
+            if (response.received_data) {
+              count.receivedData++;
+            }
           }
           return count;
         },
