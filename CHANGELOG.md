@@ -7,10 +7,10 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 BREAKING CHANGES:
 
 - API v5.0
-  - New API: POST `/idp/error_response`.
-  - New API: POST `/as/error/:request_id/:service_id`.
-  - New API: GET `/utility/idp_error_codes`.
-  - New API: GET `/utility/as_error_codes`.
+  - New API: POST `/idp/error_response` for IdP to response with error to a request.
+  - New API: POST `/as/error/:request_id/:service_id` for AS to response with error to a data request.
+  - New API: GET `/utility/idp_error_codes` for getting possible IdP error codes.
+  - New API: GET `/utility/as_error_codes` for getting possible AS error codes.
   - Change body JSON schema of request status update callback API (type: `request_status`) on RP, IdP, and AS to make it more similar to utility get request info and status API (GET `/utility/requests/:request_id`).
     - Remove `answered_idp_count`
     - Remove `service_list`
