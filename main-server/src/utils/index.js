@@ -471,28 +471,28 @@ export function getRequestStatus(requestDetail) {
 
       totalMinAsInDataRequestList += service.min_as;
 
-      const signedAnswerCount =
-        service.response_list != null
-          ? service.response_list.filter((response) => response.signed === true)
-              .length
-          : 0;
-      totalSignedDataCount += signedAnswerCount;
+      const responseCount = service.response_list.reduce(
+        (count, response) => {
+          if (response.signed) {
+            count.signed++;
+          } else if (response.received_data) {
+            count.receivedData++;
+          } else if (response.error_code != null) {
+            count.error++;
+          }
+          return count;
+        },
+        {
+          signed: 0,
+          receivedData: 0,
+          error: 0,
+        }
+      );
 
-      const receivedDataCount =
-        service.response_list != null
-          ? service.response_list.filter(
-              (response) => response.received_data === true
-            ).length
-          : 0;
-      totalReceivedDataCount += receivedDataCount;
+      totalSignedDataCount += responseCount.signed;
+      totalReceivedDataCount += responseCount.receivedData;
 
-      const errorCount =
-        service.response_list != null
-          ? service.response_list.filter(
-              (response) => response.error_code != null
-            ).length
-          : 0;
-      if (errorCount > service.as_id_list.length - requestDetail.min_as) {
+      if (responseCount.error > service.as_id_list.length - service.min_as) {
         // request can never be fulfilled
         status = 'errored';
         return status;
