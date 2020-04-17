@@ -143,8 +143,8 @@ router.get('/nodes/:node_id', async (req, res, next) => {
       const node = result.map((node) => {
         const {
           agent, // eslint-disable-line no-unused-vars
-          node_id_whitelist,
-          node_id_whitelist_active,
+          node_id_whitelist, // eslint-disable-line no-unused-vars
+          node_id_whitelist_active, // eslint-disable-line no-unused-vars
           ...rest
         } = node;
         return rest;
