@@ -45,7 +45,7 @@ import { role } from '../../node';
 export async function processDataForRP(
   data,
   processDataForRPParams,
-  { synchronous = false } = {}
+  { synchronous = false, apiVersion } = {}
 ) {
   let { node_id } = processDataForRPParams;
   const {
@@ -203,7 +203,7 @@ export async function processDataForRP(
 async function processDataForRPInternalAsync(
   data,
   { reference_id, callback_url, requestId, serviceId, rpId, error_code },
-  { synchronous = false } = {},
+  { synchronous = false, apiVersion } = {},
   { nodeId, savedRpId }
 ) {
   try {
@@ -255,7 +255,7 @@ async function processDataForRPInternalAsync(
             rpId,
             error_code,
           },
-          { synchronous },
+          { synchronous, apiVersion },
           { nodeId, savedRpId },
         ]
       );
@@ -282,7 +282,7 @@ async function processDataForRPInternalAsync(
           rpId,
           error_code,
         },
-        { synchronous },
+        { synchronous, apiVersion },
         { nodeId, savedRpId }
       );
     }
@@ -298,11 +298,13 @@ async function processDataForRPInternalAsync(
     });
 
     if (!synchronous) {
+      const type =
+        apiVersion === '4.0' ? 'send_data_result' : 'response_result';
       await callbackToClient({
         callbackUrl: callback_url,
         body: {
           node_id: nodeId,
-          type: 'send_data_result',
+          type,
           success: false,
           reference_id,
           request_id: requestId,
@@ -329,7 +331,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     rpId,
     error_code,
   },
-  { synchronous = false } = {},
+  { synchronous = false, apiVersion } = {},
   { nodeId, savedRpId }
 ) {
   if (chainDisabledRetryLater) return;
@@ -364,11 +366,13 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     await sendDataToRP(nodeId, rpId, dataToSendToRP);
 
     if (!synchronous) {
+      const type =
+        apiVersion === '4.0' ? 'send_data_result' : 'response_result';
       await callbackToClient({
         callbackUrl: callback_url,
         body: {
           node_id: nodeId,
-          type: 'send_data_result',
+          type,
           success: true,
           reference_id,
           request_id: requestId,
@@ -389,11 +393,13 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     });
 
     if (!synchronous) {
+      const type =
+        apiVersion === '4.0' ? 'send_data_result' : 'response_result';
       await callbackToClient({
         callbackUrl: callback_url,
         body: {
           node_id: nodeId,
-          type: 'send_data_result',
+          type,
           success: false,
           reference_id,
           request_id: requestId,

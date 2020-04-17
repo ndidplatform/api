@@ -11,6 +11,7 @@ BREAKING CHANGES:
   - New API: POST `/as/error/:request_id/:service_id` for AS to response with error to a data request.
   - New API: GET `/utility/idp_error_codes` for getting possible IdP error codes.
   - New API: GET `/utility/as_error_codes` for getting possible AS error codes.
+  - Change AS callback result `type` for sending data API (POST `/as/data/:request_id/:service_id`) from `send_data_result` to `response_result`.
   - Change body JSON schema of request status update callback API (type: `request_status`) on RP, IdP, and AS to make it more similar to utility get request info and status API (GET `/utility/requests/:request_id`).
     - Remove `answered_idp_count`
     - Remove `service_list`
