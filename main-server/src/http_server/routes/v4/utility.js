@@ -33,9 +33,17 @@ router.get('/idp', validateQuery, async (req, res, next) => {
   try {
     const { min_ial = 0, min_aal = 0 } = req.query;
 
-    const idpNodes = await tendermintNdid.getIdpNodes({
+    let idpNodes = await tendermintNdid.getIdpNodes({
       min_ial: parseFloat(min_ial),
       min_aal: parseFloat(min_aal),
+    });
+
+    idpNodes = idpNodes.map((idp) => {
+      const {
+        agent, // eslint-disable-line no-unused-vars
+        ...rest
+      } = idp;
+      return rest;
     });
 
     res.status(200).json(idpNodes);
@@ -53,12 +61,20 @@ router.get(
       const { namespace, identifier } = req.params;
       const { min_ial = 0, min_aal = 0, mode } = req.query;
 
-      const idpNodes = await tendermintNdid.getIdpNodes({
+      let idpNodes = await tendermintNdid.getIdpNodes({
         namespace,
         identifier,
         min_ial: parseFloat(min_ial),
         min_aal: parseFloat(min_aal),
         mode_list: mode ? [parseInt(mode)] : undefined,
+      });
+
+      idpNodes = idpNodes.map((idp) => {
+        const {
+          agent, // eslint-disable-line no-unused-vars
+          ...rest
+        } = idp;
+        return rest;
       });
 
       res.status(200).json(idpNodes);
@@ -124,7 +140,17 @@ router.get('/nodes/:node_id', async (req, res, next) => {
     if (result == null) {
       res.status(404).end();
     } else {
-      res.status(200).json(result);
+      const node = result.map((node) => {
+        const {
+          agent, // eslint-disable-line no-unused-vars
+          node_id_whitelist,
+          node_id_whitelist_active,
+          ...rest
+        } = node;
+        return rest;
+      });
+
+      res.status(200).json(node);
     }
     next();
   } catch (error) {
