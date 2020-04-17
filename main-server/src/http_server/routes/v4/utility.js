@@ -36,6 +36,7 @@ router.get('/idp', validateQuery, async (req, res, next) => {
     const idpNodes = await tendermintNdid.getIdpNodes({
       min_ial: parseFloat(min_ial),
       min_aal: parseFloat(min_aal),
+      agent: true,
     });
 
     res.status(200).json(idpNodes);
