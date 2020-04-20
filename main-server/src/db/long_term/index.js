@@ -38,8 +38,8 @@ function getName(messageType) {
   switch (messageType) {
     case privateMessageType.IDP_RESPONSE:
       return 'idpResponseMessage';
-    case privateMessageType.AS_DATA_RESPONSE:
-      return 'asDataResponseMessage';
+    case privateMessageType.AS_RESPONSE:
+      return 'asResponseMessage';
     case privateMessageType.CONSENT_REQUEST:
       return 'consentRequestMessage';
     case privateMessageType.DATA_REQUEST:

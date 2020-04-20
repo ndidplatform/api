@@ -99,7 +99,7 @@ router.post(
           requestId: request_id,
           serviceId: service_id,
         },
-        { synchronous: false }
+        { synchronous: false, apiVersion: '5.0' }
       );
 
       res.status(202).end();
@@ -128,7 +128,7 @@ router.post(
           serviceId: service_id,
           error_code,
         },
-        { synchronous: false }
+        { synchronous: false, apiVersion: '5.0' }
       );
 
       res.status(202).end();

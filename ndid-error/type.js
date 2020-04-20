@@ -673,6 +673,16 @@ module.exports = {
     message: 'Invalid error code data type in AS response. Expected number.',
     clientError: true,
   },
+  ENOUGH_IDP_RESPONSE: {
+    code: 20081,
+    message: 'Request has enough IdP responses',
+    clientError: true,
+  },
+  ENOUGH_AS_RESPONSE: {
+    code: 20082,
+    message: 'Request has enough AS responses',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
@@ -804,6 +814,10 @@ module.exports = {
   ABCI_REQUEST_IS_ALREADY_USED: {
     code: 15031,
     message: 'Request is already used',
+  },
+  ABCI_APP_STATE_ERROR: {
+    code: 15032,
+    message: 'Blockchain app state error',
   },
 
   // Client errors
@@ -1152,6 +1166,41 @@ module.exports = {
   ABCI_IAL_TOO_LOW_FOR_FIRST_IDP: {
     code: 25069,
     message: 'Too low IAL for first IdP',
+    clientError: true,
+  },
+  ABCI_CANNOT_REVOKE_ALL_ACCESSORS_IN_THIS_IDP: {
+    code: 25070,
+    message: 'Cannot revoke all accessors in this IdP',
+    clientError: true,
+  },
+  ABCI_DUPLICATE_IDENTIFIER: {
+    code: 25071,
+    message: 'Duplicate identifier',
+    clientError: true,
+  },
+  ABCI_NEW_MODE_LIST_MUST_BE_HIGHER_THAN_CURRENT_MODE_LIST: {
+    code: 25072,
+    message: 'New mode list must be higher than current mode list',
+    clientError: true,
+  },
+  ABCI_INVALID_ERROR_CODE: {
+    code: 25073,
+    message: 'Invalid error code',
+    clientError: true,
+  },
+  ABCI_NODE_NOT_IN_WHITELIST: {
+    code: 25074,
+    message: 'Node is not in whitelist',
+    clientError: true,
+  },
+  ABCI_REQUEST_CANNOT_BE_FULFILLED: {
+    code: 25075,
+    message: 'Request cannot be fulfilled',
+    clientError: true,
+  },
+  ABCI_DATA_REQUEST_CANNOT_BE_FULFILLED: {
+    code: 25076,
+    message: 'Data request cannot be fulfilled',
     clientError: true,
   },
 

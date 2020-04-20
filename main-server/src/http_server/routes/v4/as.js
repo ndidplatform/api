@@ -99,7 +99,7 @@ router.post(
           requestId: request_id,
           serviceId: service_id,
         },
-        { synchronous: false }
+        { synchronous: false, apiVersion: '4.0' }
       );
 
       res.status(202).end();

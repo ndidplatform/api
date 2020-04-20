@@ -29,27 +29,50 @@ export default {
       aal: { type: 'number', enum: [1, 2.1, 2.2, 3] },
     },
   },
-  [messageTypes.AS_DATA_RESPONSE]: {
+  [messageTypes.AS_RESPONSE]: {
     $schema: 'http://json-schema.org/draft-07/schema#',
-    properties: {
-      request_id: { type: 'string', minLength: 1 },
-      as_id: { type: 'string', minLength: 1 },
-      service_id: { type: 'string', minLength: 1 },
-      signature: { type: 'string', minLength: 1 },
-      data_salt: { type: 'string', minLength: 1 },
-      data: { type: 'string', minLength: 1 },
-      chain_id: { type: 'string', minLength: 1 },
-      height: { type: 'integer', minimum: 1 },
-    },
-    required: [
-      'request_id',
-      'as_id',
-      'service_id',
-      'signature',
-      'data_salt',
-      'data',
-      'chain_id',
-      'height',
+    anyOf: [
+      {
+        properties: {
+          request_id: { type: 'string', minLength: 1 },
+          as_id: { type: 'string', minLength: 1 },
+          service_id: { type: 'string', minLength: 1 },
+          signature: { type: 'string', minLength: 1 },
+          data_salt: { type: 'string', minLength: 1 },
+          data: { type: 'string', minLength: 1 },
+          chain_id: { type: 'string', minLength: 1 },
+          height: { type: 'integer', minimum: 1 },
+        },
+        required: [
+          'request_id',
+          'as_id',
+          'service_id',
+          'signature',
+          'data_salt',
+          'data',
+          'chain_id',
+          'height',
+        ],
+      },
+      // Error response
+      {
+        properties: {
+          request_id: { type: 'string', minLength: 1 },
+          as_id: { type: 'string', minLength: 1 },
+          service_id: { type: 'string', minLength: 1 },
+          error_code: { type: 'number', minimum: 1 },
+          chain_id: { type: 'string', minLength: 1 },
+          height: { type: 'integer', minimum: 1 },
+        },
+        required: [
+          'request_id',
+          'as_id',
+          'service_id',
+          'error_code',
+          'chain_id',
+          'height',
+        ],
+      },
     ],
   },
   [messageTypes.CONSENT_REQUEST]: {
@@ -302,6 +325,23 @@ export default {
           'mode',
           'accessor_id',
           'idp_id',
+          'chain_id',
+          'height',
+        ],
+      },
+      // Error response
+      {
+        properties: {
+          request_id: { type: 'string', minLength: 1 },
+          idp_id: { type: 'string', minLength: 1 },
+          error_code: { type: 'number', minimum: 1 },
+          chain_id: { type: 'string', minLength: 1 },
+          height: { type: 'integer', minimum: 1 },
+        },
+        required: [
+          'request_id',
+          'idp_id',
+          'error_code',
           'chain_id',
           'height',
         ],

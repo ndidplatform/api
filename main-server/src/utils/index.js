@@ -436,12 +436,21 @@ export function getRequestStatus(requestDetail) {
       status = 'rejected';
     } else if (responseCount.accept > 0 && responseCount.reject > 0) {
       status = 'complicated';
+    } else if (
+      responseCount.accept === 0 &&
+      responseCount.reject === 0 &&
+      responseCount.error > 0
+    ) {
+      status = 'pending';
     }
   }
 
   if (requestDetail.data_request_list.length === 0) {
     // No data request
-    if (requestDetail.response_list.length === requestDetail.min_idp) {
+    const nonErrorAnsweredIdPCount = requestDetail.response_list.filter(
+      (response) => response.error_code == null
+    ).length;
+    if (nonErrorAnsweredIdPCount === requestDetail.min_idp) {
       if (
         responseCount.reject === 0 &&
         (responseCount.accept > 0 ||
@@ -462,28 +471,31 @@ export function getRequestStatus(requestDetail) {
 
       totalMinAsInDataRequestList += service.min_as;
 
-      const signedAnswerCount =
-        service.response_list != null
-          ? service.response_list.filter((response) => response.signed === true)
-              .length
-          : 0;
-      totalSignedDataCount += signedAnswerCount;
+      const responseCount = service.response_list.reduce(
+        (count, response) => {
+          if (response.error_code != null) {
+            count.error++;
+          } else {
+            if (response.signed) {
+              count.signed++;
+            }
+            if (response.received_data) {
+              count.receivedData++;
+            }
+          }
+          return count;
+        },
+        {
+          signed: 0,
+          receivedData: 0,
+          error: 0,
+        }
+      );
 
-      const receivedDataCount =
-        service.response_list != null
-          ? service.response_list.filter(
-              (response) => response.received_data === true
-            ).length
-          : 0;
-      totalReceivedDataCount += receivedDataCount;
+      totalSignedDataCount += responseCount.signed;
+      totalReceivedDataCount += responseCount.receivedData;
 
-      const errorCount =
-        service.response_list != null
-          ? service.response_list.filter(
-              (response) => response.error_code != null
-            ).length
-          : 0;
-      if (errorCount > service.as_id_list.length - requestDetail.min_as) {
+      if (responseCount.error > service.as_id_list.length - service.min_as) {
         // request can never be fulfilled
         status = 'errored';
         return status;
@@ -577,7 +589,10 @@ export function getDetailedRequestStatusLegacy(requestDetail) {
 
   if (requestDetail.data_request_list.length === 0) {
     // No data request
-    if (requestDetail.response_list.length === requestDetail.min_idp) {
+    const nonErrorAnsweredIdPCount = requestDetail.response_list.filter(
+      (response) => response.error_code == null
+    ).length;
+    if (nonErrorAnsweredIdPCount === requestDetail.min_idp) {
       if (
         responseCount.reject === 0 &&
         (responseCount.accept > 0 ||

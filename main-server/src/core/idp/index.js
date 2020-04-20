@@ -20,8 +20,6 @@
  *
  */
 
-import fetch from 'node-fetch';
-
 import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -29,7 +27,6 @@ import logger from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
-import * as utils from '../../utils';
 import * as config from '../../config';
 import * as cacheDb from '../../db/cache';
 import * as dataDb from '../../db/data';

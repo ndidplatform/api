@@ -97,9 +97,19 @@ export function getErrorCallbackUrl() {
   return dataDb.getCallbackUrl(config.nodeId, `rp.${CALLBACK_URL_NAME.ERROR}`);
 }
 
-export function isAllIdpResponsesValid(responseValidList) {
+export function isAllIdpResponsesValid(responseValidList, requestDetail) {
+  // Check only non error response
+  const nonErrorResponseIdpNodeIds = requestDetail.response_list
+    .filter((response) => response.error_code == null)
+    .map((response) => response.idp_id);
   for (let i = 0; i < responseValidList.length; i++) {
-    const { valid_ial } = responseValidList[i];
+    const { idp_id, valid_signature, valid_ial } = responseValidList[i];
+    if (!nonErrorResponseIdpNodeIds.includes(idp_id)) {
+      continue;
+    }
+    if (valid_signature !== true) {
+      return false;
+    }
     if (valid_ial !== true) {
       return false;
     }
@@ -112,9 +122,11 @@ export function isAllIdpRespondedAndValid({
   requestStatus,
   responseValidList,
 }) {
-  const answeredIdPCount = requestDetail.response_list.length;
+  const nonErrorAnsweredIdPCount = requestDetail.response_list.filter(
+    (response) => response.error_code == null
+  ).length;
   if (requestStatus !== 'confirmed') return false;
-  if (answeredIdPCount !== requestDetail.min_idp) return false;
+  if (nonErrorAnsweredIdPCount !== requestDetail.min_idp) return false;
   if (requestDetail.closed === true || requestDetail.timed_out === true)
     return false;
   const asAnswerCount = requestDetail.data_request_list.reduce(
@@ -126,7 +138,7 @@ export function isAllIdpRespondedAndValid({
     if (
       requestDetail.mode === 1 ||
       ((requestDetail.mode === 2 || requestDetail.mode === 3) &&
-        isAllIdpResponsesValid(responseValidList))
+        isAllIdpResponsesValid(responseValidList, requestDetail))
     ) {
       return true;
     }
@@ -298,17 +310,19 @@ export async function processMessage(nodeId, messageId, message) {
         message.request_id
       );
       if (requestData != null) {
-        // "accessor_id" is present only in mode 2,3
-        if (message.mode === 2 || message.mode === 3) {
-          //store accessor_id from EACH IdP, to pass along to AS
-          await cacheDb.addResponsePrivateDataForRequest(
-            nodeId,
-            message.request_id,
-            {
-              idp_id: message.idp_id,
-              accessor_id: message.accessor_id,
-            }
-          );
+        if (message.error_code == null) {
+          // "accessor_id" is present only in mode 2,3
+          if (message.mode === 2 || message.mode === 3) {
+            //store accessor_id from EACH IdP, to pass along to AS
+            await cacheDb.addResponsePrivateDataForRequest(
+              nodeId,
+              message.request_id,
+              {
+                idp_id: message.idp_id,
+                accessor_id: message.accessor_id,
+              }
+            );
+          }
         }
 
         const requestDetail = await tendermintNdid.getRequestDetail({
@@ -330,11 +344,7 @@ export async function processMessage(nodeId, messageId, message) {
         const responseValid = await common.getAndSaveIdpResponseValid({
           nodeId,
           requestDetail,
-          idpId: message.idp_id,
           requestDataFromMq: message,
-          responseIal: requestDetail.response_list.find(
-            (response) => response.idp_id === message.idp_id
-          ).ial,
         });
 
         const responseValidList = savedResponseValidList.concat([
@@ -412,7 +422,7 @@ export async function processMessage(nodeId, messageId, message) {
             (requestStatus === 'completed' &&
               (requestDetail.mode === 1 ||
                 ((requestDetail.mode === 2 || requestDetail.mode === 3) &&
-                  isAllIdpResponsesValid(responseValidList)))))
+                  isAllIdpResponsesValid(responseValidList, requestDetail)))))
         ) {
           logger.debug({
             message: 'Automatically closing request',
@@ -429,7 +439,7 @@ export async function processMessage(nodeId, messageId, message) {
           );
         }
       }
-    } else if (message.type === privateMessageType.AS_DATA_RESPONSE) {
+    } else if (message.type === privateMessageType.AS_RESPONSE) {
       await processAsResponse({
         nodeId,
         requestId: message.request_id,

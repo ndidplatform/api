@@ -45,7 +45,7 @@ import { role } from '../../node';
 export async function processDataForRP(
   data,
   processDataForRPParams,
-  { synchronous = false } = {}
+  { synchronous = false, apiVersion } = {}
 ) {
   let { node_id } = processDataForRPParams;
   const {
@@ -97,10 +97,10 @@ export async function processDataForRP(
     }
 
     // Check if there is an input service ID in the request
-    const serviceIdInRequest = requestDetail.data_request_list.find(
+    const serviceInRequest = requestDetail.data_request_list.find(
       (dataRequest) => dataRequest.service_id === serviceId
     );
-    if (serviceIdInRequest == null) {
+    if (serviceInRequest == null) {
       throw new CustomError({
         errorType: errorType.SERVICE_ID_NOT_FOUND_IN_REQUEST,
       });
@@ -115,6 +115,27 @@ export async function processDataForRP(
     if (!savedRpId) {
       throw new CustomError({
         errorType: errorType.UNKNOWN_DATA_REQUEST,
+      });
+    }
+
+    // check current responses with min_as
+    const nonErrorResponseCount = serviceInRequest.response_list.filter(
+      ({ error_code }) => error_code == null
+    ).length;
+    if (nonErrorResponseCount >= serviceInRequest.min_as) {
+      throw new CustomError({
+        errorType: errorType.ENOUGH_AS_RESPONSE,
+      });
+    }
+    const remainingPossibleResponseCount =
+      serviceInRequest.as_id_list.length -
+      serviceInRequest.response_list.length;
+    if (
+      nonErrorResponseCount + remainingPossibleResponseCount <
+      serviceInRequest.min_as
+    ) {
+      throw new CustomError({
+        errorType: errorType.ENOUGH_AS_RESPONSE,
       });
     }
 
@@ -182,7 +203,7 @@ export async function processDataForRP(
 async function processDataForRPInternalAsync(
   data,
   { reference_id, callback_url, requestId, serviceId, rpId, error_code },
-  { synchronous = false } = {},
+  { synchronous = false, apiVersion } = {},
   { nodeId, savedRpId }
 ) {
   try {
@@ -234,7 +255,7 @@ async function processDataForRPInternalAsync(
             rpId,
             error_code,
           },
-          { synchronous },
+          { synchronous, apiVersion },
           { nodeId, savedRpId },
         ]
       );
@@ -261,7 +282,7 @@ async function processDataForRPInternalAsync(
           rpId,
           error_code,
         },
-        { synchronous },
+        { synchronous, apiVersion },
         { nodeId, savedRpId }
       );
     }
@@ -277,11 +298,13 @@ async function processDataForRPInternalAsync(
     });
 
     if (!synchronous) {
+      const type =
+        apiVersion === '4.0' ? 'send_data_result' : 'response_result';
       await callbackToClient({
         callbackUrl: callback_url,
         body: {
           node_id: nodeId,
-          type: 'send_data_result',
+          type,
           success: false,
           reference_id,
           request_id: requestId,
@@ -308,7 +331,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     rpId,
     error_code,
   },
-  { synchronous = false } = {},
+  { synchronous = false, apiVersion } = {},
   { nodeId, savedRpId }
 ) {
   if (chainDisabledRetryLater) return;
@@ -343,11 +366,13 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     await sendDataToRP(nodeId, rpId, dataToSendToRP);
 
     if (!synchronous) {
+      const type =
+        apiVersion === '4.0' ? 'send_data_result' : 'response_result';
       await callbackToClient({
         callbackUrl: callback_url,
         body: {
           node_id: nodeId,
-          type: 'send_data_result',
+          type,
           success: true,
           reference_id,
           request_id: requestId,
@@ -368,11 +393,13 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     });
 
     if (!synchronous) {
+      const type =
+        apiVersion === '4.0' ? 'send_data_result' : 'response_result';
       await callbackToClient({
         callbackUrl: callback_url,
         body: {
           node_id: nodeId,
-          type: 'send_data_result',
+          type,
           success: false,
           reference_id,
           request_id: requestId,
@@ -443,13 +470,14 @@ async function sendDataToRP(nodeId, rpId, data) {
   await mq.send({
     receivers,
     message: {
-      type: privateMessageType.AS_DATA_RESPONSE,
+      type: privateMessageType.AS_RESPONSE,
       request_id: data.request_id,
       as_id: data.as_id,
       service_id: data.service_id,
       signature: data.signature,
       data_salt: data.data_salt,
       data: data.data,
+      error_code: data.error_code,
       chain_id: tendermint.chainId,
       height: data.height,
     },

@@ -538,7 +538,10 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
     requestId: request_id,
   });
 
-  if (requestDetail.min_idp !== requestDetail.response_list.length) {
+  const nonErrorResponseCount = requestDetail.response_list.filter(
+    ({ error_code }) => error_code == null
+  ).length;
+  if (nonErrorResponseCount !== requestDetail.min_idp) {
     return false;
   }
 
@@ -551,26 +554,20 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
     namespace,
     identifier
   );
-  for (let i = 1; i < response_private_data_list.length; i++) {
+
+  let valid = true;
+  for (let i = 0; i < response_private_data_list.length; i++) {
     const otherReferenceGroupCode = await tendermintNdid.getReferenceGroupCodeByAccessorId(
       response_private_data_list[i].accessor_id
     );
     if (otherReferenceGroupCode !== referenceGroupCode) {
       return false;
     }
-  }
 
-  const response_list = (
-    await tendermintNdid.getRequestDetail({
-      requestId: request_id,
-    })
-  ).response_list;
-  let valid = true;
-  for (let i = 0; i < response_private_data_list.length; i++) {
     const accessor_public_key = await tendermintNdid.getAccessorKey(
       response_private_data_list[i].accessor_id
     );
-    const response = response_list.find(
+    const response = requestDetail.response_list.find(
       (response) => response.idp_id === response_private_data_list[i].idp_id
     );
     const signature = response.signature;

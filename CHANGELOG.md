@@ -7,6 +7,34 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 BREAKING CHANGES:
 
 - API v5.0
+  - New API: POST `/idp/error_response` for IdP to response with error to a request.
+  - New API: POST `/as/error/:request_id/:service_id` for AS to response with error to a data request.
+  - New API: GET `/utility/idp_error_codes` for getting possible IdP error codes.
+  - New API: GET `/utility/as_error_codes` for getting possible AS error codes.
+  - Change AS callback result `type` for sending data API (POST `/as/data/:request_id/:service_id`) from `send_data_result` to `response_result`.
+  - Change body JSON schema of request status update callback API (type: `request_status`) on RP, IdP, and AS to make it more similar to utility get request info and status API (GET `/utility/requests/:request_id`).
+    - Remove `answered_idp_count`
+    - Remove `service_list`
+    - Remove `response_valid_list`
+    - Add `response_list`
+    - Add `data_request_list`
+    - Add `min_ial`
+    - Add `min_aal`
+    - Add `idp_id_list`
+    - Add `request_timeout`
+    - Add `request_message_hash`
+    - Add `requester_node_id`
+  - Add `error_code` to response body of AS data request callback for synchronous error response.
+  - Add `agent` (boolean) flag to response body of GET `/utility/idp`.
+  - Add query string parameter `filter_for_node_id` to GET `/utility/idp` and GET `/utility/idp/:namespace/:identifier` for getting IdP list filtered with input node ID's whitelist (only if whitelist is enabled).
+  - Change response body JSON schema of GET `/utility/request/:request_id`.
+    - Add `error_code` to `response_list` item.
+    - Remove `answered_as_id_list` and `received_data_from_list` from `data_request_list` item.
+    - Add `response_list` with properties `as_id`, `signed`, `received_data`, and `error_code` to `data_request_list` item.
+  - Change response body JSON schema of GET `/utility/nodes/:node_id`.
+    - Add `agent` (boolean) flag indicating if node is an IdP agent.
+    - Add `node_id_whitelist`: array of other node IDs allowed to interact (e.g. create request) with node
+    - Add `node_id_whitelist_active` (boolean) flag indicating if `node_id_whitelist` is enabled for node.
 
 IMPROVEMENTS:
 

@@ -22,7 +22,7 @@
 
 const TYPES = {
   IDP_RESPONSE: 'idp_response',
-  AS_DATA_RESPONSE: 'as_data_response',
+  AS_RESPONSE: 'as_response',
   CONSENT_REQUEST: 'consent_request',
   DATA_REQUEST: 'data_request',
 };
