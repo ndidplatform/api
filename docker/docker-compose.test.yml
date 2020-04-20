@@ -118,6 +118,30 @@ services:
       - "8200:${API_PORT:-8080}"
     networks:
       - ndidplatform
+  api-rp-2:
+    image: ndidplatform/api:${DOCKER_TAG:-latest}
+    environment:
+      - ROLE=rp
+      - NODE_ID=rp2
+      - NDID_IP=api-ndid
+      - TENDERMINT_IP=tm-rp
+      - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
+      - MQ_CONTACT_IP=mq-rp-2
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - MQ_SERVICE_SERVER_IP=mq-rp-2
+      - DB_IP=api-redis
+      - SERVER_PORT=${API_PORT:-8080}
+      - MODE=standalone
+    volumes:
+      - ./start-api-test.sh:/api/start-api-test.sh
+    entrypoint: /api/start-api-test.sh
+    security_opt:
+      - no-new-privileges
+    user: root
+    ports:
+      - "8201:${API_PORT:-8080}"
+    networks:
+      - ndidplatform
   api-as-1:
     image: ndidplatform/api:${DOCKER_TAG:-latest}
     environment:
@@ -270,6 +294,16 @@ services:
     image: ndidplatform/mq:${DOCKER_TAG:-latest}
     environment:
       - NODE_ID=rp1
+      - MQ_BINDING_PORT=${MQ_PORT:-5555}
+      - SERVER_PORT=${MQ_SERVER_PORT:-50051}
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+  mq-rp-2:
+    image: ndidplatform/mq:${DOCKER_TAG:-latest}
+    environment:
+      - NODE_ID=rp2
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
       - SERVER_PORT=${MQ_SERVER_PORT:-50051}
     security_opt:
