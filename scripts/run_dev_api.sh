@@ -24,7 +24,7 @@ cd main-server
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45000 \
 NODE_ID=ndid1 \
-npm run initDevKey
+npm run initDev
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45000 \

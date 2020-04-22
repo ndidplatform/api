@@ -51,7 +51,7 @@ jobs:
             TENDERMINT_IP=localhost \
             TENDERMINT_PORT=45000 \
             NODE_ID=ndid1 \
-            npm run initDevKey
+            npm run initDev
 
       - run:
           name: Start service

@@ -99,7 +99,7 @@ const services = [
   },
 ];
 
-process.on('unhandledRejection', function(reason, p) {
+process.on('unhandledRejection', function (reason, p) {
   console.error('Unhandled Rejection', p, reason.stack || reason);
 });
 
@@ -265,6 +265,23 @@ export async function init() {
         );
       })
     );
+
+    console.log('========= Adding IdP error codes =========');
+    await ndid.addErrorCode({
+      type: 'idp',
+      error_code: 10101,
+      description: 'Unknown identity',
+    });
+    console.log('========= Done adding IdP error codes =========');
+
+    console.log('========= Adding AS error codes =========');
+    await ndid.addErrorCode({
+      type: 'as',
+      error_code: 10101,
+      description: 'Unknown identity',
+    });
+    console.log('========= Done adding AS error codes =========');
+
     console.log('========= Done =========');
   } catch (error) {
     console.error('Cannot initialize NDID platform:', error);

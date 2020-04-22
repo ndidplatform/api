@@ -1415,7 +1415,7 @@ export async function getNodeIdList(role) {
 }
 
 export async function addErrorCode(
-  { error_code, type, description, fatal },
+  { error_code, type, description },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
@@ -1425,7 +1425,7 @@ export async function addErrorCode(
     await tendermint.transact({
       nodeId,
       fnName: 'AddErrorCode',
-      params: { error_code, type, description, fatal },
+      params: { error_code, type, description },
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,

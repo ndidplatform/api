@@ -28,7 +28,7 @@
     TENDERMINT_IP=$TENDERMINT_IP \
     TENDERMINT_PORT=$TENDERMINT_PORT \
     NODE_ID=ndid1 \
-    npm run initDevKey
+    npm run initDev
     ```
 
 4.  Run a MQ service server
@@ -209,4 +209,4 @@ Both main server and MQ service server only log to stdout. For log rotation, see
   - DB (Redis) should not be shared with other proxy node.
   - `NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH` is where node behind proxy private keys are stored. The server expects key filename to be node's ID. If keys have a passphrase, it should be in a text file with filename `<NODE_ID>_passphrase`
   - `NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH` is where node behind proxy master private keys are stored. The server expects key filename to be `<NODE_ID>_master`. If keys have a passphrase, it should be in a text file with filename `<NODE_ID>_master_passphrase`
-- When working in development, if you clear/delete the blockchain, you need to delete latest block height files by running `npm run delete-local-data-cache`. (Automatically run when running `npm run initDevKey`) For docker, run `npm run docker-down` or `docker-compose -f docker/docker-compose.yml down` before starting containers again.
+- When working in development, if you clear/delete the blockchain, you need to delete latest block height files by running `npm run delete-local-data-cache`. (Automatically run when running `npm run initDev`) For docker, run `npm run docker-down` or `docker-compose -f docker/docker-compose.yml down` before starting containers again.
