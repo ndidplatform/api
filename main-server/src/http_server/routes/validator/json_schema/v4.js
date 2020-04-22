@@ -318,7 +318,8 @@ export default {
           },
           supported_namespace_list: {
             type: 'array',
-            items: { type: 'string' },
+            items: { type: 'string', minLength: 1 },
+            minItems: 1,
             uniqueItems: true,
           },
         },
