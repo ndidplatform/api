@@ -256,6 +256,39 @@ approve_service() {
   fi
 }
 
+register_error_code() {
+  local ERROR_CODE=$1
+  local ERROR_DESCRIPTION=$2
+  local TYPE=$3
+  echo "Registering error code ${ERROR_CODE} (${ERROR_DESCRIPTION})..."
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/add_error_code \
+    -H "Content-Type: application/json" \
+    -d "{\"type\":\"${TYPE}\",\"error_code\":${ERROR_CODE},\"description\":\"${ERROR_DESCRIPTION}\"}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Registering error code ${ERROR_CODE} (${ERROR_DESCRIPTION}) succeeded"
+    return 0
+  else
+    echo "Registering error code ${ERROR_CODE} (${ERROR_DESCRIPTION}) failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
+register_idp_error_code() {
+  local ERROR_CODE=$1
+  local ERROR_DESCRIPTION=$2
+  register_error_code $ERROR_CODE "$ERROR_DESCRIPTION" "idp"
+}
+
+register_as_error_code() {
+  local ERROR_CODE=$1
+  local ERROR_DESCRIPTION=$2
+  register_error_code $ERROR_CODE "$ERROR_DESCRIPTION" "as"
+}
+
 did_namespace_exist() {
   local NAMESPACE=$1
 
@@ -352,6 +385,8 @@ case ${ROLE} in
         register_namespace "passport_num" "Passport Number" && \
         register_service "bank_statement" "All transactions in the past 3 months" && \
         register_service "customer_info" "Customer Information"
+        register_idp_error_code 10101 "Unknown identity"
+        register_as_error_code 10101 "Unknown identity"
       do
         sleep 1; 
       done &
