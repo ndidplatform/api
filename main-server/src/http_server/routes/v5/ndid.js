@@ -550,8 +550,8 @@ router.post('/get_node_id_list', validateBody, async (req, res, next) => {
 
 router.post('/add_error_code', validateBody, async (req, res, next) => {
   try {
-    const { error_code, type, description, fatal } = req.body;
-    await ndid.addErrorCode({ error_code, type, description, fatal })
+    const { error_code, type, description } = req.body;
+    await ndid.addErrorCode({ error_code, type, description });
     res.status(204).end();
     next();
   } catch (error) {
