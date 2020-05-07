@@ -1,6 +1,6 @@
 # Changelog
 
-## TBD
+## 4.0.0 (May 7, 2020)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
 
@@ -40,6 +40,9 @@ IMPROVEMENTS:
 
 - Support Node.js 12.
 - Support Tendermint 0.33 (Block result spec change).
+- [Main] Add new environment variable options
+  - `DEFAULT_API_VERSION`: API version to serve on default path (without version path prefix)
+  - `CALLBACK_API_VERSION`: Callback API version
 - [Docker] Change Node.js version used in images from 10 to 12.
 
 BUG FIXES:
