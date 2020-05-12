@@ -94,11 +94,47 @@ jobs:
             curl -v http://localhost:8080/utility/idp
             curl -v http://localhost:8080/utility/services
   push_to_docker_hub:
-    docker:
-      - image: circleci/buildpack-deps:stretch
+    machine:
+      image: ubuntu-1604:201903-01
     steps:
       - checkout
-      - setup_remote_docker
+      - run:
+          name: Install/Update Docker
+          command: |
+            echo "Uninstall Docker"
+            sudo apt-get remove docker docker-engine docker.io containerd runc
+            echo "Update apt packages"
+            sudo apt-get update
+            sudo apt-get install \
+              apt-transport-https \
+              ca-certificates \
+              curl \
+              gnupg-agent \
+              software-properties-common
+            echo "Add Docker GPG key"
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            sudo apt-key fingerprint 0EBFCD88
+            echo "Add Docker apt repository"
+            sudo add-apt-repository \
+              "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+              $(lsb_release -cs) \
+              stable"
+            echo "Install Docker"
+            sudo apt-get update
+            sudo apt-get install docker-ce docker-ce-cli containerd.io
+      - run:
+          name: Docker version
+          command: |
+            docker version
+      - run:
+          name: Install/Update Docker Compose
+          command: |
+            sudo curl -L "https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+      - run:
+          name: Docker Compose version
+          command: |
+            docker-compose version
       - run:
           name: Build docker images
           command: |
@@ -122,11 +158,47 @@ jobs:
             docker push $REPO_NAME/api:$DOCKER_TAG
             docker push $REPO_NAME/mq:$DOCKER_TAG
   push_dev_to_docker_hub:
-    docker:
-      - image: circleci/buildpack-deps:stretch
+    machine:
+      image: ubuntu-1604:201903-01
     steps:
       - checkout
-      - setup_remote_docker
+      - run:
+          name: Install/Update Docker
+          command: |
+            echo "Uninstall Docker"
+            sudo apt-get remove docker docker-engine docker.io containerd runc
+            echo "Update apt packages"
+            sudo apt-get update
+            sudo apt-get install \
+              apt-transport-https \
+              ca-certificates \
+              curl \
+              gnupg-agent \
+              software-properties-common
+            echo "Add Docker GPG key"
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            sudo apt-key fingerprint 0EBFCD88
+            echo "Add Docker apt repository"
+            sudo add-apt-repository \
+              "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+              $(lsb_release -cs) \
+              stable"
+            echo "Install Docker"
+            sudo apt-get update
+            sudo apt-get install docker-ce docker-ce-cli containerd.io
+      - run:
+          name: Docker version
+          command: |
+            docker version
+      - run:
+          name: Install/Update Docker Compose
+          command: |
+            sudo curl -L "https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+      - run:
+          name: Docker Compose version
+          command: |
+            docker-compose version
       - run:
           name: Build docker images
           command: |
