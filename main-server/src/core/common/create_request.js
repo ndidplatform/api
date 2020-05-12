@@ -296,28 +296,38 @@ async function checkWhitelistCondition({
     idp_id_list.push(...whitelist);
   }
 
-  await Promise.all(idp_id_list.map(async (idp_node_id) => {
-    if (active && (whitelist == null || whitelist.indexOf(idp_node_id) === -1)) {
+  await Promise.all(idp_id_list.map(async (idpNodeId) => {
+    if (active && (whitelist == null || whitelist.indexOf(idpNodeId) === -1)) {
       throw new CustomError({
         errorType: errorType.NOT_IN_WHITELIST,
         details: {
           node_id: node_id,
           whitelist: whitelist,
-          request_node_id: idp_node_id,
+          request_node_id: idpNodeId,
         }
+      });
+    }
+
+    const idpNode = await tendermintNdid.getNodeInfo(idpNodeId);
+    if (idpNode == null) {
+      throw new CustomError({
+        errorType: errorType.UNQUALIFIED_IDP,
+        details: {
+          idpNodeId,
+        },
       });
     }
 
     const {
       node_id_whitelist_active: idp_active,
       node_id_whitelist: idp_whitelist,
-    } = await tendermintNdid.getNodeInfo(idp_node_id);
+    } = idpNode;
 
     if (idp_active && (idp_whitelist == null || idp_whitelist.indexOf(node_id) === -1)) {
       throw new CustomError({
         errorType: errorType.NOT_IN_WHITELIST,
         details: {
-          node_id: idp_node_id,
+          node_id: idpNodeId,
           whitelist: idp_whitelist,
           request_node_id: node_id,
         }
