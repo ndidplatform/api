@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:10
+      - image: circleci/node:12
       - image: ndidplatform/tendermint:latest
         environment:
           TM_RPC_PORT: 45000
@@ -26,6 +26,11 @@ jobs:
             - v1-main-server-dependencies-{{ checksum "main-server/package-lock.json" }}
             # fallback to using the latest cache if no exact match is found
             # - v1-main-server-dependencies-
+      - restore_cache:
+          keys:
+            - v1-mq-server-dependencies-{{ checksum "mq-server/package-lock.json" }}
+            # fallback to using the latest cache if no exact match is found
+            # - v1-mq-server-dependencies-
       - run:
           name: Install node modules for ndid-logger lib
           command: |
@@ -36,7 +41,7 @@ jobs:
             - ndid-logger/node_modules
           key: v1-ndid-logger-dependencies-{{ checksum "ndid-logger/package-lock.json" }}
       - run:
-          name: Install node modules
+          name: Install node modules for main-server
           command: |
             cd main-server
             npm install
@@ -45,6 +50,27 @@ jobs:
             - main-server/node_modules
           key: v1-main-server-dependencies-{{ checksum "main-server/package-lock.json" }}
       - run:
+          name: Install node modules for mq-server
+          command: |
+            cd mq-server
+            npm install
+      - save_cache:
+          paths:
+            - mq-server/node_modules
+          key: v1-mq-server-dependencies-{{ checksum "mq-server/package-lock.json" }}
+
+      - run:
+          name: Start main-server unit testing
+          command: |
+            cd main-server
+            npm run test:es6
+      - run:
+          name: Start mq-server unit testing
+          command: |
+            cd mq-server
+            npm run test:es6
+
+      - run:
           name: Set up Development Key
           command: |
             cd main-server
@@ -52,7 +78,6 @@ jobs:
             TENDERMINT_PORT=45000 \
             NODE_ID=ndid1 \
             npm run initDev
-
       - run:
           name: Start service
           command: |
@@ -70,7 +95,7 @@ jobs:
             curl -v http://localhost:8080/utility/services
   push_to_docker_hub:
     docker:
-      - image: circleci/node:10
+      - image: circleci/buildpack-deps:stretch
     steps:
       - checkout
       - setup_remote_docker
@@ -98,7 +123,7 @@ jobs:
             docker push $REPO_NAME/mq:$DOCKER_TAG
   push_dev_to_docker_hub:
     docker:
-      - image: circleci/node:10
+      - image: circleci/buildpack-deps:stretch
     steps:
       - checkout
       - setup_remote_docker
