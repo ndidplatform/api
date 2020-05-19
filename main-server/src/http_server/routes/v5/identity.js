@@ -248,7 +248,7 @@ router.post(
 );
 
 router.post(
-  '/:namespace/:identifier/accessors_revoke',
+  '/:namespace/:identifier/accessor_revoke',
   idpOnlyHandler,
   validateBody,
   async (req, res, next) => {
@@ -282,7 +282,7 @@ router.post(
 );
 
 router.post(
-  '/:namespace/:identifier/accessors_revoke_and_add',
+  '/:namespace/:identifier/accessor_revoke_and_add',
   idpOnlyHandler,
   validateBody,
   async (req, res, next) => {
