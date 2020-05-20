@@ -9,6 +9,7 @@ BUG FIXES:
 - Fix wrong `api_version` (latest API spec version) reported on GET `/info`.
 - Fix error when creating request with non-existent IdP node IDs.
 - Fix API path names to match spec.
+- Fix missing proxy API paths.
 
 ## 4.0.0 (May 7, 2020)
 
