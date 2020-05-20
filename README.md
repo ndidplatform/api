@@ -4,8 +4,8 @@
 
 ## Prerequisites
 
-- Node.js 8.9 or later (Recommended: latest version of Node.js 10 LTS)
-- npm 5.6.0 or later
+- Node.js 12 or later (Recommended: latest version of Node.js 12 LTS)
+- npm 6.12.0 or later
 - Redis 3.2 or later
 
 ## Getting started
