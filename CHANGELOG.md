@@ -1,5 +1,13 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+BUG FIXES:
+
+- Fix error when creating request with non-existent RP node ID (by proxy).
+
 ## 4.0.1 (May 20, 2020)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
