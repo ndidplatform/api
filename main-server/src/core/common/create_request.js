@@ -287,10 +287,18 @@ async function checkWhitelistCondition({
   node_id,
   idp_id_list,
 }) {
+  const rp_data = await tendermintNdid.getNodeInfo(node_id);
+  if (rp_data == null) {
+    throw new CustomError({
+      errorType: errorType.NODE_INFO_NOT_FOUND,
+      details: { node_id, }
+    });
+  }
+
   const {
     node_id_whitelist_active: active,
     node_id_whitelist: whitelist
-  } = await tendermintNdid.getNodeInfo(node_id);
+  } = rp_data;
 
   if (active && idp_id_list.length == 0) {
     idp_id_list.push(...whitelist);
