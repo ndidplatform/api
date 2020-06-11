@@ -6,6 +6,7 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 
 BUG FIXES:
 
+- Fix process queue start trigger in request process queue manager.
 - Fix error when creating request with non-existent RP node ID (by proxy).
 
 ## 4.0.1 (May 20, 2020)

@@ -202,14 +202,18 @@ export async function addTaskToQueue({
 
   if (stopping) return;
 
+  let startQueue = false;
   if (requestQueue[requestId] == null) {
     requestQueue[requestId] = [];
+    startQueue = true;
     incrementRequestsInQueueCount();
   }
   requestQueue[requestId].push(taskData);
   incrementPendingTasksInQueueCount();
 
-  setImmediate(executeTaskInQueue, requestId);
+  if (startQueue) {
+    setImmediate(executeTaskInQueue, requestId);
+  }
 }
 
 function executeTaskInQueue(requestId) {
