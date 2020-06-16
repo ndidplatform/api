@@ -20,21 +20,10 @@
  *
  */
 
-export default {
-  GET: {},
-  POST: {
-    '/config/set': {
-      body: {
-        $schema: 'http://json-schema.org/draft-07/schema#',
-        properties: {
-          CALLBACK_API_VERSION: { type: 'integer', enum: [4, 5] },
-        },
-      },
-    },
-    '/config/pms/reissue_token': {
-      body: {
-        $schema: 'http://json-schema.org/draft-07/schema#',
-      },
-    },
-  },
-};
+import RedisInstance from '../redis';
+
+const dbName = 'pms';
+
+const redisInstance = new RedisInstance(dbName);
+
+export default redisInstance;

@@ -20,21 +20,35 @@
  *
  */
 
-export default {
-  GET: {},
-  POST: {
-    '/config/set': {
-      body: {
-        $schema: 'http://json-schema.org/draft-07/schema#',
-        properties: {
-          CALLBACK_API_VERSION: { type: 'integer', enum: [4, 5] },
-        },
-      },
-    },
-    '/config/pms/reissue_token': {
-      body: {
-        $schema: 'http://json-schema.org/draft-07/schema#',
-      },
-    },
-  },
-};
+import * as db from '../redis_common';
+import redisInstance from './redis';
+
+import logger from '../../logger';
+import CustomError from 'ndid-error/custom_error';
+
+const dbName = 'pms';
+
+export function getRedisInstance() {
+  return redisInstance;
+}
+
+export function initialize() {
+  return redisInstance.connect();
+}
+
+export async function close() {
+  await redisInstance.close();
+  logger.info({
+    message: 'DB connection closed',
+    dbName,
+  });
+}
+
+export async function addNewTransaction(channel, msg) {
+  try {
+    await redisInstance.xadd(channel, '*', msg, 'message');
+  } catch (err) {
+    logger.error({ err });
+  }
+}
+

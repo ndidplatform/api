@@ -25,36 +25,33 @@ import EventEmitter from 'events';
 import cacheDbRedisInstance from './cache/redis';
 import longTermDbRedisInstance from './long_term/redis';
 import dataDbRedisInstance from './data/redis';
+import pmsRedisInstance from './pms/redis'
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
 export const metricsEventEmitter = new EventEmitter();
 
-function getRedis(dbName) {
+function getRedisInstance(dbName) {
   switch (dbName) {
     case 'cache':
-      return cacheDbRedisInstance.redis;
+      return cacheDbRedisInstance;
     case 'long-term':
-      return longTermDbRedisInstance.redis;
+      return longTermDbRedisInstance;
     case 'data':
-      return dataDbRedisInstance.redis;
+      return dataDbRedisInstance;
+    case 'pms':
+      return pmsRedisInstance;
     default:
       throw new CustomError({ message: 'Unknown database name' });
   }
 }
+function getRedis(dbName) {
+  return getRedisInstance(dbName).redis;
+}
 
 function getRedisVersion(dbName) {
-  switch (dbName) {
-    case 'cache':
-      return cacheDbRedisInstance.version;
-    case 'long-term':
-      return longTermDbRedisInstance.version;
-    case 'data':
-      return dataDbRedisInstance.version;
-    default:
-      throw new CustomError({ message: 'Unknown database name' });
-  }
+  return getRedisInstance(dbName).version;
 }
 
 export async function getList({ nodeId, dbName, name, key }) {

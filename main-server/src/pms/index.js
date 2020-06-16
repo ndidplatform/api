@@ -20,21 +20,12 @@
  *
  */
 
-export default {
-  GET: {},
-  POST: {
-    '/config/set': {
-      body: {
-        $schema: 'http://json-schema.org/draft-07/schema#',
-        properties: {
-          CALLBACK_API_VERSION: { type: 'integer', enum: [4, 5] },
-        },
-      },
-    },
-    '/config/pms/reissue_token': {
-      body: {
-        $schema: 'http://json-schema.org/draft-07/schema#',
-      },
-    },
-  },
-};
+import PMSLogger, { REQUEST_EVENTS } from './logger';
+import * as config from '../config';
+
+const logger = new PMSLogger({
+  enable: config.PMSLoggingEnabled,
+});
+
+export { REQUEST_EVENTS };
+export default logger;

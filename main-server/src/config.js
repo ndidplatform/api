@@ -245,3 +245,5 @@ export const prometheusHttpsCertPath =
   process.env.PROMETHEUS_HTTPS_CERT_PATH != null
     ? process.env.PROMETHEUS_HTTPS_CERT_PATH
     : path.join(__dirname, '..', 'dev_https_key', 'cert.pem');
+
+export const PMSLoggingEnabled = process.env.ENABLE_PMS_LOGGING === 'true';

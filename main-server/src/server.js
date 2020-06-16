@@ -42,6 +42,7 @@ import { getFunction } from './functions';
 import * as cacheDb from './db/cache';
 import * as longTermDb from './db/long_term';
 import * as dataDb from './db/data';
+import * as pmsDb from './db/pms';
 import * as tendermint from './tendermint';
 import * as tendermintWsPool from './tendermint/ws_pool';
 import * as mq from './mq';
@@ -87,6 +88,10 @@ async function initialize() {
 
     if (config.prometheusEnabled) {
       prometheus.initialize();
+    }
+
+    if (config.PMSLoggingEnabled) {
+      pmsDb.initialize();
     }
 
     if (config.ndidNode) {
@@ -322,6 +327,10 @@ async function shutDown() {
   await prometheus.stop();
 
   await Promise.all([cacheDb.close(), longTermDb.close(), dataDb.close()]);
+
+  if (config.PMSLoggingEnabled) {
+    await pmsDb.close();
+  }
 }
 
 process.on('SIGTERM', shutDown);

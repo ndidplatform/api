@@ -25,6 +25,7 @@ import express from 'express';
 import { validateBody } from './middleware/validation';
 
 import * as config from '../../config';
+import PMSLogger from '../../pms';
 
 const router = express.Router();
 
@@ -62,6 +63,10 @@ router.post('/set', validateBody, function (req, res, next) {
   } catch (error) {
     next(error);
   }
+});
+
+router.get('/pms/reissue_token', validateBody, (req, res, next) => {
+  PMSLogger.reissue_token();
 });
 
 export default router;
