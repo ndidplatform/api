@@ -21,9 +21,14 @@
  */
 
 import RedisInstance from '../redis';
+import * as config from '../../config';
 
 const dbName = 'pms';
 
-const redisInstance = new RedisInstance(dbName);
+const redisInstance = new RedisInstance(dbName, {
+  dbIp: config.pmsDbIp,
+  dbPort: config.pmsDbPort,
+  dbPassword: config.pmsDbPassword,
+});
 
 export default redisInstance;

@@ -247,3 +247,6 @@ export const prometheusHttpsCertPath =
     : path.join(__dirname, '..', 'dev_https_key', 'cert.pem');
 
 export const PMSLoggingEnabled = process.env.ENABLE_PMS_LOGGING === 'true';
+export const pmsDbIp = process.env.PMS_DB_IP || dbIp;
+export const pmsDbPort = process.env.PMS_DB_PORT || dbPort;
+export const pmsDbPassword = process.env.PMS_DB_PASSWORD || dbPassword;

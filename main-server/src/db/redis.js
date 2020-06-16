@@ -30,7 +30,7 @@ import logger from '../logger';
 import * as config from '../config';
 
 export default class RedisInstance extends EventEmitter {
-  constructor(dbName) {
+  constructor(dbName, dbConfig = {}) {
     super();
     this.dbName = dbName;
     this.backoff = new ExponentialBackoff({
@@ -44,9 +44,9 @@ export default class RedisInstance extends EventEmitter {
     this.reconnecting = false;
 
     this.redis = new Redis({
-      host: config.dbIp,
-      port: config.dbPort,
-      password: config.dbPassword,
+      host: dbConfig.dbIp || config.dbIp,
+      port: dbConfig.dbPort || config.dbPort,
+      password: dbConfig.dbPassword || config.dbPassword,
       retryStrategy: (times) => {
         return this.backoff.next();
       },
