@@ -415,28 +415,43 @@ export async function processMessage(nodeId, messageId, message) {
           }
         }
 
-        if (
-          !requestDetail.closed &&
-          !requestDetail.timed_out &&
-          (requestStatus === 'errored' ||
+        if (!requestDetail.closed && !requestDetail.timed_out) {
+          let autoCloseRequest = false;
+          if (
             (requestStatus === 'completed' &&
-              (requestDetail.mode === 1 ||
-                ((requestDetail.mode === 2 || requestDetail.mode === 3) &&
-                  isAllIdpResponsesValid(responseValidList, requestDetail)))))
-        ) {
-          logger.debug({
-            message: 'Automatically closing request',
-            requestId: message.request_id,
-          });
-          await common.closeRequest(
-            { node_id: nodeId, request_id: message.request_id },
-            {
-              synchronous: false,
-              sendCallbackToClient: false,
-              saveForRetryOnChainDisabled: true,
-              retryOnFail: true,
+              config.autoCloseRequestOnCompleted) ||
+            (requestStatus === 'rejected' &&
+              config.autoCloseRequestOnRejected) ||
+            (requestStatus === 'complicated' &&
+              config.autoCloseRequestOnComplicated)
+          ) {
+            if (
+              requestDetail.mode === 1 ||
+              ((requestDetail.mode === 2 || requestDetail.mode === 3) &&
+                isAllIdpResponsesValid(responseValidList, requestDetail))
+            ) {
+              autoCloseRequest = true;
             }
-          );
+          }
+          if (requestStatus === 'errored' && config.autoCloseRequestOnErrored) {
+            autoCloseRequest = true;
+          }
+
+          if (autoCloseRequest) {
+            logger.debug({
+              message: 'Automatically closing request',
+              requestId: message.request_id,
+            });
+            await common.closeRequest(
+              { node_id: nodeId, request_id: message.request_id },
+              {
+                synchronous: false,
+                sendCallbackToClient: false,
+                saveForRetryOnChainDisabled: true,
+                retryOnFail: true,
+              }
+            );
+          }
         }
       }
     } else if (message.type === privateMessageType.AS_RESPONSE) {

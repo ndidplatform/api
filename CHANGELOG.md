@@ -4,8 +4,17 @@
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
 
+IMPROVEMENTS:
+
+- [Main] Add new environment variable options for RP role
+  - `AUTO_CLOSE_REQUEST_ON_COMPLETED`: Automatically close a request as soon as status is `completed` (and when all IdP response signatures are valid in mode 2 and 3). Default to `true`.
+  - `AUTO_CLOSE_REQUEST_ON_REJECTED`: Automatically close a request as soon as status is `rejected` (and when all IdP response signatures are valid in mode 2 and 3). Default to `false`.
+  - `AUTO_CLOSE_REQUEST_ON_COMPLICATED`: Automatically close a request as soon as status is `complicated` (and when all IdP response signatures are valid in mode 2 and 3). Default to `false`.
+  - `AUTO_CLOSE_REQUEST_ON_ERRORED`: Automatically close a request as soon as status is `errored`. Default to `false`.
+
 BUG FIXES:
 
+- Requests with `errored` status will not be automatically closed by default to make it conforms with API v4 flow.
 - Fix process queue start trigger in request process queue manager.
 - Fix error when creating request with non-existent RP node ID (by proxy).
 
