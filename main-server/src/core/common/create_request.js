@@ -42,6 +42,7 @@ import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
 import { dataUrlRegex } from '../../data_url';
 
+import PMSLogger, { REQUEST_EVENTS } from '../../pms';
 import logger from '../../logger';
 
 import * as config from '../../config';
@@ -641,6 +642,9 @@ async function createRequestInternalAsync(
       purpose,
     };
 
+    // log request event: RP_CREATES_REQUEST
+    PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CREATES_REQUEST);
+
     if (!synchronous) {
       await tendermintNdid.createRequest(
         requestDataToBlockchain,
@@ -849,6 +853,10 @@ export async function createRequestInternalAsyncAfterBlockchain(
           });
         }
       }
+
+      // log request event: RP_SENDS_REQUEST_ID_TO_IDP
+      PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_SENDS_REQUEST_ID_TO_IDP);
+
       await Promise.all(mqSendPromises);
     }
 

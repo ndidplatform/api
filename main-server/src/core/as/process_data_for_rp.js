@@ -29,6 +29,7 @@ import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
+import PMSLogger, { REQUEST_EVENTS } from '../../pms';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as nodeCallback from '../node_callback';
@@ -68,6 +69,9 @@ export async function processDataForRP(
   }
 
   try {
+    // log request event: AS_RECEIVES_QUERIED_DATA
+    PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA);
+
     const requestDetail = await tendermintNdid.getRequestDetail({
       requestId,
     });
@@ -207,6 +211,9 @@ async function processDataForRPInternalAsync(
   { nodeId, savedRpId }
 ) {
   try {
+    // log request event: AS_LOGS_HASH_DATA
+    PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_LOGS_HASH_DATA);
+
     let data_salt;
     let signature;
     if (error_code == null) {
@@ -423,6 +430,9 @@ async function sendDataToRP(nodeId, rpId, data) {
       },
     });
   }
+
+  // log request event: AS_SENDS_DATA_TO_RP
+  PMSLogger.logRequestEvent(data.request_id, nodeId, REQUEST_EVENTS.AS_SENDS_DATA_TO_RP);
 
   let receivers;
   if (nodeInfo.proxy != null) {

@@ -31,6 +31,7 @@ import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
 
 import logger from '../../logger';
+import PMSLogger, { REQUEST_EVENTS } from '../../pms';
 
 import * as config from '../../config';
 import { role } from '../../node';
@@ -117,6 +118,9 @@ async function closeRequestInternalAsync(
       }
       nodeIds[responseValidList[i].idp_id] = true;
     }
+
+    // log request event: RP_CLOSES_REQUEST
+    PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CLOSES_REQUEST);
 
     if (!synchronous) {
       await tendermintNdid.closeRequest(

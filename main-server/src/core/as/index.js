@@ -33,6 +33,7 @@ import errorType from 'ndid-error/type';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../callback';
 import logger from '../../logger';
+import PMSLogger, { REQUEST_EVENTS } from '../../pms';
 
 import * as config from '../../config';
 import { role } from '../../node';
@@ -179,6 +180,9 @@ export async function processMessage(nodeId, messageId, message) {
 
   try {
     if (message.type === privateMessageType.DATA_REQUEST) {
+      // log request event: AS_RECEIVES_RP_REQUEST
+      PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_RECEIVES_RP_REQUEST);
+
       const requestDetail = await tendermintNdid.getRequestDetail({
         requestId: message.request_id,
       });
@@ -267,7 +271,11 @@ export async function afterGotDataFromCallback(
   { error, response, body },
   additionalData
 ) {
-  const { nodeId } = additionalData;
+  const { nodeId, requestId } = additionalData;
+
+  // log request event: AS_RECEIVES_QUERIED_DATA
+  PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA);
+
   try {
     if (error) throw error;
     if (response.status === 204) {
@@ -367,6 +375,9 @@ async function getDataAndSendBackToRP(
     requestDetail,
     responseDetails,
   });
+
+  // log request event: AS_QUERIES_DATA
+  PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_QUERIES_DATA);
 
   await Promise.all(
     request.service_data_request_list.map(async (serviceData) => {

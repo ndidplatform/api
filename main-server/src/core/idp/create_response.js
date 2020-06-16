@@ -34,6 +34,7 @@ import errorType from 'ndid-error/type';
 import * as utils from '../../utils';
 import { getErrorObjectForClient } from '../../utils/error';
 import logger from '../../logger';
+import PMSLogger, { REQUEST_EVENTS } from '../../pms';
 
 import * as config from '../../config';
 import { role } from '../../node';
@@ -58,6 +59,9 @@ export async function createResponse(createResponseParams) {
   } else {
     node_id = config.nodeId;
   }
+
+  // log request event: IDP_RECEIVES_AUTH_RESULT
+  PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.IDP_RECEIVES_AUTH_RESULT);
 
   try {
     const request = await tendermintNdid.getRequestDetail({
@@ -308,6 +312,9 @@ export async function createResponseInternal(
       signature,
     };
 
+    // log request event: IDP_CREATES_RESPONSE
+    PMSLogger.logRequestEvent(request_id, nodeId, REQUEST_EVENTS.IDP_CREATES_RESPONSE);
+
     await tendermintNdid.createIdpResponse(
       dataToBlockchain,
       nodeId,
@@ -416,6 +423,9 @@ export async function createResponseAfterBlockchain(
   if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
+
+    // log request event: IDP_RESPONDS_TO_RP
+    PMSLogger.logRequestEvent(request_id, nodeId, REQUEST_EVENTS.IDP_RESPONDS_TO_RP);
 
     await sendResponseToRP({
       nodeId,
