@@ -45,7 +45,8 @@ import MODE from '../mode';
 import * as config from '../config';
 
 const MQ_MESSAGE_VERSION = 1; // INCREMENT THIS WHENEVER SPEC CHANGES
-const MQ_SEND_TOTAL_TIMEOUT = 600000;
+const MQ_SEND_TOTAL_TIMEOUT = 600000; // 10 min
+const MQ_RECV_DUPLICATE_CHECK_TIMEOUT = MQ_SEND_TOTAL_TIMEOUT + 60000; // +1 min
 
 const mqMessageProtobufRootInstance = new protobuf.Root();
 const mqMessageProtobufRoot = mqMessageProtobufRootInstance.loadSync(
@@ -229,12 +230,12 @@ async function onMessage({ message, msgId, senderId }) {
   const id = senderId + ':' + msgId;
   if (timer[id] != null) return;
 
-  const unixTimeout = timestamp + MQ_SEND_TOTAL_TIMEOUT;
+  const unixTimeout = timestamp + MQ_RECV_DUPLICATE_CHECK_TIMEOUT;
   cacheDb.setDuplicateMessageTimeout(config.nodeId, id, unixTimeout);
   timer[id] = setTimeout(() => {
     cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
     delete timer[id];
-  }, MQ_SEND_TOTAL_TIMEOUT);
+  }, MQ_RECV_DUPLICATE_CHECK_TIMEOUT);
 
   try {
     await cacheDb.setRawMessageFromMQ(config.nodeId, id, message);

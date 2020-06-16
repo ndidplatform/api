@@ -15,6 +15,7 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - Requests with `errored` status will not be automatically closed by default to make it conforms with API v4 flow.
+- Fix duplicate MQ messages check timeout. (Set to more than send retry timeout.)
 - Fix process queue start trigger in request process queue manager.
 - Fix error when creating request with non-existent RP node ID (by proxy).
 
