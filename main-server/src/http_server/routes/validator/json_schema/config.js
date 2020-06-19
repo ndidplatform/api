@@ -28,6 +28,10 @@ export default {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           CALLBACK_API_VERSION: { type: 'integer', enum: [4, 5] },
+          AUTO_CLOSE_REQUEST_ON_COMPLETED: { type: 'boolean' },
+          AUTO_CLOSE_REQUEST_ON_REJECTED: { type: 'boolean' },
+          AUTO_CLOSE_REQUEST_ON_COMPLICATED: { type: 'boolean' },
+          AUTO_CLOSE_REQUEST_ON_ERRORED: { type: 'boolean' },
         },
       },
     },

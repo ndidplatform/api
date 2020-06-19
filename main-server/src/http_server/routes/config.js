@@ -46,9 +46,29 @@ router.get('/', function (req, res, next) {
 
 router.post('/set', validateBody, function (req, res, next) {
   try {
-    const { CALLBACK_API_VERSION } = req.body;
+    const {
+      CALLBACK_API_VERSION,
+      AUTO_CLOSE_REQUEST_ON_COMPLETED,
+      AUTO_CLOSE_REQUEST_ON_REJECTED,
+      AUTO_CLOSE_REQUEST_ON_COMPLICATED,
+      AUTO_CLOSE_REQUEST_ON_ERRORED,
+    } = req.body;
 
-    config.callbackApiVersion = CALLBACK_API_VERSION;
+    if (CALLBACK_API_VERSION != null) {
+      config.callbackApiVersion = CALLBACK_API_VERSION;
+    }
+    if (AUTO_CLOSE_REQUEST_ON_COMPLETED != null) {
+      config.autoCloseRequestOnCompleted = AUTO_CLOSE_REQUEST_ON_COMPLETED;
+    }
+    if (AUTO_CLOSE_REQUEST_ON_REJECTED != null) {
+      config.autoCloseRequestOnRejected = AUTO_CLOSE_REQUEST_ON_REJECTED;
+    }
+    if (AUTO_CLOSE_REQUEST_ON_COMPLICATED != null) {
+      config.autoCloseRequestOnComplicated = AUTO_CLOSE_REQUEST_ON_COMPLICATED;
+    }
+    if (AUTO_CLOSE_REQUEST_ON_ERRORED != null) {
+      config.autoCloseRequestOnErrored = AUTO_CLOSE_REQUEST_ON_ERRORED;
+    }
 
     const {
       privateKeyPassphrase, // eslint-disable-line no-unused-vars
