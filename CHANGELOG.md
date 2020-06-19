@@ -6,6 +6,7 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 
 BUG FIXES:
 
+- Fix `/identity/:namespace/:identifier/accessors_revoke` and `/identity/:namespace/:identifier/accessors_revoke_and_add` APIs error due to missing schema for validation.
 - Fix duplicate MQ messages check timeout. (Set to more than send retry timeout.)
 - Fix process queue start trigger in request process queue manager.
 - Fix error when creating request with non-existent RP node ID (by proxy).
