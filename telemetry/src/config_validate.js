@@ -20,42 +20,14 @@
  *
  */
 
-import * as db from '../redis_common';
-import redisInstance from './redis';
-
-import logger from '../../logger';
-import CustomError from 'ndid-error/custom_error';
-
-const dbName = 'pms';
-
-export function getRedisInstance() {
-  return redisInstance;
-}
-
-export function initialize() {
-  return redisInstance.connect();
-}
-
-export async function close() {
-  await redisInstance.close();
-  logger.info({
-    message: 'DB connection closed',
-    dbName,
-  });
-}
-
-export async function addNewRequestEvent(nodeId, data) {
-  try {
-    await redisInstance.xadd(`request_channel:${nodeId}`, '*', 'data', data);
-  } catch (err) {
-    logger.error({ err });
+// required config
+[
+  "DB_IP",
+  "DB_PORT",
+  "TELEMETRY_NODE_IP",
+  "TELEMETRY_NODE_PORT",
+].forEach(conf => {
+  if (process.env[conf] == undefined) {
+    throw `${conf} config is missing`;
   }
-}
-
-export async function addNewToken(nodeId, token) {
-  try {
-    await redisInstance.setKey(`token:${nodeId}`, token);
-  } catch (err) {
-    logger.error({ err });
-  }
-}
+});

@@ -23,9 +23,7 @@
 import pmsDb from '../db/pms'
 import logger from '../logger.js'
 import * as utils from '../utils';
-
-const requestChannel = "request_channel"
-const tokenChannel = "token_channel"
+import * as config from '../config';
 
 export const REQUEST_EVENTS = {
   RP_CREATES_REQUEST         : 1,
@@ -84,7 +82,7 @@ export default class PMSLogger {
       timestamp: this.getCurrentTime(),
     };
 
-    await pmsDb.addNewTransaction(requestChannel, JSON.stringify(data));
+    await pmsDb.addNewRequestEvent(node_id, JSON.stringify(data));
   }
 
   // TOKEN Generation Module
@@ -110,7 +108,7 @@ export default class PMSLogger {
     const payloadJSON = JSON.stringify(payload);
 
     const payloadSigned = await utils.createSignature(payloadJSON)
-    await pmsDb.addNewTransaction(tokenChannel, payloadSigned)
+    await pmsDb.addNewToken(config.nodeId, payloadSigned)
   }
 
   /*

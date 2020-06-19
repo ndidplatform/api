@@ -20,42 +20,31 @@
  *
  */
 
-import * as db from '../redis_common';
-import redisInstance from './redis';
-
-import logger from '../../logger';
-import CustomError from 'ndid-error/custom_error';
-
-const dbName = 'pms';
-
-export function getRedisInstance() {
-  return redisInstance;
-}
-
-export function initialize() {
-  return redisInstance.connect();
-}
-
-export async function close() {
-  await redisInstance.close();
-  logger.info({
-    message: 'DB connection closed',
-    dbName,
-  });
-}
-
-export async function addNewRequestEvent(nodeId, data) {
-  try {
-    await redisInstance.xadd(`request_channel:${nodeId}`, '*', 'data', data);
-  } catch (err) {
-    logger.error({ err });
+export default class TokenManager {
+  constructor(getToken) {
+    this.getToken = async (nodeId) => getToken(nodeId);
+    this.tokens = new Object();
   }
-}
 
-export async function addNewToken(nodeId, token) {
-  try {
-    await redisInstance.setKey(`token:${nodeId}`, token);
-  } catch (err) {
-    logger.error({ err });
+  setGetToken(getTokenFn) {
+    this.getToken = getTokenFn;
   }
-}
+
+  async getTokenFromNodeId(nodeId) {
+    if (this.tokens[nodeId] == undefined && this.getToken != undefined) {
+      this.tokens[nodeId] = await this.getToken(nodeId);
+      console.log('token', nodeId, this.tokens[nodeId]);
+    }
+    return this.tokens[nodeId];
+  }
+
+  removeTokenFromNodeId(nodeId) {
+    delete this.tokens[nodeId];
+  }
+
+  invalidateToken(nodeId, token) {
+    if (this.getTokenFromNodeId(nodeId) === token) {
+      this.removeToken(nodeId);
+    }
+  }
+};

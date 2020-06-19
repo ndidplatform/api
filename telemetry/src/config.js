@@ -20,42 +20,15 @@
  *
  */
 
-import * as db from '../redis_common';
-import redisInstance from './redis';
+// Load configuration variables from process.env
+import './config_validate';
 
-import logger from '../../logger';
-import CustomError from 'ndid-error/custom_error';
+export const redisDbIp = process.env.DB_IP;
+export const redisDbPort = process.env.DB_PORT;
+export const redisDbPassword = process.env.DB_PASSWORD;
 
-const dbName = 'pms';
+export const telemetryNodeIp = process.env.TELEMETRY_NODE_IP;
+export const telemetryNodePort = process.env.TELEMETRY_NODE_PORT;
 
-export function getRedisInstance() {
-  return redisInstance;
-}
+export const telemetryNodeAddress = `${telemetryNodeIp}:${telemetryNodePort}`;
 
-export function initialize() {
-  return redisInstance.connect();
-}
-
-export async function close() {
-  await redisInstance.close();
-  logger.info({
-    message: 'DB connection closed',
-    dbName,
-  });
-}
-
-export async function addNewRequestEvent(nodeId, data) {
-  try {
-    await redisInstance.xadd(`request_channel:${nodeId}`, '*', 'data', data);
-  } catch (err) {
-    logger.error({ err });
-  }
-}
-
-export async function addNewToken(nodeId, token) {
-  try {
-    await redisInstance.setKey(`token:${nodeId}`, token);
-  } catch (err) {
-    logger.error({ err });
-  }
-}

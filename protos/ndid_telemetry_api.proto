@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package ndid.telemetry.api;
+
+option go_package = ".;ndid_telemetry_api";
+
+option java_multiple_files = true;
+option java_package = "ndid.grpc.telemetry";
+option java_outer_classname = "NDIDTelemetryServiceProto";
+
+service NDIDTelemetry {
+  rpc SendData(SendDataRequest) returns (SendDataResponse) {}
+
+  rpc BenchmarkImmediateReturn(Empty) returns (Empty) {}
+  rpc BenchmarkCreateAppContext(Empty) returns (Empty) {}
+  rpc BenchmarkWithoutValidateToken(SendDataRequest) returns (SendDataResponse) {}
+  rpc BenchmarkValidateToken(SendDataRequest) returns (SendDataResponse) {}
+
+  rpc SendRequestTimestamp(SendRequestTimestampRequest) returns (SendDataResponse) {}
+  rpc SendSystemInformtation(SendSystemInformationRequest) returns (SendDataResponse) {}
+  rpc SendSystemLog(SendSystemLogRequest) returns (SendDataRequest) {}
+}
+
+message RequestMetadata {
+  string node_id = 1;
+  string token = 2;
+}
+
+message SendDataRequest {
+  RequestMetadata request_metadata = 1;
+  SendDataParams params = 2;
+}
+
+message SendDataParams {
+  bytes data = 1;
+}
+
+message SendDataResponse {
+  uint64 code = 1;
+  string message = 2;
+}
+
+message Empty {}
+
+message SendRequestTimestampRequest {
+  message RequestTimestamp {
+    string request_id = 1;
+    uint32 state = 2;
+    uint32 time = 3;
+  }
+
+  RequestMetadata request_metadata = 1;
+  repeated RequestTimestamp data = 2;
+}
+
+message SendSystemInformationRequest {
+  message SystemInformation {
+  }
+
+  RequestMetadata request_metadata = 1;
+  repeated SystemInformation data = 2;
+}
+
+message SendSystemLogRequest {
+  message SystemLog {
+    string log_level = 1;
+    string detail = 2;
+    uint32 time = 3;
+  }
+
+  RequestMetadata request_metadata = 1;
+  repeated SystemLog data = 2;
+}
+
