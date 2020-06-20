@@ -34,12 +34,15 @@ class TriggerBuffer {
     this.startTriggerInterval(this.timeLimit);
   }
 
-  trigger() {
+  async trigger() {
+    this.stopTimer();
     this.resetCounter();
-    return this.triggerFn();
+    const result = await this.triggerFn();
+    this.restartTimer();
+    return result;
   }
 
-  // onReceived will count the number of package in the queue
+  // onReceived will count the number of packages in the queue
   resetCounter() {
     this.counter = 0;
   }
@@ -52,20 +55,19 @@ class TriggerBuffer {
   }
 
   // trigger interval will periodically trigger the function
-  restartTriggerInterval(timeLimit) {
-    if (this.triggerIntervalID) {
-      clearInterval(this.triggerIntervalID);
+  restartTimer(timeLimit) {
+    if (this.triggerTimerID) {
+      clearTimeout(this.triggerTimerID);
     }
-    if (!timeLimit) return;
-    this.triggerIntervalID = setInterval(() => this.trigger(), timeLimit);
+    this.triggerTimerID = setTimer(async () => await this.trigger(), timeLimit || this.timeLimit);
   }
 
-  disableTriggerInterval() {
-    this.restartTriggerInterval(0);
+  stopTimer() {
+    this.restartTriggerInterval(undefined);
   }
 
-  startTriggerInterval(timeLimit) {
-    this.restartTriggerInterval(timeLimit || this.timeLimit);
+  startTimer(timeLimit) {
+    this.restartTimer(timeLimit || this.timeLimit);
   }
 }
 
@@ -121,6 +123,7 @@ export default class PMSDb {
       } else {
         throw `undefined db type ${type}`
       }
+
       this.dbs[id] = db;
 
       if (onCreated) {

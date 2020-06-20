@@ -27,9 +27,6 @@ class RedisStreamChannel {
     this.redis = redis;
     this.channel = channel;
     this.countLimit = options.countLimit || 1000;
-    this.lastSeenKey = "0";
-
-    this.redis.xadd(this.channel, "*", "node-tmp", "qweruioqpwufipqowec");
   }
 
   async read() {
