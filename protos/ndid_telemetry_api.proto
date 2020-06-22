@@ -36,7 +36,13 @@ message SendDataParams {
 }
 
 message SendDataResponse {
-  uint64 code = 1;
+  enum ResponseCode {
+    OK = 0;
+    INVALID_TOKEN = 1;
+    INTERNAL_ERROR = 2;
+  }
+
+  ResponseCode code = 1;
   string message = 2;
 }
 

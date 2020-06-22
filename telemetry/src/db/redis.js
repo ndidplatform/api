@@ -21,6 +21,7 @@
  */
 import Redis from 'ioredis';
 import * as config from '../config';
+import logger from '../logger';
 
 class RedisStreamChannel {
   constructor(redis, channel, options) {
@@ -30,7 +31,8 @@ class RedisStreamChannel {
   }
 
   async read() {
-    const messages = await this.redis.xread(['COUNT', this.countLimit, 'STREAMS', this.channel, this.lastSeenKey]);
+    logger.debug("Attempt Reading Redis");
+    const messages = await this.redis.xread(['COUNT', this.countLimit, 'STREAMS', this.channel, 0]);
     if (messages == null) return [];
     return messages[0][1];
   }
@@ -40,13 +42,36 @@ class RedisStreamChannel {
   }
 
   async onReadEvent(onReceived) {
-    const events = await this.read();
-    if (!events || events.length === 0) return;
-    if (await onReceived(events)) {
-      // onDone Remove key from stream
-      Promise.all(
-        events.map(async event => await this.removeKey(event[0]))
-      );
+    while (true) {
+      const events = await this.read();
+      if (!events || events.length === 0) return 0;
+      const keys = events.map(event => event[0]);
+      const data = events.map(event => {
+        const data = event[1];
+        const obj = {};
+        for (let i = 0; i < data.length; i += 2) {
+          obj[data[i]] = data[i+1];
+        }
+        return obj;
+      });
+
+      if (await onReceived(data)) {
+        // onDone Remove key from stream
+        try {
+          await Promise.all(
+            keys.map(async key => await this.removeKey(key))
+          );
+        } catch(error) {
+          logger.error({ error });
+        }
+
+        if (events.length == this.countLimit) {
+          // if the events exceed count limit, call start again
+          continue;
+        }
+      }
+
+      return events.length;
     }
   }
 }

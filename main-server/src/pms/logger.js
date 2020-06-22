@@ -57,8 +57,12 @@ export default class PMSLogger {
   constructor({
     enable,
   }) {
+    console.log("enable PMS", enable);
     this.enable = enable;
     if (!enable) return;
+
+    this.createTokenGenerationInterval(5 * 60 * 60, {});
+    this.generateToken({});
   }
 
   // Request Logging Module
@@ -99,6 +103,8 @@ export default class PMSLogger {
   }) {
     if (!this.enable) return;
 
+    logger.info("Generating new PMS Token");
+
     const payload = {
       expire: Date.now() + timeout,
       nonce: Math.random(),
@@ -107,8 +113,10 @@ export default class PMSLogger {
 
     const payloadJSON = JSON.stringify(payload);
 
-    const payloadSigned = await utils.createSignature(payloadJSON)
-    await pmsDb.addNewToken(config.nodeId, payloadSigned)
+    const payloadSigned = await utils.createSignature(payloadJSON);
+    await pmsDb.addNewToken(config.nodeId, payloadSigned);
+
+    logger.info("Finish generating PMS Token");
   }
 
   /*

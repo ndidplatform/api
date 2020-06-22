@@ -26,6 +26,9 @@ import TokenManager from './token';
 import TelemetryClient from './telemetry-client';
 import PMSDb from './db';
 
+import * as config from './config';
+import logger from './logger';
+
 // Initialize token manager
 const tokenManager = new TokenManager();
 
@@ -33,6 +36,10 @@ const tokenManager = new TokenManager();
 const client = new TelemetryClient({
   tokenManager,
 });
+
+// get list of all node IDs
+const nodeIds = config.nodeIds.split(',');
+logger.info('List of monitored nodes:', nodeIds)
 
 // Initialize database fetching
 const db = new PMSDb([
@@ -46,15 +53,14 @@ const db = new PMSDb([
       });
     },
   },
-  ...["node-tmp"].map(nodeId => ({
+  ...nodeIds.map(nodeId => ({
     id: `request-event-stream:${nodeId}`,
     type: "stream",
     channelName: `request_channel:${nodeId}`,
     onDataReceived: (events) => {
-      events = events.map(event => event[1]);
       return client.receiveRequestEventData(nodeId, events);
     },
     countLimit: 300,
-    timeLimit: 1000, // flush every 1 second
+    timeLimit: config.flushInterval, // flush every 5 seconds
   })),
 ]);

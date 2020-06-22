@@ -20,35 +20,17 @@
  *
  */
 
-export default class TokenManager {
-  constructor() {
-    this.tokens = new Object();
-    this.invalidatedToken = new Object();
-  }
+import { initLogger } from 'ndid-logger';
 
-  setGetToken(getTokenFn) {
-    this.getToken = getTokenFn;
-  }
+import * as config from './config';
 
-  async getTokenFromNodeId(nodeId) {
-    if (this.tokens[nodeId] == undefined && this.getToken != undefined) {
-      this.tokens[nodeId] = await this.getToken(nodeId);
-    }
-    if (this.tokens[nodeId] === this.invalidatedToken[nodeId]) {
-      delete this.tokens[nodeId];
-      return undefined;
-    }
-    return this.tokens[nodeId];
-  }
+const logger = initLogger({
+  env: config.env,
+  name: config.nodeId,
+  logLevel: config.logLevel,
 
-  revokeToken(nodeId) {
-    this.invalidatedToken[nodeId] = this.tokens[nodeId];
-  }
+  logPrettyPrint: config.logPrettyPrint,
+  logColor: config.logColor,
+});
 
-  async invalidateToken(nodeId, token) {
-    const currentToken = await this.getTokenFromNodeId(nodeId);
-    if (currentToken === token) {
-      this.revokeToken(nodeId);
-    }
-  }
-};
+export default logger;

@@ -24,6 +24,7 @@ import grpc from 'grpc';
 import path from 'path';
 import * as protoLoader from '@grpc/proto-loader';
 import * as config from '../config';
+import logger from '../logger';
 
 export const RESULT_TYPE = {
   "OK":               0,
@@ -73,24 +74,28 @@ export default class GRPCTelemetryClient {
   }
 
   isOk(result) {
-    return result === RESULT_TYPE.OK;
+    return result.code === 'OK';
   }
 
   isTokenInvalid(result) {
-    return result === RESULT_TYPE.INVALID_TOKEN;
+    return result.code === 'INVALID_TOKEN';
   }
 
-  async sendRequestEvents({
+  sendRequestEvents({
     nodeId,
     token,
     events,
   }) {
-    return RESULT_TYPE.OK;
-    /*
-    return this.client.sendRequestTimestamp({
-      requestMetadata: { nodeId, token, },
-      events,
+    logger.info("Attempt connecting GRPC server");
+    return new Promise((resolve, reject) => {
+      this.client.sendRequestTimestamp({
+        requestMetadata: { nodeId, token, },
+        data: events,
+      }, (err, result) => {
+        if (err) reject(err);
+        logger.debug(result);
+        resolve(result);
+      });
     });
-    */
   }
 };

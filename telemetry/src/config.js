@@ -23,6 +23,10 @@
 // Load configuration variables from process.env
 import './config_validate';
 
+export const env = process.env.NODE_ENV || 'development';
+
+export const nodeIds = process.env.NODE_ID;
+
 export const redisDbIp = process.env.DB_IP;
 export const redisDbPort = process.env.DB_PORT;
 export const redisDbPassword = process.env.DB_PASSWORD;
@@ -32,3 +36,14 @@ export const telemetryNodePort = process.env.TELEMETRY_NODE_PORT;
 
 export const telemetryNodeAddress = `${telemetryNodeIp}:${telemetryNodePort}`;
 
+export const flushInterval = process.env.FLUSH_INTERVAL || 10000;
+
+export const logLevel =
+  process.env.LOG_LEVEL || (env === 'development' ? 'debug' : 'info');
+export const logPrettyPrint = process.env.LOG_PRETTY_PRINT
+  ? process.env.LOG_PRETTY_PRINT === 'true'
+  : env === 'development';
+export const logColor =
+  process.env.LOG_COLOR == null
+    ? env === 'development'
+    : process.env.LOG_COLOR === 'true';

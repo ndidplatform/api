@@ -22,16 +22,16 @@
 import RedisPMSDb from './redis';
 import * as config from '../config';
 
-class TriggerBuffer {
+class TriggerTimeout {
   constructor(triggerFn, options = {}) {
     this.triggerFn = triggerFn;
     this.counter = 0;
 
-    this.countLimit = options.countLimit || Infinity;
-    this.timeLimit = options.timeLimit;
+    this.countLimit = options.countLimit || 10000;
+    this.timeLimit = options.timeLimit || 10000;
 
     this.resetCounter();
-    this.startTriggerInterval(this.timeLimit);
+    this.startTimer(this.timeLimit);
   }
 
   async trigger() {
@@ -59,11 +59,11 @@ class TriggerBuffer {
     if (this.triggerTimerID) {
       clearTimeout(this.triggerTimerID);
     }
-    this.triggerTimerID = setTimer(async () => await this.trigger(), timeLimit || this.timeLimit);
+    this.triggerTimerID = setTimeout(async () => await this.trigger(), timeLimit || this.timeLimit);
   }
 
   stopTimer() {
-    this.restartTriggerInterval(undefined);
+    this.restartTimer(undefined);
   }
 
   startTimer(timeLimit) {
@@ -107,7 +107,7 @@ export default class PMSDb {
           countLimit,
         });
 
-        const buffer = new TriggerBuffer(
+        const buffer = new TriggerTimeout(
           async () => db.onReadEvent(onDataReceived),
           {
             countLimit,

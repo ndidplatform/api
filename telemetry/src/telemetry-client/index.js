@@ -49,8 +49,8 @@ export default class TelemetryClient {
 
     // incase the operation is invalid, remove the token manager and try the operation again
     if (this.client.isTokenInvalid(result)) {
-      this.tokenManager.invalidateToken(nodeId, token);
-      return receiveRequestEventData(nodeId, events);
+      await this.tokenManager.invalidateToken(nodeId, token);
+      return this.receiveRequestEventData(nodeId, events);
     }
 
     return this.client.isOk(result);

@@ -22,6 +22,7 @@
 
 // required config
 [
+  "NODE_ID",
   "DB_IP",
   "DB_PORT",
   "TELEMETRY_NODE_IP",
