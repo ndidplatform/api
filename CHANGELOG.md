@@ -14,7 +14,7 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
-- Requests with `errored` status will not be automatically closed by default to make it conforms with API v4 flow.
+- Requests with `errored` status will not be automatically closed by default to make it conforms with API v4 flow. **The behavior is different from v4.0.x. If you want the same behavior as in v4.0.x, set `AUTO_CLOSE_REQUEST_ON_ERRORED` config to `true`**
 - Fix `/identity/:namespace/:identifier/accessors_revoke` and `/identity/:namespace/:identifier/accessors_revoke_and_add` APIs error due to missing schema for validation.
 - Fix duplicate MQ messages check timeout. (Set to more than send retry timeout.)
 - Fix process queue start trigger in request process queue manager.
