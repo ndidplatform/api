@@ -44,9 +44,19 @@ export async function close() {
   });
 }
 
-export async function addNewRequestEvent(nodeId, data) {
+export async function addNewRequestEvent(nodeId, {
+  request_id,
+  node_id,
+  state,
+  timestamp,
+}) {
   try {
-    await redisInstance.xadd(`request_channel:${nodeId}`, '*', 'data', data);
+    await redisInstance.xadd(`request_channel:${nodeId}`, '*',
+      'request_id', request_id,
+      'node_id', node_id,
+      'state', state,
+      'timestamp', timestamp,
+    );
   } catch (err) {
     logger.error({ err });
   }

@@ -57,12 +57,10 @@ export default class PMSLogger {
   constructor({
     enable,
   }) {
-    console.log("enable PMS", enable);
     this.enable = enable;
     if (!enable) return;
 
-    this.createTokenGenerationInterval(5 * 60 * 60, {});
-    this.generateToken({});
+    this.createTokenGenerationTimeout(5 * 60 * 60, {});
   }
 
   // Request Logging Module
@@ -77,12 +75,12 @@ export default class PMSLogger {
   /*
    * logRequestEvent saves the information regarding requestID
    */
-  async logRequestEvent(request_id, node_id, step) {
+  async logRequestEvent(request_id, node_id, state) {
     if (!this.enable) return;
     const data = {
       request_id,
       node_id,
-      step,
+      state,
       timestamp: this.getCurrentTime(),
     };
 
@@ -103,7 +101,7 @@ export default class PMSLogger {
   }) {
     if (!this.enable) return;
 
-    logger.info("Generating new PMS Token");
+    logger.info("Generating new PMS token");
 
     const payload = {
       expire: Date.now() + timeout,
@@ -115,31 +113,40 @@ export default class PMSLogger {
 
     const payloadSigned = await utils.createSignature(payloadJSON);
     await pmsDb.addNewToken(config.nodeId, payloadSigned);
-
-    logger.info("Finish generating PMS Token");
+    logger.info("Finish generating PMS token");
   }
 
   /*
    * Register token generation interval
    *
-   * @param {integer} timeInterval (time between two tokens)
+   * @param {integer} timeout (time between two tokens)
    * @param {Object} tokenInformation (refers to generateToken)
    */
-  createTokenGenerationInterval(timeInterval, tokenInformation) {
+  async createTokenGenerationTimeout(timeout, tokenInformation) {
     if (!this.enable) return;
     this.disableTokenGeneration();
-    this.tokenGenerationIntervalID = setInterval(() => this.generateToken(tokenInformation), timeInterval);
+    try {
+      await this.generateToken(tokenInformation);
+      this.tokenGenerationTimeoutID = setTimeout(
+        async () => await this.createTokenGenerationTimeout(timeout, tokenInformation),
+        timeout,
+      );
+    } catch (e) {
+      logger.error("Failed to generate PMS token, retry in 10 seconds");
+      timeout = 10000;
+    }
+    this.tokenGenerationTimeoutID = setTimeout(
+      async () => await this.createTokenGenerationTimeout(timeout, tokenInformation),
+      timeout,
+    );
   }
 
   /*
-   * Remove token interval
-   *
-   * @param {integer} timeInterval (time between two token)
-   * @param {Object} tokenInformation (refers to generateToken)
+   * Remove token generation timeout
    */
   disableTokenGeneration() {
-    if (this.tokenGenerationIntervalID) {
-      clearInterval(this.tokenGenerationIntervalID);
+    if (this.tokenGenerationTimeoutID) {
+      clearTimeout(this.tokenGenerationTimeoutID);
     }
   }
 }
