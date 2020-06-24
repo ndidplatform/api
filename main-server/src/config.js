@@ -169,7 +169,7 @@ export const autoCloseRequestOnComplicated =
 export const autoCloseRequestOnErrored =
   process.env.AUTO_CLOSE_REQUEST_ON_ERRORED != null
     ? process.env.AUTO_CLOSE_REQUEST_ON_ERRORED === 'true'
-    : false;
+    : true;
 
 //in byte
 export const saltLength = 16;

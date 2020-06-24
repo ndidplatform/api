@@ -10,11 +10,10 @@ IMPROVEMENTS:
   - `AUTO_CLOSE_REQUEST_ON_COMPLETED`: Automatically close a request as soon as status is `completed` (and when all IdP response signatures are valid in mode 2 and 3). Default to `true`.
   - `AUTO_CLOSE_REQUEST_ON_REJECTED`: Automatically close a request as soon as status is `rejected` (and when all IdP response signatures are valid in mode 2 and 3). Default to `false`.
   - `AUTO_CLOSE_REQUEST_ON_COMPLICATED`: Automatically close a request as soon as status is `complicated` (and when all IdP response signatures are valid in mode 2 and 3). Default to `false`.
-  - `AUTO_CLOSE_REQUEST_ON_ERRORED`: Automatically close a request as soon as status is `errored`. Default to `false`.
+  - `AUTO_CLOSE_REQUEST_ON_ERRORED`: Automatically close a request as soon as status is `errored`. Default to `true`. **To maintain the same flow behavior as v3.x.x or lower (API spec v4 or lower users), set this config to `false`.**
 
 BUG FIXES:
 
-- Requests with `errored` status will not be automatically closed by default to make it conforms with API v4 flow. **The behavior is different from v4.0.x. If you want the same behavior as in v4.0.x, set `AUTO_CLOSE_REQUEST_ON_ERRORED` config to `true`**
 - Fix `/identity/:namespace/:identifier/accessors_revoke` and `/identity/:namespace/:identifier/accessors_revoke_and_add` APIs error due to missing schema for validation.
 - Fix duplicate MQ messages check timeout. (Set to more than send retry timeout.)
 - Fix process queue start trigger in request process queue manager.
