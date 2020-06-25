@@ -20,6 +20,7 @@
  *
  */
 import GRPCTelemetryClient from './grpc';
+import logger from '../logger';
 
 export default class TelemetryClient {
   constructor({
@@ -49,6 +50,7 @@ export default class TelemetryClient {
 
     // incase the operation is invalid, remove the token manager and try the operation again
     if (this.client.isTokenInvalid(result)) {
+      logger.info("Invalidating token of node", nodeId, token);
       await this.tokenManager.invalidateToken(nodeId, token);
       return this.receiveRequestEventData(nodeId, events);
     }

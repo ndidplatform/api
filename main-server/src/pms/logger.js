@@ -20,8 +20,11 @@
  *
  */
 
-import pmsDb from '../db/pms'
+import base64url from 'base64url';
+
+import * as pmsDb from '../db/pms'
 import logger from '../logger.js'
+import * as cryptoUtils from '../utils/crypto';
 import * as utils from '../utils';
 import * as config from '../config';
 
@@ -60,7 +63,9 @@ export default class PMSLogger {
     this.enable = enable;
     if (!enable) return;
 
-    this.createTokenGenerationTimeout(5 * 60 * 60, {});
+    this.generationTimeout = config.pmsTokenGenerationIntervalSec * 1000;
+
+    this.createTokenGenerationTimeout(this.generationTimeout, {});
   }
 
   // Request Logging Module
@@ -88,6 +93,24 @@ export default class PMSLogger {
   }
 
   // TOKEN Generation Module
+  async createJWT(payload) {
+    const header = {
+      "type": "JWT",
+      "alg": "RS256",
+    };
+
+    const headerJSON = JSON.stringify(header);
+    const encodedHeader = base64url(headerJSON);
+
+    const payloadJSON = JSON.stringify(payload);
+    const encodedPayload = base64url(payloadJSON);
+
+    const token = encodedHeader + '.' + encodedPayload;
+    const signature = await utils.createSignature(token, config.nodeId, false); 
+    const signedToken = token + '.' + base64url(signature);
+
+    return signedToken;
+  }
 
   /*
    * Generate a new token and public it to redis db
@@ -103,16 +126,20 @@ export default class PMSLogger {
 
     logger.info("Generating new PMS token");
 
+    const timeNow = Math.floor(Date.now() / 1000);
+
     const payload = {
-      expire: Date.now() + timeout,
+      iat: timeNow - 60, // 1 minute delay
+      exp: timeNow + timeout,
+
+      node_id: config.nodeId,
       nonce: Math.random(),
       ...extraInfo,
     };
 
-    const payloadJSON = JSON.stringify(payload);
+    const jwt = await this.createJWT(payload);
+    await pmsDb.addNewToken(config.nodeId, jwt);
 
-    const payloadSigned = await utils.createSignature(payloadJSON);
-    await pmsDb.addNewToken(config.nodeId, payloadSigned);
     logger.info("Finish generating PMS token");
   }
 
@@ -127,16 +154,15 @@ export default class PMSLogger {
     this.disableTokenGeneration();
     try {
       await this.generateToken(tokenInformation);
-      this.tokenGenerationTimeoutID = setTimeout(
-        async () => await this.createTokenGenerationTimeout(timeout, tokenInformation),
-        timeout,
-      );
-    } catch (e) {
-      logger.error("Failed to generate PMS token, retry in 10 seconds");
+    } catch (err) {
+      logger.error({
+        msg: "Failed to generate PMS token, retry in 10 seconds",
+        err,
+      });
       timeout = 10000;
     }
     this.tokenGenerationTimeoutID = setTimeout(
-      async () => await this.createTokenGenerationTimeout(timeout, tokenInformation),
+      async () => await this.createTokenGenerationTimeout(this.generationTimeout, tokenInformation),
       timeout,
     );
   }
@@ -148,6 +174,11 @@ export default class PMSLogger {
     if (this.tokenGenerationTimeoutID) {
       clearTimeout(this.tokenGenerationTimeoutID);
     }
+  }
+
+  async reissue_token() {
+    if (!this.enable) return;
+    await this.createTokenGenerationTimeout(this.generationTimeout, {});
   }
 }
 

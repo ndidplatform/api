@@ -89,7 +89,7 @@ export default class GRPCTelemetryClient {
     logger.info("Attempt connecting GRPC server");
     return new Promise((resolve, reject) => {
       this.client.sendRequestTimestamp({
-        requestMetadata: { nodeId, token, },
+        request_metadata: { node_id: nodeId, token, },
         data: events,
       }, (err, result) => {
         if (err) reject(err);

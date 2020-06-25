@@ -65,8 +65,20 @@ router.post('/set', validateBody, function (req, res, next) {
   }
 });
 
-router.get('/pms/reissue_token', validateBody, (req, res, next) => {
-  PMSLogger.reissue_token();
+router.get('/pms/reissue_token', async (req, res, next) => {
+  try {
+    if (config.PMSLoggingEnabled) {
+      await PMSLogger.reissue_token();
+      res.status(200).end();
+    } else {
+      res.status(404).json({
+        message: "PMS module is not enabled",
+      });
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default router;

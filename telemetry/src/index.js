@@ -41,6 +41,8 @@ const client = new TelemetryClient({
 const nodeIds = config.nodeIds.split(',');
 logger.info('List of monitored nodes:', nodeIds)
 
+const interval = config.flushInterval / nodeIds.length;
+
 // Initialize database fetching
 const db = new PMSDb([
   { // database for token fetching
@@ -53,13 +55,14 @@ const db = new PMSDb([
       });
     },
   },
-  ...nodeIds.map(nodeId => ({
+  ...nodeIds.map((nodeId, idx) => ({
     id: `request-event-stream:${nodeId}`,
     type: "stream",
     channelName: `request_channel:${nodeId}`,
     onDataReceived: (events) => {
       return client.receiveRequestEventData(nodeId, events);
     },
+    delayStart: interval * idx,
     countLimit: 300,
     timeLimit: config.flushInterval, // flush every 5 seconds
   })),

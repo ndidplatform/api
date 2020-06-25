@@ -19,6 +19,7 @@
     "@grpc/proto-loader": "^0.3.0",
     "ajv": "^6.4.0",
     "asn1.js": "^5.0.1",
+    "base64url": "^3.0.1",
     "bigint-buffer": "^1.1.5",
     "body-parser": "^1.18.2",
     "data-urls": "^1.1.0",

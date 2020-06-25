@@ -21,7 +21,13 @@
  */
 
 export default {
-  GET: {},
+  GET: {
+    '/config/pms/reissue_token': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+      },
+    },
+  },
   POST: {
     '/config/set': {
       body: {
@@ -29,11 +35,6 @@ export default {
         properties: {
           CALLBACK_API_VERSION: { type: 'integer', enum: [4, 5] },
         },
-      },
-    },
-    '/config/pms/reissue_token': {
-      body: {
-        $schema: 'http://json-schema.org/draft-07/schema#',
       },
     },
   },

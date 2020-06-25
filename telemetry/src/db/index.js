@@ -93,7 +93,7 @@ export default class PMSDb {
 
     this.dbs = new Object();
     channels.forEach(channelInfo => {
-      const { id, type, onCreated } = channelInfo; 
+      const { id, type, onCreated, delayStart } = channelInfo;
 
       let db;
       if (type === "key-value") {
@@ -107,19 +107,21 @@ export default class PMSDb {
           countLimit,
         });
 
-        const buffer = new TriggerTimeout(
-          async () => db.onReadEvent(onDataReceived),
-          {
-            countLimit,
-            timeLimit,
-          },
-        );
+        setTimeout(() => {
+          const buffer = new TriggerTimeout(
+            async () => db.onReadEvent(onDataReceived),
+            {
+              countLimit,
+              timeLimit,
+            },
+          );
 
-        // subscribe for event counter
-        // this.client.subscribe(channelName, (data) => (data != undefined) && buffer.increaseCounter());
+          // subscribe for event counter
+          // this.client.subscribe(channelName, (data) => (data != undefined) && buffer.increaseCounter());
 
-        // initial trigger
-        buffer.trigger();
+          // initial trigger
+          buffer.trigger();
+        }, delayStart);
       } else {
         throw `undefined db type ${type}`
       }

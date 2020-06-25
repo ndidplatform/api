@@ -15,9 +15,9 @@ killgroup(){
 # nohup redis-server --port 6380 > redis_2.log &
 # nohup redis-server --port 6381 > redis_3.log &
 
-docker run --rm -p 6379:6379 --name ndid_redis_1 redis:4-alpine &
-docker run --rm -p 6380:6379 --name ndid_redis_2 redis:4-alpine &
-docker run --rm -p 6381:6379 --name ndid_redis_3 redis:4-alpine &
+docker run --rm -p 6379:6379 --name ndid_redis_1 redis:5-alpine &
+docker run --rm -p 6380:6379 --name ndid_redis_2 redis:5-alpine &
+docker run --rm -p 6381:6379 --name ndid_redis_3 redis:5-alpine &
 
 cd mq-server
 
@@ -82,6 +82,7 @@ SERVER_PORT=8100 \
 NODE_ID=idp1 \
 USE_EXTERNAL_CRYPTO_SERVICE=true \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
+ENABLE_PMS_LOGGING=true \
 node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \

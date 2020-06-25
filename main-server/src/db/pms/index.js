@@ -44,6 +44,10 @@ export async function close() {
   });
 }
 
+function getRedis() {
+  return getRedisInstance().redis; 
+}
+
 export async function addNewRequestEvent(nodeId, {
   request_id,
   node_id,
@@ -51,7 +55,7 @@ export async function addNewRequestEvent(nodeId, {
   timestamp,
 }) {
   try {
-    await redisInstance.xadd(`request_channel:${nodeId}`, '*',
+    await getRedis().xadd(`request_channel:${nodeId}`, '*',
       'request_id', request_id,
       'node_id', node_id,
       'state', state,
@@ -64,7 +68,7 @@ export async function addNewRequestEvent(nodeId, {
 
 export async function addNewToken(nodeId, token) {
   try {
-    await redisInstance.setKey(`token:${nodeId}`, token);
+    await getRedis().set(`token:${nodeId}`, token);
   } catch (err) {
     logger.error({ err });
   }
