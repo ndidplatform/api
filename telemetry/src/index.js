@@ -41,7 +41,7 @@ const client = new TelemetryClient({
 const nodeIds = config.nodeIds.split(',');
 logger.info('List of monitored nodes:', nodeIds)
 
-const interval = config.flushInterval / nodeIds.length;
+const intervalPerNode = config.flushIntervalMs / nodeIds.length;
 
 // Initialize database fetching
 const db = new PMSDb([
@@ -62,8 +62,8 @@ const db = new PMSDb([
     onDataReceived: (events) => {
       return client.receiveRequestEventData(nodeId, events);
     },
-    delayStart: interval * idx,
+    delayStart: intervalPerNode * idx,
     countLimit: 300,
-    timeLimit: config.flushInterval, // flush every 5 seconds
+    timeLimit: config.flushIntervalMs, // flush every 5 seconds
   })),
 ]);

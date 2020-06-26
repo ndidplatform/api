@@ -23,8 +23,8 @@
 // required config
 [
   "NODE_ID",
-  "DB_IP",
-  "DB_PORT",
+  "PMS_DB_IP",
+  "PMS_DB_PORT",
   "TELEMETRY_NODE_IP",
   "TELEMETRY_NODE_PORT",
 ].forEach(conf => {

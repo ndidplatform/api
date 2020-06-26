@@ -250,5 +250,5 @@ export const PMSLoggingEnabled = process.env.ENABLE_PMS_LOGGING === 'true';
 export const pmsDbIp = process.env.PMS_DB_IP || dbIp;
 export const pmsDbPort = process.env.PMS_DB_PORT || dbPort;
 export const pmsDbPassword = process.env.PMS_DB_PASSWORD || dbPassword;
-export const pmsTokenGenerationIntervalSec = process.env.PMS_TOKEN_GENERATION_INTERVAL || (6 * 60 * 60);
+export const pmsTokenGenerationIntervalSec = process.env.PMS_TOKEN_TIMEOUT || (6 * 60 * 60);
 

@@ -27,16 +27,16 @@ export const env = process.env.NODE_ENV || 'development';
 
 export const nodeIds = process.env.NODE_ID;
 
-export const redisDbIp = process.env.DB_IP;
-export const redisDbPort = process.env.DB_PORT;
-export const redisDbPassword = process.env.DB_PASSWORD;
+export const redisDbIp = process.env.PMS_DB_IP;
+export const redisDbPort = process.env.PMS_DB_PORT;
+export const redisDbPassword = process.env.PMS_DB_PASSWORD;
 
 export const telemetryNodeIp = process.env.TELEMETRY_NODE_IP;
 export const telemetryNodePort = process.env.TELEMETRY_NODE_PORT;
 
 export const telemetryNodeAddress = `${telemetryNodeIp}:${telemetryNodePort}`;
 
-export const flushInterval = process.env.FLUSH_INTERVAL || 10000;
+export const flushIntervalMs = (parseInt(process.env.FLUSH_INTERVAL_SEC) || 10) * 1000;
 
 export const logLevel =
   process.env.LOG_LEVEL || (env === 'development' ? 'debug' : 'info');

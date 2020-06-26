@@ -2,6 +2,9 @@
 
 # NDID API (Node.js)
 
+## News
+- PMS telemetry documentation can be found [here](telemetry/README.md)
+
 ## Prerequisites
 
 - Node.js 12 or later (Recommended: latest version of Node.js 12 LTS)
