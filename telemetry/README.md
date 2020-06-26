@@ -48,5 +48,7 @@ npm start
 - `PMS_DB_PASSWORD`: Password of Redis DB database
 - `TELEMETRY_NODE_IP`: IP of target telemetry node server (should be given by NDID)
 - `TELEMETRY_NODE_PORT`: Port of target telemetry node server (should be given by NDID)
+- `GRPC_PING_INTERVAL_MS`: ping interval in millisecond
+- `GRPC_PING_TIMEOUT_MS`: ping timeout in millisecond
 - `FLUSH_INTERVAL_SEC`: Amount of time between each data shipping in second (default: 10 seconds)
 

@@ -36,6 +36,15 @@ export const telemetryNodePort = process.env.TELEMETRY_NODE_PORT;
 
 export const telemetryNodeAddress = `${telemetryNodeIp}:${telemetryNodePort}`;
 
+export const grpcPingInterval = process.env.GRPC_PING_INTERVAL_MS
+  ? parseInt(process.env.GRPC_PING_INTERVAL_MS)
+  : 60000;
+
+export const grpcPingTimeout = process.env.GRPC_PING_TIMEOUT_MS
+  ? parseInt(process.env.GRPC_PING_TIMEOUT_MS)
+  : 20000;
+
+
 export const flushIntervalMs = (parseInt(process.env.FLUSH_INTERVAL_SEC) || 10) * 1000;
 
 export const logLevel =
