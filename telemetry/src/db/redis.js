@@ -96,8 +96,24 @@ class RedisKVDb {
 }
 
 export default class RedisPMSDb extends Redis {
-  constructor(options) {
-    super(options);
+  constructor({ backoff, onDisconnected, onConnected }) {
+    super({
+      host: config.redisDbIp,
+      port: config.redisDbPort,
+      password: config.redisDbPassword,
+      retryStrategy: (times) => {
+        return backoff.next();
+      },
+    });
+
+    this.on('connect', () => {
+      backoff.reset();
+      onConnected();
+    });
+    this.on('error', (error) => {
+      logger.error({ error });
+      onDisconnected();
+    });
   }
 
   createKVChannel(channelName) {

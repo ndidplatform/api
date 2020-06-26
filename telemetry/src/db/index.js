@@ -21,6 +21,7 @@
  */
 import RedisPMSDb from './redis';
 import * as config from '../config';
+import { ExponentialBackoff } from 'simple-backoff';
 
 class TriggerTimeout {
   constructor(triggerFn, options = {}) {
@@ -85,10 +86,19 @@ export default class PMSDb {
     a number of events before timer is trigger
   */
   constructor(channels) {
+    this.backoff = new ExponentialBackoff({
+      min: 1000,
+      max: 15000,
+      factor: 2,
+      jitter: 0,
+    });
+
+    this.connected = false;
+
     this.client = new RedisPMSDb({
-      host: config.redisDbIp,
-      port: config.redisDbPort,
-      password: config.redisDbPassword,
+      backoff: this.backoff,
+      onConnected: () => this.onConnected(),
+      onDisconnected: () => this.onDisconnected(),
     });
 
     this.dbs = new Object();
@@ -109,7 +119,7 @@ export default class PMSDb {
 
         setTimeout(() => {
           const buffer = new TriggerTimeout(
-            async () => db.onReadEvent(onDataReceived),
+            async () => (this.connected && db.onReadEvent(onDataReceived)),
             {
               countLimit,
               timeLimit,
@@ -132,6 +142,14 @@ export default class PMSDb {
         onCreated(db);
       }
     });
+  }
+
+  onConnected() {
+    this.connected = true;
+  }
+
+  onDisconnected() {
+    this.connected = false;
   }
 };
 
