@@ -35,7 +35,7 @@ const logger = initLogger({
   // logFormat: config.logFormat,
   logPrettyPrint: config.logPrettyPrint,
   logColor: config.logColor,
-  // logOneLine: config.logOneLine,
+  logOneLine: config.logOneLine,
   // replaceForTooLongLog: config.replaceForTooLongLog,
   // logLengthThreshold: config.logLengthThreshold,
 });

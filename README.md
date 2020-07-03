@@ -55,6 +55,7 @@
 - `LOG_LEVEL`: *Description below*
 - `LOG_PRETTY_PRINT`: *Description below*
 - `LOG_COLOR`: *Description below*
+- `LOG_ONE_LINE`: *Description below*
 - `PROMETHEUS`
 - `PROMETHEUS_SERVER_PORT`
 - `PROMETHEUS_HTTPS`
@@ -103,6 +104,7 @@
 - `LOG_LEVEL`: Log level. Allowed values are `fatal`, `error`, `warn`, `info`, `debug` and `trace` [Default: `debug` in development, `info` in production]
 - `LOG_PRETTY_PRINT`: Log prettifier (easy to read format). If not set to `true`, log will be in JSON format [Default: `true` in development, `false` otherwise]
 - `LOG_COLOR`: Log highlight color [Default: `true` in development, `false` otherwise]
+- `LOG_ONE_LINE`: Log one-line pretty print when `LOG_PRETTY_PRINT` is set to `true` [Default: `false`]
 - `CLIENT_HTTP_ERROR_CODE`: HTTP error code when responding a client error [Default: `400`]
 - `SERVER_HTTP_ERROR_CODE`: HTTP error code when responding a server error [Default: `500`]
 - `USE_EXTERNAL_CRYPTO_SERVICE`: Use external service for decrypting and signing (e.g. HSM) [Default: `false`]
