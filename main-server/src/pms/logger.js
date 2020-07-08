@@ -86,6 +86,10 @@ export default class PMSLogger {
    */
   async logRequestEvent(request_id, node_id, state) {
     if (!this.enable) return;
+    if (!(1 <= state && state <= 17)) {
+      throw "Invalid state";
+    }
+
     const data = {
       request_id,
       node_id,

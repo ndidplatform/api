@@ -58,7 +58,7 @@ const db = new PMSDb([
   ...nodeIds.map((nodeId, idx) => ({
     id: `request-event-stream:${nodeId}`,
     type: "stream",
-    channelName: `request_channel:${nodeId}`,
+    channelName: `${nodeId}:request-events`,
     onDataReceived: (events) => {
       return client.receiveRequestEventData(nodeId, events);
     },

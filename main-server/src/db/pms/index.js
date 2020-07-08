@@ -55,7 +55,7 @@ export async function addNewRequestEvent(nodeId, {
   timestamp,
 }) {
   try {
-    await getRedis().xadd(`request_channel:${nodeId}`, '*',
+    await getRedis().xadd(`${nodeId}:request-events`, '*',
       'request_id', request_id,
       'node_id', node_id,
       'state', state,
