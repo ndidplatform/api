@@ -618,7 +618,7 @@ export default {
         ],
       },
     },
-    '/identity/:namespace/:identifier/accessors_revoke': {
+    '/identity/:namespace/:identifier/accessor_revoke': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
@@ -631,7 +631,7 @@ export default {
         required: ['reference_id', 'callback_url', 'accessor_id'],
       },
     },
-    '/identity/:namespace/:identifier/accessors_revoke_and_add': {
+    '/identity/:namespace/:identifier/accessor_revoke_and_add': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {

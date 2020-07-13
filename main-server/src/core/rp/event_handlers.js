@@ -283,27 +283,40 @@ export async function processRequestUpdate(
       retry: true,
     });
 
-    if (
-      !requestDetail.closed &&
-      !requestDetail.timed_out &&
-      (requestStatus === 'errored' ||
-        (requestStatus === 'completed' &&
-          (requestDetail.mode === 1 ||
-            ((requestDetail.mode === 2 || requestDetail.mode === 3) &&
-              isAllIdpResponsesValid(responseValidList, requestDetail)))))
-    ) {
-      logger.debug({
-        message: 'Automatically closing request',
-        requestId,
-      });
-      await common.closeRequest(
-        { node_id: nodeId, request_id: requestId },
-        {
-          synchronous: false,
-          sendCallbackToClient: false,
-          saveForRetryOnChainDisabled: true,
+    if (!requestDetail.closed && !requestDetail.timed_out) {
+      let autoCloseRequest = false;
+      if (
+        (requestStatus === 'completed' && config.autoCloseRequestOnCompleted) ||
+        (requestStatus === 'rejected' && config.autoCloseRequestOnRejected) ||
+        (requestStatus === 'complicated' &&
+          config.autoCloseRequestOnComplicated)
+      ) {
+        if (
+          requestDetail.mode === 1 ||
+          ((requestDetail.mode === 2 || requestDetail.mode === 3) &&
+            isAllIdpResponsesValid(responseValidList, requestDetail))
+        ) {
+          autoCloseRequest = true;
         }
-      );
+      }
+      if (requestStatus === 'errored' && config.autoCloseRequestOnErrored) {
+        autoCloseRequest = true;
+      }
+
+      if (autoCloseRequest) {
+        logger.debug({
+          message: 'Automatically closing request',
+          requestId,
+        });
+        await common.closeRequest(
+          { node_id: nodeId, request_id: requestId },
+          {
+            synchronous: false,
+            sendCallbackToClient: false,
+            saveForRetryOnChainDisabled: true,
+          }
+        );
+      }
     }
   }
 

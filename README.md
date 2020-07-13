@@ -58,6 +58,7 @@
 - `LOG_LEVEL`: *Description below*
 - `LOG_PRETTY_PRINT`: *Description below*
 - `LOG_COLOR`: *Description below*
+- `LOG_ONE_LINE`: *Description below*
 - `PROMETHEUS`
 - `PROMETHEUS_SERVER_PORT`
 - `PROMETHEUS_HTTPS`
@@ -106,9 +107,14 @@
 - `LOG_LEVEL`: Log level. Allowed values are `fatal`, `error`, `warn`, `info`, `debug` and `trace` [Default: `debug` in development, `info` in production]
 - `LOG_PRETTY_PRINT`: Log prettifier (easy to read format). If not set to `true`, log will be in JSON format [Default: `true` in development, `false` otherwise]
 - `LOG_COLOR`: Log highlight color [Default: `true` in development, `false` otherwise]
+- `LOG_ONE_LINE`: Log one-line pretty print when `LOG_PRETTY_PRINT` is set to `true` [Default: `false`]
 - `CLIENT_HTTP_ERROR_CODE`: HTTP error code when responding a client error [Default: `400`]
 - `SERVER_HTTP_ERROR_CODE`: HTTP error code when responding a server error [Default: `500`]
 - `USE_EXTERNAL_CRYPTO_SERVICE`: Use external service for decrypting and signing (e.g. HSM) [Default: `false`]
+- `AUTO_CLOSE_REQUEST_ON_COMPLETED`: Automatically close a request as soon as status is `completed` (and when all IdP response signatures are valid in mode 2 and 3). (For RP role) [Default: `true`]
+- `AUTO_CLOSE_REQUEST_ON_REJECTED`: Automatically close a request as soon as status is `rejected` (and when all IdP response signatures are valid in mode 2 and 3). (For RP role) [Default: `false`]
+- `AUTO_CLOSE_REQUEST_ON_COMPLICATED`: Automatically close a request as soon as status is `complicated` (and when all IdP response signatures are valid in mode 2 and 3). (For RP role) [Default: `false`]
+- `AUTO_CLOSE_REQUEST_ON_ERRORED`: Automatically close a request as soon as status is `errored`. (For RP role) [Default: `true`]
 - `HTTPS`: Use HTTPS server [Default: `false`]
 - `HTTPS_KEY_PATH`: HTTPS private key file path. Required when HTTPS=true [Default: pre-generated development key]
 - `HTTPS_CERT_PATH`: HTTPS certificate file path. Required when HTTPS=true [Default: pre-generated development cert]

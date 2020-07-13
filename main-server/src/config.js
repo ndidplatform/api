@@ -71,7 +71,7 @@ export const logColor =
   process.env.LOG_COLOR == null
     ? env === 'development'
     : process.env.LOG_COLOR === 'true';
-// export const logOneLine = process.env.LOG_ONE_LINE === 'true';
+export const logOneLine = process.env.LOG_ONE_LINE === 'true';
 // export const logDirectoryPath =
 //   process.env.LOG_DIRECTORY_PATH || path.join(__dirname, '..', 'log');
 
@@ -153,6 +153,23 @@ export const nodeBehindProxyMasterPrivateKeyDirectoryPath = useExternalCryptoSer
     env === 'development'
   ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
   : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH;
+
+export const autoCloseRequestOnCompleted =
+  process.env.AUTO_CLOSE_REQUEST_ON_COMPLETED != null
+    ? process.env.AUTO_CLOSE_REQUEST_ON_COMPLETED === 'true'
+    : true;
+export const autoCloseRequestOnRejected =
+  process.env.AUTO_CLOSE_REQUEST_ON_REJECTED != null
+    ? process.env.AUTO_CLOSE_REQUEST_ON_REJECTED === 'true'
+    : false;
+export const autoCloseRequestOnComplicated =
+  process.env.AUTO_CLOSE_REQUEST_ON_COMPLICATED != null
+    ? process.env.AUTO_CLOSE_REQUEST_ON_COMPLICATED === 'true'
+    : false;
+export const autoCloseRequestOnErrored =
+  process.env.AUTO_CLOSE_REQUEST_ON_ERRORED != null
+    ? process.env.AUTO_CLOSE_REQUEST_ON_ERRORED === 'true'
+    : true;
 
 //in byte
 export const saltLength = 16;

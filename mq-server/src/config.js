@@ -81,7 +81,7 @@ export const logColor =
   process.env.LOG_COLOR == null
     ? env === 'development'
     : process.env.LOG_COLOR === 'true';
-// export const logOneLine = process.env.LOG_ONE_LINE === 'true';
+export const logOneLine = process.env.LOG_ONE_LINE === 'true';
 // export const logDirectoryPath =
 //   process.env.LOG_DIRECTORY_PATH || path.join(__dirname, '..', 'log');
 

@@ -1,5 +1,32 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+FEATURES:
+
+- `LOG_ONE_LINE` environment variable option for one-line pretty print when `LOG_PRETTY_PRINT` is set to `true`.
+
+## 4.1.0 (June 28, 2020)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+IMPROVEMENTS:
+
+- [Main] Add new environment variable options for RP role
+  - `AUTO_CLOSE_REQUEST_ON_COMPLETED`: Automatically close a request as soon as status is `completed` (and when all IdP response signatures are valid in mode 2 and 3). Default to `true`.
+  - `AUTO_CLOSE_REQUEST_ON_REJECTED`: Automatically close a request as soon as status is `rejected` (and when all IdP response signatures are valid in mode 2 and 3). Default to `false`.
+  - `AUTO_CLOSE_REQUEST_ON_COMPLICATED`: Automatically close a request as soon as status is `complicated` (and when all IdP response signatures are valid in mode 2 and 3). Default to `false`.
+  - `AUTO_CLOSE_REQUEST_ON_ERRORED`: Automatically close a request as soon as status is `errored`. Default to `true`. **To maintain the same flow behavior as v3.x.x or lower (API spec v4 or lower users), set this config to `false`.**
+
+BUG FIXES:
+
+- Fix `/identity/:namespace/:identifier/accessors_revoke` and `/identity/:namespace/:identifier/accessors_revoke_and_add` APIs error due to missing schema for validation.
+- Fix duplicate MQ messages check timeout. (Set to more than send retry timeout.)
+- Fix process queue start trigger in request process queue manager.
+- Fix error when creating request with non-existent RP node ID (by proxy).
+
 ## 4.0.1 (May 20, 2020)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_

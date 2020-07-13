@@ -35,6 +35,7 @@ function bufferToJSONForLogger() {
  * @param {string} config.logLevel
  * @param {boolean} config.logPrettyPrint
  * @param {boolean} config.logColor
+ * @param {boolean} config.logOneLine
  * @param {string} config.replaceForTooLongLog // Remove?
  * @param {number} config.logLengthThreshold // Remove?
  * @returns {Object} logger
@@ -58,6 +59,11 @@ function initLogger(config) {
             Buffer.prototype.toJSON = bufferToJSONForLogger;
             const result = pretty(inputData);
             Buffer.prototype.toJSON = tmp;
+
+            if (config.logOneLine) {
+              return result.replace(/\r?\n|\r/g, ' ') + '\n';
+            }
+
             return result;
           };
         }
