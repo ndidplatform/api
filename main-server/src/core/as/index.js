@@ -377,7 +377,7 @@ async function getDataAndSendBackToRP(
   });
 
   // log request event: AS_QUERIES_DATA
-  PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_QUERIES_DATA);
+  PMSLogger.logRequestEvent(request.requestId, nodeId, REQUEST_EVENTS.AS_QUERIES_DATA);
 
   await Promise.all(
     request.service_data_request_list.map(async (serviceData) => {

@@ -48,7 +48,7 @@ const db = new PMSDb([
   { // database for token fetching
     id: "token-db",
     type: "key-value",
-    keyPrefix: "token",
+    keySuffix: "token",
     onCreated: (db) => {
       tokenManager.setGetToken(async (nodeId) => {
         return await db.getKey(nodeId);

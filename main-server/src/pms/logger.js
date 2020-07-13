@@ -24,7 +24,6 @@ import base64url from 'base64url';
 
 import * as pmsDb from '../db/pms'
 import logger from '../logger.js'
-import * as cryptoUtils from '../utils/crypto';
 import * as utils from '../utils';
 import * as config from '../config';
 
@@ -87,7 +86,7 @@ export default class PMSLogger {
   async logRequestEvent(request_id, node_id, state) {
     if (!this.enable) return;
     if (!(1 <= state && state <= 17)) {
-      throw "Invalid state";
+      throw 'Invalid state';
     }
 
     const data = {
@@ -97,14 +96,14 @@ export default class PMSLogger {
       timestamp: this.getCurrentTime(),
     };
 
-    await pmsDb.addNewRequestEvent(node_id, JSON.stringify(data));
+    await pmsDb.addNewRequestEvent(node_id, data);
   }
 
   // TOKEN Generation Module
   async createJWT(payload) {
     const header = {
-      "type": "JWT",
-      "alg": "RS256",
+      'type': 'JWT',
+      'alg': 'RS256',
     };
 
     const headerJSON = JSON.stringify(header);
@@ -132,7 +131,7 @@ export default class PMSLogger {
   ) {
     if (!this.enable) return;
 
-    logger.info("Generating new PMS token");
+    logger.info('Generating new PMS token');
 
     const timeNow = Math.floor(Date.now() / 1000);
     const timePadding = 60 * 60; // an hour padding
@@ -149,7 +148,7 @@ export default class PMSLogger {
     const jwt = await this.createJWT(payload);
     await pmsDb.addNewToken(config.nodeId, jwt);
 
-    logger.info("Finish generating PMS token");
+    logger.info('Finish generating PMS token');
     this.tokenGenerationRetryCount = 0;
   }
 
@@ -168,11 +167,11 @@ export default class PMSLogger {
     try {
       await this.generateToken(this.tokenTimeoutSec, {
         ...this.tokenInfo,
-        "token-type": "auto-generated",
+        'token-type': 'auto-generated',
       });
     } catch (err) {
       logger.error({
-        msg: "Failed to generate PMS token, retry in 10 seconds",
+        msg: 'Failed to generate PMS token, retry in 10 seconds',
         err,
       });
 
@@ -202,8 +201,8 @@ export default class PMSLogger {
     if (!this.enable) return;
     await this.generateToken(this.tokenTimeoutSec, {
       ...this.tokenInfo,
-      "token-type": "manually-generated",
-    })
+      'token-type': 'manually-generated',
+    });
   }
 }
 

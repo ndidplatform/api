@@ -68,7 +68,7 @@ export async function addNewRequestEvent(nodeId, {
 
 export async function addNewToken(nodeId, token) {
   try {
-    await getRedis().set(`token:${nodeId}`, token);
+    await getRedis().set(`${nodeId}:token`, token);
   } catch (err) {
     logger.error({ err });
   }

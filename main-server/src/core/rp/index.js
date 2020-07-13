@@ -35,6 +35,7 @@ import privateMessageType from '../../mq/message/type';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
+import PMSLogger, { REQUEST_EVENTS } from '../../pms';
 
 import * as config from '../../config';
 import { role } from '../../node';

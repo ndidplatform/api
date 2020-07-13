@@ -77,21 +77,21 @@ class RedisStreamChannel {
 }
 
 class RedisKVDb {
-  constructor(redis, prefix) {
+  constructor(redis, suffix) {
     this.redis = redis;
-    this.prefix = prefix;
+    this.suffix = suffix;
   }
 
   async getKey(key) {
     try {
-      return await this.redis.get(`${this.prefix}:${key}`);
+      return await this.redis.get(`${key}:${this.suffix}`);
     } catch (e) {
       return undefined;
     }
   }
 
   async setKey(key, value) {
-    return await this.redis.get(`${this.prefix}:${key}`, value);
+    return await this.redis.set(`${key}:${this.suffix}`, value);
   }
 }
 

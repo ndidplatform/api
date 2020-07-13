@@ -107,8 +107,8 @@ export default class PMSDb {
 
       let db;
       if (type === "key-value") {
-        const { keyPrefix } = channelInfo;
-        db = this.client.createKVChannel(keyPrefix);
+        const { keySuffix } = channelInfo;
+        db = this.client.createKVChannel(keySuffix);
 
       } else if (type === "stream") {
         const { channelName, onDataReceived, countLimit, timeLimit } = channelInfo;

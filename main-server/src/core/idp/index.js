@@ -24,7 +24,7 @@ import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
-import PMSLogger from '../../pms';
+import PMSLogger, { REQUEST_EVENTS } from '../../pms';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';

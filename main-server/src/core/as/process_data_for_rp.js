@@ -70,7 +70,7 @@ export async function processDataForRP(
 
   try {
     // log request event: AS_RECEIVES_QUERIED_DATA
-    PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA);
+    PMSLogger.logRequestEvent(requestId, node_id, REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA);
 
     const requestDetail = await tendermintNdid.getRequestDetail({
       requestId,
