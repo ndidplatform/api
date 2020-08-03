@@ -78,11 +78,12 @@ if (
   process.env.LOG_LEVEL !== 'warn' &&
   process.env.LOG_LEVEL !== 'info' &&
   process.env.LOG_LEVEL !== 'debug' &&
-  process.env.LOG_LEVEL !== 'trace'
+  process.env.LOG_LEVEL !== 'trace' &&
+  process.env.LOG_LEVEL !== 'silent'
 ) {
   console.error(
     'ERROR:',
-    'Unsupported "LOG_LEVEL" environment variable value. Only "fatal", "error", "warn", "info", "debug", and "trace" are allowed. Process will now exit.'
+    'Unsupported "LOG_LEVEL" environment variable value. Only "fatal", "error", "warn", "info", "debug", "trace", and "silent" are allowed. Process will now exit.'
   );
   process.exit(1);
 }
