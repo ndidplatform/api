@@ -101,7 +101,7 @@
 - `DB_IP`: IP address of DB (redis) server [Default: `localhost`]
 - `DB_PORT`: Port of DB (redis) server [Default: `6379`]
 - `DB_PASSWORD`: Authentication password for DB (redis) connection
-- `LOG_LEVEL`: Log level. Allowed values are `fatal`, `error`, `warn`, `info`, `debug` and `trace` [Default: `debug` in development, `info` in production]
+- `LOG_LEVEL`: Log level. Allowed values are `fatal`, `error`, `warn`, `info`, `debug`, `trace`, and `silent` [Default: `debug` in development, `info` in production]
 - `LOG_PRETTY_PRINT`: Log prettifier (easy to read format). If not set to `true`, log will be in JSON format [Default: `true` in development, `false` otherwise]
 - `LOG_COLOR`: Log highlight color [Default: `true` in development, `false` otherwise]
 - `LOG_ONE_LINE`: Log one-line pretty print when `LOG_PRETTY_PRINT` is set to `true` [Default: `false`]
