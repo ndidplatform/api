@@ -59,8 +59,12 @@ export async function processAsResponse({
     return;
   }
 
+  // TODO: confirm with NDID whether to include error responses
   // log request event: RP_RECEIVES_DATA
-  PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_RECEIVES_DATA);
+  PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_RECEIVES_DATA, {
+    as_node_id: asNodeId,
+    service_id: serviceId,
+  });
 
   const signatureFromBlockchain = await tendermintNdid.getDataSignature({
     request_id: requestId,
@@ -100,9 +104,6 @@ export async function processAsResponse({
   }
 
   try {
-    // log request event: RP_ACCEPTS_DATA
-    PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_ACCEPTS_DATA);
-
     await tendermintNdid.setDataReceived(
       {
         requestId,
@@ -163,6 +164,12 @@ export async function processAsDataAfterSetDataReceived(
   if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
+
+    // log request event: RP_ACCEPTS_DATA
+    PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_ACCEPTS_DATA, {
+      as_node_id: asNodeId,
+      service_id: serviceId,
+    });
 
     await cacheDb.addDataFromAS(nodeId, requestId, {
       source_node_id: asNodeId,

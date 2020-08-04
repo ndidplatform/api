@@ -197,9 +197,6 @@ export async function sendRequestToAS(nodeId, requestData, height) {
   if (requestData.data_request_list == null) return;
   if (requestData.data_request_list.length === 0) return;
 
-  // log request event: RP_REQUESTS_AS_DATA
-  PMSLogger.logRequestEvent(requestData.request_id, nodeId, REQUEST_EVENTS.RP_REQUESTS_AS_DATA);
-
   const [requestCreationMetadata, responsePrivateDataList] = await Promise.all([
     cacheDb.getRequestCreationMetadata(nodeId, requestData.request_id),
     cacheDb.getResponsePrivateDataListForRequest(
@@ -283,6 +280,11 @@ export async function sendRequestToAS(nodeId, requestData, height) {
           },
           senderNodeId: nodeId,
           onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+            // log request event: RP_REQUESTS_AS_DATA
+            PMSLogger.logRequestEvent(requestData.request_id, nodeId, REQUEST_EVENTS.RP_REQUESTS_AS_DATA, {
+              as_node_id: receiverNodeId,
+            });
+
             nodeCallback.notifyMessageQueueSuccessSend({
               nodeId,
               getCallbackUrlFnName:
@@ -311,7 +313,7 @@ export async function processMessage(nodeId, messageId, message) {
     if (message.type === privateMessageType.IDP_RESPONSE) {
       // log request event: RP_RECEIVES_RESPONSE
       PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_RECEIVES_RESPONSE, {
-        idp_id: message.idp_id,
+        idp_node_id: message.idp_id,
       });
 
       const requestData = await cacheDb.getRequestData(

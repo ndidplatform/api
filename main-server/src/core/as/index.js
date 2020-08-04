@@ -271,10 +271,7 @@ export async function afterGotDataFromCallback(
   { error, response, body },
   additionalData
 ) {
-  const { nodeId, requestId } = additionalData;
-
-  // log request event: AS_RECEIVES_QUERIED_DATA
-  PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA);
+  const { nodeId } = additionalData;
 
   try {
     if (error) throw error;
@@ -376,9 +373,6 @@ async function getDataAndSendBackToRP(
     responseDetails,
   });
 
-  // log request event: AS_QUERIES_DATA
-  PMSLogger.logRequestEvent(request.requestId, nodeId, REQUEST_EVENTS.AS_QUERIES_DATA);
-
   await Promise.all(
     request.service_data_request_list.map(async (serviceData) => {
       let { service_id, request_params } = serviceData;
@@ -438,6 +432,11 @@ async function getDataAndSendBackToRP(
           requestId: request.request_id,
           serviceId: service_id,
         },
+      });
+
+      // log request event: AS_QUERIES_DATA
+      PMSLogger.logRequestEvent(request.requestId, nodeId, REQUEST_EVENTS.AS_QUERIES_DATA, {
+        service_id,
       });
     })
   );

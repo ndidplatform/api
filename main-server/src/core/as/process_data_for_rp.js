@@ -69,9 +69,6 @@ export async function processDataForRP(
   }
 
   try {
-    // log request event: AS_RECEIVES_QUERIED_DATA
-    PMSLogger.logRequestEvent(requestId, node_id, REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA);
-
     const requestDetail = await tendermintNdid.getRequestDetail({
       requestId,
     });
@@ -109,6 +106,11 @@ export async function processDataForRP(
         errorType: errorType.SERVICE_ID_NOT_FOUND_IN_REQUEST,
       });
     }
+
+    // log request event: AS_RECEIVES_QUERIED_DATA
+    PMSLogger.logRequestEvent(requestId, node_id, REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA, {
+      service_id: serviceId,
+    });
 
     const dataRequestId = requestId + ':' + serviceId;
     const savedRpId = await cacheDb.getRpIdFromDataRequestId(
@@ -211,9 +213,6 @@ async function processDataForRPInternalAsync(
   { nodeId, savedRpId }
 ) {
   try {
-    // log request event: AS_LOGS_HASH_DATA
-    PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_LOGS_HASH_DATA);
-
     let data_salt;
     let signature;
     if (error_code == null) {
@@ -345,6 +344,11 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
   try {
     if (error) throw error;
 
+    // log request event: AS_LOGS_HASH_DATA
+    PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_LOGS_HASH_DATA, {
+      service_id: serviceId,
+    });
+
     if (!rpId) {
       rpId = savedRpId;
     }
@@ -431,9 +435,6 @@ async function sendDataToRP(nodeId, rpId, data) {
     });
   }
 
-  // log request event: AS_SENDS_DATA_TO_RP
-  PMSLogger.logRequestEvent(data.request_id, nodeId, REQUEST_EVENTS.AS_SENDS_DATA_TO_RP);
-
   let receivers;
   if (nodeInfo.proxy != null) {
     if (nodeInfo.proxy.mq == null || nodeInfo.proxy.mq.length === 0) {
@@ -493,6 +494,11 @@ async function sendDataToRP(nodeId, rpId, data) {
     },
     senderNodeId: nodeId,
     onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+      // log request event: AS_SENDS_DATA_TO_RP
+      PMSLogger.logRequestEvent(data.request_id, nodeId, REQUEST_EVENTS.AS_SENDS_DATA_TO_RP, {
+        service_id: data.service_id,
+      });
+
       nodeCallback.notifyMessageQueueSuccessSend({
         nodeId,
         getCallbackUrlFnName:

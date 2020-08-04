@@ -119,9 +119,6 @@ async function closeRequestInternalAsync(
       nodeIds[responseValidList[i].idp_id] = true;
     }
 
-    // log request event: RP_CLOSES_REQUEST
-    PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CLOSES_REQUEST);
-
     if (!synchronous) {
       await tendermintNdid.closeRequest(
         {
@@ -211,6 +208,9 @@ export async function closeRequestInternalAsyncAfterBlockchain(
   if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
+
+    // log request event: RP_CLOSES_REQUEST
+    PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CLOSES_REQUEST);
 
     removeTimeoutScheduler(node_id, request_id);
 

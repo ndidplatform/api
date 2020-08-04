@@ -166,9 +166,6 @@ export async function notifyIncomingRequestByCallback(
     return;
   }
 
-  // log request event: IDP_NOTIFIES_USER
-  PMSLogger.logRequestEvent(eventDataForCallback.request_id, nodeId, REQUEST_EVENTS.IDP_NOTIFIES_USER);
-
   await callbackToClient({
     getCallbackUrlFnName: 'idp.getIncomingRequestCallbackUrl',
     body: {
@@ -180,6 +177,9 @@ export async function notifyIncomingRequestByCallback(
     shouldRetry: 'common.isRequestClosedOrTimedOut',
     shouldRetryArguments: [eventDataForCallback.request_id],
   });
+
+  // log request event: IDP_NOTIFIES_USER
+  PMSLogger.logRequestEvent(eventDataForCallback.request_id, nodeId, REQUEST_EVENTS.IDP_NOTIFIES_USER);
 }
 
 function checkReceiverIntegrity(requestId, requestDetail, nodeId) {

@@ -53,13 +53,20 @@ export async function addNewRequestEvent(nodeId, {
   node_id,
   state,
   timestamp,
+  additional_data,
 }) {
   try {
+    let additionalData = [];
+    if (additional_data != null) {
+      additionalData = ['additional_data', JSON.stringify(additional_data)];
+    }
+
     await getRedis().xadd(`${nodeId}:request-events`, '*',
       'request_id', request_id,
       'node_id', node_id,
       'state', state,
       'timestamp', timestamp,
+      ...additionalData,
     );
   } catch (err) {
     logger.error({ err });

@@ -83,7 +83,7 @@ export default class PMSLogger {
   /*
    * logRequestEvent saves the information regarding requestID
    */
-  async logRequestEvent(request_id, node_id, state) {
+  async logRequestEvent(request_id, node_id, state, additional_data) {
     if (!this.enable) return;
     if (!(1 <= state && state <= 17)) {
       throw 'Invalid state';
@@ -94,6 +94,7 @@ export default class PMSLogger {
       node_id,
       state,
       timestamp: this.getCurrentTime(),
+      additional_data,
     };
 
     await pmsDb.addNewRequestEvent(node_id, data);

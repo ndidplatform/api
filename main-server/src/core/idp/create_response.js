@@ -312,9 +312,6 @@ export async function createResponseInternal(
       signature,
     };
 
-    // log request event: IDP_CREATES_RESPONSE
-    PMSLogger.logRequestEvent(request_id, nodeId, REQUEST_EVENTS.IDP_CREATES_RESPONSE);
-
     await tendermintNdid.createIdpResponse(
       dataToBlockchain,
       nodeId,
@@ -423,10 +420,9 @@ export async function createResponseAfterBlockchain(
   if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
-
-    // log request event: IDP_RESPONDS_TO_RP
-    PMSLogger.logRequestEvent(request_id, nodeId, REQUEST_EVENTS.IDP_RESPONDS_TO_RP);
-
+    // log request event: IDP_CREATES_RESPONSE
+    PMSLogger.logRequestEvent(request_id, nodeId, REQUEST_EVENTS.IDP_CREATES_RESPONSE);
+    
     await sendResponseToRP({
       nodeId,
       request_id,
@@ -556,6 +552,9 @@ async function sendResponseToRP({
     },
     senderNodeId: nodeId,
     onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+      // log request event: IDP_RESPONDS_TO_RP
+      PMSLogger.logRequestEvent(request_id, nodeId, REQUEST_EVENTS.IDP_RESPONDS_TO_RP);
+
       nodeCallback.notifyMessageQueueSuccessSend({
         nodeId,
         getCallbackUrlFnName:

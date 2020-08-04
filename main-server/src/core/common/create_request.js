@@ -642,9 +642,6 @@ async function createRequestInternalAsync(
       purpose,
     };
 
-    // log request event: RP_CREATES_REQUEST
-    PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CREATES_REQUEST);
-
     if (!synchronous) {
       await tendermintNdid.createRequest(
         requestDataToBlockchain,
@@ -764,6 +761,9 @@ export async function createRequestInternalAsyncAfterBlockchain(
   try {
     if (error) throw error;
 
+    // log request event: RP_CREATES_REQUEST
+    PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CREATES_REQUEST);
+
     const creation_time = Date.now();
 
     await cacheDb.setRequestCreationMetadata(node_id, request_id, {
@@ -809,6 +809,11 @@ export async function createRequestInternalAsyncAfterBlockchain(
           message: mqMessageWithSid,
           senderNodeId: node_id,
           onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+            // log request event: RP_SENDS_REQUEST_ID_TO_IDP
+            PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_SENDS_REQUEST_ID_TO_IDP, {
+              idp_node_id: receiverNodeId,
+            });
+
             nodeCallback.notifyMessageQueueSuccessSend({
               nodeId: node_id,
               getCallbackUrlFnName:
@@ -840,6 +845,11 @@ export async function createRequestInternalAsyncAfterBlockchain(
             message: mqMessageWithRefGroupCode,
             senderNodeId: node_id,
             onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+              // log request event: RP_SENDS_REQUEST_ID_TO_IDP
+              PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_SENDS_REQUEST_ID_TO_IDP, {
+                idp_node_id: receiverNodeId,
+              });
+
               nodeCallback.notifyMessageQueueSuccessSend({
                 nodeId: node_id,
                 getCallbackUrlFnName:
@@ -853,9 +863,6 @@ export async function createRequestInternalAsyncAfterBlockchain(
           });
         }
       }
-
-      // log request event: RP_SENDS_REQUEST_ID_TO_IDP
-      PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_SENDS_REQUEST_ID_TO_IDP);
 
       await Promise.all(mqSendPromises);
     }
