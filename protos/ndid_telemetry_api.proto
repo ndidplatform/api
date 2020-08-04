@@ -53,6 +53,7 @@ message SendRequestTimestampRequest {
     string request_id = 1;
     uint32 state = 2;
     uint32 timestamp = 3;
+    string additional_data = 4;
   }
 
   RequestMetadata request_metadata = 1;
