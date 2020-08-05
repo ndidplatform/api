@@ -38,8 +38,8 @@ message SendDataParams {
 message SendDataResponse {
   enum ResponseCode {
     OK = 0;
-    INVALID_TOKEN = 1;
-    INTERNAL_ERROR = 2;
+    INTERNAL_ERROR = 1;
+    INVALID_TOKEN = 2;
   }
 
   ResponseCode code = 1;
@@ -51,8 +51,8 @@ message Empty {}
 message SendRequestTimestampRequest {
   message RequestTimestamp {
     string request_id = 1;
-    uint32 state = 2;
-    uint32 timestamp = 3;
+    int32 state_code = 2;
+    int64 source_timestamp = 3;
     string additional_data = 4;
   }
 
@@ -72,10 +72,9 @@ message SendSystemLogRequest {
   message SystemLog {
     string log_level = 1;
     string detail = 2;
-    uint32 time = 3;
+    int64 timestamp = 3;
   }
 
   RequestMetadata request_metadata = 1;
   repeated SystemLog data = 2;
 }
-

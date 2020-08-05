@@ -51,8 +51,8 @@ function getRedis() {
 export async function addNewRequestEvent(nodeId, {
   request_id,
   node_id,
-  state,
-  timestamp,
+  state_code,
+  source_timestamp,
   additional_data,
 }) {
   try {
@@ -64,8 +64,8 @@ export async function addNewRequestEvent(nodeId, {
     await getRedis().xadd(`${nodeId}:request-events`, '*',
       'request_id', request_id,
       'node_id', node_id,
-      'state', state,
-      'timestamp', timestamp,
+      'state_code', state_code,
+      'source_timestamp', source_timestamp,
       ...additionalData,
     );
   } catch (err) {

@@ -83,17 +83,17 @@ export default class PMSLogger {
   /*
    * logRequestEvent saves the information regarding requestID
    */
-  async logRequestEvent(request_id, node_id, state, additional_data) {
+  async logRequestEvent(request_id, node_id, state_code, additional_data) {
     if (!this.enable) return;
-    if (!(1 <= state && state <= 17)) {
-      throw 'Invalid state';
+    if (!(1 <= state_code && state_code <= 17)) {
+      throw new Error(`Unknown state code: ${state_code}`);
     }
 
     const data = {
       request_id,
       node_id,
-      state,
-      timestamp: this.getCurrentTime(),
+      state_code,
+      source_timestamp: this.getCurrentTime(),
       additional_data,
     };
 
