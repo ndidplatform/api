@@ -27,15 +27,22 @@ import * as config from '../config';
 import logger from '../logger';
 
 export const RESULT_TYPE = {
-  "OK":               0,
-  "INVALID_TOKEN":    1,
-  "CONNECTION_ERROR": 2,
+  OK: 0,
+  INVALID_TOKEN: 1,
+  CONNECTION_ERROR: 2,
 };
 
 export default class GRPCTelemetryClient {
   constructor() {
     const packageDefinition = protoLoader.loadSync(
-      path.join(__dirname, '..', '..', '..', 'protos', 'ndid_telemetry_api.proto'),
+      path.join(
+        __dirname,
+        '..',
+        '..',
+        '..',
+        'protos',
+        'ndid_telemetry_api.proto'
+      ),
       {
         keepCase: true,
         longs: Number,
@@ -55,7 +62,7 @@ export default class GRPCTelemetryClient {
         'grpc.keepalive_permit_without_calls': 1,
         'grpc.http2.max_pings_without_data': 0,
         'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
-      },
+      }
     );
   }
 
@@ -79,21 +86,23 @@ export default class GRPCTelemetryClient {
     return result.code === 'INVALID_TOKEN';
   }
 
-  sendRequestEvents({
-    nodeId,
-    token,
-    events,
-  }) {
-    logger.info("Attempt connecting GRPC server");
+  sendRequestEvents({ nodeId, token, events }) {
+    logger.info('Attempt connecting GRPC server');
     return new Promise((resolve, reject) => {
-      this.client.sendRequestTimestamp({
-        request_metadata: { node_id: nodeId, token, },
-        data: events,
-      }, (err, result) => {
-        if (err) reject(err);
-        logger.debug(result);
-        resolve(result);
-      });
+      const metadata = new grpc.Metadata();
+      metadata.add('version', '1.0');
+      this.client.sendRequestTimestamp(
+        {
+          request_metadata: { node_id: nodeId, token },
+          data: events,
+        },
+        metadata,
+        (err, result) => {
+          if (err) reject(err);
+          logger.debug(result);
+          resolve(result);
+        }
+      );
     });
   }
-};
+}
