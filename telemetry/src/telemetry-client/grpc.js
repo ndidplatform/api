@@ -26,11 +26,16 @@ import * as protoLoader from '@grpc/proto-loader';
 import * as config from '../config';
 import logger from '../logger';
 
-export const RESULT_TYPE = {
+const APP_RESPONSE_CODE = {
   OK: 0,
-  INVALID_TOKEN: 1,
-  CONNECTION_ERROR: 2,
+  UNKNOWN_ERROR: 1,
+  INVALID_INPUT: 2,
+  INVALID_AUTH_TOKEN: 3,
+  AUTH_TOKEN_EXPIRED: 4,
+  UNKNOWN_VERSION: 1001,
 };
+
+const GRPC_API_VERSION = '1.0';
 
 export default class GRPCTelemetryClient {
   constructor() {
@@ -79,19 +84,22 @@ export default class GRPCTelemetryClient {
   }
 
   isOk(result) {
-    return result.code === 'OK';
+    return result.code === APP_RESPONSE_CODE.OK;
   }
 
   isTokenInvalid(result) {
-    return result.code === 'INVALID_TOKEN';
+    return (
+      result.code === APP_RESPONSE_CODE.INVALID_AUTH_TOKEN ||
+      result.code === APP_RESPONSE_CODE.AUTH_TOKEN_EXPIRED
+    );
   }
 
   sendRequestEvents({ nodeId, token, events }) {
     logger.info('Attempt connecting GRPC server');
     return new Promise((resolve, reject) => {
       const metadata = new grpc.Metadata();
-      metadata.add('version', '1.0');
-      this.client.sendRequestTimestamp(
+      metadata.add('version', GRPC_API_VERSION);
+      this.client.sendRequestEvents(
         {
           request_metadata: { node_id: nodeId, token },
           data: events,

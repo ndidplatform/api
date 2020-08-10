@@ -9,46 +9,24 @@ option java_package = "ndid.grpc.telemetry";
 option java_outer_classname = "NDIDTelemetryServiceProto";
 
 service NDIDTelemetry {
-  rpc SendData(SendDataRequest) returns (SendDataResponse) {}
-
-  rpc BenchmarkImmediateReturn(Empty) returns (Empty) {}
-  rpc BenchmarkCreateAppContext(Empty) returns (Empty) {}
-  rpc BenchmarkWithoutValidateToken(SendDataRequest) returns (SendDataResponse) {}
-  rpc BenchmarkValidateToken(SendDataRequest) returns (SendDataResponse) {}
-
-  rpc SendRequestTimestamp(SendRequestTimestampRequest) returns (SendDataResponse) {}
-  rpc SendSystemInformtation(SendSystemInformationRequest) returns (SendDataResponse) {}
-  rpc SendSystemLog(SendSystemLogRequest) returns (SendDataRequest) {}
+  rpc SendRequestEvents(SendRequestEventsRequest) returns (Response) {}
+  rpc SendSystemInformtation(SendSystemInformationRequest) returns (Response) {}
+  rpc SendSystemLog(SendSystemLogRequest) returns (Response) {}
 }
+
+message Empty {}
 
 message RequestMetadata {
   string node_id = 1;
   string token = 2;
 }
 
-message SendDataRequest {
-  RequestMetadata request_metadata = 1;
-  SendDataParams params = 2;
-}
-
-message SendDataParams {
-  bytes data = 1;
-}
-
-message SendDataResponse {
-  enum ResponseCode {
-    OK = 0;
-    INTERNAL_ERROR = 1;
-    INVALID_TOKEN = 2;
-  }
-
-  ResponseCode code = 1;
+message Response {
+  uint64 code = 1;
   string message = 2;
 }
 
-message Empty {}
-
-message SendRequestTimestampRequest {
+message SendRequestEventsRequest {
   message RequestTimestamp {
     string request_id = 1;
     int32 state_code = 2;
