@@ -39,16 +39,17 @@ const client = new TelemetryClient({
 
 // get list of all node IDs
 const nodeIds = config.nodeIds.split(',');
-logger.info('List of monitored nodes:', nodeIds)
+logger.info('List of monitored nodes:', nodeIds);
 
 const intervalPerNode = config.flushIntervalMs / nodeIds.length;
 
 // Initialize database fetching
 const db = new PMSDb([
-  { // database for token fetching
-    id: "token-db",
-    type: "key-value",
-    keySuffix: "token",
+  {
+    // database for token fetching
+    id: 'token-db',
+    type: 'key-value',
+    keySuffix: 'token',
     onCreated: (db) => {
       tokenManager.setGetToken(async (nodeId) => {
         return await db.getKey(nodeId);
@@ -57,7 +58,7 @@ const db = new PMSDb([
   },
   ...nodeIds.map((nodeId, idx) => ({
     id: `request-event-stream:${nodeId}`,
-    type: "stream",
+    type: 'stream',
     channelName: `${nodeId}:request-events`,
     onDataReceived: (events) => {
       return client.receiveRequestEventData(nodeId, events);

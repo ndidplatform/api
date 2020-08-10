@@ -23,9 +23,7 @@ import GRPCTelemetryClient from './grpc';
 import logger from '../logger';
 
 export default class TelemetryClient {
-  constructor({
-    tokenManager,
-  }) {
+  constructor({ tokenManager }) {
     this.tokenManager = tokenManager;
 
     // create new GRPCTelemetryClient
@@ -42,7 +40,7 @@ export default class TelemetryClient {
       return false;
     }
 
-    logger.info("Sending", events.length, "request events of ", nodeId);
+    logger.info('Sending', events.length, 'request events of ', nodeId);
     const result = await this.client.sendRequestEvents({
       nodeId,
       token,
@@ -51,12 +49,11 @@ export default class TelemetryClient {
 
     // incase the operation is invalid, remove the token manager and try the operation again
     if (this.client.isTokenInvalid(result)) {
-      logger.info("Invalidating token of node", nodeId, token);
+      logger.info('Invalidating token of node', nodeId, token);
       await this.tokenManager.invalidateToken(nodeId, token);
       return this.receiveRequestEventData(nodeId, events);
     }
 
     return this.client.isOk(result);
   }
-
-};
+}
