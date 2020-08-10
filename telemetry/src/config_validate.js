@@ -22,12 +22,12 @@
 
 // required config
 [
-  "NODE_ID",
-  "PMS_DB_IP",
-  "PMS_DB_PORT",
-  "TELEMETRY_NODE_IP",
-  "TELEMETRY_NODE_PORT",
-].forEach(conf => {
+  'NODE_ID',
+  'PMS_DB_IP',
+  'PMS_DB_PORT',
+  'TELEMETRY_NODE_IP',
+  'TELEMETRY_NODE_PORT',
+].forEach((conf) => {
   if (process.env[conf] == undefined) {
     throw `${conf} config is missing`;
   }

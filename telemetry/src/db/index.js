@@ -19,8 +19,9 @@
  * Please contact info@ndid.co.th for any further questions
  *
  */
+
 import RedisPMSDb from './redis';
-import * as config from '../config';
+
 import { ExponentialBackoff } from 'simple-backoff';
 
 class TriggerTimeout {
@@ -60,7 +61,10 @@ class TriggerTimeout {
     if (this.triggerTimerID) {
       clearTimeout(this.triggerTimerID);
     }
-    this.triggerTimerID = setTimeout(async () => await this.trigger(), timeLimit || this.timeLimit);
+    this.triggerTimerID = setTimeout(
+      async () => await this.trigger(),
+      timeLimit || this.timeLimit
+    );
   }
 
   stopTimer() {
@@ -102,16 +106,20 @@ export default class PMSDb {
     });
 
     this.dbs = new Object();
-    channels.forEach(channelInfo => {
+    channels.forEach((channelInfo) => {
       const { id, type, onCreated, delayStart } = channelInfo;
 
       let db;
-      if (type === "key-value") {
+      if (type === 'key-value') {
         const { keySuffix } = channelInfo;
         db = this.client.createKVChannel(keySuffix);
-
-      } else if (type === "stream") {
-        const { channelName, onDataReceived, countLimit, timeLimit } = channelInfo;
+      } else if (type === 'stream') {
+        const {
+          channelName,
+          onDataReceived,
+          countLimit,
+          timeLimit,
+        } = channelInfo;
 
         db = this.client.createReadChannel(channelName, {
           countLimit,
@@ -119,11 +127,11 @@ export default class PMSDb {
 
         setTimeout(() => {
           const buffer = new TriggerTimeout(
-            async () => (this.connected && db.onReadEvent(onDataReceived)),
+            async () => this.connected && db.onReadEvent(onDataReceived),
             {
               countLimit,
               timeLimit,
-            },
+            }
           );
 
           // subscribe for event counter
@@ -133,7 +141,7 @@ export default class PMSDb {
           buffer.trigger();
         }, delayStart);
       } else {
-        throw `undefined db type ${type}`
+        throw `undefined db type ${type}`;
       }
 
       this.dbs[id] = db;
@@ -151,5 +159,4 @@ export default class PMSDb {
   onDisconnected() {
     this.connected = false;
   }
-};
-
+}

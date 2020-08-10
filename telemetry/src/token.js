@@ -51,4 +51,4 @@ export default class TokenManager {
       this.revokeToken(nodeId);
     }
   }
-};
+}

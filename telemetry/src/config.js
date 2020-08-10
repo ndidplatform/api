@@ -44,8 +44,8 @@ export const grpcPingTimeout = process.env.GRPC_PING_TIMEOUT_MS
   ? parseInt(process.env.GRPC_PING_TIMEOUT_MS)
   : 20000;
 
-
-export const flushIntervalMs = (parseInt(process.env.FLUSH_INTERVAL_SEC) || 10) * 1000;
+export const flushIntervalMs =
+  (parseInt(process.env.FLUSH_INTERVAL_SEC) || 10) * 1000;
 
 export const logLevel =
   process.env.LOG_LEVEL || (env === 'development' ? 'debug' : 'info');

@@ -19,6 +19,7 @@
  * Please contact info@ndid.co.th for any further questions
  *
  */
+
 import Redis from 'ioredis';
 import * as config from '../config';
 import logger from '../logger';
@@ -31,8 +32,14 @@ class RedisStreamChannel {
   }
 
   async read() {
-    logger.debug("Attempt Reading Redis");
-    const messages = await this.redis.xread(['COUNT', this.countLimit, 'STREAMS', this.channel, 0]);
+    logger.debug('Attempt Reading Redis');
+    const messages = await this.redis.xread([
+      'COUNT',
+      this.countLimit,
+      'STREAMS',
+      this.channel,
+      0,
+    ]);
     if (messages == null) return [];
     return messages[0][1];
   }
@@ -42,15 +49,15 @@ class RedisStreamChannel {
   }
 
   async onReadEvent(onReceived) {
-    while (true) {
+    for (;;) {
       const events = await this.read();
       if (!events || events.length === 0) return 0;
-      const keys = events.map(event => event[0]);
-      const data = events.map(event => {
+      const keys = events.map((event) => event[0]);
+      const data = events.map((event) => {
         const data = event[1];
         const obj = {};
         for (let i = 0; i < data.length; i += 2) {
-          obj[data[i]] = data[i+1];
+          obj[data[i]] = data[i + 1];
         }
         return obj;
       });
@@ -58,10 +65,8 @@ class RedisStreamChannel {
       if (await onReceived(data)) {
         // onDone Remove key from stream
         try {
-          await Promise.all(
-            keys.map(async key => await this.removeKey(key))
-          );
-        } catch(error) {
+          await Promise.all(keys.map(async (key) => await this.removeKey(key)));
+        } catch (error) {
           logger.error({ error });
         }
 
@@ -123,4 +128,4 @@ export default class RedisPMSDb extends Redis {
   createReadChannel(channelName, options) {
     return new RedisStreamChannel(this, channelName, options);
   }
-};
+}
