@@ -29,13 +29,13 @@ import * as config from '../config';
 
 export const REQUEST_EVENTS = {
   RP_CREATES_REQUEST         : 1,
-  RP_SENDS_REQUEST_ID_TO_IDP : 2,
+  RP_SENDS_REQUEST_TO_IDP    : 2,
   IDP_RECEIVES_REQUEST_ID    : 3,
   IDP_NOTIFIES_USER          : 4,
   IDP_RECEIVES_AUTH_RESULT   : 5,
   IDP_CREATES_RESPONSE       : 6,
   IDP_RESPONDS_TO_RP         : 7,
-  RP_RECEIVES_RESPONSE       : 8,
+  RP_RECEIVES_IDP_RESPONSE   : 8,
   RP_REQUESTS_AS_DATA        : 9,
   AS_RECEIVES_RP_REQUEST     : 10,
   AS_QUERIES_DATA            : 11,

@@ -311,8 +311,8 @@ export async function processMessage(nodeId, messageId, message) {
 
   try {
     if (message.type === privateMessageType.IDP_RESPONSE) {
-      // log request event: RP_RECEIVES_RESPONSE
-      PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_RECEIVES_RESPONSE, {
+      // log request event: RP_RECEIVES_IDP_RESPONSE
+      PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_RECEIVES_IDP_RESPONSE, {
         idp_node_id: message.idp_id,
       });
 

@@ -809,8 +809,8 @@ export async function createRequestInternalAsyncAfterBlockchain(
           message: mqMessageWithSid,
           senderNodeId: node_id,
           onSuccess: ({ mqDestAddress, receiverNodeId }) => {
-            // log request event: RP_SENDS_REQUEST_ID_TO_IDP
-            PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_SENDS_REQUEST_ID_TO_IDP, {
+            // log request event: RP_SENDS_REQUEST_TO_IDP
+            PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_SENDS_REQUEST_TO_IDP, {
               idp_node_id: receiverNodeId,
             });
 
@@ -845,8 +845,8 @@ export async function createRequestInternalAsyncAfterBlockchain(
             message: mqMessageWithRefGroupCode,
             senderNodeId: node_id,
             onSuccess: ({ mqDestAddress, receiverNodeId }) => {
-              // log request event: RP_SENDS_REQUEST_ID_TO_IDP
-              PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_SENDS_REQUEST_ID_TO_IDP, {
+              // log request event: RP_SENDS_REQUEST_TO_IDP
+              PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_SENDS_REQUEST_TO_IDP, {
                 idp_node_id: receiverNodeId,
               });
 
