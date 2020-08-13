@@ -435,7 +435,7 @@ async function getDataAndSendBackToRP(
       });
 
       // log request event: AS_QUERIES_DATA
-      PMSLogger.logRequestEvent(request.requestId, nodeId, REQUEST_EVENTS.AS_QUERIES_DATA, {
+      PMSLogger.logRequestEvent(request.request_id, nodeId, REQUEST_EVENTS.AS_QUERIES_DATA, {
         service_id,
       });
     })
