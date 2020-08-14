@@ -819,6 +819,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
             // log request event: RP_SENDS_REQUEST_TO_IDP
             PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_SENDS_REQUEST_TO_IDP, {
               idp_node_id: receiverNodeId,
+              api_spec_version: apiVersion,
             });
 
             nodeCallback.notifyMessageQueueSuccessSend({
@@ -855,6 +856,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
               // log request event: RP_SENDS_REQUEST_TO_IDP
               PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_SENDS_REQUEST_TO_IDP, {
                 idp_node_id: receiverNodeId,
+                api_spec_version: apiVersion,
               });
 
               nodeCallback.notifyMessageQueueSuccessSend({
