@@ -39,7 +39,7 @@ import PMSLogger, { REQUEST_EVENTS } from '../../pms';
 import * as config from '../../config';
 import { role } from '../../node';
 
-export async function createResponse(createResponseParams) {
+export async function createResponse(createResponseParams, options = {}) {
   let { node_id } = createResponseParams;
   const {
     request_id,
@@ -49,6 +49,9 @@ export async function createResponse(createResponseParams) {
     signature,
     error_code,
   } = createResponseParams;
+  const {
+    apiVersion,
+  } = options;
 
   if (role === 'proxy') {
     if (node_id == null) {
@@ -61,7 +64,9 @@ export async function createResponse(createResponseParams) {
   }
 
   // log request event: IDP_RECEIVES_AUTH_RESULT
-  PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.IDP_RECEIVES_AUTH_RESULT);
+  PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.IDP_RECEIVES_AUTH_RESULT, {
+    api_spec_version: apiVersion,
+  });
 
   try {
     const request = await tendermintNdid.getRequestDetail({
@@ -136,6 +141,7 @@ export async function createResponse(createResponseParams) {
       createErrorResponseInternal(createResponseParams, {
         nodeId: node_id,
         requestData,
+        apiVersion,
       });
     } else {
       if (ial < request.min_ial) {
@@ -259,6 +265,7 @@ export async function createResponse(createResponseParams) {
         nodeId: node_id,
         requestData,
         accessorPublicKey,
+        apiVersion,
       });
     }
   } catch (error) {
@@ -299,7 +306,7 @@ export async function createResponseInternal(
     accessor_id,
     signature,
   } = createResponseParams;
-  const { nodeId, requestData } = additionalParams;
+  const { nodeId, requestData, apiVersion } = additionalParams;
   try {
     const request = await tendermintNdid.getRequest({ requestId: request_id });
     const mode = request.mode;
@@ -325,6 +332,9 @@ export async function createResponseInternal(
           mode,
           accessor_id,
           rp_id: requestData.rp_id,
+        },
+        {
+          apiVersion,
         },
       ],
       true
@@ -360,7 +370,7 @@ export async function createErrorResponseInternal(
     request_id,
     error_code,
   } = createResponseParams;
-  const { nodeId, requestData } = additionalParams;
+  const { nodeId, requestData, apiVersion } = additionalParams;
   try {
     const dataToBlockchain = {
       request_id,
@@ -379,6 +389,9 @@ export async function createErrorResponseInternal(
           request_id,
           error_code,
           rp_id: requestData.rp_id,
+        },
+        {
+          apiVersion,
         },
       ],
       true
@@ -415,13 +428,19 @@ export async function createResponseAfterBlockchain(
     accessor_id,
     rp_id,
     error_code,
+  },
+  {
+    apiVersion,
   }
 ) {
   if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
+
     // log request event: IDP_CREATES_RESPONSE
-    PMSLogger.logRequestEvent(request_id, nodeId, REQUEST_EVENTS.IDP_CREATES_RESPONSE);
+    PMSLogger.logRequestEvent(request_id, nodeId, REQUEST_EVENTS.IDP_CREATES_RESPONSE, {
+      api_spec_version: apiVersion,
+    });
     
     await sendResponseToRP({
       nodeId,
@@ -431,6 +450,9 @@ export async function createResponseAfterBlockchain(
       rp_id,
       height,
       error_code,
+    },
+    {
+      apiVersion,
     });
 
     await callbackToClient({
@@ -475,6 +497,9 @@ async function sendResponseToRP({
   rp_id,
   height,
   error_code,
+},
+{
+  apiVersion,
 }) {
   logger.info({
     message: 'Query MQ destination for RP',
@@ -553,7 +578,9 @@ async function sendResponseToRP({
     senderNodeId: nodeId,
     onSuccess: ({ mqDestAddress, receiverNodeId }) => {
       // log request event: IDP_RESPONDS_TO_RP
-      PMSLogger.logRequestEvent(request_id, nodeId, REQUEST_EVENTS.IDP_RESPONDS_TO_RP);
+      PMSLogger.logRequestEvent(request_id, nodeId, REQUEST_EVENTS.IDP_RESPONDS_TO_RP, {
+        api_spec_version: apiVersion,
+      });
 
       nodeCallback.notifyMessageQueueSuccessSend({
         nodeId,

@@ -45,7 +45,7 @@ export const REQUEST_EVENTS = {
   RP_RECEIVES_DATA           : 15,
   RP_ACCEPTS_DATA            : 16,
   RP_CLOSES_REQUEST          : 17,
-}
+};
 
 export default class PMSLogger {
   /*
