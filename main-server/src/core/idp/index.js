@@ -179,7 +179,9 @@ export async function notifyIncomingRequestByCallback(
   });
 
   // log request event: IDP_NOTIFIES_USER
-  PMSLogger.logRequestEvent(eventDataForCallback.request_id, nodeId, REQUEST_EVENTS.IDP_NOTIFIES_USER);
+  PMSLogger.logRequestEvent(eventDataForCallback.request_id, nodeId, REQUEST_EVENTS.IDP_NOTIFIES_USER, {
+    api_spec_version: config.callbackApiVersion,
+  });
 }
 
 function checkReceiverIntegrity(requestId, requestDetail, nodeId) {
@@ -217,7 +219,9 @@ export async function processMessage(nodeId, messageId, message) {
     } else if (message.type === privateMessageType.CONSENT_REQUEST) {
 
       // log request event: IDP_RECEIVES_REQUEST_ID
-      PMSLogger.logRequestEvent(message.request_id, nodeId, REQUEST_EVENTS.IDP_RECEIVES_REQUEST_ID);
+      PMSLogger.logRequestEvent(message.request_id, nodeId, REQUEST_EVENTS.IDP_RECEIVES_REQUEST_ID, {
+        api_spec_version: config.callbackApiVersion,
+      });
 
       const requestDetail = await tendermintNdid.getRequestDetail({
         requestId: message.request_id,
