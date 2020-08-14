@@ -283,6 +283,7 @@ export async function sendRequestToAS(nodeId, requestData, height) {
             // log request event: RP_REQUESTS_AS_DATA
             PMSLogger.logRequestEvent(requestData.request_id, nodeId, REQUEST_EVENTS.RP_REQUESTS_AS_DATA, {
               as_node_id: receiverNodeId,
+              api_spec_version: config.callbackApiVersion,
             });
 
             nodeCallback.notifyMessageQueueSuccessSend({
@@ -311,7 +312,6 @@ export async function processMessage(nodeId, messageId, message) {
 
   try {
     if (message.type === privateMessageType.IDP_RESPONSE) {
-      console.log('config.callbackApiVersion:',config.callbackApiVersion);
       // log request event: RP_RECEIVES_IDP_RESPONSE
       PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_RECEIVES_IDP_RESPONSE, {
         idp_node_id: message.idp_id,
