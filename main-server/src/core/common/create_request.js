@@ -766,8 +766,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
     if (error) throw error;
 
     // log request event: RP_CREATES_REQUEST
-    PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CREATES_REQUEST,
-    {
+    PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CREATES_REQUEST, {
       api_spec_version: apiVersion,
     });
 
