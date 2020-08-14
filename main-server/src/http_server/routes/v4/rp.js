@@ -27,6 +27,8 @@ import { rpOnlyHandler } from '../middleware/role_handler';
 import * as rp from '../../../core/rp';
 import * as common from '../../../core/common';
 
+import { apiVersion } from './version';
+
 const router = express.Router();
 
 router.use(rpOnlyHandler);
@@ -69,7 +71,10 @@ router.post(
           request_timeout,
           bypass_identity_check,
         },
-        { synchronous: false }
+        { 
+          synchronous: false,
+          apiVersion: apiVersion,
+        },
       );
 
       res.status(202).json(result);

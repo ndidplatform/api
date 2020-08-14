@@ -603,6 +603,7 @@ async function createRequestInternalAsync(
     callbackFnName,
     callbackAdditionalArgs,
     saveForRetryOnChainDisabled,
+    apiVersion,
   } = options;
   const {
     node_id,
@@ -664,6 +665,7 @@ async function createRequestInternalAsync(
             sendCallbackToClient,
             callbackFnName,
             callbackAdditionalArgs,
+            apiVersion,
           },
         ],
         saveForRetryOnChainDisabled
@@ -691,6 +693,7 @@ async function createRequestInternalAsync(
           sendCallbackToClient,
           callbackFnName,
           callbackAdditionalArgs,
+          apiVersion,
         }
       );
     }
@@ -755,6 +758,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
     sendCallbackToClient = true,
     callbackFnName,
     callbackAdditionalArgs,
+    apiVersion,
   } = {}
 ) {
   if (chainDisabledRetryLater) return;
@@ -762,7 +766,10 @@ export async function createRequestInternalAsyncAfterBlockchain(
     if (error) throw error;
 
     // log request event: RP_CREATES_REQUEST
-    PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CREATES_REQUEST);
+    PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CREATES_REQUEST,
+    {
+      api_spec_version: apiVersion,
+    });
 
     const creation_time = Date.now();
 
