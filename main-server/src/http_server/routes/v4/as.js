@@ -26,6 +26,8 @@ import { validateBody } from '../middleware/validation';
 import { asOnlyHandler } from '../middleware/role_handler';
 import * as as from '../../../core/as';
 
+import { apiVersion } from './version';
+
 const router = express.Router();
 
 router.use(asOnlyHandler);
@@ -99,7 +101,10 @@ router.post(
           requestId: request_id,
           serviceId: service_id,
         },
-        { synchronous: false, apiVersion: '4.0' }
+        { 
+          synchronous: false,
+          apiVersion: apiVersion,
+        },
       );
 
       res.status(202).end();

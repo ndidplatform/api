@@ -46,7 +46,10 @@ import { role } from '../../node';
 export async function processDataForRP(
   data,
   processDataForRPParams,
-  { synchronous = false, apiVersion } = {}
+  { 
+    synchronous = false, 
+    apiVersion,
+  } = {}
 ) {
   let { node_id } = processDataForRPParams;
   const {
@@ -110,6 +113,7 @@ export async function processDataForRP(
     // log request event: AS_RECEIVES_QUERIED_DATA
     PMSLogger.logRequestEvent(requestId, node_id, REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA, {
       service_id: serviceId,
+      api_spec_version: apiVersion,
     });
 
     const dataRequestId = requestId + ':' + serviceId;
@@ -347,6 +351,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     // log request event: AS_LOGS_HASH_DATA
     PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_LOGS_HASH_DATA, {
       service_id: serviceId,
+      api_spec_version: apiVersion,
     });
 
     if (!rpId) {
@@ -374,7 +379,9 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
       };
     }
 
-    await sendDataToRP(nodeId, rpId, dataToSendToRP);
+    await sendDataToRP(nodeId, rpId, dataToSendToRP, {
+      apiVersion,
+    });
 
     if (!synchronous) {
       const type =
@@ -424,7 +431,9 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
   }
 }
 
-async function sendDataToRP(nodeId, rpId, data) {
+async function sendDataToRP(nodeId, rpId, data, {
+  apiVersion,
+}) {
   const nodeInfo = await tendermintNdid.getNodeInfo(rpId);
   if (nodeInfo == null) {
     throw new CustomError({
@@ -497,6 +506,7 @@ async function sendDataToRP(nodeId, rpId, data) {
       // log request event: AS_SENDS_DATA_TO_RP
       PMSLogger.logRequestEvent(data.request_id, nodeId, REQUEST_EVENTS.AS_SENDS_DATA_TO_RP, {
         service_id: data.service_id,
+        api_spec_version: apiVersion,
       });
 
       nodeCallback.notifyMessageQueueSuccessSend({

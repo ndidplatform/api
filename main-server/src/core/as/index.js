@@ -181,7 +181,9 @@ export async function processMessage(nodeId, messageId, message) {
   try {
     if (message.type === privateMessageType.DATA_REQUEST) {
       // log request event: AS_RECEIVES_RP_REQUEST
-      PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_RECEIVES_RP_REQUEST);
+      PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_RECEIVES_RP_REQUEST, {
+        api_spec_version: config.callbackApiVersion,
+      });
 
       const requestDetail = await tendermintNdid.getRequestDetail({
         requestId: message.request_id,
@@ -437,6 +439,7 @@ async function getDataAndSendBackToRP(
       // log request event: AS_QUERIES_DATA
       PMSLogger.logRequestEvent(request.request_id, nodeId, REQUEST_EVENTS.AS_QUERIES_DATA, {
         service_id,
+        api_spec_version: config.callbackApiVersion,
       });
     })
   );
