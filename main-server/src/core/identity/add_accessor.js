@@ -61,7 +61,7 @@ import { addAccessorAfterCloseConsentRequest } from './add_accessor_after_consen
  *
  * @returns {{ request_id: string, accessor_id: string }}
  */
-export async function addAccessor(addAccessorParams) {
+export async function addAccessor(addAccessorParams, { apiVersion }) {
   let { node_id, accessor_id } = addAccessorParams;
   const {
     reference_id,
@@ -179,6 +179,7 @@ export async function addAccessor(addAccessorParams) {
       request_id,
       mode,
       generated_accessor_id: accessor_id,
+      apiVersion,
     });
     return { request_id, accessor_id };
   } catch (error) {
@@ -215,7 +216,7 @@ async function addAccessorInternalAsync(
     accessor_id,
     request_message,
   },
-  { nodeId, request_id, mode, generated_accessor_id }
+  { nodeId, request_id, mode, generated_accessor_id, apiVersion }
 ) {
   try {
     let min_idp;
@@ -284,6 +285,7 @@ async function addAccessorInternalAsync(
             },
           ],
           saveForRetryOnChainDisabled: true,
+          apiVersion,
         },
         { request_id }
       );

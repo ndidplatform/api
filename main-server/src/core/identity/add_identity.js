@@ -56,7 +56,7 @@ import { addIdentityAfterCloseConsentRequest } from './add_identity_after_consen
  *
  * @returns {{ request_id: string }}
  */
-export async function addIdentity(addIdentityParams) {
+export async function addIdentity(addIdentityParams, { apiVersion }) {
   let { node_id } = addIdentityParams;
   const {
     reference_id,
@@ -192,6 +192,7 @@ export async function addIdentity(addIdentityParams) {
       nodeId: node_id,
       request_id,
       consentRequestNeeded,
+      apiVersion,
     });
     return { request_id };
   } catch (error) {
@@ -226,7 +227,7 @@ async function addIdentityInternalAsync(
     identity_list,
     request_message,
   },
-  { nodeId, request_id, consentRequestNeeded }
+  { nodeId, request_id, consentRequestNeeded, apiVersion }
 ) {
   try {
     const requestMode = 2;
@@ -292,6 +293,7 @@ async function addIdentityInternalAsync(
             },
           ],
           saveForRetryOnChainDisabled: true,
+          apiVersion,
         },
         { request_id }
       );

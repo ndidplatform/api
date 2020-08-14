@@ -27,6 +27,8 @@ import { idpOnlyHandler } from '../middleware/role_handler';
 import * as identity from '../../../core/identity';
 import * as tendermintNdid from '../../../tendermint/ndid';
 
+import { apiVersion } from './version';
+
 import errorType from 'ndid-error/type';
 
 const router = express.Router();
@@ -109,6 +111,9 @@ router.post(
         identifier,
         identity_list,
         request_message,
+      },
+      {
+        apiVersion: apiVersion,
       });
 
       res.status(202).json(result);
@@ -237,6 +242,9 @@ router.post(
         accessor_public_key,
         accessor_id,
         request_message,
+      },
+      {
+        apiVersion,
       });
 
       res.status(202).json(result);
@@ -271,6 +279,9 @@ router.post(
         identifier,
         accessor_id,
         request_message,
+      },
+      {
+        apiVersion,
       });
 
       res.status(202).json(result);
@@ -311,6 +322,9 @@ router.post(
         accessor_public_key,
         accessor_type,
         request_message,
+      },
+      {
+        apiVersion,
       });
 
       res.status(202).json(result);
@@ -338,6 +352,9 @@ router.post(
         namespace,
         identifier,
         request_message,
+      },
+      {
+        apiVersion,
       });
 
       res.status(202).json(result);
@@ -363,6 +380,9 @@ router.post(
         namespace,
         identifier,
         request_message,
+      },
+      {
+        apiVersion,
       });
       res.status(202).json(result);
       next();
