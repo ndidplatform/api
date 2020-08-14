@@ -311,9 +311,11 @@ export async function processMessage(nodeId, messageId, message) {
 
   try {
     if (message.type === privateMessageType.IDP_RESPONSE) {
+      console.log('config.callbackApiVersion:',config.callbackApiVersion);
       // log request event: RP_RECEIVES_IDP_RESPONSE
       PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_RECEIVES_IDP_RESPONSE, {
         idp_node_id: message.idp_id,
+        api_spec_version: config.callbackApiVersion,
       });
 
       const requestData = await cacheDb.getRequestData(
