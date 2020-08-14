@@ -96,6 +96,7 @@ async function closeRequestInternalAsync(
     callbackAdditionalArgs,
     saveForRetryOnChainDisabled,
     retryOnFail,
+    apiVersion,
   } = options;
   const { node_id } = additionalParams;
   try {
@@ -134,6 +135,7 @@ async function closeRequestInternalAsync(
             sendCallbackToClient,
             callbackFnName,
             callbackAdditionalArgs,
+            apiVersion,
           },
         ],
         saveForRetryOnChainDisabled,
@@ -155,6 +157,7 @@ async function closeRequestInternalAsync(
           sendCallbackToClient,
           callbackFnName,
           callbackAdditionalArgs,
+          apiVersion,
         }
       );
     }
@@ -203,6 +206,7 @@ export async function closeRequestInternalAsyncAfterBlockchain(
     sendCallbackToClient = true,
     callbackFnName,
     callbackAdditionalArgs,
+    apiVersion,
   } = {}
 ) {
   if (chainDisabledRetryLater) return;
@@ -210,7 +214,9 @@ export async function closeRequestInternalAsyncAfterBlockchain(
     if (error) throw error;
 
     // log request event: RP_CLOSES_REQUEST
-    PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CLOSES_REQUEST);
+    PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CLOSES_REQUEST, {
+      api_spec_version: apiVersion,
+    });
 
     removeTimeoutScheduler(node_id, request_id);
 

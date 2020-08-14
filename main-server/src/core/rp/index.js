@@ -462,6 +462,7 @@ export async function processMessage(nodeId, messageId, message) {
                 sendCallbackToClient: false,
                 saveForRetryOnChainDisabled: true,
                 retryOnFail: true,
+                apiVersion: config.callbackApiVersion,
               }
             );
           }

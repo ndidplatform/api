@@ -29,6 +29,8 @@ import errorType from 'ndid-error/type';
 import logger from '../../logger';
 import PMSLogger, { REQUEST_EVENTS } from '../../pms';
 
+import * as config from '../../config';
+
 export async function processAsResponse({
   nodeId,
   requestId,
@@ -64,6 +66,7 @@ export async function processAsResponse({
   PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_RECEIVES_DATA, {
     as_node_id: asNodeId,
     service_id: serviceId,
+    api_spec_version: config.callbackApiVersion,
   });
 
   const signatureFromBlockchain = await tendermintNdid.getDataSignature({
@@ -169,6 +172,7 @@ export async function processAsDataAfterSetDataReceived(
     PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_ACCEPTS_DATA, {
       as_node_id: asNodeId,
       service_id: serviceId,
+      api_spec_version: config.callbackApiVersion,
     });
 
     await cacheDb.addDataFromAS(nodeId, requestId, {

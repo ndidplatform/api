@@ -154,7 +154,7 @@ router.post('/request_close', validateBody, async (req, res, next) => {
         callback_url,
         request_id,
       },
-      { synchronous: false }
+      { synchronous: false, apiVersion: apiVersion }
     );
     res.status(202).end();
     next();
