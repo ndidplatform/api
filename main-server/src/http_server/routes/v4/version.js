@@ -21,6 +21,4 @@
  */
 
 
-export let apiVersion;
-
-apiVersion = '4.0';
+export const apiVersion = '4.0';

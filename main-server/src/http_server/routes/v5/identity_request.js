@@ -41,7 +41,7 @@ router.post(
 
       await common.closeRequest(
         { node_id, reference_id, callback_url, request_id },
-        { synchronous: false, apiVersion: apiVersion }
+        { synchronous: false, apiVersion }
       );
       res.status(202).end();
       next();

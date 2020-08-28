@@ -29,8 +29,6 @@ import errorType from 'ndid-error/type';
 import logger from '../../logger';
 import PMSLogger, { REQUEST_EVENTS } from '../../pms';
 
-import * as config from '../../config';
-
 export async function processAsResponse({
   nodeId,
   requestId,
@@ -63,11 +61,15 @@ export async function processAsResponse({
 
   // TODO: confirm with NDID whether to include error responses
   // log request event: RP_RECEIVES_DATA
-  PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_RECEIVES_DATA, {
-    as_node_id: asNodeId,
-    service_id: serviceId,
-    api_spec_version: config.callbackApiVersion,
-  });
+  PMSLogger.logRequestEvent(
+    requestId,
+    nodeId,
+    REQUEST_EVENTS.RP_RECEIVES_DATA,
+    {
+      as_node_id: asNodeId,
+      service_id: serviceId,
+    }
+  );
 
   const signatureFromBlockchain = await tendermintNdid.getDataSignature({
     request_id: requestId,
@@ -169,11 +171,15 @@ export async function processAsDataAfterSetDataReceived(
     if (error) throw error;
 
     // log request event: RP_ACCEPTS_DATA
-    PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_ACCEPTS_DATA, {
-      as_node_id: asNodeId,
-      service_id: serviceId,
-      api_spec_version: config.callbackApiVersion,
-    });
+    PMSLogger.logRequestEvent(
+      requestId,
+      nodeId,
+      REQUEST_EVENTS.RP_ACCEPTS_DATA,
+      {
+        as_node_id: asNodeId,
+        service_id: serviceId,
+      }
+    );
 
     await cacheDb.addDataFromAS(nodeId, requestId, {
       source_node_id: asNodeId,

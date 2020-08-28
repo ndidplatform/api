@@ -181,9 +181,11 @@ export async function processMessage(nodeId, messageId, message) {
   try {
     if (message.type === privateMessageType.DATA_REQUEST) {
       // log request event: AS_RECEIVES_RP_REQUEST
-      PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_RECEIVES_RP_REQUEST, {
-        api_spec_version: config.callbackApiVersion,
-      });
+      PMSLogger.logRequestEvent(
+        requestId,
+        nodeId,
+        REQUEST_EVENTS.AS_RECEIVES_RP_REQUEST
+      );
 
       const requestDetail = await tendermintNdid.getRequestDetail({
         requestId: message.request_id,
@@ -343,7 +345,11 @@ export async function afterGotDataFromCallback(
     additionalData.error_code = result.error_code;
     const synchronous =
       !additionalData.reference_id || !additionalData.callback_url;
-    await processDataForRP(result.data, additionalData, { synchronous });
+    await processDataForRP(result.data, additionalData, {
+      synchronous,
+      apiVersion: additionalData.callbackApiVersion,
+      throughCallbackResponse: true,
+    });
   } catch (error) {
     const err = new CustomError({
       message: 'Error processing data response from AS',
@@ -433,14 +439,20 @@ async function getDataAndSendBackToRP(
           rpId: request.rp_id,
           requestId: request.request_id,
           serviceId: service_id,
+          apiVersion: config.callbackApiVersion,
         },
       });
 
       // log request event: AS_QUERIES_DATA
-      PMSLogger.logRequestEvent(request.request_id, nodeId, REQUEST_EVENTS.AS_QUERIES_DATA, {
-        service_id,
-        api_spec_version: config.callbackApiVersion,
-      });
+      PMSLogger.logRequestEvent(
+        request.request_id,
+        nodeId,
+        REQUEST_EVENTS.AS_QUERIES_DATA,
+        {
+          service_id,
+          api_spec_version: config.callbackApiVersion,
+        }
+      );
     })
   );
 }

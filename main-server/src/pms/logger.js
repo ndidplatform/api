@@ -30,7 +30,7 @@ import * as config from '../config';
 export const REQUEST_EVENTS = {
   RP_CREATES_REQUEST         : 1,
   RP_SENDS_REQUEST_TO_IDP    : 2,
-  IDP_RECEIVES_REQUEST_ID    : 3,
+  IDP_RECEIVES_REQUEST       : 3,
   IDP_NOTIFIES_USER          : 4,
   IDP_RECEIVES_AUTH_RESULT   : 5,
   IDP_CREATES_RESPONSE       : 6,

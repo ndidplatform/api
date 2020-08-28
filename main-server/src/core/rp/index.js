@@ -281,10 +281,14 @@ export async function sendRequestToAS(nodeId, requestData, height) {
           senderNodeId: nodeId,
           onSuccess: ({ mqDestAddress, receiverNodeId }) => {
             // log request event: RP_REQUESTS_AS_DATA
-            PMSLogger.logRequestEvent(requestData.request_id, nodeId, REQUEST_EVENTS.RP_REQUESTS_AS_DATA, {
-              as_node_id: receiverNodeId,
-              api_spec_version: config.callbackApiVersion,
-            });
+            PMSLogger.logRequestEvent(
+              requestData.request_id,
+              nodeId,
+              REQUEST_EVENTS.RP_REQUESTS_AS_DATA,
+              {
+                as_node_id: receiverNodeId,
+              }
+            );
 
             nodeCallback.notifyMessageQueueSuccessSend({
               nodeId,
@@ -313,10 +317,14 @@ export async function processMessage(nodeId, messageId, message) {
   try {
     if (message.type === privateMessageType.IDP_RESPONSE) {
       // log request event: RP_RECEIVES_IDP_RESPONSE
-      PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.RP_RECEIVES_IDP_RESPONSE, {
-        idp_node_id: message.idp_id,
-        api_spec_version: config.callbackApiVersion,
-      });
+      PMSLogger.logRequestEvent(
+        requestId,
+        nodeId,
+        REQUEST_EVENTS.RP_RECEIVES_IDP_RESPONSE,
+        {
+          idp_node_id: message.idp_id,
+        }
+      );
 
       const requestData = await cacheDb.getRequestData(
         nodeId,
@@ -462,7 +470,7 @@ export async function processMessage(nodeId, messageId, message) {
                 sendCallbackToClient: false,
                 saveForRetryOnChainDisabled: true,
                 retryOnFail: true,
-                apiVersion: config.callbackApiVersion,
+                autoClose: true,
               }
             );
           }

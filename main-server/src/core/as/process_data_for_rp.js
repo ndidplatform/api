@@ -46,10 +46,7 @@ import { role } from '../../node';
 export async function processDataForRP(
   data,
   processDataForRPParams,
-  { 
-    synchronous = false, 
-    apiVersion,
-  } = {}
+  { synchronous = false, apiVersion, throughCallbackResponse = false } = {}
 ) {
   let { node_id } = processDataForRPParams;
   const {
@@ -111,10 +108,16 @@ export async function processDataForRP(
     }
 
     // log request event: AS_RECEIVES_QUERIED_DATA
-    PMSLogger.logRequestEvent(requestId, node_id, REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA, {
-      service_id: serviceId,
-      api_spec_version: apiVersion,
-    });
+    PMSLogger.logRequestEvent(
+      requestId,
+      node_id,
+      REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA,
+      {
+        service_id: serviceId,
+        api_spec_version: apiVersion,
+        through_callback_response: throughCallbackResponse,
+      }
+    );
 
     const dataRequestId = requestId + ':' + serviceId;
     const savedRpId = await cacheDb.getRpIdFromDataRequestId(
@@ -349,10 +352,14 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     if (error) throw error;
 
     // log request event: AS_LOGS_HASH_DATA
-    PMSLogger.logRequestEvent(requestId, nodeId, REQUEST_EVENTS.AS_LOGS_HASH_DATA, {
-      service_id: serviceId,
-      api_spec_version: apiVersion,
-    });
+    PMSLogger.logRequestEvent(
+      requestId,
+      nodeId,
+      REQUEST_EVENTS.AS_LOGS_HASH_DATA,
+      {
+        service_id: serviceId,
+      }
+    );
 
     if (!rpId) {
       rpId = savedRpId;
@@ -379,9 +386,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
       };
     }
 
-    await sendDataToRP(nodeId, rpId, dataToSendToRP, {
-      apiVersion,
-    });
+    await sendDataToRP(nodeId, rpId, dataToSendToRP);
 
     if (!synchronous) {
       const type =
@@ -431,9 +436,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
   }
 }
 
-async function sendDataToRP(nodeId, rpId, data, {
-  apiVersion,
-}) {
+async function sendDataToRP(nodeId, rpId, data) {
   const nodeInfo = await tendermintNdid.getNodeInfo(rpId);
   if (nodeInfo == null) {
     throw new CustomError({
@@ -504,10 +507,14 @@ async function sendDataToRP(nodeId, rpId, data, {
     senderNodeId: nodeId,
     onSuccess: ({ mqDestAddress, receiverNodeId }) => {
       // log request event: AS_SENDS_DATA_TO_RP
-      PMSLogger.logRequestEvent(data.request_id, nodeId, REQUEST_EVENTS.AS_SENDS_DATA_TO_RP, {
-        service_id: data.service_id,
-        api_spec_version: apiVersion,
-      });
+      PMSLogger.logRequestEvent(
+        data.request_id,
+        nodeId,
+        REQUEST_EVENTS.AS_SENDS_DATA_TO_RP,
+        {
+          service_id: data.service_id,
+        }
+      );
 
       nodeCallback.notifyMessageQueueSuccessSend({
         nodeId,

@@ -50,6 +50,8 @@ import { role } from '../../node';
  * @param {string} [options.callbackFnName]
  * @param {Array} [options.callbackAdditionalArgs]
  * @param {boolean} [options.saveForRetryOnChainDisabled]
+ * @param {string} [options.apiVersion]
+ * @param {boolean} [options.autoClose]
  */
 export async function closeRequest(closeRequestParams, options = {}) {
   let { node_id } = closeRequestParams;
@@ -97,6 +99,7 @@ async function closeRequestInternalAsync(
     saveForRetryOnChainDisabled,
     retryOnFail,
     apiVersion,
+    autoClose = false,
   } = options;
   const { node_id } = additionalParams;
   try {
@@ -136,6 +139,7 @@ async function closeRequestInternalAsync(
             callbackFnName,
             callbackAdditionalArgs,
             apiVersion,
+            autoClose,
           },
         ],
         saveForRetryOnChainDisabled,
@@ -158,6 +162,7 @@ async function closeRequestInternalAsync(
           callbackFnName,
           callbackAdditionalArgs,
           apiVersion,
+          autoClose,
         }
       );
     }
@@ -207,6 +212,7 @@ export async function closeRequestInternalAsyncAfterBlockchain(
     callbackFnName,
     callbackAdditionalArgs,
     apiVersion,
+    autoClose,
   } = {}
 ) {
   if (chainDisabledRetryLater) return;
@@ -216,6 +222,7 @@ export async function closeRequestInternalAsyncAfterBlockchain(
     // log request event: RP_CLOSES_REQUEST
     PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CLOSES_REQUEST, {
       api_spec_version: apiVersion,
+      auto_close: autoClose,
     });
 
     removeTimeoutScheduler(node_id, request_id);

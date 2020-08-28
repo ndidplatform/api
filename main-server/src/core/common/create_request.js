@@ -284,65 +284,70 @@ async function checkAsListCondition({
   );
 }
 
-async function checkWhitelistCondition({
-  node_id,
-  idp_id_list,
-}) {
+async function checkWhitelistCondition({ node_id, idp_id_list }) {
   const rp_data = await tendermintNdid.getNodeInfo(node_id);
   if (rp_data == null) {
     throw new CustomError({
       errorType: errorType.NODE_INFO_NOT_FOUND,
-      details: { node_id, }
+      details: { node_id },
     });
   }
 
   const {
     node_id_whitelist_active: active,
-    node_id_whitelist: whitelist
+    node_id_whitelist: whitelist,
   } = rp_data;
 
   if (active && idp_id_list.length == 0) {
     idp_id_list.push(...whitelist);
   }
 
-  await Promise.all(idp_id_list.map(async (idpNodeId) => {
-    if (active && (whitelist == null || whitelist.indexOf(idpNodeId) === -1)) {
-      throw new CustomError({
-        errorType: errorType.NOT_IN_WHITELIST,
-        details: {
-          node_id: node_id,
-          whitelist: whitelist,
-          request_node_id: idpNodeId,
-        }
-      });
-    }
+  await Promise.all(
+    idp_id_list.map(async (idpNodeId) => {
+      if (
+        active &&
+        (whitelist == null || whitelist.indexOf(idpNodeId) === -1)
+      ) {
+        throw new CustomError({
+          errorType: errorType.NOT_IN_WHITELIST,
+          details: {
+            node_id: node_id,
+            whitelist: whitelist,
+            request_node_id: idpNodeId,
+          },
+        });
+      }
 
-    const idpNode = await tendermintNdid.getNodeInfo(idpNodeId);
-    if (idpNode == null) {
-      throw new CustomError({
-        errorType: errorType.UNQUALIFIED_IDP,
-        details: {
-          idpNodeId,
-        },
-      });
-    }
+      const idpNode = await tendermintNdid.getNodeInfo(idpNodeId);
+      if (idpNode == null) {
+        throw new CustomError({
+          errorType: errorType.UNQUALIFIED_IDP,
+          details: {
+            idpNodeId,
+          },
+        });
+      }
 
-    const {
-      node_id_whitelist_active: idp_active,
-      node_id_whitelist: idp_whitelist,
-    } = idpNode;
+      const {
+        node_id_whitelist_active: idp_active,
+        node_id_whitelist: idp_whitelist,
+      } = idpNode;
 
-    if (idp_active && (idp_whitelist == null || idp_whitelist.indexOf(node_id) === -1)) {
-      throw new CustomError({
-        errorType: errorType.NOT_IN_WHITELIST,
-        details: {
-          node_id: idpNodeId,
-          whitelist: idp_whitelist,
-          request_node_id: node_id,
-        }
-      });
-    }
-  }));
+      if (
+        idp_active &&
+        (idp_whitelist == null || idp_whitelist.indexOf(node_id) === -1)
+      ) {
+        throw new CustomError({
+          errorType: errorType.NOT_IN_WHITELIST,
+          details: {
+            node_id: idpNodeId,
+            whitelist: idp_whitelist,
+            request_node_id: node_id,
+          },
+        });
+      }
+    })
+  );
 }
 
 /**
@@ -766,9 +771,14 @@ export async function createRequestInternalAsyncAfterBlockchain(
     if (error) throw error;
 
     // log request event: RP_CREATES_REQUEST
-    PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_CREATES_REQUEST, {
-      api_spec_version: apiVersion,
-    });
+    PMSLogger.logRequestEvent(
+      request_id,
+      node_id,
+      REQUEST_EVENTS.RP_CREATES_REQUEST,
+      {
+        api_spec_version: apiVersion,
+      }
+    );
 
     const creation_time = Date.now();
 
@@ -816,10 +826,14 @@ export async function createRequestInternalAsyncAfterBlockchain(
           senderNodeId: node_id,
           onSuccess: ({ mqDestAddress, receiverNodeId }) => {
             // log request event: RP_SENDS_REQUEST_TO_IDP
-            PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_SENDS_REQUEST_TO_IDP, {
-              idp_node_id: receiverNodeId,
-              api_spec_version: apiVersion,
-            });
+            PMSLogger.logRequestEvent(
+              request_id,
+              node_id,
+              REQUEST_EVENTS.RP_SENDS_REQUEST_TO_IDP,
+              {
+                idp_node_id: receiverNodeId,
+              }
+            );
 
             nodeCallback.notifyMessageQueueSuccessSend({
               nodeId: node_id,
@@ -853,10 +867,14 @@ export async function createRequestInternalAsyncAfterBlockchain(
             senderNodeId: node_id,
             onSuccess: ({ mqDestAddress, receiverNodeId }) => {
               // log request event: RP_SENDS_REQUEST_TO_IDP
-              PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.RP_SENDS_REQUEST_TO_IDP, {
-                idp_node_id: receiverNodeId,
-                api_spec_version: apiVersion,
-              });
+              PMSLogger.logRequestEvent(
+                request_id,
+                node_id,
+                REQUEST_EVENTS.RP_SENDS_REQUEST_TO_IDP,
+                {
+                  idp_node_id: receiverNodeId,
+                }
+              );
 
               nodeCallback.notifyMessageQueueSuccessSend({
                 nodeId: node_id,

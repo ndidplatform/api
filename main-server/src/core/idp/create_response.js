@@ -49,9 +49,7 @@ export async function createResponse(createResponseParams, options = {}) {
     signature,
     error_code,
   } = createResponseParams;
-  const {
-    apiVersion,
-  } = options;
+  const { apiVersion } = options;
 
   if (role === 'proxy') {
     if (node_id == null) {
@@ -64,9 +62,14 @@ export async function createResponse(createResponseParams, options = {}) {
   }
 
   // log request event: IDP_RECEIVES_AUTH_RESULT
-  PMSLogger.logRequestEvent(request_id, node_id, REQUEST_EVENTS.IDP_RECEIVES_AUTH_RESULT, {
-    api_spec_version: apiVersion,
-  });
+  PMSLogger.logRequestEvent(
+    request_id,
+    node_id,
+    REQUEST_EVENTS.IDP_RECEIVES_AUTH_RESULT,
+    {
+      api_spec_version: apiVersion,
+    }
+  );
 
   try {
     const request = await tendermintNdid.getRequestDetail({
@@ -428,9 +431,6 @@ export async function createResponseAfterBlockchain(
     accessor_id,
     rp_id,
     error_code,
-  },
-  {
-    apiVersion,
   }
 ) {
   if (chainDisabledRetryLater) return;
@@ -438,10 +438,12 @@ export async function createResponseAfterBlockchain(
     if (error) throw error;
 
     // log request event: IDP_CREATES_RESPONSE
-    PMSLogger.logRequestEvent(request_id, nodeId, REQUEST_EVENTS.IDP_CREATES_RESPONSE, {
-      api_spec_version: apiVersion,
-    });
-    
+    PMSLogger.logRequestEvent(
+      request_id,
+      nodeId,
+      REQUEST_EVENTS.IDP_CREATES_RESPONSE
+    );
+
     await sendResponseToRP({
       nodeId,
       request_id,
@@ -450,9 +452,6 @@ export async function createResponseAfterBlockchain(
       rp_id,
       height,
       error_code,
-    },
-    {
-      apiVersion,
     });
 
     await callbackToClient({
@@ -497,9 +496,6 @@ async function sendResponseToRP({
   rp_id,
   height,
   error_code,
-},
-{
-  apiVersion,
 }) {
   logger.info({
     message: 'Query MQ destination for RP',
@@ -578,9 +574,11 @@ async function sendResponseToRP({
     senderNodeId: nodeId,
     onSuccess: ({ mqDestAddress, receiverNodeId }) => {
       // log request event: IDP_RESPONDS_TO_RP
-      PMSLogger.logRequestEvent(request_id, nodeId, REQUEST_EVENTS.IDP_RESPONDS_TO_RP, {
-        api_spec_version: apiVersion,
-      });
+      PMSLogger.logRequestEvent(
+        request_id,
+        nodeId,
+        REQUEST_EVENTS.IDP_RESPONDS_TO_RP
+      );
 
       nodeCallback.notifyMessageQueueSuccessSend({
         nodeId,

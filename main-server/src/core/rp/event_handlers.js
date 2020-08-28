@@ -314,7 +314,7 @@ export async function processRequestUpdate(
             synchronous: false,
             sendCallbackToClient: false,
             saveForRetryOnChainDisabled: true,
-            apiVersion: config.callbackApiVersion,
+            autoClose: true,
           }
         );
       }
