@@ -3,7 +3,7 @@
 # NDID API (Node.js)
 
 ## News
-- PMS telemetry documentation can be found [here](telemetry/README.md)
+- Telemetry documentation can be found [here](telemetry/README.md)
 
 ## Prerequisites
 

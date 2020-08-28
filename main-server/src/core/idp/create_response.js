@@ -34,7 +34,7 @@ import errorType from 'ndid-error/type';
 import * as utils from '../../utils';
 import { getErrorObjectForClient } from '../../utils/error';
 import logger from '../../logger';
-import PMSLogger, { REQUEST_EVENTS } from '../../pms';
+import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 import * as config from '../../config';
 import { role } from '../../node';
@@ -62,7 +62,7 @@ export async function createResponse(createResponseParams, options = {}) {
   }
 
   // log request event: IDP_RECEIVES_AUTH_RESULT
-  PMSLogger.logRequestEvent(
+  TelemetryLogger.logRequestEvent(
     request_id,
     node_id,
     REQUEST_EVENTS.IDP_RECEIVES_AUTH_RESULT,
@@ -438,7 +438,7 @@ export async function createResponseAfterBlockchain(
     if (error) throw error;
 
     // log request event: IDP_CREATES_RESPONSE
-    PMSLogger.logRequestEvent(
+    TelemetryLogger.logRequestEvent(
       request_id,
       nodeId,
       REQUEST_EVENTS.IDP_CREATES_RESPONSE
@@ -574,7 +574,7 @@ async function sendResponseToRP({
     senderNodeId: nodeId,
     onSuccess: ({ mqDestAddress, receiverNodeId }) => {
       // log request event: IDP_RESPONDS_TO_RP
-      PMSLogger.logRequestEvent(
+      TelemetryLogger.logRequestEvent(
         request_id,
         nodeId,
         REQUEST_EVENTS.IDP_RESPONDS_TO_RP

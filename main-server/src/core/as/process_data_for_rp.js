@@ -29,7 +29,7 @@ import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
-import PMSLogger, { REQUEST_EVENTS } from '../../pms';
+import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as nodeCallback from '../node_callback';
@@ -108,7 +108,7 @@ export async function processDataForRP(
     }
 
     // log request event: AS_RECEIVES_QUERIED_DATA
-    PMSLogger.logRequestEvent(
+    TelemetryLogger.logRequestEvent(
       requestId,
       node_id,
       REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA,
@@ -352,7 +352,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     if (error) throw error;
 
     // log request event: AS_LOGS_HASH_DATA
-    PMSLogger.logRequestEvent(
+    TelemetryLogger.logRequestEvent(
       requestId,
       nodeId,
       REQUEST_EVENTS.AS_LOGS_HASH_DATA,
@@ -507,7 +507,7 @@ async function sendDataToRP(nodeId, rpId, data) {
     senderNodeId: nodeId,
     onSuccess: ({ mqDestAddress, receiverNodeId }) => {
       // log request event: AS_SENDS_DATA_TO_RP
-      PMSLogger.logRequestEvent(
+      TelemetryLogger.logRequestEvent(
         data.request_id,
         nodeId,
         REQUEST_EVENTS.AS_SENDS_DATA_TO_RP,

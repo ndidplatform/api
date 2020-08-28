@@ -20,7 +20,7 @@
  *
  */
 
-import RedisPMSDb from './redis';
+import RedisTelemetryDb from './redis';
 
 import { ExponentialBackoff } from 'simple-backoff';
 
@@ -76,7 +76,7 @@ class TriggerTimeout {
   }
 }
 
-export default class PMSDb {
+export default class TelemetryDb {
   /*
    @param {Object} channels
     an object of connection channels with `channelID` as key and `channel` as value
@@ -99,7 +99,7 @@ export default class PMSDb {
 
     this.connected = false;
 
-    this.client = new RedisPMSDb({
+    this.client = new RedisTelemetryDb({
       backoff: this.backoff,
       onConnected: () => this.onConnected(),
       onDisconnected: () => this.onDisconnected(),

@@ -33,7 +33,7 @@ import errorType from 'ndid-error/type';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../callback';
 import logger from '../../logger';
-import PMSLogger, { REQUEST_EVENTS } from '../../pms';
+import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 import * as config from '../../config';
 import { role } from '../../node';
@@ -181,7 +181,7 @@ export async function processMessage(nodeId, messageId, message) {
   try {
     if (message.type === privateMessageType.DATA_REQUEST) {
       // log request event: AS_RECEIVES_RP_REQUEST
-      PMSLogger.logRequestEvent(
+      TelemetryLogger.logRequestEvent(
         requestId,
         nodeId,
         REQUEST_EVENTS.AS_RECEIVES_RP_REQUEST
@@ -444,7 +444,7 @@ async function getDataAndSendBackToRP(
       });
 
       // log request event: AS_QUERIES_DATA
-      PMSLogger.logRequestEvent(
+      TelemetryLogger.logRequestEvent(
         request.request_id,
         nodeId,
         REQUEST_EVENTS.AS_QUERIES_DATA,

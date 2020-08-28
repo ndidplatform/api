@@ -35,7 +35,7 @@ import privateMessageType from '../../mq/message/type';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
-import PMSLogger, { REQUEST_EVENTS } from '../../pms';
+import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 import * as config from '../../config';
 import { role } from '../../node';
@@ -281,7 +281,7 @@ export async function sendRequestToAS(nodeId, requestData, height) {
           senderNodeId: nodeId,
           onSuccess: ({ mqDestAddress, receiverNodeId }) => {
             // log request event: RP_REQUESTS_AS_DATA
-            PMSLogger.logRequestEvent(
+            TelemetryLogger.logRequestEvent(
               requestData.request_id,
               nodeId,
               REQUEST_EVENTS.RP_REQUESTS_AS_DATA,
@@ -317,7 +317,7 @@ export async function processMessage(nodeId, messageId, message) {
   try {
     if (message.type === privateMessageType.IDP_RESPONSE) {
       // log request event: RP_RECEIVES_IDP_RESPONSE
-      PMSLogger.logRequestEvent(
+      TelemetryLogger.logRequestEvent(
         requestId,
         nodeId,
         REQUEST_EVENTS.RP_RECEIVES_IDP_RESPONSE,

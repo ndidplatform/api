@@ -22,8 +22,8 @@
 
 import base64url from 'base64url';
 
-import * as pmsDb from '../db/pms'
-import logger from '../logger.js'
+import * as telemetryDb from '../db/telemetry';
+import logger from '../logger.js';
 import * as utils from '../utils';
 import * as config from '../config';
 
@@ -47,21 +47,18 @@ export const REQUEST_EVENTS = {
   RP_CLOSES_REQUEST          : 17,
 };
 
-export default class PMSLogger {
+export default class TelemetryLogger {
   /*
-   * PMSLogger Constructor
+   * TelemetryLogger Constructor
    *
    * @param {Boolean} option.enable
    * @param {Object} option.tokenInfo
    */
-  constructor({
-    enable,
-    tokenInfo,
-  }) {
+  constructor({ enable, tokenInfo }) {
     this.enable = enable;
     if (!enable) return;
 
-    this.tokenTimeoutSec = config.pmsTokenGenerationIntervalSec;
+    this.tokenTimeoutSec = config.telemetryTokenGenerationIntervalSec;
     this.tokenInfo = tokenInfo;
 
     this.tokenGenerationRetryCount = 0;
@@ -97,14 +94,14 @@ export default class PMSLogger {
       additional_data,
     };
 
-    await pmsDb.addNewRequestEvent(node_id, data);
+    await telemetryDb.addNewRequestEvent(node_id, data);
   }
 
   // TOKEN Generation Module
   async createJWT(payload) {
     const header = {
-      'type': 'JWT',
-      'alg': 'RS256',
+      type: 'JWT',
+      alg: 'RS256',
     };
 
     const headerJSON = JSON.stringify(header);
@@ -114,7 +111,7 @@ export default class PMSLogger {
     const encodedPayload = base64url(payloadJSON);
 
     const token = encodedHeader + '.' + encodedPayload;
-    const signature = await utils.createSignature(token, config.nodeId, false); 
+    const signature = await utils.createSignature(token, config.nodeId, false);
     const signedToken = token + '.' + base64url(signature);
 
     return signedToken;
@@ -126,13 +123,10 @@ export default class PMSLogger {
    * @param {Integer} timeout (time until token is expired, default: 6hrs).
    * @param {Object} extraInfo (additional data).
    */
-  async generateToken(
-    timeoutSec = 6 * 60 * 60,
-    extraInfo = {},
-  ) {
+  async generateToken(timeoutSec = 6 * 60 * 60, extraInfo = {}) {
     if (!this.enable) return;
 
-    logger.info('Generating new PMS token');
+    logger.info('Generating new telemetry token');
 
     const timeNow = Math.floor(Date.now() / 1000);
     const timePadding = 60 * 60; // an hour padding
@@ -147,9 +141,9 @@ export default class PMSLogger {
     };
 
     const jwt = await this.createJWT(payload);
-    await pmsDb.addNewToken(config.nodeId, jwt);
+    await telemetryDb.addNewToken(config.nodeId, jwt);
 
-    logger.info('Finish generating PMS token');
+    logger.info('Finish generating telemetry token');
     this.tokenGenerationRetryCount = 0;
   }
 
@@ -172,7 +166,7 @@ export default class PMSLogger {
       });
     } catch (err) {
       logger.error({
-        msg: 'Failed to generate PMS token, retry in 10 seconds',
+        msg: 'Failed to generate telemetry token, retry in 10 seconds',
         err,
       });
 
@@ -184,7 +178,7 @@ export default class PMSLogger {
     }
     this.tokenGenerationTimeoutID = setTimeout(
       () => this.createTokenGenerationTimeout(),
-      timeoutSec * 1000,
+      timeoutSec * 1000
     );
   }
 
@@ -206,4 +200,3 @@ export default class PMSLogger {
     });
   }
 }
-

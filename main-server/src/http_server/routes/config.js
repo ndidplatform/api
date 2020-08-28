@@ -25,7 +25,7 @@ import express from 'express';
 import { validateBody } from './middleware/validation';
 
 import * as config from '../../config';
-import PMSLogger from '../../pms';
+import TelemetryLogger from '../../telemetry';
 
 const router = express.Router();
 
@@ -85,14 +85,14 @@ router.post('/set', validateBody, function (req, res, next) {
   }
 });
 
-router.get('/pms/reissue_token', async (req, res, next) => {
+router.get('/telemetry/reissue_token', async (req, res, next) => {
   try {
-    if (config.PMSLoggingEnabled) {
-      await PMSLogger.reissue_token();
+    if (config.telemetryLoggingEnabled) {
+      await TelemetryLogger.reissueToken();
       res.status(200).end();
     } else {
       res.status(404).json({
-        message: "PMS module is not enabled",
+        message: 'Telemetry module is not enabled',
       });
     }
     next();

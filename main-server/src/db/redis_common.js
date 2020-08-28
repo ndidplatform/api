@@ -25,7 +25,7 @@ import EventEmitter from 'events';
 import cacheDbRedisInstance from './cache/redis';
 import longTermDbRedisInstance from './long_term/redis';
 import dataDbRedisInstance from './data/redis';
-import pmsRedisInstance from './pms/redis'
+import telemetryRedisInstance from './telemetry/redis';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -40,8 +40,8 @@ function getRedisInstance(dbName) {
       return longTermDbRedisInstance;
     case 'data':
       return dataDbRedisInstance;
-    case 'pms':
-      return pmsRedisInstance;
+    case 'telemetry':
+      return telemetryRedisInstance;
     default:
       throw new CustomError({ message: 'Unknown database name' });
   }

@@ -20,12 +20,15 @@
  *
  */
 
-import PMSLogger, { REQUEST_EVENTS } from './logger';
-import * as config from '../config';
+import RedisInstance from '../redis';
+import * as config from '../../config';
 
-const logger = new PMSLogger({
-  enable: config.PMSLoggingEnabled,
+const dbName = 'telemetry';
+
+const redisInstance = new RedisInstance(dbName, {
+  dbIp: config.telemetryDbIp,
+  dbPort: config.telemetryDbPort,
+  dbPassword: config.telemetryDbPassword,
 });
 
-export { REQUEST_EVENTS };
-export default logger;
+export default redisInstance;

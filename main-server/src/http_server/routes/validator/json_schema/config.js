@@ -22,7 +22,7 @@
 
 export default {
   GET: {
-    '/config/pms/reissue_token': {
+    '/config/telemetry/reissue_token': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
       },

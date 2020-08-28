@@ -24,7 +24,7 @@ import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
-import PMSLogger, { REQUEST_EVENTS } from '../../pms';
+import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
@@ -179,7 +179,7 @@ export async function notifyIncomingRequestByCallback(
   });
 
   // log request event: IDP_NOTIFIES_USER
-  PMSLogger.logRequestEvent(
+  TelemetryLogger.logRequestEvent(
     eventDataForCallback.request_id,
     nodeId,
     REQUEST_EVENTS.IDP_NOTIFIES_USER,
@@ -223,7 +223,7 @@ export async function processMessage(nodeId, messageId, message) {
       await identity.onReceiveIdpResponseForIdentity({ nodeId, message });
     } else if (message.type === privateMessageType.CONSENT_REQUEST) {
       // log request event: IDP_RECEIVES_REQUEST
-      PMSLogger.logRequestEvent(
+      TelemetryLogger.logRequestEvent(
         message.request_id,
         nodeId,
         REQUEST_EVENTS.IDP_RECEIVES_REQUEST

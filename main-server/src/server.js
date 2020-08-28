@@ -42,7 +42,7 @@ import { getFunction } from './functions';
 import * as cacheDb from './db/cache';
 import * as longTermDb from './db/long_term';
 import * as dataDb from './db/data';
-import * as pmsDb from './db/pms';
+import * as telemetryDb from './db/telemetry';
 import * as tendermint from './tendermint';
 import * as tendermintWsPool from './tendermint/ws_pool';
 import * as mq from './mq';
@@ -90,8 +90,8 @@ async function initialize() {
       prometheus.initialize();
     }
 
-    if (config.PMSLoggingEnabled) {
-      pmsDb.initialize();
+    if (config.telemetryLoggingEnabled) {
+      telemetryDb.initialize();
     }
 
     if (config.ndidNode) {
@@ -328,8 +328,8 @@ async function shutDown() {
 
   await Promise.all([cacheDb.close(), longTermDb.close(), dataDb.close()]);
 
-  if (config.PMSLoggingEnabled) {
-    await pmsDb.close();
+  if (config.telemetryLoggingEnabled) {
+    await telemetryDb.close();
   }
 }
 

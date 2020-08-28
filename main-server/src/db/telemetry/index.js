@@ -26,7 +26,7 @@ import redisInstance from './redis';
 import logger from '../../logger';
 import CustomError from 'ndid-error/custom_error';
 
-const dbName = 'pms';
+const dbName = 'telemetry';
 
 export function getRedisInstance() {
   return redisInstance;

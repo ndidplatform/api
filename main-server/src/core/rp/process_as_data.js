@@ -27,7 +27,7 @@ import * as utils from '../../utils';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
-import PMSLogger, { REQUEST_EVENTS } from '../../pms';
+import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 export async function processAsResponse({
   nodeId,
@@ -56,7 +56,7 @@ export async function processAsResponse({
 
   // log request event: RP_RECEIVES_DATA
   // include error responses
-  PMSLogger.logRequestEvent(
+  TelemetryLogger.logRequestEvent(
     requestId,
     nodeId,
     REQUEST_EVENTS.RP_RECEIVES_DATA,
@@ -171,7 +171,7 @@ export async function processAsDataAfterSetDataReceived(
     if (error) throw error;
 
     // log request event: RP_ACCEPTS_DATA
-    PMSLogger.logRequestEvent(
+    TelemetryLogger.logRequestEvent(
       requestId,
       nodeId,
       REQUEST_EVENTS.RP_ACCEPTS_DATA,

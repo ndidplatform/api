@@ -24,7 +24,7 @@ import 'source-map-support/register';
 
 import TokenManager from './token';
 import TelemetryClient from './telemetry-client';
-import PMSDb from './db';
+import TelemetryDb from './db';
 
 import * as config from './config';
 import logger from './logger';
@@ -44,7 +44,7 @@ logger.info('List of monitored nodes:', nodeIds);
 const intervalPerNode = config.flushIntervalMs / nodeIds.length;
 
 // Initialize database fetching
-const db = new PMSDb([
+const db = new TelemetryDb([
   {
     // database for token fetching
     id: 'token-db',

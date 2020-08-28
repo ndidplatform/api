@@ -100,7 +100,7 @@ class RedisKVDb {
   }
 }
 
-export default class RedisPMSDb extends Redis {
+export default class RedisTelemetryDb extends Redis {
   constructor({ backoff, onDisconnected, onConnected }) {
     super({
       host: config.redisDbIp,

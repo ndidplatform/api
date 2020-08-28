@@ -42,7 +42,7 @@ import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
 import { dataUrlRegex } from '../../data_url';
 
-import PMSLogger, { REQUEST_EVENTS } from '../../pms';
+import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 import logger from '../../logger';
 
 import * as config from '../../config';
@@ -771,7 +771,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
     if (error) throw error;
 
     // log request event: RP_CREATES_REQUEST
-    PMSLogger.logRequestEvent(
+    TelemetryLogger.logRequestEvent(
       request_id,
       node_id,
       REQUEST_EVENTS.RP_CREATES_REQUEST,
@@ -826,7 +826,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
           senderNodeId: node_id,
           onSuccess: ({ mqDestAddress, receiverNodeId }) => {
             // log request event: RP_SENDS_REQUEST_TO_IDP
-            PMSLogger.logRequestEvent(
+            TelemetryLogger.logRequestEvent(
               request_id,
               node_id,
               REQUEST_EVENTS.RP_SENDS_REQUEST_TO_IDP,
@@ -867,7 +867,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
             senderNodeId: node_id,
             onSuccess: ({ mqDestAddress, receiverNodeId }) => {
               // log request event: RP_SENDS_REQUEST_TO_IDP
-              PMSLogger.logRequestEvent(
+              TelemetryLogger.logRequestEvent(
                 request_id,
                 node_id,
                 REQUEST_EVENTS.RP_SENDS_REQUEST_TO_IDP,

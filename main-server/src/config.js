@@ -263,9 +263,11 @@ export const prometheusHttpsCertPath =
     ? process.env.PROMETHEUS_HTTPS_CERT_PATH
     : path.join(__dirname, '..', 'dev_https_key', 'cert.pem');
 
-export const PMSLoggingEnabled = process.env.ENABLE_PMS_LOGGING === 'true';
-export const pmsDbIp = process.env.PMS_DB_IP || dbIp;
-export const pmsDbPort = process.env.PMS_DB_PORT || dbPort;
-export const pmsDbPassword = process.env.PMS_DB_PASSWORD || dbPassword;
-export const pmsTokenGenerationIntervalSec = process.env.PMS_TOKEN_TIMEOUT || (6 * 60 * 60);
-
+export const telemetryLoggingEnabled =
+  process.env.ENABLE_TELEMETRY_LOGGING === 'true';
+export const telemetryDbIp = process.env.TELEMETRY_DB_IP || dbIp;
+export const telemetryDbPort = process.env.TELEMETRY_DB_PORT || dbPort;
+export const telemetryDbPassword =
+  process.env.TELEMETRY_DB_PASSWORD || dbPassword;
+export const telemetryTokenGenerationIntervalSec =
+  process.env.TELEMETRY_TOKEN_TIMEOUT || 6 * 60 * 60;
