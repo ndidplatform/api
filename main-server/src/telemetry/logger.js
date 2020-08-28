@@ -192,7 +192,7 @@ export default class TelemetryLogger {
   }
 
   // manually create a token
-  async reissue_token() {
+  async reissueToken() {
     if (!this.enable) return;
     await this.generateToken(this.tokenTimeoutSec, {
       ...this.tokenInfo,
