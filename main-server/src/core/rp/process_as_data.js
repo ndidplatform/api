@@ -54,13 +54,8 @@ export async function processAsResponse({
   const asResponseId =
     nodeId + ':' + requestId + ':' + serviceId + ':' + asNodeId;
 
-  if (errorCode != null) {
-    cleanUpDataResponseFromAS(nodeId, asResponseId);
-    return;
-  }
-
-  // TODO: confirm with NDID whether to include error responses
   // log request event: RP_RECEIVES_DATA
+  // include error responses
   PMSLogger.logRequestEvent(
     requestId,
     nodeId,
@@ -70,6 +65,11 @@ export async function processAsResponse({
       service_id: serviceId,
     }
   );
+
+  if (errorCode != null) {
+    cleanUpDataResponseFromAS(nodeId, asResponseId);
+    return;
+  }
 
   const signatureFromBlockchain = await tendermintNdid.getDataSignature({
     request_id: requestId,
