@@ -2,7 +2,7 @@
 
 cd telemetry
 
-NODE_ID=idp1,idp2,rp1,as1 \
+NODE_ID=idp1,idp2,idp3,rp1,rp2,as1 \
 TELEMETRY_DB_IP=localhost \
 TELEMETRY_DB_PORT=6379 \
 TELEMETRY_NODE_IP=localhost \
