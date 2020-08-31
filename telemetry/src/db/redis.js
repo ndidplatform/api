@@ -32,7 +32,7 @@ class RedisStreamChannel {
   }
 
   async read() {
-    logger.debug('Attempt Reading Redis');
+    logger.debug(`Attempt Reading Redis (channel: ${this.channel})`);
     const messages = await this.redis.xread([
       'COUNT',
       this.countLimit,

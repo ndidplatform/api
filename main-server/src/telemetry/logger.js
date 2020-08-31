@@ -23,7 +23,7 @@
 import base64url from 'base64url';
 
 import * as telemetryDb from '../db/telemetry';
-import logger from '../logger.js';
+import logger from '../logger';
 import * as utils from '../utils';
 import * as config from '../config';
 

@@ -67,7 +67,10 @@ import { createIdentityAfterCloseConsentRequest } from './create_identity_after_
  *
  * @returns {{ request_id: string, accessor_id: string }}
  */
-export async function createIdentity(createIdentityParams, { apiVersion }) {
+export async function createIdentity(
+  createIdentityParams,
+  { apiVersion } = {}
+) {
   let { node_id, ial, accessor_id } = createIdentityParams;
   const {
     reference_id,
@@ -254,7 +257,6 @@ export async function createIdentity(createIdentityParams, { apiVersion }) {
       new_identity_list,
       requestMode,
       min_idp,
-      apiVersion,
     });
 
     return {
@@ -296,6 +298,7 @@ async function createIdentityInternalAsync(
     ial,
     request_message,
   },
+  { apiVersion } = {},
   {
     nodeId,
     request_id,
@@ -306,7 +309,6 @@ async function createIdentityInternalAsync(
     new_identity_list,
     requestMode,
     min_idp,
-    apiVersion,
   }
 ) {
   try {
