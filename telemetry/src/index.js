@@ -49,10 +49,16 @@ const db = new TelemetryDb([
     // database for token fetching
     id: 'token-db',
     type: 'key-value',
-    keySuffix: 'token',
+    keyPrefix: 'token',
     onCreated: (db) => {
       tokenManager.setGetToken(async (nodeId) => {
         return await db.getKey(nodeId);
+      });
+      tokenManager.setRemoveToken(async (nodeId) => {
+        return await db.unlinkKey(nodeId);
+      });
+      tokenManager.setPublishRequestNewTokenEvent(async (nodeId) => {
+        return await db.publish('request_new', nodeId);
       });
     },
   },

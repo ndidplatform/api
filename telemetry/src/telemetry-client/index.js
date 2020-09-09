@@ -24,6 +24,9 @@ import logger from '../logger';
 
 export default class TelemetryClient {
   constructor({ tokenManager }) {
+    /**
+     * @type {import('../token').default}
+     */
     this.tokenManager = tokenManager;
 
     // create new GRPCTelemetryClient
@@ -37,6 +40,8 @@ export default class TelemetryClient {
     if (token == undefined) {
       // no token for this nodeId
       // cannot send the data
+      logger.warn(`No auth token of node ID: "${nodeId}"; Unable to send`);
+      this.tokenManager.requestNewToken(nodeId);
       return false;
     }
 

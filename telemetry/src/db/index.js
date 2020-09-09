@@ -111,8 +111,8 @@ export default class TelemetryDb {
 
       let db;
       if (type === 'key-value') {
-        const { keySuffix } = channelInfo;
-        db = this.client.createKVChannel(keySuffix);
+        const { keyPrefix } = channelInfo;
+        db = this.client.createKVChannel(keyPrefix);
       } else if (type === 'stream') {
         const {
           channelName,

@@ -43,6 +43,7 @@ import * as cacheDb from './db/cache';
 import * as longTermDb from './db/long_term';
 import * as dataDb from './db/data';
 import * as telemetryDb from './db/telemetry';
+import * as telemetryEventsDb from './db/telemetry_events';
 import * as tendermint from './tendermint';
 import * as tendermintWsPool from './tendermint/ws_pool';
 import * as mq from './mq';
@@ -51,6 +52,7 @@ import * as externalCryptoService from './external_crypto_service';
 import * as jobMaster from './master-worker-interface/server';
 import * as jobWorker from './master-worker-interface/client';
 import * as prometheus from './prometheus';
+import * as telemetryToken from './telemetry/token';
 
 import logger from './logger';
 
@@ -59,7 +61,7 @@ import MODE from './mode';
 import ROLE from './role';
 import * as config from './config';
 
-process.on('unhandledRejection', function(reason, p) {
+process.on('unhandledRejection', function (reason, p) {
   if (reason && reason.name === 'CustomError') {
     logger.error({
       message: 'Unhandled Rejection',
@@ -92,6 +94,7 @@ async function initialize() {
 
     if (config.telemetryLoggingEnabled) {
       telemetryDb.initialize();
+      telemetryEventsDb.initialize();
     }
 
     if (config.ndidNode) {
@@ -192,6 +195,12 @@ async function initialize() {
     if (externalCryptoServiceReady != null) {
       logger.info({ message: 'Waiting for DPKI callback URLs to be set' });
       await externalCryptoServiceReady;
+    }
+
+    if (config.telemetryLoggingEnabled) {
+      if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+        await telemetryToken.initialize();
+      }
     }
 
     if (
@@ -330,6 +339,7 @@ async function shutDown() {
 
   if (config.telemetryLoggingEnabled) {
     await telemetryDb.close();
+    await telemetryEventsDb.close();
   }
 }
 

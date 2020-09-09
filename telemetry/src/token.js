@@ -30,6 +30,14 @@ export default class TokenManager {
     this.getToken = getTokenFn;
   }
 
+  setRemoveToken(removeTokenFn) {
+    this.removeToken = removeTokenFn;
+  }
+
+  setPublishRequestNewTokenEvent(publishRequestNewTokenEventFn) {
+    this.publishRequestNewTokenEvent = publishRequestNewTokenEventFn;
+  }
+
   async getTokenFromNodeId(nodeId) {
     if (this.tokens[nodeId] == undefined && this.getToken != undefined) {
       this.tokens[nodeId] = await this.getToken(nodeId);
@@ -41,14 +49,23 @@ export default class TokenManager {
     return this.tokens[nodeId];
   }
 
-  revokeToken(nodeId) {
+  async revokeToken(nodeId) {
     this.invalidatedToken[nodeId] = this.tokens[nodeId];
+    if (this.removeToken != undefined) {
+      await this.removeToken(nodeId);
+    }
   }
 
   async invalidateToken(nodeId, token) {
     const currentToken = await this.getTokenFromNodeId(nodeId);
     if (currentToken === token) {
-      this.revokeToken(nodeId);
+      await this.revokeToken(nodeId);
+    }
+  }
+
+  requestNewToken(nodeId) {
+    if (this.publishRequestNewTokenEvent != undefined) {
+      this.publishRequestNewTokenEvent(nodeId);
     }
   }
 }

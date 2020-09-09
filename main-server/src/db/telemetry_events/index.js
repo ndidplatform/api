@@ -20,13 +20,11 @@
  *
  */
 
-import * as db from '../redis_common';
 import redisInstance from './redis';
 
 import logger from '../../logger';
-import CustomError from 'ndid-error/custom_error';
 
-const dbName = 'telemetry';
+const dbName = 'telemetry_events';
 
 export function getRedisInstance() {
   return redisInstance;
@@ -45,38 +43,28 @@ export async function close() {
 }
 
 function getRedis() {
-  return getRedisInstance().redis; 
+  return getRedisInstance().redis;
 }
 
-export async function addNewRequestEvent(nodeId, {
-  request_id,
-  node_id,
-  state_code,
-  source_timestamp,
-  additional_data,
-}) {
+export async function subscribeToNodeTokenDelete({ onNewTokenRequest }) {
   try {
-    let additionalData = [];
-    if (additional_data != null) {
-      additionalData = ['additional_data', JSON.stringify(additional_data)];
-    }
+    const key = 'token:request_new';
 
-    await getRedis().xadd(`${nodeId}:request-events`, '*',
-      'request_id', request_id,
-      'node_id', node_id,
-      'state_code', state_code,
-      'source_timestamp', source_timestamp,
-      ...additionalData,
-    );
+    await getRedis().subscribe(key);
+
+    getRedis().on('message', function (channel, message) {
+      logger.debug({
+        message: 'Receive message from redis subscribes',
+        channel,
+        subscriptionMessage: message,
+      });
+
+      if (channel === key) {
+        onNewTokenRequest({ nodeId: message });
+      }
+    });
   } catch (err) {
     logger.error({ err });
-  }
-}
-
-export async function setToken(nodeId, token) {
-  try {
-    await getRedis().set(`token:${nodeId}`, token);
-  } catch (err) {
-    logger.error({ err });
+    // TODO: retry
   }
 }

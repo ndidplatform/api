@@ -32,6 +32,7 @@ const APP_RESPONSE_CODE = {
   INVALID_INPUT: 2,
   INVALID_AUTH_TOKEN: 3,
   AUTH_TOKEN_EXPIRED: 4,
+  INVALID_AUTH_TOKEN_SIGNATURE: 5,
   UNKNOWN_VERSION: 1001,
 };
 
@@ -90,7 +91,8 @@ export default class GRPCTelemetryClient {
   isTokenInvalid(result) {
     return (
       result.code === APP_RESPONSE_CODE.INVALID_AUTH_TOKEN ||
-      result.code === APP_RESPONSE_CODE.AUTH_TOKEN_EXPIRED
+      result.code === APP_RESPONSE_CODE.AUTH_TOKEN_EXPIRED ||
+      result.code === APP_RESPONSE_CODE.INVALID_AUTH_TOKEN_SIGNATURE
     );
   }
 

@@ -20,12 +20,8 @@
  *
  */
 
-import base64url from 'base64url';
-
 import * as telemetryDb from '../db/telemetry';
 import logger from '../logger';
-import * as utils from '../utils';
-import * as config from '../config';
 
 export const REQUEST_EVENTS = {
   RP_CREATES_REQUEST         : 1,
@@ -54,18 +50,9 @@ export default class TelemetryLogger {
    * @param {Boolean} option.enable
    * @param {Object} option.tokenInfo
    */
-  constructor({ enable, tokenInfo }) {
+  constructor({ enable }) {
     this.enable = enable;
     if (!enable) return;
-
-    this.tokenTimeoutSec = config.telemetryTokenGenerationIntervalSec;
-    this.tokenInfo = tokenInfo;
-
-    this.tokenGenerationRetryCount = 0;
-    this.tokenGenerationRetryLimit = 5; // 5 retries per token generation
-    this.tokenGenerationRetryTimeoutSec = 10; // 10 seconds between each retry generation
-
-    this.createTokenGenerationTimeout();
   }
 
   // Request Logging Module
@@ -95,108 +82,5 @@ export default class TelemetryLogger {
     };
 
     await telemetryDb.addNewRequestEvent(node_id, data);
-  }
-
-  // TOKEN Generation Module
-  async createJWT(payload) {
-    const header = {
-      type: 'JWT',
-      alg: 'RS256',
-    };
-
-    const headerJSON = JSON.stringify(header);
-    const encodedHeader = base64url(headerJSON);
-
-    const payloadJSON = JSON.stringify(payload);
-    const encodedPayload = base64url(payloadJSON);
-
-    const token = encodedHeader + '.' + encodedPayload;
-    const signature = await utils.createSignature(token, config.nodeId, false);
-    const signedToken = token + '.' + base64url(signature);
-
-    return signedToken;
-  }
-
-  /*
-   * Generate a new token and public it to redis db
-   *
-   * @param {Integer} timeout (time until token is expired, default: 6hrs).
-   * @param {Object} extraInfo (additional data).
-   */
-  async generateToken(timeoutSec = 6 * 60 * 60, extraInfo = {}) {
-    if (!this.enable) return;
-
-    logger.info('Generating new telemetry token');
-
-    const timeNow = Math.floor(Date.now() / 1000);
-    const timePadding = 60 * 60; // an hour padding
-
-    const payload = {
-      iat: timeNow - timePadding,
-      exp: timeNow + timeoutSec + timePadding,
-
-      node_id: config.nodeId,
-      nonce: Math.random(),
-      ...extraInfo,
-    };
-
-    const jwt = await this.createJWT(payload);
-    await telemetryDb.addNewToken(config.nodeId, jwt);
-
-    logger.info('Finish generating telemetry token');
-    this.tokenGenerationRetryCount = 0;
-  }
-
-  /*
-   * Register token generation interval
-   *
-   * @param {integer} timeout (time between two tokens)
-   * @param {Object} tokenInformation (refers to generateToken)
-   */
-  async createTokenGenerationTimeout() {
-    if (!this.enable) return;
-
-    this.disableTokenGeneration();
-
-    let timeoutSec = this.tokenTimeoutSec;
-    try {
-      await this.generateToken(this.tokenTimeoutSec, {
-        ...this.tokenInfo,
-        'token-type': 'auto-generated',
-      });
-    } catch (err) {
-      logger.error({
-        msg: 'Failed to generate telemetry token, retry in 10 seconds',
-        err,
-      });
-
-      // if retry count does not exceed limit, change timeout for retry
-      if (this.tokenGenerationRetryCount < this.tokenGenerationRetryLimit) {
-        this.tokenGenerationRetryCount++;
-        timeoutSec = this.tokenGenerationRetryTimeoutSec;
-      }
-    }
-    this.tokenGenerationTimeoutID = setTimeout(
-      () => this.createTokenGenerationTimeout(),
-      timeoutSec * 1000
-    );
-  }
-
-  /*
-   * Remove token generation timeout
-   */
-  disableTokenGeneration() {
-    if (this.tokenGenerationTimeoutID) {
-      clearTimeout(this.tokenGenerationTimeoutID);
-    }
-  }
-
-  // manually create a token
-  async reissueToken() {
-    if (!this.enable) return;
-    await this.generateToken(this.tokenTimeoutSec, {
-      ...this.tokenInfo,
-      'token-type': 'manually-generated',
-    });
   }
 }

@@ -25,7 +25,7 @@ import express from 'express';
 import { validateBody } from './middleware/validation';
 
 import * as config from '../../config';
-import TelemetryLogger from '../../telemetry';
+import * as telemetryToken from '../../telemetry/token';
 
 const router = express.Router();
 
@@ -88,7 +88,7 @@ router.post('/set', validateBody, function (req, res, next) {
 router.get('/telemetry/reissue_token', async (req, res, next) => {
   try {
     if (config.telemetryLoggingEnabled) {
-      await TelemetryLogger.reissueToken();
+      await telemetryToken.reissueToken();
       res.status(200).end();
     } else {
       res.status(404).json({

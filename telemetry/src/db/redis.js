@@ -51,7 +51,10 @@ class RedisStreamChannel {
   async onReadEvent(onReceived) {
     for (;;) {
       const events = await this.read();
-      if (!events || events.length === 0) return 0;
+      if (!events || events.length === 0) {
+        logger.debug(`No events (channel: ${this.channel})`);
+        return 0;
+      }
       const keys = events.map((event) => event[0]);
       const data = events.map((event) => {
         const data = event[1];
@@ -82,21 +85,29 @@ class RedisStreamChannel {
 }
 
 class RedisKVDb {
-  constructor(redis, suffix) {
+  constructor(redis, prefix) {
     this.redis = redis;
-    this.suffix = suffix;
+    this.prefix = prefix;
   }
 
   async getKey(key) {
     try {
-      return await this.redis.get(`${key}:${this.suffix}`);
+      return await this.redis.get(`${this.prefix}:${key}`);
     } catch (e) {
       return undefined;
     }
   }
 
   async setKey(key, value) {
-    return await this.redis.set(`${key}:${this.suffix}`, value);
+    return await this.redis.set(`${this.prefix}:${key}`, value);
+  }
+
+  async unlinkKey(key) {
+    return await this.redis.unlink(`${this.prefix}:${key}`);
+  }
+
+  async publish(key, value) {
+    return await this.redis.publish(`${this.prefix}:${key}`, value);
   }
 }
 

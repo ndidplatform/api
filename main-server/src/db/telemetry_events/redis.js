@@ -20,13 +20,15 @@
  *
  */
 
-import TelemetryLogger, { REQUEST_EVENTS } from './logger';
+import RedisInstance from '../redis';
+import * as config from '../../config';
 
-import * as config from '../config';
+const dbName = 'telemetry_events';
 
-const logger = new TelemetryLogger({
-  enable: config.telemetryLoggingEnabled,
+const redisInstance = new RedisInstance(dbName, {
+  dbIp: config.telemetryDbIp,
+  dbPort: config.telemetryDbPort,
+  dbPassword: config.telemetryDbPassword,
 });
 
-export { REQUEST_EVENTS };
-export default logger;
+export default redisInstance;
