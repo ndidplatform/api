@@ -114,7 +114,7 @@ export async function processDataForRP(
       REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA,
       {
         service_id: serviceId,
-        api_spec_version: apiVersion,
+        api_spec_version: apiVersion.toString(),
         through_callback_response: throughCallbackResponse,
       }
     );
