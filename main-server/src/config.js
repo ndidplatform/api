@@ -263,11 +263,12 @@ export const prometheusHttpsCertPath =
     ? process.env.PROMETHEUS_HTTPS_CERT_PATH
     : path.join(__dirname, '..', 'dev_https_key', 'cert.pem');
 
-export const telemetryLoggingEnabled =
-  process.env.ENABLE_TELEMETRY_LOGGING === 'true';
+export const telemetryLoggingEnabled = process.env.ENABLE_TELEMETRY_LOGGING
+  ? process.env.ENABLE_TELEMETRY_LOGGING === 'true'
+  : true;
 export const telemetryDbIp = process.env.TELEMETRY_DB_IP || dbIp;
 export const telemetryDbPort = process.env.TELEMETRY_DB_PORT || dbPort;
 export const telemetryDbPassword =
   process.env.TELEMETRY_DB_PASSWORD || dbPassword;
 export const telemetryTokenGenerationIntervalSec =
-  process.env.TELEMETRY_TOKEN_TIMEOUT || 6 * 60 * 60;
+  process.env.TELEMETRY_TOKEN_TIMEOUT || 6 * 60 * 60; // also used as token expire duration
