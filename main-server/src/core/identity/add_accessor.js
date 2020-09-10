@@ -179,7 +179,6 @@ export async function addAccessor(addAccessorParams, { apiVersion }) {
       request_id,
       mode,
       generated_accessor_id: accessor_id,
-      apiVersion,
     });
     return { request_id, accessor_id };
   } catch (error) {
@@ -216,7 +215,8 @@ async function addAccessorInternalAsync(
     accessor_id,
     request_message,
   },
-  { nodeId, request_id, mode, generated_accessor_id, apiVersion }
+  { apiVersion },
+  { nodeId, request_id, mode, generated_accessor_id }
 ) {
   try {
     let min_idp;

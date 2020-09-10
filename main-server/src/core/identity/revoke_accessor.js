@@ -165,7 +165,6 @@ export async function revokeAccessor(revokeAccessorParams, { apiVersion }) {
       nodeId: node_id,
       request_id,
       mode,
-      apiVersion,
     });
     return { request_id };
   } catch (error) {
@@ -200,7 +199,8 @@ async function createRequestToRevokeAccessor(
     accessor_id,
     request_message,
   },
-  { nodeId, request_id, mode, apiVersion }
+  { apiVersion },
+  { nodeId, request_id, mode }
 ) {
   try {
     let min_idp;

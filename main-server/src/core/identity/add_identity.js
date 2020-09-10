@@ -192,7 +192,6 @@ export async function addIdentity(addIdentityParams, { apiVersion }) {
       nodeId: node_id,
       request_id,
       consentRequestNeeded,
-      apiVersion,
     });
     return { request_id };
   } catch (error) {
@@ -227,7 +226,8 @@ async function addIdentityInternalAsync(
     identity_list,
     request_message,
   },
-  { nodeId, request_id, consentRequestNeeded, apiVersion }
+  { apiVersion },
+  { nodeId, request_id, consentRequestNeeded }
 ) {
   try {
     const requestMode = 2;

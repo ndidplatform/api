@@ -55,7 +55,7 @@ import { revokeIdentityAssociationAfterCloseConsentRequest } from './revoke_iden
  */
 export async function revokeIdentityAssociation(
   revokeIdentityAssociationParams,
-  { apiVersion },
+  { apiVersion }
 ) {
   let { node_id } = revokeIdentityAssociationParams;
   const {
@@ -141,7 +141,6 @@ export async function revokeIdentityAssociation(
       nodeId: node_id,
       request_id,
       modeList: identityOnNode.mode_list,
-      apiVersion,
     });
     return { request_id };
   } catch (error) {
@@ -169,7 +168,8 @@ export async function revokeIdentityAssociation(
 
 async function revokeAssociationInternalAsync(
   { reference_id, callback_url, namespace, identifier, request_message },
-  { nodeId, request_id, modeList, apiVersion }
+  { apiVersion },
+  { nodeId, request_id, modeList }
 ) {
   try {
     const mode = modeList.includes(3) ? 3 : 2;

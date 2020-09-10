@@ -61,7 +61,10 @@ import { revokeAndAddAccessorAfterCloseConsentRequest } from './revoke_and_add_a
  *
  * @returns {{ request_id: string }}
  */
-export async function revokeAndAddAccessor(revokeAndAddAccessorParams, { apiVersion }) {
+export async function revokeAndAddAccessor(
+  revokeAndAddAccessorParams,
+  { apiVersion }
+) {
   let { node_id, accessor_id } = revokeAndAddAccessorParams;
   const {
     revoking_accessor_id,
@@ -196,7 +199,6 @@ export async function revokeAndAddAccessor(revokeAndAddAccessorParams, { apiVers
       request_id,
       mode,
       generated_accessor_id: accessor_id,
-      apiVersion,
     });
     return { request_id, accessor_id };
   } catch (error) {
@@ -234,7 +236,8 @@ async function revokeAndAddAccessorInternalAsync(
     accessor_type,
     request_message,
   },
-  { nodeId, request_id, mode, generated_accessor_id, apiVersion }
+  { apiVersion },
+  { nodeId, request_id, mode, generated_accessor_id }
 ) {
   try {
     let min_idp;
