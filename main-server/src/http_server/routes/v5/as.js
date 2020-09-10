@@ -103,7 +103,7 @@ router.post(
         },
         {
           synchronous: false,
-          apiVersion: apiVersion,
+          apiVersion,
         }
       );
 
@@ -133,7 +133,7 @@ router.post(
           serviceId: service_id,
           error_code,
         },
-        { synchronous: false, apiVersion: apiVersion }
+        { synchronous: false, apiVersion }
       );
 
       res.status(202).end();

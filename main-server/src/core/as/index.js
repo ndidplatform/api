@@ -347,7 +347,7 @@ export async function afterGotDataFromCallback(
       !additionalData.reference_id || !additionalData.callback_url;
     await processDataForRP(result.data, additionalData, {
       synchronous,
-      apiVersion: additionalData.callbackApiVersion,
+      apiVersion: additionalData.apiVersion,
       throughCallbackResponse: true,
     });
   } catch (error) {
