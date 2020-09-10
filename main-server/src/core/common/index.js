@@ -37,6 +37,8 @@ import * as cacheDb from '../../db/cache';
 import { delegateToWorker } from '../../master-worker-interface/server';
 import { broadcastRemoveRequestTimeoutScheduler } from '../../master-worker-interface/client';
 
+import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
+
 import MODE from '../../mode';
 import { getFunction } from '../../functions';
 
@@ -279,6 +281,17 @@ export function timeoutRequestAfterBlockchain(
   if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
+
+    // log request event: RP_CLOSES_OR_TIMES_OUT_REQUEST
+    TelemetryLogger.logRequestEvent(
+      requestId,
+      nodeId,
+      REQUEST_EVENTS.RP_CLOSES_OR_TIMES_OUT_REQUEST,
+      {
+        timeout: true,
+      }
+    );
+
     cacheDb.removeTimeoutScheduler(nodeId, requestId);
   } catch (error) {
     logger.error({

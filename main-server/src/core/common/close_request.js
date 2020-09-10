@@ -219,13 +219,14 @@ export async function closeRequestInternalAsyncAfterBlockchain(
   try {
     if (error) throw error;
 
-    // log request event: RP_CLOSES_REQUEST
+    // log request event: RP_CLOSES_OR_TIMES_OUT_REQUEST
     TelemetryLogger.logRequestEvent(
       request_id,
       node_id,
-      REQUEST_EVENTS.RP_CLOSES_REQUEST,
+      REQUEST_EVENTS.RP_CLOSES_OR_TIMES_OUT_REQUEST,
       {
         api_spec_version: apiVersion.toString(),
+        close: true,
         auto_close: autoClose,
       }
     );
