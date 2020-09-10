@@ -119,10 +119,12 @@ export default class TelemetryDb {
           onDataReceived,
           countLimit,
           timeLimit,
+          streamMaxCapacity,
         } = channelInfo;
 
         db = this.client.createReadChannel(channelName, {
           countLimit,
+          streamMaxCapacity,
         });
 
         setTimeout(() => {

@@ -44,6 +44,11 @@ export const grpcPingTimeout = process.env.GRPC_PING_TIMEOUT_MS
   ? parseInt(process.env.GRPC_PING_TIMEOUT_MS)
   : 20000;
 
+export const requestEventStreamMaxCapacity = process.env
+  .REQUEST_EVENT_STREAM_MAX_CAPACITY
+  ? parseInt(process.env.REQUEST_EVENT_STREAM_MAX_CAPACITY)
+  : 1000000;
+
 export const flushIntervalMs =
   (parseInt(process.env.FLUSH_INTERVAL_SEC) || 10) * 1000;
 

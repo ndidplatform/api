@@ -72,5 +72,6 @@ const db = new TelemetryDb([
     delayStart: intervalPerNode * idx,
     countLimit: 300,
     timeLimit: config.flushIntervalMs, // flush every 5 seconds
+    streamMaxCapacity: config.requestEventStreamMaxCapacity,
   })),
 ]);

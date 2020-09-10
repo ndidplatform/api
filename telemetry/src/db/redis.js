@@ -26,9 +26,31 @@ import logger from '../logger';
 
 class RedisStreamChannel {
   constructor(redis, channel, options) {
+    /**
+     * @type {Redis.Redis}
+     */
     this.redis = redis;
     this.channel = channel;
+
     this.countLimit = options.countLimit || 1000;
+
+    this.streamMaxCapacity = options.streamMaxCapacity;
+
+    if (this.streamMaxCapacity) {
+      this.setStreamMaxCapacity();
+    }
+  }
+
+  async setStreamMaxCapacity() {
+    logger.debug(
+      `Setting Stream Max Capacity (channel: ${this.channel}) to ${this.streamMaxCapacity}`
+    );
+    await this.redis.xtrim([
+      this.channel,
+      'MAXLEN',
+      '~',
+      this.streamMaxCapacity,
+    ]);
   }
 
   async read() {
