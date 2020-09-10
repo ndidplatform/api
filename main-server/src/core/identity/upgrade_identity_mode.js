@@ -53,7 +53,10 @@ import { role } from '../../node';
  *
  * @returns {{ request_id: string }}
  */
-export async function upgradeIdentityMode(upgradeIdentityModeParams, { apiVersion }) {
+export async function upgradeIdentityMode(
+  upgradeIdentityModeParams,
+  { apiVersion }
+) {
   let { node_id } = upgradeIdentityModeParams;
   const {
     reference_id,
@@ -167,7 +170,6 @@ export async function upgradeIdentityMode(upgradeIdentityModeParams, { apiVersio
       nodeId: node_id,
       request_id,
       requestMode,
-      apiVersion,
     });
     return { request_id };
   } catch (error) {
@@ -195,7 +197,8 @@ export async function upgradeIdentityMode(upgradeIdentityModeParams, { apiVersio
 
 async function upgradeIdentityModeInternalAsync(
   { reference_id, callback_url, namespace, identifier, request_message },
-  { nodeId, request_id, requestMode, apiVersion }
+  { apiVersion },
+  { nodeId, request_id, requestMode }
 ) {
   try {
     const min_idp = 1;
