@@ -137,3 +137,11 @@ if (process.env.NODE_ENV === 'production') {
     process.exit(1);
   }
 }
+
+if (process.env.ENABLE_TELEMETRY_LOGGING == null) {
+  console.error(
+    'ERROR:',
+    '"ENABLE_TELEMETRY_LOGGING" environment variable is not set. Process will now exit.'
+  );
+  process.exit(1);
+}
