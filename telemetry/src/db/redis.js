@@ -136,7 +136,7 @@ class RedisKVDb {
 export default class RedisTelemetryDb extends Redis {
   constructor({ backoff, onDisconnected, onConnected }) {
     super({
-      host: config.redisDbIp,
+      host: config.redisDbHost,
       port: config.redisDbPort,
       password: config.redisDbPassword,
       retryStrategy: (times) => {

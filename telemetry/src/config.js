@@ -27,14 +27,14 @@ export const env = process.env.NODE_ENV || 'development';
 
 export const nodeIds = process.env.NODE_ID;
 
-export const redisDbIp = process.env.TELEMETRY_DB_IP;
+export const redisDbHost = process.env.TELEMETRY_DB_HOST;
 export const redisDbPort = process.env.TELEMETRY_DB_PORT;
 export const redisDbPassword = process.env.TELEMETRY_DB_PASSWORD;
 
-export const telemetryNodeIp = process.env.TELEMETRY_NODE_IP;
+export const telemetryNodeHost = process.env.TELEMETRY_NODE_HOST;
 export const telemetryNodePort = process.env.TELEMETRY_NODE_PORT;
 
-export const telemetryNodeAddress = `${telemetryNodeIp}:${telemetryNodePort}`;
+export const telemetryNodeAddress = `${telemetryNodeHost}:${telemetryNodePort}`;
 
 export const grpcPingInterval = process.env.GRPC_PING_INTERVAL_MS
   ? parseInt(process.env.GRPC_PING_INTERVAL_MS)

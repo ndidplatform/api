@@ -43,12 +43,12 @@ npm start
 **Environment Variable options**
 
 - `NODE_ID`: List of montored nodes separated by commas (',').
-- `TELEMETRY_DB_IP`: IP of Redis DB database
+- `TELEMETRY_DB_HOST`: Host/IP of Redis DB database
 - `TELEMETRY_DB_PORT`: Port of Redis DB database
 - `TELEMETRY_DB_PASSWORD`: Password of Redis DB database
-- `TELEMETRY_NODE_IP`: IP of target telemetry node server (should be given by NDID)
+- `TELEMETRY_NODE_HOST`: Host/IP of target telemetry node server (should be given by NDID)
 - `TELEMETRY_NODE_PORT`: Port of target telemetry node server (should be given by NDID)
 - `GRPC_PING_INTERVAL_MS`: ping interval in millisecond
 - `GRPC_PING_TIMEOUT_MS`: ping timeout in millisecond
 - `FLUSH_INTERVAL_SEC`: Amount of time between each data shipping in second (default: 10 seconds)
-
+- `REQUEST_EVENT_STREAM_MAX_CAPACITY`: Maximum number of items in request events Redis streams
