@@ -21,6 +21,6 @@
  */
 
 export const HTTP_HEADER_FIELDS = {
-  ndidMemberAppType: 'NDID-Member-App-Type',
-  ndidMemberAppVersion: 'NDID-Member-App-Version',
+  ndidMemberAppType: 'ndid-member-app-type',
+  ndidMemberAppVersion: 'ndid-member-app-version',
 };
