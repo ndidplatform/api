@@ -23,9 +23,9 @@
 // required config
 [
   'NODE_ID',
-  'TELEMETRY_DB_IP',
+  'TELEMETRY_DB_HOST',
   'TELEMETRY_DB_PORT',
-  'TELEMETRY_NODE_IP',
+  'TELEMETRY_NODE_HOST',
   'TELEMETRY_NODE_PORT',
 ].forEach((conf) => {
   if (process.env[conf] == undefined) {
