@@ -55,7 +55,10 @@ import { revokeAccessorAfterCloseConsentRequest } from './revoke_accessor_after_
  *
  * @returns {{ request_id: string }}
  */
-export async function revokeAccessor(revokeAccessorParams, { apiVersion }) {
+export async function revokeAccessor(
+  revokeAccessorParams,
+  { apiVersion } = {}
+) {
   let { node_id } = revokeAccessorParams;
   const {
     accessor_id,
@@ -199,7 +202,7 @@ async function createRequestToRevokeAccessor(
     accessor_id,
     request_message,
   },
-  { apiVersion },
+  { apiVersion, ndidMemberAppType, ndidMemberAppVersion },
   { nodeId, request_id, mode }
 ) {
   try {
@@ -266,6 +269,8 @@ async function createRequestToRevokeAccessor(
           ],
           saveForRetryOnChainDisabled: true,
           apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
         },
         { request_id }
       );

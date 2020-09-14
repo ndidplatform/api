@@ -27,6 +27,7 @@ import { asOnlyHandler } from '../middleware/role_handler';
 import * as as from '../../../core/as';
 
 import { apiVersion } from './version';
+import { HTTP_HEADER_FIELDS } from './private_http_header';
 
 const router = express.Router();
 
@@ -91,6 +92,10 @@ router.post(
     try {
       const { request_id, service_id } = req.params;
       const { node_id, reference_id, callback_url, data } = req.body;
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
 
       await as.processDataForRP(
         data,
@@ -104,6 +109,8 @@ router.post(
         {
           synchronous: false,
           apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
         }
       );
 
@@ -122,6 +129,10 @@ router.post(
     try {
       const { request_id, service_id } = req.params;
       const { node_id, reference_id, callback_url, error_code } = req.body;
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
 
       await as.processDataForRP(
         undefined,
@@ -133,7 +144,12 @@ router.post(
           serviceId: service_id,
           error_code,
         },
-        { synchronous: false, apiVersion }
+        {
+          synchronous: false,
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
+        }
       );
 
       res.status(202).end();

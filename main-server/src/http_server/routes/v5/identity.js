@@ -28,6 +28,7 @@ import * as identity from '../../../core/identity';
 import * as tendermintNdid from '../../../tendermint/ndid';
 
 import { apiVersion } from './version';
+import { HTTP_HEADER_FIELDS } from './private_http_header';
 
 const router = express.Router();
 
@@ -46,6 +47,11 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
       request_message,
     } = req.body;
 
+    const {
+      [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+      [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+    } = req.headers;
+
     const result = await identity.createIdentity(
       {
         node_id,
@@ -59,7 +65,7 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
         ial,
         request_message,
       },
-      { apiVersion }
+      { apiVersion, ndidMemberAppType, ndidMemberAppVersion }
     );
 
     res.status(202).json(result);
@@ -100,6 +106,7 @@ router.post(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
+
       const {
         node_id,
         reference_id,
@@ -107,6 +114,11 @@ router.post(
         identity_list,
         request_message,
       } = req.body;
+
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
 
       const result = await identity.addIdentity(
         {
@@ -119,7 +131,9 @@ router.post(
           request_message,
         },
         {
-          apiVersion: apiVersion,
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
         }
       );
 
@@ -243,6 +257,11 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
       const result = await identity.addAccessor(
         {
           node_id,
@@ -257,6 +276,8 @@ router.post(
         },
         {
           apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
         }
       );
 
@@ -284,6 +305,11 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
       const result = await identity.revokeAccessor(
         {
           node_id,
@@ -296,6 +322,8 @@ router.post(
         },
         {
           apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
         }
       );
 
@@ -326,6 +354,11 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
       const result = await identity.revokeAndAddAccessor(
         {
           node_id,
@@ -341,6 +374,8 @@ router.post(
         },
         {
           apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
         }
       );
 
@@ -362,6 +397,11 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
       const result = await identity.revokeIdentityAssociation(
         {
           node_id,
@@ -373,6 +413,8 @@ router.post(
         },
         {
           apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
         }
       );
 
@@ -391,7 +433,14 @@ router.post(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
+
       const { node_id, reference_id, callback_url, request_message } = req.body;
+
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
       const result = await identity.upgradeIdentityMode(
         {
           node_id,
@@ -403,6 +452,8 @@ router.post(
         },
         {
           apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
         }
       );
       res.status(202).json(result);

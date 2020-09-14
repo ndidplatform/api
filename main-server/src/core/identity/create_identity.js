@@ -298,7 +298,7 @@ async function createIdentityInternalAsync(
     ial,
     request_message,
   },
-  { apiVersion } = {},
+  { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = {},
   {
     nodeId,
     request_id,
@@ -380,6 +380,8 @@ async function createIdentityInternalAsync(
           ],
           saveForRetryOnChainDisabled: true,
           apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
         },
         { request_id }
       );

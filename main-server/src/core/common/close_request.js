@@ -100,6 +100,8 @@ async function closeRequestInternalAsync(
     retryOnFail,
     apiVersion,
     autoClose = false,
+    ndidMemberAppType,
+    ndidMemberAppVersion,
   } = options;
   const { node_id } = additionalParams;
   try {
@@ -140,6 +142,8 @@ async function closeRequestInternalAsync(
             callbackAdditionalArgs,
             apiVersion,
             autoClose,
+            ndidMemberAppType,
+            ndidMemberAppVersion,
           },
         ],
         saveForRetryOnChainDisabled,
@@ -163,6 +167,8 @@ async function closeRequestInternalAsync(
           callbackAdditionalArgs,
           apiVersion,
           autoClose,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
         }
       );
     }
@@ -213,6 +219,8 @@ export async function closeRequestInternalAsyncAfterBlockchain(
     callbackAdditionalArgs,
     apiVersion,
     autoClose,
+    ndidMemberAppType,
+    ndidMemberAppVersion,
   } = {}
 ) {
   if (chainDisabledRetryLater) return;
@@ -225,9 +233,11 @@ export async function closeRequestInternalAsyncAfterBlockchain(
       node_id,
       REQUEST_EVENTS.RP_CLOSES_OR_TIMES_OUT_REQUEST,
       {
-        api_spec_version: apiVersion.toString(),
+        api_spec_version: apiVersion ? apiVersion.toString() : undefined,
         close: true,
         auto_close: autoClose,
+        ndid_member_app_type: ndidMemberAppType,
+        ndid_member_app_version: ndidMemberAppVersion,
       }
     );
 

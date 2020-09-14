@@ -46,7 +46,13 @@ import { role } from '../../node';
 export async function processDataForRP(
   data,
   processDataForRPParams,
-  { synchronous = false, apiVersion, throughCallbackResponse = false } = {}
+  {
+    synchronous = false,
+    apiVersion,
+    throughCallbackResponse = false,
+    ndidMemberAppType,
+    ndidMemberAppVersion,
+  } = {}
 ) {
   let { node_id } = processDataForRPParams;
   const {
@@ -116,6 +122,8 @@ export async function processDataForRP(
         service_id: serviceId,
         api_spec_version: apiVersion.toString(),
         through_callback_response: throughCallbackResponse,
+        ndid_member_app_type: ndidMemberAppType,
+        ndid_member_app_version: ndidMemberAppVersion,
       }
     );
 

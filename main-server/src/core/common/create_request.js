@@ -609,6 +609,8 @@ async function createRequestInternalAsync(
     callbackAdditionalArgs,
     saveForRetryOnChainDisabled,
     apiVersion,
+    ndidMemberAppType,
+    ndidMemberAppVersion,
   } = options;
   const {
     node_id,
@@ -671,6 +673,8 @@ async function createRequestInternalAsync(
             callbackFnName,
             callbackAdditionalArgs,
             apiVersion,
+            ndidMemberAppType,
+            ndidMemberAppVersion,
           },
         ],
         saveForRetryOnChainDisabled
@@ -699,6 +703,8 @@ async function createRequestInternalAsync(
           callbackFnName,
           callbackAdditionalArgs,
           apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
         }
       );
     }
@@ -764,6 +770,8 @@ export async function createRequestInternalAsyncAfterBlockchain(
     callbackFnName,
     callbackAdditionalArgs,
     apiVersion,
+    ndidMemberAppType,
+    ndidMemberAppVersion,
   } = {}
 ) {
   if (chainDisabledRetryLater) return;
@@ -777,6 +785,8 @@ export async function createRequestInternalAsyncAfterBlockchain(
       REQUEST_EVENTS.RP_CREATES_REQUEST,
       {
         api_spec_version: apiVersion.toString(),
+        ndid_member_app_type: ndidMemberAppType,
+        ndid_member_app_version: ndidMemberAppVersion,
       }
     );
 

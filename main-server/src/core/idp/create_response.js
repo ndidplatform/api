@@ -49,7 +49,7 @@ export async function createResponse(createResponseParams, options = {}) {
     signature,
     error_code,
   } = createResponseParams;
-  const { apiVersion } = options;
+  const { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = options;
 
   if (role === 'proxy') {
     if (node_id == null) {
@@ -68,6 +68,8 @@ export async function createResponse(createResponseParams, options = {}) {
     REQUEST_EVENTS.IDP_RECEIVES_AUTH_RESULT,
     {
       api_spec_version: apiVersion.toString(),
+      ndid_member_app_type: ndidMemberAppType,
+      ndid_member_app_version: ndidMemberAppVersion,
     }
   );
 

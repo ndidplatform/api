@@ -55,7 +55,7 @@ import { role } from '../../node';
  */
 export async function upgradeIdentityMode(
   upgradeIdentityModeParams,
-  { apiVersion }
+  { apiVersion } = {}
 ) {
   let { node_id } = upgradeIdentityModeParams;
   const {
@@ -197,7 +197,7 @@ export async function upgradeIdentityMode(
 
 async function upgradeIdentityModeInternalAsync(
   { reference_id, callback_url, namespace, identifier, request_message },
-  { apiVersion },
+  { apiVersion, ndidMemberAppType, ndidMemberAppVersion },
   { nodeId, request_id, requestMode }
 ) {
   try {
@@ -245,6 +245,8 @@ async function upgradeIdentityModeInternalAsync(
         ],
         saveForRetryOnChainDisabled: true,
         apiVersion,
+        ndidMemberAppType,
+        ndidMemberAppVersion,
       },
       { request_id }
     );
