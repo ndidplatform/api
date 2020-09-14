@@ -233,7 +233,7 @@ export async function closeRequestInternalAsyncAfterBlockchain(
       node_id,
       REQUEST_EVENTS.RP_CLOSES_OR_TIMES_OUT_REQUEST,
       {
-        api_spec_version: apiVersion ? apiVersion.toString() : undefined,
+        api_spec_version: apiVersion ? apiVersion.toString() : undefined, // undefined in case of auto close internally by platform
         close: true,
         auto_close: autoClose,
         ndid_member_app_type: ndidMemberAppType,
