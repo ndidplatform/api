@@ -450,7 +450,7 @@ async function getDataAndSendBackToRP(
         REQUEST_EVENTS.AS_QUERIES_DATA,
         {
           service_id,
-          api_spec_version: config.callbackApiVersion.toString(),
+          api_spec_version: config.callbackApiVersion,
         }
       );
     })

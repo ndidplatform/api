@@ -67,7 +67,7 @@ export async function createResponse(createResponseParams, options = {}) {
     node_id,
     REQUEST_EVENTS.IDP_RECEIVES_AUTH_RESULT,
     {
-      api_spec_version: apiVersion.toString(),
+      api_spec_version: apiVersion,
       ndid_member_app_type: ndidMemberAppType,
       ndid_member_app_version: ndidMemberAppVersion,
     }

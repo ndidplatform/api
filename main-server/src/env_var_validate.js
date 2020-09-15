@@ -138,6 +138,36 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
+const DEFAULT_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.0'];
+if (process.env.DEFAULT_API_VERSION != null) {
+  if (
+    !DEFAULT_API_VERSION_ALLOWED_VALUES.includes(
+      process.env.DEFAULT_API_VERSION
+    )
+  ) {
+    console.error(
+      'ERROR:',
+      'Unsupported "DEFAULT_API_VERSION" environment variable value. Only "4.0" and "5.0" are allowed. Process will now exit.'
+    );
+    process.exit(1);
+  }
+}
+
+const CALLBACK_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.0'];
+if (process.env.CALLBACK_API_VERSION != null) {
+  if (
+    !CALLBACK_API_VERSION_ALLOWED_VALUES.includes(
+      process.env.CALLBACK_API_VERSION
+    )
+  ) {
+    console.error(
+      'ERROR:',
+      'Unsupported "CALLBACK_API_VERSION" environment variable value. Only "4.0" and "5.0" are allowed. Process will now exit.'
+    );
+    process.exit(1);
+  }
+}
+
 if (process.env.ENABLE_TELEMETRY_LOGGING == null) {
   console.error(
     'ERROR:',

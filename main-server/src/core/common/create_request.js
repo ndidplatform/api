@@ -784,7 +784,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
       node_id,
       REQUEST_EVENTS.RP_CREATES_REQUEST,
       {
-        api_spec_version: apiVersion.toString(),
+        api_spec_version: apiVersion,
         ndid_member_app_type: ndidMemberAppType,
         ndid_member_app_version: ndidMemberAppVersion,
       }

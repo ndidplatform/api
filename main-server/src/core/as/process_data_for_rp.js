@@ -120,7 +120,7 @@ export async function processDataForRP(
       REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA,
       {
         service_id: serviceId,
-        api_spec_version: apiVersion.toString(),
+        api_spec_version: apiVersion,
         through_callback_response: throughCallbackResponse,
         ndid_member_app_type: ndidMemberAppType,
         ndid_member_app_version: ndidMemberAppVersion,

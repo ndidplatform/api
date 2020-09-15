@@ -184,7 +184,7 @@ export async function notifyIncomingRequestByCallback(
     nodeId,
     REQUEST_EVENTS.IDP_NOTIFIES_USER,
     {
-      api_spec_version: config.callbackApiVersion.toString(),
+      api_spec_version: config.callbackApiVersion,
     }
   );
 }

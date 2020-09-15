@@ -373,7 +373,7 @@ export async function processMessage(nodeId, messageId, message) {
         ]);
 
         let requestDetailsForCallback;
-        if (config.callbackApiVersion === 4) {
+        if (config.callbackApiVersion === '4.0') {
           const detailedRequestStatus = utils.getDetailedRequestStatusLegacy(
             requestDetail
           );

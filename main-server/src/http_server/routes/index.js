@@ -116,7 +116,7 @@ router.get('/reinit_node_keys', reinitNodeKeys);
 
 router.use(readyHandler);
 
-if (config.defaultApiVersion === 4) {
+if (config.defaultApiVersion === '4.0') {
   router.use(apiV4Router);
 } else {
   router.use(apiV5Router);
