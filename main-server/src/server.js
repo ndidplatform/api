@@ -199,7 +199,7 @@ async function initialize() {
 
     if (config.telemetryLoggingEnabled) {
       if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
-        await telemetryToken.initialize();
+        await telemetryToken.initialize({ role });
       }
     }
 

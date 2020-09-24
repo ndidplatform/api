@@ -45,7 +45,7 @@ export default class TelemetryClient {
       return false;
     }
 
-    logger.info('Sending', events.length, 'request events of ', nodeId);
+    logger.info('Sending', events.length, 'request events of', nodeId);
     const result = await this.client.sendRequestEvents({
       nodeId,
       token,

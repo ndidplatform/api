@@ -24,8 +24,10 @@ import base64url from 'base64url';
 
 import * as telemetryDb from '../db/telemetry';
 import * as telemetryEventsDb from '../db/telemetry_events';
+import * as node from '../node';
 import logger from '../logger';
 import * as utils from '../utils';
+import ROLE from '../role';
 import * as config from '../config';
 
 const tokenTimeoutSec = config.telemetryTokenGenerationIntervalSec;
@@ -37,11 +39,20 @@ const tokenGenerationRetryTimeoutSec = 10; // 10 seconds between each retry gene
 let tokenGenerationTimeoutID;
 
 let tokenInfo;
+let role;
+let managedNodeIds;
 
 let initialized = false;
 
-export async function initialize({ tokenInfo: _tokenInfo } = {}) {
+export async function initialize({ tokenInfo: _tokenInfo, role: _role } = {}) {
   tokenInfo = _tokenInfo;
+  role = _role;
+
+  if (role === ROLE.RP || role === ROLE.IDP || role === ROLE.AS) {
+    managedNodeIds = [config.nodeId];
+  } else if (role === ROLE.PROXY) {
+    await refreshProxyManagedNodeIds();
+  }
 
   await telemetryEventsDb.subscribeToNodeTokenDelete({
     onNewTokenRequest,
@@ -52,18 +63,28 @@ export async function initialize({ tokenInfo: _tokenInfo } = {}) {
   initialized = true;
 }
 
+async function refreshProxyManagedNodeIds() {
+  const nodesBehindProxy = await node.getNodesBehindProxyWithKeyOnProxy();
+  managedNodeIds = nodesBehindProxy.map((node) => node.node_id);
+}
+
 async function onNewTokenRequest({ nodeId }) {
   if (!initialized) {
     return;
   }
-  if (nodeId === config.nodeId) {
+
+  if (role === ROLE.PROXY) {
+    await refreshProxyManagedNodeIds();
+  }
+
+  if (managedNodeIds.includes(nodeId)) {
     logger.info('Telemetry new token requested, generating');
     createTokenGenerationTimeout();
   }
 }
 
 // TOKEN Generation Module
-async function createJWT(payload) {
+async function createJWT({ nodeId, payload }) {
   const header = {
     type: 'JWT',
     alg: 'RS256',
@@ -76,7 +97,7 @@ async function createJWT(payload) {
   const encodedPayload = base64url(payloadJSON);
 
   const token = encodedHeader + '.' + encodedPayload;
-  const signature = await utils.createSignature(token, config.nodeId, false);
+  const signature = await utils.createSignature(token, nodeId, false);
   const signedToken = token + '.' + base64url(signature);
 
   return signedToken;
@@ -105,8 +126,12 @@ async function generateToken(timeoutSec = 6 * 60 * 60, extraInfo = {}) {
     ...extraInfo,
   };
 
-  const jwt = await createJWT(payload);
-  await telemetryDb.setToken(config.nodeId, jwt);
+  const jwt = await createJWT({ nodeId: config.nodeId, payload });
+  await Promise.all(
+    managedNodeIds.map(async (nodeId) => {
+      await telemetryDb.setToken(nodeId, jwt);
+    })
+  );
 
   logger.info('Finish generating telemetry token');
   tokenGenerationRetryCount = 0;
