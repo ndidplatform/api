@@ -119,6 +119,31 @@ export function checkRequestMessageIntegrity(
   request,
   requestDetail
 ) {
+  // Verify request message salt (only on mode 1) to verify identity integrity 
+  // since it's derived from namespace and identifier
+  // For mode 2 and mode 3 requests, RP doesn't send namespace and identifier data to IdP 
+  // hence, request message salt cannot be derived on IdP
+  if (requestDetail.mode === 1) {
+    const expectedRequestMessageSalt = utils.generateRequestMessageSalt({
+      initial_salt: request.initial_salt,
+      namespace: request.namespace,
+      identifier: request.identifier,
+    });
+    if (request.request_message_salt !== expectedRequestMessageSalt) {
+      logger.warn({
+        message: 'Request message salt mismatched',
+        requestId,
+      });
+      logger.debug({
+        message: 'Request message salt mismatched',
+        requestId,
+        expectedRequestMessageSalt,
+        requestMessageSalt: request.request_message_salt,
+      });
+      return false;
+    }
+  }
+
   const requestMessageHash = utils.hash(
     request.request_message + request.request_message_salt
   );

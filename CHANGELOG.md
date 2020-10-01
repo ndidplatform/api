@@ -4,9 +4,17 @@
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
 
+BREAKING CHANGES:
+
+- Change request message salt derivation. Now includes identity (namespace and identifier).
+
 FEATURES:
 
 - `LOG_ONE_LINE` environment variable option for one-line pretty print when `LOG_PRETTY_PRINT` is set to `true`.
+
+SECURITY FIXES:
+
+- Include identity (namespace and identifier) to request message salt derivation to be able to verify the identity of IdP response on AS side for mode 1 requests. This change prevents IdPs from spoofing AS.
 
 ## 4.1.0 (June 28, 2020)
 
