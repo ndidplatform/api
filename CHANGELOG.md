@@ -14,7 +14,7 @@ FEATURES:
 
 SECURITY FIXES:
 
-- Include identity (namespace and identifier) to request message salt derivation to be able to verify the identity of IdP response on AS side for mode 1 requests. This change prevents IdPs from spoofing AS.
+- Include identity (namespace and identifier) to request message salt derivation to be able to verify the identity of IdP response signature later (if there's a dispute) for mode 1 requests. This change prevents IdPs from spoofing AS.
 
 ## 4.1.0 (June 28, 2020)
 
