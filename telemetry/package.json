@@ -11,6 +11,7 @@
   "author": "",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
+    "@babel/runtime": "^7.11.2",
     "@grpc/proto-loader": "^0.5.4",
     "grpc": "^1.24.3",
     "ioredis": "^4.17.3",
