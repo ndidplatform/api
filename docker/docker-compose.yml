@@ -11,6 +11,7 @@ services:
       - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
       - NDID_NODE=true
+      - ENABLE_TELEMETRY_LOGGING=false
     entrypoint: /api/docker/start-api.sh
     volumes:
       - ./start-api.sh:/api/docker/start-api.sh:ro
@@ -33,6 +34,7 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-idp-1
       - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
+      - ENABLE_TELEMETRY_LOGGING=true
     entrypoint: /api/docker/start-api.sh
     volumes:
       - ./start-api.sh:/api/docker/start-api.sh:ro
@@ -55,6 +57,7 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-idp-2
       - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
+      - ENABLE_TELEMETRY_LOGGING=true
     entrypoint: /api/docker/start-api.sh
     volumes:
       - ./start-api.sh:/api/docker/start-api.sh:ro
@@ -77,6 +80,7 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-rp
       - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
+      - ENABLE_TELEMETRY_LOGGING=true
     entrypoint: /api/docker/start-api.sh
     volumes:
       - ./start-api.sh:/api/docker/start-api.sh:ro
@@ -99,6 +103,7 @@ services:
       - MQ_SERVICE_SERVER_IP=mq-as
       - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
+      - ENABLE_TELEMETRY_LOGGING=true
     entrypoint: /api/docker/start-api.sh
     volumes:
       - ./start-api.sh:/api/docker/start-api.sh:ro

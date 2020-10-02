@@ -1,0 +1,50 @@
+FROM node:12-alpine3.11 as build
+
+WORKDIR /tmp
+
+RUN apk update && apk add --no-cache --virtual .build-deps \
+  python \
+  g++ \
+  make \
+  git \
+  file
+
+COPY ./ndid-logger/package*.json /tmp/api/ndid-logger/
+COPY ./telemetry/package*.json /tmp/api/telemetry/
+
+WORKDIR /tmp/api/ndid-logger
+RUN npm install && npm prune --production
+
+WORKDIR /tmp/api/telemetry
+RUN npm install
+
+COPY ./ndid-error /tmp/api/ndid-error
+COPY ./ndid-logger /tmp/api/ndid-logger
+COPY ./telemetry /tmp/api/telemetry
+
+RUN npm run build && npm prune --production
+
+RUN apk del .build-deps
+
+
+FROM node:12-alpine3.11
+LABEL maintainer="NDID IT Team <it@ndid.co.th>"
+
+# Set umask to 027
+RUN umask 027 && echo "umask 0027" >> /etc/profile
+
+COPY --from=build /var/cache/apk /var/cache/apk
+RUN apk add --no-cache bash openssl && rm -rf /var/cache/apk
+
+COPY --from=build /tmp/api/ndid-error /api/ndid-error
+COPY --from=build /tmp/api/ndid-logger /api/ndid-logger
+COPY --from=build /tmp/api/telemetry /api/telemetry
+
+COPY ./protos /api/protos
+COPY ./dev_cert /api/dev_cert
+COPY COPYING /api/
+COPY VERSION /api/
+
+WORKDIR /api/telemetry
+
+ENTRYPOINT [ "node", "/api/telemetry/build/index.js" ]
