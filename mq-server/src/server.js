@@ -188,6 +188,7 @@ function getInfo(call, callback) {
   callback(null, {
     node_id: config.nodeId,
     mq_binding_port: config.mqPort,
+    version,
   });
 }
 

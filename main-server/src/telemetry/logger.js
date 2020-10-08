@@ -64,6 +64,18 @@ export default class TelemetryLogger {
     return Date.now();
   }
 
+  async logMainVersion({ version }) {
+    // TODO
+  }
+
+  async logMQServiceVersion({ version }) {
+    // TODO
+  }
+
+  async logTendermintAndABCIVersions({ tendermint, abci }) {
+    // TODO
+  }
+
   /*
    * logRequestEvent saves the information regarding requestID
    */

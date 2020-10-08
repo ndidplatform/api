@@ -220,6 +220,14 @@ export default class TendermintWsClient extends EventEmitter {
 
   /**
    *
+   * @returns {Promise<Object>}
+   */
+  abciInfo() {
+    return this._call(null, 'abci_info', []);
+  }
+
+  /**
+   *
    * @param {number} height Block height to query
    * @returns {Promise<Object>}
    */

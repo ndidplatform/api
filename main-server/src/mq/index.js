@@ -38,6 +38,8 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import validate from './message/validator';
 
+import TelemetryLogger from '../telemetry';
+
 import { delegateToWorker } from '../master-worker-interface/server';
 
 import { role } from '../node';
@@ -81,6 +83,8 @@ const rawMessagesToRetry = [];
 let messageHandlerFunction;
 let errorHandlerFunction;
 
+let telemetryEnabled = false;
+
 export const metricsEventEmitter = new EventEmitter();
 
 export function setMessageHandlerFunction(handler) {
@@ -91,12 +95,27 @@ export function setErrorHandlerFunction(handler) {
   errorHandlerFunction = handler;
 }
 
-export async function initializeOutbound(sendSavedPendingMessages = true) {
+async function telemetryLogVersions(version) {
+  if (telemetryEnabled) {
+    await TelemetryLogger.logMQServiceVersion({
+      version,
+    });
+  }
+}
+
+export async function initializeOutbound({
+  sendSavedPendingMessages = true,
+  telemetryEnabled: _telemetryEnabled = false,
+} = {}) {
   logger.info({
     message: 'Initializing message queue (outbound)',
   });
 
-  await mqService.initialize();
+  telemetryEnabled = _telemetryEnabled;
+
+  await mqService.initialize({
+    telemetryLogVersions,
+  });
 
   if (sendSavedPendingMessages) {
     // Send saved pending outbound messages
@@ -108,14 +127,20 @@ export async function initializeOutbound(sendSavedPendingMessages = true) {
   });
 }
 
-export async function initializeInbound() {
+export async function initializeInbound({
+  telemetryEnabled: _telemetryEnabled = false,
+} = {}) {
   logger.info({
     message: 'Initializing message queue (inbound)',
   });
 
+  telemetryEnabled = _telemetryEnabled;
+
   await initDuplicateInboundMessageTimeout();
 
-  await mqService.initialize();
+  await mqService.initialize({
+    telemetryLogVersions,
+  });
 
   mqService.eventEmitter.on('message', onMessage);
 
@@ -139,8 +164,11 @@ export async function initializeInbound() {
   });
 }
 
-export function initialize() {
-  return Promise.all([initializeOutbound(), initializeInbound()]);
+export function initialize({ telemetryEnabled }) {
+  return Promise.all([
+    initializeOutbound({ telemetryEnabled }),
+    initializeInbound({ telemetryEnabled }),
+  ]);
 }
 
 async function initDuplicateInboundMessageTimeout() {

@@ -51,9 +51,7 @@ const packageDefinition = protoLoader.loadSync(
 );
 const proto = grpc.loadPackageDefinition(packageDefinition);
 
-const MQ_SERVICE_SERVER_ADDRESS = `${config.mqServiceServerIp}:${
-  config.mqServiceServerPort
-}`;
+const MQ_SERVICE_SERVER_ADDRESS = `${config.mqServiceServerIp}:${config.mqServiceServerPort}`;
 
 export const eventEmitter = new EventEmitter();
 
@@ -61,7 +59,11 @@ let client;
 let connectivityState = null;
 let closing = false;
 const calls = [];
+
+let mqServiceServerInfo;
 let nodeIdMatched;
+
+let telemetryLogVersions;
 
 let recvMessageChannel;
 
@@ -102,7 +104,8 @@ function watchForNextConnectivityStateChange() {
               message: 'MQ service gRPC reconnect',
             });
             try {
-              await checkNodeIdToMatch();
+              mqServiceServerInfo = await getInfo();
+              checkNodeIdToMatch(mqServiceServerInfo);
             } catch (error) {
               const err = new CustomError({
                 message: 'Node ID check failed on reconnect',
@@ -116,6 +119,10 @@ function watchForNextConnectivityStateChange() {
                 subscribeToRecvMessages();
               }
             }
+
+            if (telemetryLogVersions) {
+              telemetryLogVersions(mqServiceServerInfo.version);
+            }
           }
 
           connectivityState = newConnectivityState;
@@ -125,7 +132,10 @@ function watchForNextConnectivityStateChange() {
     );
 }
 
-export async function initialize() {
+export async function initialize({
+  telemetryLogVersions: _telemetryLogVersions,
+}) {
+  telemetryLogVersions = _telemetryLogVersions;
   if (client != null) {
     await waitForReady(client);
     return;
@@ -155,18 +165,22 @@ export async function initialize() {
     }
   );
   await waitForReady(client);
-  await checkNodeIdToMatch();
+  mqServiceServerInfo = await getInfo();
+  checkNodeIdToMatch(mqServiceServerInfo);
   watchForNextConnectivityStateChange();
   logger.info({
     message: 'Connected to MQ service server',
   });
+
+  if (telemetryLogVersions) {
+    telemetryLogVersions(mqServiceServerInfo.version);
+  }
 }
 
-async function checkNodeIdToMatch() {
+async function checkNodeIdToMatch(mqServiceServerInfo) {
   logger.info({
     message: 'Checking Node ID setting on MQ service server',
   });
-  const mqServiceServerInfo = await getInfo();
   if (mqServiceServerInfo.node_id !== config.nodeId) {
     nodeIdMatched = false;
     throw new CustomError({

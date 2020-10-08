@@ -31,6 +31,8 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../logger';
 
+import TelemetryLogger from '../telemetry';
+
 import { delegateToWorker } from '../master-worker-interface/server';
 
 // import * as tendermintHttpClient from './http_client';
@@ -77,7 +79,10 @@ let cacheBlocks = {};
 let lastKnownAppHash;
 
 export let tendermintVersion;
+export let tendermintVersionStr;
 export let syncing = null;
+export let currentChainId;
+export let abciVersion;
 export let connected = false;
 
 export let blockchainInitialized = false;
@@ -85,6 +90,8 @@ let waitForInitEndedBeforeReady = true;
 
 export const eventEmitter = new EventEmitter();
 export const metricsEventEmitter = new EventEmitter();
+
+let telemetryEnabled = false;
 
 const chainIdFilepath = path.join(
   config.dataDirectoryPath,
@@ -159,6 +166,10 @@ export function loadSavedData() {
 
 export async function initialize() {
   tendermintWsClient.subscribeToNewBlockEvent();
+}
+
+export function setTelemetryEnabled(_telemetryEnabled = false) {
+  telemetryEnabled = _telemetryEnabled;
 }
 
 export async function connectWS() {
@@ -376,6 +387,7 @@ function setTendermintVersion(versionStr) {
   const major = parseInt(majorStr);
   const minor = parseInt(minorStr);
   const patch = parseInt(patchStr);
+  tendermintVersionStr = versionStr;
   tendermintVersion = {
     major,
     minor,
@@ -386,6 +398,15 @@ function setTendermintVersion(versionStr) {
     versionStr,
     parsedVersion: tendermintVersion,
   });
+}
+
+async function telemetryLogVersions() {
+  if (telemetryEnabled) {
+    await TelemetryLogger.logTendermintAndABCIVersions({
+      tendermint: tendermintVersionStr,
+      abci: abciVersion,
+    });
+  }
 }
 
 /**
@@ -428,7 +449,7 @@ async function pollStatusUntilSynced() {
           message: 'Tendermint blockchain synced',
         });
 
-        const currentChainId = status.node_info.network;
+        currentChainId = status.node_info.network;
         if (chainId == null) {
           // Save chain ID to file on fresh start
           saveChainId(currentChainId);
@@ -447,6 +468,15 @@ async function pollStatusUntilSynced() {
           await handleNewChain(currentChainId);
           // }
         }
+
+        const abciInfo = await tendermintWsPool.getConnection().abciInfo();
+        abciVersion = {
+          version: abciInfo.response.version,
+          appVersion: abciInfo.response.app_version,
+        };
+
+        telemetryLogVersions();
+
         pollingStatus = false;
         return status;
       }

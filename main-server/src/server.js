@@ -56,6 +56,8 @@ import * as telemetryToken from './telemetry/token';
 
 import logger from './logger';
 
+import TelemetryLogger from './telemetry';
+
 import { version } from './version';
 import MODE from './mode';
 import ROLE from './role';
@@ -104,6 +106,11 @@ async function initialize() {
 
     const tendermintReady = new Promise((resolve) =>
       tendermint.eventEmitter.once('ready', (status) => resolve(status))
+    );
+
+    tendermint.setTelemetryEnabled(
+      (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) &&
+        config.telemetryLoggingEnabled
     );
 
     await tendermint.connectWS();
@@ -223,11 +230,18 @@ async function initialize() {
         })
       );
       if (config.mode === MODE.STANDALONE) {
-        await mq.initialize();
+        await mq.initialize({
+          telemetryEnabled: config.telemetryLoggingEnabled,
+        });
       } else if (config.mode === MODE.MASTER) {
-        await mq.initializeInbound();
+        await mq.initializeInbound({
+          telemetryEnabled: config.telemetryLoggingEnabled,
+        });
       } else if (config.mode === MODE.WORKER) {
-        await mq.initializeOutbound(false);
+        await mq.initializeOutbound({
+          sendSavedPendingMessages: false,
+          telemetryEnabled: false,
+        });
       }
     }
 
@@ -272,6 +286,10 @@ async function initialize() {
     }
 
     logger.info({ message: 'Server initialized' });
+
+    if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+      TelemetryLogger.logMainVersion({ version });
+    }
   } catch (error) {
     logger.error({
       message: 'Cannot initialize server',
