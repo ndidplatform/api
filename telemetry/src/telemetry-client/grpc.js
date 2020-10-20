@@ -127,7 +127,7 @@ export default class GRPCTelemetryClient {
     return new Promise((resolve, reject) => {
       const metadata = new grpc.Metadata();
       metadata.add('version', GRPC_API_VERSION);
-      this.client.sendMQServiceVersionLogs(
+      this.client.sendMqServiceVersionLogs(
         {
           request_metadata: { node_id: nodeId, token },
           data: logs,
@@ -150,7 +150,7 @@ export default class GRPCTelemetryClient {
     return new Promise((resolve, reject) => {
       const metadata = new grpc.Metadata();
       metadata.add('version', GRPC_API_VERSION);
-      this.client.sendTendermintAndABCIVersionLogs(
+      this.client.sendTendermintAndAbciVersionLogs(
         {
           request_metadata: { node_id: nodeId, token },
           data: logs,

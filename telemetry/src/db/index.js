@@ -129,7 +129,7 @@ export default class TelemetryDb {
 
         setTimeout(() => {
           const buffer = new TriggerTimeout(
-            async () => this.connected && db.onReadEvent(onDataReceived),
+            async () => this.connected && db.onReadStreamData(onDataReceived),
             {
               countLimit,
               timeLimit,

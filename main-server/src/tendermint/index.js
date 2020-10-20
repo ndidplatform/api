@@ -403,6 +403,7 @@ function setTendermintVersion(versionStr) {
 async function telemetryLogVersions() {
   if (telemetryEnabled) {
     await TelemetryLogger.logTendermintAndABCIVersions({
+      nodeId: config.nodeId,
       tendermintVersion: tendermintVersionStr,
       abciVersion: abciVersion,
     });

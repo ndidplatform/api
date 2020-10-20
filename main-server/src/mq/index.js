@@ -98,6 +98,7 @@ export function setErrorHandlerFunction(handler) {
 async function telemetryLogVersions(version) {
   if (telemetryEnabled) {
     await TelemetryLogger.logMQServiceVersion({
+      nodeId: config.nodeId,
       version,
     });
   }

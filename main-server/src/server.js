@@ -288,7 +288,7 @@ async function initialize() {
     logger.info({ message: 'Server initialized' });
 
     if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
-      TelemetryLogger.logMainVersion({ version });
+      TelemetryLogger.logMainVersion({ nodeId: config.nodeId, version });
     }
   } catch (error) {
     logger.error({

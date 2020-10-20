@@ -45,21 +45,29 @@ export default class TelemetryClient {
       return false;
     }
 
-    logger.info('Sending', logs.length, 'main version logs of', nodeId);
-    const result = await this.client.sendMainVersionLogs({
-      nodeId,
-      token,
-      logs,
-    });
+    try {
+      logger.info('Sending', logs.length, 'main version logs of', nodeId);
+      const result = await this.client.sendMainVersionLogs({
+        nodeId,
+        token,
+        logs,
+      });
 
-    // incase the operation is invalid, remove the token manager and try the operation again
-    if (this.client.isTokenInvalid(result)) {
-      logger.info('Invalidating token of node', nodeId, token);
-      await this.tokenManager.invalidateToken(nodeId, token);
-      return this.receiveMainVersionLogData(nodeId, logs);
+      // incase the operation is invalid, remove the token manager and try the operation again
+      if (this.client.isTokenInvalid(result)) {
+        logger.info('Invalidating token of node', nodeId, token);
+        await this.tokenManager.invalidateToken(nodeId, token);
+        return this.receiveMainVersionLogData(nodeId, logs);
+      }
+
+      return this.client.isOk(result);
+    } catch (error) {
+      logger.error({
+        message: 'Error sending main version logs',
+        err: error,
+      });
+      return false;
     }
-
-    return this.client.isOk(result);
   }
 
   async receiveMQServiceVersionLogData(nodeId, logs) {
@@ -74,21 +82,29 @@ export default class TelemetryClient {
       return false;
     }
 
-    logger.info('Sending', logs.length, 'MQ service version logs of', nodeId);
-    const result = await this.client.sendMQServiceVersionLogs({
-      nodeId,
-      token,
-      logs,
-    });
+    try {
+      logger.info('Sending', logs.length, 'MQ service version logs of', nodeId);
+      const result = await this.client.sendMQServiceVersionLogs({
+        nodeId,
+        token,
+        logs,
+      });
 
-    // incase the operation is invalid, remove the token manager and try the operation again
-    if (this.client.isTokenInvalid(result)) {
-      logger.info('Invalidating token of node', nodeId, token);
-      await this.tokenManager.invalidateToken(nodeId, token);
-      return this.receiveMainVersionLogData(nodeId, logs);
+      // incase the operation is invalid, remove the token manager and try the operation again
+      if (this.client.isTokenInvalid(result)) {
+        logger.info('Invalidating token of node', nodeId, token);
+        await this.tokenManager.invalidateToken(nodeId, token);
+        return this.receiveMainVersionLogData(nodeId, logs);
+      }
+
+      return this.client.isOk(result);
+    } catch (error) {
+      logger.error({
+        message: 'Error sending MQ service version logs',
+        err: error,
+      });
+      return false;
     }
-
-    return this.client.isOk(result);
   }
 
   async receiveTendermintAndABCIVersionLogData(nodeId, logs) {
@@ -103,21 +119,34 @@ export default class TelemetryClient {
       return false;
     }
 
-    logger.info('Sending', logs.length, 'Tendermint and ABCI version logs of', nodeId);
-    const result = await this.client.sendTendermintAndABCIVersionLogs({
-      nodeId,
-      token,
-      logs,
-    });
+    try {
+      logger.info(
+        'Sending',
+        logs.length,
+        'Tendermint and ABCI version logs of',
+        nodeId
+      );
+      const result = await this.client.sendTendermintAndABCIVersionLogs({
+        nodeId,
+        token,
+        logs,
+      });
 
-    // incase the operation is invalid, remove the token manager and try the operation again
-    if (this.client.isTokenInvalid(result)) {
-      logger.info('Invalidating token of node', nodeId, token);
-      await this.tokenManager.invalidateToken(nodeId, token);
-      return this.receiveMainVersionLogData(nodeId, logs);
+      // incase the operation is invalid, remove the token manager and try the operation again
+      if (this.client.isTokenInvalid(result)) {
+        logger.info('Invalidating token of node', nodeId, token);
+        await this.tokenManager.invalidateToken(nodeId, token);
+        return this.receiveMainVersionLogData(nodeId, logs);
+      }
+
+      return this.client.isOk(result);
+    } catch (error) {
+      logger.error({
+        message: 'Error sending Tendermint and ABCI version logs',
+        err: error,
+      });
+      return false;
     }
-
-    return this.client.isOk(result);
   }
 
   async receiveRequestEventData(nodeId, events) {
@@ -132,20 +161,28 @@ export default class TelemetryClient {
       return false;
     }
 
-    logger.info('Sending', events.length, 'request events of', nodeId);
-    const result = await this.client.sendRequestEvents({
-      nodeId,
-      token,
-      events,
-    });
+    try {
+      logger.info('Sending', events.length, 'request events of', nodeId);
+      const result = await this.client.sendRequestEvents({
+        nodeId,
+        token,
+        events,
+      });
 
-    // incase the operation is invalid, remove the token manager and try the operation again
-    if (this.client.isTokenInvalid(result)) {
-      logger.info('Invalidating token of node', nodeId, token);
-      await this.tokenManager.invalidateToken(nodeId, token);
-      return this.receiveRequestEventData(nodeId, events);
+      // incase the operation is invalid, remove the token manager and try the operation again
+      if (this.client.isTokenInvalid(result)) {
+        logger.info('Invalidating token of node', nodeId, token);
+        await this.tokenManager.invalidateToken(nodeId, token);
+        return this.receiveRequestEventData(nodeId, events);
+      }
+
+      return this.client.isOk(result);
+    } catch (error) {
+      logger.error({
+        message: 'Error sending request events',
+        err: error,
+      });
+      return false;
     }
-
-    return this.client.isOk(result);
   }
 }

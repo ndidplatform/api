@@ -70,16 +70,16 @@ class RedisStreamChannel {
     await this.redis.xdel([this.channel, key]);
   }
 
-  async onReadEvent(onReceived) {
+  async onReadStreamData(onReceived) {
     for (;;) {
-      const events = await this.read();
-      if (!events || events.length === 0) {
-        logger.debug(`No events (channel: ${this.channel})`);
+      const entries = await this.read();
+      if (!entries || entries.length === 0) {
+        logger.debug(`No entries (channel: ${this.channel})`);
         return 0;
       }
-      const keys = events.map((event) => event[0]);
-      const data = events.map((event) => {
-        const data = event[1];
+      const keys = entries.map((entry) => entry[0]);
+      const data = entries.map((entry) => {
+        const data = entry[1];
         const obj = {};
         for (let i = 0; i < data.length; i += 2) {
           obj[data[i]] = data[i + 1];
@@ -95,13 +95,13 @@ class RedisStreamChannel {
           logger.error({ error });
         }
 
-        if (events.length == this.countLimit) {
-          // if the events exceed count limit, call start again
+        if (entries.length == this.countLimit) {
+          // if the entries exceed count limit, call start again
           continue;
         }
       }
 
-      return events.length;
+      return entries.length;
     }
   }
 }

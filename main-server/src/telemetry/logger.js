@@ -21,7 +21,7 @@
  */
 
 import * as telemetryDb from '../db/telemetry';
-import logger from '../logger';
+// import logger from '../logger';
 
 export const REQUEST_EVENTS = {
   RP_CREATES_REQUEST             : 1,
@@ -65,6 +65,8 @@ export default class TelemetryLogger {
   }
 
   async logMainVersion({ nodeId, version }) {
+    if (!this.enable) return;
+
     // prevent duplicates on the same run
     if (this.mainVersion === version) {
       return;
@@ -80,6 +82,8 @@ export default class TelemetryLogger {
   }
 
   async logMQServiceVersion({ nodeId, version }) {
+    if (!this.enable) return;
+
     // prevent duplicates on the same run
     if (this.mqServiceVersion === version) {
       return;
@@ -99,9 +103,12 @@ export default class TelemetryLogger {
     tendermintVersion,
     abciVersion,
   }) {
+    if (!this.enable) return;
+
     // prevent duplicates on the same run
     if (
       this.tendermintVersion === tendermintVersion &&
+      this.abciVersion != null &&
       this.abciVersion.version === abciVersion.version &&
       this.abciVersion.appVersion === abciVersion.appVersion
     ) {
