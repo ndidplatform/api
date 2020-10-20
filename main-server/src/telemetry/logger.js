@@ -64,16 +64,60 @@ export default class TelemetryLogger {
     return Date.now();
   }
 
-  async logMainVersion({ version }) {
-    // TODO
+  async logMainVersion({ nodeId, version }) {
+    // prevent duplicates on the same run
+    if (this.mainVersion === version) {
+      return;
+    }
+
+    await telemetryDb.addMainVersionLog(nodeId, {
+      node_id: nodeId,
+      version,
+      source_timestamp: this.getCurrentTime(),
+    });
+
+    this.mainVersion = version;
   }
 
-  async logMQServiceVersion({ version }) {
-    // TODO
+  async logMQServiceVersion({ nodeId, version }) {
+    // prevent duplicates on the same run
+    if (this.mqServiceVersion === version) {
+      return;
+    }
+
+    await telemetryDb.addMQServiceVersionLog(nodeId, {
+      node_id: nodeId,
+      version,
+      source_timestamp: this.getCurrentTime(),
+    });
+
+    this.mqServiceVersion = version;
   }
 
-  async logTendermintAndABCIVersions({ tendermint, abci }) {
-    // TODO
+  async logTendermintAndABCIVersions({
+    nodeId,
+    tendermintVersion,
+    abciVersion,
+  }) {
+    // prevent duplicates on the same run
+    if (
+      this.tendermintVersion === tendermintVersion &&
+      this.abciVersion.version === abciVersion.version &&
+      this.abciVersion.appVersion === abciVersion.appVersion
+    ) {
+      return;
+    }
+
+    await telemetryDb.addTendermintAndABCIVersionLog(nodeId, {
+      node_id: nodeId,
+      tendermint_version: tendermintVersion,
+      abci_version: abciVersion.version,
+      abci_app_version: abciVersion.appVersion,
+      source_timestamp: this.getCurrentTime(),
+    });
+
+    this.tendermintVersion = tendermintVersion;
+    this.abciVersion = abciVersion;
   }
 
   /*

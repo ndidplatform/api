@@ -62,6 +62,7 @@ const db = new TelemetryDb([
       });
     },
   },
+  // Request events
   ...nodeIds.map((nodeId, idx) => ({
     id: `request-event-stream:${nodeId}`,
     type: 'stream',
@@ -73,5 +74,44 @@ const db = new TelemetryDb([
     countLimit: 300,
     timeLimit: config.flushIntervalMs, // flush every 5 seconds
     streamMaxCapacity: config.requestEventStreamMaxCapacity,
+  })),
+  // Main version log
+  ...nodeIds.map((nodeId) => ({
+    id: `main-version-log-stream:${nodeId}`,
+    type: 'stream',
+    channelName: `${nodeId}:main-version-logs`,
+    onDataReceived: (logs) => {
+      return client.receiveMainVersionLogData(nodeId, logs);
+    },
+    delayStart: 0,
+    countLimit: 100,
+    timeLimit: config.flushIntervalMs, // flush every 5 seconds
+    streamMaxCapacity: 10000,
+  })),
+  // MQ service version log
+  ...nodeIds.map((nodeId) => ({
+    id: `mq-service-version-log-stream:${nodeId}`,
+    type: 'stream',
+    channelName: `${nodeId}:mq-service-version-logs`,
+    onDataReceived: (logs) => {
+      return client.receiveMQServiceVersionLogData(nodeId, logs);
+    },
+    delayStart: 0,
+    countLimit: 100,
+    timeLimit: config.flushIntervalMs, // flush every 5 seconds
+    streamMaxCapacity: 10000,
+  })),
+  // Tendermint and ABCI version log
+  ...nodeIds.map((nodeId) => ({
+    id: `tendermint-abci-version-log-stream:${nodeId}`,
+    type: 'stream',
+    channelName: `${nodeId}:tendermint-abci-version-logs`,
+    onDataReceived: (logs) => {
+      return client.receiveTendermintAndABCIVersionLogData(nodeId, logs);
+    },
+    delayStart: 0,
+    countLimit: 100,
+    timeLimit: config.flushIntervalMs, // flush every 5 seconds
+    streamMaxCapacity: 10000,
   })),
 ]);

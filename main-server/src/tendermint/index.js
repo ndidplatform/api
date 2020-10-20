@@ -403,8 +403,8 @@ function setTendermintVersion(versionStr) {
 async function telemetryLogVersions() {
   if (telemetryEnabled) {
     await TelemetryLogger.logTendermintAndABCIVersions({
-      tendermint: tendermintVersionStr,
-      abci: abciVersion,
+      tendermintVersion: tendermintVersionStr,
+      abciVersion: abciVersion,
     });
   }
 }

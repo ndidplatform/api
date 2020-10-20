@@ -96,8 +96,80 @@ export default class GRPCTelemetryClient {
     );
   }
 
+  sendMainVersionLogs({ nodeId, token, logs }) {
+    logger.info({
+      message: 'Attempt connecting GRPC server',
+      function: 'sendMainVersionLogs',
+    });
+    return new Promise((resolve, reject) => {
+      const metadata = new grpc.Metadata();
+      metadata.add('version', GRPC_API_VERSION);
+      this.client.sendMainVersionLogs(
+        {
+          request_metadata: { node_id: nodeId, token },
+          data: logs,
+        },
+        metadata,
+        (err, result) => {
+          if (err) reject(err);
+          logger.debug(result);
+          resolve(result);
+        }
+      );
+    });
+  }
+
+  sendMQServiceVersionLogs({ nodeId, token, logs }) {
+    logger.info({
+      message: 'Attempt connecting GRPC server',
+      function: 'sendMQServiceVersionLogs',
+    });
+    return new Promise((resolve, reject) => {
+      const metadata = new grpc.Metadata();
+      metadata.add('version', GRPC_API_VERSION);
+      this.client.sendMQServiceVersionLogs(
+        {
+          request_metadata: { node_id: nodeId, token },
+          data: logs,
+        },
+        metadata,
+        (err, result) => {
+          if (err) reject(err);
+          logger.debug(result);
+          resolve(result);
+        }
+      );
+    });
+  }
+
+  sendTendermintAndABCIVersionLogs({ nodeId, token, logs }) {
+    logger.info({
+      message: 'Attempt connecting GRPC server',
+      function: 'sendTendermintAndABCIVersionLogs',
+    });
+    return new Promise((resolve, reject) => {
+      const metadata = new grpc.Metadata();
+      metadata.add('version', GRPC_API_VERSION);
+      this.client.sendTendermintAndABCIVersionLogs(
+        {
+          request_metadata: { node_id: nodeId, token },
+          data: logs,
+        },
+        metadata,
+        (err, result) => {
+          if (err) reject(err);
+          logger.debug(result);
+          resolve(result);
+        }
+      );
+    });
+  }
+
   sendRequestEvents({ nodeId, token, events }) {
-    logger.info('Attempt connecting GRPC server');
+    logger.info({
+      message: 'Attempt connecting GRPC server',
+      function: 'sendRequestEvents',
+    });
     return new Promise((resolve, reject) => {
       const metadata = new grpc.Metadata();
       metadata.add('version', GRPC_API_VERSION);

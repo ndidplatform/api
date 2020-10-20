@@ -45,28 +45,101 @@ export async function close() {
 }
 
 function getRedis() {
-  return getRedisInstance().redis; 
+  return getRedisInstance().redis;
 }
 
-export async function addNewRequestEvent(nodeId, {
-  request_id,
-  node_id,
-  state_code,
-  source_timestamp,
-  additional_data,
-}) {
+export async function addMainVersionLog(
+  nodeId,
+  { node_id, version, source_timestamp }
+) {
+  try {
+    await getRedis().xadd(
+      `${nodeId}:main-version-logs`,
+      '*',
+      'node_id',
+      node_id,
+      'version',
+      version,
+      'source_timestamp',
+      source_timestamp
+    );
+  } catch (err) {
+    logger.error({ err });
+  }
+}
+
+export async function addMQServiceVersionLog(
+  nodeId,
+  { node_id, version, source_timestamp }
+) {
+  try {
+    await getRedis().xadd(
+      `${nodeId}:mq-service-version-logs`,
+      '*',
+      'node_id',
+      node_id,
+      'version',
+      version,
+      'source_timestamp',
+      source_timestamp
+    );
+  } catch (err) {
+    logger.error({ err });
+  }
+}
+
+export async function addTendermintAndABCIVersionLog(
+  nodeId,
+  {
+    node_id,
+    tendermint_version,
+    abci_version,
+    abci_app_version,
+    source_timestamp,
+  }
+) {
+  try {
+    await getRedis().xadd(
+      `${nodeId}:tendermint-abci-version-logs`,
+      '*',
+      'node_id',
+      node_id,
+      'tendermint_version',
+      tendermint_version,
+      'abci_version',
+      abci_version,
+      'abci_app_version',
+      abci_app_version,
+      'source_timestamp',
+      source_timestamp
+    );
+  } catch (err) {
+    logger.error({ err });
+  }
+}
+
+export async function addNewRequestEvent(
+  nodeId,
+  { request_id, node_id, state_code, source_timestamp, additional_data }
+) {
   try {
     let additionalData = [];
     if (additional_data != null) {
       additionalData = ['additional_data', JSON.stringify(additional_data)];
     }
 
-    await getRedis().xadd(`${nodeId}:request-events`, '*',
-      'request_id', request_id,
-      'node_id', node_id,
-      'state_code', state_code,
-      'source_timestamp', source_timestamp,
-      ...additionalData,
+    await getRedis().xadd(
+      `${nodeId}:request-events`,
+      '*',
+      'request_id',
+      request_id,
+      'node_id',
+      node_id,
+      'state_code',
+      state_code,
+      'source_timestamp',
+      source_timestamp,
+      ...additionalData
     );
   } catch (err) {
     logger.error({ err });

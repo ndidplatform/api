@@ -33,11 +33,98 @@ export default class TelemetryClient {
     this.client = new GRPCTelemetryClient();
   }
 
+  async receiveMainVersionLogData(nodeId, logs) {
+    if (!logs || logs.length === 0) return; // no events
+
+    const token = await this.tokenManager.getTokenFromNodeId(nodeId);
+    if (token == null) {
+      // no token for this nodeId
+      // cannot send the data
+      logger.warn(`No auth token of node ID: "${nodeId}"; Unable to send`);
+      this.tokenManager.requestNewToken(nodeId);
+      return false;
+    }
+
+    logger.info('Sending', logs.length, 'main version logs of', nodeId);
+    const result = await this.client.sendMainVersionLogs({
+      nodeId,
+      token,
+      logs,
+    });
+
+    // incase the operation is invalid, remove the token manager and try the operation again
+    if (this.client.isTokenInvalid(result)) {
+      logger.info('Invalidating token of node', nodeId, token);
+      await this.tokenManager.invalidateToken(nodeId, token);
+      return this.receiveMainVersionLogData(nodeId, logs);
+    }
+
+    return this.client.isOk(result);
+  }
+
+  async receiveMQServiceVersionLogData(nodeId, logs) {
+    if (!logs || logs.length === 0) return; // no events
+
+    const token = await this.tokenManager.getTokenFromNodeId(nodeId);
+    if (token == null) {
+      // no token for this nodeId
+      // cannot send the data
+      logger.warn(`No auth token of node ID: "${nodeId}"; Unable to send`);
+      this.tokenManager.requestNewToken(nodeId);
+      return false;
+    }
+
+    logger.info('Sending', logs.length, 'MQ service version logs of', nodeId);
+    const result = await this.client.sendMQServiceVersionLogs({
+      nodeId,
+      token,
+      logs,
+    });
+
+    // incase the operation is invalid, remove the token manager and try the operation again
+    if (this.client.isTokenInvalid(result)) {
+      logger.info('Invalidating token of node', nodeId, token);
+      await this.tokenManager.invalidateToken(nodeId, token);
+      return this.receiveMainVersionLogData(nodeId, logs);
+    }
+
+    return this.client.isOk(result);
+  }
+
+  async receiveTendermintAndABCIVersionLogData(nodeId, logs) {
+    if (!logs || logs.length === 0) return; // no events
+
+    const token = await this.tokenManager.getTokenFromNodeId(nodeId);
+    if (token == null) {
+      // no token for this nodeId
+      // cannot send the data
+      logger.warn(`No auth token of node ID: "${nodeId}"; Unable to send`);
+      this.tokenManager.requestNewToken(nodeId);
+      return false;
+    }
+
+    logger.info('Sending', logs.length, 'Tendermint and ABCI version logs of', nodeId);
+    const result = await this.client.sendTendermintAndABCIVersionLogs({
+      nodeId,
+      token,
+      logs,
+    });
+
+    // incase the operation is invalid, remove the token manager and try the operation again
+    if (this.client.isTokenInvalid(result)) {
+      logger.info('Invalidating token of node', nodeId, token);
+      await this.tokenManager.invalidateToken(nodeId, token);
+      return this.receiveMainVersionLogData(nodeId, logs);
+    }
+
+    return this.client.isOk(result);
+  }
+
   async receiveRequestEventData(nodeId, events) {
     if (!events || events.length === 0) return; // no events
 
     const token = await this.tokenManager.getTokenFromNodeId(nodeId);
-    if (token == undefined) {
+    if (token == null) {
       // no token for this nodeId
       // cannot send the data
       logger.warn(`No auth token of node ID: "${nodeId}"; Unable to send`);
