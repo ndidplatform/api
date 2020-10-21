@@ -2,8 +2,12 @@
 
 # NDID API (Node.js)
 
-## News
-- Telemetry documentation can be found [here](telemetry/README.md)
+## Modules
+
+- Main
+- MQ service
+- Telemetry
+  - Documentation can be found [here](telemetry/README.md)
 
 ## Prerequisites
 
@@ -47,18 +51,18 @@
 
 **Environment variable options**
 
-- `NODE_ID`: (Must be the same as its server pair) *Description below* [Required]
-- `MQ_BINDING_PORT`: (Must be the same as its server pair) *Description below* [Required]
+- `NODE_ID`: (Must be the same as its server pair) _Description below_ [Required]
+- `MQ_BINDING_PORT`: (Must be the same as its server pair) _Description below_ [Required]
 - `SERVER_PORT`: gRPC server port [Default: `50051`]
 - `MAX_CONCURRENT_MESSAGES_PER_MQ_SOCKET`: Maximum concurrent messages for each MQ sending socket [Default: `16`]
 - `MAX_MQ_SOCKET`: Maximum limit for MQ sending sockets [Default: `10000`]
 - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds [Default: `300000`]
 - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds [Default: `20000`]
 - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than `GRPC_PING_INTERVAL_MS` config on API server pair. [Default: `30000`]
-- `LOG_LEVEL`: *Description below*
-- `LOG_PRETTY_PRINT`: *Description below*
-- `LOG_COLOR`: *Description below*
-- `LOG_ONE_LINE`: *Description below*
+- `LOG_LEVEL`: _Description below_
+- `LOG_PRETTY_PRINT`: _Description below_
+- `LOG_COLOR`: _Description below_
+- `LOG_ONE_LINE`: _Description below_
 - `PROMETHEUS`
 - `PROMETHEUS_SERVER_PORT`
 - `PROMETHEUS_HTTPS`
