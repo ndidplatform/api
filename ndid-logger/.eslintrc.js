@@ -5,13 +5,6 @@ module.exports = {
     node: true,
   },
   extends: 'eslint:recommended',
-  plugins: ['@babel'],
-  parser: '@babel/eslint-parser',
-  parserOptions: {
-    babelOptions: {
-      configFile: './telemetry/babel.config.json',
-    },
-  },
   rules: {
     indent: ['off', 2],
     'linebreak-style': ['error', 'unix'],
@@ -27,9 +20,6 @@ module.exports = {
     'object-shorthand': 1,
     'arrow-parens': 1,
     'no-await-in-loop': 1,
-
-    '@babel/new-cap': 1,
-    '@babel/object-curly-spacing': 0,
   },
   overrides: [
     {

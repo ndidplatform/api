@@ -9,7 +9,7 @@ module.exports = {
   parser: '@babel/eslint-parser',
   parserOptions: {
     babelOptions: {
-      configFile: './telemetry/babel.config.json',
+      configFile: './mq-server/babel.config.json',
     },
   },
   rules: {
