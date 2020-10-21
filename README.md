@@ -73,6 +73,7 @@
 
     NODE_ID=$NODE_ID \
     MQ_CONTACT_IP=$MQ_CONTACT_IP \
+    ENABLE_TELEMETRY_LOGGING=true \
     npm start
     ```
 
@@ -151,6 +152,7 @@ Debug APIs (Only in development mode)
   MQ_BINDING_PORT=5555 \
   SERVER_PORT=8100 \
   NODE_ID=idp1 \
+  ENABLE_TELEMETRY_LOGGING=true \
   npm start
   ```
 
@@ -163,6 +165,7 @@ Debug APIs (Only in development mode)
   MQ_BINDING_PORT=5556 \
   SERVER_PORT=8200 \
   NODE_ID=rp1 \
+  ENABLE_TELEMETRY_LOGGING=true \
   npm start
   ```
 
@@ -175,6 +178,7 @@ Debug APIs (Only in development mode)
   MQ_BINDING_PORT=5557 \
   SERVER_PORT=8300 \
   NODE_ID=as1 \
+  ENABLE_TELEMETRY_LOGGING=true \
   npm start
   ```
 
