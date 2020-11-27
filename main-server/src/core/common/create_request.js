@@ -363,6 +363,7 @@ async function checkWhitelistCondition({
  * @param {number} createRequestParams.request_timeout
  * @param {string} createRequestParams.purpose
  * @param {boolean} createRequestParams.bypass_identity_check
+ * @param {string} createRequestParams.initial_salt
  * @param {Object} options
  * @param {boolean} [options.synchronous]
  * @param {boolean} [options.sendCallbackToClient]
@@ -398,6 +399,7 @@ export async function createRequest(
     request_timeout,
     purpose,
     bypass_identity_check,
+    initial_salt,
   } = createRequestParams;
   const { synchronous = false } = options;
   let {
@@ -492,7 +494,9 @@ export async function createRequest(
       request_id = utils.createRequestId();
     }
 
-    const initial_salt = utils.randomBase64Bytes(config.saltLength);
+    if (!initial_salt) {
+      initial_salt = utils.randomBase64Bytes(config.saltLength);
+    }
     const request_message_salt = utils.generateRequestMessageSalt(initial_salt);
 
     const data_request_params_salt_list = data_request_list.map(
