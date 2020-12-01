@@ -383,7 +383,10 @@ export async function createRequest(
   if (createRequestParams.idp_id_list == null) {
     createRequestParams.idp_id_list = [];
   }
-  let { node_id } = createRequestParams;
+  let { 
+    node_id,
+    initial_salt,
+  } = createRequestParams;
   const {
     mode,
     namespace,
@@ -399,7 +402,6 @@ export async function createRequest(
     request_timeout,
     purpose,
     bypass_identity_check,
-    initial_salt,
   } = createRequestParams;
   const { synchronous = false } = options;
   let {
