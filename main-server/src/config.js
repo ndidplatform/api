@@ -46,21 +46,21 @@ export const serverHttpErrorCode = process.env.SERVER_HTTP_ERROR_CODE || 500;
 
 let _defaultApiVersion = process.env.DEFAULT_API_VERSION
   ? process.env.DEFAULT_API_VERSION
-  : '5.0';
+  : '5.1';
 if (_defaultApiVersion === '4') {
   _defaultApiVersion = '4.0';
 } else if (_defaultApiVersion === '5') {
-  _defaultApiVersion = '5.0';
+  _defaultApiVersion = '5.1';
 }
 export const defaultApiVersion = _defaultApiVersion;
 
 let _callbackApiVersion = process.env.CALLBACK_API_VERSION
   ? process.env.CALLBACK_API_VERSION
-  : '5.0';
+  : '5.1';
 if (_callbackApiVersion === '4') {
   _callbackApiVersion = '4.0';
 } else if (_callbackApiVersion === '5') {
-  _callbackApiVersion = '5.0';
+  _callbackApiVersion = '5.1';
 }
 export const callbackApiVersion = _callbackApiVersion;
 

@@ -24,24 +24,28 @@ import * as telemetryDb from '../db/telemetry';
 // import logger from '../logger';
 
 export const REQUEST_EVENTS = {
-  RP_CREATES_REQUEST             : 1,
-  RP_SENDS_REQUEST_TO_IDP        : 2,
-  IDP_RECEIVES_REQUEST           : 3,
-  IDP_NOTIFIES_USER              : 4,
-  IDP_RECEIVES_AUTH_RESULT       : 5,
-  IDP_CREATES_RESPONSE           : 6,
-  IDP_RESPONDS_TO_RP             : 7,
-  RP_RECEIVES_IDP_RESPONSE       : 8,
-  RP_REQUESTS_AS_DATA            : 9,
-  AS_RECEIVES_RP_REQUEST         : 10,
-  AS_QUERIES_DATA                : 11,
-  AS_RECEIVES_QUERIED_DATA       : 12,
-  AS_LOGS_HASH_DATA              : 13,
-  AS_SENDS_DATA_TO_RP            : 14,
-  RP_RECEIVES_DATA               : 15,
-  RP_ACCEPTS_DATA                : 16,
-  RP_CLOSES_OR_TIMES_OUT_REQUEST : 17,
+  RP_CREATES_REQUEST: 1,
+  RP_SENDS_REQUEST_TO_IDP: 2,
+  IDP_RECEIVES_REQUEST: 3,
+  IDP_NOTIFIES_USER: 4,
+  IDP_RECEIVES_AUTH_RESULT: 5,
+  IDP_CREATES_RESPONSE: 6,
+  IDP_RESPONDS_TO_RP: 7,
+  RP_RECEIVES_IDP_RESPONSE: 8,
+  RP_REQUESTS_AS_DATA: 9,
+  AS_RECEIVES_RP_REQUEST: 10,
+  AS_QUERIES_DATA: 11,
+  AS_RECEIVES_QUERIED_DATA: 12,
+  AS_LOGS_HASH_DATA: 13,
+  AS_SENDS_DATA_TO_RP: 14,
+  RP_RECEIVES_DATA: 15,
+  RP_ACCEPTS_DATA: 16,
+  RP_CLOSES_OR_TIMES_OUT_REQUEST: 17,
+
+  AS_RECEIVES_PAYMENT: 18,
 };
+
+const validRequestEventCodes = Object.values(REQUEST_EVENTS);
 
 export default class TelemetryLogger {
   /*
@@ -132,7 +136,7 @@ export default class TelemetryLogger {
    */
   async logRequestEvent(request_id, node_id, state_code, additional_data) {
     if (!this.enable) return;
-    if (!(1 <= state_code && state_code <= 17)) {
+    if (!validRequestEventCodes.includes(state_code)) {
       throw new Error(`Unknown state code: ${state_code}`);
     }
 

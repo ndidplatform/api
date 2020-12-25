@@ -355,6 +355,14 @@ export default {
         required: ['reference_id', 'callback_url'],
       },
     },
+    '/as/payment_received_log/:request_id/:service_id': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+        },
+      },
+    },
     '/as/data/:request_id/:service_id': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',

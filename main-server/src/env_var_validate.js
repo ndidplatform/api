@@ -138,7 +138,7 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
-const DEFAULT_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.0'];
+const DEFAULT_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.1'];
 if (process.env.DEFAULT_API_VERSION != null) {
   if (
     !DEFAULT_API_VERSION_ALLOWED_VALUES.includes(
@@ -147,13 +147,13 @@ if (process.env.DEFAULT_API_VERSION != null) {
   ) {
     console.error(
       'ERROR:',
-      'Unsupported "DEFAULT_API_VERSION" environment variable value. Only "4.0" and "5.0" are allowed. Process will now exit.'
+      'Unsupported "DEFAULT_API_VERSION" environment variable value. Only "4.0" and "5.1" are allowed. Process will now exit.'
     );
     process.exit(1);
   }
 }
 
-const CALLBACK_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.0'];
+const CALLBACK_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.1'];
 if (process.env.CALLBACK_API_VERSION != null) {
   if (
     !CALLBACK_API_VERSION_ALLOWED_VALUES.includes(
@@ -162,7 +162,7 @@ if (process.env.CALLBACK_API_VERSION != null) {
   ) {
     console.error(
       'ERROR:',
-      'Unsupported "CALLBACK_API_VERSION" environment variable value. Only "4.0" and "5.0" are allowed. Process will now exit.'
+      'Unsupported "CALLBACK_API_VERSION" environment variable value. Only "4.0" and "5.1" are allowed. Process will now exit.'
     );
     process.exit(1);
   }

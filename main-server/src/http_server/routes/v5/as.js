@@ -86,6 +86,39 @@ router.get('/service/:service_id', async (req, res, next) => {
 });
 
 router.post(
+  '/payment_received_log/:request_id/:service_id',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { request_id, service_id } = req.params;
+      const { node_id } = req.body;
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
+      await as.logPaymentReceived(
+        {
+          node_id,
+          requestId: request_id,
+          serviceId: service_id,
+        },
+        {
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
+        }
+      );
+
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
   '/data/:request_id/:service_id',
   validateBody,
   async (req, res, next) => {
