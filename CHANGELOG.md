@@ -15,7 +15,15 @@ FEATURES:
   - Data collected:
     - Request states/events
     - Software versions (API main server, MQ service server, Tendermint and ABCI app)
+
+## 4.2.0 (January 20, 2021)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+FEATURES:
+
 - `LOG_ONE_LINE` environment variable option for one-line pretty print when `LOG_PRETTY_PRINT` is set to `true`.
+- Use system timezone for pretty print log timestamps
 
 ## 4.1.0 (June 28, 2020)
 
