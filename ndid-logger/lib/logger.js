@@ -49,7 +49,7 @@ function initLogger(config) {
     //   hostname: config.logHostname ? os.hostname : null,
     // },
     prettyPrint: config.logPrettyPrint
-      ? { colorize: config.logColor, translateTime: true, errorProps: '*' }
+      ? { colorize: config.logColor, translateTime: 'SYS:standard', errorProps: '*' }
       : undefined,
     prettifier: config.logPrettyPrint
       ? (options) => {
