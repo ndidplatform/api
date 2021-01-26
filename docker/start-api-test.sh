@@ -38,11 +38,11 @@ if [ -z ${NODE_ID} ]; then exit_missing_env NODE_ID; fi
 if [ -z ${ROLE} ]; then exit_missing_env ROLE; fi
 if [ -z ${TENDERMINT_IP} ]; then exit_missing_env TENDERMINT_IP; fi
 
-if [ "${MODE}" == "standalone" ] || [ "${MODE}" == "worker" ]; then
-  if [ -z ${SERVER_PORT} ]; then exit_missing_env SERVER_PORT; fi
-  if [ -z ${NDID_IP} ]; then exit_missing_env NDID_IP; fi
-  if [ -z ${NDID_PORT} ]; then NDID_PORT=${SERVER_PORT}; fi
-fi
+if [ -z ${SERVER_PORT} ]; then exit_missing_env SERVER_PORT; fi
+
+if [ -z ${NDID_IP} ]; then exit_missing_env NDID_IP; fi
+
+if [ -z ${NDID_PORT} ]; then NDID_PORT=${SERVER_PORT}; fi
 
 KEY_PATH=${PRIVATE_KEY_PATH:-/api/keys/node.pem}
 MASTER_KEY_PATH=${MASTER_PRIVATE_KEY_PATH:-/api/keys/master.pem}
@@ -353,6 +353,39 @@ approve_service_node_behind_proxy() {
   fi
 }
 
+register_error_code() {
+  local ERROR_CODE=$1
+  local ERROR_DESCRIPTION=$2
+  local TYPE=$3
+  echo "Registering error code ${ERROR_CODE} (${ERROR_DESCRIPTION})..."
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/add_error_code \
+    -H "Content-Type: application/json" \
+    -d "{\"type\":\"${TYPE}\",\"error_code\":${ERROR_CODE},\"description\":\"${ERROR_DESCRIPTION}\"}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Registering error code ${ERROR_CODE} (${ERROR_DESCRIPTION}) succeeded"
+    return 0
+  else
+    echo "Registering error code ${ERROR_CODE} (${ERROR_DESCRIPTION}) failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
+register_idp_error_code() {
+  local ERROR_CODE=$1
+  local ERROR_DESCRIPTION=$2
+  register_error_code $ERROR_CODE "$ERROR_DESCRIPTION" "idp"
+}
+
+register_as_error_code() {
+  local ERROR_CODE=$1
+  local ERROR_DESCRIPTION=$2
+  register_error_code $ERROR_CODE "$ERROR_DESCRIPTION" "as"
+}
+
 did_namespace_exist() {
   local NAMESPACE=$1
 
@@ -459,72 +492,70 @@ register_nodes_behind_proxy(){
   fi
 }
 
-if [ "${MODE}" == "standalone" ] || [ "${MODE}" == "worker" ]; then
-  case ${ROLE} in
-    ndid)
-      tendermint_wait_for_sync_complete
-      if ! does_node_id_exist; then
-        if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]); then
-          generate_key
-        fi
-        if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${MASTER_KEY_PATH} ] || [ ! -f ${MASTER_PUBLIC_KEY_PATH} ]); then
-          generate_master_key
-        fi
-        wait_for_ndid_node_to_be_ready && \
-        until init_ndid; do sleep 1; done && \
-        until end_init; do sleep 1; done && \
-        until 
-          register_namespace "citizen_id" "Thai citizen ID" && \
-          register_namespace "passport_num" "Passport Number" && \
-          register_service "bank_statement" "All transactions in the past 3 months" && \
-          register_service "customer_info" "Customer Information"
-        do
-          sleep 1; 
-        done &
+case ${ROLE} in
+  ndid)
+    tendermint_wait_for_sync_complete
+    if ! does_node_id_exist; then
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]); then
+        generate_key
       fi
-      ;;
-    idp|rp|as|proxy)
-      tendermint_wait_for_sync_complete
-      
-      if ! does_node_id_exist; then
-        if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]); then
-          generate_key
-        fi
-        if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${MASTER_KEY_PATH} ] || [ ! -f ${MASTER_PUBLIC_KEY_PATH} ]); then
-          generate_master_key
-        fi
-        wait_until_ndid_node_initialized
-        wait_until_namespace_exist "citizen_id"
-        wait_until_namespace_exist "passport_num"
-        wait_until_service_exist "bank_statement"
-        wait_until_service_exist "customer_info"
-        if [ "${SKIP}" != "true" ]; then
-          until register_node_id; do sleep 1; done
-        fi
-        wait_until_node_exist
-        if [ "${SKIP}" != "true" ]; then
-          until set_token_for_node_id 10000; do sleep 1; done
-          wait_until_node_has_token_with_amount 10000
-        fi
-        until tendermint_add_validator; do sleep 1; done
-        if [ "${ROLE}" = "as" ]; then
-          until approve_service "bank_statement"; do sleep 1; done
-          until approve_service "customer_info"; do sleep 1; done
-        fi
-        if [ "${ROLE}" = "proxy" ]; then
-          register_nodes_behind_proxy
-        fi
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${MASTER_KEY_PATH} ] || [ ! -f ${MASTER_PUBLIC_KEY_PATH} ]); then
+        generate_master_key
+      fi
+      wait_for_ndid_node_to_be_ready && \
+      until init_ndid; do sleep 1; done && \
+      until end_init; do sleep 1; done && \
+      until 
+        register_namespace "citizen_id" "Thai citizen ID" && \
+        register_namespace "passport_num" "Passport Number" && \
+        register_service "bank_statement" "All transactions in the past 3 months" && \
+        register_service "customer_info" "Customer Information"
+        register_idp_error_code 10101 "Unknown identity"
+        register_as_error_code 10101 "Unknown identity"
+      do
+        sleep 1; 
+      done &
+    fi
+    ;;
+  idp|rp|as|proxy)
+    tendermint_wait_for_sync_complete
+    
+    if ! does_node_id_exist; then
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]); then
+        generate_key
+      fi
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${MASTER_KEY_PATH} ] || [ ! -f ${MASTER_PUBLIC_KEY_PATH} ]); then
+        generate_master_key
+      fi
+      wait_until_ndid_node_initialized
+      wait_until_namespace_exist "citizen_id"
+      wait_until_namespace_exist "passport_num"
+      wait_until_service_exist "bank_statement"
+      wait_until_service_exist "customer_info"
+      if [ "${SKIP}" != "true" ]; then
+        until register_node_id; do sleep 1; done
+      fi
+      wait_until_node_exist
+      if [ "${SKIP}" != "true" ]; then
+        until set_token_for_node_id 10000; do sleep 1; done
+        wait_until_node_has_token_with_amount 10000
+      fi
+      until tendermint_add_validator; do sleep 1; done
+      if [ "${ROLE}" = "as" ]; then
+        until approve_service "bank_statement"; do sleep 1; done
+        until approve_service "customer_info"; do sleep 1; done
+      fi
+      if [ "${ROLE}" = "proxy" ]; then
+        register_nodes_behind_proxy
+      fi
 
-        sleep 3
-      fi
-      ;;
-    *) 
-      exit_invalid_role 
-      ;;
-  esac
-else 
-  wait_until_node_exist
-fi
+      sleep 3
+    fi
+    ;;
+  *) 
+    exit_invalid_role 
+    ;;
+esac
 
 export PRIVATE_KEY_PATH=${KEY_PATH} 
 export MASTER_PRIVATE_KEY_PATH=${MASTER_KEY_PATH} 
