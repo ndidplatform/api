@@ -114,7 +114,7 @@ services:
     networks:
       - ndidplatform
   api-redis:
-    image: redis:4-alpine
+    image: redis:5-alpine
     security_opt:
       - no-new-privileges
     networks:
