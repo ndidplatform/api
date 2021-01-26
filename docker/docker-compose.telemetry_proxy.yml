@@ -6,8 +6,8 @@ services:
       - NODE_ID=proxy1_rp4,proxy1_idp4,proxy1_as4
       - TELEMETRY_DB_HOST=api-redis-proxy-1
       - TELEMETRY_DB_PORT=6379
-      - TELEMETRY_NODE_HOST=telemetry-server
-      - TELEMETRY_NODE_PORT=8880
+      - TELEMETRY_NODE_HOST=${TELEMETRY_NODE_HOST:-ndid-telemetry-server}
+      - TELEMETRY_NODE_PORT=${TELEMETRY_NODE_PORT-8880}
       - FLUSH_INTERVAL_SEC=20
     security_opt:
       - no-new-privileges
@@ -20,8 +20,8 @@ services:
       - NODE_ID=proxy2_rp5
       - TELEMETRY_DB_HOST=api-redis-proxy-2
       - TELEMETRY_DB_PORT=6379
-      - TELEMETRY_NODE_HOST=telemetry-server
-      - TELEMETRY_NODE_PORT=8880
+      - TELEMETRY_NODE_HOST=${TELEMETRY_NODE_HOST:-ndid-telemetry-server}
+      - TELEMETRY_NODE_PORT=${TELEMETRY_NODE_PORT-8880}
       - FLUSH_INTERVAL_SEC=20
     security_opt:
       - no-new-privileges
