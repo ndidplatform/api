@@ -40,6 +40,8 @@ export function getFunction(fnName) {
     // Core module
     case 'common.createRequestInternalAsyncAfterBlockchain':
       return common.createRequestInternalAsyncAfterBlockchain;
+    case 'common.createMessageInternalAsyncAfterBlockchain':
+      return common.createMessageInternalAsyncAfterBlockchain;
     case 'common.closeRequestInternalAsyncAfterBlockchain':
       return common.closeRequestInternalAsyncAfterBlockchain;
     case 'common.isRequestClosedOrTimedOut':

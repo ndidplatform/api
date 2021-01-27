@@ -1461,3 +1461,53 @@ export async function removeErrorCode(
     });
   }
 }
+
+export async function createMessage(
+  messageDataToBlockchain,
+  nodeId,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    return await tendermint.transact({
+      nodeId,
+      fnName: 'CreateMessage',
+      params: messageDataToBlockchain,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot create message to blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function getMessage({ messageId }) {
+  try {
+    return await tendermint.query('GetMessage', { message_id: messageId });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get message from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function getMessageDetail({ messageId, height }) {
+  try {
+    const messageDetail = await tendermint.query(
+      'GetMessageDetail',
+      { message_id: messageId },
+      height
+    );
+    if (messageDetail == null) {
+      return null;
+    }
+    return messageDetail;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get message details from blockchain',
+      cause: error,
+    });
+  }
+}

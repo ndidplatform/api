@@ -268,6 +268,23 @@ export default {
         },
       },
     },
+    '/rp/message': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+          properties: {
+            node_id: { type: 'string', minLength: 1 },
+            reference_id: { type: 'string', minLength: 1 },
+            message: { type: 'string' },
+            purpose: { type: 'string'},
+            initial_salt: { type: 'string' },
+          },
+          required: [
+            'reference_id',
+            'message',
+            'purpose',
+          ],
+      },
+    },
     '/idp/callback': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',

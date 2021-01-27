@@ -190,4 +190,36 @@ router.post('/callback', validateBody, async (req, res, next) => {
   }
 });
 
+router.post(
+  '/message',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const {
+        node_id,
+        reference_id,
+        message,
+        purpose,
+        initial_salt,
+      } = req.body;
+
+      const result = await common.createMessage(
+        {
+          node_id,
+          reference_id,
+          message,
+          purpose,
+          initial_salt,
+        },
+        { synchronous: false }
+      );
+
+      res.status(202).json(result);
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default router;

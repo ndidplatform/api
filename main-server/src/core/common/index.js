@@ -42,6 +42,7 @@ import { getFunction } from '../../functions';
 
 export * from './create_request';
 export * from './close_request';
+export * from './create_message';
 
 let processingInboundMessagesCount = 0;
 
