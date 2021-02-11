@@ -40,6 +40,7 @@ import { role } from '../../node';
  * @param {string} createMessageParams.message
  * @param {string} createMessageParams.purpose
  * @param {string} createMessageParams.initial_salt
+ * @param {boolean} createMessageParams.hash_message
  * @param {Object} options
  * @param {boolean} [options.synchronous]
  * @param {boolean} [options.saveForRetryOnChainDisabled]
@@ -61,6 +62,7 @@ export async function createMessage(
     reference_id,
     message,
     purpose,
+    hash_message,
   } = createMessageParams;
   const { synchronous = false } = options;
   let {
@@ -92,45 +94,85 @@ export async function createMessage(
       message_id = utils.createMessageId();
     }
 
-    if (!initial_salt) {
-      initial_salt = utils.randomBase64Bytes(config.saltLength);
-    }
-    const message_salt = utils.generateMessageSalt(initial_salt);
+    logger.info(createMessageParams);
 
-    const messageData = {
-      message_id,
-      message,
-      rp_id: node_id,
-      message_salt,
-      initial_salt,
-      reference_id,
-    };
+    if (hash_message) {
+      if (!initial_salt) {
+        initial_salt = utils.randomBase64Bytes(config.saltLength);
+      }
+      const message_salt = utils.generateMessageSalt(initial_salt);
 
-    // save message data to DB to send to AS via mq when authen complete
-    await Promise.all([
-      cacheDb.setMessageData(node_id, message_id, messageData),
-      cacheDb.setMessageIdByReferenceId(node_id, reference_id, message_id),
-    ]);
-
-    if (synchronous) {
-      await createMessageInternalAsync(createMessageParams, options, {
-        node_id,
+      const messageData = {
         message_id,
+        message,
+        rp_id: node_id,
         message_salt,
-        messageData,
-        purpose,
-      });
+        initial_salt,
+        reference_id,
+      };
+
+      // save message data to DB to send to AS via mq when authen complete
+      await Promise.all([
+        cacheDb.setMessageData(node_id, message_id, messageData),
+        cacheDb.setMessageIdByReferenceId(node_id, reference_id, message_id),
+      ]);
+
+      if (synchronous) {
+        await createMessageInternalAsync(createMessageParams, options, {
+          node_id,
+          message_id,
+          message_salt,
+          messageData,
+          purpose,
+        });
+      } else {
+        createMessageInternalAsync(createMessageParams, options, {
+          node_id,
+          message_id,
+          message_salt,
+          messageData,
+          purpose,
+        });
+      }
+    } else { 
+      const messageData = {
+        message_id,
+        message,
+        rp_id: node_id,
+        reference_id,
+      };
+
+      // save message data to DB to send to AS via mq when authen complete
+      await Promise.all([
+        cacheDb.setMessageData(node_id, message_id, messageData),
+        cacheDb.setMessageIdByReferenceId(node_id, reference_id, message_id),
+      ]);
+
+      if (synchronous) {
+        await createMessageInternalAsync(createMessageParams, options, {
+          node_id,
+          message_id,
+          messageData,
+          purpose,
+        });
+      } else {
+        createMessageInternalAsync(createMessageParams, options, {
+          node_id,
+          message_id,
+          messageData,
+          purpose,
+        });
+      }
+    }
+
+    
+
+    if (hash_message) {
+      return { message_id, initial_salt };
     } else {
-      createMessageInternalAsync(createMessageParams, options, {
-        node_id,
-        message_id,
-        message_salt,
-        messageData,
-        purpose,
-      });
+      return { message_id };
     }
-
-    return { message_id, initial_salt };
+    
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot create message',
@@ -164,6 +206,7 @@ async function createMessageInternalAsync(
     reference_id,
     message,
     purpose,
+    hash_message,
   } = createMessageParams;
   const {
     synchronous = false,
@@ -176,12 +219,20 @@ async function createMessageInternalAsync(
     messageData,
   } = additionalParams;
   try {
-    const messageDataToBlockchain = {
-      message_id,
-      message,
-      message_hash: utils.hash(message + message_salt),
-      purpose,
-    };
+    let messageDataToBlockchain;
+    if (hash_message) {
+      messageDataToBlockchain = {
+        message_id,
+        message: utils.hash(message + message_salt),
+        purpose,
+      };
+    } else {
+      messageDataToBlockchain = {
+        message_id,
+        message,
+        purpose,
+      };
+    }
 
     if (!synchronous) {
       await tendermintNdid.createMessage(

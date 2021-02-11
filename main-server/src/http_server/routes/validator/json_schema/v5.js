@@ -277,6 +277,7 @@ export default {
             message: { type: 'string' },
             purpose: { type: 'string'},
             initial_salt: { type: 'string' },
+            hash_message: { type: 'boolean' },
           },
           required: [
             'reference_id',
