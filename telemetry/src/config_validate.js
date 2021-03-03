@@ -25,8 +25,8 @@
   'NODE_ID',
   'TELEMETRY_DB_HOST',
   'TELEMETRY_DB_PORT',
-  'TELEMETRY_NODE_HOST',
-  'TELEMETRY_NODE_PORT',
+  'TELEMETRY_NODE_GRPC_HOST',
+  'TELEMETRY_NODE_GRPC_PORT',
 ].forEach((conf) => {
   if (process.env[conf] == undefined) {
     throw `${conf} config is missing`;
