@@ -21,6 +21,8 @@
  */
 
 // Load configuration variables from process.env
+import path from 'path';
+
 import './config_validate';
 
 export const env = process.env.NODE_ENV || 'development';
@@ -31,10 +33,10 @@ export const redisDbHost = process.env.TELEMETRY_DB_HOST;
 export const redisDbPort = process.env.TELEMETRY_DB_PORT;
 export const redisDbPassword = process.env.TELEMETRY_DB_PASSWORD;
 
-export const telemetryNodeHost = process.env.TELEMETRY_NODE_HOST;
-export const telemetryNodePort = process.env.TELEMETRY_NODE_PORT;
+export const telemetryNodeGrpcHost = process.env.TELEMETRY_NODE_GRPC_HOST;
+export const telemetryNodeGrpcPort = process.env.TELEMETRY_NODE_GRPC_PORT;
 
-export const telemetryNodeAddress = `${telemetryNodeHost}:${telemetryNodePort}`;
+export const telemetryNodeGrpcAddress = `${telemetryNodeGrpcHost}:${telemetryNodeGrpcPort}`;
 
 export const grpcPingInterval = process.env.GRPC_PING_INTERVAL_MS
   ? parseInt(process.env.GRPC_PING_INTERVAL_MS)
@@ -43,6 +45,26 @@ export const grpcPingInterval = process.env.GRPC_PING_INTERVAL_MS
 export const grpcPingTimeout = process.env.GRPC_PING_TIMEOUT_MS
   ? parseInt(process.env.GRPC_PING_TIMEOUT_MS)
   : 20000;
+
+export const grpcSsl = process.env.GRPC_SSL === 'true';
+
+export const grpcSslRootCertFilePath = process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
+  ? process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
+  : env === 'development'
+  ? path.join(__dirname, '..', '..', 'dev_cert', 'telemetry_grpc', 'server1.crt')
+  : null;
+
+export const grpcSslKeyFilePath = process.env.GRPC_SSL_KEY_FILE_PATH
+  ? process.env.GRPC_SSL_KEY_FILE_PATH
+  // : env === 'development'
+  // ? path.join(__dirname, '..', '..', 'dev_cert', 'telemetry_grpc', 'client.key')
+  : null;
+
+export const grpcSslCertFilePath = process.env.GRPC_SSL_CERT_FILE_PATH
+  ? process.env.GRPC_SSL_CERT_FILE_PATH
+  // : env === 'development'
+  // ? path.join(__dirname, '..', '..', 'dev_cert', 'telemetry_grpc', 'client.crt')
+  : null;
 
 export const requestEventStreamMaxCapacity = process.env
   .REQUEST_EVENT_STREAM_MAX_CAPACITY

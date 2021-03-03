@@ -15,18 +15,20 @@ Collect activities on NDID API server and forward to NDID telemetry server
 
 ## How to start Telemetry module
 
-1. Start a simple Redis database  
+1. Start a simple Redis database
+
    Note that this db can be shared with your current Redis DB
-   (if so, then you have no need to specified `TELEMETRY_DB_IP` `TELEMETRY_DB_PORT` `TELEMETRY_DB_PASSWORD`, the old value will be used)  
+   (if so, then you have no need to specify `TELEMETRY_DB_IP`, `TELEMETRY_DB_PORT`, and `TELEMETRY_DB_PASSWORD`. The old values will be used)
+
    **However, to use the old Redis, the version of that Redis has to meet the minimum requirement above.**
 
-2. Before starting the API server, add the following environment variables
+2. Before starting the API main server, add the following environment variables
 
-   ```
+   ```sh
    ENABLE_TELEMETRY_LOGGING=true
 
    # omit these, if you are using the same database as the one used by API server
-   TELEMETRY_DB_IP=127.0.0.1 # change to your database ip
+   TELEMETRY_DB_IP=127.0.0.1 # change to your database host
    TELEMETRY_DB_PORT=6379 # change to your database port
    TELEMETRY_DB_PASSWORD=<password>
    ```
@@ -49,13 +51,17 @@ Collect activities on NDID API server and forward to NDID telemetry server
 
 **Environment Variable options**
 
-- `NODE_ID`: List of monitored node IDs separated by commas (',').
-- `TELEMETRY_DB_HOST`: Host/IP of Redis DB database
-- `TELEMETRY_DB_PORT`: Port of Redis DB database
+- `NODE_ID`: List of monitored node IDs separated by commas (','). [Required]
+- `TELEMETRY_DB_HOST`: Host/IP of Redis DB database [Required]
+- `TELEMETRY_DB_PORT`: Port of Redis DB database [Required]
 - `TELEMETRY_DB_PASSWORD`: Password of Redis DB database
-- `TELEMETRY_NODE_HOST`: Host/IP of target telemetry node server (should be given by NDID)
-- `TELEMETRY_NODE_PORT`: Port of target telemetry node server (should be given by NDID)
-- `GRPC_PING_INTERVAL_MS`: Ping interval in millisecond
-- `GRPC_PING_TIMEOUT_MS`: Ping timeout in millisecond
-- `FLUSH_INTERVAL_SEC`: Amount of time between each data shipping in second (default: 10 seconds)
-- `REQUEST_EVENT_STREAM_MAX_CAPACITY`: Maximum number of items in request events Redis streams
+- `TELEMETRY_NODE_GRPC_HOST`: Host/IP of target telemetry node gRPC server (should be given by NDID) [Required]
+- `TELEMETRY_NODE_GRPC_PORT`: Port of target telemetry node gRPC server (should be given by NDID) [Required]
+- `GRPC_PING_INTERVAL_MS`: Ping interval in millisecond [Default: `60000`]
+- `GRPC_PING_TIMEOUT_MS`: Ping timeout in millisecond [Default: `20000`]
+- `GRPC_SSL`: Use SSL for gRPC connection to telemetry node server [Default: `false`]
+- `GRPC_SSL_ROOT_CERT_FILE_PATH`: SSL root certificate filepath to use with gRPC connection. Use when `GRPC_SSL` is set to `true` [Default: Node.js built-in root certificates. More info: https://nodejs.org/api/tls.html#tls_tls_rootcertificates]
+- `GRPC_SSL_KEY_FILE_PATH`: Client key filepath for gRPC connection. Use when `GRPC_SSL` is set to `true`.
+- `GRPC_SSL_CERT_FILE_PATH`: Client certificate filepath for gRPC connection. Use when `GRPC_SSL` is set to `true`.
+- `FLUSH_INTERVAL_SEC`: Amount of time between each data shipping in second [Default: `10`]
+- `REQUEST_EVENT_STREAM_MAX_CAPACITY`: Maximum number of items in request events Redis streams [Default: `1000000`]
