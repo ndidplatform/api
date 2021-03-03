@@ -22,6 +22,8 @@
 
 import grpc from 'grpc';
 import path from 'path';
+import fs from 'fs';
+import tls from 'tls';
 import * as protoLoader from '@grpc/proto-loader';
 import * as config from '../config';
 import logger from '../logger';
@@ -59,9 +61,27 @@ export default class GRPCTelemetryClient {
     );
     const proto = grpc.loadPackageDefinition(packageDefinition);
 
+    let grpcSslRootCert;
+    let grpcSslKey;
+    let grpcSslCert;
+    if (config.grpcSsl) {
+      if (config.grpcSslRootCertFilePath) {
+        grpcSslRootCert = fs.readFileSync(config.grpcSslRootCertFilePath);
+      } else {
+        grpcSslRootCert = Buffer.from(tls.rootCertificates.join('\n'));
+      }
+      if (config.grpcSslKeyFilePath) {
+        grpcSslKey = fs.readFileSync(config.grpcSslKeyFilePath);
+      }
+      if (config.grpcSslCertFilePath) {
+        grpcSslCert = fs.readFileSync(config.grpcSslCertFilePath);
+      }
+    }
     this.client = new proto.ndid.telemetry.api.NDIDTelemetry(
-      config.telemetryNodeAddress,
-      grpc.credentials.createInsecure(),
+      config.telemetryNodeGrpcAddress,
+      config.grpcSsl
+        ? grpc.credentials.createSsl(grpcSslRootCert, grpcSslKey, grpcSslCert)
+        : grpc.credentials.createInsecure(),
       {
         'grpc.keepalive_time_ms': config.grpcPingInterval,
         'grpc.keepalive_timeout_ms': config.grpcPingTimeout,
