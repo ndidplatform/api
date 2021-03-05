@@ -7,6 +7,7 @@ message MqMessage {
   bytes signature = 4;
   string receiver_node_id = 5;
   string sender_node_id = 6;
+  string message_compression_algorithm = 7;
 }
 
 message ConsentRequestMqMessage {

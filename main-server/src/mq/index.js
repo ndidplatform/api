@@ -44,7 +44,7 @@ import { role } from '../node';
 import MODE from '../mode';
 import * as config from '../config';
 
-const MQ_MESSAGE_VERSION = 1; // INCREMENT THIS WHENEVER SPEC CHANGES
+const MQ_MESSAGE_VERSION = 2; // INCREMENT THIS WHENEVER SPEC CHANGES
 const MQ_SEND_TOTAL_TIMEOUT = 600000; // 10 min
 const MQ_RECV_DUPLICATE_CHECK_TIMEOUT = MQ_SEND_TOTAL_TIMEOUT + 60000; // +1 min
 
@@ -367,6 +367,7 @@ export async function processRawMessage({
     let messageSignature;
     let receiverNodeId;
     let signatureForProxy;
+    let messageCompressionAlgorithm;
 
     if (role === 'proxy') {
       // Message is encapsulated with proxy layer
@@ -428,11 +429,15 @@ export async function processRawMessage({
       messageType = decodedDecryptedMessage.message_type;
       messageBuffer = decodedDecryptedMessage.message;
       messageSignature = decodedDecryptedMessage.signature;
+      messageCompressionAlgorithm =
+        decodedDecryptedMessage.message_compression_algorithm;
     } else {
       receiverNodeId = config.nodeId;
       messageType = outerLayerDecodedDecryptedMessage.message_type;
       messageBuffer = outerLayerDecodedDecryptedMessage.message;
       messageSignature = outerLayerDecodedDecryptedMessage.signature;
+      messageCompressionAlgorithm =
+        outerLayerDecodedDecryptedMessage.message_compression_algorithm;
     }
 
     if (messageBuffer == null || messageSignature == null) {
@@ -441,7 +446,11 @@ export async function processRawMessage({
       });
     }
 
-    const message = deserializeMqMessage(messageType, messageBuffer);
+    const message = await deserializeMqMessage(
+      messageType,
+      messageBuffer,
+      messageCompressionAlgorithm
+    );
 
     const { idp_id, rp_id, as_id } = message;
     const nodeId = idp_id || rp_id || as_id;
@@ -608,7 +617,11 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
   }
   const timestamp = Date.now();
 
-  const { messageType, messageBuffer } = serializeMqMessage(message);
+  const {
+    messageType,
+    messageBuffer,
+    messageCompressionAlgorithm,
+  } = await serializeMqMessage(message);
   const messageSignatureBuffer = await utils.createSignature(
     messageBuffer,
     senderNodeId
@@ -618,6 +631,7 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
     message_type: messageType,
     message: messageBuffer,
     signature: messageSignatureBuffer,
+    message_compression_algorithm: messageCompressionAlgorithm,
   };
   const protoMessage = MqMessage.create(mqMessageObject);
   const protoBuffer = MqMessage.encode(protoMessage).finish();
@@ -631,6 +645,7 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
     message: 'Sending message over message queue details',
     messageObject: message,
     messageSignatureBuffer,
+    messageCompressionAlgorithm,
     protoBuffer,
   });
 
