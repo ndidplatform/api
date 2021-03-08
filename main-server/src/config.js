@@ -120,6 +120,12 @@ export const registerMqAtStartup =
     ? process.env.REGISTER_MQ_AT_STARTUP === 'true'
     : true;
 
+// in bytes
+export const mqMessageCompressMinLength =
+  process.env.MQ_MESSAGE_COMPRESS_MIN_LENGTH != null
+    ? process.env.MQ_MESSAGE_COMPRESS_MIN_LENGTH
+    : 1000;
+
 export const useExternalCryptoService =
   process.env.USE_EXTERNAL_CRYPTO_SERVICE === 'true';
 

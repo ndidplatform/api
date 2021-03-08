@@ -42,7 +42,7 @@ describe('Test MQ message serialization', () => {
       messageType,
       messageBuffer,
       messageCompressionAlgorithm,
-    } = await serializeMqMessage(message);
+    } = await serializeMqMessage(message, 1);
 
     expect(messageType).to.be.equals(message.type);
     expect(messageBuffer).to.not.be.empty;
@@ -98,11 +98,38 @@ describe('Test MQ message serialization', () => {
       messageType,
       messageBuffer,
       messageCompressionAlgorithm,
-    } = await serializeMqMessage(message);
+    } = await serializeMqMessage(message, 1);
 
     expect(messageType).to.be.equals(message.type);
     expect(messageBuffer).to.not.be.empty;
     expect(messageCompressionAlgorithm).to.be.equals('gzip');
+
+    const deserializedMessage = await deserializeMqMessage(
+      messageType,
+      messageBuffer,
+      messageCompressionAlgorithm
+    );
+
+    expect(deserializedMessage).to.be.an('object');
+    expect(deserializedMessage).to.be.deep.equals(message);
+  });
+
+  it('should serialize message correctly (3) (no compression)', async () => {
+    const message = {
+      type: messageTypes.IDP_RESPONSE,
+      test: 'test',
+      time: Date.now(),
+    };
+
+    const {
+      messageType,
+      messageBuffer,
+      messageCompressionAlgorithm,
+    } = await serializeMqMessage(message, 10000);
+
+    expect(messageType).to.be.equals(message.type);
+    expect(messageBuffer).to.not.be.empty;
+    expect(messageCompressionAlgorithm).to.be.equals(null);
 
     const deserializedMessage = await deserializeMqMessage(
       messageType,
