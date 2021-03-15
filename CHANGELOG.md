@@ -1,5 +1,16 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+BREAKING CHANGES:
+
+- MQ message compression
+  - Compress only when MQ message size is at least configured size. (Config can be set with environment variable`MQ_MESSAGE_COMPRESS_MIN_LENGTH`.)
+- Change MQ message data format
+  - Add `message_compression_algorithm`.
+
 ## 4.2.0 (January 20, 2021)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
