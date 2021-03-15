@@ -60,6 +60,8 @@ export function getFunction(fnName) {
       return as.registerOrUpdateASServiceInternalAsyncAfterBlockchain;
     case 'as.processDataForRPInternalAsyncAfterBlockchain':
       return as.processDataForRPInternalAsyncAfterBlockchain;
+    case 'as.setServicePriceInternalAsyncAfterBlockchain':
+      return as.setServicePriceInternalAsyncAfterBlockchain;
     case 'identity.updateIalInternalAsyncAfterBlockchain':
       return identity.updateIalInternalAsyncAfterBlockchain;
     case 'identity.createIdentityInternalAsyncAfterCreateRequestBlockchain':

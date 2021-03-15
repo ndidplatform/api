@@ -41,6 +41,7 @@ import { role } from '../../node';
 export * from './register_or_update_as_service';
 export * from './process_data_for_rp';
 export * from './log_payment_received';
+export * from './service_price';
 export * from './event_handlers';
 
 const CALLBACK_URL_NAME = {

@@ -378,6 +378,43 @@ router.post('/disable_service', validateBody, async (req, res, next) => {
   }
 });
 
+router.post(
+  '/set_service_price_ceiling',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { service_id, price_ceiling_by_currency_list } = req.body;
+
+      await ndid.setServicePriceCeiling({
+        service_id,
+        price_ceiling_by_currency_list,
+      });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/set_service_price_min_effective_datetime_delay',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { duration_second } = req.body;
+
+      await ndid.setServicePriceMinEffectiveDatetimeDelay({
+        duration_second,
+      });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 router.post('/set_validator', validateBody, async (req, res, next) => {
   try {
     const { public_key, power } = req.body;

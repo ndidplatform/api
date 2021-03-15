@@ -57,7 +57,7 @@ export default {
       errorCode: {
         type: 'integer',
         minimum: 1,
-      }
+      },
     },
   },
   GET: {
@@ -71,7 +71,7 @@ export default {
           min_aal: {
             $ref: 'defs#/definitions/aalString',
           },
-          agent: { 
+          agent: {
             $ref: 'defs#/definitions/booleanString',
           },
         },
@@ -325,12 +325,7 @@ export default {
           request_id: { type: 'string', minLength: 1 },
           error_code: { $ref: 'defs#/definitions/errorCode' },
         },
-        required: [
-          'reference_id',
-          'callback_url',
-          'request_id',
-          'error_code',
-        ],
+        required: ['reference_id', 'callback_url', 'request_id', 'error_code'],
       },
     },
     '/as/service/:service_id': {
@@ -361,6 +356,46 @@ export default {
         properties: {
           node_id: { type: 'string', minLength: 1 },
         },
+      },
+    },
+    '/as/service_price/:service_id': {
+      params: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          service_id: { type: 'string', minLength: 1 },
+        },
+        required: ['service_id'],
+      },
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+          callback_url: { $ref: 'defs#/definitions/url' },
+          price_by_currency_list: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                currency: { type: 'string', minLength: 1 },
+                min_price: { type: 'integer', minimum: 0 },
+                max_price: { type: 'integer', minimum: 0 },
+              },
+              required: ['currency', 'min_price', 'max_price'],
+            },
+            minItems: 1,
+            uniqueItemProperties: ['currency'],
+          },
+          effective_date: { type: 'string', format: 'date-time' }, // ISO 8601 format
+          more_info_url: { $ref: 'defs#/definitions/url' },
+          detail: { type: 'string', minLength: 1 },
+        },
+        required: [
+          'reference_id',
+          'callback_url',
+          'price_by_currency_list',
+          'effective_date',
+        ],
       },
     },
     '/as/data/:request_id/:service_id': {

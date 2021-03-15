@@ -683,6 +683,11 @@ module.exports = {
     message: 'Request has enough AS responses',
     clientError: true,
   },
+  SERVICE_ID_NOT_FOUND: {
+    code: 20018,
+    message: 'Service ID could not be found',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
@@ -818,6 +823,14 @@ module.exports = {
   ABCI_APP_STATE_ERROR: {
     code: 15032,
     message: 'Blockchain app state error',
+  },
+  ABCI_SERVICE_PRICE_CEILING_LIST_NOT_FOUND: {
+    code: 15033,
+    message: 'Service price ceiling list not found',
+  },
+  ABCI_SERVICE_PRICE_CEILING_NOT_FOUND: {
+    code: 15034,
+    message: 'Service price ceiling not found',
   },
 
   // Client errors
@@ -1201,6 +1214,26 @@ module.exports = {
   ABCI_DATA_REQUEST_CANNOT_BE_FULFILLED: {
     code: 25076,
     message: 'Data request cannot be fulfilled',
+    clientError: true,
+  },
+  ABCI_IDP_CREATE_REQUEST_WITH_DATA_REQUEST_NOT_ALLOWED: {
+    code: 25077,
+    message: 'IdP creating request with data request is not allowed',
+    clientError: true,
+  },
+  ABCI_IDP_CREATE_REQUEST_MODE_1_AND_2_NOT_ALLOWED: {
+    code: 25078,
+    message: 'IdP creating request in mode 1 and 2 is not allowed',
+    clientError: true,
+  },
+  ABCI_SERVICE_MAX_PRICE_GREATER_THAN_PRICE_CEILING: {
+    code: 25079,
+    message: 'Service max price is greater than price ceiling',
+    clientError: true,
+  },
+  ABCI_SERVICE_PRICE_EFFECTIVE_DATETIME_BEFORE_ALLOWED: {
+    code: 25080,
+    message: 'Service price effective datetime is before allowed datetime',
     clientError: true,
   },
 
