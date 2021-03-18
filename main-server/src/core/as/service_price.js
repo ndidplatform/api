@@ -86,7 +86,7 @@ async function setServicePriceInternalAsync(
     callback_url,
     service_id,
     price_by_currency_list,
-    effective_date,
+    effective_datetime,
     more_info_url,
     detail,
   },
@@ -99,7 +99,7 @@ async function setServicePriceInternalAsync(
         {
           service_id,
           price_by_currency_list,
-          effective_date,
+          effective_datetime,
           more_info_url,
           detail,
         },
@@ -112,7 +112,7 @@ async function setServicePriceInternalAsync(
         {
           service_id,
           price_by_currency_list,
-          effective_date,
+          effective_datetime,
           more_info_url,
           detail,
         },

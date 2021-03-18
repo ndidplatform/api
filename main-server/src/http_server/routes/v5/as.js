@@ -129,7 +129,7 @@ router.post(
         reference_id,
         callback_url,
         price_by_currency_list,
-        effective_date,
+        effective_datetime,
         more_info_url,
         detail,
       } = req.body;
@@ -141,7 +141,7 @@ router.post(
           callback_url,
           service_id,
           price_by_currency_list,
-          effective_date,
+          effective_datetime,
           more_info_url,
           detail,
         },
