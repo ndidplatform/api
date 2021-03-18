@@ -378,15 +378,15 @@ export default {
               type: 'object',
               properties: {
                 currency: { type: 'string', minLength: 1 },
-                min_price: { type: 'integer', minimum: 0 },
-                max_price: { type: 'integer', minimum: 0 },
+                min_price: { type: 'number', minimum: 0 },
+                max_price: { type: 'number', minimum: 0 },
               },
               required: ['currency', 'min_price', 'max_price'],
             },
             minItems: 1,
             uniqueItemProperties: ['currency'],
           },
-          effective_date: { type: 'string', format: 'date-time' }, // ISO 8601 format
+          effective_datetime: { type: 'string', format: 'date-time' }, // ISO 8601 format
           more_info_url: { $ref: 'defs#/definitions/url' },
           detail: { type: 'string', minLength: 1 },
         },
@@ -394,7 +394,7 @@ export default {
           'reference_id',
           'callback_url',
           'price_by_currency_list',
-          'effective_date',
+          'effective_datetime',
         ],
       },
     },

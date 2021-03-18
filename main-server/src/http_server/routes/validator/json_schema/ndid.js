@@ -280,7 +280,7 @@ export default {
               type: 'object',
               properties: {
                 currency: { type: 'string', minLength: 1 },
-                price: { type: 'integer', minimum: 0 },
+                price: { type: 'number', minimum: 0 },
               },
               required: ['currency', 'price'],
             },
