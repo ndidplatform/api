@@ -104,7 +104,7 @@ router.get('/as/:service_id', async (req, res, next) => {
   }
 });
 
-router.get('/as/price/:service_id', async (req, res, next) => {
+router.get('/as/service_price/:service_id', async (req, res, next) => {
   try {
     const { service_id } = req.params;
     const { node_id } = req.query;
@@ -137,6 +137,21 @@ router.get('/service_price_ceiling', async (req, res, next) => {
       res.status(404).end();
     } else {
       res.status(200).json(servicePriceCeiling);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/service_price_min_effective_datetime_delay', async (req, res, next) => {
+  try {
+    const servicePriceMinEffectiveDatetimeDelay = await coreServicePrice.getServicePriceMinEffectiveDatetimeDelay();
+
+    if (servicePriceMinEffectiveDatetimeDelay == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(servicePriceMinEffectiveDatetimeDelay);
     }
     next();
   } catch (error) {
