@@ -93,6 +93,15 @@ export default {
         },
       },
     },
+    '/utility/service_price_ceiling': {
+      query: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          service_id: { type: 'string', minLength: 1 },
+        },
+        required: ['service_id'],
+      },
+    },
     '/idp/request_message_padded_hash': {
       query: {
         $schema: 'http://json-schema.org/draft-07/schema#',
