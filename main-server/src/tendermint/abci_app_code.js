@@ -138,6 +138,7 @@ import errorType from 'ndid-error/type';
 // ServicePriceCeilingNotFound                        uint32 = 114
 // ServiceMaxPriceGreaterThanPriceCeiling             uint32 = 115
 // ServicePriceEffectiveDatetimeBeforeAllowed         uint32 = 116
+// ServicePriceMinCannotBeGreaterThanMax              uint32 = 117
 // UnknownError                                       uint32 = 999
 
 const codeMapping = {
@@ -257,6 +258,7 @@ const codeMapping = {
   114: errorType.ABCI_SERVICE_PRICE_CEILING_NOT_FOUND,
   115: errorType.ABCI_SERVICE_MAX_PRICE_GREATER_THAN_PRICE_CEILING,
   116: errorType.ABCI_SERVICE_PRICE_EFFECTIVE_DATETIME_BEFORE_ALLOWED,
+  117: errorType.ABCI_SERVICE_PRICE_MIN_CANNOT_BE_GREATER_THAN_MAX,
 
   999: errorType.UNKNOWN_ERROR,
 };

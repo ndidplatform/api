@@ -684,8 +684,13 @@ module.exports = {
     clientError: true,
   },
   SERVICE_ID_NOT_FOUND: {
-    code: 20018,
+    code: 20083,
     message: 'Service ID could not be found',
+    clientError: true,
+  },
+  SERVICE_MIN_PRICE_CANNOT_BE_GREATER_THAN_MAX_PRICE: {
+    code: 20084,
+    message: 'Service minimum price cannot be greater than maximum price',
     clientError: true,
   },
 
@@ -1234,6 +1239,11 @@ module.exports = {
   ABCI_SERVICE_PRICE_EFFECTIVE_DATETIME_BEFORE_ALLOWED: {
     code: 25080,
     message: 'Service price effective datetime is before allowed datetime',
+    clientError: true,
+  },
+  ABCI_SERVICE_PRICE_MIN_CANNOT_BE_GREATER_THAN_MAX: {
+    code: 25081,
+    message: 'Service minimum price cannot be greater than maximum price',
     clientError: true,
   },
 
