@@ -23,9 +23,9 @@
 import * as tendermintNdid from '../tendermint/ndid';
 
 export async function getServicePriceCeiling({ serviceId }) {
-  const servicePriceCeiling = await tendermintNdid.getServicePriceCeiling({
-    service_id: serviceId,
-  });
+  const servicePriceCeiling = await tendermintNdid.getServicePriceCeiling(
+    serviceId
+  );
 
   if (servicePriceCeiling == null) {
     return null;
