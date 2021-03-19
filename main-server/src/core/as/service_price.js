@@ -35,7 +35,7 @@ export async function setServicePrice(
   { synchronous = false } = {}
 ) {
   let { node_id } = setServicePriceParams;
-  const { service_id } = setServicePriceParams;
+  const { service_id, price_by_currency_list } = setServicePriceParams;
 
   if (role === 'proxy') {
     if (node_id == null) {
@@ -45,6 +45,15 @@ export async function setServicePrice(
     }
   } else {
     node_id = config.nodeId;
+  }
+
+  for (let i = 0; i < price_by_currency_list.length; i++) {
+    const { min_price, max_price } = price_by_currency_list[i];
+    if (min_price > max_price) {
+      throw new CustomError({
+        errorType: errorType.SERVICE_MIN_PRICE_CANNOT_BE_GREATER_THAN_MAX_PRICE,
+      });
+    }
   }
 
   try {
