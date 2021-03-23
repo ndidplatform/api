@@ -4,14 +4,10 @@
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
 
-BREAKING CHANGES:
-
-- Environment variable `ENABLE_TELEMETRY_LOGGING` must be set for main server
-
 FEATURES:
 
 - Telemetry data collection
-  - This is an opt-in feature
+  - This is an opt-in feature. Can be set using environment variable `ENABLE_TELEMETRY_LOGGING`.
   - Data collected:
     - Request states/events
     - Software versions (API main server, MQ service server, Tendermint and ABCI app)
