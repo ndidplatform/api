@@ -135,7 +135,7 @@
 - `PROMETHEUS_HTTPS`: Use HTTPS server for Prometheus metrics HTTP server [Default: `false`]
 - `PROMETHEUS_HTTPS_KEY_PATH`: HTTPS private key file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true [Default: pre-generated development key]
 - `PROMETHEUS_HTTPS_CERT_PATH`: HTTPS certificate file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true [Default: pre-generated development cert]
-- `ENABLE_TELEMETRY_LOGGING`: Enable/disable telemetry logging. Options are `true` and `false` [Default: `false`]
+- `ENABLE_TELEMETRY_LOGGING`: Enable/disable telemetry logging. Options are `true` and `false` [Default: `true`]
 
 Debug APIs (Only in development mode)
 
