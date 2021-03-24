@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.1.1 (March 24, 2021)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+BUG FIXES:
+
+- Fix retry transact on fail counter logic.
+
 ## 4.1.0 (June 28, 2020)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
