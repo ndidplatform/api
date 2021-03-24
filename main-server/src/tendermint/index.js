@@ -1139,8 +1139,8 @@ async function retryOnTransactFail(txHash, transactParams, error) {
     factor: 2,
     jitter: 0.2,
   });
-  let nextRetry;
-  for (let i = 0; i < counter + 1; i++) {
+  let nextRetry = backoff.next();
+  for (let i = 0; i < counter; i++) {
     nextRetry = backoff.next();
   }
 
