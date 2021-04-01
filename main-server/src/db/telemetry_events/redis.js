@@ -26,7 +26,7 @@ import * as config from '../../config';
 const dbName = 'telemetry_events';
 
 const redisInstance = new RedisInstance(dbName, {
-  dbIp: config.telemetryDbIp,
+  dbIp: config.telemetryDbHost,
   dbPort: config.telemetryDbPort,
   dbPassword: config.telemetryDbPassword,
 });

@@ -135,7 +135,10 @@
 - `PROMETHEUS_HTTPS`: Use HTTPS server for Prometheus metrics HTTP server [Default: `false`]
 - `PROMETHEUS_HTTPS_KEY_PATH`: HTTPS private key file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true [Default: pre-generated development key]
 - `PROMETHEUS_HTTPS_CERT_PATH`: HTTPS certificate file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true [Default: pre-generated development cert]
-- `ENABLE_TELEMETRY_LOGGING`: Enable/disable telemetry logging. Options are `true` and `false` [Required]
+- `ENABLE_TELEMETRY_LOGGING`: Enable/disable telemetry logging. Options are `true` and `false` [Default: `true`]
+- `TELEMETRY_DB_HOST`: Host/IP of Redis DB database for telemetry [Default: Same as `DB_IP`]
+- `TELEMETRY_DB_PORT`: Port of Redis DB database for telemetry [Default: Same as `DB_PORT`]
+- `TELEMETRY_DB_PASSWORD`: Password of Redis DB database for telemetry [Default: Same as `DB_PASSWORD`]
 
 Debug APIs (Only in development mode)
 

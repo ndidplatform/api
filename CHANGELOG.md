@@ -1,12 +1,28 @@
 # Changelog
 
-## TBD
+## 4.3.2 (TBD)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
 
-BREAKING CHANGES:
+OTHERS:
 
-- Environment variable `ENABLE_TELEMETRY_LOGGING` must be set for main server
+- [Main] Add environment variable option alias `TELEMETRY_DB_HOST` for `TELEMETRY_DB_IP` to match with telemetry client module.
+
+## 4.3.1 (March 25, 2021)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+BUG FIXES:
+
+- Fix retry transact on fail counter logic.
+
+OTHERS:
+
+- Change default `ENABLE_TELEMETRY_LOGGING` config to `true`.
+
+## 4.3.0 (March 23, 2021)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
 
 FEATURES:
 
@@ -18,7 +34,7 @@ FEATURES:
     - New API: POST `/ndid/set_service_price_ceiling`: Set service price ceiling
     - New API: POST `/ndid/set_service_price_min_effective_datetime_delay`: Set service price minimum effective datetime delay (compared to latest block's time)
 - Telemetry data collection
-  - This is an opt-in feature
+  - This is an opt-in feature. Can be set using environment variable `ENABLE_TELEMETRY_LOGGING`.
   - Data collected:
     - Request states/events
     - Software versions (API main server, MQ service server, Tendermint and ABCI app)

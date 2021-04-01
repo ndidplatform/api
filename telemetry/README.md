@@ -18,7 +18,7 @@ Collect activities on NDID API server and forward to NDID telemetry server
 1. Start a simple Redis database
 
    Note that this db can be shared with your current Redis DB
-   (if so, then you have no need to specify `TELEMETRY_DB_IP`, `TELEMETRY_DB_PORT`, and `TELEMETRY_DB_PASSWORD`. The old values will be used)
+   (if so, then you have no need to specify `TELEMETRY_DB_HOST`, `TELEMETRY_DB_PORT`, and `TELEMETRY_DB_PASSWORD` when running API main server. The old values will be used)
 
    **However, to use the old Redis, the version of that Redis has to meet the minimum requirement above.**
 
@@ -28,7 +28,7 @@ Collect activities on NDID API server and forward to NDID telemetry server
    ENABLE_TELEMETRY_LOGGING=true
 
    # omit these, if you are using the same database as the one used by API server
-   TELEMETRY_DB_IP=127.0.0.1 # change to your database host
+   TELEMETRY_DB_HOST=127.0.0.1 # change to your database host
    TELEMETRY_DB_PORT=6379 # change to your database port
    TELEMETRY_DB_PASSWORD=<password>
    ```
@@ -40,7 +40,7 @@ Collect activities on NDID API server and forward to NDID telemetry server
    ```sh
    # you CANNOT omit these values
    NODE_ID=idp1,rp1 \
-   TELEMETRY_DB_IP=127.0.0.1 \
+   TELEMETRY_DB_HOST=127.0.0.1 \
    TELEMETRY_DB_PORT=6379 \
    TELEMETRY_DB_PASSWORD=<password> \
    TELEMETRY_NODE_IP=telemetry.ndid.co.th \

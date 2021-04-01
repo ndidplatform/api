@@ -1139,7 +1139,7 @@ async function retryOnTransactFail(txHash, transactParams, error) {
     factor: 2,
     jitter: 0.2,
   });
-  let nextRetry;
+  let nextRetry = backoff.next();
   for (let i = 0; i < counter; i++) {
     nextRetry = backoff.next();
   }
@@ -1156,6 +1156,7 @@ async function retryOnTransactFail(txHash, transactParams, error) {
     txHash,
     nodeId,
     fnName,
+    retryCount: counter,
     nextRetry,
   });
 
@@ -1170,7 +1171,7 @@ async function retryOnTransactFail(txHash, transactParams, error) {
         useMasterKey,
         saveForRetryOnChainDisabled,
         retryOnFail,
-        counter,
+        counter: counter + 1,
       }),
     nextRetry
   );

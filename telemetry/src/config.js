@@ -21,7 +21,7 @@
  */
 
 // Load configuration variables from process.env
-import path from 'path';
+// import path from 'path';
 
 import './config_validate';
 
@@ -50,21 +50,24 @@ export const grpcSsl = process.env.GRPC_SSL === 'true';
 
 export const grpcSslRootCertFilePath = process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
   ? process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
-  : env === 'development'
-  ? path.join(__dirname, '..', '..', 'dev_cert', 'telemetry_grpc', 'server1.crt')
   : null;
+// : env === 'development'
+// ? path.join(__dirname, '..', '..', 'dev_cert', 'telemetry_grpc', 'server1.crt')
+// : null;
 
 export const grpcSslKeyFilePath = process.env.GRPC_SSL_KEY_FILE_PATH
   ? process.env.GRPC_SSL_KEY_FILE_PATH
-  // : env === 'development'
-  // ? path.join(__dirname, '..', '..', 'dev_cert', 'telemetry_grpc', 'client.key')
   : null;
+// : env === 'development'
+// ? path.join(__dirname, '..', '..', 'dev_cert', 'telemetry_grpc', 'client.key')
+// : null;
 
 export const grpcSslCertFilePath = process.env.GRPC_SSL_CERT_FILE_PATH
   ? process.env.GRPC_SSL_CERT_FILE_PATH
-  // : env === 'development'
-  // ? path.join(__dirname, '..', '..', 'dev_cert', 'telemetry_grpc', 'client.crt')
   : null;
+// : env === 'development'
+// ? path.join(__dirname, '..', '..', 'dev_cert', 'telemetry_grpc', 'client.crt')
+// : null;
 
 export const requestEventStreamMaxCapacity = process.env
   .REQUEST_EVENT_STREAM_MAX_CAPACITY
