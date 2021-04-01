@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.3.2 (TBD)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+OTHERS:
+
+- [Main] Add environment variable option alias `TELEMETRY_DB_HOST` for `TELEMETRY_DB_IP` to match with telemetry client module.
+
 ## 4.3.1 (March 25, 2021)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_

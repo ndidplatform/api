@@ -21,7 +21,7 @@
  */
 
 // Load configuration variables from process.env
-import path from 'path';
+// import path from 'path';
 
 import './config_validate';
 
