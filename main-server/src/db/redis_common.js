@@ -570,3 +570,47 @@ export async function getFlattenListWithRangeSupport({ nodeId, dbName, name }) {
     });
   }
 }
+
+export async function setToNewKey({ nodeId, dbName, name, key, newKey }) {
+  const operation = 'setToNewKey';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+
+    const keyOnRedis = `${nodeId}:${dbName}:${name}:${key}`;
+    const newKeyOnRedis = `${nodeId}:${dbName}:${name}:${newKey}`;
+
+    const errAndResults = await redis
+      .multi()
+      .eval(
+        `return redis.call('SET', KEYS[2], redis.call('GET', KEYS[1]))`,
+        2,
+        keyOnRedis,
+        newKeyOnRedis
+      )
+      .unlink(keyOnRedis)
+      .exec();
+
+    const [evalErr] = errAndResults[0];
+    if (evalErr != null) {
+      throw new Error(evalErr);
+    }
+
+    const [unlinkErr] = errAndResults[1];
+    if (unlinkErr != null) {
+      throw new Error(unlinkErr);
+    }
+
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}

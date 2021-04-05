@@ -1033,6 +1033,21 @@ export function setRetryTendermintTransaction(nodeId, txHash, data) {
   });
 }
 
+export function updateTxHashForRetryTendermintTransaction(
+  nodeId,
+  txHash,
+  newTxHash
+) {
+  return db.setToNewKey({
+    nodeId,
+    dbName,
+    name: 'tendermintTransaction',
+    keyName: 'txHash',
+    key: txHash,
+    newKey: newTxHash,
+  });
+}
+
 export function removeRetryTendermintTransaction(nodeId, txHash) {
   return db.remove({
     nodeId,
