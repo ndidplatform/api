@@ -1007,7 +1007,7 @@ export function getAllRetryTendermintTransaction(nodeId) {
     dbName,
     name: 'tendermintTransaction',
     keyName: 'txHash',
-    valueName: 'data',
+    valueName: 'transactParams',
   });
 }
 
