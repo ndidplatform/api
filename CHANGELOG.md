@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.2.2 (TBD)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+BUG FIXES:
+
+- Fix retry transact data on redis doesn't get removed after successful retry.
+
 ## 4.2.1 (March 24, 2021)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
