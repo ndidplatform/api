@@ -584,22 +584,25 @@ export async function loadAndRetryTransact() {
   );
   if (config.mode === MODE.STANDALONE) {
     await Promise.all(
-      retryTransactions.map((txHash, transactParams) =>
-        retryTransact(transactParams)
+      retryTransactions.map(({ txHash, transactParams }) =>
+        retryTransact(txHash, transactParams)
       )
     );
   } else if (config.mode === MODE.MASTER) {
-    retryTransactions.forEach((txHash, transactParams) =>
+    retryTransactions.forEach(({ txHash, transactParams }) =>
       delegateToWorker({
         fnName: 'tendermint.retryTransact',
-        args: [transactParams],
+        args: [txHash, transactParams],
       })
     );
   }
 }
 
-export async function retryTransact(transactParams) {
-  return transact(transactParams);
+export async function retryTransact(retryPreviousTxHash, transactParams) {
+  return transact({
+    ...transactParams,
+    retryPreviousTxHash,
+  });
 }
 
 function checkForSetLastBlock(parsedTransactionsInBlocks) {
@@ -1277,13 +1280,13 @@ export async function transact({
   };
 
   if (retryOnFail) {
-    if (retryCount === 0) {
+    if (retryCount === 0 && !retryPreviousTxHash) {
       await cacheDb.setRetryTendermintTransaction(config.nodeId, txHash, {
         ...transactParams,
         retryOnFail,
         retryCount,
       });
-    } else if (retryCount > 0) {
+    } else if (retryCount > 0 || (retryCount === 0 && retryPreviousTxHash)) {
       await cacheDb.updateTxHashForRetryTendermintTransaction(
         config.nodeId,
         retryPreviousTxHash,
