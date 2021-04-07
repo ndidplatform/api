@@ -576,20 +576,27 @@ export async function setToNewKey({ nodeId, dbName, name, key, newKey }) {
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
+    const redisVersion = getRedisVersion(dbName);
 
     const keyOnRedis = `${nodeId}:${dbName}:${name}:${key}`;
     const newKeyOnRedis = `${nodeId}:${dbName}:${name}:${newKey}`;
 
-    const errAndResults = await redis
+    let pipeline = redis
       .multi()
       .eval(
         `return redis.call('SET', KEYS[2], redis.call('GET', KEYS[1]))`,
         2,
         keyOnRedis,
         newKeyOnRedis
-      )
-      .unlink(keyOnRedis)
-      .exec();
+      );
+
+    if (redisVersion.major >= '4') {
+      pipeline = pipeline.unlink(keyOnRedis);
+    } else {
+      pipeline = pipeline.del(keyOnRedis);
+    }
+
+    const errAndResults = await pipeline.exec();
 
     const [evalErr] = errAndResults[0];
     if (evalErr != null) {
