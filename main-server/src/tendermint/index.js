@@ -405,7 +405,7 @@ async function telemetryLogVersions() {
     await TelemetryLogger.logTendermintAndABCIVersions({
       nodeId: config.nodeId,
       tendermintVersion: tendermintVersionStr,
-      abciVersion: abciVersion,
+      abciVersion,
     });
   }
 }
