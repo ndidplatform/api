@@ -170,6 +170,7 @@ export async function initialize({
   watchForNextConnectivityStateChange();
   logger.info({
     message: 'Connected to MQ service server',
+    mqServiceServerInfo,
   });
 
   if (telemetryLogVersions) {

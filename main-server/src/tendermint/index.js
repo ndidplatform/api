@@ -405,7 +405,7 @@ async function telemetryLogVersions() {
     await TelemetryLogger.logTendermintAndABCIVersions({
       nodeId: config.nodeId,
       tendermintVersion: tendermintVersionStr,
-      abciVersion: abciVersion,
+      abciVersion,
     });
   }
 }
@@ -584,22 +584,25 @@ export async function loadAndRetryTransact() {
   );
   if (config.mode === MODE.STANDALONE) {
     await Promise.all(
-      retryTransactions.map((txHash, transactParams) =>
-        retryTransact(transactParams)
+      retryTransactions.map(({ txHash, transactParams }) =>
+        retryTransact(txHash, transactParams)
       )
     );
   } else if (config.mode === MODE.MASTER) {
-    retryTransactions.forEach((txHash, transactParams) =>
+    retryTransactions.forEach(({ txHash, transactParams }) =>
       delegateToWorker({
         fnName: 'tendermint.retryTransact',
-        args: [transactParams],
+        args: [txHash, transactParams],
       })
     );
   }
 }
 
-export async function retryTransact(transactParams) {
-  return transact(transactParams);
+export async function retryTransact(retryPreviousTxHash, transactParams) {
+  return transact({
+    ...transactParams,
+    retryPreviousTxHash,
+  });
 }
 
 function checkForSetLastBlock(parsedTransactionsInBlocks) {
@@ -1130,7 +1133,7 @@ async function retryOnTransactFail(txHash, transactParams, error) {
     useMasterKey,
     saveForRetryOnChainDisabled,
     retryOnFail,
-    counter,
+    retryCount,
   } = transactParams;
 
   const backoff = new ExponentialBackoff({
@@ -1139,9 +1142,9 @@ async function retryOnTransactFail(txHash, transactParams, error) {
     factor: 2,
     jitter: 0.2,
   });
-  let nextRetry = backoff.next();
-  for (let i = 0; i < counter; i++) {
-    nextRetry = backoff.next();
+  let nextRetryDelay = backoff.next();
+  for (let i = 0; i < retryCount; i++) {
+    nextRetryDelay = backoff.next();
   }
 
   // notifyError({
@@ -1156,8 +1159,8 @@ async function retryOnTransactFail(txHash, transactParams, error) {
     txHash,
     nodeId,
     fnName,
-    retryCount: counter,
-    nextRetry,
+    retryCount,
+    nextRetryDelay,
   });
 
   setTimeout(
@@ -1171,9 +1174,10 @@ async function retryOnTransactFail(txHash, transactParams, error) {
         useMasterKey,
         saveForRetryOnChainDisabled,
         retryOnFail,
-        counter: counter + 1,
+        retryCount: retryCount + 1,
+        retryPreviousTxHash: txHash,
       }),
-    nextRetry
+    nextRetryDelay
   );
 }
 
@@ -1200,7 +1204,8 @@ export async function transact({
   useMasterKey = false,
   saveForRetryOnChainDisabled = false,
   retryOnFail = false,
-  counter = 0,
+  retryCount = 0,
+  retryPreviousTxHash,
 }) {
   if (nodeId == null || nodeId == '') {
     throw new CustomError({
@@ -1228,6 +1233,7 @@ export async function transact({
     useMasterKey,
     callbackFnName,
     callbackAdditionalArgs,
+    retryCount,
   });
 
   const paramsJsonString = JSON.stringify(params);
@@ -1273,12 +1279,20 @@ export async function transact({
     functionName: fnName,
   };
 
-  if (retryOnFail && counter === 0) {
-    await cacheDb.setRetryTendermintTransaction(config.nodeId, txHash, {
-      ...transactParams,
-      retryOnFail,
-      counter,
-    });
+  if (retryOnFail) {
+    if (retryCount === 0 && !retryPreviousTxHash) {
+      await cacheDb.setRetryTendermintTransaction(config.nodeId, txHash, {
+        ...transactParams,
+        retryOnFail,
+        retryCount,
+      });
+    } else if (retryCount > 0 || (retryCount === 0 && retryPreviousTxHash)) {
+      await cacheDb.updateTxHashForRetryTendermintTransaction(
+        config.nodeId,
+        retryPreviousTxHash,
+        txHash
+      );
+    }
   }
 
   try {
@@ -1321,7 +1335,7 @@ export async function transact({
         {
           ...transactParams,
           retryOnFail,
-          counter,
+          retryCount,
         },
         error
       );

@@ -71,6 +71,10 @@ export default class TelemetryLogger {
   async logMainVersion({ nodeId, version }) {
     if (!this.enable) return;
 
+    if (!version) {
+      throw new Error('"version" is required');
+    }
+
     // prevent duplicates on the same run
     if (this.mainVersion === version) {
       return;
@@ -87,6 +91,10 @@ export default class TelemetryLogger {
 
   async logMQServiceVersion({ nodeId, version }) {
     if (!this.enable) return;
+
+    if (!version) {
+      throw new Error('"version" is required');
+    }
 
     // prevent duplicates on the same run
     if (this.mqServiceVersion === version) {
@@ -108,6 +116,14 @@ export default class TelemetryLogger {
     abciVersion,
   }) {
     if (!this.enable) return;
+
+    if (!tendermintVersion) {
+      throw new Error('"tendermintVersion" is required');
+    }
+
+    if (!abciVersion) {
+      throw new Error('"abciVersion" is required');
+    }
 
     // prevent duplicates on the same run
     if (

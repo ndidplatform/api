@@ -18,6 +18,11 @@ FEATURES:
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
 
+BUG FIXES:
+
+- Fix retry transact data on redis doesn't get removed after successful retry.
+- Fix retry transact after process restart.
+
 OTHERS:
 
 - [Main] Add environment variable option alias `TELEMETRY_DB_HOST` for `TELEMETRY_DB_IP` to match with telemetry client module.
