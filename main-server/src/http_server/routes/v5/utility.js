@@ -104,26 +104,30 @@ router.get('/as/:service_id', async (req, res, next) => {
   }
 });
 
-router.get('/as/service_price/:service_id', async (req, res, next) => {
-  try {
-    const { service_id } = req.params;
-    const { node_id } = req.query;
+router.get(
+  '/as/service_price/:service_id',
+  validateQuery,
+  async (req, res, next) => {
+    try {
+      const { service_id } = req.params;
+      const { node_id } = req.query;
 
-    const servicePriceList = await coreServicePrice.getServicePriceList({
-      nodeId: node_id,
-      serviceId: service_id,
-    });
+      const servicePriceList = await coreServicePrice.getServicePriceList({
+        nodeId: node_id,
+        serviceId: service_id,
+      });
 
-    if (servicePriceList == null) {
-      res.status(404).end();
-    } else {
-      res.status(200).json(servicePriceList);
+      if (servicePriceList == null) {
+        res.status(404).end();
+      } else {
+        res.status(200).json(servicePriceList);
+      }
+      next();
+    } catch (error) {
+      next(error);
     }
-    next();
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 router.get('/service_price_ceiling', validateQuery, async (req, res, next) => {
   try {

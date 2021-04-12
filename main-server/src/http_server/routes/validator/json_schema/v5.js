@@ -102,6 +102,15 @@ export default {
         required: ['service_id'],
       },
     },
+    '/utility/as/service_price/:service_id': {
+      query: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+        },
+        required: ['node_id'],
+      },
+    },
     '/idp/request_message_padded_hash': {
       query: {
         $schema: 'http://json-schema.org/draft-07/schema#',
