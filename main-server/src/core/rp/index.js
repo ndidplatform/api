@@ -35,6 +35,7 @@ import privateMessageType from '../../mq/message/type';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
+import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 import * as config from '../../config';
 import { role } from '../../node';
@@ -279,6 +280,16 @@ export async function sendRequestToAS(nodeId, requestData, height) {
           },
           senderNodeId: nodeId,
           onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+            // log request event: RP_REQUESTS_AS_DATA
+            TelemetryLogger.logRequestEvent(
+              requestData.request_id,
+              nodeId,
+              REQUEST_EVENTS.RP_REQUESTS_AS_DATA,
+              {
+                as_node_id: receiverNodeId,
+              }
+            );
+
             nodeCallback.notifyMessageQueueSuccessSend({
               nodeId,
               getCallbackUrlFnName:
@@ -305,6 +316,16 @@ export async function processMessage(nodeId, messageId, message) {
 
   try {
     if (message.type === privateMessageType.IDP_RESPONSE) {
+      // log request event: RP_RECEIVES_IDP_RESPONSE
+      TelemetryLogger.logRequestEvent(
+        requestId,
+        nodeId,
+        REQUEST_EVENTS.RP_RECEIVES_IDP_RESPONSE,
+        {
+          idp_node_id: message.idp_id,
+        }
+      );
+
       const requestData = await cacheDb.getRequestData(
         nodeId,
         message.request_id
@@ -352,7 +373,7 @@ export async function processMessage(nodeId, messageId, message) {
         ]);
 
         let requestDetailsForCallback;
-        if (config.callbackApiVersion === 4) {
+        if (config.callbackApiVersion === '4.0') {
           const detailedRequestStatus = utils.getDetailedRequestStatusLegacy(
             requestDetail
           );
@@ -449,6 +470,7 @@ export async function processMessage(nodeId, messageId, message) {
                 sendCallbackToClient: false,
                 saveForRetryOnChainDisabled: true,
                 retryOnFail: true,
+                autoClose: true,
               }
             );
           }

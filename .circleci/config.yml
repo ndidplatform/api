@@ -84,6 +84,7 @@ jobs:
             cd main-server
             NODE_ID=ndid1 \
             NDID_NODE=true \
+            ENABLE_TELEMETRY_LOGGING=false \
             npm start
           background: true
       - run:

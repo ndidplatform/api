@@ -27,7 +27,8 @@ import { idpOnlyHandler } from '../middleware/role_handler';
 import * as identity from '../../../core/identity';
 import * as tendermintNdid from '../../../tendermint/ndid';
 
-import errorType from 'ndid-error/type';
+import { apiVersion } from './version';
+import { HTTP_HEADER_FIELDS } from './private_http_header';
 
 const router = express.Router();
 
@@ -46,18 +47,26 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
       request_message,
     } = req.body;
 
-    const result = await identity.createIdentity({
-      node_id,
-      reference_id,
-      callback_url,
-      identity_list,
-      mode,
-      accessor_type,
-      accessor_public_key,
-      accessor_id,
-      ial,
-      request_message,
-    });
+    const {
+      [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+      [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+    } = req.headers;
+
+    const result = await identity.createIdentity(
+      {
+        node_id,
+        reference_id,
+        callback_url,
+        identity_list,
+        mode,
+        accessor_type,
+        accessor_public_key,
+        accessor_id,
+        ial,
+        request_message,
+      },
+      { apiVersion, ndidMemberAppType, ndidMemberAppVersion }
+    );
 
     res.status(202).json(result);
     next();
@@ -66,25 +75,29 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
   }
 });
 
-router.get('/:namespace/:identifier', idpOnlyHandler,  async (req, res, next) => {
-  try {
-    const { namespace, identifier } = req.params;
+router.get(
+  '/:namespace/:identifier',
+  idpOnlyHandler,
+  async (req, res, next) => {
+    try {
+      const { namespace, identifier } = req.params;
 
-    const reference_group_code = await tendermintNdid.getReferenceGroupCode(
-      namespace,
-      identifier
-    );
+      const reference_group_code = await tendermintNdid.getReferenceGroupCode(
+        namespace,
+        identifier
+      );
 
-    if (reference_group_code !== null) {
-      res.status(200).json({ reference_group_code });
-    } else {
-      res.status(404).end();
+      if (reference_group_code !== null) {
+        res.status(200).json({ reference_group_code });
+      } else {
+        res.status(404).end();
+      }
+      next();
+    } catch (error) {
+      next(error);
     }
-    next();
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 router.post(
   '/:namespace/:identifier',
@@ -93,6 +106,7 @@ router.post(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
+
       const {
         node_id,
         reference_id,
@@ -101,15 +115,27 @@ router.post(
         request_message,
       } = req.body;
 
-      const result = await identity.addIdentity({
-        node_id,
-        reference_id,
-        callback_url,
-        namespace,
-        identifier,
-        identity_list,
-        request_message,
-      });
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
+      const result = await identity.addIdentity(
+        {
+          node_id,
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          identity_list,
+          request_message,
+        },
+        {
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
+        }
+      );
 
       res.status(202).json(result);
       next();
@@ -119,29 +145,33 @@ router.post(
   }
 );
 
-router.get('/:namespace/:identifier/ial', idpOnlyHandler, async (req, res, next) => {
-  try {
-    const { node_id } = req.query;
-    const { namespace, identifier } = req.params;
+router.get(
+  '/:namespace/:identifier/ial',
+  idpOnlyHandler,
+  async (req, res, next) => {
+    try {
+      const { node_id } = req.query;
+      const { namespace, identifier } = req.params;
 
-    const idenityInfo = await identity.getIdentityInfo({
-      nodeId: node_id,
-      namespace,
-      identifier,
-    });
-
-    if (idenityInfo != null) {
-      res.status(200).json({
-        ial: idenityInfo.ial,
+      const idenityInfo = await identity.getIdentityInfo({
+        nodeId: node_id,
+        namespace,
+        identifier,
       });
-    } else {
-      res.status(404).end();
+
+      if (idenityInfo != null) {
+        res.status(200).json({
+          ial: idenityInfo.ial,
+        });
+      } else {
+        res.status(404).end();
+      }
+      next();
+    } catch (error) {
+      next(error);
     }
-    next();
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 router.post(
   '/:namespace/:identifier/ial',
@@ -227,17 +257,29 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
-      const result = await identity.addAccessor({
-        node_id,
-        reference_id,
-        callback_url,
-        namespace,
-        identifier,
-        accessor_type,
-        accessor_public_key,
-        accessor_id,
-        request_message,
-      });
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
+      const result = await identity.addAccessor(
+        {
+          node_id,
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          accessor_type,
+          accessor_public_key,
+          accessor_id,
+          request_message,
+        },
+        {
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
+        }
+      );
 
       res.status(202).json(result);
       next();
@@ -263,15 +305,27 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
-      const result = await identity.revokeAccessor({
-        node_id,
-        reference_id,
-        callback_url,
-        namespace,
-        identifier,
-        accessor_id,
-        request_message,
-      });
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
+      const result = await identity.revokeAccessor(
+        {
+          node_id,
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          accessor_id,
+          request_message,
+        },
+        {
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
+        }
+      );
 
       res.status(202).json(result);
       next();
@@ -300,18 +354,30 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
-      const result = await identity.revokeAndAddAccessor({
-        node_id,
-        reference_id,
-        callback_url,
-        namespace,
-        identifier,
-        revoking_accessor_id,
-        accessor_id,
-        accessor_public_key,
-        accessor_type,
-        request_message,
-      });
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
+      const result = await identity.revokeAndAddAccessor(
+        {
+          node_id,
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          revoking_accessor_id,
+          accessor_id,
+          accessor_public_key,
+          accessor_type,
+          request_message,
+        },
+        {
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
+        }
+      );
 
       res.status(202).json(result);
       next();
@@ -331,14 +397,26 @@ router.post(
 
       const { namespace, identifier } = req.params;
 
-      const result = await identity.revokeIdentityAssociation({
-        node_id,
-        reference_id,
-        callback_url,
-        namespace,
-        identifier,
-        request_message,
-      });
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
+      const result = await identity.revokeIdentityAssociation(
+        {
+          node_id,
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          request_message,
+        },
+        {
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
+        }
+      );
 
       res.status(202).json(result);
       next();
@@ -355,15 +433,29 @@ router.post(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
+
       const { node_id, reference_id, callback_url, request_message } = req.body;
-      const result = await identity.upgradeIdentityMode({
-        node_id,
-        reference_id,
-        callback_url,
-        namespace,
-        identifier,
-        request_message,
-      });
+
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
+      const result = await identity.upgradeIdentityMode(
+        {
+          node_id,
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          request_message,
+        },
+        {
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
+        }
+      );
       res.status(202).json(result);
       next();
     } catch (error) {

@@ -24,6 +24,7 @@ import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
+import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
@@ -164,6 +165,7 @@ export async function notifyIncomingRequestByCallback(
     });
     return;
   }
+
   await callbackToClient({
     getCallbackUrlFnName: 'idp.getIncomingRequestCallbackUrl',
     body: {
@@ -175,6 +177,16 @@ export async function notifyIncomingRequestByCallback(
     shouldRetry: 'common.isRequestClosedOrTimedOut',
     shouldRetryArguments: [eventDataForCallback.request_id],
   });
+
+  // log request event: IDP_NOTIFIES_USER
+  TelemetryLogger.logRequestEvent(
+    eventDataForCallback.request_id,
+    nodeId,
+    REQUEST_EVENTS.IDP_NOTIFIES_USER,
+    {
+      api_spec_version: config.callbackApiVersion,
+    }
+  );
 }
 
 function checkReceiverIntegrity(requestId, requestDetail, nodeId) {
@@ -210,6 +222,13 @@ export async function processMessage(nodeId, messageId, message) {
     if (message.type === privateMessageType.IDP_RESPONSE) {
       await identity.onReceiveIdpResponseForIdentity({ nodeId, message });
     } else if (message.type === privateMessageType.CONSENT_REQUEST) {
+      // log request event: IDP_RECEIVES_REQUEST
+      TelemetryLogger.logRequestEvent(
+        message.request_id,
+        nodeId,
+        REQUEST_EVENTS.IDP_RECEIVES_REQUEST
+      );
+
       const requestDetail = await tendermintNdid.getRequestDetail({
         requestId: message.request_id,
       });
@@ -261,9 +280,7 @@ export async function processMessage(nodeId, messageId, message) {
         ),
         initial_salt: message.initial_salt,
         creation_time: message.creation_time,
-        creation_block_height: `${requestDetail.creation_chain_id}:${
-          requestDetail.creation_block_height
-        }`,
+        creation_block_height: `${requestDetail.creation_chain_id}:${requestDetail.creation_block_height}`,
         request_timeout: requestDetail.request_timeout,
       };
       //already onboarded

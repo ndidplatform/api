@@ -27,6 +27,9 @@ import { rpOnlyHandler } from '../middleware/role_handler';
 import * as rp from '../../../core/rp';
 import * as common from '../../../core/common';
 
+import { apiVersion } from './version';
+import { HTTP_HEADER_FIELDS } from './private_http_header';
+
 const router = express.Router();
 
 router.use(rpOnlyHandler);
@@ -52,6 +55,10 @@ router.post(
         bypass_identity_check,
         initial_salt,
       } = req.body;
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
 
       const result = await common.createRequest(
         {
@@ -71,7 +78,12 @@ router.post(
           bypass_identity_check,
           initial_salt,
         },
-        { synchronous: false }
+        {
+          synchronous: false,
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
+        }
       );
 
       res.status(202).json(result);
@@ -143,6 +155,10 @@ router.post('/request_data_removal/:request_id', async (req, res, next) => {
 router.post('/request_close', validateBody, async (req, res, next) => {
   try {
     const { node_id, reference_id, callback_url, request_id } = req.body;
+    const {
+      [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+      [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+    } = req.headers;
 
     await common.closeRequest(
       {
@@ -151,7 +167,12 @@ router.post('/request_close', validateBody, async (req, res, next) => {
         callback_url,
         request_id,
       },
-      { synchronous: false }
+      {
+        synchronous: false,
+        apiVersion,
+        ndidMemberAppType,
+        ndidMemberAppVersion,
+      }
     );
     res.status(202).end();
     next();

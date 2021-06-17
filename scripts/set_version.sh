@@ -18,3 +18,4 @@ cd $DIR_ABSOLUTE_PATH/../main-server && npm version --allow-same-version $NEW_VE
 cd $DIR_ABSOLUTE_PATH/../mq-server && npm version --allow-same-version $NEW_VERSION
 cd $DIR_ABSOLUTE_PATH/../ndid-logger && npm version --allow-same-version $NEW_VERSION
 cd $DIR_ABSOLUTE_PATH/../ndid-error && npm version --allow-same-version $NEW_VERSION
+cd $DIR_ABSOLUTE_PATH/../telemetry && npm version --allow-same-version $NEW_VERSION

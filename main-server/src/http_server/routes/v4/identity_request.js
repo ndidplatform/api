@@ -27,6 +27,8 @@ import { idpOnlyHandler } from '../middleware/role_handler';
 import * as identity from '../../../core/identity';
 import * as common from '../../../core/common';
 
+import { apiVersion } from './version';
+
 const router = express.Router();
 
 router.post(
@@ -39,7 +41,7 @@ router.post(
 
       await common.closeRequest(
         { node_id, reference_id, callback_url, request_id },
-        { synchronous: false }
+        { synchronous: false, apiVersion }
       );
       res.status(202).end();
       next();

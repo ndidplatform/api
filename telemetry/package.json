@@ -1,0 +1,35 @@
+{
+  "name": "telemetry",
+  "version": "4.3.1",
+  "description": "Collect activities on NDID API server and forward to NDID telemetry sever",
+  "scripts": {
+    "build": "rm -rf build/ && npx babel src -d ./build/ --source-maps inline --verbose",
+    "start": "npm run build && node build/index.js",
+    "test": "npm run build && NODE_ID=unit-test npx mocha build/**/*.test.js",
+    "test:es6": "NODE_ID=unit-test mocha src/**/*.test.js --require @babel/register --require source-map-support/register"
+  },
+  "author": "",
+  "license": "AGPL-3.0-or-later",
+  "dependencies": {
+    "@babel/runtime": "^7.12.1",
+    "@grpc/proto-loader": "^0.5.4",
+    "grpc": "^1.24.3",
+    "ioredis": "^4.17.3",
+    "ndid-logger": "file:../ndid-logger",
+    "simple-backoff": "^1.1.0",
+    "source-map-support": "^0.5.19"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.12.1",
+    "@babel/core": "^7.12.3",
+    "@babel/eslint-parser": "^7.12.1",
+    "@babel/eslint-plugin": "^7.12.1",
+    "@babel/plugin-proposal-object-rest-spread": "^7.12.1",
+    "@babel/plugin-transform-runtime": "^7.12.1",
+    "@babel/preset-env": "^7.12.1",
+    "@babel/register": "^7.12.1",
+    "eslint": "^7.6.0"
+  },
+  "main": "index.js",
+  "keywords": []
+}

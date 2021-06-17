@@ -237,7 +237,7 @@ export async function processRequestUpdate(
     );
 
     let requestDetailsForCallback;
-    if (config.callbackApiVersion === 4) {
+    if (config.callbackApiVersion === '4.0') {
       const detailedRequestStatus = utils.getDetailedRequestStatusLegacy(
         requestDetail
       );
@@ -314,6 +314,7 @@ export async function processRequestUpdate(
             synchronous: false,
             sendCallbackToClient: false,
             saveForRetryOnChainDisabled: true,
+            autoClose: true,
           }
         );
       }

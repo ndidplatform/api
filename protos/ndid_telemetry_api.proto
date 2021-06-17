@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package ndid.telemetry.api;
+
+option go_package = ".;ndid_telemetry_api";
+
+option java_multiple_files = true;
+option java_package = "ndid.grpc.telemetry";
+option java_outer_classname = "NDIDTelemetryServiceProto";
+
+service NDIDTelemetry {
+  rpc SendMainVersionLogs(SendMainVersionLogsRequest) returns (Response) {}
+  rpc SendMQServiceVersionLogs(SendMQServiceVersionLogsRequest) returns (Response) {}
+  rpc SendTendermintAndABCIVersionLogs(SendTendermintAndABCIVersionLogsRequest) returns (Response) {}
+  rpc SendRequestEvents(SendRequestEventsRequest) returns (Response) {}
+  rpc SendSystemInformtation(SendSystemInformationRequest) returns (Response) {}
+  rpc SendSystemLog(SendSystemLogRequest) returns (Response) {}
+}
+
+message Empty {}
+
+message RequestMetadata {
+  string node_id = 1;
+  string token = 2;
+}
+
+message Response {
+  uint64 code = 1;
+  string message = 2;
+}
+
+message SendMainVersionLogsRequest {
+  message MainVersionLog {
+    string version = 1;
+    int64 source_timestamp = 2;
+  }
+
+  RequestMetadata request_metadata = 1;
+  repeated MainVersionLog data = 2;
+}
+
+message SendMQServiceVersionLogsRequest {
+  message MQServiceVersionLog {
+    string version = 1;
+    int64 source_timestamp = 2;
+  }
+
+  RequestMetadata request_metadata = 1;
+  repeated MQServiceVersionLog data = 2;
+}
+
+message SendTendermintAndABCIVersionLogsRequest {
+  message TendermintAndABCIVersionLog {
+    string tendermint_version = 1;
+    string abci_version = 2;
+    string abci_app_version = 3;
+    int64 source_timestamp = 4;
+  }
+
+  RequestMetadata request_metadata = 1;
+  repeated TendermintAndABCIVersionLog data = 2;
+}
+
+message SendRequestEventsRequest {
+  message RequestTimestamp {
+    string request_id = 1;
+    int32 state_code = 2;
+    int64 source_timestamp = 3;
+    string additional_data = 4;
+  }
+
+  RequestMetadata request_metadata = 1;
+  repeated RequestTimestamp data = 2;
+}
+
+message SendSystemInformationRequest {
+  message SystemInformation {
+  }
+
+  RequestMetadata request_metadata = 1;
+  repeated SystemInformation data = 2;
+}
+
+message SendSystemLogRequest {
+  message SystemLog {
+    string log_level = 1;
+    string detail = 2;
+    int64 timestamp = 3;
+  }
+
+  RequestMetadata request_metadata = 1;
+  repeated SystemLog data = 2;
+}

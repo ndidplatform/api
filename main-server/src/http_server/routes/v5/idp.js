@@ -26,6 +26,9 @@ import { validateBody, validateQuery } from '../middleware/validation';
 import { idpOnlyHandler } from '../middleware/role_handler';
 import * as idp from '../../../core/idp';
 
+import { apiVersion } from './version';
+import { HTTP_HEADER_FIELDS } from './private_http_header';
+
 const router = express.Router();
 
 router.use(idpOnlyHandler);
@@ -83,6 +86,10 @@ router.post('/response', validateBody, async (req, res, next) => {
       accessor_id,
       signature,
     } = req.body;
+    const {
+      [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+      [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+    } = req.headers;
 
     await idp.createResponse(
       {
@@ -98,7 +105,12 @@ router.post('/response', validateBody, async (req, res, next) => {
         accessor_id,
         signature,
       },
-      { synchronous: false }
+      {
+        synchronous: false,
+        apiVersion,
+        ndidMemberAppType,
+        ndidMemberAppVersion,
+      }
     );
 
     res.status(202).end();
@@ -114,9 +126,13 @@ router.post('/error_response', validateBody, async (req, res, next) => {
       node_id,
       reference_id,
       callback_url,
-      error_code, 
+      error_code,
       request_id,
     } = req.body;
+    const {
+      [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+      [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+    } = req.headers;
 
     await idp.createResponse(
       {
@@ -128,7 +144,12 @@ router.post('/error_response', validateBody, async (req, res, next) => {
         //identifier,
         error_code,
       },
-      { synchronous: false }
+      {
+        synchronous: false,
+        apiVersion,
+        ndidMemberAppType,
+        ndidMemberAppVersion,
+      }
     );
 
     res.status(202).end();

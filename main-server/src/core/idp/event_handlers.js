@@ -381,7 +381,7 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
     });
 
     let requestDetailsForCallback;
-    if (config.callbackApiVersion === 4) {
+    if (config.callbackApiVersion === '4.0') {
       const requestStatus = utils.getDetailedRequestStatusLegacy(requestDetail);
 
       requestDetailsForCallback = {

@@ -44,12 +44,25 @@ export const httpsCertPath =
 export const clientHttpErrorCode = process.env.CLIENT_HTTP_ERROR_CODE || 400;
 export const serverHttpErrorCode = process.env.SERVER_HTTP_ERROR_CODE || 500;
 
-export const defaultApiVersion = process.env.DEFAULT_API_VERSION
-  ? parseInt(process.env.DEFAULT_API_VERSION)
-  : 5;
-export const callbackApiVersion = process.env.CALLBACK_API_VERSION
-  ? parseInt(process.env.CALLBACK_API_VERSION)
-  : 5;
+let _defaultApiVersion = process.env.DEFAULT_API_VERSION
+  ? process.env.DEFAULT_API_VERSION
+  : '5.1';
+if (_defaultApiVersion === '4') {
+  _defaultApiVersion = '4.0';
+} else if (_defaultApiVersion === '5') {
+  _defaultApiVersion = '5.1';
+}
+export const defaultApiVersion = _defaultApiVersion;
+
+let _callbackApiVersion = process.env.CALLBACK_API_VERSION
+  ? process.env.CALLBACK_API_VERSION
+  : '5.1';
+if (_callbackApiVersion === '4') {
+  _callbackApiVersion = '4.0';
+} else if (_callbackApiVersion === '5') {
+  _callbackApiVersion = '5.1';
+}
+export const callbackApiVersion = _callbackApiVersion;
 
 export const dbIp = process.env.DB_IP || 'localhost';
 export const dbPort = process.env.DB_PORT
@@ -71,7 +84,7 @@ export const logColor =
   process.env.LOG_COLOR == null
     ? env === 'development'
     : process.env.LOG_COLOR === 'true';
-// export const logOneLine = process.env.LOG_ONE_LINE === 'true';
+export const logOneLine = process.env.LOG_ONE_LINE === 'true';
 // export const logDirectoryPath =
 //   process.env.LOG_DIRECTORY_PATH || path.join(__dirname, '..', 'log');
 
@@ -262,3 +275,16 @@ export const prometheusHttpsCertPath =
   process.env.PROMETHEUS_HTTPS_CERT_PATH != null
     ? process.env.PROMETHEUS_HTTPS_CERT_PATH
     : path.join(__dirname, '..', 'dev_https_key', 'cert.pem');
+
+export const telemetryLoggingEnabled = process.env.ENABLE_TELEMETRY_LOGGING
+  ? process.env.ENABLE_TELEMETRY_LOGGING === 'true'
+  : true;
+export const telemetryDbHost =
+  (process.env.TELEMETRY_DB_HOST
+    ? process.env.TELEMETRY_DB_HOST
+    : process.env.TELEMETRY_DB_IP) || dbIp;
+export const telemetryDbPort = process.env.TELEMETRY_DB_PORT || dbPort;
+export const telemetryDbPassword =
+  process.env.TELEMETRY_DB_PASSWORD || dbPassword;
+export const telemetryTokenGenerationIntervalSec =
+  process.env.TELEMETRY_TOKEN_TIMEOUT || 6 * 60 * 60; // also used as token expire duration

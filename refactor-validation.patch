@@ -1,0 +1,73 @@
+diff --git a/main-server/src/http_server/routes/middleware/validation.js b/main-server/src/http_server/routes/middleware/validation.js
+index a6576b13..81391fcf 100644
+--- a/main-server/src/http_server/routes/middleware/validation.js
++++ b/main-server/src/http_server/routes/middleware/validation.js
+@@ -25,6 +25,8 @@ import validate from '../validator';
+ import CustomError from 'ndid-error/custom_error';
+ import errorType from 'ndid-error/type';
+ 
++import Ajv from 'ajv';
++
+ function getBaseUrlAndApiVersion(req) {
+   let baseUrl = req.baseUrl;
+   if (baseUrl.startsWith('/config')) {
+@@ -55,6 +57,21 @@ function getBaseUrlAndApiVersion(req) {
+   };
+ }
+ 
++function getSchemaValidator(defs, schema) {
++  const ajv = new Ajv({
++    allErrors: true,
++  });
++  ajv.addSchema(defs);
++  const validate = ajv.compile(schema);
++  return (data) => {
++    const valid = validate(data);
++    return {
++      valid,
++      errors: validate.errors,
++    };
++  };
++}
++
+ // Path params validation (no rules = not needed according to specs)
+ // export function validatePath(req, res, next) {
+ //   const { baseUrl, apiVersion } = getBaseUrlAndApiVersion(req);
+@@ -117,3 +134,37 @@ export function validateBody(req, res, next) {
+   }
+   next();
+ }
++
++export function createValidateQueryFunc(defs, schema) {
++  const validator = getSchemaValidator(defs, schema);
++  return (req, res, next) => {
++    const queryValidationResult = validator(req.body);
++    if (!queryValidationResult.valid) {
++      next(
++        new CustomError({
++          errorType: errorType.QUERY_STRING_VALIDATION_FAILED,
++          details: queryValidationResult,
++        })
++      );
++    return;
++  }
++    next();
++  };
++}
++
++export function createValidateBodyFunc(defs, schema) {
++  const validator = getSchemaValidator(defs, schema);
++  return (req, res, next) => {
++    const bodyValidationResult = validator(req.body);
++    if (!bodyValidationResult.valid) {
++      next(
++        new CustomError({
++          errorType: errorType.BODY_VALIDATION_FAILED,
++          details: bodyValidationResult,
++        })
++      );
++      return;
++    }
++    next();
++  };
++}

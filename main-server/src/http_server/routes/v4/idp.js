@@ -26,6 +26,8 @@ import { validateBody, validateQuery } from '../middleware/validation';
 import { idpOnlyHandler } from '../middleware/role_handler';
 import * as idp from '../../../core/idp';
 
+import { apiVersion } from './version';
+
 const router = express.Router();
 
 router.use(idpOnlyHandler);
@@ -98,7 +100,10 @@ router.post('/response', validateBody, async (req, res, next) => {
         accessor_id,
         signature,
       },
-      { synchronous: false }
+      { 
+        synchronous: false,
+        apiVersion: apiVersion,
+      },
     );
 
     res.status(202).end();

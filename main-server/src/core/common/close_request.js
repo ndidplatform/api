@@ -31,6 +31,7 @@ import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
 
 import logger from '../../logger';
+import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 import * as config from '../../config';
 import { role } from '../../node';
@@ -49,6 +50,8 @@ import { role } from '../../node';
  * @param {string} [options.callbackFnName]
  * @param {Array} [options.callbackAdditionalArgs]
  * @param {boolean} [options.saveForRetryOnChainDisabled]
+ * @param {string} [options.apiVersion]
+ * @param {boolean} [options.autoClose]
  */
 export async function closeRequest(closeRequestParams, options = {}) {
   let { node_id } = closeRequestParams;
@@ -95,6 +98,10 @@ async function closeRequestInternalAsync(
     callbackAdditionalArgs,
     saveForRetryOnChainDisabled,
     retryOnFail,
+    apiVersion,
+    autoClose = false,
+    ndidMemberAppType,
+    ndidMemberAppVersion,
   } = options;
   const { node_id } = additionalParams;
   try {
@@ -133,10 +140,14 @@ async function closeRequestInternalAsync(
             sendCallbackToClient,
             callbackFnName,
             callbackAdditionalArgs,
+            apiVersion,
+            autoClose,
+            ndidMemberAppType,
+            ndidMemberAppVersion,
           },
         ],
         saveForRetryOnChainDisabled,
-        retryOnFail,
+        retryOnFail
       );
     } else {
       await tendermintNdid.closeRequest(
@@ -154,6 +165,10 @@ async function closeRequestInternalAsync(
           sendCallbackToClient,
           callbackFnName,
           callbackAdditionalArgs,
+          apiVersion,
+          autoClose,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
         }
       );
     }
@@ -202,11 +217,29 @@ export async function closeRequestInternalAsyncAfterBlockchain(
     sendCallbackToClient = true,
     callbackFnName,
     callbackAdditionalArgs,
+    apiVersion,
+    autoClose,
+    ndidMemberAppType,
+    ndidMemberAppVersion,
   } = {}
 ) {
   if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
+
+    // log request event: RP_CLOSES_OR_TIMES_OUT_REQUEST
+    TelemetryLogger.logRequestEvent(
+      request_id,
+      node_id,
+      REQUEST_EVENTS.RP_CLOSES_OR_TIMES_OUT_REQUEST,
+      {
+        api_spec_version: apiVersion ? apiVersion : undefined, // undefined in case of auto close internally by platform
+        close: true,
+        auto_close: autoClose,
+        ndid_member_app_type: ndidMemberAppType,
+        ndid_member_app_version: ndidMemberAppVersion,
+      }
+    );
 
     removeTimeoutScheduler(node_id, request_id);
 

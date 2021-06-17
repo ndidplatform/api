@@ -26,6 +26,9 @@ import { validateBody } from '../middleware/validation';
 import { asOnlyHandler } from '../middleware/role_handler';
 import * as as from '../../../core/as';
 
+import { apiVersion } from './version';
+import { HTTP_HEADER_FIELDS } from './private_http_header';
+
 const router = express.Router();
 
 router.use(asOnlyHandler);
@@ -83,12 +86,49 @@ router.get('/service/:service_id', async (req, res, next) => {
 });
 
 router.post(
+  '/payment_received_log/:request_id/:service_id',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { request_id, service_id } = req.params;
+      const { node_id } = req.body;
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
+      await as.logPaymentReceived(
+        {
+          node_id,
+          requestId: request_id,
+          serviceId: service_id,
+        },
+        {
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
+        }
+      );
+
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
   '/data/:request_id/:service_id',
   validateBody,
   async (req, res, next) => {
     try {
       const { request_id, service_id } = req.params;
       const { node_id, reference_id, callback_url, data } = req.body;
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
 
       await as.processDataForRP(
         data,
@@ -99,7 +139,12 @@ router.post(
           requestId: request_id,
           serviceId: service_id,
         },
-        { synchronous: false, apiVersion: '5.0' }
+        {
+          synchronous: false,
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
+        }
       );
 
       res.status(202).end();
@@ -117,6 +162,10 @@ router.post(
     try {
       const { request_id, service_id } = req.params;
       const { node_id, reference_id, callback_url, error_code } = req.body;
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
 
       await as.processDataForRP(
         undefined,
@@ -128,7 +177,12 @@ router.post(
           serviceId: service_id,
           error_code,
         },
-        { synchronous: false, apiVersion: '5.0' }
+        {
+          synchronous: false,
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
+        }
       );
 
       res.status(202).end();

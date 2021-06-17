@@ -78,11 +78,12 @@ if (
   process.env.LOG_LEVEL !== 'warn' &&
   process.env.LOG_LEVEL !== 'info' &&
   process.env.LOG_LEVEL !== 'debug' &&
-  process.env.LOG_LEVEL !== 'trace'
+  process.env.LOG_LEVEL !== 'trace' &&
+  process.env.LOG_LEVEL !== 'silent'
 ) {
   console.error(
     'ERROR:',
-    'Unsupported "LOG_LEVEL" environment variable value. Only "fatal", "error", "warn", "info", "debug", and "trace" are allowed. Process will now exit.'
+    'Unsupported "LOG_LEVEL" environment variable value. Only "fatal", "error", "warn", "info", "debug", "trace", and "silent" are allowed. Process will now exit.'
   );
   process.exit(1);
 }
@@ -132,6 +133,36 @@ if (process.env.NODE_ENV === 'production') {
     console.error(
       'ERROR:',
       '"GRPC_SSL_ROOT_CERT_FILE_PATH", "GRPC_SSL_KEY_FILE_PATH", and "GRPC_SSL_CERT_FILE_PATH" environment variables are not set when "GRPC_SSL" is set to true. Process will now exit.'
+    );
+    process.exit(1);
+  }
+}
+
+const DEFAULT_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.1'];
+if (process.env.DEFAULT_API_VERSION != null) {
+  if (
+    !DEFAULT_API_VERSION_ALLOWED_VALUES.includes(
+      process.env.DEFAULT_API_VERSION
+    )
+  ) {
+    console.error(
+      'ERROR:',
+      'Unsupported "DEFAULT_API_VERSION" environment variable value. Only "4.0" and "5.1" are allowed. Process will now exit.'
+    );
+    process.exit(1);
+  }
+}
+
+const CALLBACK_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.1'];
+if (process.env.CALLBACK_API_VERSION != null) {
+  if (
+    !CALLBACK_API_VERSION_ALLOWED_VALUES.includes(
+      process.env.CALLBACK_API_VERSION
+    )
+  ) {
+    console.error(
+      'ERROR:',
+      'Unsupported "CALLBACK_API_VERSION" environment variable value. Only "4.0" and "5.1" are allowed. Process will now exit.'
     );
     process.exit(1);
   }

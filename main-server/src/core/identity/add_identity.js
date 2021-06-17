@@ -56,7 +56,7 @@ import { addIdentityAfterCloseConsentRequest } from './add_identity_after_consen
  *
  * @returns {{ request_id: string }}
  */
-export async function addIdentity(addIdentityParams) {
+export async function addIdentity(addIdentityParams, { apiVersion } = {}) {
   let { node_id } = addIdentityParams;
   const {
     reference_id,
@@ -226,6 +226,7 @@ async function addIdentityInternalAsync(
     identity_list,
     request_message,
   },
+  { apiVersion, ndidMemberAppType, ndidMemberAppVersion },
   { nodeId, request_id, consentRequestNeeded }
 ) {
   try {
@@ -292,6 +293,9 @@ async function addIdentityInternalAsync(
             },
           ],
           saveForRetryOnChainDisabled: true,
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
         },
         { request_id }
       );

@@ -1,0 +1,18 @@
+version: '3'
+services:
+  telemetry-client:
+    image: ndidplatform/telemetry-client:latest
+    environment:
+      - NODE_ID=idp1,idp2,idp3,rp1,as1,as2
+      - TELEMETRY_DB_HOST=api-redis
+      - TELEMETRY_DB_PORT=6379
+      - TELEMETRY_NODE_GRPC_HOST=${TELEMETRY_NODE_GRPC_HOST:-ndid-telemetry-server}
+      - TELEMETRY_NODE_GRPC_PORT=${TELEMETRY_NODE_GRPC_PORT-8880}
+      - FLUSH_INTERVAL_SEC=20
+    security_opt:
+      - no-new-privileges
+    networks:
+      - ndidplatform
+
+networks:
+  ndidplatform:

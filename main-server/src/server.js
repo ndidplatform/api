@@ -42,6 +42,8 @@ import { getFunction } from './functions';
 import * as cacheDb from './db/cache';
 import * as longTermDb from './db/long_term';
 import * as dataDb from './db/data';
+import * as telemetryDb from './db/telemetry';
+import * as telemetryEventsDb from './db/telemetry_events';
 import * as tendermint from './tendermint';
 import * as tendermintWsPool from './tendermint/ws_pool';
 import * as mq from './mq';
@@ -50,15 +52,18 @@ import * as externalCryptoService from './external_crypto_service';
 import * as jobMaster from './master-worker-interface/server';
 import * as jobWorker from './master-worker-interface/client';
 import * as prometheus from './prometheus';
+import * as telemetryToken from './telemetry/token';
 
 import logger from './logger';
+
+import TelemetryLogger from './telemetry';
 
 import { version } from './version';
 import MODE from './mode';
 import ROLE from './role';
 import * as config from './config';
 
-process.on('unhandledRejection', function(reason, p) {
+process.on('unhandledRejection', function (reason, p) {
   if (reason && reason.name === 'CustomError') {
     logger.error({
       message: 'Unhandled Rejection',
@@ -89,6 +94,11 @@ async function initialize() {
       prometheus.initialize();
     }
 
+    if (config.telemetryLoggingEnabled) {
+      telemetryDb.initialize();
+      telemetryEventsDb.initialize();
+    }
+
     if (config.ndidNode) {
       tendermint.setWaitForInitEndedBeforeReady(false);
     }
@@ -96,6 +106,11 @@ async function initialize() {
 
     const tendermintReady = new Promise((resolve) =>
       tendermint.eventEmitter.once('ready', (status) => resolve(status))
+    );
+
+    tendermint.setTelemetryEnabled(
+      (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) &&
+        config.telemetryLoggingEnabled
     );
 
     await tendermint.connectWS();
@@ -189,6 +204,12 @@ async function initialize() {
       await externalCryptoServiceReady;
     }
 
+    if (config.telemetryLoggingEnabled) {
+      if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+        await telemetryToken.initialize({ role });
+      }
+    }
+
     if (
       role === ROLE.RP ||
       role === ROLE.IDP ||
@@ -209,11 +230,18 @@ async function initialize() {
         })
       );
       if (config.mode === MODE.STANDALONE) {
-        await mq.initialize();
+        await mq.initialize({
+          telemetryEnabled: config.telemetryLoggingEnabled,
+        });
       } else if (config.mode === MODE.MASTER) {
-        await mq.initializeInbound();
+        await mq.initializeInbound({
+          telemetryEnabled: config.telemetryLoggingEnabled,
+        });
       } else if (config.mode === MODE.WORKER) {
-        await mq.initializeOutbound(false);
+        await mq.initializeOutbound({
+          sendSavedPendingMessages: false,
+          telemetryEnabled: false,
+        });
       }
     }
 
@@ -258,6 +286,10 @@ async function initialize() {
     }
 
     logger.info({ message: 'Server initialized' });
+
+    if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+      TelemetryLogger.logMainVersion({ nodeId: config.nodeId, version });
+    }
   } catch (error) {
     logger.error({
       message: 'Cannot initialize server',
@@ -322,6 +354,11 @@ async function shutDown() {
   await prometheus.stop();
 
   await Promise.all([cacheDb.close(), longTermDb.close(), dataDb.close()]);
+
+  if (config.telemetryLoggingEnabled) {
+    await telemetryDb.close();
+    await telemetryEventsDb.close();
+  }
 }
 
 process.on('SIGTERM', shutDown);

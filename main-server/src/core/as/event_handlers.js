@@ -185,8 +185,10 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
   const callbackUrl = await getIncomingRequestStatusUpdateCallbackUrl();
   if (callbackUrl != null) {
     let requestDetailsForCallback;
-    if (config.callbackApiVersion === 4) {
-      const detailedRequestStatus = utils.getDetailedRequestStatusLegacy(requestDetail);
+    if (config.callbackApiVersion === '4.0') {
+      const detailedRequestStatus = utils.getDetailedRequestStatusLegacy(
+        requestDetail
+      );
 
       requestDetailsForCallback = {
         ...detailedRequestStatus,

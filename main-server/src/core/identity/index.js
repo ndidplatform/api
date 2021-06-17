@@ -186,6 +186,7 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
           { nodeId, requestId, identityConsentRequestError },
         ],
         saveForRetryOnChainDisabled: true,
+        apiVersion: config.callbackApiVersion,
       }
     );
     return;
@@ -239,6 +240,7 @@ export async function onReceiveIdpResponseForIdentity({ nodeId, message }) {
           },
         ],
         saveForRetryOnChainDisabled: true,
+        apiVersion: config.callbackApiVersion,
       }
     );
   }

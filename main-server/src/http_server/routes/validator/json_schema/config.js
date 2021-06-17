@@ -21,13 +21,19 @@
  */
 
 export default {
-  GET: {},
+  GET: {
+    '/config/telemetry/reissue_token': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+      },
+    },
+  },
   POST: {
     '/config/set': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
-          CALLBACK_API_VERSION: { type: 'integer', enum: [4, 5] },
+          CALLBACK_API_VERSION: { type: 'string', enum: ['4.0', '5.1'] },
           AUTO_CLOSE_REQUEST_ON_COMPLETED: { type: 'boolean' },
           AUTO_CLOSE_REQUEST_ON_REJECTED: { type: 'boolean' },
           AUTO_CLOSE_REQUEST_ON_COMPLICATED: { type: 'boolean' },

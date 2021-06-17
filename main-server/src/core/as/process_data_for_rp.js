@@ -29,6 +29,7 @@ import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
+import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as nodeCallback from '../node_callback';
@@ -45,7 +46,13 @@ import { role } from '../../node';
 export async function processDataForRP(
   data,
   processDataForRPParams,
-  { synchronous = false, apiVersion } = {}
+  {
+    synchronous = false,
+    apiVersion,
+    throughCallbackResponse = false,
+    ndidMemberAppType,
+    ndidMemberAppVersion,
+  } = {}
 ) {
   let { node_id } = processDataForRPParams;
   const {
@@ -105,6 +112,20 @@ export async function processDataForRP(
         errorType: errorType.SERVICE_ID_NOT_FOUND_IN_REQUEST,
       });
     }
+
+    // log request event: AS_RECEIVES_QUERIED_DATA
+    TelemetryLogger.logRequestEvent(
+      requestId,
+      node_id,
+      REQUEST_EVENTS.AS_RECEIVES_QUERIED_DATA,
+      {
+        service_id: serviceId,
+        api_spec_version: apiVersion,
+        through_callback_response: throughCallbackResponse,
+        ndid_member_app_type: ndidMemberAppType,
+        ndid_member_app_version: ndidMemberAppVersion,
+      }
+    );
 
     const dataRequestId = requestId + ':' + serviceId;
     const savedRpId = await cacheDb.getRpIdFromDataRequestId(
@@ -338,6 +359,16 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
   try {
     if (error) throw error;
 
+    // log request event: AS_LOGS_HASH_DATA
+    TelemetryLogger.logRequestEvent(
+      requestId,
+      nodeId,
+      REQUEST_EVENTS.AS_LOGS_HASH_DATA,
+      {
+        service_id: serviceId,
+      }
+    );
+
     if (!rpId) {
       rpId = savedRpId;
     }
@@ -483,6 +514,16 @@ async function sendDataToRP(nodeId, rpId, data) {
     },
     senderNodeId: nodeId,
     onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+      // log request event: AS_SENDS_DATA_TO_RP
+      TelemetryLogger.logRequestEvent(
+        data.request_id,
+        nodeId,
+        REQUEST_EVENTS.AS_SENDS_DATA_TO_RP,
+        {
+          service_id: data.service_id,
+        }
+      );
+
       nodeCallback.notifyMessageQueueSuccessSend({
         nodeId,
         getCallbackUrlFnName:

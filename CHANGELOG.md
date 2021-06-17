@@ -1,5 +1,51 @@
 # Changelog
 
+## 4.3.2 (TBD)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+BUG FIXES:
+
+- Fix retry transact data on redis doesn't get removed after successful retry.
+- Fix retry transact after process restart.
+
+OTHERS:
+
+- [Main] Add environment variable option alias `TELEMETRY_DB_HOST` for `TELEMETRY_DB_IP` to match with telemetry client module.
+
+## 4.3.1 (March 25, 2021)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+BUG FIXES:
+
+- Fix retry transact on fail counter logic.
+
+OTHERS:
+
+- Change default `ENABLE_TELEMETRY_LOGGING` config to `true`.
+
+## 4.3.0 (March 23, 2021)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+FEATURES:
+
+- Telemetry data collection
+  - This is an opt-in feature. Can be set using environment variable `ENABLE_TELEMETRY_LOGGING`.
+  - Data collected:
+    - Request states/events
+    - Software versions (API main server, MQ service server, Tendermint and ABCI app)
+
+## 4.2.0 (January 20, 2021)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+
+FEATURES:
+
+- `LOG_ONE_LINE` environment variable option for one-line pretty print when `LOG_PRETTY_PRINT` is set to `true`.
+- Use system timezone for pretty print log timestamps
+
 ## 4.1.0 (June 28, 2020)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_

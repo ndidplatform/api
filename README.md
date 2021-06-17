@@ -2,6 +2,13 @@
 
 # NDID API (Node.js)
 
+## Modules
+
+- Main
+- MQ service
+- Telemetry
+  - Documentation can be found [here](telemetry/README.md)
+
 ## Prerequisites
 
 - Node.js 12 or later (Recommended: latest version of Node.js 12 LTS)
@@ -44,17 +51,18 @@
 
 **Environment variable options**
 
-- `NODE_ID`: (Must be the same as its server pair) *Description below* [Required]
-- `MQ_BINDING_PORT`: (Must be the same as its server pair) *Description below* [Required]
+- `NODE_ID`: (Must be the same as its server pair) _Description below_ [Required]
+- `MQ_BINDING_PORT`: (Must be the same as its server pair) _Description below_ [Required]
 - `SERVER_PORT`: gRPC server port [Default: `50051`]
 - `MAX_CONCURRENT_MESSAGES_PER_MQ_SOCKET`: Maximum concurrent messages for each MQ sending socket [Default: `16`]
 - `MAX_MQ_SOCKET`: Maximum limit for MQ sending sockets [Default: `10000`]
 - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds [Default: `300000`]
 - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds [Default: `20000`]
 - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than `GRPC_PING_INTERVAL_MS` config on API server pair. [Default: `30000`]
-- `LOG_LEVEL`: *Description below*
-- `LOG_PRETTY_PRINT`: *Description below*
-- `LOG_COLOR`: *Description below*
+- `LOG_LEVEL`: _Description below_
+- `LOG_PRETTY_PRINT`: _Description below_
+- `LOG_COLOR`: _Description below_
+- `LOG_ONE_LINE`: _Description below_
 - `PROMETHEUS`
 - `PROMETHEUS_SERVER_PORT`
 - `PROMETHEUS_HTTPS`
@@ -69,6 +77,7 @@
 
     NODE_ID=$NODE_ID \
     MQ_CONTACT_IP=$MQ_CONTACT_IP \
+    ENABLE_TELEMETRY_LOGGING=true \
     npm start
     ```
 
@@ -100,9 +109,10 @@
 - `DB_IP`: IP address of DB (redis) server [Default: `localhost`]
 - `DB_PORT`: Port of DB (redis) server [Default: `6379`]
 - `DB_PASSWORD`: Authentication password for DB (redis) connection
-- `LOG_LEVEL`: Log level. Allowed values are `fatal`, `error`, `warn`, `info`, `debug` and `trace` [Default: `debug` in development, `info` in production]
+- `LOG_LEVEL`: Log level. Allowed values are `fatal`, `error`, `warn`, `info`, `debug`, `trace`, and `silent` [Default: `debug` in development, `info` in production]
 - `LOG_PRETTY_PRINT`: Log prettifier (easy to read format). If not set to `true`, log will be in JSON format [Default: `true` in development, `false` otherwise]
 - `LOG_COLOR`: Log highlight color [Default: `true` in development, `false` otherwise]
+- `LOG_ONE_LINE`: Log one-line pretty print when `LOG_PRETTY_PRINT` is set to `true` [Default: `false`]
 - `CLIENT_HTTP_ERROR_CODE`: HTTP error code when responding a client error [Default: `400`]
 - `SERVER_HTTP_ERROR_CODE`: HTTP error code when responding a server error [Default: `500`]
 - `USE_EXTERNAL_CRYPTO_SERVICE`: Use external service for decrypting and signing (e.g. HSM) [Default: `false`]
@@ -125,6 +135,10 @@
 - `PROMETHEUS_HTTPS`: Use HTTPS server for Prometheus metrics HTTP server [Default: `false`]
 - `PROMETHEUS_HTTPS_KEY_PATH`: HTTPS private key file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true [Default: pre-generated development key]
 - `PROMETHEUS_HTTPS_CERT_PATH`: HTTPS certificate file path for Prometheus metrics HTTP server. Required when PROMETHEUS_HTTPS=true [Default: pre-generated development cert]
+- `ENABLE_TELEMETRY_LOGGING`: Enable/disable telemetry logging. Options are `true` and `false` [Default: `true`]
+- `TELEMETRY_DB_HOST`: Host/IP of Redis DB database for telemetry [Default: Same as `DB_IP`]
+- `TELEMETRY_DB_PORT`: Port of Redis DB database for telemetry [Default: Same as `DB_PORT`]
+- `TELEMETRY_DB_PASSWORD`: Password of Redis DB database for telemetry [Default: Same as `DB_PASSWORD`]
 
 Debug APIs (Only in development mode)
 
@@ -145,6 +159,7 @@ Debug APIs (Only in development mode)
   MQ_BINDING_PORT=5555 \
   SERVER_PORT=8100 \
   NODE_ID=idp1 \
+  ENABLE_TELEMETRY_LOGGING=true \
   npm start
   ```
 
@@ -157,6 +172,7 @@ Debug APIs (Only in development mode)
   MQ_BINDING_PORT=5556 \
   SERVER_PORT=8200 \
   NODE_ID=rp1 \
+  ENABLE_TELEMETRY_LOGGING=true \
   npm start
   ```
 
@@ -169,6 +185,7 @@ Debug APIs (Only in development mode)
   MQ_BINDING_PORT=5557 \
   SERVER_PORT=8300 \
   NODE_ID=as1 \
+  ENABLE_TELEMETRY_LOGGING=true \
   npm start
   ```
 

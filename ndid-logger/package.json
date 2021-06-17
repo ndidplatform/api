@@ -1,6 +1,6 @@
 {
   "name": "ndid-logger",
-  "version": "4.1.0",
+  "version": "4.3.1",
   "description": "",
   "license": "AGPL-3.0-or-later",
   "main": "lib/logger.js",
@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "chai": "^4.1.2",
-    "eslint": "^5.16.0",
+    "eslint": "^7.6.0",
     "mocha": "^7.1.2"
   }
 }

@@ -8,6 +8,7 @@ services:
         build.commit: ${BUILD_COMMIT}
         build.date: ${BUILD_DATE}
     image: ${REPO_NAME:-ndidplatform}/api:${DOCKER_TAG:-latest}
+
   mq:
     build:
       context: ../
@@ -16,3 +17,12 @@ services:
         build.commit: ${BUILD_COMMIT}
         build.date: ${BUILD_DATE}
     image: ${REPO_NAME:-ndidplatform}/mq:${DOCKER_TAG:-latest}
+
+  telemetry-client:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile-telemetry
+      labels:
+        build.commit: ${BUILD_COMMIT}
+        build.date: ${BUILD_DATE}
+    image: ${REPO_NAME:-ndidplatform}/telemetry-client:${DOCKER_TAG:-latest}

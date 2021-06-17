@@ -25,36 +25,33 @@ import EventEmitter from 'events';
 import cacheDbRedisInstance from './cache/redis';
 import longTermDbRedisInstance from './long_term/redis';
 import dataDbRedisInstance from './data/redis';
+import telemetryRedisInstance from './telemetry/redis';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
 export const metricsEventEmitter = new EventEmitter();
 
-function getRedis(dbName) {
+function getRedisInstance(dbName) {
   switch (dbName) {
     case 'cache':
-      return cacheDbRedisInstance.redis;
+      return cacheDbRedisInstance;
     case 'long-term':
-      return longTermDbRedisInstance.redis;
+      return longTermDbRedisInstance;
     case 'data':
-      return dataDbRedisInstance.redis;
+      return dataDbRedisInstance;
+    case 'telemetry':
+      return telemetryRedisInstance;
     default:
       throw new CustomError({ message: 'Unknown database name' });
   }
 }
+function getRedis(dbName) {
+  return getRedisInstance(dbName).redis;
+}
 
 function getRedisVersion(dbName) {
-  switch (dbName) {
-    case 'cache':
-      return cacheDbRedisInstance.version;
-    case 'long-term':
-      return longTermDbRedisInstance.version;
-    case 'data':
-      return dataDbRedisInstance.version;
-    default:
-      throw new CustomError({ message: 'Unknown database name' });
-  }
+  return getRedisInstance(dbName).version;
 }
 
 export async function getList({ nodeId, dbName, name, key }) {
@@ -565,6 +562,57 @@ export async function getFlattenListWithRangeSupport({ nodeId, dbName, name }) {
       Date.now() - startTime
     );
     return list;
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
+export async function setToNewKey({ nodeId, dbName, name, key, newKey }) {
+  const operation = 'setToNewKey';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+    const redisVersion = getRedisVersion(dbName);
+
+    const keyOnRedis = `${nodeId}:${dbName}:${name}:${key}`;
+    const newKeyOnRedis = `${nodeId}:${dbName}:${name}:${newKey}`;
+
+    let pipeline = redis
+      .multi()
+      .eval(
+        `return redis.call('SET', KEYS[2], redis.call('GET', KEYS[1]))`,
+        2,
+        keyOnRedis,
+        newKeyOnRedis
+      );
+
+    if (redisVersion.major >= '4') {
+      pipeline = pipeline.unlink(keyOnRedis);
+    } else {
+      pipeline = pipeline.del(keyOnRedis);
+    }
+
+    const errAndResults = await pipeline.exec();
+
+    const [evalErr] = errAndResults[0];
+    if (evalErr != null) {
+      throw new Error(evalErr);
+    }
+
+    const [unlinkErr] = errAndResults[1];
+    if (unlinkErr != null) {
+      throw new Error(unlinkErr);
+    }
+
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,

@@ -25,6 +25,7 @@ import express from 'express';
 import { validateBody } from './middleware/validation';
 
 import * as config from '../../config';
+import * as telemetryToken from '../../telemetry/token';
 
 const router = express.Router();
 
@@ -78,6 +79,22 @@ router.post('/set', validateBody, function (req, res, next) {
     } = config;
 
     res.status(200).json(configNoCredential);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/telemetry/reissue_token', async (req, res, next) => {
+  try {
+    if (config.telemetryLoggingEnabled) {
+      await telemetryToken.reissueToken();
+      res.status(200).end();
+    } else {
+      res.status(404).json({
+        message: 'Telemetry module is not enabled',
+      });
+    }
     next();
   } catch (error) {
     next(error);
