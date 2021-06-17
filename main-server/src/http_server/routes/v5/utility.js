@@ -25,6 +25,7 @@ import express from 'express';
 import { validateQuery } from '../middleware/validation';
 import * as tendermintNdid from '../../../tendermint/ndid';
 import * as coreRequest from '../../../core/request';
+import * as coreMessage from '../../../core/message';
 import * as privateMessage from '../../../core/common/private_message';
 
 const router = express.Router();
@@ -275,6 +276,27 @@ router.post('/private_message_removal/:request_id', async (req, res, next) => {
       type,
     });
     res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/message/:message_id', async (req, res, next) => {
+  try {
+    const { message_id } = req.params;
+
+    const message = await coreMessage.getMessageDetails({
+      messageId: message_id,
+    });
+
+    if (message == null) {
+      res.status(404).end();
+      next();
+      return;
+    }
+
+    res.status(200).json(message);
     next();
   } catch (error) {
     next(error);

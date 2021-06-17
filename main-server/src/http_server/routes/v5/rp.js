@@ -53,6 +53,7 @@ router.post(
         min_idp,
         request_timeout,
         bypass_identity_check,
+        initial_salt,
       } = req.body;
       const {
         [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
@@ -75,6 +76,7 @@ router.post(
           min_idp,
           request_timeout,
           bypass_identity_check,
+          initial_salt,
         },
         {
           synchronous: false,
@@ -208,5 +210,39 @@ router.post('/callback', validateBody, async (req, res, next) => {
     next(error);
   }
 });
+
+router.post(
+  '/message',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const {
+        node_id,
+        reference_id,
+        message,
+        purpose,
+        initial_salt,
+        hash_message,
+      } = req.body;
+
+      const result = await common.createMessage(
+        {
+          node_id,
+          reference_id,
+          message,
+          purpose,
+          initial_salt,
+          hash_message,
+        },
+        { synchronous: false }
+      );
+
+      res.status(202).json(result);
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;
