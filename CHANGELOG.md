@@ -6,6 +6,7 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 
 BREAKING CHANGES:
 
+- Change request message salt derivation. Now includes identity (namespace and identifier).
 - MQ message compression
   - Compress only when MQ message size is at least configured size. (Config can be set with environment variable`MQ_MESSAGE_COMPRESS_MIN_LENGTH`.)
 - Change MQ message data format
@@ -20,6 +21,10 @@ FEATURES:
   - NDID only APIs
     - New API: POST `/ndid/set_service_price_ceiling`: Set service price ceiling
     - New API: POST `/ndid/set_service_price_min_effective_datetime_delay`: Set service price minimum effective datetime delay (compared to latest block's time)
+
+SECURITY FIXES:
+
+- Include identity (namespace and identifier) to request message salt derivation to be able to verify the identity of IdP response signature later (if there's a dispute) for mode 1 requests. This change prevents IdPs from spoofing AS.
 
 ## 4.3.2 (TBD)
 

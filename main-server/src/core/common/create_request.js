@@ -499,7 +499,11 @@ export async function createRequest(
     }
 
     const initial_salt = utils.randomBase64Bytes(config.saltLength);
-    const request_message_salt = utils.generateRequestMessageSalt(initial_salt);
+    const request_message_salt = utils.generateRequestMessageSalt({
+      initial_salt,
+      namespace,
+      identifier,
+    });
 
     const data_request_params_salt_list = data_request_list.map(
       (data_request) => {
