@@ -96,6 +96,7 @@
 - `MQ_BINDING_PORT`: A port to bind message queue [Default: `5555`]
 - `MQ_SERVICE_SERVER_IP`: IP address of MQ service server [Default: `localhost`]
 - `MQ_SERVICE_SERVER_PORT`: Port of MQ service server [Default: `50051`]
+- `MQ_MESSAGE_COMPRESS_MIN_LENGTH`: Minimum message (to send over MQ) length in bytes to compress [Default: `1000`]
 - `SERVER_PORT`: API server port [Default: `8080`]
 - `PRIVATE_KEY_PATH`: Path to node's private key (if call back to create signature is not set) [Default: use pre-generated development key in development mode]
 - `PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key
