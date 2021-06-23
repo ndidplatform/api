@@ -119,6 +119,46 @@ router.post(
 );
 
 router.post(
+  '/service_price/:service_id',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { service_id } = req.params;
+      const {
+        node_id,
+        reference_id,
+        callback_url,
+        price_by_currency_list,
+        effective_datetime,
+        more_info_url,
+        detail,
+      } = req.body;
+
+      await as.setServicePrice(
+        {
+          node_id,
+          reference_id,
+          callback_url,
+          service_id,
+          price_by_currency_list,
+          effective_datetime,
+          more_info_url,
+          detail,
+        },
+        {
+          synchronous: false,
+        }
+      );
+
+      res.status(202).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
   '/data/:request_id/:service_id',
   validateBody,
   async (req, res, next) => {

@@ -25,6 +25,7 @@ import express from 'express';
 import { validateQuery } from '../middleware/validation';
 import * as tendermintNdid from '../../../tendermint/ndid';
 import * as coreRequest from '../../../core/request';
+import * as coreServicePrice from '../../../core/service_price';
 import * as privateMessage from '../../../core/common/private_message';
 
 const router = express.Router();
@@ -102,6 +103,68 @@ router.get('/as/:service_id', async (req, res, next) => {
     next(error);
   }
 });
+
+router.get(
+  '/as/service_price/:service_id',
+  validateQuery,
+  async (req, res, next) => {
+    try {
+      const { service_id } = req.params;
+      const { node_id } = req.query;
+
+      const servicePriceList = await coreServicePrice.getServicePriceList({
+        nodeId: node_id,
+        serviceId: service_id,
+      });
+
+      if (servicePriceList == null) {
+        res.status(404).end();
+      } else {
+        res.status(200).json(servicePriceList);
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get('/service_price_ceiling', validateQuery, async (req, res, next) => {
+  try {
+    const { service_id } = req.query;
+
+    const servicePriceCeiling = await coreServicePrice.getServicePriceCeiling({
+      serviceId: service_id,
+    });
+
+    if (servicePriceCeiling == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(servicePriceCeiling);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get(
+  '/service_price_min_effective_datetime_delay',
+  async (req, res, next) => {
+    try {
+      const servicePriceMinEffectiveDatetimeDelay = await coreServicePrice.getServicePriceMinEffectiveDatetimeDelay();
+
+      if (servicePriceMinEffectiveDatetimeDelay == null) {
+        res.status(404).end();
+      } else {
+        res.status(200).json(servicePriceMinEffectiveDatetimeDelay);
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 router.get('/requests/:request_id', async (req, res, next) => {
   try {

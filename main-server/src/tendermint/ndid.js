@@ -748,6 +748,30 @@ export async function updateServiceDestination(
   }
 }
 
+export async function setServicePrice(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'SetServicePrice',
+      params,
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot set service price',
+      cause: error,
+    });
+  }
+}
+
 //
 // Query
 //
@@ -1223,6 +1247,44 @@ export async function getErrorCodeList(type) {
   }
 }
 
+export async function getServicePriceCeiling(service_id) {
+  try {
+    return await tendermint.query('GetServicePriceCeiling', {
+      service_id,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get service price ceiling',
+      cause: error,
+    });
+  }
+}
+
+export async function getServicePriceMinEffectiveDatetimeDelay() {
+  try {
+    return await tendermint.query('GetServicePriceMinEffectiveDatetimeDelay');
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get service price minimum effective datetime delay',
+      cause: error,
+    });
+  }
+}
+
+export async function getServicePriceList({ node_id, service_id }) {
+  try {
+    return await tendermint.query('GetServicePriceList', {
+      node_id,
+      service_id,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get service price ceiling',
+      cause: error,
+    });
+  }
+}
+
 export async function checkExistingAccessorID(accessor_id) {
   try {
     const result = await tendermint.query('CheckExistingAccessorID', {
@@ -1457,6 +1519,54 @@ export async function removeErrorCode(
   } catch (error) {
     throw new CustomError({
       message: 'Cannot remove error code',
+      cause: error,
+    });
+  }
+}
+
+export async function setServicePriceCeiling(
+  { service_id, price_ceiling_by_currency_list },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'SetServicePriceCeiling',
+      params: { service_id, price_ceiling_by_currency_list },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot set service price ceiling',
+      cause: error,
+    });
+  }
+}
+
+export async function setServicePriceMinEffectiveDatetimeDelay(
+  { duration_second },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'SetServicePriceMinEffectiveDatetimeDelay',
+      params: { duration_second },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot set service price minimum effective datetime delay',
       cause: error,
     });
   }

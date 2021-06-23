@@ -531,6 +531,25 @@ export async function disableService({ service_id }) {
   }
 }
 
+export async function setServicePriceCeiling({
+  service_id,
+  price_ceiling_by_currency_list,
+}) {
+  return await tendermintNdid.setServicePriceCeiling(
+    { service_id, price_ceiling_by_currency_list },
+    config.nodeId
+  );
+}
+
+export async function setServicePriceMinEffectiveDatetimeDelay({
+  duration_second,
+}) {
+  return await tendermintNdid.setServicePriceMinEffectiveDatetimeDelay(
+    { duration_second },
+    config.nodeId
+  );
+}
+
 export async function setValidator({ public_key, power }) {
   try {
     await tendermint.transact({

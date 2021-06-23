@@ -21,6 +21,7 @@
  */
 
 import Ajv from 'ajv';
+import ajvKeywords from 'ajv-keywords';
 
 import schemasV4 from './json_schema/v4';
 import schemasV5 from './json_schema/v5';
@@ -32,6 +33,7 @@ const ajvOptions = {
 };
 
 const ajv = new Ajv(ajvOptions);
+ajvKeywords(ajv, ['uniqueItemProperties']);
 
 function validate({
   configApi,

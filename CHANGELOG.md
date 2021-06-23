@@ -11,6 +11,16 @@ BREAKING CHANGES:
 - Change MQ message data format
   - Add `message_compression_algorithm`.
 
+FEATURES:
+
+- API version 5.1
+  - New API: POST `/as/service_price/:service_id`: Set AS service price/fee.
+  - New API: GET `/utility/as/price/:service_id`: Get AS service price/fee list (including history sorted by latest first).
+  - New API: GET `/utility/service_price_ceiling`: Get service price ceiling (set by NDID).
+  - NDID only APIs
+    - New API: POST `/ndid/set_service_price_ceiling`: Set service price ceiling
+    - New API: POST `/ndid/set_service_price_min_effective_datetime_delay`: Set service price minimum effective datetime delay (compared to latest block's time)
+
 ## 4.3.2 (TBD)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
