@@ -31,6 +31,8 @@ import messageTypes from './type';
 
 import { dataUrlRegex } from '../../data_url';
 
+import * as config from '../../config';
+
 const gzip = util.promisify(zlib.gzip);
 const unzip = util.promisify(zlib.unzip);
 
@@ -145,7 +147,10 @@ export async function deserializeMqMessage(
     if (messageCompressionAlgorithm !== MESSAGE_COMPRESSION_ALGORITHM) {
       throw new Error('Unsupported message compression algorithm');
     }
-    uncompressedMessageBuffer = await unzip(messageBuffer);
+    uncompressedMessageBuffer = await unzip(messageBuffer, {
+      // Prevent large uncompressed file that is able to compressed to <= 3MB
+      maxOutputLength: config.mqMessageMaxUncompressedLength,
+    });
   } else {
     uncompressedMessageBuffer = messageBuffer;
   }
