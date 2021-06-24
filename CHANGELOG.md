@@ -8,7 +8,8 @@ BREAKING CHANGES:
 
 - Change request message salt derivation. Now includes identity (namespace and identifier).
 - MQ message compression
-  - Compress only when MQ message size is at least configured size. (Config can be set with environment variable`MQ_MESSAGE_COMPRESS_MIN_LENGTH`.)
+  - Sender side compresses MQ message only when size is at least configured size. (Config can be set with environment variable`MQ_MESSAGE_COMPRESS_MIN_LENGTH`.)
+  - Receiver side accepts compressed MQ message that uncompressed size is not larger than 25MB
 - Change MQ message data format
   - Add `message_compression_algorithm`.
 

@@ -139,6 +139,9 @@ export const mqMessageCompressMinLength =
     ? process.env.MQ_MESSAGE_COMPRESS_MIN_LENGTH
     : 1000;
 
+// in bytes
+export const mqMessageMaxUncompressedLength = 25 * 1024 * 1024; // 25 MB
+
 export const useExternalCryptoService =
   process.env.USE_EXTERNAL_CRYPTO_SERVICE === 'true';
 
@@ -166,12 +169,13 @@ export const nodeBehindProxyPrivateKeyDirectoryPath = useExternalCryptoService
     env === 'development'
   ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'keys')
   : process.env.NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH;
-export const nodeBehindProxyMasterPrivateKeyDirectoryPath = useExternalCryptoService
-  ? null
-  : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH == null &&
-    env === 'development'
-  ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
-  : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH;
+export const nodeBehindProxyMasterPrivateKeyDirectoryPath =
+  useExternalCryptoService
+    ? null
+    : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH == null &&
+      env === 'development'
+    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
+    : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH;
 
 export const autoCloseRequestOnCompleted =
   process.env.AUTO_CLOSE_REQUEST_ON_COMPLETED != null
