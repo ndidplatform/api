@@ -504,6 +504,12 @@ export async function createRequest(
 
     if (!initial_salt) {
       initial_salt = utils.randomBase64Bytes(config.saltLength);
+    } else {
+      if (initial_salt.length < config.saltStrLength) {
+        throw new CustomError({
+          errorType: errorType.INITIAL_SALT_TOO_SHORT,
+        });
+      }
     }
     const request_message_salt = utils.generateRequestMessageSalt(initial_salt);
 

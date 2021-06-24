@@ -186,6 +186,10 @@ export const autoCloseRequestOnErrored =
 
 //in byte
 export const saltLength = 16;
+//in string
+export const saltStrLength = 24;
+export const messageStrLength = 1024;
+export const purposeStrLength = 512;
 
 // Callback retry timeout in seconds
 export const callbackRetryTimeout = process.env.CALLBACK_RETRY_TIMEOUT

@@ -94,11 +94,21 @@ export async function createMessage(
       message_id = utils.createMessageId();
     }
 
-    logger.info(createMessageParams);
+    if (purpose.length > config.purposeStrLength) {
+      throw new CustomError({
+        errorType: errorType.PURPOSE_TOO_LONG,
+      });
+    }
 
     if (hash_message) {
       if (!initial_salt) {
         initial_salt = utils.randomBase64Bytes(config.saltLength);
+      } else {
+        if (initial_salt.length < config.saltStrLength) {
+          throw new CustomError({
+            errorType: errorType.INITIAL_SALT_TOO_SHORT,
+          });
+        }
       }
       const message_salt = utils.generateMessageSalt(initial_salt);
 
@@ -135,6 +145,12 @@ export async function createMessage(
         });
       }
     } else { 
+      if (message.length > config.messageStrLength) {
+        throw new CustomError({
+          errorType: errorType.MESSAGE_TOO_LONG,
+        });
+      }
+
       const messageData = {
         message_id,
         message,
