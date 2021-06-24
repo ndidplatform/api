@@ -49,7 +49,7 @@ export function initialize() {
     })
   );
 
-  app.use(bodyParser.json({ limit: '3mb' }));
+  app.use(bodyParser.json({ limit: '25mb' }));
   app.use(bodyParserErrorHandler);
 
   app.use(routes);

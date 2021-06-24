@@ -23,6 +23,7 @@
 import parseDataURL from 'data-urls';
 
 import validateData from './data_validator';
+import { packData } from '../as_data_helper';
 import * as tendermint from '../../tendermint';
 
 import { callbackToClient } from '../../callback';
@@ -55,14 +56,8 @@ export async function processDataForRP(
   } = {}
 ) {
   let { node_id } = processDataForRPParams;
-  const {
-    reference_id,
-    callback_url,
-    requestId,
-    serviceId,
-    rpId,
-    error_code,
-  } = processDataForRPParams;
+  const { reference_id, callback_url, requestId, serviceId, rpId, error_code } =
+    processDataForRPParams;
 
   if (role === 'proxy') {
     if (node_id == null) {
@@ -160,6 +155,7 @@ export async function processDataForRP(
       });
     }
 
+    let packedData;
     if (error_code == null) {
       const dataValidationResult = await validateData({ serviceId, data });
       if (dataValidationResult.valid === false) {
@@ -178,6 +174,12 @@ export async function processDataForRP(
           });
         }
       }
+
+      packedData = await packData(
+        data,
+        config.asDataCompressMinLength,
+        config.asDataMaxUncompressedLength
+      );
     } else {
       const error_code_list = await tendermintNdid.getErrorCodeList('as');
       if (
@@ -196,11 +198,13 @@ export async function processDataForRP(
       await processDataForRPInternalAsync(...arguments, {
         nodeId: node_id,
         savedRpId,
+        packedData,
       });
     } else {
       processDataForRPInternalAsync(...arguments, {
         nodeId: node_id,
         savedRpId,
+        packedData,
       });
     }
   } catch (error) {
@@ -225,7 +229,7 @@ async function processDataForRPInternalAsync(
   data,
   { reference_id, callback_url, requestId, serviceId, rpId, error_code },
   { synchronous = false, apiVersion } = {},
-  { nodeId, savedRpId }
+  { nodeId, savedRpId, packedData }
 ) {
   try {
     let data_salt;
@@ -277,7 +281,7 @@ async function processDataForRPInternalAsync(
             error_code,
           },
           { synchronous, apiVersion },
-          { nodeId, savedRpId },
+          { nodeId, savedRpId, packedData },
         ]
       );
     } else {
@@ -304,7 +308,7 @@ async function processDataForRPInternalAsync(
           error_code,
         },
         { synchronous, apiVersion },
-        { nodeId, savedRpId }
+        { nodeId, savedRpId, packedData }
       );
     }
   } catch (error) {
@@ -344,7 +348,6 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
   {
     reference_id,
     callback_url,
-    data,
     requestId,
     serviceId,
     signature,
@@ -353,7 +356,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     error_code,
   },
   { synchronous = false, apiVersion } = {},
-  { nodeId, savedRpId }
+  { nodeId, savedRpId, packedData }
 ) {
   if (chainDisabledRetryLater) return;
   try {
@@ -381,7 +384,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
         signature,
         data_salt,
         service_id: serviceId,
-        data,
+        packed_data: packedData,
         height,
       };
     } else {
@@ -507,7 +510,7 @@ async function sendDataToRP(nodeId, rpId, data) {
       service_id: data.service_id,
       signature: data.signature,
       data_salt: data.data_salt,
-      data: data.data,
+      packed_data: data.packed_data,
       error_code: data.error_code,
       chain_id: tendermint.chainId,
       height: data.height,

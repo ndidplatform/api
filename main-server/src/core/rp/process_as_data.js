@@ -22,12 +22,14 @@
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
+import { unpackData } from '../as_data_helper';
 import * as cacheDb from '../../db/cache';
 import * as utils from '../../utils';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../../logger';
 import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
+import * as config from '../../config';
 
 export async function processAsResponse({
   nodeId,
@@ -36,7 +38,7 @@ export async function processAsResponse({
   asNodeId,
   signature,
   dataSalt,
-  data,
+  packedData,
   errorCode,
 }) {
   logger.debug({
@@ -47,7 +49,7 @@ export async function processAsResponse({
     asNodeId,
     signature,
     dataSalt,
-    data,
+    packedData,
     errorCode,
   });
 
@@ -70,6 +72,9 @@ export async function processAsResponse({
     cleanUpDataResponseFromAS(nodeId, asResponseId);
     return;
   }
+
+  const data = await unpackData(packedData, config.asDataMaxUncompressedLength);
+  console.warn('>>>unpacked', data)
 
   const signatureFromBlockchain = await tendermintNdid.getDataSignature({
     request_id: requestId,

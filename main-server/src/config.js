@@ -197,6 +197,15 @@ export const autoCloseRequestOnErrored =
 //in byte
 export const saltLength = 32;
 
+// in bytes
+export const asDataCompressMinLength =
+  process.env.AS_DATA_COMPRESS_MIN_LENGTH != null
+    ? process.env.AS_DATA_COMPRESS_MIN_LENGTH
+    : 1000;
+
+// in bytes
+export const asDataMaxUncompressedLength = 20 * 1024 * 1024; // 20 MB
+
 // Callback retry timeout in seconds
 export const callbackRetryTimeout = process.env.CALLBACK_RETRY_TIMEOUT
   ? parseInt(process.env.CALLBACK_RETRY_TIMEOUT)

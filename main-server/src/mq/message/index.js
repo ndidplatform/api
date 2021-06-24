@@ -84,30 +84,12 @@ export async function serializeMqMessage(message, compressMinLength) {
       break;
     }
     case messageTypes.AS_RESPONSE: {
-      const { data, ...messageJson } = message;
-      let dataDataUrlPrefix;
-      let dataBuffer;
-      if (data != null) {
-        // Data is present if it's not an error response
-        const dataUrlParsedData = parseDataURL(data);
-        if (dataUrlParsedData != null) {
-          const match = data.match(dataUrlRegex);
-          if (match[4] && match[4].endsWith('base64')) {
-            // Convert data with data URL format to Buffer for transfer over MQ
-            // In case it is base64 encoded, MQ message payload size is reduced
-            dataDataUrlPrefix = match[1];
-            dataBuffer = dataUrlParsedData.body;
-          }
-        }
-        if (!dataDataUrlPrefix && !dataBuffer) {
-          messageJson.data = data;
-        }
-      }
+      const { packed_data, ...messageJson } = message;
       const request_json = JSON.stringify(messageJson);
       const asDataResponseMqMessageObject = {
         request_json,
-        data_data_url_prefix: dataDataUrlPrefix,
-        data_bytes: dataBuffer,
+        packed_data_metadata: JSON.stringify(packed_data.metadata),
+        packed_data_bytes: Buffer.from(packed_data.buffer_base64, 'base64'),
       };
       const protoMessage = AsDataResponseMqMessage.create(
         asDataResponseMqMessageObject
@@ -181,14 +163,16 @@ export async function deserializeMqMessage(
       const decodedMessage = AsDataResponseMqMessage.decode(
         uncompressedMessageBuffer
       );
-      const { request_json, data_data_url_prefix, data_bytes } = decodedMessage;
+      const { request_json, packed_data_metadata, packed_data_bytes } =
+        decodedMessage;
       message = JSON.parse(request_json);
-      if (data_data_url_prefix && data_bytes) {
-        message = {
-          ...message,
-          data: `${data_data_url_prefix}${data_bytes.toString('base64')}`,
-        };
-      }
+      message = {
+        ...message,
+        packed_data: {
+          buffer_base64: packed_data_bytes.toString('base64'),
+          metadata: JSON.parse(packed_data_metadata),
+        },
+      };
       break;
     }
     default: {
