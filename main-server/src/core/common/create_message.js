@@ -20,11 +20,15 @@
  *
  */
 
+import { getFunction } from '../../functions';
+import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 import * as utils from '../../utils';
+import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
+import { getErrorObjectForClient } from '../../utils/error';
 
 import logger from '../../logger';
 
@@ -37,12 +41,16 @@ import { role } from '../../node';
  * @param {Object} createMessageParams
  * @param {string} createMessageParams.node_id
  * @param {string} createMessageParams.reference_id
+ * @param {string} createMessageParams.callback_url
  * @param {string} createMessageParams.message
  * @param {string} createMessageParams.purpose
  * @param {string} createMessageParams.initial_salt
  * @param {boolean} createMessageParams.hash_message
  * @param {Object} options
  * @param {boolean} [options.synchronous]
+ * @param {boolean} [options.sendCallbackToClient]
+ * @param {string} [options.callbackFnName]
+ * @param {Array} [options.callbackAdditionalArgs]
  * @param {boolean} [options.saveForRetryOnChainDisabled]
  * @param {Object} additionalParams
  * @param {string} [additionalParams.message_id]
@@ -60,6 +68,7 @@ export async function createMessage(
   } = createMessageParams;
   const {
     reference_id,
+    callback_url,
     message,
     purpose,
     hash_message,
@@ -119,6 +128,7 @@ export async function createMessage(
         message_salt,
         initial_salt,
         reference_id,
+        callback_url,
       };
 
       // save message data to DB to send to AS via mq when authen complete
@@ -220,12 +230,16 @@ async function createMessageInternalAsync(
 ) {
   const {
     reference_id,
+    callback_url,
     message,
     purpose,
     hash_message,
   } = createMessageParams;
   const {
     synchronous = false,
+    sendCallbackToClient = true,
+    callbackFnName,
+    callbackAdditionalArgs,
     saveForRetryOnChainDisabled,
   } = options;
   const {
@@ -259,11 +273,15 @@ async function createMessageInternalAsync(
           {
             node_id,
             reference_id,
+            callback_url,
             message_id,
             messageData,
           },
           {
             synchronous,
+            sendCallbackToClient,
+            callbackFnName,
+            callbackAdditionalArgs,
           },
         ],
         saveForRetryOnChainDisabled
@@ -278,11 +296,15 @@ async function createMessageInternalAsync(
         {
           node_id,
           reference_id,
+          callback_url,
           message_id,
           messageData,
         },
         {
           synchronous,
+          sendCallbackToClient,
+          callbackFnName,
+          callbackAdditionalArgs,
         }
       );
     }
@@ -294,6 +316,30 @@ async function createMessageInternalAsync(
       additionalArgs: arguments[2],
       err: error,
     });
+
+    if (!synchronous) {
+      if (sendCallbackToClient) {
+        await callbackToClient({
+          callbackUrl: callback_url,
+          body: {
+            node_id,
+            type: 'create_message_result',
+            success: false,
+            reference_id,
+            message_id,
+            error: getErrorObjectForClient(error),
+          },
+          retry: true,
+        });
+      }
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        } else {
+          getFunction(callbackFnName)({ error });
+        }
+      }
+    }
 
     await createMessageCleanUpOnError({
       nodeId: node_id,
@@ -310,11 +356,15 @@ export async function createMessageInternalAsyncAfterBlockchain(
   {
     node_id,
     reference_id,
+    callback_url,
     message_id,
     messageData,
   },
   {
     synchronous = false,
+    sendCallbackToClient = true,
+    callbackFnName,
+    callbackAdditionalArgs,
   } = {}
 ) {
   if (chainDisabledRetryLater) return;
@@ -329,7 +379,35 @@ export async function createMessageInternalAsyncAfterBlockchain(
 
     const {
       reference_id: _3, // eslint-disable-line no-unused-vars
+      callback_url: _4, // eslint-disable-line no-unused-vars
     } = messageData;
+
+    if (!synchronous) {
+      if (sendCallbackToClient) {
+        await callbackToClient({
+          callbackUrl: callback_url,
+          body: {
+            node_id,
+            type: 'create_message_result',
+            success: true,
+            reference_id,
+            message_id,
+            creation_block_height: `${tendermint.chainId}:${height}`,
+          },
+          retry: true,
+        });
+      }
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)(
+            { chainId: tendermint.chainId, height },
+            ...callbackAdditionalArgs
+          );
+        } else {
+          getFunction(callbackFnName)({ chainId: tendermint.chainId, height });
+        }
+      }
+    }
   } catch (error) {
     logger.error({
       message: 'Create message internal async after blockchain error',
@@ -340,6 +418,28 @@ export async function createMessageInternalAsyncAfterBlockchain(
     });
 
     if (!synchronous) {
+      if (sendCallbackToClient) {
+        await callbackToClient({
+          callbackUrl: callback_url,
+          body: {
+            node_id,
+            type: 'create_message_result',
+            success: false,
+            reference_id,
+            request_id,
+            error: getErrorObjectForClient(error),
+          },
+          retry: true,
+        });
+      }
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)({ error }, ...callbackAdditionalArgs);
+        } else {
+          getFunction(callbackFnName)({ error });
+        }
+      }
+
       await createMessageCleanUpOnError({
         nodeId: node_id,
         messageId: message_id,
