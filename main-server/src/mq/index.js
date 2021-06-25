@@ -646,11 +646,12 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
   }
   const timestamp = Date.now();
 
-  const {
-    messageType,
-    messageBuffer,
-    messageCompressionAlgorithm,
-  } = await serializeMqMessage(message, config.mqMessageCompressMinLength);
+  const { messageType, messageBuffer, messageCompressionAlgorithm } =
+    await serializeMqMessage(
+      message,
+      config.compressMqMessage,
+      config.mqMessageCompressMinLength
+    );
   const messageSignatureBuffer = await utils.createSignature(
     messageBuffer,
     senderNodeId
