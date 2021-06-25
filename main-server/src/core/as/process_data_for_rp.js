@@ -175,11 +175,12 @@ export async function processDataForRP(
         }
       }
 
-      packedData = await packData(
+      packedData = await packData({
         data,
-        config.asDataCompressMinLength,
-        config.asDataMaxUncompressedLength
-      );
+        compressMinLength: config.asDataCompressMinLength,
+        maxUncompressedLength: config.asDataMaxUncompressedLength,
+        maxResultDataLength: config.asDataMaxLength,
+      });
     } else {
       const error_code_list = await tendermintNdid.getErrorCodeList('as');
       if (

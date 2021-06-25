@@ -8,6 +8,8 @@ BREAKING CHANGES:
 
 - Change request message salt derivation. Now includes identity (namespace and identifier).
 - AS response data compression
+  - Maximum uncompressed data size is 20 MB.
+  - Maximum compressed data (or data to be sent to other nodes) size is 3MB.
   - Sender side compresses AS resposne data only when size is at least configured size. (Config can be set with environment variable `AS_DATA_COMPRESS_MIN_LENGTH`.)
 - Move AS response data data URL parsing from MQ message serialization to app layer.
 - MQ message compression

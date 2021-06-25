@@ -693,6 +693,16 @@ module.exports = {
     message: 'Service minimum price cannot be greater than maximum price',
     clientError: true,
   },
+  UNCOMPRESSED_AS_DATA_SIZE_OVER_LIMIT: {
+    code: 20085,
+    message: 'Uncompressed AS data size larger than limit',
+    clientError: true,
+  },
+  AS_DATA_SIZE_OVER_LIMIT: {
+    code: 20086,
+    message: 'AS data size larger than limit',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

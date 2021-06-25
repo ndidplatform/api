@@ -207,6 +207,8 @@ export const asDataCompressMinLength =
 
 // in bytes
 export const asDataMaxUncompressedLength = 20 * 1024 * 1024; // 20 MB
+// in bytes
+export const asDataMaxLength = 3 * 1024 * 1024; // 3 MB
 
 // Callback retry timeout in seconds
 export const callbackRetryTimeout = process.env.CALLBACK_RETRY_TIMEOUT

@@ -73,8 +73,10 @@ export async function processAsResponse({
     return;
   }
 
-  const data = await unpackData(packedData, config.asDataMaxUncompressedLength);
-  console.warn('>>>unpacked', data)
+  const data = await unpackData({
+    packedData,
+    maxUncompressedLength: config.asDataMaxUncompressedLength,
+  });
 
   const signatureFromBlockchain = await tendermintNdid.getDataSignature({
     request_id: requestId,

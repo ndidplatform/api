@@ -27,12 +27,20 @@ import parseDataURL from 'data-urls';
 
 import { dataUrlRegex } from '../data_url';
 
+import CustomError from 'ndid-error/custom_error';
+import errorType from 'ndid-error/type';
+
 const gzip = util.promisify(zlib.gzip);
 const unzip = util.promisify(zlib.unzip);
 
 const COMPRESSION_ALGORITHM = 'gzip';
 
-export async function packData(data, compressMinLength, maxUncompressedLength) {
+export async function packData({
+  data,
+  compressMinLength,
+  maxUncompressedLength,
+  maxResultDataLength,
+}) {
   if (typeof data !== 'string') {
     throw new Error('"data" must be a string');
   }
@@ -57,18 +65,34 @@ export async function packData(data, compressMinLength, maxUncompressedLength) {
     dataBuffer = Buffer.from(data);
   }
 
-  if (dataBuffer.length > maxUncompressedLength) {
-    throw new Error('data size larger than limit');
-  }
-
   // compress
   let buffer;
   if (compressMinLength && dataBuffer.length >= compressMinLength) {
+    if (dataBuffer.length > maxUncompressedLength) {
+      throw new CustomError({
+        errorType: errorType.UNCOMPRESSED_AS_DATA_SIZE_OVER_LIMIT,
+        details: {
+          length: dataBuffer.length,
+          maxUncompressedLength,
+        },
+      });
+    }
+
     buffer = await gzip(dataBuffer);
     metadata.compression_algorithm = COMPRESSION_ALGORITHM;
   } else {
     buffer = dataBuffer;
     metadata.compression_algorithm = null;
+  }
+
+  if (buffer.length > maxResultDataLength) {
+    throw new CustomError({
+      errorType: errorType.AS_DATA_SIZE_OVER_LIMIT,
+      details: {
+        length: buffer.length,
+        maxResultDataLength,
+      },
+    });
   }
 
   return {
@@ -77,7 +101,7 @@ export async function packData(data, compressMinLength, maxUncompressedLength) {
   };
 }
 
-export async function unpackData(packedData, maxUncompressedLength) {
+export async function unpackData({ packedData, maxUncompressedLength }) {
   const { buffer_base64: bufferBase64, metadata } = packedData;
   const { compression_algorithm: compressionAlgorithm } = metadata;
 
