@@ -7,11 +7,19 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 BREAKING CHANGES:
 
 - Change request message salt derivation. Now includes identity (namespace and identifier).
+- AS response data compression
+  - Sender side compresses AS resposne data only when size is at least configured size. (Config can be set with environment variable`AS_DATA_COMPRESS_MIN_LENGTH`.)
+- Move AS response data data URL parsing from MQ message serialization to app layer.
 - MQ message compression
   - Sender side compresses MQ message only when size is at least configured size. (Config can be set with environment variable`MQ_MESSAGE_COMPRESS_MIN_LENGTH`.)
   - Receiver side accepts compressed MQ message that uncompressed size is not larger than 25MB
 - Change MQ message data format
   - Add `message_compression_algorithm`.
+  - `AsDataResponseMqMessage` message type
+    - Remove `data_data_url_prefix`.
+    - Remove `data_bytes`.
+    - Add `packed_data_metadata`.
+    - Add `packed_data_bytes`.
 
 FEATURES:
 
