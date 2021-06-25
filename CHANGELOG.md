@@ -11,7 +11,8 @@ BREAKING CHANGES:
   - Sender side compresses AS resposne data only when size is at least configured size. (Config can be set with environment variable`AS_DATA_COMPRESS_MIN_LENGTH`.)
 - Move AS response data data URL parsing from MQ message serialization to app layer.
 - MQ message compression
-  - Sender side compresses MQ message only when size is at least configured size. (Config can be set with environment variable`MQ_MESSAGE_COMPRESS_MIN_LENGTH`.)
+  - Default config is no compression (Config can be set with environment variable `COMPRESS_MQ_MESSAGE`.)
+  - Sender side compresses MQ message only when size is at least configured size. (Config can be set with environment variable `MQ_MESSAGE_COMPRESS_MIN_LENGTH`.)
   - Receiver side accepts compressed MQ message that uncompressed size is not larger than 25MB
 - Change MQ message data format
   - Add `message_compression_algorithm`.
