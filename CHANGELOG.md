@@ -8,7 +8,7 @@ BREAKING CHANGES:
 
 - Change request message salt derivation. Now includes identity (namespace and identifier).
 - AS response data compression
-  - Sender side compresses AS resposne data only when size is at least configured size. (Config can be set with environment variable`AS_DATA_COMPRESS_MIN_LENGTH`.)
+  - Sender side compresses AS resposne data only when size is at least configured size. (Config can be set with environment variable `AS_DATA_COMPRESS_MIN_LENGTH`.)
 - Move AS response data data URL parsing from MQ message serialization to app layer.
 - MQ message compression
   - Default config is no compression (Config can be set with environment variable `COMPRESS_MQ_MESSAGE`.)
