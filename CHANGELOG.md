@@ -7,7 +7,8 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 BREAKING CHANGES:
 
 - MQ message compression
-  - Sender side compresses MQ message only when size is at least configured size. (Config can be set with environment variable`MQ_MESSAGE_COMPRESS_MIN_LENGTH`.)
+  - Default config is no compression (Config can be set with environment variable `COMPRESS_MQ_MESSAGE`.)
+  - Sender side compresses MQ message only when size is at least configured size. (Config can be set with environment variable `MQ_MESSAGE_COMPRESS_MIN_LENGTH`.)
   - Receiver side accepts compressed MQ message that uncompressed size is not larger than 25MB
 - Change MQ message data format
   - Add `message_compression_algorithm`.

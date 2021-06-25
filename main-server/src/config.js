@@ -120,6 +120,8 @@ export const registerMqAtStartup =
     ? process.env.REGISTER_MQ_AT_STARTUP === 'true'
     : true;
 
+export const compressMqMessage = process.env.COMPRESS_MQ_MESSAGE === 'true';
+
 // in bytes
 export const mqMessageCompressMinLength =
   process.env.MQ_MESSAGE_COMPRESS_MIN_LENGTH != null
