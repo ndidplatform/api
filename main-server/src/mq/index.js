@@ -650,7 +650,8 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
     await serializeMqMessage(
       message,
       config.compressMqMessage,
-      config.mqMessageCompressMinLength
+      config.mqMessageCompressMinLength,
+      config.mqMessageMaxLength,
     );
   const messageSignatureBuffer = await utils.createSignature(
     messageBuffer,

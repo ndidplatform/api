@@ -51,7 +51,12 @@ const AsDataResponseMqMessage = mqMessageProtobufRoot.lookupType(
 
 const MESSAGE_COMPRESSION_ALGORITHM = 'gzip';
 
-export async function serializeMqMessage(message, compress, compressMinLength) {
+export async function serializeMqMessage(
+  message,
+  compress,
+  compressMinLength,
+  maxResultLength
+) {
   let messageBuffer;
   switch (message.type) {
     case messageTypes.CONSENT_REQUEST: {
@@ -109,6 +114,10 @@ export async function serializeMqMessage(message, compress, compressMinLength) {
       messageBuffer = await gzip(messageBuffer);
       messageCompressionAlgorithm = MESSAGE_COMPRESSION_ALGORITHM;
     }
+  }
+
+  if (messageBuffer.length > maxResultLength) {
+    throw new Error('message size larger than max length limit');
   }
 
   return {

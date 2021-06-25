@@ -143,6 +143,8 @@ export const mqMessageCompressMinLength =
 
 // in bytes
 export const mqMessageMaxUncompressedLength = 25 * 1024 * 1024; // 25 MB
+// in bytes
+export const mqMessageMaxLength = 3125 * 1024; // ~3 MB
 
 export const useExternalCryptoService =
   process.env.USE_EXTERNAL_CRYPTO_SERVICE === 'true';
