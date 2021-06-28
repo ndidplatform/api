@@ -198,6 +198,7 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
     role,
     max_ial,
     max_aal,
+    on_the_fly_support,
   } = data;
 
   data.role = data.role.toUpperCase();
@@ -208,11 +209,16 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
         message: 'IdP role must have property "max_ial" and "max_aal"',
       });
     }
+    if (on_the_fly_support == null) {
+      throw new CustomError({
+        message: 'IdP role must have property "on_the_fly_support"',
+      });
+    }
   } else {
-    if (max_ial != null || max_aal != null) {
+    if (max_ial != null || max_aal != null || on_the_fly_support != null) {
       throw new CustomError({
         message:
-          'Roles other than IdP should not have property "max_ial" and/or "max_aal"',
+          'Roles other than IdP should not have property "max_ial", "max_aal", and/or "on_the_fly_support"',
       });
     }
   }

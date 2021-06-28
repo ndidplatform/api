@@ -91,6 +91,7 @@ export default {
           role: { type: 'string', enum: ['rp', 'idp', 'as', 'proxy'] },
           max_ial: { $ref: 'defs#/definitions/ial' },
           max_aal: { $ref: 'defs#/definitions/aal' },
+          on_the_fly_support: { type: 'boolean' },
           agent: { type: 'boolean' },
           node_id_whitelist_active: { type: 'boolean' },
           node_id_whitelist: {
@@ -119,6 +120,7 @@ export default {
           node_name: { type: 'string', minLength: 1 },
           max_ial: { $ref: 'defs#/definitions/ial' },
           max_aal: { $ref: 'defs#/definitions/aal' },
+          on_the_fly_support: { type: 'boolean' },
           agent: { type: 'boolean' },
           node_id_whitelist_active: { type: 'boolean' },
           node_id_whitelist: {
