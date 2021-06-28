@@ -23,6 +23,9 @@ BREAKING CHANGES:
     - Remove `data_bytes`.
     - Add `packed_data_metadata`.
     - Add `packed_data_bytes`.
+- API version 5.1
+  - NDID only APIs
+    - `on_the_fly_support` (boolean) is a required property for registering node (POST `/ndid/register_node`) and updating node (POST `/ndid/update_node`).
 
 FEATURES:
 
@@ -30,6 +33,12 @@ FEATURES:
   - New API: POST `/as/service_price/:service_id`: Set AS service price/fee.
   - New API: GET `/utility/as/price/:service_id`: Get AS service price/fee list (including history sorted by latest first).
   - New API: GET `/utility/service_price_ceiling`: Get service price ceiling (set by NDID).
+  - Change response body JSON schema of GET `/utility/nodes/:node_id`.
+    - Add `on_the_fly_support` (boolean) property (only when `node_id` is IdP node).
+  - Change response body JSON schema of GET `/utility/idp`.
+    - Add `on_the_fly_support` (boolean) property.
+  - Change response body JSON schema of GET `/utility/idp/:namespace/:identifier`.
+    - Add `on_the_fly_support` (boolean) property.
   - NDID only APIs
     - New API: POST `/ndid/set_service_price_ceiling`: Set service price ceiling
     - New API: POST `/ndid/set_service_price_min_effective_datetime_delay`: Set service price minimum effective datetime delay (compared to latest block's time)
