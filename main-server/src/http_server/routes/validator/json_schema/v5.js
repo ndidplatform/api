@@ -609,6 +609,8 @@ export default {
           accessor_public_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
           ial: { $ref: 'defs#/definitions/ial' },
+          lial: { type: 'boolean' },
+          laal: { type: 'boolean' },
           request_message: { type: 'string' },
         },
         required: [
@@ -620,6 +622,8 @@ export default {
           'accessor_public_key',
           //'accessor_id', // omit to let system auto generate
           'ial',
+          'lial',
+          'laal',
         ],
       },
     },

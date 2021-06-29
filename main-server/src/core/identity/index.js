@@ -41,6 +41,8 @@ export * from './create_identity_after_consent';
 export * from './add_identity';
 export * from './add_identity_after_consent';
 export * from './update_ial';
+export * from './update_lial';
+export * from './update_laal';
 export * from './add_accessor';
 export * from './add_accessor_after_consent';
 export * from './revoke_accessor';

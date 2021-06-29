@@ -23,6 +23,8 @@ BREAKING CHANGES:
     - Remove `data_bytes`.
     - Add `packed_data_metadata`.
     - Add `packed_data_bytes`.
+- API version 5.1
+  - Add `lial` and `laal` required properties to POST `/identity`.
 
 FEATURES:
 
@@ -30,6 +32,10 @@ FEATURES:
   - New API: POST `/as/service_price/:service_id`: Set AS service price/fee.
   - New API: GET `/utility/as/price/:service_id`: Get AS service price/fee list (including history sorted by latest first).
   - New API: GET `/utility/service_price_ceiling`: Get service price ceiling (set by NDID).
+  - New API: GET `/identity/:namespace/:identifier/lial`: Get identity's LIAL.
+  - New API: POST `/identity/:namespace/:identifier/lial`: Set identity's LIAL.
+  - New API: GET `/identity/:namespace/:identifier/laal`: Get identity's LAAL.
+  - New API: POST `/identity/:namespace/:identifier/laal`: Set identity's LAAL.
   - NDID only APIs
     - New API: POST `/ndid/set_service_price_ceiling`: Set service price ceiling
     - New API: POST `/ndid/set_service_price_min_effective_datetime_delay`: Set service price minimum effective datetime delay (compared to latest block's time)
