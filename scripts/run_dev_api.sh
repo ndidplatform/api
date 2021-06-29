@@ -7,17 +7,17 @@ killgroup(){
   kill 0
 }
 
-# nohup redis-cli -p 6379 FLUSHALL
-# nohup redis-cli -p 6380 FLUSHALL
-# nohup redis-cli -p 6381 FLUSHALL
+nohup redis-cli -p 6379 FLUSHALL
+nohup redis-cli -p 6380 FLUSHALL
+nohup redis-cli -p 6381 FLUSHALL
 
-# nohup redis-server --port 6379 > redis_1.log &
-# nohup redis-server --port 6380 > redis_2.log &
-# nohup redis-server --port 6381 > redis_3.log &
+nohup redis-server --port 6379 > redis_1.log &
+nohup redis-server --port 6380 > redis_2.log &
+nohup redis-server --port 6381 > redis_3.log &
 
-docker run --rm -p 6379:6379 --name ndid_redis_1 redis:4-alpine &
-docker run --rm -p 6380:6379 --name ndid_redis_2 redis:4-alpine &
-docker run --rm -p 6381:6379 --name ndid_redis_3 redis:4-alpine &
+# docker run --rm -p 6379:6379 --name ndid_redis_1 redis:4-alpine &
+# docker run --rm -p 6380:6379 --name ndid_redis_2 redis:4-alpine &
+# docker run --rm -p 6381:6379 --name ndid_redis_3 redis:4-alpine &
 
 cd main-server
 

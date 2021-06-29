@@ -107,7 +107,7 @@ process.on('unhandledRejection', function (reason, p) {
 mkdirp.sync(config.dataDirectoryPath);
 // mkdirp.sync(config.logDirectoryPath);
 
-async function addKeyAndSetToken(nodeId, role, behindProxy) {
+async function addKeyAndSetToken(nodeId, role, behindProxy, index) {
   const node_name = ''; //all anonymous
 
   const filePath = behindProxy
@@ -142,7 +142,11 @@ async function addKeyAndSetToken(nodeId, role, behindProxy) {
 
   let node = {
     node_id: nodeId,
-    node_name,
+    node_name: JSON.stringify({
+      marketing_name_th: `${nodeId}_TH`,
+      marketing_name_en: `${nodeId}_EN`,
+      industry_code: `00${(index % 3) + 1}`,
+    }),
     public_key,
     master_public_key,
     role,
@@ -152,6 +156,7 @@ async function addKeyAndSetToken(nodeId, role, behindProxy) {
       ...node,
       max_ial: 3,
       max_aal: 3,
+      on_the_fly_support: false,
     };
   }
 
@@ -214,11 +219,13 @@ export async function init() {
     });
     await ndid.endInit();
     await Promise.all(
-      nodes.map(({ nodeId, role }) => addKeyAndSetToken(nodeId, role))
+      nodes.map(({ nodeId, role }, index) =>
+        addKeyAndSetToken(nodeId, role, false, index)
+      )
     );
     await Promise.all(
-      nodesBehindProxy.map(({ nodeId, role }) =>
-        addKeyAndSetToken(nodeId, role, true)
+      nodesBehindProxy.map(({ nodeId, role }, index) =>
+        addKeyAndSetToken(nodeId, role, true, index)
       )
     );
     await Promise.all(
