@@ -71,6 +71,8 @@ router.get(
 
       idpNodes = idpNodes.map((idp) => {
         const {
+          lial, // eslint-disable-line no-unused-vars
+          laal, // eslint-disable-line no-unused-vars
           agent, // eslint-disable-line no-unused-vars
           ...rest
         } = idp;
