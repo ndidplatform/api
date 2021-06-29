@@ -101,6 +101,8 @@ export async function updateNode(
  * @param {string} identity.new_identity_list[].namespace
  * @param {string} identity.new_identity_list[].identifier
  * @param {string} identity.ial
+ * @param {string} identity.lial
+ * @param {string} identity.laal
  * @param {string} identity.mode_list
  * @param {string} identity.accessor_id
  * @param {string} identity.accessor_public_key
@@ -116,6 +118,8 @@ export async function registerIdentity(
     reference_group_code,
     new_identity_list,
     ial,
+    lial,
+    laal,
     mode_list,
     accessor_id,
     accessor_public_key,
@@ -140,6 +144,8 @@ export async function registerIdentity(
         reference_group_code,
         new_identity_list,
         ial,
+        lial,
+        laal,
         mode_list,
         accessor_id,
         accessor_public_key,
@@ -572,8 +578,8 @@ export async function setDataReceived(
   }
 }
 
-export async function updateIal(
-  { reference_group_code, namespace, identifier, ial },
+export async function updateIdentity(
+  { reference_group_code, namespace, identifier, ial, lial, laal },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
@@ -598,6 +604,8 @@ export async function updateIal(
           ? utils.hash(identifier)
           : undefined,
         ial,
+        lial,
+        laal,
       },
       callbackFnName,
       callbackAdditionalArgs,
@@ -605,12 +613,14 @@ export async function updateIal(
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot update Ial',
+      message: 'Cannot update identity',
       cause: error,
       reference_group_code,
       namespace,
       identifier,
       ial,
+      lial,
+      laal,
     });
   }
 }

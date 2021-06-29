@@ -44,6 +44,8 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
       accessor_public_key,
       accessor_id,
       ial,
+      lial,
+      laal,
       request_message,
     } = req.body;
 
@@ -63,6 +65,8 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
         accessor_public_key,
         accessor_id,
         ial,
+        lial,
+        laal,
         request_message,
       },
       { apiVersion, ndidMemberAppType, ndidMemberAppVersion }
@@ -189,6 +193,116 @@ router.post(
           namespace,
           identifier,
           ial,
+        },
+        { synchronous: false }
+      );
+      res.status(202).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
+  '/:namespace/:identifier/lial',
+  idpOnlyHandler,
+  async (req, res, next) => {
+    try {
+      const { node_id } = req.query;
+      const { namespace, identifier } = req.params;
+
+      const idenityInfo = await identity.getIdentityInfo({
+        nodeId: node_id,
+        namespace,
+        identifier,
+      });
+
+      if (idenityInfo != null) {
+        res.status(200).json({
+          lial: idenityInfo.lial,
+        });
+      } else {
+        res.status(404).end();
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/:namespace/:identifier/lial',
+  idpOnlyHandler,
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { namespace, identifier } = req.params;
+      const { node_id, reference_id, callback_url, lial } = req.body;
+      await identity.updateLial(
+        {
+          node_id,
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          lial,
+        },
+        { synchronous: false }
+      );
+      res.status(202).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
+  '/:namespace/:identifier/laal',
+  idpOnlyHandler,
+  async (req, res, next) => {
+    try {
+      const { node_id } = req.query;
+      const { namespace, identifier } = req.params;
+
+      const idenityInfo = await identity.getIdentityInfo({
+        nodeId: node_id,
+        namespace,
+        identifier,
+      });
+
+      if (idenityInfo != null) {
+        res.status(200).json({
+          laal: idenityInfo.laal,
+        });
+      } else {
+        res.status(404).end();
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/:namespace/:identifier/laal',
+  idpOnlyHandler,
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { namespace, identifier } = req.params;
+      const { node_id, reference_id, callback_url, laal } = req.body;
+      await identity.updateLial(
+        {
+          node_id,
+          reference_id,
+          callback_url,
+          namespace,
+          identifier,
+          laal,
         },
         { synchronous: false }
       );

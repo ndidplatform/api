@@ -63,6 +63,8 @@ import { createIdentityAfterCloseConsentRequest } from './create_identity_after_
  * @param {string} createIdentityParams.accessor_public_key
  * @param {string} createIdentityParams.accessor_id
  * @param {number} createIdentityParams.ial
+ * @param {number} createIdentityParams.lial
+ * @param {number} createIdentityParams.laal
  * @param {string} createIdentityParams.request_message
  *
  * @returns {{ request_id: string, accessor_id: string }}
@@ -93,10 +95,8 @@ export async function createIdentity(
   }
 
   try {
-    const identityRequestData = await cacheDb.getIdentityRequestDataByReferenceId(
-      node_id,
-      reference_id
-    );
+    const identityRequestData =
+      await cacheDb.getIdentityRequestDataByReferenceId(node_id, reference_id);
     if (identityRequestData) {
       throw new CustomError({
         errorType: errorType.DUPLICATE_REFERENCE_ID,
@@ -142,10 +142,8 @@ export async function createIdentity(
           });
         }
 
-        const identityReferenceGroupCode = await tendermintNdid.getReferenceGroupCode(
-          namespace,
-          identifier
-        );
+        const identityReferenceGroupCode =
+          await tendermintNdid.getReferenceGroupCode(namespace, identifier);
 
         if (identityReferenceGroupCode != null) {
           if (reference_group_code == null) {
@@ -296,6 +294,8 @@ async function createIdentityInternalAsync(
     accessor_public_key,
     accessor_id,
     ial,
+    lial,
+    laal,
     request_message,
   },
   { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = {},
@@ -317,6 +317,8 @@ async function createIdentityInternalAsync(
       reference_group_code,
       new_identity_list,
       ial,
+      lial,
+      laal,
       mode,
       accessor_id: accessor_id != null ? accessor_id : generated_accessor_id,
       accessor_public_key,
