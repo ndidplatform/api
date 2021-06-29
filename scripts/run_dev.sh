@@ -7,17 +7,17 @@ killgroup(){
   kill 0
 }
 
-redis-server --port 6379 &
-redis-server --port 6380 &
-redis-server --port 6381 &
+# redis-server --port 6379 &
+# redis-server --port 6380 &
+# redis-server --port 6381 &
 
-redis-cli -p 6379 FLUSHALL
-redis-cli -p 6380 FLUSHALL
-redis-cli -p 6381 FLUSHALL
+# redis-cli -p 6379 FLUSHALL
+# redis-cli -p 6380 FLUSHALL
+# redis-cli -p 6381 FLUSHALL
 
-# docker run --rm -p 6379:6379 --name ndid_redis_1 redis:5-alpine &
-# docker run --rm -p 6380:6379 --name ndid_redis_2 redis:5-alpine &
-# docker run --rm -p 6381:6379 --name ndid_redis_3 redis:5-alpine &
+docker run --rm -p 6379:6379 --name ndid_redis_1 redis:5-alpine &
+docker run --rm -p 6380:6379 --name ndid_redis_2 redis:5-alpine &
+docker run --rm -p 6381:6379 --name ndid_redis_3 redis:5-alpine &
 
 cd mq-server
 
