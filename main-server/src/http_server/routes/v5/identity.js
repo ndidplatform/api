@@ -295,7 +295,7 @@ router.post(
     try {
       const { namespace, identifier } = req.params;
       const { node_id, reference_id, callback_url, laal } = req.body;
-      await identity.updateLial(
+      await identity.updateLaal(
         {
           node_id,
           reference_id,
