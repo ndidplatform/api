@@ -64,6 +64,10 @@ export function getFunction(fnName) {
       return as.setServicePriceInternalAsyncAfterBlockchain;
     case 'identity.updateIalInternalAsyncAfterBlockchain':
       return identity.updateIalInternalAsyncAfterBlockchain;
+    case 'identity.updateLialInternalAsyncAfterBlockchain':
+      return identity.updateLialInternalAsyncAfterBlockchain;
+    case 'identity.updateLaalInternalAsyncAfterBlockchain':
+      return identity.updateLaalInternalAsyncAfterBlockchain;
     case 'identity.createIdentityInternalAsyncAfterCreateRequestBlockchain':
       return identity.createIdentityInternalAsyncAfterCreateRequestBlockchain;
     case 'identity.createIdentityAfterCloseConsentRequest':

@@ -663,6 +663,30 @@ export default {
         required: ['reference_id', 'callback_url', 'ial'],
       },
     },
+    '/identity/:namespace/:identifier/lial': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+          callback_url: { $ref: 'defs#/definitions/url' },
+          lial: { type: 'boolean' },
+        },
+        required: ['reference_id', 'callback_url', 'lial'],
+      },
+    },
+    '/identity/:namespace/:identifier/laal': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+          callback_url: { $ref: 'defs#/definitions/url' },
+          laal: { type: 'boolean' },
+        },
+        required: ['reference_id', 'callback_url', 'laal'],
+      },
+    },
     '/identity/:namespace/:identifier/accessors': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
