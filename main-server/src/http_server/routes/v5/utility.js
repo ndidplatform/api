@@ -61,13 +61,20 @@ router.get(
   async (req, res, next) => {
     try {
       const { namespace, identifier } = req.params;
-      const { min_ial = 0, min_aal = 0, mode, filter_for_node_id } = req.query;
+      const {
+        min_ial = 0,
+        min_aal = 0,
+        on_the_fly_support,
+        mode,
+        filter_for_node_id,
+      } = req.query;
 
       const idpNodes = await tendermintNdid.getIdpNodes({
         namespace,
         identifier,
         min_ial: parseFloat(min_ial),
         min_aal: parseFloat(min_aal),
+        on_the_fly_support,
         mode_list: mode ? [parseInt(mode)] : undefined,
         filter_for_node_id,
       });
@@ -152,7 +159,8 @@ router.get(
   '/service_price_min_effective_datetime_delay',
   async (req, res, next) => {
     try {
-      const servicePriceMinEffectiveDatetimeDelay = await coreServicePrice.getServicePriceMinEffectiveDatetimeDelay();
+      const servicePriceMinEffectiveDatetimeDelay =
+        await coreServicePrice.getServicePriceMinEffectiveDatetimeDelay();
 
       if (servicePriceMinEffectiveDatetimeDelay == null) {
         res.status(404).end();
