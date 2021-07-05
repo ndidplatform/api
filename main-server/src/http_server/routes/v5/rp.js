@@ -223,6 +223,7 @@ router.post(
         purpose,
         initial_salt,
         hash_message,
+        callback_url,
       } = req.body;
 
       const result = await common.createMessage(
@@ -233,6 +234,7 @@ router.post(
           purpose,
           initial_salt,
           hash_message,
+          callback_url,
         },
         { synchronous: false }
       );

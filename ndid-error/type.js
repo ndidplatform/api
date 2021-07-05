@@ -683,6 +683,21 @@ module.exports = {
     message: 'Request has enough AS responses',
     clientError: true,
   },
+  INITIAL_SALT_TOO_SHORT: {
+    code: 20083,
+    message: 'Request has too short initial salt size',
+    clientError: true,
+  },
+  MESSAGE_TOO_LONG: {
+    code: 20084,
+    message: 'Request has too long message',
+    clientError: true,
+  },
+  PURPOSE_TOO_LONG: {
+    code: 20085,
+    message: 'Request has too long purpose',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
