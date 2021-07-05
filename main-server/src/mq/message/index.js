@@ -91,11 +91,18 @@ export async function serializeMqMessage(
     case messageTypes.AS_RESPONSE: {
       const { packed_data, ...messageJson } = message;
       const request_json = JSON.stringify(messageJson);
-      const asDataResponseMqMessageObject = {
-        request_json,
-        packed_data_metadata: JSON.stringify(packed_data.metadata),
-        packed_data_bytes: Buffer.from(packed_data.buffer_base64, 'base64'),
-      };
+      let asDataResponseMqMessageObject;
+      if (packed_data != null) {
+        asDataResponseMqMessageObject = {
+          request_json,
+          packed_data_metadata: JSON.stringify(packed_data.metadata),
+          packed_data_bytes: Buffer.from(packed_data.buffer_base64, 'base64'),
+        };
+      } else {
+        asDataResponseMqMessageObject = {
+          request_json,
+        };
+      }
       const protoMessage = AsDataResponseMqMessage.create(
         asDataResponseMqMessageObject
       );
@@ -175,13 +182,15 @@ export async function deserializeMqMessage(
       const { request_json, packed_data_metadata, packed_data_bytes } =
         decodedMessage;
       message = JSON.parse(request_json);
-      message = {
-        ...message,
-        packed_data: {
-          buffer_base64: packed_data_bytes.toString('base64'),
-          metadata: JSON.parse(packed_data_metadata),
-        },
-      };
+      if (packed_data_metadata && packed_data_bytes != null) {
+        message = {
+          ...message,
+          packed_data: {
+            buffer_base64: packed_data_bytes.toString('base64'),
+            metadata: JSON.parse(packed_data_metadata),
+          },
+        };
+      }
       break;
     }
     default: {
