@@ -426,7 +426,7 @@ export async function createMessageInternalAsyncAfterBlockchain(
             type: 'create_message_result',
             success: false,
             reference_id,
-            request_id,
+            message_id,
             error: getErrorObjectForClient(error),
           },
           retry: true,
