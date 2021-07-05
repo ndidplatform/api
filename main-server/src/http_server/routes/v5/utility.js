@@ -353,7 +353,7 @@ router.post('/private_message_removal/:request_id', async (req, res, next) => {
   }
 });
 
-router.get('/message/:message_id', async (req, res, next) => {
+router.get('/messages/:message_id', async (req, res, next) => {
   try {
     const { message_id } = req.params;
 
