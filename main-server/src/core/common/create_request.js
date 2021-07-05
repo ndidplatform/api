@@ -369,6 +369,7 @@ async function checkWhitelistCondition({ node_id, idp_id_list }) {
  * @param {number} createRequestParams.request_timeout
  * @param {string} createRequestParams.purpose
  * @param {boolean} createRequestParams.bypass_identity_check
+ * @param {string} createRequestParams.initial_salt
  * @param {Object} options
  * @param {boolean} [options.synchronous]
  * @param {boolean} [options.sendCallbackToClient]
@@ -388,7 +389,10 @@ export async function createRequest(
   if (createRequestParams.idp_id_list == null) {
     createRequestParams.idp_id_list = [];
   }
-  let { node_id } = createRequestParams;
+  let { 
+    node_id,
+    initial_salt,
+  } = createRequestParams;
   const {
     mode,
     namespace,
@@ -498,7 +502,9 @@ export async function createRequest(
       request_id = utils.createRequestId();
     }
 
-    const initial_salt = utils.randomBase64Bytes(config.saltLength);
+    if (!initial_salt) {
+      initial_salt = utils.randomBase64Bytes(config.saltLength);
+    }
     const request_message_salt = utils.generateRequestMessageSalt({
       initial_salt,
       namespace,

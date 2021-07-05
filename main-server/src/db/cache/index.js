@@ -1057,3 +1057,91 @@ export function removeRetryTendermintTransaction(nodeId, txHash) {
     key: txHash,
   });
 }
+
+export function getMessageData(nodeId, messageId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'messageData',
+    keyName: 'messageId',
+    key: messageId,
+    valueName: 'message',
+  });
+}
+
+export function setMessageData(nodeId, messageId, message) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'messageData',
+    keyName: 'messageId',
+    key: messageId,
+    valueName: 'message',
+    value: message,
+  });
+}
+
+export function removeMessageData(nodeId, messageId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'messageData',
+    keyName: 'messageId',
+    key: messageId,
+  });
+}
+
+export function getMessageIdByReferenceId(nodeId, referenceId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'referenceIdMessageIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'messageId',
+  });
+}
+
+export function setMessageIdByReferenceId(nodeId, referenceId, messageId) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'referenceIdMessageIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'messageId',
+    value: messageId,
+  });
+}
+
+export function removeMessageIdByReferenceId(nodeId, referenceId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'referenceIdMessageIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+  });
+}
+
+export function setMessageCreationMetadata(nodeId, messageId, metadata) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'messageCreationMetadata',
+    keyName: 'messageId',
+    key: messageId,
+    valueName: 'metadata',
+    value: metadata,
+  });
+}
+
+export function removeMessageCreationMetadata(nodeId, messageId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'messageCreationMetadata',
+    keyName: 'messageId',
+    key: messageId,
+  });
+}

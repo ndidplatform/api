@@ -366,6 +366,15 @@ export function generateDataSalt({ request_id, service_id, initial_salt }) {
   return bufferHash.slice(0, config.saltLength).toString('base64');
 }
 
+export function createMessageId() {
+  return cryptoUtils.randomHexBytes(32);
+}
+
+export function generateMessageSalt(initial_salt) {
+  const bufferHash = cryptoUtils.sha256(initial_salt);
+  return bufferHash.slice(0, config.saltLength).toString('base64');
+}
+
 /**
  * @typedef {Object} RequestStatus
  * @property {string} request_id
