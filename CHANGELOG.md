@@ -47,6 +47,8 @@ FEATURES:
   - New API: POST `/identity/:namespace/:identifier/lial`: Set identity's LIAL.
   - New API: GET `/identity/:namespace/:identifier/laal`: Get identity's LAAL.
   - New API: POST `/identity/:namespace/:identifier/laal`: Set identity's LAAL.
+  - New API: POST `/rp/messages`: Save message to blockchain.
+  - New API: GET `/utility/messages/:message_id`: Get saved message and its metadata/info from blockchain.
   - NDID only APIs
     - New API: POST `/ndid/set_service_price_ceiling`: Set service price ceiling
     - New API: POST `/ndid/set_service_price_min_effective_datetime_delay`: Set service price minimum effective datetime delay (compared to latest block's time)
