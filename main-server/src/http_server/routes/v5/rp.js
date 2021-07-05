@@ -211,12 +211,20 @@ router.post('/callback', validateBody, async (req, res, next) => {
   }
 });
 
-router.post(
-  '/message',
-  validateBody,
-  async (req, res, next) => {
-    try {
-      const {
+router.post('/messages', validateBody, async (req, res, next) => {
+  try {
+    const {
+      node_id,
+      reference_id,
+      callback_url,
+      message,
+      purpose,
+      initial_salt,
+      hash_message,
+    } = req.body;
+
+    const result = await common.createMessage(
+      {
         node_id,
         reference_id,
         callback_url,
@@ -224,27 +232,15 @@ router.post(
         purpose,
         initial_salt,
         hash_message,
-      } = req.body;
+      },
+      { synchronous: false }
+    );
 
-      const result = await common.createMessage(
-        {
-          node_id,
-          reference_id,
-          callback_url,
-          message,
-          purpose,
-          initial_salt,
-          hash_message,
-        },
-        { synchronous: false }
-      );
-
-      res.status(202).json(result);
-      next();
-    } catch (error) {
-      next(error);
-    }
+    res.status(202).json(result);
+    next();
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 export default router;
