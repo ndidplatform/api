@@ -701,6 +701,20 @@ module.exports = {
   AS_DATA_SIZE_OVER_LIMIT: {
     code: 20086,
     message: 'AS data size larger than limit',
+  },
+  INITIAL_SALT_TOO_SHORT: {
+    code: 20087,
+    message: 'Request has too short initial salt size',
+    clientError: true,
+  },
+  MESSAGE_TOO_LONG: {
+    code: 20088,
+    message: 'Request has too long message',
+    clientError: true,
+  },
+  PURPOSE_TOO_LONG: {
+    code: 20089,
+    message: 'Request has too long purpose',
     clientError: true,
   },
 

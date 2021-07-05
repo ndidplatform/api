@@ -219,6 +219,7 @@ router.post(
       const {
         node_id,
         reference_id,
+        callback_url,
         message,
         purpose,
         initial_salt,
@@ -229,6 +230,7 @@ router.post(
         {
           node_id,
           reference_id,
+          callback_url,
           message,
           purpose,
           initial_salt,

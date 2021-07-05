@@ -1586,6 +1586,8 @@ export async function setServicePriceMinEffectiveDatetimeDelay(
 export async function createMessage(
   messageDataToBlockchain,
   nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
   saveForRetryOnChainDisabled
 ) {
   try {
@@ -1593,6 +1595,8 @@ export async function createMessage(
       nodeId,
       fnName: 'CreateMessage',
       params: messageDataToBlockchain,
+      callbackFnName,
+      callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
     });
   } catch (error) {

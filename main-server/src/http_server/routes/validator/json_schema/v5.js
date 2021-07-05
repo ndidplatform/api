@@ -292,6 +292,7 @@ export default {
           properties: {
             node_id: { type: 'string', minLength: 1 },
             reference_id: { type: 'string', minLength: 1 },
+            callback_url: { $ref: 'defs#/definitions/url' },
             message: { type: 'string' },
             purpose: { type: 'string'},
             initial_salt: { type: 'string' },
@@ -299,6 +300,7 @@ export default {
           },
           required: [
             'reference_id',
+            'callback_url',
             'message',
             'purpose',
           ],
