@@ -11,7 +11,7 @@ killgroup(){
 
 # redis-cli -p 6380 FLUSHALL
 
-docker run --rm -p 6380:6379 --name ndid_redis_2 redis:4-alpine &
+docker run --rm -p 6380:6379 --name ndid_redis_2 redis:5-alpine &
 
 cd mq-server
 
