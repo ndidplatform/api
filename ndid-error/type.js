@@ -1270,6 +1270,21 @@ module.exports = {
     message: 'Service minimum price cannot be greater than maximum price',
     clientError: true,
   },
+  ABCI_NOTHING_TO_UPDATE_IDENTITY: {
+    code: 25082,
+    message: 'Nothing to update identity (no params/data to update given)',
+    clientError: true,
+  },
+  ABCI_NO_PERMISSION_TO_CALL_RP_METHOD: {
+    code: 25083,
+    message: 'No permission to call RP method',
+    clientError: true,
+  },
+  ABCI_DUPLICATE_MESSAGE_ID: {
+    code: 25084,
+    message: 'Duplicate message ID',
+    clientError: true,
+  },
 
   ABCI_UNAUTHORIZED: {
     code: 35001,

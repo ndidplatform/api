@@ -139,6 +139,9 @@ import errorType from 'ndid-error/type';
 // ServiceMaxPriceGreaterThanPriceCeiling             uint32 = 115
 // ServicePriceEffectiveDatetimeBeforeAllowed         uint32 = 116
 // ServicePriceMinCannotBeGreaterThanMax              uint32 = 117
+// NothingToUpdateIdentity                            uint32 = 118
+// NoPermissionForCallRPMethod                        uint32 = 119
+// DuplicateMessageID                                 uint32 = 120
 // UnknownError                                       uint32 = 999
 
 const codeMapping = {
@@ -259,6 +262,9 @@ const codeMapping = {
   115: errorType.ABCI_SERVICE_MAX_PRICE_GREATER_THAN_PRICE_CEILING,
   116: errorType.ABCI_SERVICE_PRICE_EFFECTIVE_DATETIME_BEFORE_ALLOWED,
   117: errorType.ABCI_SERVICE_PRICE_MIN_CANNOT_BE_GREATER_THAN_MAX,
+  118: errorType.ABCI_NOTHING_TO_UPDATE_IDENTITY,
+  119: errorType.ABCI_NO_PERMISSION_TO_CALL_RP_METHOD,
+  120: errorType.ABCI_DUPLICATE_MESSAGE_ID,
 
   999: errorType.UNKNOWN_ERROR,
 };
