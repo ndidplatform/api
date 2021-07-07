@@ -15,7 +15,7 @@ killgroup(){
 # redis-cli -p 6380 FLUSHALL
 # redis-cli -p 6381 FLUSHALL
 
-docker run --rm -p 6379:6379 --name ndid_redis_1 redis:4-alpine &
+docker run --rm -p 6379:6379 --name ndid_redis_1 redis:5-alpine &
 
 cd main-server
 
@@ -24,6 +24,7 @@ TENDERMINT_PORT=45000 \
 NODE_ID=ndid1 \
 NDID_NODE=true \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
+ENABLE_TELEMETRY_LOGGING=false \
 node build/server.js &
 
 wait
