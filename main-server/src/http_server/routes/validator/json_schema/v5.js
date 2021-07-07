@@ -286,7 +286,7 @@ export default {
         },
       },
     },
-    '/rp/message': {
+    '/rp/messages': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
           properties: {
