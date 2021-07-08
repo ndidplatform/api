@@ -42,7 +42,7 @@ describe('Test MQ message serialization', () => {
       messageType,
       messageBuffer,
       messageCompressionAlgorithm,
-    } = await serializeMqMessage(message, 1);
+    } = await serializeMqMessage(message, true, 1);
 
     expect(messageType).to.be.equals(message.type);
     expect(messageBuffer).to.not.be.empty;
@@ -98,7 +98,7 @@ describe('Test MQ message serialization', () => {
       messageType,
       messageBuffer,
       messageCompressionAlgorithm,
-    } = await serializeMqMessage(message, 1);
+    } = await serializeMqMessage(message, true, 1);
 
     expect(messageType).to.be.equals(message.type);
     expect(messageBuffer).to.not.be.empty;
