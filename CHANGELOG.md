@@ -2,7 +2,7 @@
 
 ## TBD
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v6.x.x_
 
 BREAKING CHANGES:
 
