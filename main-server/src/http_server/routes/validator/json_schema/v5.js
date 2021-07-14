@@ -116,7 +116,6 @@ export default {
         properties: {
           node_id: { type: 'string', minLength: 1 },
         },
-        required: ['node_id'],
       },
     },
     '/idp/request_message_padded_hash': {

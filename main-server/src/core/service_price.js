@@ -51,22 +51,26 @@ export async function getServicePriceList({ nodeId, serviceId }) {
   if (servicePriceList == null) {
     return null;
   } else {
-    const priceList = servicePriceList.price_list.map((price) => {
-      const {
-        creation_block_height,
-        creation_chain_id,
-        ...filteredServicePriceList
-      } = price;
+    const servicePriceListByNode = servicePriceList.price_list_by_node.map(
+      (priceListByNode) => {
+        return {
+          node_id: priceListByNode.node_id,
+          price_list: priceListByNode.price_list.map((price) => {
+            const {
+              creation_block_height,
+              creation_chain_id,
+              ...filteredServicePriceList
+            } = price;
 
-      return {
-        ...filteredServicePriceList,
-        creation_block_height: `${creation_chain_id}:${creation_block_height}`,
-      };
-    });
+            return {
+              ...filteredServicePriceList,
+              creation_block_height: `${creation_chain_id}:${creation_block_height}`,
+            };
+          }),
+        };
+      }
+    );
 
-    return {
-      node_id: nodeId,
-      price_list: priceList,
-    };
+    return servicePriceListByNode;
   }
 }
