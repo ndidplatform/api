@@ -26,7 +26,6 @@ BREAKING CHANGES:
     - Add `packed_data_metadata`.
     - Add `packed_data_bytes`.
 - API version 5.1
-  - Add `lial` and `laal` required properties to POST `/identity`.
   - NDID only APIs
     - `on_the_fly_support` (boolean) is a required property for registering node (POST `/ndid/register_node`) and updating node (POST `/ndid/update_node`).
 
@@ -38,8 +37,11 @@ FEATURES:
   - New API: GET `/utility/service_price_ceiling`: Get service price ceiling (set by NDID).
   - Change response body JSON schema of GET `/utility/nodes/:node_id`.
     - Add `on_the_fly_support` (boolean) property (only when `node_id` is IdP node).
+  - Add query string parameter `on_the_fly_support` to GET `/utility/idp`
   - Change response body JSON schema of GET `/utility/idp`.
     - Add `on_the_fly_support` (boolean) property.
+  - Add `lial` and `laal` properties to POST `/identity`.
+  - Add query string parameter `on_the_fly_support` to GET `/utility/idp/:namespace/:identifier`
   - Change response body JSON schema of GET `/utility/idp/:namespace/:identifier`.
     - Add `on_the_fly_support` (boolean) property.
     - Add `lial` and `laal` (boolean) properties.

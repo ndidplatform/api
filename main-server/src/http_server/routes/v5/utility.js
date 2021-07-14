@@ -33,7 +33,13 @@ const router = express.Router();
 
 router.get('/idp', validateQuery, async (req, res, next) => {
   try {
-    const { min_ial = 0, min_aal = 0, agent, filter_for_node_id } = req.query;
+    const {
+      min_ial = 0,
+      min_aal = 0,
+      on_the_fly_support,
+      agent,
+      filter_for_node_id,
+    } = req.query;
 
     let agentFlag;
     if (agent === 'true') {
@@ -42,9 +48,17 @@ router.get('/idp', validateQuery, async (req, res, next) => {
       agentFlag = false;
     }
 
+    let onTheFlySupport;
+    if (on_the_fly_support === 'true') {
+      onTheFlySupport = true;
+    } else if (on_the_fly_support === 'false') {
+      onTheFlySupport = false;
+    }
+
     const idpNodes = await tendermintNdid.getIdpNodes({
       min_ial: parseFloat(min_ial),
       min_aal: parseFloat(min_aal),
+      on_the_fly_support: onTheFlySupport,
       agent: agentFlag,
       filter_for_node_id,
     });
@@ -70,12 +84,19 @@ router.get(
         filter_for_node_id,
       } = req.query;
 
+      let onTheFlySupport;
+      if (on_the_fly_support === 'true') {
+        onTheFlySupport = true;
+      } else if (on_the_fly_support === 'false') {
+        onTheFlySupport = false;
+      }
+
       const idpNodes = await tendermintNdid.getIdpNodes({
         namespace,
         identifier,
         min_ial: parseFloat(min_ial),
         min_aal: parseFloat(min_aal),
-        on_the_fly_support,
+        on_the_fly_support: onTheFlySupport,
         mode_list: mode ? [parseInt(mode)] : undefined,
         filter_for_node_id,
       });

@@ -71,9 +71,13 @@ export default {
           min_aal: {
             $ref: 'defs#/definitions/aalString',
           },
+          on_the_fly_support: {
+            $ref: 'defs#/definitions/booleanString',
+          },
           agent: {
             $ref: 'defs#/definitions/booleanString',
           },
+          filter_for_node_id: { type: 'string' },
         },
       },
     },
@@ -87,9 +91,13 @@ export default {
           min_aal: {
             $ref: 'defs#/definitions/aalString',
           },
+          on_the_fly_support: {
+            $ref: 'defs#/definitions/booleanString',
+          },
           mode: {
             $ref: 'defs#/definitions/modeString',
           },
+          filter_for_node_id: { type: 'string' },
         },
       },
     },
@@ -289,21 +297,16 @@ export default {
     '/rp/messages': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
-          properties: {
-            node_id: { type: 'string', minLength: 1 },
-            reference_id: { type: 'string', minLength: 1 },
-            callback_url: { $ref: 'defs#/definitions/url' },
-            message: { type: 'string' },
-            purpose: { type: 'string'},
-            initial_salt: { type: 'string' },
-            hash_message: { type: 'boolean' },
-          },
-          required: [
-            'reference_id',
-            'callback_url',
-            'message',
-            'purpose',
-          ],
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+          callback_url: { $ref: 'defs#/definitions/url' },
+          message: { type: 'string' },
+          purpose: { type: 'string' },
+          initial_salt: { type: 'string' },
+          hash_message: { type: 'boolean' },
+        },
+        required: ['reference_id', 'callback_url', 'message', 'purpose'],
       },
     },
     '/idp/callback': {
@@ -644,8 +647,6 @@ export default {
           'accessor_public_key',
           //'accessor_id', // omit to let system auto generate
           'ial',
-          'lial',
-          'laal',
         ],
       },
     },
