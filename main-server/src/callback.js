@@ -40,7 +40,7 @@ import * as config from './config';
 
 import MODE from './mode';
 
-const RESPONSE_BODY_SIZE_LIMIT = 3 * 1024 * 1024; // 3MB
+const RESPONSE_BODY_SIZE_LIMIT = 25 * 1024 * 1024; // 25MB
 
 const waitPromises = [];
 let stopCallbackRetry = false;
