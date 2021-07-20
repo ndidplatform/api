@@ -701,6 +701,7 @@ module.exports = {
   AS_DATA_SIZE_OVER_LIMIT: {
     code: 20086,
     message: 'AS data size larger than limit',
+    clientError: true,
   },
   INITIAL_SALT_TOO_SHORT: {
     code: 20087,
