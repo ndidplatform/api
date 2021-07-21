@@ -198,10 +198,10 @@ export const autoCloseRequestOnErrored =
     ? process.env.AUTO_CLOSE_REQUEST_ON_ERRORED === 'true'
     : true;
 
-//in byte
+// in bytes
 export const saltLength = 32;
-//in string
-export const saltStrLength = 24;
+
+export const saltStrLength = 44; // base64 string length of 32 bytes
 export const messageStrLength = 1024;
 export const purposeStrLength = 512;
 
