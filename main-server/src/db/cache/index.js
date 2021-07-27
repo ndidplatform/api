@@ -1007,7 +1007,7 @@ export function getAllRetryTendermintTransaction(nodeId) {
     dbName,
     name: 'tendermintTransaction',
     keyName: 'txHash',
-    valueName: 'data',
+    valueName: 'transactParams',
   });
 }
 
@@ -1030,6 +1030,21 @@ export function setRetryTendermintTransaction(nodeId, txHash, data) {
     key: txHash,
     valueName: 'data',
     value: data,
+  });
+}
+
+export function updateTxHashForRetryTendermintTransaction(
+  nodeId,
+  txHash,
+  newTxHash
+) {
+  return db.setToNewKey({
+    nodeId,
+    dbName,
+    name: 'tendermintTransaction',
+    keyName: 'txHash',
+    key: txHash,
+    newKey: newTxHash,
   });
 }
 

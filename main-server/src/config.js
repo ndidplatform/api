@@ -279,7 +279,10 @@ export const prometheusHttpsCertPath =
 export const telemetryLoggingEnabled = process.env.ENABLE_TELEMETRY_LOGGING
   ? process.env.ENABLE_TELEMETRY_LOGGING === 'true'
   : true;
-export const telemetryDbIp = process.env.TELEMETRY_DB_IP || dbIp;
+export const telemetryDbHost =
+  (process.env.TELEMETRY_DB_HOST
+    ? process.env.TELEMETRY_DB_HOST
+    : process.env.TELEMETRY_DB_IP) || dbIp;
 export const telemetryDbPort = process.env.TELEMETRY_DB_PORT || dbPort;
 export const telemetryDbPassword =
   process.env.TELEMETRY_DB_PASSWORD || dbPassword;
