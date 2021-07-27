@@ -43,8 +43,8 @@ Collect activities on NDID API server and forward to NDID telemetry server
    TELEMETRY_DB_HOST=127.0.0.1 \
    TELEMETRY_DB_PORT=6379 \
    TELEMETRY_DB_PASSWORD=<password> \
-   TELEMETRY_NODE_IP=telemetry.ndid.co.th \
-   TELEMETRY_NODE_PORT=80 \
+   TELEMETRY_NODE_GRPC_HOST=telemetry.ndid.co.th \
+   TELEMETRY_NODE_GRPC_PORT=80 \
    FLUSH_INTERVAL_SEC=10 \
    npm start
    ```
