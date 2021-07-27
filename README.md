@@ -96,6 +96,8 @@
 - `MQ_BINDING_PORT`: A port to bind message queue [Default: `5555`]
 - `MQ_SERVICE_SERVER_IP`: IP address of MQ service server [Default: `localhost`]
 - `MQ_SERVICE_SERVER_PORT`: Port of MQ service server [Default: `50051`]
+- `COMPRESS_MQ_MESSAGE`: Compress MQ message before sending to other nodes [Default: `false`]
+- `MQ_MESSAGE_COMPRESS_MIN_LENGTH`: Minimum message (to send over MQ) length in bytes to compress [Default: `1000`]
 - `SERVER_PORT`: API server port [Default: `8080`]
 - `PRIVATE_KEY_PATH`: Path to node's private key (if call back to create signature is not set) [Default: use pre-generated development key in development mode]
 - `PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key
@@ -120,6 +122,7 @@
 - `AUTO_CLOSE_REQUEST_ON_REJECTED`: Automatically close a request as soon as status is `rejected` (and when all IdP response signatures are valid in mode 2 and 3). (For RP role) [Default: `false`]
 - `AUTO_CLOSE_REQUEST_ON_COMPLICATED`: Automatically close a request as soon as status is `complicated` (and when all IdP response signatures are valid in mode 2 and 3). (For RP role) [Default: `false`]
 - `AUTO_CLOSE_REQUEST_ON_ERRORED`: Automatically close a request as soon as status is `errored`. (For RP role) [Default: `true`]
+- `AS_DATA_COMPRESS_MIN_LENGTH`: Minimum AS response data (to send over P2P/MQ) length in bytes to compress [Default: `1000`]
 - `HTTPS`: Use HTTPS server [Default: `false`]
 - `HTTPS_KEY_PATH`: HTTPS private key file path. Required when HTTPS=true [Default: pre-generated development key]
 - `HTTPS_CERT_PATH`: HTTPS certificate file path. Required when HTTPS=true [Default: pre-generated development cert]

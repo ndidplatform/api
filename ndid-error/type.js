@@ -683,6 +683,41 @@ module.exports = {
     message: 'Request has enough AS responses',
     clientError: true,
   },
+  SERVICE_ID_NOT_FOUND: {
+    code: 20083,
+    message: 'Service ID could not be found',
+    clientError: true,
+  },
+  SERVICE_MIN_PRICE_CANNOT_BE_GREATER_THAN_MAX_PRICE: {
+    code: 20084,
+    message: 'Service minimum price cannot be greater than maximum price',
+    clientError: true,
+  },
+  UNCOMPRESSED_AS_DATA_SIZE_OVER_LIMIT: {
+    code: 20085,
+    message: 'Uncompressed AS data size larger than limit',
+    clientError: true,
+  },
+  AS_DATA_SIZE_OVER_LIMIT: {
+    code: 20086,
+    message: 'AS data size larger than limit',
+    clientError: true,
+  },
+  INITIAL_SALT_TOO_SHORT: {
+    code: 20087,
+    message: 'Request has too short initial salt size',
+    clientError: true,
+  },
+  MESSAGE_TOO_LONG: {
+    code: 20088,
+    message: 'Request has too long message',
+    clientError: true,
+  },
+  PURPOSE_TOO_LONG: {
+    code: 20089,
+    message: 'Request has too long purpose',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
@@ -818,6 +853,14 @@ module.exports = {
   ABCI_APP_STATE_ERROR: {
     code: 15032,
     message: 'Blockchain app state error',
+  },
+  ABCI_SERVICE_PRICE_CEILING_LIST_NOT_FOUND: {
+    code: 15033,
+    message: 'Service price ceiling list not found',
+  },
+  ABCI_SERVICE_PRICE_CEILING_NOT_FOUND: {
+    code: 15034,
+    message: 'Service price ceiling not found',
   },
 
   // Client errors
@@ -1201,6 +1244,46 @@ module.exports = {
   ABCI_DATA_REQUEST_CANNOT_BE_FULFILLED: {
     code: 25076,
     message: 'Data request cannot be fulfilled',
+    clientError: true,
+  },
+  ABCI_IDP_CREATE_REQUEST_WITH_DATA_REQUEST_NOT_ALLOWED: {
+    code: 25077,
+    message: 'IdP creating request with data request is not allowed',
+    clientError: true,
+  },
+  ABCI_IDP_CREATE_REQUEST_MODE_1_AND_2_NOT_ALLOWED: {
+    code: 25078,
+    message: 'IdP creating request in mode 1 and 2 is not allowed',
+    clientError: true,
+  },
+  ABCI_SERVICE_MAX_PRICE_GREATER_THAN_PRICE_CEILING: {
+    code: 25079,
+    message: 'Service max price is greater than price ceiling',
+    clientError: true,
+  },
+  ABCI_SERVICE_PRICE_EFFECTIVE_DATETIME_BEFORE_ALLOWED: {
+    code: 25080,
+    message: 'Service price effective datetime is before allowed datetime',
+    clientError: true,
+  },
+  ABCI_SERVICE_PRICE_MIN_CANNOT_BE_GREATER_THAN_MAX: {
+    code: 25081,
+    message: 'Service minimum price cannot be greater than maximum price',
+    clientError: true,
+  },
+  ABCI_NOTHING_TO_UPDATE_IDENTITY: {
+    code: 25082,
+    message: 'Nothing to update identity (no params/data to update given)',
+    clientError: true,
+  },
+  ABCI_NO_PERMISSION_TO_CALL_RP_METHOD: {
+    code: 25083,
+    message: 'No permission to call RP method',
+    clientError: true,
+  },
+  ABCI_DUPLICATE_MESSAGE_ID: {
+    code: 25084,
+    message: 'Duplicate message ID',
     clientError: true,
   },
 

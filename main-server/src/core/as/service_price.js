@@ -20,10 +20,7 @@
  *
  */
 
-import { getIdentityInfo } from '.';
-
 import * as tendermintNdid from '../../tendermint/ndid';
-
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
@@ -33,23 +30,13 @@ import logger from '../../logger';
 import * as config from '../../config';
 import { role } from '../../node';
 
-/**
- * Update identity's IAL
- *
- * @param {Object} updateIalParams
- * @param {string} updateIalParams.node_id
- * @param {string} updateIalParams.reference_id
- * @param {string} updateIalParams.callback_url
- * @param {string} updateIalParams.namespace
- * @param {string} updateIalParams.identifier
- * @param {number} updateIalParams.ial
- * @param {Object} options
- * @param {boolean} options.synchronous
- */
-export async function updateIal(
-  { node_id, reference_id, callback_url, namespace, identifier, ial },
+export async function setServicePrice(
+  setServicePriceParams,
   { synchronous = false } = {}
 ) {
+  let { node_id } = setServicePriceParams;
+  const { service_id, price_by_currency_list } = setServicePriceParams;
+
   if (role === 'proxy') {
     if (node_id == null) {
       throw new CustomError({
@@ -60,67 +47,87 @@ export async function updateIal(
     node_id = config.nodeId;
   }
 
-  try {
-    // check for created identity
-    const identityOnNode = await getIdentityInfo({
-      nodeId: node_id,
-      namespace,
-      identifier,
-    });
-    if (identityOnNode == null) {
+  for (let i = 0; i < price_by_currency_list.length; i++) {
+    const { min_price, max_price } = price_by_currency_list[i];
+    if (min_price > max_price) {
       throw new CustomError({
-        errorType: errorType.IDENTITY_NOT_FOUND_ON_IDP,
-        details: {
-          namespace,
-          identifier,
-        },
+        errorType: errorType.SERVICE_MIN_PRICE_CANNOT_BE_GREATER_THAN_MAX_PRICE,
       });
     }
+  }
 
-    //check max_ial
-    ial = parseFloat(ial);
-    let { max_ial } = await tendermintNdid.getNodeInfo(node_id);
-    if (ial > max_ial) {
+  try {
+    const serviceDetail = await tendermintNdid.getServiceDetail(service_id);
+    if (serviceDetail == null) {
       throw new CustomError({
-        errorType: errorType.MAXIMUM_IAL_EXCEED,
+        errorType: errorType.SERVICE_ID_NOT_FOUND,
         details: {
-          namespace,
-          identifier,
+          service_id,
         },
       });
     }
 
     if (synchronous) {
-      await updateIalInternalAsync(...arguments, { nodeId: node_id });
+      await setServicePriceInternalAsync(...arguments, {
+        nodeId: node_id,
+      });
     } else {
-      updateIalInternalAsync(...arguments, { nodeId: node_id });
+      setServicePriceInternalAsync(...arguments, {
+        nodeId: node_id,
+      });
     }
   } catch (error) {
     const err = new CustomError({
-      message: "Cannot update identity's IAL",
+      message: 'Cannot set AS service price',
       cause: error,
+      details: {
+        service_id,
+      },
     });
     logger.error({ err });
     throw err;
   }
 }
 
-async function updateIalInternalAsync(
-  { reference_id, callback_url, namespace, identifier, ial },
+async function setServicePriceInternalAsync(
+  {
+    reference_id,
+    callback_url,
+    service_id,
+    price_by_currency_list,
+    effective_datetime,
+    more_info_url,
+    detail,
+  },
   { synchronous = false } = {},
   { nodeId }
 ) {
   try {
     if (!synchronous) {
-      await tendermintNdid.updateIdentity(
-        { namespace, identifier, ial },
+      await tendermintNdid.setServicePrice(
+        {
+          service_id,
+          price_by_currency_list,
+          effective_datetime,
+          more_info_url,
+          detail,
+        },
         nodeId,
-        'identity.updateIalInternalAsyncAfterBlockchain',
+        'as.setServicePriceInternalAsyncAfterBlockchain',
         [{ nodeId, reference_id, callback_url }, { synchronous }]
       );
     } else {
-      await tendermintNdid.updateIdentity({ namespace, identifier, ial }, nodeId);
-      await updateIalInternalAsyncAfterBlockchain(
+      await tendermintNdid.setServicePrice(
+        {
+          service_id,
+          price_by_currency_list,
+          effective_datetime,
+          more_info_url,
+          detail,
+        },
+        nodeId
+      );
+      await setServicePriceInternalAsyncAfterBlockchain(
         {},
         { nodeId, reference_id, callback_url },
         { synchronous }
@@ -128,7 +135,7 @@ async function updateIalInternalAsync(
     }
   } catch (error) {
     logger.error({
-      message: "Update identity's IAL internal async error",
+      message: 'Set AS service price internal async error',
       originalArgs: arguments[0],
       options: arguments[1],
       additionalArgs: arguments[2],
@@ -140,7 +147,7 @@ async function updateIalInternalAsync(
         callbackUrl: callback_url,
         body: {
           node_id: nodeId,
-          type: 'update_ial_result',
+          type: 'set_service_price_result',
           success: false,
           reference_id,
           error: getErrorObjectForClient(error),
@@ -153,11 +160,12 @@ async function updateIalInternalAsync(
   }
 }
 
-export async function updateIalInternalAsyncAfterBlockchain(
-  { error },
+export async function setServicePriceInternalAsyncAfterBlockchain(
+  { error, chainDisabledRetryLater },
   { nodeId, reference_id, callback_url },
   { synchronous = false } = {}
 ) {
+  if (chainDisabledRetryLater) return;
   try {
     if (error) throw error;
 
@@ -166,7 +174,7 @@ export async function updateIalInternalAsyncAfterBlockchain(
         callbackUrl: callback_url,
         body: {
           node_id: nodeId,
-          type: 'update_ial_result',
+          type: 'set_service_price_result',
           success: true,
           reference_id,
         },
@@ -175,7 +183,7 @@ export async function updateIalInternalAsyncAfterBlockchain(
     }
   } catch (error) {
     logger.error({
-      message: "Update identity's IAL internal async after blockchain error",
+      message: 'Set AS service price internal async after blockchain error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
@@ -187,7 +195,7 @@ export async function updateIalInternalAsyncAfterBlockchain(
         callbackUrl: callback_url,
         body: {
           node_id: nodeId,
-          type: 'update_ial_result',
+          type: 'set_service_price_result',
           success: false,
           reference_id,
           error: getErrorObjectForClient(error),

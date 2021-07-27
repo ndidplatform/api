@@ -34,20 +34,20 @@ import * as config from '../../config';
 import { role } from '../../node';
 
 /**
- * Update identity's IAL
+ * Update identity's LAAL
  *
- * @param {Object} updateIalParams
- * @param {string} updateIalParams.node_id
- * @param {string} updateIalParams.reference_id
- * @param {string} updateIalParams.callback_url
- * @param {string} updateIalParams.namespace
- * @param {string} updateIalParams.identifier
- * @param {number} updateIalParams.ial
+ * @param {Object} updateLaalParams
+ * @param {string} updateLaalParams.node_id
+ * @param {string} updateLaalParams.reference_id
+ * @param {string} updateLaalParams.callback_url
+ * @param {string} updateLaalParams.namespace
+ * @param {string} updateLaalParams.identifier
+ * @param {boolean} updateLaalParams.laal
  * @param {Object} options
  * @param {boolean} options.synchronous
  */
-export async function updateIal(
-  { node_id, reference_id, callback_url, namespace, identifier, ial },
+export async function updateLaal(
+  { node_id, reference_id, callback_url, namespace, identifier, laal },
   { synchronous = false } = {}
 ) {
   if (role === 'proxy') {
@@ -77,27 +77,14 @@ export async function updateIal(
       });
     }
 
-    //check max_ial
-    ial = parseFloat(ial);
-    let { max_ial } = await tendermintNdid.getNodeInfo(node_id);
-    if (ial > max_ial) {
-      throw new CustomError({
-        errorType: errorType.MAXIMUM_IAL_EXCEED,
-        details: {
-          namespace,
-          identifier,
-        },
-      });
-    }
-
     if (synchronous) {
-      await updateIalInternalAsync(...arguments, { nodeId: node_id });
+      await updateLaalInternalAsync(...arguments, { nodeId: node_id });
     } else {
-      updateIalInternalAsync(...arguments, { nodeId: node_id });
+      updateLaalInternalAsync(...arguments, { nodeId: node_id });
     }
   } catch (error) {
     const err = new CustomError({
-      message: "Cannot update identity's IAL",
+      message: "Cannot update identity's LAAL",
       cause: error,
     });
     logger.error({ err });
@@ -105,22 +92,22 @@ export async function updateIal(
   }
 }
 
-async function updateIalInternalAsync(
-  { reference_id, callback_url, namespace, identifier, ial },
+async function updateLaalInternalAsync(
+  { reference_id, callback_url, namespace, identifier, laal },
   { synchronous = false } = {},
   { nodeId }
 ) {
   try {
     if (!synchronous) {
       await tendermintNdid.updateIdentity(
-        { namespace, identifier, ial },
+        { namespace, identifier, laal },
         nodeId,
-        'identity.updateIalInternalAsyncAfterBlockchain',
+        'identity.updateLaalInternalAsyncAfterBlockchain',
         [{ nodeId, reference_id, callback_url }, { synchronous }]
       );
     } else {
-      await tendermintNdid.updateIdentity({ namespace, identifier, ial }, nodeId);
-      await updateIalInternalAsyncAfterBlockchain(
+      await tendermintNdid.updateIdentity({ namespace, identifier, laal }, nodeId);
+      await updateLaalInternalAsyncAfterBlockchain(
         {},
         { nodeId, reference_id, callback_url },
         { synchronous }
@@ -128,7 +115,7 @@ async function updateIalInternalAsync(
     }
   } catch (error) {
     logger.error({
-      message: "Update identity's IAL internal async error",
+      message: "Update identity's LAAL internal async error",
       originalArgs: arguments[0],
       options: arguments[1],
       additionalArgs: arguments[2],
@@ -140,7 +127,7 @@ async function updateIalInternalAsync(
         callbackUrl: callback_url,
         body: {
           node_id: nodeId,
-          type: 'update_ial_result',
+          type: 'update_laal_result',
           success: false,
           reference_id,
           error: getErrorObjectForClient(error),
@@ -153,7 +140,7 @@ async function updateIalInternalAsync(
   }
 }
 
-export async function updateIalInternalAsyncAfterBlockchain(
+export async function updateLaalInternalAsyncAfterBlockchain(
   { error },
   { nodeId, reference_id, callback_url },
   { synchronous = false } = {}
@@ -166,7 +153,7 @@ export async function updateIalInternalAsyncAfterBlockchain(
         callbackUrl: callback_url,
         body: {
           node_id: nodeId,
-          type: 'update_ial_result',
+          type: 'update_laal_result',
           success: true,
           reference_id,
         },
@@ -175,7 +162,7 @@ export async function updateIalInternalAsyncAfterBlockchain(
     }
   } catch (error) {
     logger.error({
-      message: "Update identity's IAL internal async after blockchain error",
+      message: "Update identity's LAAL internal async after blockchain error",
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],
       options: arguments[2],
@@ -187,7 +174,7 @@ export async function updateIalInternalAsyncAfterBlockchain(
         callbackUrl: callback_url,
         body: {
           node_id: nodeId,
-          type: 'update_ial_result',
+          type: 'update_laal_result',
           success: false,
           reference_id,
           error: getErrorObjectForClient(error),

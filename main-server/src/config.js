@@ -133,6 +133,19 @@ export const registerMqAtStartup =
     ? process.env.REGISTER_MQ_AT_STARTUP === 'true'
     : true;
 
+export const compressMqMessage = process.env.COMPRESS_MQ_MESSAGE === 'true';
+
+// in bytes
+export const mqMessageCompressMinLength =
+  process.env.MQ_MESSAGE_COMPRESS_MIN_LENGTH != null
+    ? process.env.MQ_MESSAGE_COMPRESS_MIN_LENGTH
+    : 1000;
+
+// in bytes
+export const mqMessageMaxUncompressedLength = 25 * 1024 * 1024; // 25 MB
+// in bytes
+export const mqMessageMaxLength = 3125 * 1024; // ~3 MB
+
 export const useExternalCryptoService =
   process.env.USE_EXTERNAL_CRYPTO_SERVICE === 'true';
 
@@ -160,12 +173,13 @@ export const nodeBehindProxyPrivateKeyDirectoryPath = useExternalCryptoService
     env === 'development'
   ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'keys')
   : process.env.NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH;
-export const nodeBehindProxyMasterPrivateKeyDirectoryPath = useExternalCryptoService
-  ? null
-  : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH == null &&
-    env === 'development'
-  ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
-  : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH;
+export const nodeBehindProxyMasterPrivateKeyDirectoryPath =
+  useExternalCryptoService
+    ? null
+    : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH == null &&
+      env === 'development'
+    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
+    : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH;
 
 export const autoCloseRequestOnCompleted =
   process.env.AUTO_CLOSE_REQUEST_ON_COMPLETED != null
@@ -184,8 +198,23 @@ export const autoCloseRequestOnErrored =
     ? process.env.AUTO_CLOSE_REQUEST_ON_ERRORED === 'true'
     : true;
 
-//in byte
-export const saltLength = 16;
+// in bytes
+export const saltLength = 32;
+
+export const saltStrLength = 44; // base64 string length of 32 bytes
+export const messageStrLength = 1024;
+export const purposeStrLength = 512;
+
+// in bytes
+export const asDataCompressMinLength =
+  process.env.AS_DATA_COMPRESS_MIN_LENGTH != null
+    ? process.env.AS_DATA_COMPRESS_MIN_LENGTH
+    : 1000;
+
+// in bytes
+export const asDataMaxUncompressedLength = 20 * 1024 * 1024; // 20 MB
+// in bytes
+export const asDataMaxLength = 3 * 1024 * 1024; // 3 MB
 
 // Callback retry timeout in seconds
 export const callbackRetryTimeout = process.env.CALLBACK_RETRY_TIMEOUT

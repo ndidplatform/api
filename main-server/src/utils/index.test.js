@@ -107,7 +107,7 @@ describe('Test hash with custom padding for accessor encrypt (request response s
     const requestId =
       '8a1cef0f345655c1597c2158b7d25a6866c4baf9d3e543dd3abc4982e3905f04';
     const requestMessage = 'test';
-    const initialSalt = 'd9UV7tfs38e+s/5RAtcAfw==';
+    const initialSalt = 'A3p2ziVdWsshBcNebf/hbI83j++y3kCl7Vp2W7v9sNw=';
 
     const requestMessageForConsentHash = utils.hashRequestMessageForConsent(
       requestMessage,
@@ -117,7 +117,7 @@ describe('Test hash with custom padding for accessor encrypt (request response s
     );
 
     const expectedRequestMessageForConsentHash =
-      'A/nQfv5vp/BVym2F2J36n9NEJjPIMMgYUQrl1cKTi5h1+iV1bnwNU5mfksEdPGIC6uNfW5eIrtzfTN9pFGDE/myQL/PBBfFMiCMmf6CBV2S0z6HjSbnqS4HVnf+O6KLpvJYwLitdQr/Z/TPFQV+j4ZoOXvwlHffrRj9F2UXK63Xx3BgqlpvwXX7IpFluYYFC+UXRCh9PggOdewc4vXXi4GEHqc5Jv3Q7VMjdaaQv0iZHD/MBYRnHrenBUeLh7RD1+mwRpUVcgH/sKILscWuaXrZ1wn6G/1j0CFPQFWHYQhxkEXOdLfeV3wOktaOWikNzEzV5ByDNoOKI13uJo9Fi5g==';
+      'M1NyHfOJPplUv1MODF4JGdcpoj3kYrOMSgC7cBA54Q6kodAXBLsvH4PqHKNbX/AqWzWkVqH1D+x8CfY0VGdXk7TqLTu1/RBjRUrdz7snl3ydhmiI+kiP8up8+P9cNa9K7vubb5d9I9F5CVmsAF3/vvzan9GkaVcWG5o9Xi4Pq7Txu9wYD4ekzJMpPX+FlcQLhDI45TxjOCye4s+AYq72K2RGed5VdCdhMC3zQJ3jmd5CjH3uFvcoxx/IOgfM2FbZmR6lrnbm9IYLB0rFzxhT3aUmMW3KBI/Wgi17OtX7zGssoKr0Ed1wncJvekoC65QdKvQi/Q1EAtJ0D2oj41Nntw==';
 
     // return type is Buffer
     expect(requestMessageForConsentHash).to.be.equals(
@@ -134,7 +134,7 @@ describe('Test hash with custom padding for accessor encrypt (request response s
     const requestId =
       '9516e0657638d6c724da0f8a6b387612fdef14feb2e5427eb10fab247fb04c50';
     const requestMessage = 'test';
-    const initialSalt = '1As/8IJU0erEGm9tna0C+Q==';
+    const initialSalt = 'td1A6xjvG+M6Q92/OmoAzn1AlUl/wBClynkfptegqV0=';
 
     const requestMessageForConsentHash = utils.hashRequestMessageForConsent(
       requestMessage,
@@ -144,7 +144,7 @@ describe('Test hash with custom padding for accessor encrypt (request response s
     );
 
     const expectedRequestMessageForConsentHash =
-      'AKwl1BSr4yIISCvmgJ2CJXmm67wOe63gcQ5usSOVHy+D/FcryU2+idIsfXCtfjUKtCcyNOSPwDgJ4Urw0rPB+z8WC+mVbYuN0lmeB3W1Ss/GDK+mq3YhjH+bNJ25Kn4UKk6qmH0rQtF1qFcZVJo7E46GEpI+rWyQhKd4JyPSQiG1RhmqcEIHI7Zn8u6fXeXh3825yUheB8KOkj83Bcucs3P8AB87Kvs6FJAmj5fm8NijkcjhW2Hci+9dXrX+N3gH65gmzED7RN1Ynxe4BEnYgtR4s+iBUOy6MEjvgKdKWN3Zz5vfeui1O+jo5HqJHkbeo3ZeZc3pVCEqAhoQHpGuWw==';
+      'hBQls+XJXyVW5ci3lkX1b4LNpjgQtss9W+MFsYAWNz6slnTNHSc2dyeaJITyP87OuRE6BzXa2E/qecvM7aCkga2VBE1RH+Vi5Re/q15zdp9cxKcEyT8yl/yZVUHoWidW3y/BTXN5O/HYbZZIMzapHkj/ulimhjuWkYKpWAvsxbvPXsuI5Gca5Uab+TGJQMtaP0jEEN9cP/BzIq6Cn9P6JHQYf6aLw93TUamPqCSY17Io3DuJ8ZexdXVIGBVFUxKTI3jzH8Y7SPB/wZXYQfxsYFlZ62iJ6hIHOgFF9Z3ifm+EypreWS9r1ypMSRYfwNqIPIgBf39JoNzatUengU7huw==';
 
     // return type is Buffer
     expect(requestMessageForConsentHash).to.be.equals(

@@ -21,6 +21,8 @@
  */
 
 import path from 'path';
+import util from 'util';
+import zlib from 'zlib';
 
 import protobuf from 'protobufjs';
 import parseDataURL from 'data-urls';
@@ -28,6 +30,11 @@ import parseDataURL from 'data-urls';
 import messageTypes from './type';
 
 import { dataUrlRegex } from '../../data_url';
+
+import * as config from '../../config';
+
+const gzip = util.promisify(zlib.gzip);
+const unzip = util.promisify(zlib.unzip);
 
 const mqMessageProtobufRootInstance = new protobuf.Root();
 const mqMessageProtobufRoot = mqMessageProtobufRootInstance.loadSync(
@@ -42,7 +49,14 @@ const AsDataResponseMqMessage = mqMessageProtobufRoot.lookupType(
   'AsDataResponseMqMessage'
 );
 
-export function serializeMqMessage(message) {
+const MESSAGE_COMPRESSION_ALGORITHM = 'gzip';
+
+export async function serializeMqMessage(
+  message,
+  compress,
+  compressMinLength,
+  maxResultLength
+) {
   let messageBuffer;
   switch (message.type) {
     case messageTypes.CONSENT_REQUEST: {
@@ -75,31 +89,20 @@ export function serializeMqMessage(message) {
       break;
     }
     case messageTypes.AS_RESPONSE: {
-      const { data, ...messageJson } = message;
-      let dataDataUrlPrefix;
-      let dataBuffer;
-      if (data != null) {
-        // Data is present if it's not an error response
-        const dataUrlParsedData = parseDataURL(data);
-        if (dataUrlParsedData != null) {
-          const match = data.match(dataUrlRegex);
-          if (match[4] && match[4].endsWith('base64')) {
-            // Convert data with data URL format to Buffer for transfer over MQ
-            // In case it is base64 encoded, MQ message payload size is reduced
-            dataDataUrlPrefix = match[1];
-            dataBuffer = dataUrlParsedData.body;
-          }
-        }
-        if (!dataDataUrlPrefix && !dataBuffer) {
-          messageJson.data = data;
-        }
-      }
+      const { packed_data, ...messageJson } = message;
       const request_json = JSON.stringify(messageJson);
-      const asDataResponseMqMessageObject = {
-        request_json,
-        data_data_url_prefix: dataDataUrlPrefix,
-        data_bytes: dataBuffer,
-      };
+      let asDataResponseMqMessageObject;
+      if (packed_data != null) {
+        asDataResponseMqMessageObject = {
+          request_json,
+          packed_data_metadata: JSON.stringify(packed_data.metadata),
+          packed_data_bytes: Buffer.from(packed_data.buffer_base64, 'base64'),
+        };
+      } else {
+        asDataResponseMqMessageObject = {
+          request_json,
+        };
+      }
       const protoMessage = AsDataResponseMqMessage.create(
         asDataResponseMqMessageObject
       );
@@ -111,17 +114,51 @@ export function serializeMqMessage(message) {
       messageBuffer = Buffer.from(messageStr, 'utf8');
     }
   }
+
+  let messageCompressionAlgorithm = null;
+  if (compress) {
+    if (compressMinLength && messageBuffer.length >= compressMinLength) {
+      messageBuffer = await gzip(messageBuffer);
+      messageCompressionAlgorithm = MESSAGE_COMPRESSION_ALGORITHM;
+    }
+  }
+
+  if (messageBuffer.length > maxResultLength) {
+    throw new Error('message size larger than max length limit');
+  }
+
   return {
     messageType: message.type,
     messageBuffer,
+    messageCompressionAlgorithm,
   };
 }
 
-export function deserializeMqMessage(messageType, messageBuffer) {
+export async function deserializeMqMessage(
+  messageType,
+  messageBuffer,
+  messageCompressionAlgorithm
+) {
+  let uncompressedMessageBuffer;
+
+  if (messageCompressionAlgorithm) {
+    if (messageCompressionAlgorithm !== MESSAGE_COMPRESSION_ALGORITHM) {
+      throw new Error('Unsupported message compression algorithm');
+    }
+    uncompressedMessageBuffer = await unzip(messageBuffer, {
+      // Prevent large uncompressed file that is able to compressed to <= 3MB
+      maxOutputLength: config.mqMessageMaxUncompressedLength,
+    });
+  } else {
+    uncompressedMessageBuffer = messageBuffer;
+  }
+
   let message;
   switch (messageType) {
     case messageTypes.CONSENT_REQUEST: {
-      const decodedMessage = ConsentRequestMqMessage.decode(messageBuffer);
+      const decodedMessage = ConsentRequestMqMessage.decode(
+        uncompressedMessageBuffer
+      );
       const {
         request_json,
         request_message_data_url_prefix,
@@ -139,21 +176,28 @@ export function deserializeMqMessage(messageType, messageBuffer) {
       break;
     }
     case messageTypes.AS_RESPONSE: {
-      const decodedMessage = AsDataResponseMqMessage.decode(messageBuffer);
-      const { request_json, data_data_url_prefix, data_bytes } = decodedMessage;
+      const decodedMessage = AsDataResponseMqMessage.decode(
+        uncompressedMessageBuffer
+      );
+      const { request_json, packed_data_metadata, packed_data_bytes } =
+        decodedMessage;
       message = JSON.parse(request_json);
-      if (data_data_url_prefix && data_bytes) {
+      if (packed_data_metadata && packed_data_bytes != null) {
         message = {
           ...message,
-          data: `${data_data_url_prefix}${data_bytes.toString('base64')}`,
+          packed_data: {
+            buffer_base64: packed_data_bytes.toString('base64'),
+            metadata: JSON.parse(packed_data_metadata),
+          },
         };
       }
       break;
     }
     default: {
-      const messageStr = messageBuffer.toString('utf8');
+      const messageStr = uncompressedMessageBuffer.toString('utf8');
       message = JSON.parse(messageStr);
     }
   }
+
   return message;
 }

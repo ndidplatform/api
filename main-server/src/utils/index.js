@@ -341,8 +341,12 @@ export function createRequestId() {
   return cryptoUtils.randomHexBytes(32);
 }
 
-export function generateRequestMessageSalt(initial_salt) {
-  const bufferHash = cryptoUtils.sha256(initial_salt);
+export function generateRequestMessageSalt({
+  initial_salt,
+  namespace,
+  identifier,
+}) {
+  const bufferHash = cryptoUtils.sha256(namespace + identifier + initial_salt);
   return bufferHash.slice(0, config.saltLength).toString('base64');
 }
 
@@ -359,6 +363,15 @@ export function generateDataSalt({ request_id, service_id, initial_salt }) {
   const bufferHash = cryptoUtils.sha256(
     request_id + service_id + config.nodeId + initial_salt
   );
+  return bufferHash.slice(0, config.saltLength).toString('base64');
+}
+
+export function createMessageId() {
+  return cryptoUtils.randomHexBytes(32);
+}
+
+export function generateMessageSalt(initial_salt) {
+  const bufferHash = cryptoUtils.sha256(initial_salt);
   return bufferHash.slice(0, config.saltLength).toString('base64');
 }
 

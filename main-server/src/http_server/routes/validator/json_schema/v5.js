@@ -57,7 +57,7 @@ export default {
       errorCode: {
         type: 'integer',
         minimum: 1,
-      }
+      },
     },
   },
   GET: {
@@ -71,9 +71,13 @@ export default {
           min_aal: {
             $ref: 'defs#/definitions/aalString',
           },
-          agent: { 
+          on_the_fly_support: {
             $ref: 'defs#/definitions/booleanString',
           },
+          agent: {
+            $ref: 'defs#/definitions/booleanString',
+          },
+          filter_for_node_id: { type: 'string' },
         },
       },
     },
@@ -87,9 +91,30 @@ export default {
           min_aal: {
             $ref: 'defs#/definitions/aalString',
           },
+          on_the_fly_support: {
+            $ref: 'defs#/definitions/booleanString',
+          },
           mode: {
             $ref: 'defs#/definitions/modeString',
           },
+          filter_for_node_id: { type: 'string' },
+        },
+      },
+    },
+    '/utility/service_price_ceiling': {
+      query: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          service_id: { type: 'string', minLength: 1 },
+        },
+        required: ['service_id'],
+      },
+    },
+    '/utility/as/service_price/:service_id': {
+      query: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
         },
       },
     },
@@ -166,6 +191,7 @@ export default {
               min_aal: { $ref: 'defs#/definitions/aal' },
               min_idp: { type: 'integer', minimum: 1 },
               request_timeout: { type: 'integer', minimum: 1 },
+              initial_salt: { type: 'string' },
             },
             required: [
               'reference_id',
@@ -227,6 +253,7 @@ export default {
               min_idp: { type: 'integer', minimum: 1 },
               request_timeout: { type: 'integer', minimum: 1 },
               bypass_identity_check: { type: 'boolean' },
+              initial_salt: { type: 'string' },
             },
             required: [
               'reference_id',
@@ -264,6 +291,21 @@ export default {
             $ref: 'defs#/definitions/url',
           },
         },
+      },
+    },
+    '/rp/messages': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+          callback_url: { $ref: 'defs#/definitions/url' },
+          message: { type: 'string' },
+          purpose: { type: 'string' },
+          initial_salt: { type: 'string' },
+          hash_message: { type: 'boolean' },
+        },
+        required: ['reference_id', 'callback_url', 'message', 'purpose'],
       },
     },
     '/idp/callback': {
@@ -325,12 +367,7 @@ export default {
           request_id: { type: 'string', minLength: 1 },
           error_code: { $ref: 'defs#/definitions/errorCode' },
         },
-        required: [
-          'reference_id',
-          'callback_url',
-          'request_id',
-          'error_code',
-        ],
+        required: ['reference_id', 'callback_url', 'request_id', 'error_code'],
       },
     },
     '/as/service/:service_id': {
@@ -361,6 +398,46 @@ export default {
         properties: {
           node_id: { type: 'string', minLength: 1 },
         },
+      },
+    },
+    '/as/service_price/:service_id': {
+      params: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          service_id: { type: 'string', minLength: 1 },
+        },
+        required: ['service_id'],
+      },
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+          callback_url: { $ref: 'defs#/definitions/url' },
+          price_by_currency_list: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                currency: { type: 'string', minLength: 1 },
+                min_price: { type: 'number', minimum: 0 },
+                max_price: { type: 'number', minimum: 0 },
+              },
+              required: ['currency', 'min_price', 'max_price'],
+            },
+            minItems: 1,
+            uniqueItemProperties: ['currency'],
+          },
+          effective_datetime: { type: 'string', format: 'date-time' }, // ISO 8601 format
+          more_info_url: { $ref: 'defs#/definitions/url' },
+          detail: { type: 'string', minLength: 1 },
+        },
+        required: [
+          'reference_id',
+          'callback_url',
+          'price_by_currency_list',
+          'effective_datetime',
+        ],
       },
     },
     '/as/data/:request_id/:service_id': {
@@ -556,6 +633,8 @@ export default {
           accessor_public_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
           ial: { $ref: 'defs#/definitions/ial' },
+          lial: { type: 'boolean' },
+          laal: { type: 'boolean' },
           request_message: { type: 'string' },
         },
         required: [
@@ -604,6 +683,30 @@ export default {
           ial: { $ref: 'defs#/definitions/ial' },
         },
         required: ['reference_id', 'callback_url', 'ial'],
+      },
+    },
+    '/identity/:namespace/:identifier/lial': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+          callback_url: { $ref: 'defs#/definitions/url' },
+          lial: { type: 'boolean' },
+        },
+        required: ['reference_id', 'callback_url', 'lial'],
+      },
+    },
+    '/identity/:namespace/:identifier/laal': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+          callback_url: { $ref: 'defs#/definitions/url' },
+          laal: { type: 'boolean' },
+        },
+        required: ['reference_id', 'callback_url', 'laal'],
       },
     },
     '/identity/:namespace/:identifier/accessors': {

@@ -101,6 +101,8 @@ export async function updateNode(
  * @param {string} identity.new_identity_list[].namespace
  * @param {string} identity.new_identity_list[].identifier
  * @param {string} identity.ial
+ * @param {string} identity.lial
+ * @param {string} identity.laal
  * @param {string} identity.mode_list
  * @param {string} identity.accessor_id
  * @param {string} identity.accessor_public_key
@@ -116,6 +118,8 @@ export async function registerIdentity(
     reference_group_code,
     new_identity_list,
     ial,
+    lial,
+    laal,
     mode_list,
     accessor_id,
     accessor_public_key,
@@ -140,6 +144,8 @@ export async function registerIdentity(
         reference_group_code,
         new_identity_list,
         ial,
+        lial,
+        laal,
         mode_list,
         accessor_id,
         accessor_public_key,
@@ -572,8 +578,8 @@ export async function setDataReceived(
   }
 }
 
-export async function updateIal(
-  { reference_group_code, namespace, identifier, ial },
+export async function updateIdentity(
+  { reference_group_code, namespace, identifier, ial, lial, laal },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
@@ -598,6 +604,8 @@ export async function updateIal(
           ? utils.hash(identifier)
           : undefined,
         ial,
+        lial,
+        laal,
       },
       callbackFnName,
       callbackAdditionalArgs,
@@ -605,12 +613,14 @@ export async function updateIal(
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot update Ial',
+      message: 'Cannot update identity',
       cause: error,
       reference_group_code,
       namespace,
       identifier,
       ial,
+      lial,
+      laal,
     });
   }
 }
@@ -748,6 +758,30 @@ export async function updateServiceDestination(
   }
 }
 
+export async function setServicePrice(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'SetServicePrice',
+      params,
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot set service price',
+      cause: error,
+    });
+  }
+}
+
 //
 // Query
 //
@@ -870,6 +904,7 @@ export async function getIdpNodes({
   agent,
   min_ial,
   min_aal,
+  on_the_fly_support,
   node_id_list,
   supported_request_message_type_list,
   mode_list,
@@ -892,6 +927,7 @@ export async function getIdpNodes({
       agent,
       min_ial,
       min_aal,
+      on_the_fly_support,
       node_id_list,
       supported_request_message_type_list,
       mode_list,
@@ -1223,6 +1259,44 @@ export async function getErrorCodeList(type) {
   }
 }
 
+export async function getServicePriceCeiling(service_id) {
+  try {
+    return await tendermint.query('GetServicePriceCeiling', {
+      service_id,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get service price ceiling',
+      cause: error,
+    });
+  }
+}
+
+export async function getServicePriceMinEffectiveDatetimeDelay() {
+  try {
+    return await tendermint.query('GetServicePriceMinEffectiveDatetimeDelay');
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get service price minimum effective datetime delay',
+      cause: error,
+    });
+  }
+}
+
+export async function getServicePriceList({ node_id, service_id }) {
+  try {
+    return await tendermint.query('GetServicePriceList', {
+      node_id,
+      service_id,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get service price ceiling',
+      cause: error,
+    });
+  }
+}
+
 export async function checkExistingAccessorID(accessor_id) {
   try {
     const result = await tendermint.query('CheckExistingAccessorID', {
@@ -1457,6 +1531,107 @@ export async function removeErrorCode(
   } catch (error) {
     throw new CustomError({
       message: 'Cannot remove error code',
+      cause: error,
+    });
+  }
+}
+
+export async function setServicePriceCeiling(
+  { service_id, price_ceiling_by_currency_list },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'SetServicePriceCeiling',
+      params: { service_id, price_ceiling_by_currency_list },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot set service price ceiling',
+      cause: error,
+    });
+  }
+}
+
+export async function setServicePriceMinEffectiveDatetimeDelay(
+  { duration_second },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'SetServicePriceMinEffectiveDatetimeDelay',
+      params: { duration_second },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot set service price minimum effective datetime delay',
+    })
+  }
+}
+
+export async function createMessage(
+  messageDataToBlockchain,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    return await tendermint.transact({
+      nodeId,
+      fnName: 'CreateMessage',
+      params: messageDataToBlockchain,
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot create message to blockchain',
+      cause: error,
+    });
+  }
+}
+  
+export async function getMessage({ messageId }) {
+  try {
+    return await tendermint.query('GetMessage', { message_id: messageId });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get message from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function getMessageDetail({ messageId, height }) {
+  try {
+    const messageDetail = await tendermint.query(
+      'GetMessageDetail',
+      { message_id: messageId },
+      height
+    );
+    if (messageDetail == null) {
+      return null;
+    }
+    return messageDetail;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get message details from blockchain',
       cause: error,
     });
   }

@@ -1,5 +1,63 @@
 # Changelog
 
+## 5.0.0 (July 27, 2021)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v6.x.x_
+
+BREAKING CHANGES:
+
+- Change request message salt derivation. Now includes identity (namespace and identifier).
+- AS response data compression
+  - Compression algorithm: gzip
+  - Maximum uncompressed data size is 20 MB.
+  - Maximum compressed data (or data to be sent to other nodes) size is 3MB.
+  - Sender side compresses AS resposne data only when size is at least configured size. (Config can be set with environment variable `AS_DATA_COMPRESS_MIN_LENGTH`.)
+- Move AS response data data URL parsing from MQ message serialization to app layer.
+- MQ message compression
+  - Compression algorithm: gzip
+  - Default config is no compression (Config can be set with environment variable `COMPRESS_MQ_MESSAGE`.)
+  - Sender side compresses MQ message only when size is at least configured size. (Config can be set with environment variable `MQ_MESSAGE_COMPRESS_MIN_LENGTH`.)
+  - Receiver side accepts compressed MQ message that uncompressed size is not larger than 25MB
+- Change MQ message data format
+  - Add `message_compression_algorithm`.
+  - `AsDataResponseMqMessage` message type
+    - Remove `data_data_url_prefix`.
+    - Remove `data_bytes`.
+    - Add `packed_data_metadata`.
+    - Add `packed_data_bytes`.
+- API version 5.1
+  - NDID only APIs
+    - `on_the_fly_support` (boolean) is a required property for registering node (POST `/ndid/register_node`) and updating node (POST `/ndid/update_node`).
+
+FEATURES:
+
+- API version 5.1
+  - New API: POST `/as/service_price/:service_id`: Set AS service price/fee.
+  - New API: GET `/utility/as/price/:service_id`: Get AS service price/fee list (including history sorted by latest first).
+  - New API: GET `/utility/service_price_ceiling`: Get service price ceiling (set by NDID).
+  - Change response body JSON schema of GET `/utility/nodes/:node_id`.
+    - Add `on_the_fly_support` (boolean) property (only when `node_id` is IdP node).
+  - Add query string parameter `on_the_fly_support` to GET `/utility/idp`
+  - Change response body JSON schema of GET `/utility/idp`.
+    - Add `on_the_fly_support` (boolean) property.
+  - Add `lial` and `laal` properties to POST `/identity`.
+  - Add query string parameter `on_the_fly_support` to GET `/utility/idp/:namespace/:identifier`
+  - Change response body JSON schema of GET `/utility/idp/:namespace/:identifier`.
+    - Add `on_the_fly_support` (boolean) property.
+    - Add `lial` and `laal` (boolean) properties.
+  - New API: GET `/identity/:namespace/:identifier/lial`: Get identity's LIAL.
+  - New API: POST `/identity/:namespace/:identifier/lial`: Set identity's LIAL.
+  - New API: GET `/identity/:namespace/:identifier/laal`: Get identity's LAAL.
+  - New API: POST `/identity/:namespace/:identifier/laal`: Set identity's LAAL.
+  - New API: POST `/rp/messages`: Save message to blockchain.
+  - New API: GET `/utility/messages/:message_id`: Get saved message and its metadata/info from blockchain.
+  - NDID only APIs
+    - New API: POST `/ndid/set_service_price_ceiling`: Set service price ceiling
+    - New API: POST `/ndid/set_service_price_min_effective_datetime_delay`: Set service price minimum effective datetime delay (compared to latest block's time)
+
+SECURITY FIXES:
+
+- Include identity (namespace and identifier) to request message salt derivation to be able to verify the identity of IdP response signature later (if there's a dispute) for mode 1 requests. This change prevents IdPs from spoofing AS.
 ## 4.3.2 (July 27, 2021)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_

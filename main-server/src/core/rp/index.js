@@ -484,7 +484,7 @@ export async function processMessage(nodeId, messageId, message) {
         asNodeId: message.as_id,
         signature: message.signature,
         dataSalt: message.data_salt,
-        data: message.data,
+        packedData: message.packed_data,
         errorCode: message.error_code,
       });
     } else {

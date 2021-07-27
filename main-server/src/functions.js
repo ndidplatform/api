@@ -40,6 +40,8 @@ export function getFunction(fnName) {
     // Core module
     case 'common.createRequestInternalAsyncAfterBlockchain':
       return common.createRequestInternalAsyncAfterBlockchain;
+    case 'common.createMessageInternalAsyncAfterBlockchain':
+      return common.createMessageInternalAsyncAfterBlockchain;
     case 'common.closeRequestInternalAsyncAfterBlockchain':
       return common.closeRequestInternalAsyncAfterBlockchain;
     case 'common.isRequestClosedOrTimedOut':
@@ -60,8 +62,14 @@ export function getFunction(fnName) {
       return as.registerOrUpdateASServiceInternalAsyncAfterBlockchain;
     case 'as.processDataForRPInternalAsyncAfterBlockchain':
       return as.processDataForRPInternalAsyncAfterBlockchain;
+    case 'as.setServicePriceInternalAsyncAfterBlockchain':
+      return as.setServicePriceInternalAsyncAfterBlockchain;
     case 'identity.updateIalInternalAsyncAfterBlockchain':
       return identity.updateIalInternalAsyncAfterBlockchain;
+    case 'identity.updateLialInternalAsyncAfterBlockchain':
+      return identity.updateLialInternalAsyncAfterBlockchain;
+    case 'identity.updateLaalInternalAsyncAfterBlockchain':
+      return identity.updateLaalInternalAsyncAfterBlockchain;
     case 'identity.createIdentityInternalAsyncAfterCreateRequestBlockchain':
       return identity.createIdentityInternalAsyncAfterCreateRequestBlockchain;
     case 'identity.createIdentityAfterCloseConsentRequest':

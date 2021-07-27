@@ -53,7 +53,7 @@ export default {
       errorCode: {
         type: 'integer',
         minimum: 1,
-      }
+      },
     },
   },
   GET: {},
@@ -91,9 +91,13 @@ export default {
           role: { type: 'string', enum: ['rp', 'idp', 'as', 'proxy'] },
           max_ial: { $ref: 'defs#/definitions/ial' },
           max_aal: { $ref: 'defs#/definitions/aal' },
+          on_the_fly_support: { type: 'boolean' },
           agent: { type: 'boolean' },
           node_id_whitelist_active: { type: 'boolean' },
-          node_id_whitelist: { type: 'array', items: { type: 'string', minLength: 1 } },
+          node_id_whitelist: {
+            type: 'array',
+            items: { type: 'string', minLength: 1 },
+          },
         },
         required: [
           'node_id',
@@ -116,9 +120,13 @@ export default {
           node_name: { type: 'string', minLength: 1 },
           max_ial: { $ref: 'defs#/definitions/ial' },
           max_aal: { $ref: 'defs#/definitions/aal' },
+          on_the_fly_support: { type: 'boolean' },
           agent: { type: 'boolean' },
           node_id_whitelist_active: { type: 'boolean' },
-          node_id_whitelist: { type: 'array', items: { type: 'string', minLength: 1 } },
+          node_id_whitelist: {
+            type: 'array',
+            items: { type: 'string', minLength: 1 },
+          },
         },
         required: ['node_id'],
       },
@@ -263,6 +271,37 @@ export default {
         required: ['service_id'],
       },
     },
+    '/ndid/set_service_price_ceiling': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          service_id: { type: 'string', minLength: 1 },
+          price_ceiling_by_currency_list: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                currency: { type: 'string', minLength: 1 },
+                price: { type: 'number', minimum: 0 },
+              },
+              required: ['currency', 'price'],
+            },
+            minItems: 1,
+            uniqueItemProperties: ['currency'],
+          },
+        },
+        required: ['service_id', 'price_ceiling_by_currency_list'],
+      },
+    },
+    '/ndid/set_service_price_min_effective_datetime_delay': {
+      body: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          duration_second: { type: 'integer', minimum: 1 },
+        },
+        required: ['duration_second'],
+      },
+    },
     '/ndid/set_validator': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
@@ -381,20 +420,20 @@ export default {
       body: {
         properties: {
           error_code: { $ref: 'defs#/definitions/errorCode' },
-          type: { type: 'string', enum: ['idp', 'as']},
+          type: { type: 'string', enum: ['idp', 'as'] },
           description: { type: 'string' },
         },
-        required: ['error_code', 'type', 'description']
-      }
+        required: ['error_code', 'type', 'description'],
+      },
     },
     '/ndid/remove_error_code': {
       body: {
         properties: {
           error_code: { $ref: 'defs#/definitions/errorCode' },
-          type: { type: 'string', enum: ['idp', 'as']},
+          type: { type: 'string', enum: ['idp', 'as'] },
         },
         required: ['error_code', 'type'],
-      }
-    }
+      },
+    },
   },
 };

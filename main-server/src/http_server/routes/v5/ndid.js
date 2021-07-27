@@ -92,6 +92,7 @@ router.post('/register_node', validateBody, async (req, res, next) => {
       role,
       max_aal,
       max_ial,
+      on_the_fly_support,
       agent,
       node_id_whitelist_active,
       node_id_whitelist,
@@ -108,6 +109,7 @@ router.post('/register_node', validateBody, async (req, res, next) => {
         role,
         max_aal,
         max_ial,
+        on_the_fly_support,
         agent,
         node_id_whitelist_active,
         node_id_whitelist,
@@ -130,6 +132,7 @@ router.post('/update_node', validateBody, async (req, res, next) => {
       // role,
       max_aal,
       max_ial,
+      on_the_fly_support,
       agent,
       node_id_whitelist_active,
       node_id_whitelist,
@@ -142,6 +145,7 @@ router.post('/update_node', validateBody, async (req, res, next) => {
         // role,
         max_aal,
         max_ial,
+        on_the_fly_support,
         agent,
         node_id_whitelist_active,
         node_id_whitelist,
@@ -377,6 +381,43 @@ router.post('/disable_service', validateBody, async (req, res, next) => {
     next(error);
   }
 });
+
+router.post(
+  '/set_service_price_ceiling',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { service_id, price_ceiling_by_currency_list } = req.body;
+
+      await ndid.setServicePriceCeiling({
+        service_id,
+        price_ceiling_by_currency_list,
+      });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/set_service_price_min_effective_datetime_delay',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { duration_second } = req.body;
+
+      await ndid.setServicePriceMinEffectiveDatetimeDelay({
+        duration_second,
+      });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 router.post('/set_validator', validateBody, async (req, res, next) => {
   try {

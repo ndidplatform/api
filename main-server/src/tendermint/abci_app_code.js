@@ -132,6 +132,16 @@ import errorType from 'ndid-error/type';
 // AppStateError                                      uint32 = 108
 // RequestCannotBeFulfilled                           uint32 = 109
 // DataRequestCannotBeFulfilled                       uint32 = 110
+// IdPCreateRequestWithDataRequestNotAllowed          uint32 = 111
+// IdPCreateRequestMode1And2NotAllowed                uint32 = 112
+// ServicePriceCeilingListNotFound                    uint32 = 113
+// ServicePriceCeilingNotFound                        uint32 = 114
+// ServiceMaxPriceGreaterThanPriceCeiling             uint32 = 115
+// ServicePriceEffectiveDatetimeBeforeAllowed         uint32 = 116
+// ServicePriceMinCannotBeGreaterThanMax              uint32 = 117
+// NothingToUpdateIdentity                            uint32 = 118
+// NoPermissionForCallRPMethod                        uint32 = 119
+// DuplicateMessageID                                 uint32 = 120
 // UnknownError                                       uint32 = 999
 
 const codeMapping = {
@@ -245,6 +255,17 @@ const codeMapping = {
   108: errorType.ABCI_APP_STATE_ERROR,
   109: errorType.ABCI_REQUEST_CANNOT_BE_FULFILLED,
   110: errorType.ABCI_DATA_REQUEST_CANNOT_BE_FULFILLED,
+  111: errorType.ABCI_IDP_CREATE_REQUEST_WITH_DATA_REQUEST_NOT_ALLOWED,
+  112: errorType.ABCI_IDP_CREATE_REQUEST_MODE_1_AND_2_NOT_ALLOWED,
+  113: errorType.ABCI_SERVICE_PRICE_CEILING_LIST_NOT_FOUND,
+  114: errorType.ABCI_SERVICE_PRICE_CEILING_NOT_FOUND,
+  115: errorType.ABCI_SERVICE_MAX_PRICE_GREATER_THAN_PRICE_CEILING,
+  116: errorType.ABCI_SERVICE_PRICE_EFFECTIVE_DATETIME_BEFORE_ALLOWED,
+  117: errorType.ABCI_SERVICE_PRICE_MIN_CANNOT_BE_GREATER_THAN_MAX,
+  118: errorType.ABCI_NOTHING_TO_UPDATE_IDENTITY,
+  119: errorType.ABCI_NO_PERMISSION_TO_CALL_RP_METHOD,
+  120: errorType.ABCI_DUPLICATE_MESSAGE_ID,
+
   999: errorType.UNKNOWN_ERROR,
 };
 

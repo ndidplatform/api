@@ -7,6 +7,7 @@ message MqMessage {
   bytes signature = 4;
   string receiver_node_id = 5;
   string sender_node_id = 6;
+  string message_compression_algorithm = 7;
 }
 
 message ConsentRequestMqMessage {
@@ -17,6 +18,6 @@ message ConsentRequestMqMessage {
 
 message AsDataResponseMqMessage {
   string request_json = 1;
-  string data_data_url_prefix = 2;
-  bytes data_bytes = 3;
+  string packed_data_metadata = 2;
+  bytes packed_data_bytes = 3;
 }
