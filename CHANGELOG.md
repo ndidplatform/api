@@ -58,8 +58,7 @@ FEATURES:
 SECURITY FIXES:
 
 - Include identity (namespace and identifier) to request message salt derivation to be able to verify the identity of IdP response signature later (if there's a dispute) for mode 1 requests. This change prevents IdPs from spoofing AS.
-
-## 4.3.2 (TBD)
+## 4.3.2 (July 27, 2021)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
 
