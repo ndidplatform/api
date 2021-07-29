@@ -1,7 +1,7 @@
 version: '3'
 services:
   telemetry-client-proxy-1:
-    image: ndidplatform/telemetry-client:latest
+    image: ndidplatform/telemetry-client:${DOCKER_TAG:-latest}
     environment:
       - NODE_ID=proxy1_rp4,proxy1_idp4,proxy1_as4
       - TELEMETRY_DB_HOST=api-redis-proxy-1
@@ -15,7 +15,7 @@ services:
       - ndidplatform
 
   telemetry-client-proxy-2:
-    image: ndidplatform/telemetry-client:latest
+    image: ndidplatform/telemetry-client:${DOCKER_TAG:-latest}
     environment:
       - NODE_ID=proxy2_rp5
       - TELEMETRY_DB_HOST=api-redis-proxy-2

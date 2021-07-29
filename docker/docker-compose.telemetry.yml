@@ -1,7 +1,7 @@
 version: '3'
 services:
   telemetry-client:
-    image: ndidplatform/telemetry-client:latest
+    image: ndidplatform/telemetry-client:${DOCKER_TAG:-latest}
     environment:
       - NODE_ID=idp1,idp2,idp3,rp1,as1,as2
       - TELEMETRY_DB_HOST=api-redis
