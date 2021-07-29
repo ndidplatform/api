@@ -58,6 +58,7 @@ FEATURES:
 SECURITY FIXES:
 
 - Include identity (namespace and identifier) to request message salt derivation to be able to verify the identity of IdP response signature later (if there's a dispute) for mode 1 requests. This change prevents IdPs from spoofing AS.
+
 ## 4.3.2 (July 27, 2021)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v5.x.x_
@@ -205,7 +206,7 @@ BREAKING CHANGES:
   - Change API route names
     - `/identity/:namespace/:identifier/accessors_revoke` to `/identity/:namespace/:identifier/accessor_revoke`
     - `/identity/:namespace/:identifier/accessors_revoke_and_add` to `/identity/:namespace/:identifier/accessor_revoke_and_add`
-  - Change NDID APIs (`/ndid/update_node`, `/ndid/enable_node`, and  `/ndid/disable_node`) HTTP success response status code from 200 to 204.
+  - Change NDID APIs (`/ndid/update_node`, `/ndid/enable_node`, and `/ndid/disable_node`) HTTP success response status code from 200 to 204.
 
 IMPROVEMENTS:
 
