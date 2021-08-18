@@ -1,4 +1,4 @@
-FROM node:12-alpine3.14 as build
+FROM node:12-alpine3.11 as build
 
 WORKDIR /tmp
 
@@ -26,7 +26,7 @@ RUN npm run build && npm prune --production
 RUN apk del .build-deps
 
 
-FROM node:12-alpine3.14
+FROM node:12-alpine3.11
 LABEL maintainer="NDID IT Team <it@ndid.co.th>"
 
 # Directory path for persistence data files
