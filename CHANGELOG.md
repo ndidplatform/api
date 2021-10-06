@@ -1,5 +1,13 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v6.x.x_
+
+BUG FIXES:
+
+- Fix message queue send success trigger when send retry timed out.
+
 ## 5.0.0 (July 27, 2021)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v6.x.x_

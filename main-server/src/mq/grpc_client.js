@@ -392,7 +392,9 @@ export async function sendMessage(
             logger.warn({
               message: '[MQ Service] Send message retry timed out',
             });
-            return;
+            throw new CustomError({
+              message: 'Send message retry timed out',
+            });
           }
         }
 
