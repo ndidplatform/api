@@ -2,6 +2,7 @@
 
 # Install jq and curl as they are required by this script
 if ! which jq || ! which curl; then
+  sed -i -e 's/http:/https:/' /etc/apk/repositories
   mkdir -p /var/cache/apk
   apk update
   apk add --no-cache curl jq
