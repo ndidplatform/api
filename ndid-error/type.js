@@ -718,6 +718,11 @@ module.exports = {
     message: 'Request has too long purpose',
     clientError: true,
   },
+  SERVICE_PRICE_EFFECTIVE_DATETIME_BEFORE_ALLOWED: {
+    code: 20090,
+    message: 'Service price effective datetime is before allowed datetime',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
