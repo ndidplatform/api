@@ -10,7 +10,7 @@ BUG FIXES:
 
 OTHERS:
 
-- Bypass effective datetime check on ABCI app when AS sets service price since there's an issue with block time drift to the future preventing service price set with resonable effective datetime. (This is a temporary workaround until the issue is sorted out or ABCI app logic changes.)
+- Move effective datetime check from ABCI app to API when AS sets service price since there’s an issue with block time drift to the future.
 - Check effective datetime delay when AS sets service price (by comparing with current time on local machine).
 
 ## 5.0.0 (July 27, 2021)
