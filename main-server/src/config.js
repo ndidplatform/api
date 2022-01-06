@@ -212,7 +212,7 @@ export const asDataCompressMinLength =
     : 1000;
 
 // in bytes
-export const asDataMaxUncompressedLength = 20 * 1024 * 1024; // 20 MB
+export const asDataMaxUncompressedLength = 10 * 1024 * 1024; // 10 MB
 // in bytes
 export const asDataMaxLength = 3 * 1024 * 1024; // 3 MB
 
