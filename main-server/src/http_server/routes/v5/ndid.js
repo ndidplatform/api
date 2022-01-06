@@ -406,9 +406,10 @@ router.post(
   validateBody,
   async (req, res, next) => {
     try {
-      const { duration_second } = req.body;
+      const { service_id, duration_second } = req.body;
 
       await ndid.setServicePriceMinEffectiveDatetimeDelay({
+        service_id,
         duration_second,
       });
       res.status(204).end();

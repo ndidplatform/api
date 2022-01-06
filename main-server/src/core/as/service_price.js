@@ -69,7 +69,9 @@ export async function setServicePrice(
     }
 
     const servicePriceMinEffectiveDatetimeDelay =
-      await tendermintNdid.getServicePriceMinEffectiveDatetimeDelay();
+      await tendermintNdid.getServicePriceMinEffectiveDatetimeDelay({
+        service_id,
+      });
 
     if (
       new Date(effective_datetime).getTime() <

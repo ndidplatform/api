@@ -1272,9 +1272,11 @@ export async function getServicePriceCeiling(service_id) {
   }
 }
 
-export async function getServicePriceMinEffectiveDatetimeDelay() {
+export async function getServicePriceMinEffectiveDatetimeDelay({ service_id }) {
   try {
-    return await tendermint.query('GetServicePriceMinEffectiveDatetimeDelay');
+    return await tendermint.query('GetServicePriceMinEffectiveDatetimeDelay',{
+      service_id,
+    });
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get service price minimum effective datetime delay',
@@ -1561,7 +1563,7 @@ export async function setServicePriceCeiling(
 }
 
 export async function setServicePriceMinEffectiveDatetimeDelay(
-  { duration_second },
+  { service_id, duration_second },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
@@ -1571,7 +1573,10 @@ export async function setServicePriceMinEffectiveDatetimeDelay(
     await tendermint.transact({
       nodeId,
       fnName: 'SetServicePriceMinEffectiveDatetimeDelay',
-      params: { duration_second },
+      params: {
+        service_id,
+        duration_second,
+      },
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
@@ -1579,7 +1584,7 @@ export async function setServicePriceMinEffectiveDatetimeDelay(
   } catch (error) {
     throw new CustomError({
       message: 'Cannot set service price minimum effective datetime delay',
-    })
+    });
   }
 }
 
@@ -1606,7 +1611,7 @@ export async function createMessage(
     });
   }
 }
-  
+
 export async function getMessage({ messageId }) {
   try {
     return await tendermint.query('GetMessage', { message_id: messageId });
