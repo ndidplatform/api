@@ -116,13 +116,6 @@ async function setServicePriceInternalAsync(
   { synchronous = false } = {},
   { nodeId }
 ) {
-  // IMPORTANT: bypass effective datetime check on ABCI app since there's an issue with block time drift to the future
-  // by causing int64 overflow on time to msec conversion on ABCI side
-  // Remove this after the issue with ABCI app is sorted (removing check or else which requires chain migration).
-  effective_datetime = new Date(
-    new Date(effective_datetime).getTime() + 18446744073710
-  );
-
   try {
     if (!synchronous) {
       await tendermintNdid.setServicePrice(
