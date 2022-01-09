@@ -1,6 +1,6 @@
 # Changelog
 
-## TBD
+## 5.2.0 (January 9, 2022)
 
 OTHERS:
 
