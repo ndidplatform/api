@@ -2,6 +2,8 @@
 
 ## 5.2.0 (January 9, 2022)
 
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v6.x.x_
+
 OTHERS:
 
 - Change AS response maximum uncompressed data size from 20 MB to 10 MB.
