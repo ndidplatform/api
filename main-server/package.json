@@ -33,7 +33,7 @@
     "mustache": "^2.3.0",
     "ndid-error": "file:../ndid-error",
     "ndid-logger": "file:../ndid-logger",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^3.1.1",
     "prom-client": "^11.2.1",
     "protobufjs": "^6.8.8",
     "simple-backoff": "^1.1.0",
