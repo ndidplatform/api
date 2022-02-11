@@ -17,7 +17,7 @@
   "dependencies": {
     "@babel/runtime": "^7.12.1",
     "@grpc/proto-loader": "^0.3.0",
-    "ajv": "^6.4.0",
+    "ajv": "^6.12.3",
     "ajv-keywords": "^3.5.2",
     "asn1.js": "^5.0.1",
     "base64url": "^3.0.1",
