@@ -64,6 +64,15 @@ export async function handleMessageFromMqWithBlockWait(
   }
 
   const latestBlockHeight = tendermint.latestBlockHeight;
+  // TODO: Remove after cause for error (process before expecting block height) is found
+  logger.debug({
+    message: 'Determine wait for block',
+    latestBlockHeightType: typeof latestBlockHeight,
+    tendermintLatestBlockHeight: latestBlockHeight,
+    messageBlockHeightType: typeof message.height,
+    messageBlockHeight: message.height,
+    waitForBlock: latestBlockHeight <= message.height,
+  });
   if (latestBlockHeight <= message.height) {
     logger.debug({
       message: 'Saving message from MQ (wait for block)',
