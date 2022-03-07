@@ -548,10 +548,14 @@ export async function setServicePriceCeiling({
 }
 
 export async function setServicePriceMinEffectiveDatetimeDelay({
+  service_id,
   duration_second,
 }) {
   return await tendermintNdid.setServicePriceMinEffectiveDatetimeDelay(
-    { duration_second },
+    {
+      service_id,
+      duration_second,
+    },
     config.nodeId
   );
 }

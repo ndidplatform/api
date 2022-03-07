@@ -1,5 +1,14 @@
 # Changelog
 
+## TBD
+
+FEATURES:
+
+- API version 5.2
+  - Add query string parameter `service_id` to GET `/utility/service_price_min_effective_datetime_delay`. Calling the API without `service_id` will return a global / fallback value.
+  - NDID only APIs
+    - Add parameter `service_id` to POST `/ndid/set_service_price_min_effective_datetime_delay` to set service price minimum effective datetime delay by service ID. Calling the API without `service_id` will set a global / fallback value.
+
 ## 5.2.0 (January 9, 2022)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v6.x.x_

@@ -179,10 +179,15 @@ router.get('/service_price_ceiling', validateQuery, async (req, res, next) => {
 
 router.get(
   '/service_price_min_effective_datetime_delay',
+  validateQuery,
   async (req, res, next) => {
     try {
+      const { service_id } = req.query;
+
       const servicePriceMinEffectiveDatetimeDelay =
-        await coreServicePrice.getServicePriceMinEffectiveDatetimeDelay();
+        await coreServicePrice.getServicePriceMinEffectiveDatetimeDelay({
+          service_id,
+        });
 
       if (servicePriceMinEffectiveDatetimeDelay == null) {
         res.status(404).end();

@@ -38,8 +38,8 @@ export async function getServicePriceCeiling({ serviceId }) {
   }
 }
 
-export async function getServicePriceMinEffectiveDatetimeDelay() {
-  return await tendermintNdid.getServicePriceMinEffectiveDatetimeDelay();
+export async function getServicePriceMinEffectiveDatetimeDelay({ service_id }) {
+  return await tendermintNdid.getServicePriceMinEffectiveDatetimeDelay({ service_id });
 }
 
 export async function getServicePriceList({ nodeId, serviceId }) {

@@ -110,6 +110,14 @@ export default {
         required: ['service_id'],
       },
     },
+    '/utility/service_price_min_effective_datetime_delay': {
+      query: {
+        $schema: 'http://json-schema.org/draft-07/schema#',
+        properties: {
+          service_id: { type: 'string', minLength: 1 },
+        },
+      },
+    },
     '/utility/as/service_price/:service_id': {
       query: {
         $schema: 'http://json-schema.org/draft-07/schema#',

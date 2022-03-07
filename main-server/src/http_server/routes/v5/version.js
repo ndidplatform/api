@@ -20,4 +20,4 @@
  *
  */
 
-export const apiVersion = '5.1';
+export const apiVersion = '5.2';

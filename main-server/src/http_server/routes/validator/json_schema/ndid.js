@@ -297,6 +297,7 @@ export default {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
+          service_id: { type: 'string', minLength: 1 },
           duration_second: { type: 'integer', minimum: 1 },
         },
         required: ['duration_second'],
