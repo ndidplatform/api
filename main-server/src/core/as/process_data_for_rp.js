@@ -138,21 +138,23 @@ export async function processDataForRP(
     const nonErrorResponseCount = serviceInRequest.response_list.filter(
       ({ error_code }) => error_code == null
     ).length;
-    if (nonErrorResponseCount >= serviceInRequest.min_as) {
-      throw new CustomError({
-        errorType: errorType.ENOUGH_AS_RESPONSE,
-      });
-    }
-    const remainingPossibleResponseCount =
-      serviceInRequest.as_id_list.length -
-      serviceInRequest.response_list.length;
-    if (
-      nonErrorResponseCount + remainingPossibleResponseCount <
-      serviceInRequest.min_as
-    ) {
-      throw new CustomError({
-        errorType: errorType.ENOUGH_AS_RESPONSE,
-      });
+    if (serviceInRequest.min_as > 0) {
+      if (nonErrorResponseCount >= serviceInRequest.min_as) {
+        throw new CustomError({
+          errorType: errorType.ENOUGH_AS_RESPONSE,
+        });
+      }
+      const remainingPossibleResponseCount =
+        serviceInRequest.as_id_list.length -
+        serviceInRequest.response_list.length;
+      if (
+        nonErrorResponseCount + remainingPossibleResponseCount <
+        serviceInRequest.min_as
+      ) {
+        throw new CustomError({
+          errorType: errorType.ENOUGH_AS_RESPONSE,
+        });
+      }
     }
 
     let packedData;

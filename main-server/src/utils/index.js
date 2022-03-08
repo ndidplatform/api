@@ -482,7 +482,11 @@ export function getRequestStatus(requestDetail) {
     for (let i = 0; i < requestDetail.data_request_list.length; i++) {
       const service = requestDetail.data_request_list[i];
 
-      totalMinAsInDataRequestList += service.min_as;
+      if (service.min_as > 0) {
+        totalMinAsInDataRequestList += service.min_as;
+      } else {
+        totalMinAsInDataRequestList += service.as_id_list.length;
+      }
 
       const responseCount = service.response_list.reduce(
         (count, response) => {
@@ -508,10 +512,17 @@ export function getRequestStatus(requestDetail) {
       totalSignedDataCount += responseCount.signed;
       totalReceivedDataCount += responseCount.receivedData;
 
-      if (responseCount.error > service.as_id_list.length - service.min_as) {
-        // request can never be fulfilled
-        status = 'errored';
-        return status;
+      if (service.min_as > 0) {
+        if (responseCount.error > service.as_id_list.length - service.min_as) {
+          // request can never be fulfilled
+          status = 'errored';
+          return status;
+        }
+      } else {
+        if (responseCount.error > 0) {
+          status = 'complicated'; // TODO: check with NDID what status name should this be?
+          return status;
+        }
       }
     }
 

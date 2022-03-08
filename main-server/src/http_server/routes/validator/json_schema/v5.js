@@ -176,13 +176,13 @@ export default {
                     },
                     min_as: {
                       type: 'integer',
-                      minimum: 1,
+                      minimum: 0,
                     },
                     request_params: {
                       type: 'string',
                     },
                   },
-                  required: ['service_id', 'min_as'],
+                  required: ['service_id'],
                 },
                 uniqueItems: true,
               },
@@ -237,13 +237,13 @@ export default {
                     },
                     min_as: {
                       type: 'integer',
-                      minimum: 1,
+                      minimum: 0,
                     },
                     request_params: {
                       type: 'string',
                     },
                   },
-                  required: ['service_id', 'min_as'],
+                  required: ['service_id'],
                 },
                 uniqueItems: true,
               },
