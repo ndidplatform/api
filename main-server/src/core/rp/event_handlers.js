@@ -254,6 +254,8 @@ export async function processRequestUpdate(
         ...filteredRequestDetail
       } = requestDetail;
 
+      // FIXME: handle closed or timed out request
+
       requestDetailsForCallback = {
         ...filteredRequestDetail,
         response_list: requestDetail.response_list.map((response) => {

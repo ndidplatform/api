@@ -5,6 +5,7 @@
 FEATURES:
 
 - API version 5.2
+  - Allow `min_as` to be `0` or undefined (not provided) in data request list on create request (API: POST `/rp/requests/:namespace/:identifier`). All requested ASes are able to response to a data request.
   - Add query string parameter `service_id` to GET `/utility/service_price_min_effective_datetime_delay`. Calling the API without `service_id` will return a global / fallback value.
   - NDID only APIs
     - Add parameter `service_id` to POST `/ndid/set_service_price_min_effective_datetime_delay` to set service price minimum effective datetime delay by service ID. Calling the API without `service_id` will set a global / fallback value.

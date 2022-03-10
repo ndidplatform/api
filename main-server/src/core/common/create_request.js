@@ -194,9 +194,10 @@ async function checkAsListCondition({
 
   await Promise.all(
     data_request_list.map(async (dataRequest) => {
-      const { service_id, min_as } = dataRequest;
-      let { as_id_list } = dataRequest;
+      const { service_id } = dataRequest;
+      let { as_id_list, min_as } = dataRequest;
       if (as_id_list != null && as_id_list.length === 0) as_id_list = null;
+      if (min_as == null) min_as = 0;
 
       //all as_list offer the service
       let potential_as_list = await tendermintNdid.getAsNodesInfoByServiceId({
@@ -260,22 +261,28 @@ async function checkAsListCondition({
         });
       }
 
-      if (
-        as_id_list != null &&
-        potential_as_list.length !== as_id_list.length
-      ) {
-        throw new CustomError({
-          errorType: errorType.UNQUALIFIED_AS,
-          details: {
-            service_id,
-            min_ial,
-            min_aal,
-            min_as,
-          },
-        });
-      }
+      if (as_id_list != null) {
+        if (potential_as_list.length !== as_id_list.length) {
+          throw new CustomError({
+            errorType: errorType.UNQUALIFIED_AS,
+            details: {
+              service_id,
+              min_ial,
+              min_aal,
+              min_as,
+            },
+          });
+        }
+      } else {
+        if (potential_as_list.length === 0) {
+          throw new CustomError({
+            errorType: errorType.NOT_ENOUGH_AS,
+            details: {
+              service_id,
+            },
+          });
+        }
 
-      if (as_id_list == null) {
         dataRequest.as_id_list = potential_as_list.map(
           (node_info) => node_info.node_id
         );
@@ -293,10 +300,8 @@ async function checkWhitelistCondition({ node_id, idp_id_list }) {
     });
   }
 
-  const {
-    node_id_whitelist_active: active,
-    node_id_whitelist: whitelist,
-  } = rp_data;
+  const { node_id_whitelist_active: active, node_id_whitelist: whitelist } =
+    rp_data;
 
   if (active && idp_id_list.length == 0) {
     idp_id_list.push(...whitelist);
@@ -389,10 +394,7 @@ export async function createRequest(
   if (createRequestParams.idp_id_list == null) {
     createRequestParams.idp_id_list = [];
   }
-  let { 
-    node_id,
-    initial_salt,
-  } = createRequestParams;
+  let { node_id, initial_salt } = createRequestParams;
   const {
     mode,
     namespace,
@@ -465,23 +467,20 @@ export async function createRequest(
       idp_id_list,
     });
 
-    const {
-      receivers,
-      receiversWithSid,
-      receiversWithRefGroupCode,
-    } = await checkIdpListCondition({
-      namespace,
-      identifier,
-      min_ial,
-      min_aal,
-      min_idp,
-      idp_id_list,
-      mode,
-      supported_request_message_data_url_type_list: requestMessageMimeType
-        ? [requestMessageMimeType]
-        : undefined,
-      bypass_identity_check,
-    });
+    const { receivers, receiversWithSid, receiversWithRefGroupCode } =
+      await checkIdpListCondition({
+        namespace,
+        identifier,
+        min_ial,
+        min_aal,
+        min_idp,
+        idp_id_list,
+        mode,
+        supported_request_message_data_url_type_list: requestMessageMimeType
+          ? [requestMessageMimeType]
+          : undefined,
+        bypass_identity_check,
+      });
 
     if (data_request_list != null && data_request_list.length > 0) {
       await checkAsListCondition({
@@ -875,10 +874,8 @@ export async function createRequestInternalAsyncAfterBlockchain(
       }
       if (requestData.mode === 2 || requestData.mode === 3) {
         if (receiversWithRefGroupCode.length > 0) {
-          const reference_group_code = await tendermintNdid.getReferenceGroupCode(
-            namespace,
-            identifier
-          );
+          const reference_group_code =
+            await tendermintNdid.getReferenceGroupCode(namespace, identifier);
           const mqMessageWithRefGroupCode = {
             type: privateMessageType.CONSENT_REQUEST,
             reference_group_code,

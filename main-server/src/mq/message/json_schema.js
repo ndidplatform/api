@@ -121,10 +121,10 @@ export default {
                 },
                 min_as: {
                   type: 'integer',
-                  minimum: 1,
+                  minimum: 0,
                 },
               },
-              required: ['service_id', 'min_as'],
+              required: ['service_id'],
             },
           },
           data_request_params_salt_list: {
@@ -190,10 +190,10 @@ export default {
                 },
                 min_as: {
                   type: 'integer',
-                  minimum: 1,
+                  minimum: 0,
                 },
               },
-              required: ['service_id', 'min_as'],
+              required: ['service_id'],
             },
           },
           data_request_params_salt_list: {
