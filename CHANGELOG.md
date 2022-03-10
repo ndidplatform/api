@@ -1,5 +1,12 @@
 # Changelog
 
+## TBD
+
+FEATURES:
+
+- API version 5.2
+  - Allow `min_as` to be `0` or undefined (not provided) in data request list on create request (API: POST `/rp/requests/:namespace/:identifier`). All requested ASes are able to response to a data request.
+
 ## 5.2.0 (January 9, 2022)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v6.x.x_
