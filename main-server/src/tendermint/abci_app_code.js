@@ -142,6 +142,8 @@ import errorType from 'ndid-error/type';
 // NothingToUpdateIdentity                            uint32 = 118
 // NoPermissionForCallRPMethod                        uint32 = 119
 // DuplicateMessageID                                 uint32 = 120
+// RequestTypeAlreadyExists                           uint32 = 121
+// RequestTypeDoesNotExist                            uint32 = 122
 // UnknownError                                       uint32 = 999
 
 const codeMapping = {
@@ -265,6 +267,8 @@ const codeMapping = {
   118: errorType.ABCI_NOTHING_TO_UPDATE_IDENTITY,
   119: errorType.ABCI_NO_PERMISSION_TO_CALL_RP_METHOD,
   120: errorType.ABCI_DUPLICATE_MESSAGE_ID,
+  121: errorType.ABCI_REQUEST_TYPE_ALREADY_EXISTS,
+  122: errorType.ABCI_REQUEST_TYPE_DOES_NOT_EXIST,
 
   999: errorType.UNKNOWN_ERROR,
 };

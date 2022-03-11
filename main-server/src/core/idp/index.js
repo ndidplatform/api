@@ -279,6 +279,7 @@ export async function processMessage(nodeId, messageId, message) {
           })
         ),
         initial_salt: message.initial_salt,
+        request_type: requestDetail.request_type,
         creation_time: message.creation_time,
         creation_block_height: `${requestDetail.creation_chain_id}:${requestDetail.creation_block_height}`,
         request_timeout: requestDetail.request_timeout,

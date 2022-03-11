@@ -138,7 +138,7 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
-const DEFAULT_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.1'];
+const DEFAULT_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.2'];
 if (process.env.DEFAULT_API_VERSION != null) {
   if (
     !DEFAULT_API_VERSION_ALLOWED_VALUES.includes(
@@ -153,7 +153,7 @@ if (process.env.DEFAULT_API_VERSION != null) {
   }
 }
 
-const CALLBACK_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.1'];
+const CALLBACK_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.2'];
 if (process.env.CALLBACK_API_VERSION != null) {
   if (
     !CALLBACK_API_VERSION_ALLOWED_VALUES.includes(

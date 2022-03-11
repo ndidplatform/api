@@ -699,3 +699,19 @@ export async function removeErrorCode({ error_code, type }) {
     throw error;
   }
 }
+
+export async function addRequestType({ name }) {
+  try {
+    await tendermintNdid.addRequestType({ name }, config.nodeId);
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function removeRequestType({ name }) {
+  try {
+    await tendermintNdid.removeRequestType({ name }, config.nodeId);
+  } catch (error) {
+    throw error;
+  }
+}

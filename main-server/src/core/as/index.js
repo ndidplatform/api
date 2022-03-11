@@ -428,6 +428,7 @@ async function getDataAndSendBackToRP(
           response_signature_list: responseDetails.response_signature_list,
           max_aal: responseDetails.max_aal,
           max_ial: responseDetails.max_ial,
+          request_type: requestDetail.request_type,
           creation_time: request.creation_time,
           creation_block_height: `${requestDetail.creation_chain_id}:${requestDetail.creation_block_height}`,
           request_timeout: requestDetail.request_timeout,

@@ -1,5 +1,24 @@
 # Changelog
 
+## TBD
+
+FEATURES:
+
+- API version 5.2
+  - Add `request_type` to create request (API: POST `/rp/requests/:namespace/:identifier`) parameter.
+  - New API: GET `/utility/request_types`: Get valid request type list.
+  - Change response body JSON schema of GET `/utility/requests/:request_id`.
+    - Add `request_type` (string) property.
+  - Change body JSON schema of request status update callback API (type: `request_status`) on RP, IdP, and AS.
+    - Add `request_type` (string) property.
+  - Change body JSON schema of incoming request callback API (type: `incoming_request`) on IdP.
+    - Add `request_type` (string) property.
+  - Change body JSON schema of data request callback API (type: `data_request`) on AS.
+    - Add `request_type` (string) property.
+  - NDID only APIs
+    - New API: POST `/ndid/add_request_type`: Add request type
+    - New API: POST `/ndid/remove_request_type`: Remove request type
+
 ## 5.2.0 (January 9, 2022)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v6.x.x_

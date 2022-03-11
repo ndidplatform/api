@@ -192,6 +192,7 @@ export default {
               min_idp: { type: 'integer', minimum: 1 },
               request_timeout: { type: 'integer', minimum: 1 },
               initial_salt: { type: 'string' },
+              request_type: { type: 'string', minLength: 1 },
             },
             required: [
               'reference_id',
@@ -254,6 +255,7 @@ export default {
               request_timeout: { type: 'integer', minimum: 1 },
               bypass_identity_check: { type: 'boolean' },
               initial_salt: { type: 'string' },
+              request_type: { type: 'string', minLength: 1 },
             },
             required: [
               'reference_id',

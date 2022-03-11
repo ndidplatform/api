@@ -293,10 +293,8 @@ async function checkWhitelistCondition({ node_id, idp_id_list }) {
     });
   }
 
-  const {
-    node_id_whitelist_active: active,
-    node_id_whitelist: whitelist,
-  } = rp_data;
+  const { node_id_whitelist_active: active, node_id_whitelist: whitelist } =
+    rp_data;
 
   if (active && idp_id_list.length == 0) {
     idp_id_list.push(...whitelist);
@@ -370,6 +368,7 @@ async function checkWhitelistCondition({ node_id, idp_id_list }) {
  * @param {string} createRequestParams.purpose
  * @param {boolean} createRequestParams.bypass_identity_check
  * @param {string} createRequestParams.initial_salt
+ * @param {string} [createRequestParams.type]
  * @param {Object} options
  * @param {boolean} [options.synchronous]
  * @param {boolean} [options.sendCallbackToClient]
@@ -389,10 +388,7 @@ export async function createRequest(
   if (createRequestParams.idp_id_list == null) {
     createRequestParams.idp_id_list = [];
   }
-  let { 
-    node_id,
-    initial_salt,
-  } = createRequestParams;
+  let { node_id, initial_salt } = createRequestParams;
   const {
     mode,
     namespace,
@@ -408,6 +404,7 @@ export async function createRequest(
     request_timeout,
     purpose,
     bypass_identity_check,
+    request_type,
   } = createRequestParams;
   const { synchronous = false } = options;
   let {
@@ -432,6 +429,15 @@ export async function createRequest(
       throw new CustomError({
         errorType: errorType.UNSUPPORTED_MODE,
       });
+    }
+
+    if (request_type != null && request_type !== '') {
+      const validRequestTypeList = await tendermintNdid.getRequestTypeList();
+      if (!validRequestTypeList.includes(request_type)) {
+        throw new CustomError({
+          errorType: errorType.INVALID_REQUEST_TYPE,
+        });
+      }
     }
 
     const requestId = await cacheDb.getRequestIdByReferenceId(
@@ -465,23 +471,20 @@ export async function createRequest(
       idp_id_list,
     });
 
-    const {
-      receivers,
-      receiversWithSid,
-      receiversWithRefGroupCode,
-    } = await checkIdpListCondition({
-      namespace,
-      identifier,
-      min_ial,
-      min_aal,
-      min_idp,
-      idp_id_list,
-      mode,
-      supported_request_message_data_url_type_list: requestMessageMimeType
-        ? [requestMessageMimeType]
-        : undefined,
-      bypass_identity_check,
-    });
+    const { receivers, receiversWithSid, receiversWithRefGroupCode } =
+      await checkIdpListCondition({
+        namespace,
+        identifier,
+        min_ial,
+        min_aal,
+        min_idp,
+        idp_id_list,
+        mode,
+        supported_request_message_data_url_type_list: requestMessageMimeType
+          ? [requestMessageMimeType]
+          : undefined,
+        bypass_identity_check,
+      });
 
     if (data_request_list != null && data_request_list.length > 0) {
       await checkAsListCondition({
@@ -543,6 +546,7 @@ export async function createRequest(
       rp_id: node_id,
       request_message_salt,
       initial_salt,
+      request_type,
       reference_id,
       callback_url,
     };
@@ -617,6 +621,7 @@ async function createRequestInternalAsync(
     request_timeout,
     idp_id_list,
     purpose,
+    request_type,
   } = createRequestParams;
   const {
     synchronous = false,
@@ -664,6 +669,7 @@ async function createRequestInternalAsync(
       request_message_hash: utils.hash(request_message + request_message_salt),
       idp_id_list,
       purpose,
+      request_type,
     };
 
     if (!synchronous) {
@@ -875,10 +881,8 @@ export async function createRequestInternalAsyncAfterBlockchain(
       }
       if (requestData.mode === 2 || requestData.mode === 3) {
         if (receiversWithRefGroupCode.length > 0) {
-          const reference_group_code = await tendermintNdid.getReferenceGroupCode(
-            namespace,
-            identifier
-          );
+          const reference_group_code =
+            await tendermintNdid.getReferenceGroupCode(namespace, identifier);
           const mqMessageWithRefGroupCode = {
             type: privateMessageType.CONSENT_REQUEST,
             reference_group_code,
