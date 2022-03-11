@@ -400,4 +400,21 @@ router.get('/messages/:message_id', async (req, res, next) => {
   }
 });
 
+router.get('/request_types', async (req, res, next) => {
+  try {
+    const { prefix } = req.query;
+
+    const result = await tendermintNdid.getRequestTypeList({ prefix });
+
+    if (result == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(result);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

@@ -7,8 +7,20 @@ FEATURES:
 - API version 5.2
   - Allow `min_as` to be `0` or undefined (not provided) in data request list on create request (API: POST `/rp/requests/:namespace/:identifier`). All requested ASes are able to response to a data request.
   - Add query string parameter `service_id` to GET `/utility/service_price_min_effective_datetime_delay`. Calling the API without `service_id` will return a global / fallback value.
+  - Add `request_type` to create request (API: POST `/rp/requests/:namespace/:identifier`) parameter.
+  - New API: GET `/utility/request_types`: Get valid request type list.
+  - Change response body JSON schema of GET `/utility/requests/:request_id`.
+    - Add `request_type` (string) property.
+  - Change body JSON schema of request status update callback API (type: `request_status`) on RP, IdP, and AS.
+    - Add `request_type` (string) property.
+  - Change body JSON schema of incoming request callback API (type: `incoming_request`) on IdP.
+    - Add `request_type` (string) property.
+  - Change body JSON schema of data request callback API (type: `data_request`) on AS.
+    - Add `request_type` (string) property.
   - NDID only APIs
     - Add parameter `service_id` to POST `/ndid/set_service_price_min_effective_datetime_delay` to set service price minimum effective datetime delay by service ID. Calling the API without `service_id` will set a global / fallback value.
+    - New API: POST `/ndid/add_request_type`: Add request type
+    - New API: POST `/ndid/remove_request_type`: Remove request type
 
 ## 5.2.0 (January 9, 2022)
 

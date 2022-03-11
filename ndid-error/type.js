@@ -723,6 +723,11 @@ module.exports = {
     message: 'Service price effective datetime is before allowed datetime',
     clientError: true,
   },
+  INVALID_REQUEST_TYPE: {
+    code: 20091,
+    message: 'Invalid request type',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
@@ -1289,6 +1294,16 @@ module.exports = {
   ABCI_DUPLICATE_MESSAGE_ID: {
     code: 25084,
     message: 'Duplicate message ID',
+    clientError: true,
+  },
+  ABCI_REQUEST_TYPE_ALREADY_EXISTS: {
+    code: 25085,
+    message: 'Request type already exists',
+    clientError: true,
+  },
+  ABCI_REQUEST_TYPE_DOES_NOT_EXIST: {
+    code: 25086,
+    message: 'Request type does not exist',
     clientError: true,
   },
 

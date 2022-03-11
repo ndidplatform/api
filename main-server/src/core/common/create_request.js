@@ -375,6 +375,7 @@ async function checkWhitelistCondition({ node_id, idp_id_list }) {
  * @param {string} createRequestParams.purpose
  * @param {boolean} createRequestParams.bypass_identity_check
  * @param {string} createRequestParams.initial_salt
+ * @param {string} [createRequestParams.type]
  * @param {Object} options
  * @param {boolean} [options.synchronous]
  * @param {boolean} [options.sendCallbackToClient]
@@ -410,6 +411,7 @@ export async function createRequest(
     request_timeout,
     purpose,
     bypass_identity_check,
+    request_type,
   } = createRequestParams;
   const { synchronous = false } = options;
   let {
@@ -434,6 +436,15 @@ export async function createRequest(
       throw new CustomError({
         errorType: errorType.UNSUPPORTED_MODE,
       });
+    }
+
+    if (request_type != null && request_type !== '') {
+      const validRequestTypeList = await tendermintNdid.getRequestTypeList();
+      if (!validRequestTypeList.includes(request_type)) {
+        throw new CustomError({
+          errorType: errorType.INVALID_REQUEST_TYPE,
+        });
+      }
     }
 
     const requestId = await cacheDb.getRequestIdByReferenceId(
@@ -542,6 +553,7 @@ export async function createRequest(
       rp_id: node_id,
       request_message_salt,
       initial_salt,
+      request_type,
       reference_id,
       callback_url,
     };
@@ -616,6 +628,7 @@ async function createRequestInternalAsync(
     request_timeout,
     idp_id_list,
     purpose,
+    request_type,
   } = createRequestParams;
   const {
     synchronous = false,
@@ -663,6 +676,7 @@ async function createRequestInternalAsync(
       request_message_hash: utils.hash(request_message + request_message_salt),
       idp_id_list,
       purpose,
+      request_type,
     };
 
     if (!synchronous) {

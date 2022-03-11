@@ -436,5 +436,21 @@ export default {
         required: ['error_code', 'type'],
       },
     },
+    '/ndid/add_request_type': {
+      body: {
+        properties: {
+          name: { type: 'string', minLength: 1 },
+        },
+        required: ['name'],
+      },
+    },
+    '/ndid/remove_request_type': {
+      body: {
+        properties: {
+          name: { type: 'string', minLength: 1 },
+        },
+        required: ['name'],
+      },
+    },
   },
 };

@@ -1641,3 +1641,63 @@ export async function getMessageDetail({ messageId, height }) {
     });
   }
 }
+
+export async function addRequestType(
+  { name },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'AddRequestType',
+      params: { name },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot add request type',
+      cause: error,
+    });
+  }
+}
+
+export async function removeRequestType(
+  { name },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'RemoveRequestType',
+      params: { name },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove request type',
+      cause: error,
+    });
+  }
+}
+
+export async function getRequestTypeList({ prefix } = {}) {
+  try {
+    const result = await tendermint.query('GetRequestTypeList', { prefix });
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get request type list',
+      cause: error,
+    });
+  }
+}

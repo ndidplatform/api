@@ -54,6 +54,7 @@ router.post(
         request_timeout,
         bypass_identity_check,
         initial_salt,
+        request_type,
       } = req.body;
       const {
         [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
@@ -77,6 +78,7 @@ router.post(
           request_timeout,
           bypass_identity_check,
           initial_salt,
+          request_type,
         },
         {
           synchronous: false,

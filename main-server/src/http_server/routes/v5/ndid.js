@@ -612,4 +612,26 @@ router.post('/remove_error_code', validateBody, async (req, res, next) => {
   }
 });
 
+router.post('/add_request_type', validateBody, async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    await ndid.addRequestType({ name });
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/remove_request_type', validateBody, async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    await ndid.removeRequestType({ name });
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
