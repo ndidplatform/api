@@ -476,12 +476,15 @@ export function getRequestStatus(requestDetail) {
       }
     }
   } else {
+    let totalAsInDataRequestList = 0;
     let totalMinAsInDataRequestList = 0;
     let totalSignedDataCount = 0;
     let totalReceivedDataCount = 0;
     let totalErrorCount = 0;
     for (let i = 0; i < requestDetail.data_request_list.length; i++) {
       const service = requestDetail.data_request_list[i];
+
+      totalAsInDataRequestList += service.as_id_list.length;
 
       if (service.min_as > 0) {
         totalMinAsInDataRequestList += service.min_as;
@@ -529,7 +532,7 @@ export function getRequestStatus(requestDetail) {
     }
 
     // for min AS = 0 case
-    if (totalMinAsInDataRequestList === totalErrorCount) {
+    if (totalAsInDataRequestList === totalErrorCount) {
       status = 'errored';
     }
 
