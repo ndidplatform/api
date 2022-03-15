@@ -312,12 +312,8 @@ router.post('/disable_namespace', validateBody, async (req, res, next) => {
 
 router.post('/create_service', validateBody, async (req, res, next) => {
   try {
-    const {
-      service_id,
-      service_name,
-      data_schema,
-      data_schema_version,
-    } = req.body;
+    const { service_id, service_name, data_schema, data_schema_version } =
+      req.body;
 
     await ndid.addService({
       service_id,
@@ -334,12 +330,8 @@ router.post('/create_service', validateBody, async (req, res, next) => {
 
 router.post('/update_service', validateBody, async (req, res, next) => {
   try {
-    const {
-      service_id,
-      service_name,
-      data_schema,
-      data_schema_version,
-    } = req.body;
+    const { service_id, service_name, data_schema, data_schema_version } =
+      req.body;
 
     await ndid.updateService({
       service_id,
@@ -551,7 +543,8 @@ router.post(
   '/get_allowed_min_ial_for_register_identity_at_first_idp',
   async (req, res, next) => {
     try {
-      const min_ial = await ndid.getAllowedMinIalForRegisterIdentityAtFirstIdp();
+      const min_ial =
+        await ndid.getAllowedMinIalForRegisterIdentityAtFirstIdp();
       res.status(200).json({ min_ial });
       next();
     } catch (error) {
@@ -633,5 +626,39 @@ router.post('/remove_request_type', validateBody, async (req, res, next) => {
     next(error);
   }
 });
+
+router.post(
+  '/add_suppressed_identity_modification_notification_node',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { node_id } = req.body;
+      await ndid.addSuppressedIdentityModificationNotificationNode({
+        node_id,
+      });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/remove_suppressed_identity_modification_notification_node',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { node_id } = req.body;
+      await ndid.removeSuppressedIdentityModificationNotificationNode({
+        node_id,
+      });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

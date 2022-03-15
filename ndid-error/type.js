@@ -1306,6 +1306,21 @@ module.exports = {
     message: 'Request type does not exist',
     clientError: true,
   },
+  ABCI_SUPPRESSED_IDENTITY_MODIFICATION_NOTIFICATION_NODE_ID_ALREADY_EXISTS: {
+    code: 25087,
+    message: 'Suppressed identity modification notification node ID already exists',
+    clientError: true,
+  },
+  ABCI_SUPPRESSED_IDENTITY_MODIFICATION_NOTIFICATION_NODE_ID_DOES_NOT_EXIST: {
+    code: 25088,
+    message: 'Suppressed identity modification notification node ID does not exist',
+    clientError: true,
+  },
+  ABCI_NOT_IDP_NODE: {
+    code: 25089,
+    message: 'Not an IdP node',
+    clientError: true,
+  },
 
   ABCI_UNAUTHORIZED: {
     code: 35001,

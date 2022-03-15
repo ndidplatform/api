@@ -144,6 +144,9 @@ import errorType from 'ndid-error/type';
 // DuplicateMessageID                                 uint32 = 120
 // RequestTypeAlreadyExists                           uint32 = 121
 // RequestTypeDoesNotExist                            uint32 = 122
+// SuppressedIdentityModificationNotificationNodeIDAlreadyExists uint32 = 123
+// SuppressedIdentityModificationNotificationNodeIDDoesNotExist  uint32 = 124
+// NotIdPNode                                                    uint32 = 125
 // UnknownError                                       uint32 = 999
 
 const codeMapping = {
@@ -269,6 +272,9 @@ const codeMapping = {
   120: errorType.ABCI_DUPLICATE_MESSAGE_ID,
   121: errorType.ABCI_REQUEST_TYPE_ALREADY_EXISTS,
   122: errorType.ABCI_REQUEST_TYPE_DOES_NOT_EXIST,
+  123: errorType.ABCI_SUPPRESSED_IDENTITY_MODIFICATION_NOTIFICATION_NODE_ID_ALREADY_EXISTS,
+  124: errorType.ABCI_SUPPRESSED_IDENTITY_MODIFICATION_NOTIFICATION_NODE_ID_DOES_NOT_EXIST,
+  125: errorType.ABCI_NOT_IDP_NODE,
 
   999: errorType.UNKNOWN_ERROR,
 };

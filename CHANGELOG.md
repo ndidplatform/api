@@ -17,10 +17,18 @@ FEATURES:
     - Add `request_type` (string) property.
   - Change body JSON schema of data request callback API (type: `data_request`) on AS.
     - Add `request_type` (string) property.
+  - New API: GET `/utility/suppressed_identity_modification_notification_node_ids`: Get suppressed identity modification notification node ID list.
+  - New API: GET `/utility/suppressed_identity_modification_notification_node_ids/:node_id`: Check identity modification notification suppressed status by node ID.
   - NDID only APIs
     - Add parameter `service_id` to POST `/ndid/set_service_price_min_effective_datetime_delay` to set service price minimum effective datetime delay by service ID. Calling the API without `service_id` will set a global / fallback value.
     - New API: POST `/ndid/add_request_type`: Add request type
     - New API: POST `/ndid/remove_request_type`: Remove request type
+    - New API: POST `/ndid/add_suppressed_identity_modification_notification_node`: Add suppressed identity modification notification node (ID)
+    - New API: POST `/ndid/remove_suppressed_identity_modification_notification_node`: Remove suppressed identity modification notification node (ID)
+
+OTHERS:
+
+- Identity modification notification callback will not be sent if the modification action is done by node ID listed in suppressed identity modification node list.
 
 ## 5.2.0 (January 9, 2022)
 
