@@ -1,5 +1,20 @@
 # Changelog
 
+## TBD
+
+FEATURES:
+
+- API version 5.2
+  - New API: GET `/utility/suppressed_identity_modification_notification_node_ids`: Get suppressed identity modification notification node ID list.
+  - New API: GET `/utility/suppressed_identity_modification_notification_node_ids/:node_id`: Check identity modification notification suppressed status by node ID.
+  - NDID only APIs
+    - New API: POST `/ndid/add_suppressed_identity_modification_notification_node`: Add suppressed identity modification notification node (ID)
+    - New API: POST `/ndid/remove_suppressed_identity_modification_notification_node`: Remove suppressed identity modification notification node (ID)
+
+OTHERS:
+
+- Identity modification notification callback will not be sent if the modification action is done by node ID listed in suppressed identity modification node list.
+
 ## 5.2.0 (January 9, 2022)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v6.x.x_

@@ -699,3 +699,29 @@ export async function removeErrorCode({ error_code, type }) {
     throw error;
   }
 }
+
+export async function addSuppressedIdentityModificationNotificationNode({
+  node_id,
+}) {
+  try {
+    await tendermintNdid.addSuppressedIdentityModificationNotificationNode(
+      { node_id },
+      config.nodeId
+    );
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function removeSuppressedIdentityModificationNotificationNode({
+  node_id,
+}) {
+  try {
+    await tendermintNdid.removeSuppressedIdentityModificationNotificationNode(
+      { node_id },
+      config.nodeId
+    );
+  } catch (error) {
+    throw error;
+  }
+}

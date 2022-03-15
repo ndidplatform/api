@@ -435,5 +435,21 @@ export default {
         required: ['error_code', 'type'],
       },
     },
+    '/ndid/add_suppressed_identity_modification_notification_node': {
+      body: {
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+        },
+        required: ['node_id'],
+      },
+    },
+    '/ndid/remove_suppressed_identity_modification_notification_node': {
+      body: {
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+        },
+        required: ['node_id'],
+      },
+    },
   },
 };

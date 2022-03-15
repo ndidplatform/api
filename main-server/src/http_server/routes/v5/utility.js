@@ -395,4 +395,50 @@ router.get('/messages/:message_id', async (req, res, next) => {
   }
 });
 
+router.get(
+  '/suppressed_identity_modification_notification_node_ids',
+  async (req, res, next) => {
+    try {
+      const { prefix } = req.query;
+
+      const result =
+        await tendermintNdid.getSuppressedIdentityModificationNotificationNodeList(
+          { prefix }
+        );
+
+      if (result == null) {
+        res.status(404).end();
+      } else {
+        res.status(200).json(result);
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
+  '/suppressed_identity_modification_notification_node_ids/:node_id',
+  async (req, res, next) => {
+    try {
+      const { node_id } = req.params;
+
+      const result =
+        await tendermintNdid.isSuppressedIdentityModificationNotificationNode(
+          { node_id }
+        );
+
+      if (result == null) {
+        res.status(404).end();
+      } else {
+        res.status(200).json(result);
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default router;

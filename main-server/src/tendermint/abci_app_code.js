@@ -142,6 +142,9 @@ import errorType from 'ndid-error/type';
 // NothingToUpdateIdentity                            uint32 = 118
 // NoPermissionForCallRPMethod                        uint32 = 119
 // DuplicateMessageID                                 uint32 = 120
+// SuppressedIdentityModificationNotificationNodeIDAlreadyExists uint32 = 123
+// SuppressedIdentityModificationNotificationNodeIDDoesNotExist  uint32 = 124
+// NotIdPNode                                                    uint32 = 125
 // UnknownError                                       uint32 = 999
 
 const codeMapping = {
@@ -265,6 +268,9 @@ const codeMapping = {
   118: errorType.ABCI_NOTHING_TO_UPDATE_IDENTITY,
   119: errorType.ABCI_NO_PERMISSION_TO_CALL_RP_METHOD,
   120: errorType.ABCI_DUPLICATE_MESSAGE_ID,
+  123: errorType.ABCI_SUPPRESSED_IDENTITY_MODIFICATION_NOTIFICATION_NODE_ID_ALREADY_EXISTS,
+  124: errorType.ABCI_SUPPRESSED_IDENTITY_MODIFICATION_NOTIFICATION_NODE_ID_DOES_NOT_EXIST,
+  125: errorType.ABCI_NOT_IDP_NODE,
 
   999: errorType.UNKNOWN_ERROR,
 };

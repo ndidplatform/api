@@ -42,6 +42,15 @@ export async function handleIdentityModificationTransactions({
     return;
   }
 
+  const notificationSuppressed =
+    await tendermintNdid.isSuppressedIdentityModificationNotificationNode({
+      node_id: transaction.nodeId,
+    });
+
+  if (notificationSuppressed.suppressed) {
+    return;
+  }
+
   let referenceGroupCode;
   if (tendermintVersion.major === 0 && tendermintVersion.minor < 32) {
     referenceGroupCode = Buffer.from(

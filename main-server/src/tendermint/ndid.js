@@ -1579,7 +1579,7 @@ export async function setServicePriceMinEffectiveDatetimeDelay(
   } catch (error) {
     throw new CustomError({
       message: 'Cannot set service price minimum effective datetime delay',
-    })
+    });
   }
 }
 
@@ -1606,7 +1606,7 @@ export async function createMessage(
     });
   }
 }
-  
+
 export async function getMessage({ messageId }) {
   try {
     return await tendermint.query('GetMessage', { message_id: messageId });
@@ -1632,6 +1632,92 @@ export async function getMessageDetail({ messageId, height }) {
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get message details from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function addSuppressedIdentityModificationNotificationNode(
+  { node_id },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'AddSuppressedIdentityModificationNotificationNode',
+      params: { node_id },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot add suppressed identity modification notification node',
+      cause: error,
+    });
+  }
+}
+
+export async function removeSuppressedIdentityModificationNotificationNode(
+  { node_id },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'RemoveSuppressedIdentityModificationNotificationNode',
+      params: { node_id },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove suppressed identity modification notification node',
+      cause: error,
+    });
+  }
+}
+
+export async function getSuppressedIdentityModificationNotificationNodeList({
+  prefix,
+} = {}) {
+  try {
+    return await tendermint.query(
+      'GetSuppressedIdentityModificationNotificationNodeList',
+      {
+        prefix,
+      }
+    );
+  } catch (error) {
+    throw new CustomError({
+      message:
+        'Cannot get suppressed identity modification notification node list from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function isSuppressedIdentityModificationNotificationNode({
+  node_id,
+}) {
+  try {
+    return await tendermint.query(
+      'IsSuppressedIdentityModificationNotificationNode',
+      {
+        node_id,
+      }
+    );
+  } catch (error) {
+    throw new CustomError({
+      message:
+        'Cannot check is suppressed identity modification notification node from blockchain',
       cause: error,
     });
   }
