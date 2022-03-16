@@ -476,15 +476,11 @@ export function getRequestStatus(requestDetail) {
       }
     }
   } else {
-    let totalAsInDataRequestList = 0;
     let totalMinAsInDataRequestList = 0;
     let totalSignedDataCount = 0;
     let totalReceivedDataCount = 0;
-    let totalErrorCount = 0;
     for (let i = 0; i < requestDetail.data_request_list.length; i++) {
       const service = requestDetail.data_request_list[i];
-
-      totalAsInDataRequestList += service.as_id_list.length;
 
       if (service.min_as > 0) {
         totalMinAsInDataRequestList += service.min_as;
@@ -515,7 +511,6 @@ export function getRequestStatus(requestDetail) {
 
       totalSignedDataCount += responseCount.signed;
       totalReceivedDataCount += responseCount.receivedData;
-      totalErrorCount += responseCount.error;
 
       if (service.min_as > 0) {
         if (responseCount.error > service.as_id_list.length - service.min_as) {
@@ -524,16 +519,15 @@ export function getRequestStatus(requestDetail) {
           return status;
         }
       } else {
+        if (responseCount.error === service.as_id_list.length){
+          status = 'errored';
+          return status;
+        }
         if (responseCount.error > 0) {
           status = 'complicated'; // TODO: check with NDID what status name should this be?
           break;
         }
       }
-    }
-
-    // for min AS = 0 case
-    if (totalAsInDataRequestList === totalErrorCount) {
-      status = 'errored';
     }
 
     if (
