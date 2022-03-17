@@ -29,6 +29,7 @@ FEATURES:
 OTHERS:
 
 - Identity modification notification callback will not be sent if the modification action is done by node ID listed in suppressed identity modification node list.
+- Update dependencies.
 
 ## 5.2.0 (January 9, 2022)
 
