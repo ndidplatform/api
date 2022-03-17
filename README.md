@@ -11,8 +11,8 @@
 
 ## Prerequisites
 
-- Node.js 12 or later (Recommended: latest version of Node.js 12 LTS)
-- npm 6.12.0 or later
+- Node.js 12 or later (Recommended: latest version of Node.js 16 LTS)
+- npm 8 or later
 - Redis 3.2 or later
 
 ## Getting started

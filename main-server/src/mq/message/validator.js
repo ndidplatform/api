@@ -21,6 +21,7 @@
  */
 
 import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 
 import messageTypesObj from './type';
 import schemas from './json_schema';
@@ -33,6 +34,9 @@ const ajvOptions = {
 };
 
 const ajv = new Ajv(ajvOptions);
+addFormats(ajv);
+
+ajv.addSchema(schemas.defsSchema, 'defs');
 
 const messageTypes = Object.values(messageTypesObj);
 
@@ -48,10 +52,6 @@ function validate({ type, message }) {
 
   try {
     const dataJsonSchema = schemas[type];
-
-    ajv.removeSchema('defs');
-
-    ajv.addSchema(schemas.defsSchema, 'defs');
 
     const validate = ajv.compile(dataJsonSchema);
     const valid = validate(message);

@@ -186,7 +186,7 @@ export async function connectWS() {
  */
 function saveLatestBlockHeight(height) {
   if (latestProcessedBlockHeight < height) {
-    fs.writeFile(latestBlockHeightFilepath, height, (err) => {
+    fs.writeFile(latestBlockHeightFilepath, height.toString(), (err) => {
       if (err) {
         logger.error({
           message: 'Cannot write latest block height file',

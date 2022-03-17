@@ -21,13 +21,14 @@
  */
 
 import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 
 import CustomError from 'ndid-error/custom_error';
 
 // http://json-schema.org/draft-07/schema
 const metaSchema = {
   $schema: 'http://json-schema.org/draft-07/schema#',
-  $id: 'http://json-schema.org/draft-07/schema#',
+  // $id: 'http://json-schema.org/draft-07/schema#',
   title: 'Core schema meta-schema',
   definitions: {
     schemaArray: {
@@ -190,13 +191,15 @@ const ajvOptions = {
 };
 
 const ajv = new Ajv(ajvOptions);
+addFormats(ajv);
+
+const schemaValidate = ajv.compile(metaSchema);
 
 function validate(dataSchema) {
   try {
     const dataSchemaJson = JSON.parse(dataSchema);
 
-    const validate = ajv.compile(metaSchema);
-    const valid = validate(dataSchemaJson);
+    const valid = schemaValidate(dataSchemaJson);
 
     return {
       valid,

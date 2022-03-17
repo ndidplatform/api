@@ -55,7 +55,7 @@ export async function packData({
       // Convert data with data URL format to Buffer for transferring over P2P
       // In case it is base64 encoded, MQ message payload size is reduced
       const dataDataUrlPrefix = match[1];
-      dataBuffer = dataUrlParsedData.body;
+      dataBuffer = Buffer.from(dataUrlParsedData.body);
 
       metadata.base64_data_url = true;
       metadata.data_url_prefix = dataDataUrlPrefix;

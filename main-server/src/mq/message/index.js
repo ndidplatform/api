@@ -70,7 +70,7 @@ export async function serializeMqMessage(
           // Convert request message with data URL format to Buffer for transfer over MQ
           // In case it is base64 encoded, MQ message payload size is reduced
           requestMessageDataUrlPrefix = match[1];
-          requestMessageBuffer = dataUrlParsedRequestMessage.body;
+          requestMessageBuffer = Buffer.from(dataUrlParsedRequestMessage.body);
         }
       }
       if (!requestMessageDataUrlPrefix && !requestMessageBuffer) {

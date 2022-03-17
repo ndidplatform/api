@@ -29,8 +29,10 @@ import './env_var_validate';
 import path from 'path';
 import EventEmitter from 'events';
 
-import grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
+
+import zmq from 'zeromq';
 
 import MQSend from './mq_module/mq_send_controller';
 import MQRecv from './mq_module/mq_recv_controller';
@@ -287,28 +289,39 @@ async function initialize() {
     getInfo,
   });
 
-  server.bind(
-    SERVER_ADDRESS,
-    config.grpcSsl
-      ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
-          {
-            cert_chain: grpcSslCert,
-            private_key: grpcSslKey,
-          },
-        ])
-      : grpc.ServerCredentials.createInsecure()
-  );
+  const port = await new Promise((resolve, reject) => {
+    server.bindAsync(
+      SERVER_ADDRESS,
+      config.grpcSsl
+        ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
+            {
+              cert_chain: grpcSslCert,
+              private_key: grpcSslKey,
+            },
+          ])
+        : grpc.ServerCredentials.createInsecure(),
+      (err, port) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(port);
+      }
+    );
+  });
 
   server.start();
 
   logger.info({
     message: 'Server initialized',
+    grpcPort: port,
   });
 }
 
 logger.info({
   message: 'Starting server',
   version,
+  zmqVersion: zmq.version,
   NODE_ENV: process.env.NODE_ENV,
   config,
 });

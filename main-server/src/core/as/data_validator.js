@@ -21,6 +21,7 @@
  */
 
 import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import CustomError from 'ndid-error/custom_error';
@@ -31,6 +32,7 @@ const ajvOptions = {
 };
 
 const ajv = new Ajv(ajvOptions);
+addFormats(ajv);
 
 async function validate({ serviceId, data }) {
   let dataSchema, dataSchemaVersion;

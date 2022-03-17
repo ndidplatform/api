@@ -13,29 +13,29 @@
     "docker-down": "docker-compose -f docker/docker-compose.yml down"
   },
   "dependencies": {
-    "@babel/runtime": "^7.12.1",
-    "@grpc/proto-loader": "^0.3.0",
-    "dotenv": "^6.0.0",
-    "express": "^4.16.4",
-    "grpc": "^1.15.1",
+    "@babel/runtime": "^7.17.7",
+    "@grpc/grpc-js": "^1.5.8",
+    "@grpc/proto-loader": "^0.6.9",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3",
     "ndid-error": "file:../ndid-error",
     "ndid-logger": "file:../ndid-logger",
     "prom-client": "^11.2.1",
-    "source-map-support": "^0.5.19",
-    "zeromq": "^4.6.0"
+    "source-map-support": "^0.5.21",
+    "zeromq": "^5.2.8"
   },
   "devDependencies": {
-    "@babel/cli": "^7.12.1",
-    "@babel/core": "^7.12.3",
-    "@babel/eslint-parser": "^7.12.1",
-    "@babel/eslint-plugin": "^7.12.1",
-    "@babel/plugin-proposal-object-rest-spread": "^7.12.1",
-    "@babel/plugin-transform-runtime": "^7.12.1",
-    "@babel/preset-env": "^7.12.1",
-    "@babel/register": "^7.12.1",
-    "chai": "^4.1.2",
-    "chai-http": "^4.0.0",
-    "eslint": "^7.6.0",
-    "mocha": "^7.1.2"
+    "@babel/cli": "^7.17.6",
+    "@babel/core": "^7.17.7",
+    "@babel/eslint-parser": "^7.17.0",
+    "@babel/eslint-plugin": "^7.17.7",
+    "@babel/plugin-proposal-object-rest-spread": "^7.17.3",
+    "@babel/plugin-transform-runtime": "^7.17.0",
+    "@babel/preset-env": "^7.16.11",
+    "@babel/register": "^7.17.7",
+    "chai": "^4.3.6",
+    "chai-http": "^4.3.0",
+    "eslint": "^8.11.0",
+    "mocha": "^9.2.2"
   }
 }

@@ -23,7 +23,7 @@
 import path from 'path';
 import EventEmitter from 'events';
 
-import grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 
 import { getArgsProtobuf } from './message';
@@ -97,22 +97,32 @@ export async function initialize() {
     workerStoppingCall,
   });
 
-  server.bind(
-    MASTER_SERVER_ADDRESS,
-    config.grpcSsl
-      ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
-          {
-            cert_chain: grpcSslCert,
-            private_key: grpcSslKey,
-          },
-        ])
-      : grpc.ServerCredentials.createInsecure()
-  );
+  const port = await new Promise((resolve, reject) => {
+    server.bindAsync(
+      MASTER_SERVER_ADDRESS,
+      config.grpcSsl
+        ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
+            {
+              cert_chain: grpcSslCert,
+              private_key: grpcSslKey,
+            },
+          ])
+        : grpc.ServerCredentials.createInsecure(),
+      (err, port) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(port);
+      }
+    );
+  });
   server.start();
 
   logger.info({
     message: 'Master gRPC server initialzed',
     masterId,
+    port,
   });
 }
 

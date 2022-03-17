@@ -9,12 +9,12 @@
     "test:es6": "mocha src/**/*.test.js --require @babel/register --require source-map-support/register"
   },
   "dependencies": {
-    "pino": "^5.11.1",
-    "pino-pretty": "^2.5.0"
+    "pino": "^6.14.0",
+    "pino-pretty": "^6.0.0"
   },
   "devDependencies": {
-    "chai": "^4.1.2",
-    "eslint": "^7.6.0",
-    "mocha": "^7.1.2"
+    "chai": "^4.3.6",
+    "eslint": "^8.11.0",
+    "mocha": "^9.2.2"
   }
 }
