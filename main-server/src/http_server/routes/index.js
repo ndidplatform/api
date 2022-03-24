@@ -62,9 +62,9 @@ if (config.env === 'development') {
       res.end(chunk, encoding);
 
       const isJSON =
-        res._headers &&
-        res._headers['content-type'] &&
-        res._headers['content-type'].indexOf('json') >= 0;
+        res.getHeaders() &&
+        res.getHeaders()['content-type'] &&
+        res.getHeaders()['content-type'].indexOf('json') >= 0;
 
       const responseBodyString = chunk && chunk.toString();
       let responseBody;
