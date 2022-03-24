@@ -26,6 +26,12 @@ FEATURES:
     - New API: POST `/ndid/add_suppressed_identity_modification_notification_node`: Add suppressed identity modification notification node (ID)
     - New API: POST `/ndid/remove_suppressed_identity_modification_notification_node`: Remove suppressed identity modification notification node (ID)
 
+IMPROVEMENTS:
+
+- Support Node.js 16.
+- Support Tendermint 0.35.
+  - Block result spec change.
+
 OTHERS:
 
 - Identity modification notification callback will not be sent if the modification action is done by node ID listed in suppressed identity modification node list.
