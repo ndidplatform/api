@@ -64,6 +64,7 @@ export default {
     '/utility/idp': {
       query: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           min_ial: {
             $ref: 'defs#/definitions/ialString',
@@ -84,6 +85,7 @@ export default {
     '/utility/idp/:namespace/:identifier': {
       query: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           min_ial: {
             $ref: 'defs#/definitions/ialString',
@@ -104,6 +106,7 @@ export default {
     '/utility/service_price_ceiling': {
       query: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           service_id: { type: 'string', minLength: 1 },
         },
@@ -113,6 +116,7 @@ export default {
     '/utility/service_price_min_effective_datetime_delay': {
       query: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           service_id: { type: 'string', minLength: 1 },
         },
@@ -121,6 +125,7 @@ export default {
     '/utility/as/service_price/:service_id': {
       query: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
         },
@@ -129,6 +134,7 @@ export default {
     '/idp/request_message_padded_hash': {
       query: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           request_id: { type: 'string', minLength: 1 },
@@ -142,6 +148,7 @@ export default {
     '/rp/requests/:namespace/:identifier': {
       params: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },
@@ -153,6 +160,7 @@ export default {
         anyOf: [
           // Mode 1
           {
+            type: 'object',
             properties: {
               node_id: { type: 'string', minLength: 1 },
               reference_id: { type: 'string', minLength: 1 },
@@ -215,6 +223,7 @@ export default {
           },
           // Mode 2,3
           {
+            type: 'object',
             properties: {
               node_id: { type: 'string', minLength: 1 },
               reference_id: { type: 'string', minLength: 1 },
@@ -283,6 +292,7 @@ export default {
     '/rp/request_close': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -295,6 +305,7 @@ export default {
     '/rp/callback': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           error_url: {
@@ -306,6 +317,7 @@ export default {
     '/rp/messages': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -321,6 +333,7 @@ export default {
     '/idp/callback': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           incoming_request_url: {
@@ -341,6 +354,7 @@ export default {
     '/idp/response': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -370,6 +384,7 @@ export default {
     '/idp/error_response': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -383,6 +398,7 @@ export default {
     '/as/service/:service_id': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -405,6 +421,7 @@ export default {
     '/as/payment_received_log/:request_id/:service_id': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
         },
@@ -413,6 +430,7 @@ export default {
     '/as/service_price/:service_id': {
       params: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           service_id: { type: 'string', minLength: 1 },
         },
@@ -420,6 +438,7 @@ export default {
       },
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -453,6 +472,7 @@ export default {
     '/as/data/:request_id/:service_id': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -465,6 +485,7 @@ export default {
     '/as/error/:request_id/:service_id': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -477,6 +498,7 @@ export default {
     '/as/callback': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           incoming_request_status_update_url: {
@@ -491,6 +513,7 @@ export default {
     '/proxy/callback': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           error_url: {
             $ref: 'defs#/definitions/url',
@@ -501,6 +524,7 @@ export default {
     '/node/create': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
@@ -534,6 +558,7 @@ export default {
     '/node/update': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -587,6 +612,7 @@ export default {
     '/node/callback': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           sign_url: {
@@ -621,6 +647,7 @@ export default {
     '/identity/': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -662,6 +689,7 @@ export default {
     '/identity/:namespace/:identifier': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -686,6 +714,7 @@ export default {
     '/identity/:namespace/:identifier/ial': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -698,6 +727,7 @@ export default {
     '/identity/:namespace/:identifier/lial': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -710,6 +740,7 @@ export default {
     '/identity/:namespace/:identifier/laal': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -722,6 +753,7 @@ export default {
     '/identity/:namespace/:identifier/accessors': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -742,6 +774,7 @@ export default {
     '/identity/:namespace/:identifier/accessor_revoke': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -755,6 +788,7 @@ export default {
     '/identity/:namespace/:identifier/accessor_revoke_and_add': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -777,6 +811,7 @@ export default {
     '/identity/:namespace/:identifier/association_revoke': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -789,6 +824,7 @@ export default {
     '/identity/:namespace/:identifier/mode': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -801,6 +837,7 @@ export default {
     '/identity/:namespace/:identifier/removal_from_reference_group': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -813,6 +850,7 @@ export default {
     '/identity/:namespace/:identifier/reference_group_merge': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
@@ -832,6 +870,7 @@ export default {
     '/identity/:namespace/:identifier/endorsement': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           // TODO: After v1.0
@@ -841,6 +880,7 @@ export default {
     '/identity_request/request_close': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },

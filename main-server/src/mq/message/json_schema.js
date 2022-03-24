@@ -33,6 +33,7 @@ export default {
     $schema: 'http://json-schema.org/draft-07/schema#',
     anyOf: [
       {
+        type: 'object',
         properties: {
           request_id: { type: 'string', minLength: 1 },
           as_id: { type: 'string', minLength: 1 },
@@ -71,6 +72,7 @@ export default {
       },
       // Error response
       {
+        type: 'object',
         properties: {
           request_id: { type: 'string', minLength: 1 },
           as_id: { type: 'string', minLength: 1 },
@@ -95,6 +97,7 @@ export default {
     anyOf: [
       // Mode 1
       {
+        type: 'object',
         properties: {
           mode: { type: 'number', enum: [1] },
           namespace: { type: 'string', minLength: 1 },
@@ -164,6 +167,7 @@ export default {
       },
       // Mode 2,3
       {
+        type: 'object',
         properties: {
           mode: { type: 'number', enum: [2, 3] },
           reference_group_code: { type: 'string', minLength: 1 },
@@ -259,6 +263,7 @@ export default {
   },
   [messageTypes.DATA_REQUEST]: {
     $schema: 'http://json-schema.org/draft-07/schema#',
+    type: 'object',
     properties: {
       request_id: { type: 'string', minLength: 1 },
       mode: { type: 'number', enum: [1, 2, 3] },
@@ -318,6 +323,7 @@ export default {
     anyOf: [
       // Mode 1
       {
+        type: 'object',
         properties: {
           request_id: { type: 'string', minLength: 1 },
           mode: { type: 'number', enum: [1] },
@@ -329,6 +335,7 @@ export default {
       },
       // Mode 2,3
       {
+        type: 'object',
         properties: {
           request_id: { type: 'string', minLength: 1 },
           mode: { type: 'number', enum: [2, 3] },
@@ -348,6 +355,7 @@ export default {
       },
       // Error response
       {
+        type: 'object',
         properties: {
           request_id: { type: 'string', minLength: 1 },
           idp_id: { type: 'string', minLength: 1 },

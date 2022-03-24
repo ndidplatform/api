@@ -188,6 +188,7 @@ const metaSchema = {
 
 const ajvOptions = {
   allErrors: true,
+  allowUnionTypes: true,
 };
 
 const ajv = new Ajv(ajvOptions);

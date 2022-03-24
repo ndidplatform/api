@@ -61,6 +61,7 @@ export default {
     '/ndid/init_ndid': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           public_key: { type: 'string', minLength: 1 },
           public_key_type: { $ref: 'defs#/definitions/keyType' },
@@ -79,6 +80,7 @@ export default {
     '/ndid/register_node': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           node_name: { type: 'string', minLength: 1 },
@@ -115,6 +117,7 @@ export default {
     '/ndid/update_node': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           node_name: { type: 'string', minLength: 1 },
@@ -134,6 +137,7 @@ export default {
     '/ndid/enable_node': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
         },
@@ -143,6 +147,7 @@ export default {
     '/ndid/disable_node': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
         },
@@ -152,6 +157,7 @@ export default {
     '/ndid/set_node_token': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           amount: { type: 'number', minimum: 0 },
@@ -162,6 +168,7 @@ export default {
     '/ndid/add_node_token': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           amount: { type: 'number', minimum: 0 },
@@ -172,6 +179,7 @@ export default {
     '/ndid/reduce_node_token': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           amount: { type: 'number', minimum: 0 },
@@ -182,6 +190,7 @@ export default {
     '/ndid/create_namespace': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           namespace: { type: 'string', minLength: 1 },
           description: { type: 'string' },
@@ -200,6 +209,7 @@ export default {
     '/ndid/update_namespace': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           namespace: { type: 'string', minLength: 1 },
           description: { type: 'string' },
@@ -218,6 +228,7 @@ export default {
     '/ndid/enable_namespace': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           namespace: { type: 'string', minLength: 1 },
         },
@@ -227,6 +238,7 @@ export default {
     '/ndid/disable_namespace': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           namespace: { type: 'string', minLength: 1 },
         },
@@ -236,6 +248,7 @@ export default {
     '/ndid/create_service': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           service_id: { type: 'string', minLength: 1 },
           service_name: { type: 'string', minLength: 1 },
@@ -246,6 +259,7 @@ export default {
     '/ndid/update_service': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           service_id: { type: 'string', minLength: 1 },
           service_name: { type: 'string', minLength: 1 },
@@ -256,6 +270,7 @@ export default {
     '/ndid/enable_service': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           service_id: { type: 'string', minLength: 1 },
         },
@@ -265,6 +280,7 @@ export default {
     '/ndid/disable_service': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           service_id: { type: 'string', minLength: 1 },
         },
@@ -274,6 +290,7 @@ export default {
     '/ndid/set_service_price_ceiling': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           service_id: { type: 'string', minLength: 1 },
           price_ceiling_by_currency_list: {
@@ -296,6 +313,7 @@ export default {
     '/ndid/set_service_price_min_effective_datetime_delay': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           service_id: { type: 'string', minLength: 1 },
           duration_second: { type: 'integer', minimum: 1 },
@@ -306,6 +324,7 @@ export default {
     '/ndid/set_validator': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           public_key: { type: 'string', minLength: 1 },
           power: { type: 'number', minimum: 0 },
@@ -316,6 +335,7 @@ export default {
     '/ndid/approve_service': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           service_id: { type: 'string', minLength: 1 },
@@ -326,6 +346,7 @@ export default {
     '/ndid/enable_service_destination': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           service_id: { type: 'string', minLength: 1 },
@@ -336,6 +357,7 @@ export default {
     '/ndid/disable_service_destination': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           service_id: { type: 'string', minLength: 1 },
@@ -346,6 +368,7 @@ export default {
     '/ndid/add_node_to_proxy_node': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           proxy_node_id: { type: 'string', minLength: 1 },
@@ -357,6 +380,7 @@ export default {
     '/ndid/update_node_proxy_node': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
           proxy_node_id: { type: 'string', minLength: 1 },
@@ -368,6 +392,7 @@ export default {
     '/ndid/remove_node_from_proxy_node': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
         },
@@ -377,6 +402,7 @@ export default {
     '/ndid/set_last_block': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           block_height: { type: 'integer', minimum: -1 },
         },
@@ -386,6 +412,7 @@ export default {
     '/ndid/set_allowed_mode_list': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           purpose: { type: 'string' },
           allowed_mode_list: {
@@ -403,6 +430,7 @@ export default {
     '/ndid/set_allowed_min_ial_for_register_identity_at_first_idp': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           min_ial: { $ref: 'defs#/definitions/ial' },
         },
@@ -412,6 +440,7 @@ export default {
     '/ndid/get_node_id_list': {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
+        type: 'object',
         properties: {
           role: { type: 'string', enum: ['', 'rp', 'idp', 'as'] },
         },
@@ -419,6 +448,7 @@ export default {
     },
     '/ndid/add_error_code': {
       body: {
+        type: 'object',
         properties: {
           error_code: { $ref: 'defs#/definitions/errorCode' },
           type: { type: 'string', enum: ['idp', 'as'] },
@@ -429,6 +459,7 @@ export default {
     },
     '/ndid/remove_error_code': {
       body: {
+        type: 'object',
         properties: {
           error_code: { $ref: 'defs#/definitions/errorCode' },
           type: { type: 'string', enum: ['idp', 'as'] },
@@ -438,6 +469,7 @@ export default {
     },
     '/ndid/add_request_type': {
       body: {
+        type: 'object',
         properties: {
           name: { type: 'string', minLength: 1 },
         },
@@ -446,6 +478,7 @@ export default {
     },
     '/ndid/remove_request_type': {
       body: {
+        type: 'object',
         properties: {
           name: { type: 'string', minLength: 1 },
         },
@@ -454,6 +487,7 @@ export default {
     },
     '/ndid/add_suppressed_identity_modification_notification_node': {
       body: {
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
         },
@@ -462,6 +496,7 @@ export default {
     },
     '/ndid/remove_suppressed_identity_modification_notification_node': {
       body: {
+        type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
         },
