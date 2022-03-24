@@ -52,20 +52,26 @@ export async function handleIdentityModificationTransactions({
   }
 
   let referenceGroupCode;
-  if (tendermintVersion.major === 0 && tendermintVersion.minor < 32) {
-    referenceGroupCode = Buffer.from(
-      transaction.deliverTxResult.tags.find(
-        (tag) => tag.key === reference_group_code_base64
-      ).value,
-      'base64'
-    ).toString();
-  } else {
+  if (tendermintVersion.major === 0 && tendermintVersion.minor >= 35) {
+    referenceGroupCode = transaction.deliverTxResult.events
+      .find((event) => event.type === 'did.result')
+      .attributes.find(
+        (attribute) => attribute.key === 'reference_group_code'
+      ).value;
+  } else if (tendermintVersion.major === 0 && tendermintVersion.minor >= 33) {
     referenceGroupCode = Buffer.from(
       transaction.deliverTxResult.events
         .find((event) => event.type === 'did.result')
         .attributes.find(
           (attribute) => attribute.key === reference_group_code_base64
         ).value,
+      'base64'
+    ).toString();
+  } else {
+    referenceGroupCode = Buffer.from(
+      transaction.deliverTxResult.tags.find(
+        (tag) => tag.key === reference_group_code_base64
+      ).value,
       'base64'
     ).toString();
   }

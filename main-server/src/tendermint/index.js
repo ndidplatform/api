@@ -813,7 +813,17 @@ async function getParsedTxsInBlocks(fromHeight, toHeight, withTxHash) {
       (transaction, index) => {
         let deliverTxResult;
         let success;
-        if (tendermintVersion.major === 0 && tendermintVersion.minor >= 33) {
+        if (tendermintVersion.major === 0 && tendermintVersion.minor >= 35) {
+          deliverTxResult = blockResults[blockIndex].txs_results[index];
+          const successAttribute = deliverTxResult.events
+            .find((event) => event.type === 'did.result')
+            .attributes.find((attribute) => attribute.key === 'success');
+          if (successAttribute) {
+            success = successAttribute.value === 'true';
+          } else {
+            success = false;
+          }
+        } else if (tendermintVersion.major === 0 && tendermintVersion.minor >= 33) {
           deliverTxResult = blockResults[blockIndex].txs_results[index];
           const successAttribute = deliverTxResult.events
             .find((event) => event.type === 'did.result')
