@@ -1,11 +1,11 @@
-FROM node:12-alpine3.11 as build
+FROM node:16-alpine3.15 as build
 
 WORKDIR /tmp
 
-RUN sed -i -e 's/http:/https:/' /etc/apk/repositories
+# RUN sed -i -e 's/http:/https:/' /etc/apk/repositories
 
 RUN apk update && apk add --no-cache --virtual .build-deps \
-  python \
+  python3 \
   g++ \
   make \
   git \
@@ -29,13 +29,13 @@ RUN npm run build && npm prune --production
 RUN apk del .build-deps
 
 
-FROM node:12-alpine3.11
+FROM node:16-alpine3.15
 LABEL maintainer="NDID IT Team <it@ndid.co.th>"
 
 # Set umask to 027
 RUN umask 027 && echo "umask 0027" >> /etc/profile
 
-RUN sed -i -e 's/http:/https:/' /etc/apk/repositories
+# RUN sed -i -e 's/http:/https:/' /etc/apk/repositories
 COPY --from=build /var/cache/apk /var/cache/apk
 RUN apk add --no-cache bash openssl && rm -rf /var/cache/apk
 
