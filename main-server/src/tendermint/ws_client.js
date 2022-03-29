@@ -240,8 +240,8 @@ export default class TendermintWsClient extends EventEmitter {
   }
 
   tx(hash, prove) {
-    // return this._call(null, 'tx', { hash: hash.toString('base64'), prove }); // for version 0.34.x and below ?
-    return this._call(null, 'tx', { hash: hash.toString('hex'), prove });
+    return this._call(null, 'tx', { hash: hash.toString('base64'), prove }); // for version 0.34.x and below
+    // return this._call(null, 'tx', { hash: hash.toString('hex'), prove }); // for version >= 0.35
   }
 
   abciQuery(data, height) {
