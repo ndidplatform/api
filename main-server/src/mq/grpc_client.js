@@ -160,8 +160,13 @@ export async function initialize({
       'grpc.keepalive_time_ms': config.grpcPingInterval,
       'grpc.keepalive_timeout_ms': config.grpcPingTimeout,
       'grpc.keepalive_permit_without_calls': 1,
-      'grpc.http2.max_pings_without_data': 0,
-      'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
+
+      // options for C-based version (not supported on pure JavaScript version)
+      // 'grpc.http2.max_pings_without_data': 0,
+      // 'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
+
+      // option for pure JavaScript version
+      'grpc-node.max_session_memory': 100,
     }
   );
   await waitForReady(client);
