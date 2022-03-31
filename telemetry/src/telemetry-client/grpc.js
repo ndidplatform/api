@@ -20,7 +20,7 @@
  *
  */
 
-import * as grpc from '@grpc/grpc-js';
+import * as grpc from 'grpc';
 import path from 'path';
 import fs from 'fs';
 import tls from 'tls';

@@ -12,8 +12,8 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@babel/runtime": "^7.17.7",
-    "@grpc/grpc-js": "^1.5.8",
     "@grpc/proto-loader": "^0.6.9",
+    "grpc": "^1.24.11",
     "ioredis": "^4.28.5",
     "ndid-logger": "file:../ndid-logger",
     "simple-backoff": "^1.1.0",
