@@ -68,7 +68,7 @@ export default class MQSendSocket extends EventEmitter {
       count++;
       this.emit('new_socket_connection', count);
       if (count > maxConn) {
-        console.log(count);
+        // console.log(count);
         maxConn = count;
       }
       this.socketListByDest[destKey].push(newSocket);
