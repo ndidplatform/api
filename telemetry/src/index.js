@@ -39,7 +39,10 @@ const client = new TelemetryClient({
 
 // get list of all node IDs
 const nodeIds = config.nodeIds.split(',');
-logger.info('List of monitored nodes:', nodeIds);
+logger.info({
+  message: 'List of monitored nodes',
+  nodeIds,
+});
 
 const intervalPerNode = config.flushIntervalMs / nodeIds.length;
 

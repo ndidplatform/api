@@ -40,13 +40,19 @@ export default class TelemetryClient {
     if (token == null) {
       // no token for this nodeId
       // cannot send the data
-      logger.warn(`No auth token of node ID: "${nodeId}"; Unable to send`);
+      logger.warn({
+        message: `No auth token of node ID: "${nodeId}"; Unable to send`,
+      });
       this.tokenManager.requestNewToken(nodeId);
       return false;
     }
 
     try {
-      logger.info('Sending', logs.length, 'main version logs of', nodeId);
+      logger.info({
+        message: 'Sending main version logs',
+        count: logs.length,
+        nodeId,
+      });
       const result = await this.client.sendMainVersionLogs({
         nodeId,
         token,
@@ -55,7 +61,11 @@ export default class TelemetryClient {
 
       // incase the operation is invalid, remove the token manager and try the operation again
       if (this.client.isTokenInvalid(result)) {
-        logger.info('Invalidating token of node', nodeId, token);
+        logger.info({
+          message: 'Invalidating token',
+          nodeId,
+          token,
+        });
         await this.tokenManager.invalidateToken(nodeId, token);
         return this.receiveMainVersionLogData(nodeId, logs);
       }
@@ -77,13 +87,19 @@ export default class TelemetryClient {
     if (token == null) {
       // no token for this nodeId
       // cannot send the data
-      logger.warn(`No auth token of node ID: "${nodeId}"; Unable to send`);
+      logger.warn({
+        message: `No auth token of node ID: "${nodeId}"; Unable to send`,
+      });
       this.tokenManager.requestNewToken(nodeId);
       return false;
     }
 
     try {
-      logger.info('Sending', logs.length, 'MQ service version logs of', nodeId);
+      logger.info({
+        messsage: 'Sending MQ service version logs',
+        count: logs.length,
+        nodeId,
+      });
       const result = await this.client.sendMQServiceVersionLogs({
         nodeId,
         token,
@@ -92,7 +108,11 @@ export default class TelemetryClient {
 
       // incase the operation is invalid, remove the token manager and try the operation again
       if (this.client.isTokenInvalid(result)) {
-        logger.info('Invalidating token of node', nodeId, token);
+        logger.info({
+          message: 'Invalidating token',
+          nodeId,
+          token,
+        });
         await this.tokenManager.invalidateToken(nodeId, token);
         return this.receiveMainVersionLogData(nodeId, logs);
       }
@@ -114,18 +134,19 @@ export default class TelemetryClient {
     if (token == null) {
       // no token for this nodeId
       // cannot send the data
-      logger.warn(`No auth token of node ID: "${nodeId}"; Unable to send`);
+      logger.warn({
+        message: `No auth token of node ID: "${nodeId}"; Unable to send`,
+      });
       this.tokenManager.requestNewToken(nodeId);
       return false;
     }
 
     try {
-      logger.info(
-        'Sending',
-        logs.length,
-        'Tendermint and ABCI version logs of',
-        nodeId
-      );
+      logger.info({
+        message: 'Sending Tendermint and ABCI version logs',
+        count: logs.length,
+        nodeId,
+      });
       const result = await this.client.sendTendermintAndABCIVersionLogs({
         nodeId,
         token,
@@ -134,7 +155,11 @@ export default class TelemetryClient {
 
       // incase the operation is invalid, remove the token manager and try the operation again
       if (this.client.isTokenInvalid(result)) {
-        logger.info('Invalidating token of node', nodeId, token);
+        logger.info({
+          message: 'Invalidating token',
+          nodeId,
+          token,
+        });
         await this.tokenManager.invalidateToken(nodeId, token);
         return this.receiveMainVersionLogData(nodeId, logs);
       }
@@ -156,13 +181,19 @@ export default class TelemetryClient {
     if (token == null) {
       // no token for this nodeId
       // cannot send the data
-      logger.warn(`No auth token of node ID: "${nodeId}"; Unable to send`);
+      logger.warn({
+        message: `No auth token of node ID: "${nodeId}"; Unable to send`,
+      });
       this.tokenManager.requestNewToken(nodeId);
       return false;
     }
 
     try {
-      logger.info('Sending', events.length, 'request events of', nodeId);
+      logger.info({
+        message: 'Sending request events',
+        count: events.length,
+        nodeId,
+      });
       const result = await this.client.sendRequestEvents({
         nodeId,
         token,
@@ -171,7 +202,11 @@ export default class TelemetryClient {
 
       // incase the operation is invalid, remove the token manager and try the operation again
       if (this.client.isTokenInvalid(result)) {
-        logger.info('Invalidating token of node', nodeId, token);
+        logger.info({
+          message: 'Invalidating token',
+          nodeId,
+          token,
+        });
         await this.tokenManager.invalidateToken(nodeId, token);
         return this.receiveRequestEventData(nodeId, events);
       }

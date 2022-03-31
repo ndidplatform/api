@@ -42,9 +42,9 @@ class RedisStreamChannel {
   }
 
   async setStreamMaxCapacity() {
-    logger.debug(
-      `Setting Stream Max Capacity (channel: ${this.channel}) to ${this.streamMaxCapacity}`
-    );
+    logger.debug({
+      message: `Setting Stream Max Capacity (channel: ${this.channel}) to ${this.streamMaxCapacity}`,
+    });
     await this.redis.xtrim([
       this.channel,
       'MAXLEN',
@@ -54,7 +54,9 @@ class RedisStreamChannel {
   }
 
   async read() {
-    logger.debug(`Attempt Reading Redis (channel: ${this.channel})`);
+    logger.debug({
+      message: `Attempt Reading Redis (channel: ${this.channel})`,
+    });
     const messages = await this.redis.xread([
       'COUNT',
       this.countLimit,
@@ -74,7 +76,9 @@ class RedisStreamChannel {
     for (;;) {
       const entries = await this.read();
       if (!entries || entries.length === 0) {
-        logger.debug(`No entries (channel: ${this.channel})`);
+        logger.debug({
+          message: `No entries (channel: ${this.channel})`,
+        });
         return 0;
       }
       const keys = entries.map((entry) => entry[0]);
@@ -92,7 +96,7 @@ class RedisStreamChannel {
         try {
           await Promise.all(keys.map(async (key) => await this.removeKey(key)));
         } catch (error) {
-          logger.error({ error });
+          logger.error({ err: error });
         }
 
         if (entries.length == this.countLimit) {
@@ -149,7 +153,7 @@ export default class RedisTelemetryDb extends Redis {
       onConnected();
     });
     this.on('error', (error) => {
-      logger.error({ error });
+      logger.error({ err: error });
       onDisconnected();
     });
   }
