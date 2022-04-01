@@ -251,8 +251,8 @@ export async function loadExpectedTxFromDB() {
       return;
     }
     if (config.mode === MODE.STANDALONE) {
-      savedExpectedTxs.forEach(({ tx: txHash, metadata }) => {
-        expectedTx[txHash] = metadata;
+      savedExpectedTxs.forEach(({ tx: txHash, transactParams }) => {
+        expectedTx[txHash] = transactParams;
         incrementExpectedTxsCount();
       });
       // expectedTxsLoaded = true;
@@ -271,8 +271,8 @@ export async function loadExpectedTxFromDB() {
 }
 
 export function loadExpectedTxOnWorker(savedExpectedTxs) {
-  savedExpectedTxs.forEach(({ tx: txHash, metadata }) => {
-    expectedTx[txHash] = metadata;
+  savedExpectedTxs.forEach(({ tx: txHash, transactParams }) => {
+    expectedTx[txHash] = transactParams;
     incrementExpectedTxsCount();
   });
   // expectedTxsLoaded = true;
@@ -320,15 +320,11 @@ async function processExpectedTx(txHash, result, fromEvent) {
   }
 
   try {
-    const {
-      transactParams,
-      callbackFnName,
-      callbackAdditionalArgs,
-    } = expectedTx[txHash];
+    const transactParams = expectedTx[txHash];
     delete expectedTx[txHash];
     decrementExpectedTxsCount();
     let retVal = getTransactResultFromTx(result, fromEvent);
-    const waitForCommit = !callbackFnName;
+    const waitForCommit = !transactParams.callbackFnName;
     if (waitForCommit) {
       txEventEmitter.emit(txHash, retVal);
     } else {
@@ -346,19 +342,19 @@ async function processExpectedTx(txHash, result, fromEvent) {
       }
       await cacheDb.removeRetryTendermintTransaction(config.nodeId, txHash);
       if (getTxResultCallbackFn != null) {
-        if (callbackAdditionalArgs != null) {
-          await getTxResultCallbackFn(callbackFnName)(
+        if (transactParams.callbackAdditionalArgs != null) {
+          await getTxResultCallbackFn(transactParams.callbackFnName)(
             retVal,
-            ...callbackAdditionalArgs
+            ...transactParams.callbackAdditionalArgs
           );
         } else {
-          await getTxResultCallbackFn(callbackFnName)(retVal);
+          await getTxResultCallbackFn(transactParams.callbackFnName)(retVal);
         }
       } else {
         logger.error({
           message:
             'getTxResultCallbackFn has not been set but there is a callback function to call',
-          callbackFnName,
+          callbackFnName: transactParams.callbackFnName,
         });
       }
     }
@@ -823,7 +819,10 @@ async function getParsedTxsInBlocks(fromHeight, toHeight, withTxHash) {
           } else {
             success = false;
           }
-        } else if (tendermintVersion.major === 0 && tendermintVersion.minor >= 33) {
+        } else if (
+          tendermintVersion.major === 0 &&
+          tendermintVersion.minor >= 33
+        ) {
           deliverTxResult = blockResults[blockIndex].txs_results[index];
           const successAttribute = deliverTxResult.events
             .find((event) => event.type === 'did.result')
@@ -1276,14 +1275,9 @@ export async function transact({
     useMasterKey,
     saveForRetryOnChainDisabled,
   };
-  const metadata = {
-    transactParams,
-    callbackFnName,
-    callbackAdditionalArgs,
-  };
-  expectedTx[txHash] = metadata;
+  expectedTx[txHash] = transactParams;
   incrementExpectedTxsCount();
-  await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, metadata);
+  await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, transactParams);
   expectedTxMetricsData[txHash] = {
     startTime: Date.now(),
     functionName: fnName,
