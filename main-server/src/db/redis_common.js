@@ -381,6 +381,27 @@ export async function get({ nodeId, dbName, name, key }) {
   }
 }
 
+export async function getBuffer({ nodeId, dbName, name, key }) {
+  const operation = 'getBuffer';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+    const result = await redis.getBuffer(`${nodeId}:${dbName}:${name}:${key}`);
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
 export async function getMulti({ nodeId, dbName, name, keys }) {
   const operation = 'getMulti';
   const startTime = Date.now();
@@ -404,12 +425,21 @@ export async function getMulti({ nodeId, dbName, name, keys }) {
   }
 }
 
-export async function set({ nodeId, dbName, name, key, value }) {
+export async function set({
+  nodeId,
+  dbName,
+  name,
+  key,
+  value,
+  jsonStringifyValue = true,
+}) {
   const operation = 'set';
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
-    value = JSON.stringify(value);
+    if (jsonStringifyValue) {
+      value = JSON.stringify(value);
+    }
     await redis.set(`${nodeId}:${dbName}:${name}:${key}`, value);
     metricsEventEmitter.emit(
       'operationTime',
@@ -473,6 +503,53 @@ export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
                   ''
                 ),
                 [valueName]: JSON.parse(item),
+              };
+            });
+            result = result.concat(resultPartParsed);
+            stream.resume();
+          });
+        }
+      });
+      stream.on('end', () => resolve(result));
+      stream.on('error', (error) => reject(error));
+    });
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
+    return retVal;
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
+export async function getAllBuffer({ nodeId, dbName, name, keyName, valueName }) {
+  const operation = 'getAll';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+    const retVal = await new Promise((resolve, reject) => {
+      let result = [];
+      const stream = redis.scanStream({
+        match: `${nodeId}:${dbName}:${name}:*`,
+        count: 100,
+      });
+      stream.on('data', (keys) => {
+        if (keys.length) {
+          stream.pause();
+          redis.mgetBuffer(...keys).then((resultPart) => {
+            const resultPartParsed = resultPart.map((item, index) => {
+              return {
+                [keyName]: keys[index].replace(
+                  `${nodeId}:${dbName}:${name}:`,
+                  ''
+                ),
+                [valueName]: item,
               };
             });
             result = result.concat(resultPartParsed);
