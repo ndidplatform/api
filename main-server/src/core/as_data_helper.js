@@ -48,17 +48,19 @@ export async function packData({
   // check for base64 data URL
   let dataBuffer;
   const metadata = {};
-  const dataUrlParsedData = parseDataURL(data);
-  if (dataUrlParsedData != null) {
-    const match = data.match(dataUrlRegex);
-    if (match[4] && match[4].endsWith('base64')) {
-      // Convert data with data URL format to Buffer for transferring over P2P
-      // In case it is base64 encoded, MQ message payload size is reduced
-      const dataDataUrlPrefix = match[1];
-      dataBuffer = Buffer.from(dataUrlParsedData.body);
+  if (data.startsWith('data:')) {
+    const dataUrlParsedData = parseDataURL(data);
+    if (dataUrlParsedData != null) {
+      const match = data.match(dataUrlRegex);
+      if (match[4] && match[4].endsWith('base64')) {
+        // Convert data with data URL format to Buffer for transferring over P2P
+        // In case it is base64 encoded, MQ message payload size is reduced
+        const dataDataUrlPrefix = match[1];
+        dataBuffer = Buffer.from(dataUrlParsedData.body);
 
-      metadata.base64_data_url = true;
-      metadata.data_url_prefix = dataDataUrlPrefix;
+        metadata.base64_data_url = true;
+        metadata.data_url_prefix = dataDataUrlPrefix;
+      }
     }
   }
   if (dataBuffer == null) {
