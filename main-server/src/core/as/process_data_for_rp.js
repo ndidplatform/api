@@ -167,13 +167,19 @@ export async function processDataForRP(
         });
       }
 
-      const dataUrlParsedData = parseDataURL(data);
-      if (dataUrlParsedData != null) {
-        const match = data.match(dataUrlRegex);
-        if (match[4] && match[4].endsWith('base64') && data.search(/\s/) >= 0) {
-          throw new CustomError({
-            errorType: errorType.DATA_URL_BASE64_MUST_NOT_CONTAIN_WHITESPACES,
-          });
+      if (data.startsWith('data:')) {
+        const dataUrlParsedData = parseDataURL(data);
+        if (dataUrlParsedData != null) {
+          const match = data.match(dataUrlRegex);
+          if (
+            match[4] &&
+            match[4].endsWith('base64') &&
+            data.search(/\s/) >= 0
+          ) {
+            throw new CustomError({
+              errorType: errorType.DATA_URL_BASE64_MUST_NOT_CONTAIN_WHITESPACES,
+            });
+          }
         }
       }
 
