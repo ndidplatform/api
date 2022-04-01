@@ -238,11 +238,12 @@ export function setRawMessageFromMQ(nodeId, messageId, messageBuffer) {
     key: messageId,
     valueName: 'messageBuffer',
     value: messageBuffer,
+    jsonStringifyValue: false,
   });
 }
 
 export function getRawMessageFromMQ(nodeId, messageId) {
-  return db.get({
+  return db.getBuffer({
     nodeId,
     dbName,
     name: 'rawReceivedMessageFromMQ',
@@ -262,7 +263,7 @@ export function removeRawMessageFromMQ(nodeId, messageId) {
 }
 
 export function getAllRawMessageFromMQ(nodeId) {
-  return db.getAll({
+  return db.getAllBuffer({
     nodeId,
     dbName,
     name: 'rawReceivedMessageFromMQ',
