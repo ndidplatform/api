@@ -118,7 +118,7 @@ export function removeMessages(nodeId, direction, messageType, requestId) {
 }
 
 export function removeAllMessages(nodeId, direction, messageType) {
-  return db.removeAllLists({
+  return db.removeAll({
     nodeId,
     dbName,
     name: `${direction}_${getName(messageType)}`,
