@@ -172,7 +172,6 @@ export async function initialize() {
       'grpc.http2.max_pings_without_data': 0,
       'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
       'grpc.max_receive_message_length': -1,
-      'grpc.use_local_subchannel_pool': 1,
     }
   );
   await waitForReady(client);
