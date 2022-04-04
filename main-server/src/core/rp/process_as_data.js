@@ -69,7 +69,6 @@ export async function processAsResponse({
   );
 
   if (errorCode != null) {
-    cleanUpDataResponseFromAS(nodeId, asResponseId);
     return;
   }
 
@@ -85,7 +84,6 @@ export async function processAsResponse({
   });
 
   if (signatureFromBlockchain == null) {
-    cleanUpDataResponseFromAS(nodeId, asResponseId);
     return;
   }
   if (
@@ -97,7 +95,6 @@ export async function processAsResponse({
       data
     ))
   ) {
-    cleanUpDataResponseFromAS(nodeId, asResponseId);
     const err = new CustomError({
       errorType: errorType.INVALID_DATA_RESPONSE_SIGNATURE,
       details: {
@@ -115,6 +112,15 @@ export async function processAsResponse({
     return;
   }
 
+  await cacheDb.addDataFromASTemp(nodeId, asResponseId, {
+    source_node_id: asNodeId,
+    service_id: serviceId,
+    source_signature: signature,
+    signature_sign_method: 'RSA-SHA256',
+    data_salt: dataSalt,
+    data,
+  });
+
   try {
     await tendermintNdid.setDataReceived(
       {
@@ -130,9 +136,6 @@ export async function processAsResponse({
           requestId,
           asNodeId,
           serviceId,
-          signature,
-          dataSalt,
-          data,
           asResponseId,
         },
       ],
@@ -167,9 +170,6 @@ export async function processAsDataAfterSetDataReceived(
     requestId,
     asNodeId,
     serviceId,
-    signature,
-    dataSalt,
-    data,
     asResponseId,
   }
 ) {
@@ -188,14 +188,7 @@ export async function processAsDataAfterSetDataReceived(
       }
     );
 
-    await cacheDb.addDataFromAS(nodeId, requestId, {
-      source_node_id: asNodeId,
-      service_id: serviceId,
-      source_signature: signature,
-      signature_sign_method: 'RSA-SHA256',
-      data_salt: dataSalt,
-      data,
-    });
+    await cacheDb.moveDataFromASOutOfTemp(nodeId, asResponseId, requestId);
 
     cleanUpDataResponseFromAS(nodeId, asResponseId);
   } catch (error) {
@@ -220,7 +213,7 @@ export async function processAsDataAfterSetDataReceived(
 
 async function cleanUpDataResponseFromAS(nodeId, asResponseId) {
   try {
-    await cacheDb.removeDataResponseFromAS(nodeId, asResponseId);
+    await cacheDb.removeDataFromASTemp(nodeId, asResponseId);
   } catch (error) {
     logger.error({
       message: 'Cannot remove data response from AS',

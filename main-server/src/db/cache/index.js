@@ -663,40 +663,41 @@ export function removeRequestCreationMetadata(nodeId, requestId) {
 // Used by RP
 //
 
-export function getDataResponsefromAS(nodeId, asResponseId) {
-  return db.get({
+export function addDataFromASTemp(nodeId, asResponseId, data) {
+  return db.addToSet({
     nodeId,
     dbName,
-    name: 'dataResponseFromAS',
-    keyName: 'asResponseId',
+    name: 'dataFromASTemp',
+    // keyName: 'asResponseId',
     key: asResponseId,
-    valueName: 'dataResponse',
-  });
-}
-export function setDataResponseFromAS(nodeId, asResponseId, data) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'dataResponseFromAS',
-    keyName: 'asResponseId',
-    key: asResponseId,
-    valueName: 'dataResponse',
+    // valueName: 'data',
     value: data,
   });
 }
 
-export function removeDataResponseFromAS(nodeId, asResponseId) {
+export function removeDataFromASTemp(nodeId, asResponseId) {
   return db.remove({
     nodeId,
     dbName,
-    name: 'dataResponseFromAS',
-    keyName: 'asResponseId',
+    name: 'dataFromASTemp',
+    // keyName: 'asResponseId',
     key: asResponseId,
   });
 }
 
+export function moveDataFromASOutOfTemp(nodeId, asResponseId, requestId) {
+  return db.mergeSetAndRemoveSource({
+    nodeId,
+    dbName,
+    name: 'dataFromASTemp',
+    keys: [asResponseId],
+    mergeToName: 'dataFromAS',
+    mergeToKey: requestId,
+  });
+}
+
 export function getDatafromAS(nodeId, requestId) {
-  return db.getList({
+  return db.getSet({
     nodeId,
     dbName,
     name: 'dataFromAS',
@@ -707,7 +708,7 @@ export function getDatafromAS(nodeId, requestId) {
 }
 
 export function countDataFromAS(nodeId, requestId) {
-  return db.count({
+  return db.countSet({
     nodeId,
     dbName,
     name: 'dataFromAS',
@@ -717,29 +718,29 @@ export function countDataFromAS(nodeId, requestId) {
 }
 
 export function addDataFromAS(nodeId, requestId, data) {
-  return db.pushToList({
+  return db.addToSet({
     nodeId,
     dbName,
     name: 'dataFromAS',
-    keyName: 'requestId',
+    // keyName: 'requestId',
     key: requestId,
-    valueName: 'data',
+    // valueName: 'data',
     value: data,
   });
 }
 
 export function removeDataFromAS(nodeId, requestId) {
-  return db.removeList({
+  return db.remove({
     nodeId,
     dbName,
     name: 'dataFromAS',
-    keyName: 'requestId',
+    // keyName: 'requestId',
     key: requestId,
   });
 }
 
 export function removeAllDataFromAS(nodeId) {
-  return db.removeAllLists({
+  return db.removeAll({
     nodeId,
     dbName,
     name: 'dataFromAS',

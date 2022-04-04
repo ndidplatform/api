@@ -321,8 +321,8 @@ export async function removeListWithRangeSupport({ nodeId, dbName, name }) {
   }
 }
 
-export async function removeAllLists({ nodeId, dbName, name }) {
-  const operation = 'removeAllLists';
+export async function removeAll({ nodeId, dbName, name }) {
+  const operation = 'removeAll';
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
@@ -528,7 +528,13 @@ export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
   }
 }
 
-export async function getAllBuffer({ nodeId, dbName, name, keyName, valueName }) {
+export async function getAllBuffer({
+  nodeId,
+  dbName,
+  name,
+  keyName,
+  valueName,
+}) {
   const operation = 'getAll';
   const startTime = Date.now();
   try {
@@ -566,6 +572,134 @@ export async function getAllBuffer({ nodeId, dbName, name, keyName, valueName })
       Date.now() - startTime
     );
     return retVal;
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
+export async function addToSet({ nodeId, dbName, name, key, value }) {
+  const operation = 'addToSet';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+    value = JSON.stringify(value);
+    const result = await redis.sadd(
+      `${nodeId}:${dbName}:${name}:${key}`,
+      value
+    );
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
+    return result === 1;
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
+export async function getSet({ nodeId, dbName, name, key }) {
+  const operation = 'getSet';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+    const values = await redis.smembers(`${nodeId}:${dbName}:${name}:${key}`);
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
+    return values.map((value) => JSON.parse(value));
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
+export async function removeFromSet({ nodeId, dbName, name, key, value }) {
+  const operation = 'removeFromSet';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+    value = JSON.stringify(value);
+    const result = await redis.srem(
+      `${nodeId}:${dbName}:${name}:${key}`,
+      value
+    );
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
+    return result === 1;
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
+export async function countSet({ nodeId, dbName, name, key }) {
+  const operation = 'countSet';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+    const count = await redis.scard(`${nodeId}:${dbName}:${name}:${key}`);
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
+    return count;
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
+export async function mergeSetAndRemoveSource({
+  nodeId,
+  dbName,
+  name,
+  keys,
+  mergeToName,
+  mergeToKey,
+}) {
+  const operation = 'mergeSetAndRemoveSource';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+
+    const keysToMerge = keys.map((key) => `${nodeId}:${dbName}:${name}:${key}`);
+
+    await redis.sunionstore(
+      `${nodeId}:${dbName}:${mergeToName}:${mergeToKey}`,
+      `${nodeId}:${dbName}:${mergeToName}:${mergeToKey}`,
+      keysToMerge
+    );
+    // remove source keys
+    await Promise.all(keys.map((key) => remove({ nodeId, dbName, name, key })));
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,
