@@ -54,11 +54,12 @@ export async function handleMessageFromQueue(
   const requestId = message.request_id;
 
   try {
-    const addToProcessQueue = await requestProcessManager.handleMessageFromMqWithBlockWait(
-      messageId,
-      message,
-      nodeId
-    );
+    const addToProcessQueue =
+      await requestProcessManager.handleMessageFromMqWithBlockWait(
+        messageId,
+        message,
+        nodeId
+      );
 
     if (addToProcessQueue) {
       await requestProcessManager.addMqMessageTaskToQueue({
@@ -196,7 +197,7 @@ export async function processRequestUpdate(
     height,
   });
 
-  const requestDetail = await tendermintNdid.getRequestDetail({
+  let requestDetail = await tendermintNdid.getRequestDetail({
     requestId: requestId,
     height,
   });
@@ -231,16 +232,33 @@ export async function processRequestUpdate(
 
   // When it is not IdP response states which are processed by processMessage()
   if (!idpResponse) {
-    const responseValidList = await cacheDb.getIdpResponseValidList(
+    let responseValidList = await cacheDb.getIdpResponseValidList(
       nodeId,
       requestId
     );
 
+    // request might already be closed or timed out before getting responseValidList
+    if (answeredIdPCount > 0 && responseValidList.length === 0) {
+      requestDetail = await tendermintNdid.getRequestDetail({
+        requestId: requestId,
+        height,
+      });
+
+      if (requestDetail.closed || requestDetail.timed_out) {
+        responseValidList = requestDetail.response_list.map((response) => {
+          return {
+            idp_id: response.idp_id,
+            valid_signature: response.valid_signature,
+            valid_ial: response.valid_ial,
+          };
+        });
+      }
+    }
+
     let requestDetailsForCallback;
     if (config.callbackApiVersion === '4.0') {
-      const detailedRequestStatus = utils.getDetailedRequestStatusLegacy(
-        requestDetail
-      );
+      const detailedRequestStatus =
+        utils.getDetailedRequestStatusLegacy(requestDetail);
 
       requestDetailsForCallback = {
         ...detailedRequestStatus,
@@ -253,8 +271,6 @@ export async function processRequestUpdate(
         creation_block_height, // eslint-disable-line no-unused-vars
         ...filteredRequestDetail
       } = requestDetail;
-
-      // FIXME: handle closed or timed out request
 
       requestDetailsForCallback = {
         ...filteredRequestDetail,
