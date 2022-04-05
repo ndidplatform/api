@@ -733,7 +733,7 @@ async function processTransactionsInBlock(blockHeight, block) {
 }
 
 export async function processMissingBlocks(statusOnSync) {
-  const blockHeight = statusOnSync.sync_info.latest_block_height;
+  const blockHeight = parseInt(statusOnSync.sync_info.latest_block_height);
   const appHash = statusOnSync.sync_info.latest_app_hash;
   await processNewBlock(blockHeight, appHash);
 }
