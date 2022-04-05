@@ -168,6 +168,7 @@ export async function processDataForRP(
       }
 
       if (data.startsWith('data:')) {
+        // this if block condition - string starts with "data:" - helps avoid data URL parse on every data input since it is slow
         const dataUrlParsedData = parseDataURL(data);
         if (dataUrlParsedData != null) {
           const match = data.match(dataUrlRegex);
