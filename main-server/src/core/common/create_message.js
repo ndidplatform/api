@@ -62,17 +62,9 @@ export async function createMessage(
   options = {},
   additionalParams = {}
 ) {
-  let { 
-    node_id,
-    initial_salt,
-  } = createMessageParams;
-  const {
-    reference_id,
-    callback_url,
-    message,
-    purpose,
-    hash_message,
-  } = createMessageParams;
+  let { node_id, initial_salt } = createMessageParams;
+  const { reference_id, callback_url, message, purpose, hash_message } =
+    createMessageParams;
   const { synchronous = false } = options;
   let {
     message_id, // Pre-generated message ID. Used by create identity function.
@@ -154,7 +146,7 @@ export async function createMessage(
           purpose,
         });
       }
-    } else { 
+    } else {
       if (message.length > config.messageStrLength) {
         throw new CustomError({
           errorType: errorType.MESSAGE_TOO_LONG,
@@ -191,14 +183,11 @@ export async function createMessage(
       }
     }
 
-    
-
     if (hash_message) {
       return { message_id, initial_salt };
     } else {
       return { message_id };
     }
-    
   } catch (error) {
     const err = new CustomError({
       message: 'Cannot create message',
@@ -228,13 +217,8 @@ async function createMessageInternalAsync(
   options = {},
   additionalParams
 ) {
-  const {
-    reference_id,
-    callback_url,
-    message,
-    purpose,
-    hash_message,
-  } = createMessageParams;
+  const { reference_id, callback_url, message, purpose, hash_message } =
+    createMessageParams;
   const {
     synchronous = false,
     sendCallbackToClient = true,
@@ -242,12 +226,7 @@ async function createMessageInternalAsync(
     callbackAdditionalArgs,
     saveForRetryOnChainDisabled,
   } = options;
-  const {
-    node_id,
-    message_id,
-    message_salt,
-    messageData,
-  } = additionalParams;
+  const { node_id, message_id, message_salt, messageData } = additionalParams;
   try {
     let messageDataToBlockchain;
     if (hash_message) {
@@ -353,13 +332,7 @@ async function createMessageInternalAsync(
 
 export async function createMessageInternalAsyncAfterBlockchain(
   { height, error, chainDisabledRetryLater },
-  {
-    node_id,
-    reference_id,
-    callback_url,
-    message_id,
-    messageData,
-  },
+  { node_id, reference_id, callback_url, message_id, messageData },
   {
     synchronous = false,
     sendCallbackToClient = true,
