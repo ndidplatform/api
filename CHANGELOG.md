@@ -4,6 +4,7 @@
 
 FEATURES:
 
+- Identity modification notification (mode 2) can be suppressed. Suppressed notification from (actor) node IDs can only be set by regulator (NDID).
 - API version 5.2
   - Allow `min_as` to be `0` or undefined (not provided) in data request list on create request (API: POST `/rp/requests/:namespace/:identifier`). All requested ASes are able to response to a data request.
   - Add query string parameter `service_id` to GET `/utility/service_price_min_effective_datetime_delay`. Calling the API without `service_id` will return a global / fallback value.
@@ -31,11 +32,15 @@ IMPROVEMENTS:
 - Support Node.js 16.
 - Support Tendermint 0.35.
   - Block result spec change.
+- Update dependencies.
+- Remove duplicate data when setting expected Tx metadata.
+- Optimize raw MQ message write to redis. (Don't serialize JSON when setting raw message received from MQ to redis, set it as binary (Buffer) instead.)
+- Reduce data from AS write to redis on RP side.
+- [Docker] Change Node.js version used in images from 12 to 16.
 
 OTHERS:
 
 - Identity modification notification callback will not be sent if the modification action is done by node ID listed in suppressed identity modification node list.
-- Update dependencies.
 
 ## 5.2.0 (January 9, 2022)
 
