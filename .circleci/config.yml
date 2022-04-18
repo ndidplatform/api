@@ -3,14 +3,14 @@ jobs:
   build:
     docker:
       - image: cimg/node:16.14
-      - image: ndidplatform/did-tendermint:latest
-        environment:
-          TM_RPC_PORT: 45000
-        command:
-          - node
-          - --p2p.laddr=tcp://0.0.0.0:47000
-          - --rpc.laddr=tcp://0.0.0.0:45000
-      - image: redis:5-alpine
+      # - image: ndidplatform/did-tendermint:latest
+      #   environment:
+      #     TM_RPC_PORT: 45000
+      #   command:
+      #     - node
+      #     - --p2p.laddr=tcp://0.0.0.0:47000
+      #     - --rpc.laddr=tcp://0.0.0.0:45000
+      # - image: redis:5-alpine
     steps:
       - checkout
       - restore_cache:
@@ -81,30 +81,30 @@ jobs:
             cd mq-server
             npm run test:es6
 
-      - run:
-          name: Set up Development Key
-          command: |
-            cd main-server
-            TENDERMINT_IP=localhost \
-            TENDERMINT_PORT=45000 \
-            NODE_ID=ndid1 \
-            npm run initDev
-      - run:
-          name: Start service
-          command: |
-            cd main-server
-            NODE_ID=ndid1 \
-            NDID_NODE=true \
-            ENABLE_TELEMETRY_LOGGING=false \
-            npm start
-          background: true
-      - run:
-          name: Start sample testing
-          command: |
-            sleep 10
-            curl -v http://localhost:8080/utility/namespaces
-            curl -v http://localhost:8080/utility/idp
-            curl -v http://localhost:8080/utility/services
+      # - run:
+      #     name: Set up Development Key
+      #     command: |
+      #       cd main-server
+      #       TENDERMINT_IP=localhost \
+      #       TENDERMINT_PORT=45000 \
+      #       NODE_ID=ndid1 \
+      #       npm run initDev
+      # - run:
+      #     name: Start service
+      #     command: |
+      #       cd main-server
+      #       NODE_ID=ndid1 \
+      #       NDID_NODE=true \
+      #       ENABLE_TELEMETRY_LOGGING=false \
+      #       npm start
+      #     background: true
+      # - run:
+      #     name: Start sample testing
+      #     command: |
+      #       sleep 10
+      #       curl -v http://localhost:8080/utility/namespaces
+      #       curl -v http://localhost:8080/utility/idp
+      #       curl -v http://localhost:8080/utility/services
   push_to_docker_hub:
     docker:
       - image: cimg/base:stable
