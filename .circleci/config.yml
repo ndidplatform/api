@@ -7,7 +7,7 @@ jobs:
         environment:
           TM_RPC_PORT: 45000
         command:
-          - genesis
+          - node
           - --p2p.laddr=tcp://0.0.0.0:47000
           - --rpc.laddr=tcp://0.0.0.0:45000
       - image: redis:5-alpine
