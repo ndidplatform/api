@@ -1,6 +1,6 @@
 # Changelog
 
-## 6.0.0 (TBD)
+## 6.0.0 (April 20, 2022)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v7.x.x_
 
@@ -8,7 +8,7 @@ FEATURES:
 
 - Identity modification notification (mode 2) can be suppressed. Suppressed notification from (actor) node IDs can only be set by regulator (NDID).
 - API version 5.2
-  - Allow `min_as` to be `0` or undefined (not provided) in data request list on create request (API: POST `/rp/requests/:namespace/:identifier`). All requested ASes are able to response to a data request.
+  - Allow `min_as` to be `0` or undefined (not provided) in data request list on create request (API: POST `/rp/requests/:namespace/:identifier`). All requested ASs are able to response to a data request.
   - Add query string parameter `service_id` to GET `/utility/service_price_min_effective_datetime_delay`. Calling the API without `service_id` will return a global / fallback value.
   - Add `request_type` to create request (API: POST `/rp/requests/:namespace/:identifier`) parameter.
   - New API: GET `/utility/request_types`: Get valid request type list.
@@ -16,6 +16,7 @@ FEATURES:
     - Add `request_type` (string) property.
   - Change body JSON schema of request status update callback API (type: `request_status`) on RP, IdP, and AS.
     - Add `request_type` (string) property.
+    - Add possible value `partial_completed` to `status` for cases where there is service in data request with `0` min AS, success data response(s) (and RP has set data received) mixed with error response(s), and all eligible ASs (AS node IDs in `as_id_list`) to response have responded.
   - Change body JSON schema of incoming request callback API (type: `incoming_request`) on IdP.
     - Add `request_type` (string) property.
   - Change body JSON schema of data request callback API (type: `data_request`) on AS.
