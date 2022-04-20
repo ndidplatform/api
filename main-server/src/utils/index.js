@@ -476,16 +476,23 @@ export function getRequestStatus(requestDetail) {
       }
     }
   } else {
+    // for min AS > 0 cases
     let totalMinAsInDataRequestList = 0;
     let totalSignedDataCount = 0;
     let totalReceivedDataCount = 0;
+
+    // for min AS = 0 cases
+    let totalNoMinAsEligibleAsInDataRequestList = 0;
+    let totalNoMinAsSignedDataCount = 0;
+    let totalNoMinAsReceivedDataCount = 0;
+    let totalNoMinAsErrorResponseCount = 0;
     for (let i = 0; i < requestDetail.data_request_list.length; i++) {
       const service = requestDetail.data_request_list[i];
 
       if (service.min_as > 0) {
         totalMinAsInDataRequestList += service.min_as;
       } else {
-        totalMinAsInDataRequestList += service.as_id_list.length;
+        totalNoMinAsEligibleAsInDataRequestList += service.as_id_list.length;
       }
 
       const responseCount = service.response_list.reduce(
@@ -509,8 +516,14 @@ export function getRequestStatus(requestDetail) {
         }
       );
 
-      totalSignedDataCount += responseCount.signed;
-      totalReceivedDataCount += responseCount.receivedData;
+      if (service.min_as > 0) {
+        totalSignedDataCount += responseCount.signed;
+        totalReceivedDataCount += responseCount.receivedData;
+      } else {
+        totalNoMinAsSignedDataCount += responseCount.signed;
+        totalNoMinAsReceivedDataCount += responseCount.receivedData;
+        totalNoMinAsErrorResponseCount += responseCount.error;
+      }
 
       if (service.min_as > 0) {
         if (responseCount.error > service.as_id_list.length - service.min_as) {
@@ -519,22 +532,40 @@ export function getRequestStatus(requestDetail) {
           return status;
         }
       } else {
-        if (responseCount.error === service.as_id_list.length){
+        if (responseCount.error === service.as_id_list.length) {
           status = 'errored';
           return status;
-        }
-        if (responseCount.error > 0) {
-          status = 'complicated'; // TODO: check with NDID what status name should this be?
-          break;
         }
       }
     }
 
-    if (
-      totalMinAsInDataRequestList === totalSignedDataCount &&
-      totalSignedDataCount === totalReceivedDataCount
-    ) {
-      status = 'completed';
+    if (totalNoMinAsEligibleAsInDataRequestList === 0) {
+      // no min AS = 0 in data request list
+      if (
+        totalMinAsInDataRequestList === totalSignedDataCount &&
+        totalSignedDataCount === totalReceivedDataCount
+      ) {
+        status = 'completed';
+      }
+    } else {
+      if (
+        totalMinAsInDataRequestList === totalSignedDataCount &&
+        totalSignedDataCount === totalReceivedDataCount
+      ) {
+        if (
+          totalNoMinAsEligibleAsInDataRequestList ===
+            totalNoMinAsSignedDataCount &&
+          totalNoMinAsSignedDataCount === totalNoMinAsReceivedDataCount
+        ) {
+          status = 'completed';
+        } else if (
+          totalNoMinAsEligibleAsInDataRequestList ===
+            totalNoMinAsSignedDataCount + totalNoMinAsErrorResponseCount &&
+          totalNoMinAsSignedDataCount === totalNoMinAsReceivedDataCount
+        ) {
+          status = 'partial_completed';
+        }
+      }
     }
   }
 

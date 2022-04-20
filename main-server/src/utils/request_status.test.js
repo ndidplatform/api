@@ -735,7 +735,7 @@ describe('Test derive request status from request details', () => {
       creation_chain_id: 'test-chain-NDID',
     });
 
-    expect(requestStatus).to.equal('complicated');
+    expect(requestStatus).to.equal('confirmed');
   });
 
   it('should derive request status correctly', () => {
@@ -789,7 +789,7 @@ describe('Test derive request status from request details', () => {
       creation_chain_id: 'test-chain-NDID',
     });
 
-    expect(requestStatus).to.equal('complicated');
+    expect(requestStatus).to.equal('partial_completed');
   });
 
   it('should derive request status correctly', () => {
@@ -814,6 +814,455 @@ describe('Test derive request status from request details', () => {
             },
             {
               as_id: 'as2',
+              error_code: 10101,
+            },
+          ],
+        },
+      ],
+      request_message_hash: '/+m2u2JBZ3zADwVdtLiMkvMjONWL8ZsDTqduLp3csGU=',
+      response_list: [
+        {
+          ial: 2.3,
+          aal: 3,
+          status: 'accept',
+          signature:
+            'NHzTRPXXCcCFNHBrA3DSJnVDvXaz+u76Qix55ADLxiWktvJGFY7/wXTK/OCH6Gs1diVM6KNuh6rLP5cPWiaJdkx2zP+3An+1/ox+HqqKb6AKIO0EAKaH3seO1F4wqLrf1ymLN7dobEwntuR3n4XI9eaXsrhNNlTuilYDG4+iA/xzBuCB9QBEhb6hBvBGPsG2BpQiHVveh4t0+6MxdpgkzQuNyzMLqvrj7e71YQjY2cMBC0zGbzcwsyI4rM6NEptsVsf7IJKXW5YNBygp8dxuLCXm5dcksN2MouYp+VU36mTYiAr74sn8isXOsWeVwgbvEOh93uB7ZjQomcU0L1UXDQ==',
+          idp_id: 'idp1',
+          valid_ial: true,
+          valid_signature: true,
+        },
+      ],
+      closed: true,
+      timed_out: false,
+      purpose: '',
+      mode: 2,
+      request_type: null,
+      requester_node_id: 'rp1',
+      creation_block_height: 488,
+      creation_chain_id: 'test-chain-NDID',
+    });
+
+    expect(requestStatus).to.equal('errored');
+  });
+
+  it('should derive request status correctly', () => {
+    const requestStatus = utils.getRequestStatus({
+      request_id:
+        '1804ac0308d22b4203dfc12a930394efa081f30a734c748d2f1966b8c62bb326',
+      min_idp: 1,
+      min_aal: 3,
+      min_ial: 2.3,
+      request_timeout: 86400,
+      idp_id_list: ['idp1'],
+      data_request_list: [
+        {
+          service_id: 'bank_statement',
+          as_id_list: ['as1', 'as2'],
+          min_as: 0,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [
+            {
+              as_id: 'as1',
+              error_code: 10101,
+            },
+          ],
+        },
+        {
+          service_id: 'bank_statement_2',
+          as_id_list: ['as1', 'as2'],
+          min_as: 1,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [],
+        },
+      ],
+      request_message_hash: '/+m2u2JBZ3zADwVdtLiMkvMjONWL8ZsDTqduLp3csGU=',
+      response_list: [
+        {
+          ial: 2.3,
+          aal: 3,
+          status: 'accept',
+          signature:
+            'NHzTRPXXCcCFNHBrA3DSJnVDvXaz+u76Qix55ADLxiWktvJGFY7/wXTK/OCH6Gs1diVM6KNuh6rLP5cPWiaJdkx2zP+3An+1/ox+HqqKb6AKIO0EAKaH3seO1F4wqLrf1ymLN7dobEwntuR3n4XI9eaXsrhNNlTuilYDG4+iA/xzBuCB9QBEhb6hBvBGPsG2BpQiHVveh4t0+6MxdpgkzQuNyzMLqvrj7e71YQjY2cMBC0zGbzcwsyI4rM6NEptsVsf7IJKXW5YNBygp8dxuLCXm5dcksN2MouYp+VU36mTYiAr74sn8isXOsWeVwgbvEOh93uB7ZjQomcU0L1UXDQ==',
+          idp_id: 'idp1',
+          valid_ial: true,
+          valid_signature: true,
+        },
+      ],
+      closed: true,
+      timed_out: false,
+      purpose: '',
+      mode: 2,
+      request_type: null,
+      requester_node_id: 'rp1',
+      creation_block_height: 488,
+      creation_chain_id: 'test-chain-NDID',
+    });
+
+    expect(requestStatus).to.equal('confirmed');
+  });
+
+  it('should derive request status correctly', () => {
+    const requestStatus = utils.getRequestStatus({
+      request_id:
+        '1804ac0308d22b4203dfc12a930394efa081f30a734c748d2f1966b8c62bb326',
+      min_idp: 1,
+      min_aal: 3,
+      min_ial: 2.3,
+      request_timeout: 86400,
+      idp_id_list: ['idp1'],
+      data_request_list: [
+        {
+          service_id: 'bank_statement',
+          as_id_list: ['as1', 'as2'],
+          min_as: 0,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [
+            {
+              as_id: 'as1',
+              error_code: 10101,
+            },
+          ],
+        },
+        {
+          service_id: 'bank_statement_2',
+          as_id_list: ['as1', 'as2'],
+          min_as: 1,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [
+            {
+              as_id: 'as1',
+              signed: true,
+              received_data: true,
+            },
+          ],
+        },
+      ],
+      request_message_hash: '/+m2u2JBZ3zADwVdtLiMkvMjONWL8ZsDTqduLp3csGU=',
+      response_list: [
+        {
+          ial: 2.3,
+          aal: 3,
+          status: 'accept',
+          signature:
+            'NHzTRPXXCcCFNHBrA3DSJnVDvXaz+u76Qix55ADLxiWktvJGFY7/wXTK/OCH6Gs1diVM6KNuh6rLP5cPWiaJdkx2zP+3An+1/ox+HqqKb6AKIO0EAKaH3seO1F4wqLrf1ymLN7dobEwntuR3n4XI9eaXsrhNNlTuilYDG4+iA/xzBuCB9QBEhb6hBvBGPsG2BpQiHVveh4t0+6MxdpgkzQuNyzMLqvrj7e71YQjY2cMBC0zGbzcwsyI4rM6NEptsVsf7IJKXW5YNBygp8dxuLCXm5dcksN2MouYp+VU36mTYiAr74sn8isXOsWeVwgbvEOh93uB7ZjQomcU0L1UXDQ==',
+          idp_id: 'idp1',
+          valid_ial: true,
+          valid_signature: true,
+        },
+      ],
+      closed: true,
+      timed_out: false,
+      purpose: '',
+      mode: 2,
+      request_type: null,
+      requester_node_id: 'rp1',
+      creation_block_height: 488,
+      creation_chain_id: 'test-chain-NDID',
+    });
+
+    expect(requestStatus).to.equal('confirmed');
+  });
+
+  it('should derive request status correctly', () => {
+    const requestStatus = utils.getRequestStatus({
+      request_id:
+        '1804ac0308d22b4203dfc12a930394efa081f30a734c748d2f1966b8c62bb326',
+      min_idp: 1,
+      min_aal: 3,
+      min_ial: 2.3,
+      request_timeout: 86400,
+      idp_id_list: ['idp1'],
+      data_request_list: [
+        {
+          service_id: 'bank_statement',
+          as_id_list: ['as1', 'as2'],
+          min_as: 0,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [
+            {
+              as_id: 'as1',
+              error_code: 10101,
+            },
+            {
+              as_id: 'as2',
+              signed: true,
+              received_data: false,
+            },
+          ],
+        },
+        {
+          service_id: 'bank_statement_2',
+          as_id_list: ['as1', 'as2'],
+          min_as: 1,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [
+            {
+              as_id: 'as1',
+              signed: true,
+              received_data: true,
+            },
+          ],
+        },
+      ],
+      request_message_hash: '/+m2u2JBZ3zADwVdtLiMkvMjONWL8ZsDTqduLp3csGU=',
+      response_list: [
+        {
+          ial: 2.3,
+          aal: 3,
+          status: 'accept',
+          signature:
+            'NHzTRPXXCcCFNHBrA3DSJnVDvXaz+u76Qix55ADLxiWktvJGFY7/wXTK/OCH6Gs1diVM6KNuh6rLP5cPWiaJdkx2zP+3An+1/ox+HqqKb6AKIO0EAKaH3seO1F4wqLrf1ymLN7dobEwntuR3n4XI9eaXsrhNNlTuilYDG4+iA/xzBuCB9QBEhb6hBvBGPsG2BpQiHVveh4t0+6MxdpgkzQuNyzMLqvrj7e71YQjY2cMBC0zGbzcwsyI4rM6NEptsVsf7IJKXW5YNBygp8dxuLCXm5dcksN2MouYp+VU36mTYiAr74sn8isXOsWeVwgbvEOh93uB7ZjQomcU0L1UXDQ==',
+          idp_id: 'idp1',
+          valid_ial: true,
+          valid_signature: true,
+        },
+      ],
+      closed: true,
+      timed_out: false,
+      purpose: '',
+      mode: 2,
+      request_type: null,
+      requester_node_id: 'rp1',
+      creation_block_height: 488,
+      creation_chain_id: 'test-chain-NDID',
+    });
+
+    expect(requestStatus).to.equal('confirmed');
+  });
+
+  it('should derive request status correctly', () => {
+    const requestStatus = utils.getRequestStatus({
+      request_id:
+        '1804ac0308d22b4203dfc12a930394efa081f30a734c748d2f1966b8c62bb326',
+      min_idp: 1,
+      min_aal: 3,
+      min_ial: 2.3,
+      request_timeout: 86400,
+      idp_id_list: ['idp1'],
+      data_request_list: [
+        {
+          service_id: 'bank_statement',
+          as_id_list: ['as1', 'as2'],
+          min_as: 0,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [
+            {
+              as_id: 'as1',
+              error_code: 10101,
+            },
+            {
+              as_id: 'as2',
+              signed: true,
+              received_data: true,
+            },
+          ],
+        },
+        {
+          service_id: 'bank_statement_2',
+          as_id_list: ['as1', 'as2'],
+          min_as: 1,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [
+            {
+              as_id: 'as1',
+              signed: true,
+              received_data: true,
+            },
+          ],
+        },
+      ],
+      request_message_hash: '/+m2u2JBZ3zADwVdtLiMkvMjONWL8ZsDTqduLp3csGU=',
+      response_list: [
+        {
+          ial: 2.3,
+          aal: 3,
+          status: 'accept',
+          signature:
+            'NHzTRPXXCcCFNHBrA3DSJnVDvXaz+u76Qix55ADLxiWktvJGFY7/wXTK/OCH6Gs1diVM6KNuh6rLP5cPWiaJdkx2zP+3An+1/ox+HqqKb6AKIO0EAKaH3seO1F4wqLrf1ymLN7dobEwntuR3n4XI9eaXsrhNNlTuilYDG4+iA/xzBuCB9QBEhb6hBvBGPsG2BpQiHVveh4t0+6MxdpgkzQuNyzMLqvrj7e71YQjY2cMBC0zGbzcwsyI4rM6NEptsVsf7IJKXW5YNBygp8dxuLCXm5dcksN2MouYp+VU36mTYiAr74sn8isXOsWeVwgbvEOh93uB7ZjQomcU0L1UXDQ==',
+          idp_id: 'idp1',
+          valid_ial: true,
+          valid_signature: true,
+        },
+      ],
+      closed: true,
+      timed_out: false,
+      purpose: '',
+      mode: 2,
+      request_type: null,
+      requester_node_id: 'rp1',
+      creation_block_height: 488,
+      creation_chain_id: 'test-chain-NDID',
+    });
+
+    expect(requestStatus).to.equal('partial_completed');
+  });
+
+  it('should derive request status correctly', () => {
+    const requestStatus = utils.getRequestStatus({
+      request_id:
+        '1804ac0308d22b4203dfc12a930394efa081f30a734c748d2f1966b8c62bb326',
+      min_idp: 1,
+      min_aal: 3,
+      min_ial: 2.3,
+      request_timeout: 86400,
+      idp_id_list: ['idp1'],
+      data_request_list: [
+        {
+          service_id: 'bank_statement',
+          as_id_list: ['as1', 'as2'],
+          min_as: 0,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [
+            {
+              as_id: 'as1',
+              error_code: 10101,
+            },
+            {
+              as_id: 'as2',
+              error_code: 10101,
+            },
+          ],
+        },
+        {
+          service_id: 'bank_statement_2',
+          as_id_list: ['as1', 'as2'],
+          min_as: 1,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [
+            {
+              as_id: 'as1',
+              signed: true,
+              received_data: true,
+            },
+          ],
+        },
+      ],
+      request_message_hash: '/+m2u2JBZ3zADwVdtLiMkvMjONWL8ZsDTqduLp3csGU=',
+      response_list: [
+        {
+          ial: 2.3,
+          aal: 3,
+          status: 'accept',
+          signature:
+            'NHzTRPXXCcCFNHBrA3DSJnVDvXaz+u76Qix55ADLxiWktvJGFY7/wXTK/OCH6Gs1diVM6KNuh6rLP5cPWiaJdkx2zP+3An+1/ox+HqqKb6AKIO0EAKaH3seO1F4wqLrf1ymLN7dobEwntuR3n4XI9eaXsrhNNlTuilYDG4+iA/xzBuCB9QBEhb6hBvBGPsG2BpQiHVveh4t0+6MxdpgkzQuNyzMLqvrj7e71YQjY2cMBC0zGbzcwsyI4rM6NEptsVsf7IJKXW5YNBygp8dxuLCXm5dcksN2MouYp+VU36mTYiAr74sn8isXOsWeVwgbvEOh93uB7ZjQomcU0L1UXDQ==',
+          idp_id: 'idp1',
+          valid_ial: true,
+          valid_signature: true,
+        },
+      ],
+      closed: true,
+      timed_out: false,
+      purpose: '',
+      mode: 2,
+      request_type: null,
+      requester_node_id: 'rp1',
+      creation_block_height: 488,
+      creation_chain_id: 'test-chain-NDID',
+    });
+
+    expect(requestStatus).to.equal('errored');
+  });
+
+  it('should derive request status correctly', () => {
+    const requestStatus = utils.getRequestStatus({
+      request_id:
+        '1804ac0308d22b4203dfc12a930394efa081f30a734c748d2f1966b8c62bb326',
+      min_idp: 1,
+      min_aal: 3,
+      min_ial: 2.3,
+      request_timeout: 86400,
+      idp_id_list: ['idp1'],
+      data_request_list: [
+        {
+          service_id: 'bank_statement',
+          as_id_list: ['as1', 'as2'],
+          min_as: 0,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [
+            {
+              as_id: 'as1',
+              error_code: 10101,
+            },
+            {
+              as_id: 'as2',
+              signed: true,
+              received_data: true,
+            },
+          ],
+        },
+        {
+          service_id: 'bank_statement_2',
+          as_id_list: ['as1'],
+          min_as: 1,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [
+            {
+              as_id: 'as1',
+              error_code: 10101,
+            },
+          ],
+        },
+      ],
+      request_message_hash: '/+m2u2JBZ3zADwVdtLiMkvMjONWL8ZsDTqduLp3csGU=',
+      response_list: [
+        {
+          ial: 2.3,
+          aal: 3,
+          status: 'accept',
+          signature:
+            'NHzTRPXXCcCFNHBrA3DSJnVDvXaz+u76Qix55ADLxiWktvJGFY7/wXTK/OCH6Gs1diVM6KNuh6rLP5cPWiaJdkx2zP+3An+1/ox+HqqKb6AKIO0EAKaH3seO1F4wqLrf1ymLN7dobEwntuR3n4XI9eaXsrhNNlTuilYDG4+iA/xzBuCB9QBEhb6hBvBGPsG2BpQiHVveh4t0+6MxdpgkzQuNyzMLqvrj7e71YQjY2cMBC0zGbzcwsyI4rM6NEptsVsf7IJKXW5YNBygp8dxuLCXm5dcksN2MouYp+VU36mTYiAr74sn8isXOsWeVwgbvEOh93uB7ZjQomcU0L1UXDQ==',
+          idp_id: 'idp1',
+          valid_ial: true,
+          valid_signature: true,
+        },
+      ],
+      closed: true,
+      timed_out: false,
+      purpose: '',
+      mode: 2,
+      request_type: null,
+      requester_node_id: 'rp1',
+      creation_block_height: 488,
+      creation_chain_id: 'test-chain-NDID',
+    });
+
+    expect(requestStatus).to.equal('errored');
+  });
+
+  it('should derive request status correctly', () => {
+    const requestStatus = utils.getRequestStatus({
+      request_id:
+        '1804ac0308d22b4203dfc12a930394efa081f30a734c748d2f1966b8c62bb326',
+      min_idp: 1,
+      min_aal: 3,
+      min_ial: 2.3,
+      request_timeout: 86400,
+      idp_id_list: ['idp1'],
+      data_request_list: [
+        {
+          service_id: 'bank_statement',
+          as_id_list: ['as1', 'as2'],
+          min_as: 0,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [
+            {
+              as_id: 'as1',
+              error_code: 10101,
+            },
+            {
+              as_id: 'as2',
+              error_code: 10101,
+            },
+          ],
+        },
+        {
+          service_id: 'bank_statement_2',
+          as_id_list: ['as1', 'as2'],
+          min_as: 1,
+          request_params_hash: 'MyUwI7quJS54s6Xh/m4r6WEEa9mL9gKGqPlBrRSoD0A=',
+          response_list: [
+            {
+              as_id: 'as1',
               error_code: 10101,
             },
           ],
