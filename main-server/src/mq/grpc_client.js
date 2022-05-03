@@ -66,7 +66,7 @@ let nodeIdMatched;
 let telemetryLogVersions;
 
 let recvMessageChannels = [];
-const RECV_MESSAGE_CHANNEL_COUNT = 3;
+const RECV_MESSAGE_CHANNEL_COUNT = 8;
 
 const waitPromises = [];
 let stopSendMessageRetry = false;
