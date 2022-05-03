@@ -1,0 +1,28 @@
+syntax = "proto3";
+ 
+service MessageQueueReceiver {
+  rpc recvMessage(InboundMessage) returns (Empty){}
+  rpc getInfo(Empty) returns (ServiceServerInfo){}
+}
+ 
+message InboundMessage {
+  bytes message = 1;
+  string message_id = 2;
+  string sender_id = 3;
+  Error error = 4;
+}
+
+message Error {
+  int32 code = 1;
+  string message = 2;
+}
+
+message ServiceServerInfo {
+  string node_id = 1;
+  int32 mq_binding_port = 2;
+  string version = 3;
+}
+
+message Empty {
+
+}

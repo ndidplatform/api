@@ -28,6 +28,7 @@ import protobuf from 'protobufjs';
 import { serializeMqMessage, deserializeMqMessage } from './message';
 
 import * as mqService from './grpc_client';
+import * as mqRecvService from './grpc_server';
 import * as tendermint from '../tendermint';
 import * as tendermintNdid from '../tendermint/ndid';
 import * as cacheDb from '../db/cache';
@@ -139,21 +140,17 @@ export async function initializeInbound({
 
   await initDuplicateInboundMessageTimeout();
 
-  await mqService.initialize({
-    telemetryLogVersions,
-  });
+  await mqRecvService.initialize();
 
-  mqService.eventEmitter.on('message', onMessage);
+  mqRecvService.eventEmitter.on('message', onMessage);
 
-  mqService.eventEmitter.on('error', (error) => {
+  mqRecvService.eventEmitter.on('error', (error) => {
     if (errorHandlerFunction) {
       errorHandlerFunction(error);
     } else {
       logger.error({ message: 'MQ Service error', err: error });
     }
   });
-
-  mqService.subscribeToRecvMessages();
 
   tendermint.eventEmitter.on('ready', retryProcessMessages);
 

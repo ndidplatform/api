@@ -317,3 +317,8 @@ export const telemetryDbPassword =
   process.env.TELEMETRY_DB_PASSWORD || dbPassword;
 export const telemetryTokenGenerationIntervalSec =
   process.env.TELEMETRY_TOKEN_TIMEOUT || 6 * 60 * 60; // also used as token expire duration
+
+export const mqRecvGrpcServerPort =
+  process.env.MQ_RECV_GRPC_SERVER_PORT == null
+    ? 12345
+    : process.env.MQ_RECV_GRPC_SERVER_PORT;

@@ -106,3 +106,15 @@ export const prometheusHttpsCertPath =
   process.env.PROMETHEUS_HTTPS_CERT_PATH != null
     ? process.env.PROMETHEUS_HTTPS_CERT_PATH
     : path.join(__dirname, '..', 'dev_https_key', 'cert.pem');
+
+export const mqRecvServiceServerIp = process.env.MQ_RECV_SERVICE_SERVER_IP
+  ? process.env.MQ_RECV_SERVICE_SERVER_IP
+  : 'localhost';
+
+export const mqRecvServiceServerPort = process.env.MQ_RECV_SERVICE_SERVER_PORT
+  ? parseInt(process.env.MQ_RECV_SERVICE_SERVER_PORT)
+  : 12345;
+
+export const grpcCallTimeout = process.env.GRPC_CALL_TIMEOUT_MS
+  ? parseInt(process.env.GRPC_CALL_TIMEOUT_MS)
+  : 60000;

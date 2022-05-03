@@ -84,6 +84,13 @@ const SERVER_ADDRESS = `0.0.0.0:${config.serverPort}`;
 let recvSubscriberConnections = [];
 let sendCalls = {};
 
+//
+
+let client;
+const calls = [];
+
+const MQ_RECV_SERVICE_SERVER_ADDRESS = `${config.mqRecvServiceServerIp}:${config.mqRecvServiceServerPort}`;
+
 export const metricsEventEmitter = new EventEmitter();
 
 // Recv
@@ -135,24 +142,28 @@ function sendAckForRecvMessage(call, callback) {
 }
 
 function onRecvMessage({ message, msgId, senderId }) {
-  if (recvSubscriberConnections.length === 0) {
-    logger.warn({
-      message: 'Got inbound message but no subscribers/recipients',
-      msgId,
-      senderId,
-    });
-    metricsEventEmitter.emit('incoming_message_without_subscriber');
-  }
-  recvSubscriberConnections.forEach((connection) => {
-    connection.write({ message, message_id: msgId, sender_id: senderId });
-  });
+  recvMessage({ message, msgId, senderId });
+
+  // if (recvSubscriberConnections.length === 0) {
+  //   logger.warn({
+  //     message: 'Got inbound message but no subscribers/recipients',
+  //     msgId,
+  //     senderId,
+  //   });
+  //   metricsEventEmitter.emit('incoming_message_without_subscriber');
+  // }
+  // recvSubscriberConnections.forEach((connection) => {
+  //   connection.write({ message, message_id: msgId, sender_id: senderId });
+  // });
   metricsEventEmitter.emit('incoming_message');
 }
 
 function onRecvError({ error }) {
-  recvSubscriberConnections.forEach((connection) => {
-    connection.write({ error });
-  });
+  recvMessage({ error });
+
+  // recvSubscriberConnections.forEach((connection) => {
+  //   connection.write({ error });
+  // });
   metricsEventEmitter.emit('incoming_message_error');
 }
 
@@ -191,6 +202,50 @@ function getInfo(call, callback) {
     node_id: config.nodeId,
     mq_binding_port: config.mqPort,
     version,
+  });
+}
+
+// for client
+
+async function waitForReady(client) {
+  await new Promise((resolve, reject) => {
+    client.waitForReady(Infinity, (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+  logger.info({
+    message: 'MQ recv service server ready',
+  });
+}
+
+function recvMessage({ message, msgId, senderId, error }) {
+  // if (!nodeIdMatched) {
+  //   throw new Error('Node ID mismatch. Will NOT send');
+  // }
+  return new Promise((resolve, reject) => {
+    const call = client.recvMessage(
+      { message, message_id: msgId, sender_id: senderId, error },
+      { deadline: Date.now() + config.grpcCallTimeout },
+      (error) => {
+        if (error) {
+          logger.error({
+            message: 'recvMessage error',
+            msgId,
+            err: error,
+          });
+          reject(error);
+          calls.splice(calls.indexOf(call), 1);
+          return;
+        }
+        resolve();
+        calls.splice(calls.indexOf(call), 1);
+      }
+    );
+    calls.push(call);
   });
 }
 
@@ -302,6 +357,33 @@ async function initialize() {
   );
 
   server.start();
+
+  // client for sending inbound messages
+  const packageDefinition_recv = protoLoader.loadSync(
+    path.join(__dirname, '..', '..', 'protos', 'mq_recv_service.proto'),
+    {
+      keepCase: true,
+      longs: Number,
+      enums: String,
+      defaults: true,
+      oneofs: true,
+    }
+  );
+  const proto_recv = grpc.loadPackageDefinition(packageDefinition_recv);
+  client = new proto_recv.MessageQueueReceiver(
+    MQ_RECV_SERVICE_SERVER_ADDRESS,
+    config.grpcSsl
+      ? grpc.credentials.createSsl(grpcSslRootCert, grpcSslKey, grpcSslCert)
+      : grpc.credentials.createInsecure(),
+    {
+      'grpc.keepalive_time_ms': config.grpcPingInterval,
+      'grpc.keepalive_timeout_ms': config.grpcPingTimeout,
+      'grpc.keepalive_permit_without_calls': 1,
+      'grpc.http2.max_pings_without_data': 0,
+      'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
+    }
+  );
+  await waitForReady(client);
 
   logger.info({
     message: 'Server initialized',
