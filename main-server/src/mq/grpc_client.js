@@ -65,7 +65,8 @@ let nodeIdMatched;
 
 let telemetryLogVersions;
 
-let recvMessageChannel;
+let recvMessageChannels = [];
+const RECV_MESSAGE_CHANNEL_COUNT = 3;
 
 const waitPromises = [];
 let stopSendMessageRetry = false;
@@ -201,9 +202,9 @@ export function close() {
   stopSendMessageRetry = true;
   waitPromises.forEach((waitPromise) => waitPromise.stop());
   if (client) {
-    if (recvMessageChannel) {
+    recvMessageChannels.map((recvMessageChannel) => {
       recvMessageChannel.cancel();
-    }
+    });
     calls.forEach((call) => call.cancel());
     client.close();
     logger.info({
@@ -275,35 +276,50 @@ export function subscribeToRecvMessages() {
       message: 'gRPC client is not initialized yet',
     });
   }
-  if (recvMessageChannel != null) return;
-  recvMessageChannel = client.subscribeToRecvMessages(null);
+  if (recvMessageChannels.length >= RECV_MESSAGE_CHANNEL_COUNT) return;
+
   subscribedToRecvMessages = true;
-  recvMessageChannel.on('data', onRecvMessage);
-  recvMessageChannel.on('end', async function onRecvMessageChannelEnded() {
-    recvMessageChannel.cancel();
-    recvMessageChannel = null;
-    logger.debug({
-      message:
-        '[MQ Service] Subscription to receive messages has ended due to server close (stream ended)',
-    });
-  });
-  recvMessageChannel.on('error', async function onRecvMessageChannelError(
-    error
+  for (
+    let i = recvMessageChannels.length;
+    i < RECV_MESSAGE_CHANNEL_COUNT;
+    i++
   ) {
-    if (error.code !== grpc.status.CANCELLED) {
-      const err = new CustomError({
-        message: 'Receive Message channel error',
-        cause: error,
-      });
-      logger.error({ err });
+    const recvMessageChannel = client.subscribeToRecvMessages(null);
+    recvMessageChannels.push(recvMessageChannel);
+    recvMessageChannel.on('data', onRecvMessage);
+    recvMessageChannel.on('end', async function onRecvMessageChannelEnded() {
       recvMessageChannel.cancel();
-      recvMessageChannel = null;
+      recvMessageChannels.splice(
+        recvMessageChannels.indexOf(recvMessageChannel),
+        1
+      );
       logger.debug({
         message:
-          '[MQ Service] Subscription to receive messages has ended due to error',
+          '[MQ Service] Subscription to receive messages has ended due to server close (stream ended)',
       });
-    }
-  });
+    });
+    recvMessageChannel.on(
+      'error',
+      async function onRecvMessageChannelError(error) {
+        if (error.code !== grpc.status.CANCELLED) {
+          const err = new CustomError({
+            message: 'Receive Message channel error',
+            cause: error,
+          });
+          logger.error({ err });
+          recvMessageChannel.cancel();
+          recvMessageChannels.splice(
+            recvMessageChannels.indexOf(recvMessageChannel),
+            1
+          );
+          logger.debug({
+            message:
+              '[MQ Service] Subscription to receive messages has ended due to error',
+          });
+        }
+      }
+    );
+  }
 }
 
 export function sendAckForRecvMessage(msgId) {
@@ -405,11 +421,11 @@ export async function sendMessage(
       }
     }
   } else {
-    try {
-      await sendMessageInternal(mqAddress, payload, msgId);
-    } catch (error) {
-      throw error;
-    }
+    // try {
+    await sendMessageInternal(mqAddress, payload, msgId);
+    // } catch (error) {
+    //   throw error;
+    // }
   }
 }
 

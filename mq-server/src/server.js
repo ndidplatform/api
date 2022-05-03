@@ -134,6 +134,25 @@ function sendAckForRecvMessage(call, callback) {
   metricsEventEmitter.emit('incoming_message_ack_sent');
 }
 
+let nextRecvSubscriberConnectionsIdx = 0;
+
+// simple round-robin load balance
+function getRecvSubscriberConnection() {
+  if (nextRecvSubscriberConnectionsIdx >= recvSubscriberConnections.length) {
+    nextRecvSubscriberConnectionsIdx = 0;
+  }
+
+  if (recvSubscriberConnections[nextRecvSubscriberConnectionsIdx] != null) {
+    logger.debug({
+      message: 'get recv subscriber connection',
+      recvSubscriberConnectionsIndex: nextRecvSubscriberConnectionsIdx,
+    });
+    return recvSubscriberConnections[nextRecvSubscriberConnectionsIdx++];
+  }
+
+  return null;
+}
+
 function onRecvMessage({ message, msgId, senderId }) {
   if (recvSubscriberConnections.length === 0) {
     logger.warn({
@@ -143,16 +162,19 @@ function onRecvMessage({ message, msgId, senderId }) {
     });
     metricsEventEmitter.emit('incoming_message_without_subscriber');
   }
-  recvSubscriberConnections.forEach((connection) => {
-    connection.write({ message, message_id: msgId, sender_id: senderId });
+  const recvSubscriberConnection = getRecvSubscriberConnection();
+  recvSubscriberConnection.write({
+    message,
+    message_id: msgId,
+    sender_id: senderId,
   });
   metricsEventEmitter.emit('incoming_message');
 }
 
 function onRecvError({ error }) {
-  recvSubscriberConnections.forEach((connection) => {
-    connection.write({ error });
-  });
+  if (recvSubscriberConnections[0] != null) {
+    recvSubscriberConnections[0].write({ error });
+  }
   metricsEventEmitter.emit('incoming_message_error');
 }
 
