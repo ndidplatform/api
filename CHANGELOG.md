@@ -16,7 +16,7 @@ FEATURES:
     - Add `request_type` (string) property.
   - Change body JSON schema of request status update callback API (type: `request_status`) on RP, IdP, and AS.
     - Add `request_type` (string) property.
-    - Add possible value `partial_completed` to `status` for cases where there is service in data request with `0` min AS, success data response(s) (and RP has set data received) mixed with error response(s), and all eligible ASs (AS node IDs in `as_id_list`) to response have responded.
+    - Add possible value `partial_completed` to `status` for cases where there is a service in data request with `0` min AS and at least one success data response(s) (AS signed response and RP has set data received) in any service.
   - Change body JSON schema of incoming request callback API (type: `incoming_request`) on IdP.
     - Add `request_type` (string) property.
   - Change body JSON schema of data request callback API (type: `data_request`) on AS.

@@ -476,23 +476,20 @@ export function getRequestStatus(requestDetail) {
       }
     }
   } else {
-    // for min AS > 0 cases
-    let totalMinAsInDataRequestList = 0;
-    let totalSignedDataCount = 0;
-    let totalReceivedDataCount = 0;
+    let hasDataReponse = false;
 
-    // for min AS = 0 cases
-    let totalNoMinAsEligibleAsInDataRequestList = 0;
-    let totalNoMinAsSignedDataCount = 0;
-    let totalNoMinAsReceivedDataCount = 0;
-    let totalNoMinAsErrorResponseCount = 0;
+    const dataResponseSummary = [];
+    let hasZeroMinAsCase = false;
+
     for (let i = 0; i < requestDetail.data_request_list.length; i++) {
       const service = requestDetail.data_request_list[i];
 
-      if (service.min_as > 0) {
-        totalMinAsInDataRequestList += service.min_as;
-      } else {
-        totalNoMinAsEligibleAsInDataRequestList += service.as_id_list.length;
+      if (service.min_as === 0) {
+        hasZeroMinAsCase = true;
+      }
+
+      if (service.response_list.length > 0) {
+        hasDataReponse = true;
       }
 
       const responseCount = service.response_list.reduce(
@@ -506,65 +503,105 @@ export function getRequestStatus(requestDetail) {
             if (response.received_data) {
               count.receivedData++;
             }
+            if (response.signed && response.received_data) {
+              count.signedAndReceivedData++;
+            }
           }
           return count;
         },
         {
           signed: 0,
           receivedData: 0,
+          signedAndReceivedData: 0,
           error: 0,
         }
       );
 
-      if (service.min_as > 0) {
-        totalSignedDataCount += responseCount.signed;
-        totalReceivedDataCount += responseCount.receivedData;
-      } else {
-        totalNoMinAsSignedDataCount += responseCount.signed;
-        totalNoMinAsReceivedDataCount += responseCount.receivedData;
-        totalNoMinAsErrorResponseCount += responseCount.error;
+      dataResponseSummary.push({
+        minAs: service.min_as,
+        eligibleAs: service.as_id_list.length,
+        ...responseCount,
+      });
+    }
+
+    if (!hasDataReponse) {
+      return status;
+    }
+
+    if (hasZeroMinAsCase) {
+      let allSuccess;
+      let someSuccess = false;
+      let allError;
+      for (let i = 0; i < dataResponseSummary.length; i++) {
+        const { minAs, eligibleAs, signedAndReceivedData, error } =
+          dataResponseSummary[i];
+
+        if (minAs > 0) {
+          if (error > eligibleAs - minAs) {
+            allSuccess = allSuccess == null ? false : allSuccess && false;
+            allError = allError == null ? true : allError && true;
+            continue;
+          }
+
+          if (minAs === signedAndReceivedData) {
+            allSuccess = allSuccess == null ? true : allSuccess && true;
+            allError = allError == null ? false : allError && false;
+            someSuccess = someSuccess || true;
+            continue;
+          }
+
+          allSuccess = allSuccess == null ? false : allSuccess && false;
+        } else {
+          if (signedAndReceivedData > 0) {
+            someSuccess = someSuccess || true;
+            allError = allError == null ? false : allError && false;
+          }
+
+          if (eligibleAs === signedAndReceivedData) {
+            allSuccess = allSuccess == null ? true : allSuccess && true;
+            allError = allError == null ? false : allError && false;
+            continue;
+          }
+
+          if (eligibleAs === error) {
+            allSuccess = allSuccess == null ? false : allSuccess && false;
+            allError = allError == null ? true : allError && true;
+            continue;
+          }
+
+          allSuccess = allSuccess == null ? false : allSuccess && false;
+        }
       }
 
-      if (service.min_as > 0) {
-        if (responseCount.error > service.as_id_list.length - service.min_as) {
+      if (allError != null && allError) {
+        status = 'errored';
+      } else if (allSuccess != null && allSuccess) {
+        status = 'completed';
+      } else if (someSuccess) {
+        status = 'partial_completed';
+      }
+    } else {
+      let allSuccess;
+      for (let i = 0; i < dataResponseSummary.length; i++) {
+        const { minAs, eligibleAs, signedAndReceivedData, error } =
+          dataResponseSummary[i];
+
+        if (error > eligibleAs - minAs) {
           // request can never be fulfilled
           status = 'errored';
           return status;
         }
-      } else {
-        if (responseCount.error === service.as_id_list.length) {
-          status = 'errored';
-          return status;
-        }
-      }
-    }
 
-    if (totalNoMinAsEligibleAsInDataRequestList === 0) {
-      // no min AS = 0 in data request list
-      if (
-        totalMinAsInDataRequestList === totalSignedDataCount &&
-        totalSignedDataCount === totalReceivedDataCount
-      ) {
-        status = 'completed';
-      }
-    } else {
-      if (
-        totalMinAsInDataRequestList === totalSignedDataCount &&
-        totalSignedDataCount === totalReceivedDataCount
-      ) {
-        if (
-          totalNoMinAsEligibleAsInDataRequestList ===
-            totalNoMinAsSignedDataCount &&
-          totalNoMinAsSignedDataCount === totalNoMinAsReceivedDataCount
-        ) {
-          status = 'completed';
-        } else if (
-          totalNoMinAsEligibleAsInDataRequestList ===
-            totalNoMinAsSignedDataCount + totalNoMinAsErrorResponseCount &&
-          totalNoMinAsSignedDataCount === totalNoMinAsReceivedDataCount
-        ) {
-          status = 'partial_completed';
+        if (minAs === signedAndReceivedData) {
+          allSuccess = allSuccess == null ? true : allSuccess && true;
+          continue;
         }
+
+        allSuccess = allSuccess == null ? false : allSuccess && false;
+      }
+
+      if (allSuccess != null && allSuccess) {
+        status = 'completed';
       }
     }
   }
