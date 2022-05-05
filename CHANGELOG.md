@@ -8,7 +8,7 @@ FEATURES:
 
 - Identity modification notification (mode 2) can be suppressed. Suppressed notification from (actor) node IDs can only be set by regulator (NDID).
 - API version 5.2
-  - Allow `min_as` to be `0` or undefined (not provided) in data request list on create request (API: POST `/rp/requests/:namespace/:identifier`). All requested ASs are able to response to a data request.
+  - Allow `min_as` to be `0` in data request list on create request (API: POST `/rp/requests/:namespace/:identifier`). All requested ASs are able to response to a data request.
   - Add query string parameter `service_id` to GET `/utility/service_price_min_effective_datetime_delay`. Calling the API without `service_id` will return a global / fallback value.
   - Add `request_type` to create request (API: POST `/rp/requests/:namespace/:identifier`) parameter.
   - New API: GET `/utility/request_types`: Get valid request type list.

@@ -197,7 +197,6 @@ async function checkAsListCondition({
       const { service_id } = dataRequest;
       let { as_id_list, min_as } = dataRequest;
       if (as_id_list != null && as_id_list.length === 0) as_id_list = null;
-      if (min_as == null) min_as = 0;
 
       //all as_list offer the service
       let potential_as_list = await tendermintNdid.getAsNodesInfoByServiceId({
