@@ -532,6 +532,7 @@ export function getRequestStatus(requestDetail) {
       let allSuccess;
       let someSuccess = false;
       let allError;
+      let canWaitForMoreResponse = false;
       for (let i = 0; i < dataResponseSummary.length; i++) {
         const { minAs, eligibleAs, signedAndReceivedData, error } =
           dataResponseSummary[i];
@@ -551,7 +552,12 @@ export function getRequestStatus(requestDetail) {
           }
 
           allSuccess = allSuccess == null ? false : allSuccess && false;
+          canWaitForMoreResponse = canWaitForMoreResponse || true;
         } else {
+          if (eligibleAs > error) {
+            canWaitForMoreResponse = canWaitForMoreResponse || true;
+          }
+
           if (signedAndReceivedData > 0) {
             someSuccess = someSuccess || true;
             allError = allError == null ? false : allError && false;
@@ -574,7 +580,9 @@ export function getRequestStatus(requestDetail) {
       }
 
       if (allError != null && allError) {
-        status = 'errored';
+        if (!canWaitForMoreResponse) {
+          status = 'errored';
+        }
       } else if (allSuccess != null && allSuccess) {
         status = 'completed';
       } else if (someSuccess) {
