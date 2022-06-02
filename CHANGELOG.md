@@ -1,5 +1,13 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v8.x.x_
+
+BREAKING CHANGES:
+
+- ABCI transaction and query data format change.
+
 ## 6.0.0 (May 13, 2022)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v7.x.x_
