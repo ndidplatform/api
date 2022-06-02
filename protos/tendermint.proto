@@ -2,13 +2,14 @@ syntax = "proto3";
 
 message Tx {
   string method = 1;
-  string params = 2;
-  bytes nonce = 3;
-  bytes signature = 4;
-  string node_id = 5;
+  bytes params = 2;
+  string chain_id = 3;
+  bytes nonce = 4;
+  bytes signature = 5;
+  string node_id = 6;
 }
 
 message Query {
   string method = 1;
-  string params = 2;
+  bytes params = 2;
 }
