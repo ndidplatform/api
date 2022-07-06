@@ -872,6 +872,10 @@ module.exports = {
     code: 15034,
     message: 'Service price ceiling not found',
   },
+  ABCI_CHAIN_IS_ALREADY_INITIALIZED: {
+    code: 15035,
+    message: 'Blockchain is already initialized',
+  },
 
   // Client errors
   ABCI_REQUEST_ID_NOT_FOUND: {

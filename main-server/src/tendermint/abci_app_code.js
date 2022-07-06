@@ -147,6 +147,7 @@ import errorType from 'ndid-error/type';
 // SuppressedIdentityModificationNotificationNodeIDAlreadyExists uint32 = 123
 // SuppressedIdentityModificationNotificationNodeIDDoesNotExist  uint32 = 124
 // NotIdPNode                                                    uint32 = 125
+// ChainIsAlreadyInitialized                                     uint32 = 126
 // UnknownError                                       uint32 = 999
 
 const codeMapping = {
@@ -275,6 +276,7 @@ const codeMapping = {
   123: errorType.ABCI_SUPPRESSED_IDENTITY_MODIFICATION_NOTIFICATION_NODE_ID_ALREADY_EXISTS,
   124: errorType.ABCI_SUPPRESSED_IDENTITY_MODIFICATION_NOTIFICATION_NODE_ID_DOES_NOT_EXIST,
   125: errorType.ABCI_NOT_IDP_NODE,
+  126: errorType.ABCI_CHAIN_IS_ALREADY_INITIALIZED,
 
   999: errorType.UNKNOWN_ERROR,
 };

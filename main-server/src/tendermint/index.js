@@ -1258,7 +1258,6 @@ export async function transact({
     method: fnName,
     params:
       paramsJsonString != null ? Buffer.from(paramsJsonString, 'utf8') : null,
-    chain_id: currentChainId,
     nonce,
     signature: await utils.createSignature(
       Buffer.concat([
