@@ -1,6 +1,6 @@
 {
   "name": "telemetry",
-  "version": "6.0.0",
+  "version": "7.0.0",
   "description": "Collect activities on NDID API server and forward to NDID telemetry sever",
   "scripts": {
     "build": "rm -rf build/ && npx babel src -d ./build/ --source-maps inline --verbose",
