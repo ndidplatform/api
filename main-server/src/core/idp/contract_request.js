@@ -32,6 +32,7 @@ import fetch from 'node-fetch';
 import * as cryptoUtils from '../../utils/crypto';
 import { createResponse } from './create_response';
 import logger from '../../logger';
+import { dcontractConfig } from '../../config';
 
 /*global globalThis*/
 const { AbortController } = globalThis;
@@ -61,7 +62,7 @@ function extractURLFromRequestMessage(requestMessage) {
  * @returns {boolean} validation result <true/false>
  */
 async function checkContractHash(requestMessage, opt = {}) {
-  const timeoutTime = opt.timeout || 15000;
+  const timeoutTime = opt.timeout || dcontractConfig.fetchTimeout;
   /**
    * Validate individual url and hash data
    * @param {} url
@@ -155,6 +156,10 @@ export async function checkContractDocumentIntegrity(
   requestDetail,
   callbackUrlFn
 ) {
+  if (!dcontractConfig.validateContract) {
+    return true;
+  }
+
   if (requestDetail.request_type !== 'dcontract') {
     return true;
   }

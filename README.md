@@ -142,6 +142,8 @@
 - `TELEMETRY_DB_HOST`: Host/IP of Redis DB database for telemetry [Default: Same as `DB_IP`]
 - `TELEMETRY_DB_PORT`: Port of Redis DB database for telemetry [Default: Same as `DB_PORT`]
 - `TELEMETRY_DB_PASSWORD`: Password of Redis DB database for telemetry [Default: Same as `DB_PASSWORD`]
+- `DCONTRACT_VALIDATE`: Enable dcontract document validatation on IdP Node [Default: `true`]
+- `DCONTRACT_FETCH_TIMEOUT`: Timeout for fetching documents from document source in milisecond [ Default: `15000ms` ]
 
 Debug APIs (Only in development mode)
 
