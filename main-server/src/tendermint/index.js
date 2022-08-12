@@ -1084,11 +1084,15 @@ export async function query(fnName, params, height) {
     params,
   });
 
-  const paramsJsonString = JSON.stringify(params);
+  let paramsJsonString;
+  if (params != null) {
+    paramsJsonString = JSON.stringify(params);
+  }
 
   const queryObject = {
     method: fnName,
-    params: paramsJsonString,
+    params:
+      paramsJsonString != null ? Buffer.from(paramsJsonString, 'utf8') : null,
   };
   const queryProto = TendermintQuery.create(queryObject);
   const queryProtoBuffer = TendermintQuery.encode(queryProto).finish();
@@ -1245,16 +1249,21 @@ export async function transact({
     retryCount,
   });
 
-  const paramsJsonString = JSON.stringify(params);
+  let paramsJsonString;
+  if (params != null) {
+    paramsJsonString = JSON.stringify(params);
+  }
 
   const txObject = {
     method: fnName,
-    params: paramsJsonString,
+    params:
+      paramsJsonString != null ? Buffer.from(paramsJsonString, 'utf8') : null,
     nonce,
     signature: await utils.createSignature(
       Buffer.concat([
         Buffer.from(fnName, 'utf8'),
         Buffer.from(paramsJsonString, 'utf8'),
+        Buffer.from(currentChainId, 'utf8'),
         nonce,
       ]).toString('base64'),
       nodeId,
