@@ -173,7 +173,7 @@ export async function checkContractDocumentIntegrity(
     return true;
   }
 
-  logger.error({
+  logger.debug({
     message: `dContract integrity result: ${result}`, requestId
   });
   createContractErrorResponse(requestId, await callbackUrlFn());
