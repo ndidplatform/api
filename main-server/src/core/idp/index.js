@@ -252,12 +252,25 @@ export async function processMessage(nodeId, messageId, message) {
         requestDetail
       );
 
-      if (requestDetail.request_type === 'dcontract') {
-        await checkContractDocumentIntegrity(
+      if (
+        requestDetail.request_type ===
+        config.dcontractConfig.dcontractRequestType
+      ) {
+        const dcontractValid = await checkContractDocumentIntegrity(
           message.request_id,
           message,
-          nodeId,
+          nodeId
         );
+
+        if (!dcontractValid) {
+          throw new CustomError({
+            errorType: errorType.REQUEST_INTEGRITY_CHECK_FAILED,
+            details: {
+              requestId: message.request_id,
+              requestType: config.dcontractConfig.dcontractRequestType,
+            },
+          });
+        }
       }
 
       const receiverValid = checkReceiverIntegrity(

@@ -321,6 +321,7 @@ export const telemetryTokenGenerationIntervalSec =
 const validateContract =
   process.env.DCONTRACT_VALIDATE?.toLowerCase() === 'false' ? false : true;
 export const dcontractConfig = {
+  dcontractRequestType: process.env.DCONTRACT_REQUEST_TYPE || 'dsign.dcontract',
   validateContract,
   fetchTimeout: process.env.DCONTRACT_FETCH_TIMEOUT || 30000,
 };
