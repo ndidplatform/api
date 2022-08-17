@@ -490,7 +490,7 @@ export async function createResponseAfterBlockchain(
   }
 }
 
-async function sendResponseToRP({
+export async function sendResponseToRP({
   nodeId,
   request_id,
   mode,

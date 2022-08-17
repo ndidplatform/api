@@ -20,6 +20,8 @@
  *
  */
 
+import { checkContractDocumentIntegrity } from './contract_request';
+
 import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -33,11 +35,11 @@ import * as cacheDb from '../../db/cache';
 import * as dataDb from '../../db/data';
 import * as identity from '../identity';
 import privateMessageType from '../../mq/message/type';
-import { checkContractDocumentIntegrity } from './contract_request';
 
 export * from './create_response';
 export * from './event_handlers';
 export * from './request_message_padded_hash';
+export * from './contract_request';
 
 const CALLBACK_URL_NAME = {
   INCOMING_REQUEST: 'incoming_request_url',
@@ -250,12 +252,13 @@ export async function processMessage(nodeId, messageId, message) {
         requestDetail
       );
 
-      await checkContractDocumentIntegrity(
-        message.request_id,
-        message,
-        requestDetail,
-        getIncomingRequestCallbackUrl
-      );
+      if (requestDetail.request_type === 'dcontract') {
+        await checkContractDocumentIntegrity(
+          message.request_id,
+          message,
+          nodeId,
+        );
+      }
 
       const receiverValid = checkReceiverIntegrity(
         message.request_id,

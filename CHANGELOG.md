@@ -1,5 +1,18 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v8.x.x_
+
+FEATURES:
+
+- Support `dcontract` request type.
+  - Integrity check on IdP side. If fail, the platform automatically responses with error code `31000`. (Config can be set with environment variable `DCONTRACT_VALIDATE`.)
+
+OTHERS:
+
+- Minimum Node.js version requirement increase to 15.
+
 ## 7.0.0 (August 11, 2022)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v8.x.x_

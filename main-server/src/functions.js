@@ -54,6 +54,8 @@ export function getFunction(fnName) {
       return common.removeTimeoutSchedulerInternal;
     case 'idp.createResponseAfterBlockchain':
       return idp.createResponseAfterBlockchain;
+    case 'idp.createContractErrorResponseAfterBlockchain':
+      return idp.createContractErrorResponseAfterBlockchain;
     case 'idp.processIdpResponseAfterAddAccessor':
       return idp.processIdpResponseAfterAddAccessor;
     case 'as.afterGotDataFromCallback':

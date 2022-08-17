@@ -20,23 +20,30 @@
  *
  */
 
-/** 
- * This library derived from 
- * https://github.com/bomu-bomu/dcontract-msg-validator 
+/**
+ * This library derived from
+ * https://github.com/bomu-bomu/dcontract-msg-validator
  * by the original author
- * 
+ *
  */
 
 import fetch from 'node-fetch';
 
+import { sendResponseToRP } from './create_response';
+
+import * as common from '../common';
+import * as tendermintNdid from '../../tendermint/ndid';
+import * as cacheDb from '../../db/cache';
+
+import CustomError from 'ndid-error/custom_error';
+import errorType from 'ndid-error/type';
 import * as cryptoUtils from '../../utils/crypto';
-import { createResponse } from './create_response';
 import logger from '../../logger';
+import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
+
 import { dcontractConfig } from '../../config';
 
-/*global globalThis*/
-const { AbortController } = globalThis;
-const DOCUMENT_INTEGRITY_FAILED = 31000;
+const IDP_ERROR_CODE_DOCUMENT_INTEGRITY_FAILED = 31000;
 
 /**
  * Extract Hash URL from requestMessage
@@ -52,7 +59,9 @@ function extractURLFromRequestMessage(requestMessage) {
   // 2. extract with newline
   const token = requestMessage.trim().split(/\n+/);
   // 3. get last message start with http* scheme
-  return token.filter((line) => line.match(/^http(s?):\/\//)).map((line) => line.trim());
+  return token
+    .filter((line) => line.match(/^http(s?):\/\//))
+    .map((line) => line.trim());
 }
 
 /**
@@ -80,7 +89,9 @@ async function checkContractHash(requestMessage, opt = {}) {
       const response = await fetch(uri, { signal: controller.signal });
 
       if (response?.status !== 200) {
-        throw new Error(`request to ${uri.href} failed: ${response?.statusText}`);
+        throw new Error(
+          `request to ${uri.href} failed: ${response?.statusText}`
+        );
       }
       const urlSplit = url.split('/');
       const urlHash = urlSplit[urlSplit.length - 1];
@@ -91,7 +102,9 @@ async function checkContractHash(requestMessage, opt = {}) {
       return contentHash === urlHash;
     } catch (err) {
       if (err.name === 'AbortError') {
-        throw new Error(`request to ${url} failed: Timeout after ${timeoutTime}ms`);
+        throw new Error(
+          `request to ${url} failed: Timeout after ${timeoutTime}ms`
+        );
       } else {
         throw err;
       }
@@ -123,59 +136,127 @@ async function checkContractHash(requestMessage, opt = {}) {
 }
 
 /**
- * Create error response when contract integrity check failed
- * @param {Sting} request_id 
- * @param {String} callback_url 
- */
-async function createContractErrorResponse(
-  request_id,
-  callback_url
-) {
-  await createResponse(
-    {
-      request_id,
-      callback_url,
-      error_code: DOCUMENT_INTEGRITY_FAILED,
-    },
-    {}
-  );
-}
-
-/**
  * Check Document Integrity if request type is dcontract
  * true if ok, false otherwise
- * @param {String} requestId 
- * @param {Object} request 
- * @param {Object} requestDetail 
- * @param {Function} callbackUrlFn 
+ * @param {String} requestId
+ * @param {Object} request
+ * @param {string} nodeId
  * @returns {boolean}
  */
 export async function checkContractDocumentIntegrity(
   requestId,
   request,
-  requestDetail,
-  callbackUrlFn
+  nodeId
 ) {
   if (!dcontractConfig.validateContract) {
     return true;
   }
 
-  if (requestDetail.request_type !== 'dcontract') {
-    return true;
-  }
-
   logger.debug({
-    message: 'Validate dContract request document', requestId
+    message: 'Validate dContract request document',
+    requestId,
   });
 
   const result = await checkContractHash(request.request_message);
-  if (result) {
-    return true;
-  }
 
   logger.debug({
-    message: `dContract integrity result: ${result}`, requestId
+    message: `dContract integrity result: ${result}`,
+    requestId,
   });
-  createContractErrorResponse(requestId, await callbackUrlFn());
-  return false;
+
+  if (!result) {
+    createContractErrorResponse(nodeId, requestId);
+  }
+
+  return result;
+}
+
+/**
+ * Create error response when contract integrity check failed
+ * @param {String} nodeId
+ * @param {String} requestId
+ */
+async function createContractErrorResponse(nodeId, requestId) {
+  try {
+    const requestData = await cacheDb.getRequestReceivedFromMQ(
+      nodeId,
+      requestId
+    );
+    if (!requestData) {
+      throw new CustomError({
+        errorType: errorType.UNKNOWN_CONSENT_REQUEST,
+      });
+    }
+
+    const dataToBlockchain = {
+      request_id: requestId,
+      error_code: IDP_ERROR_CODE_DOCUMENT_INTEGRITY_FAILED,
+    };
+
+    await tendermintNdid.createIdpResponse(
+      dataToBlockchain,
+      nodeId,
+      'idp.createContractErrorResponseAfterBlockchain',
+      [
+        {
+          nodeId,
+          request_id: requestId,
+          error_code: IDP_ERROR_CODE_DOCUMENT_INTEGRITY_FAILED,
+          rp_id: requestData.rp_id,
+        },
+      ],
+      true
+    );
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Error responding dcontract error',
+      cause: error,
+    });
+    logger.error({ err });
+    await common.notifyError({
+      nodeId,
+      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
+      action: 'idp.createContractErrorResponse',
+      error: err,
+      requestId,
+    });
+  }
+}
+
+export async function createContractErrorResponseAfterBlockchain(
+  { height, error, chainDisabledRetryLater },
+  { nodeId, request_id, rp_id, error_code }
+) {
+  if (chainDisabledRetryLater) return;
+  try {
+    if (error) throw error;
+
+    // log request event: IDP_CREATES_RESPONSE
+    TelemetryLogger.logRequestEvent(
+      request_id,
+      nodeId,
+      REQUEST_EVENTS.IDP_CREATES_RESPONSE
+    );
+
+    await sendResponseToRP({
+      nodeId,
+      request_id,
+      rp_id,
+      height,
+      error_code,
+    });
+  } catch (error) {
+    const err = new CustomError({
+      message: 'Responding dcontract error after blockchain error',
+      cause: error,
+    });
+    logger.error({ err });
+    await common.notifyError({
+      nodeId,
+      getCallbackUrlFnName: 'idp.getErrorCallbackUrl',
+      action: 'idp.createContractErrorResponseAfterBlockchain',
+      error: err,
+      requestId: request_id,
+    });
+  }
 }

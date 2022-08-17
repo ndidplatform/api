@@ -374,7 +374,7 @@ async function checkWhitelistCondition({ node_id, idp_id_list }) {
  * @param {string} createRequestParams.purpose
  * @param {boolean} createRequestParams.bypass_identity_check
  * @param {string} createRequestParams.initial_salt
- * @param {string} [createRequestParams.type]
+ * @param {string} [createRequestParams.request_type]
  * @param {Object} options
  * @param {boolean} [options.synchronous]
  * @param {boolean} [options.sendCallbackToClient]

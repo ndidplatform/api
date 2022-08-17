@@ -11,7 +11,7 @@
 
 ## Prerequisites
 
-- Node.js 12 or later (Recommended: latest version of Node.js 16 LTS)
+- Node.js 15 or later (Recommended: latest version of Node.js 16 LTS)
 - npm 8 or later
 - Redis 3.2 or later
 
@@ -142,7 +142,7 @@
 - `TELEMETRY_DB_HOST`: Host/IP of Redis DB database for telemetry [Default: Same as `DB_IP`]
 - `TELEMETRY_DB_PORT`: Port of Redis DB database for telemetry [Default: Same as `DB_PORT`]
 - `TELEMETRY_DB_PASSWORD`: Password of Redis DB database for telemetry [Default: Same as `DB_PASSWORD`]
-- `DCONTRACT_VALIDATE`: Enable dcontract document validation automatically on IdP Node. To disable this feature (set `DCONTRACT_VALIDATE=false`) IdP required to validate document by themselves. [Default: `true`]
+- `DCONTRACT_VALIDATE`: Enable dcontract document validation automatically on IdP node. To disable this feature, set to `false` and IdP is required to validate document by themselves. [Default: `true`]
 - `DCONTRACT_FETCH_TIMEOUT`: Timeout for fetching documents from document source in miliseconds [ Default: `30000` ]
 
 Debug APIs (Only in development mode)
