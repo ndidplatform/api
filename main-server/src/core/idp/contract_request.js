@@ -99,7 +99,7 @@ async function checkContractHash(requestMessage, opt = {}) {
 
       const contentHash = cryptoUtils.sha256(content).toString('hex');
 
-      return contentHash === urlHash;
+      return contentHash === urlHash.toLowerCase();
     } catch (err) {
       if (err.name === 'AbortError') {
         throw new Error(
