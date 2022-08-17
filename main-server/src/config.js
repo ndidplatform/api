@@ -152,8 +152,8 @@ export const useExternalCryptoService =
 export const privateKeyPath = useExternalCryptoService
   ? null
   : process.env.PRIVATE_KEY_PATH == null && env === 'development'
-  ? path.join(__dirname, '..', 'dev_key', 'keys', nodeId)
-  : process.env.PRIVATE_KEY_PATH;
+    ? path.join(__dirname, '..', 'dev_key', 'keys', nodeId)
+    : process.env.PRIVATE_KEY_PATH;
 export const privateKeyPassphrase = useExternalCryptoService
   ? null
   : process.env.PRIVATE_KEY_PASSPHRASE;
@@ -161,8 +161,8 @@ export const privateKeyPassphrase = useExternalCryptoService
 export const masterPrivateKeyPath = useExternalCryptoService
   ? null
   : process.env.MASTER_PRIVATE_KEY_PATH == null && env === 'development'
-  ? path.join(__dirname, '..', 'dev_key', 'master_keys', nodeId + '_master')
-  : process.env.MASTER_PRIVATE_KEY_PATH;
+    ? path.join(__dirname, '..', 'dev_key', 'master_keys', nodeId + '_master')
+    : process.env.MASTER_PRIVATE_KEY_PATH;
 export const masterPrivateKeyPassphrase = useExternalCryptoService
   ? null
   : process.env.MASTER_PRIVATE_KEY_PASSPHRASE;
@@ -171,15 +171,15 @@ export const nodeBehindProxyPrivateKeyDirectoryPath = useExternalCryptoService
   ? null
   : process.env.NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH == null &&
     env === 'development'
-  ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'keys')
-  : process.env.NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH;
+    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'keys')
+    : process.env.NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH;
 export const nodeBehindProxyMasterPrivateKeyDirectoryPath =
   useExternalCryptoService
     ? null
     : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH == null &&
       env === 'development'
-    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
-    : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH;
+      ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
+      : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH;
 
 export const autoCloseRequestOnCompleted =
   process.env.AUTO_CLOSE_REQUEST_ON_COMPLETED != null
@@ -256,13 +256,13 @@ export const grpcSsl = process.env.GRPC_SSL === 'true';
 export const grpcSslRootCertFilePath = process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
   ? process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
   : env === 'development'
-  ? path.join(__dirname, '..', '..', 'dev_cert', 'grpc', 'ca.crt')
-  : null;
+    ? path.join(__dirname, '..', '..', 'dev_cert', 'grpc', 'ca.crt')
+    : null;
 
 export const grpcSslKeyFilePath = process.env.GRPC_SSL_KEY_FILE_PATH
   ? process.env.GRPC_SSL_KEY_FILE_PATH
   : env === 'development'
-  ? path.join(
+    ? path.join(
       __dirname,
       '..',
       '..',
@@ -270,12 +270,12 @@ export const grpcSslKeyFilePath = process.env.GRPC_SSL_KEY_FILE_PATH
       'grpc',
       mode === 'worker' ? 'client.key' : 'server.key'
     )
-  : null;
+    : null;
 
 export const grpcSslCertFilePath = process.env.GRPC_SSL_CERT_FILE_PATH
   ? process.env.GRPC_SSL_CERT_FILE_PATH
   : env === 'development'
-  ? path.join(
+    ? path.join(
       __dirname,
       '..',
       '..',
@@ -283,7 +283,7 @@ export const grpcSslCertFilePath = process.env.GRPC_SSL_CERT_FILE_PATH
       'grpc',
       mode === 'worker' ? 'client.crt' : 'server.crt'
     )
-  : null;
+    : null;
 
 export const enableConfigHttpRoutePath =
   process.env.ENABLE_CONFIG_HTTP_ROUTE_PATH === 'true';
@@ -317,3 +317,10 @@ export const telemetryDbPassword =
   process.env.TELEMETRY_DB_PASSWORD || dbPassword;
 export const telemetryTokenGenerationIntervalSec =
   process.env.TELEMETRY_TOKEN_TIMEOUT || 6 * 60 * 60; // also used as token expire duration
+
+
+const validateContract = process.env.DCONTRACT_VALIDATE?.toLowerCase();
+export const dcontractConfig = {
+  validateContract: (validateContract === undefined) ? true : validateContract === 'true',
+  fetchTimeout: process.env.DCONTRACT_FETCH_TIMEOUT || 30000
+};

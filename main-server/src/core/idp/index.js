@@ -33,6 +33,7 @@ import * as cacheDb from '../../db/cache';
 import * as dataDb from '../../db/data';
 import * as identity from '../identity';
 import privateMessageType from '../../mq/message/type';
+import { checkContractDocumentIntegrity } from './contract_request';
 
 export * from './create_response';
 export * from './event_handlers';
@@ -248,6 +249,14 @@ export async function processMessage(nodeId, messageId, message) {
         message,
         requestDetail
       );
+
+      await checkContractDocumentIntegrity(
+        message.request_id,
+        message,
+        requestDetail,
+        getIncomingRequestCallbackUrl
+      );
+
       const receiverValid = checkReceiverIntegrity(
         message.request_id,
         requestDetail,
