@@ -11,7 +11,7 @@ FEATURES:
 
 OTHERS:
 
-- Minimum Node.js version requirement increase to 15.
+- Increase minimum Node.js version requirement to 15.
 
 ## 7.0.0 (August 11, 2022)
 
