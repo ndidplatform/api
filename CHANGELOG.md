@@ -6,7 +6,7 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 
 FEATURES:
 
-- Support `dcontract` request type.
+- Support dcontract request type.
   - Integrity check on IdP side. If fail, the platform automatically responses with error code `31000`. (Config can be set with environment variable `DCONTRACT_VALIDATE`.)
 
 OTHERS:
