@@ -1,5 +1,15 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v8.x.x_
+
+FEATURES:
+
+- Support simple API authentication.
+  - Using API key set in HTTP header `X-API-Key`
+  - Default config is NOT using API key auth. (Config can be set with environment variable `USE_API_KEY` and `API_KEY_HASH`.)
+
 ## 7.1.0 (August 18, 2022)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v8.x.x_

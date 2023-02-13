@@ -64,6 +64,11 @@ if (_callbackApiVersion === '4') {
 }
 export const callbackApiVersion = _callbackApiVersion;
 
+// Simple auth - API key
+export const useApiKey =
+  process.env.USE_API_KEY != null ? process.env.USE_API_KEY === 'true' : false;
+export const apiKeyHash = process.env.API_KEY_HASH;
+
 export const dbIp = process.env.DB_IP || 'localhost';
 export const dbPort = process.env.DB_PORT
   ? parseInt(process.env.DB_PORT)
