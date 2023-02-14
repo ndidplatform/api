@@ -627,6 +627,7 @@ async function createRequestInternalAsync(
     request_timeout,
     idp_id_list,
     purpose,
+    bypass_identity_check,
     request_type,
   } = createRequestParams;
   const {
@@ -691,6 +692,7 @@ async function createRequestInternalAsync(
             request_id,
             min_idp,
             request_timeout,
+            bypass_identity_check,
             receiversWithSid,
             receiversWithRefGroupCode,
             requestData,
@@ -721,6 +723,7 @@ async function createRequestInternalAsync(
           request_id,
           min_idp,
           request_timeout,
+          bypass_identity_check,
           receiversWithSid,
           receiversWithRefGroupCode,
           requestData,
@@ -788,6 +791,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
     request_id,
     min_idp,
     request_timeout,
+    bypass_identity_check,
     receiversWithSid,
     receiversWithRefGroupCode,
     requestData,
@@ -815,6 +819,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
         api_spec_version: apiVersion,
         ndid_member_app_type: ndidMemberAppType,
         ndid_member_app_version: ndidMemberAppVersion,
+        bypass_identity_check,
       }
     );
 
