@@ -117,4 +117,16 @@ const db = new TelemetryDb([
     timeLimit: config.flushIntervalMs, // flush every 5 seconds
     streamMaxCapacity: 10000,
   })),
+  ...nodeIds.map((nodeId) => ({
+    id: `process-log-stream:${nodeId}`,
+    type: 'stream',
+    channelName: `${nodeId}:process-logs`,
+    onDataReceived: (logs) => {
+      return client.receiveProcessLogData(nodeId, logs);
+    },
+    delayStart: 0,
+    countLimit: 100,
+    timeLimit: config.flushIntervalMs, // flush every 5 seconds
+    streamMaxCapacity: 10000,
+  })),
 ]);

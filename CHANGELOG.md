@@ -1,5 +1,15 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v8.x.x_
+
+FEATURES:
+
+- Telemetry data collection
+  - Add data collected:
+    - All error logs on main process
+
 ## 7.1.0 (August 18, 2022)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v8.x.x_

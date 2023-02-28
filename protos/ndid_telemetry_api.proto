@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ndid.telemetry.api;
 
-option go_package = ".;ndid_telemetry_api";
+option go_package = "./;ndid_telemetry_api";
 
 option java_multiple_files = true;
 option java_package = "ndid.grpc.telemetry";
@@ -12,9 +12,9 @@ service NDIDTelemetry {
   rpc SendMainVersionLogs(SendMainVersionLogsRequest) returns (Response) {}
   rpc SendMQServiceVersionLogs(SendMQServiceVersionLogsRequest) returns (Response) {}
   rpc SendTendermintAndABCIVersionLogs(SendTendermintAndABCIVersionLogsRequest) returns (Response) {}
+  rpc SendProcessLogs(SendProcessLogsRequest) returns (Response) {}
   rpc SendRequestEvents(SendRequestEventsRequest) returns (Response) {}
   rpc SendSystemInformtation(SendSystemInformationRequest) returns (Response) {}
-  rpc SendSystemLog(SendSystemLogRequest) returns (Response) {}
 }
 
 message Empty {}
@@ -61,6 +61,15 @@ message SendTendermintAndABCIVersionLogsRequest {
   repeated TendermintAndABCIVersionLog data = 2;
 }
 
+message SendProcessLogsRequest {
+  message ProcessLog {
+    string log = 1;
+  }
+
+  RequestMetadata request_metadata = 1;
+  repeated ProcessLog data = 2;
+}
+
 message SendRequestEventsRequest {
   message RequestTimestamp {
     string request_id = 1;
@@ -79,15 +88,4 @@ message SendSystemInformationRequest {
 
   RequestMetadata request_metadata = 1;
   repeated SystemInformation data = 2;
-}
-
-message SendSystemLogRequest {
-  message SystemLog {
-    string log_level = 1;
-    string detail = 2;
-    int64 timestamp = 3;
-  }
-
-  RequestMetadata request_metadata = 1;
-  repeated SystemLog data = 2;
 }

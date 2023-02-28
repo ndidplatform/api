@@ -20,7 +20,10 @@
  *
  */
 
+const stream = require('node:stream');
+
 const pino = require('pino');
+const pinoms = require('pino-multi-stream');
 const pinoPretty = require('pino-pretty');
 
 function bufferToJSONForLogger() {
@@ -38,37 +41,70 @@ function bufferToJSONForLogger() {
  * @param {boolean} config.logOneLine
  * @param {string} config.replaceForTooLongLog // Remove?
  * @param {number} config.logLengthThreshold // Remove?
+ * @param {Function} config.optionalErrorLogFn
  * @returns {Object} logger
  */
 function initLogger(config) {
-  const logger = pino({
-    level: config.logLevel,
-    messageKey: 'message',
-    // base: {
-    //   pid: config.logPid ? process.pid : null,
-    //   hostname: config.logHostname ? os.hostname : null,
-    // },
-    prettyPrint: config.logPrettyPrint
-      ? { colorize: config.logColor, translateTime: 'SYS:standard', errorProps: '*' }
-      : undefined,
-    prettifier: config.logPrettyPrint
-      ? (options) => {
-          const pretty = pinoPretty(options);
-          return (inputData) => {
-            const tmp = Buffer.prototype.toJSON;
-            Buffer.prototype.toJSON = bufferToJSONForLogger;
-            const result = pretty(inputData);
-            Buffer.prototype.toJSON = tmp;
+  const prettyStream = pinoms.prettyStream({
+    prettyPrint: {
+      messageKey: 'message',
+      colorize: config.logColor,
+      translateTime: 'SYS:standard',
+      errorProps: '*',
+    },
+    prettifier: (options) => {
+      const pretty = pinoPretty(options);
+      return (inputData) => {
+        const tmp = Buffer.prototype.toJSON;
+        Buffer.prototype.toJSON = bufferToJSONForLogger;
+        const result = pretty(inputData);
+        Buffer.prototype.toJSON = tmp;
 
-            if (config.logOneLine) {
-              return result.replace(/\r?\n|\r/g, ' ') + '\n';
-            }
-
-            return result;
-          };
+        if (config.logOneLine) {
+          return result.replace(/\r?\n|\r/g, ' ') + '\n';
         }
-      : undefined,
+
+        return result;
+      };
+    },
   });
+
+  const optionalErrLogWritable = new stream.Writable({
+    objectMode: true,
+    writev(chunks, cb) {
+      chunks.forEach((item) => {
+        const body = item.chunk;
+        config.optionalErrorLogFn(body);
+      });
+      cb();
+    },
+    write(body, enc, cb) {
+      config.optionalErrorLogFn(body);
+      cb();
+    },
+  });
+
+  const streams = [
+    config.logPrettyPrint
+      ? { level: config.logLevel, stream: prettyStream }
+      : { level: config.logLevel, stream: process.stdout },
+  ];
+
+  if (typeof config.optionalErrorLogFn === 'function') {
+    streams.push({ level: 'error', stream: optionalErrLogWritable });
+  }
+
+  const logger = pinoms(
+    {
+      level: config.logLevel,
+      // base: {
+      //   pid: config.logPid ? process.pid : null,
+      //   hostname: config.logHostname ? os.hostname : null,
+      // },
+      // streams,
+    },
+    pinoms.multistream(streams)
+  );
 
   return logger;
 }

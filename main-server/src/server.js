@@ -54,7 +54,7 @@ import * as jobWorker from './master-worker-interface/client';
 import * as prometheus from './prometheus';
 import * as telemetryToken from './telemetry/token';
 
-import logger from './logger';
+import logger, { setOptionalErrorLogFn } from './logger';
 
 import TelemetryLogger from './telemetry';
 
@@ -81,6 +81,7 @@ process.on('unhandledRejection', function (reason, p) {
 
 async function initialize() {
   logger.info({ message: 'Initializing server' });
+
   try {
     tendermint.loadSavedData();
 
@@ -97,6 +98,13 @@ async function initialize() {
     if (config.telemetryLoggingEnabled) {
       telemetryDb.initialize();
       telemetryEventsDb.initialize();
+
+      setOptionalErrorLogFn((log) => {
+        TelemetryLogger.logProcessLog({
+          nodeId: config.nodeId,
+          log,
+        });
+      });
     }
 
     if (config.ndidNode) {

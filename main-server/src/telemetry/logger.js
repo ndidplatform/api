@@ -147,6 +147,16 @@ export default class TelemetryLogger {
     this.abciVersion = abciVersion;
   }
 
+  async logProcessLog({ nodeId, log }) {
+    if (!this.enable) return;
+
+    await telemetryDb.addProcessLog(nodeId, {
+      node_id: nodeId,
+      log,
+      // source_timestamp: this.getCurrentTime(),
+    });
+  }
+
   /*
    * logRequestEvent saves the information regarding requestID
    */

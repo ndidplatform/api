@@ -220,4 +220,51 @@ export default class TelemetryClient {
       return false;
     }
   }
+
+  async receiveProcessLogData(nodeId, logs) {
+    if (!logs || logs.length === 0) return; // no events
+
+    const token = await this.tokenManager.getTokenFromNodeId(nodeId);
+    if (token == null) {
+      // no token for this nodeId
+      // cannot send the data
+      logger.warn({
+        message: `No auth token of node ID: "${nodeId}"; Unable to send`,
+      });
+      this.tokenManager.requestNewToken(nodeId);
+      return false;
+    }
+
+    try {
+      logger.info({
+        message: 'Sending process logs',
+        count: logs.length,
+        nodeId,
+      });
+      const result = await this.client.sendProcessLogs({
+        nodeId,
+        token,
+        logs,
+      });
+
+      // incase the operation is invalid, remove the token manager and try the operation again
+      if (this.client.isTokenInvalid(result)) {
+        logger.info({
+          message: 'Invalidating token',
+          nodeId,
+          token,
+        });
+        await this.tokenManager.invalidateToken(nodeId, token);
+        return this.receiveMainVersionLogData(nodeId, logs);
+      }
+
+      return this.client.isOk(result);
+    } catch (error) {
+      logger.error({
+        message: 'Error sending process logs',
+        err: error,
+      });
+      return false;
+    }
+  }
 }
