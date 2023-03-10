@@ -102,6 +102,7 @@ async function initialize() {
       setOptionalErrorLogFn((log) => {
         TelemetryLogger.logProcessLog({
           nodeId: config.nodeId,
+          process_name: 'main',
           log,
         });
       });

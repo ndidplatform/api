@@ -147,11 +147,12 @@ export default class TelemetryLogger {
     this.abciVersion = abciVersion;
   }
 
-  async logProcessLog({ nodeId, log }) {
+  async logProcessLog({ nodeId, process_name, log }) {
     if (!this.enable) return;
 
     await telemetryDb.addProcessLog(nodeId, {
       node_id: nodeId,
+      process_name,
       log,
       // source_timestamp: this.getCurrentTime(),
     });

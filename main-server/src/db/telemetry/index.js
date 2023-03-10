@@ -118,13 +118,15 @@ export async function addTendermintAndABCIVersionLog(
   }
 }
 
-export async function addProcessLog(nodeId, { node_id, log }) {
+export async function addProcessLog(nodeId, { node_id, process_name, log }) {
   try {
     await getRedis().xadd(
       `${nodeId}:process-logs`,
       '*',
       'node_id',
       node_id,
+      'process_name',
+      process_name,
       'log',
       log
     );
