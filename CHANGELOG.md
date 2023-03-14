@@ -10,6 +10,10 @@ FEATURES:
   - Add data collected:
     - All error logs on main process
 
+BUG FIXES:
+
+- Fix telemetry incorrectly enabled on node with NDID role. (Node with `NDID_NODE` environment variable set to `true`.)
+
 ## 7.1.0 (August 18, 2022)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v8.x.x_

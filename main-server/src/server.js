@@ -95,17 +95,19 @@ async function initialize() {
       prometheus.initialize();
     }
 
-    if (config.telemetryLoggingEnabled) {
-      telemetryDb.initialize();
-      telemetryEventsDb.initialize();
+    if (!config.ndidNode) {
+      if (config.telemetryLoggingEnabled) {
+        telemetryDb.initialize();
+        telemetryEventsDb.initialize();
 
-      setOptionalErrorLogFn((log) => {
-        TelemetryLogger.logProcessLog({
-          nodeId: config.nodeId,
-          process_name: 'main',
-          log,
+        setOptionalErrorLogFn((log) => {
+          TelemetryLogger.logProcessLog({
+            nodeId: config.nodeId,
+            process_name: 'main',
+            log,
+          });
         });
-      });
+      }
     }
 
     if (config.ndidNode) {
@@ -117,10 +119,12 @@ async function initialize() {
       tendermint.eventEmitter.once('ready', (status) => resolve(status))
     );
 
-    tendermint.setTelemetryEnabled(
-      (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) &&
-        config.telemetryLoggingEnabled
-    );
+    if (!config.ndidNode) {
+      tendermint.setTelemetryEnabled(
+        (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) &&
+          config.telemetryLoggingEnabled
+      );
+    }
 
     await tendermint.connectWS();
     const tendermintStatusOnSync = await tendermintReady;
@@ -213,7 +217,7 @@ async function initialize() {
       await externalCryptoServiceReady;
     }
 
-    if (config.telemetryLoggingEnabled) {
+    if (config.telemetryLoggingEnabled && !config.ndidNode) {
       if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
         await telemetryToken.initialize({ role });
       }
@@ -296,8 +300,10 @@ async function initialize() {
 
     logger.info({ message: 'Server initialized' });
 
-    if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
-      TelemetryLogger.logMainVersion({ nodeId: config.nodeId, version });
+    if (!config.ndidNode) {
+      if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+        TelemetryLogger.logMainVersion({ nodeId: config.nodeId, version });
+      }
     }
   } catch (error) {
     logger.error({
@@ -364,9 +370,11 @@ async function shutDown() {
 
   await Promise.all([cacheDb.close(), longTermDb.close(), dataDb.close()]);
 
-  if (config.telemetryLoggingEnabled) {
-    await telemetryDb.close();
-    await telemetryEventsDb.close();
+  if (!config.ndidNode) {
+    if (config.telemetryLoggingEnabled) {
+      await telemetryDb.close();
+      await telemetryEventsDb.close();
+    }
   }
 }
 
