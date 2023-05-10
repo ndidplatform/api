@@ -52,25 +52,51 @@ export async function revokeIdentityAssociationAfterCloseConsentRequest(
     }
     const { type, namespace, identifier, reference_id } = identity;
 
-    await tendermintNdid.revokeIdentityAssociation(
-      {
-        namespace,
-        identifier,
-        request_id,
-      },
-      nodeId,
-      'identity.revokeIdentityAssociationAfterCloseConsentAndBlockchain',
-      [
+    try {
+      await tendermintNdid.revokeIdentityAssociation(
         {
-          nodeId,
-          type,
-          reference_id,
+          namespace,
+          identifier,
           request_id,
         },
-        { callbackFnName, callbackAdditionalArgs },
-      ],
-      true
-    );
+        nodeId,
+        'identity.revokeIdentityAssociationAfterCloseConsentAndBlockchain',
+        [
+          {
+            nodeId,
+            type,
+            reference_id,
+            request_id,
+          },
+          { callbackFnName, callbackAdditionalArgs },
+        ],
+        true
+      );
+    } catch (error) {
+      logger.error({
+        message: 'Revoke association error',
+        tendermintResult: arguments[0],
+        additionalArgs: arguments[1],
+        options: arguments[2],
+        err: error,
+      });
+
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)(
+            { error, type, reference_id, request_id },
+            ...callbackAdditionalArgs
+          );
+        } else {
+          getFunction(callbackFnName)({
+            error,
+            type,
+            reference_id,
+            request_id,
+          });
+        }
+      }
+    }
   } catch (error) {
     logger.error({
       message: 'Revoke association after close consent request error',

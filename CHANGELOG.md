@@ -1,5 +1,13 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v9.x.x_
+
+OTHERS:
+
+- Compatibility with validations on CheckTx when making transactions to Tendermint/ABCI app.
+
 ## 7.1.0 (August 18, 2022)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v8.x.x_

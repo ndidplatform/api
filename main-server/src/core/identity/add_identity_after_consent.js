@@ -51,38 +51,59 @@ export async function addIdentityAfterCloseConsentRequest(
     if (identity == null) {
       identity = await cacheDb.getIdentityFromRequestId(nodeId, request_id);
     }
-    const {
-      type,
-      namespace,
-      identifier,
-      identity_list,
-      reference_id,
-    } = identity;
+    const { type, namespace, identifier, identity_list, reference_id } =
+      identity;
 
     const reference_group_code = await tendermintNdid.getReferenceGroupCode(
       namespace,
       identifier
     );
 
-    await tendermintNdid.addIdentity(
-      {
-        reference_group_code,
-        new_identity_list: identity_list,
-        request_id,
-      },
-      nodeId,
-      'identity.addIdentityAfterConsentAndBlockchain',
-      [
+    try {
+      await tendermintNdid.addIdentity(
         {
-          nodeId,
-          type,
-          reference_id,
+          reference_group_code,
+          new_identity_list: identity_list,
           request_id,
         },
-        { callbackFnName, callbackAdditionalArgs },
-      ],
-      true
-    );
+        nodeId,
+        'identity.addIdentityAfterConsentAndBlockchain',
+        [
+          {
+            nodeId,
+            type,
+            reference_id,
+            request_id,
+          },
+          { callbackFnName, callbackAdditionalArgs },
+        ],
+        true
+      );
+    } catch (error) {
+      logger.error({
+        message: 'Add identity error',
+        tendermintResult: arguments[0],
+        additionalArgs: arguments[1],
+        options: arguments[2],
+        err: error,
+      });
+
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)(
+            { error, type, reference_id, request_id },
+            ...callbackAdditionalArgs
+          );
+        } else {
+          getFunction(callbackFnName)({
+            error,
+            type,
+            reference_id,
+            request_id,
+          });
+        }
+      }
+    }
   } catch (error) {
     logger.error({
       message: 'Add identity after close consent request error',

@@ -53,25 +53,52 @@ export async function revokeAccessorAfterCloseConsentRequest(
     }
     const { type, accessor_id, reference_id } = identity;
 
-    await tendermintNdid.revokeAccessor(
-      {
-        request_id,
-        accessor_id,
-      },
-      nodeId,
-      'identity.revokeAccessorAfterConsentAndBlockchain',
-      [
+    try {
+      await tendermintNdid.revokeAccessor(
         {
-          nodeId,
-          type,
-          accessor_id,
-          reference_id,
           request_id,
+          accessor_id,
         },
-        { callbackFnName, callbackAdditionalArgs },
-      ],
-      true
-    );
+        nodeId,
+        'identity.revokeAccessorAfterConsentAndBlockchain',
+        [
+          {
+            nodeId,
+            type,
+            accessor_id,
+            reference_id,
+            request_id,
+          },
+          { callbackFnName, callbackAdditionalArgs },
+        ],
+        true
+      );
+    } catch (error) {
+      logger.error({
+        message: 'Revoke accessor error',
+        tendermintResult: arguments[0],
+        additionalArgs: arguments[1],
+        options: arguments[2],
+        err: error,
+      });
+
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)(
+            { error, type, accessor_id, reference_id, request_id },
+            ...callbackAdditionalArgs
+          );
+        } else {
+          getFunction(callbackFnName)({
+            error,
+            type,
+            accessor_id,
+            reference_id,
+            request_id,
+          });
+        }
+      }
+    }
   } catch (error) {
     logger.error({
       message: 'Revoke accessor after close consent request error',

@@ -53,26 +53,52 @@ export async function upgradeIdentityModeAfterCloseConsentRequest(
     }
     const { type, namespace, identifier, reference_id } = identity;
 
-    await tendermintNdid.updateIdentityModeList(
-      {
-        namespace,
-        identifier,
-        mode_list: [2, 3],
-        request_id,
-      },
-      nodeId,
-      'identity.upgradeIdentityModeAfterConsentAndBlockchain',
-      [
+    try {
+      await tendermintNdid.updateIdentityModeList(
         {
-          nodeId,
-          type,
-          reference_id,
+          namespace,
+          identifier,
+          mode_list: [2, 3],
           request_id,
         },
-        { callbackFnName, callbackAdditionalArgs },
-      ],
-      true
-    );
+        nodeId,
+        'identity.upgradeIdentityModeAfterConsentAndBlockchain',
+        [
+          {
+            nodeId,
+            type,
+            reference_id,
+            request_id,
+          },
+          { callbackFnName, callbackAdditionalArgs },
+        ],
+        true
+      );
+    } catch (error) {
+      logger.error({
+        message: 'Upgrade identity mode error',
+        tendermintResult: arguments[0],
+        additionalArgs: arguments[1],
+        options: arguments[2],
+        err: error,
+      });
+
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)(
+            { error, type, reference_id, request_id },
+            ...callbackAdditionalArgs
+          );
+        } else {
+          getFunction(callbackFnName)({
+            error,
+            type,
+            reference_id,
+            request_id,
+          });
+        }
+      }
+    }
   } catch (error) {
     logger.error({
       message: 'Upgrade identity mode after close consent request error',

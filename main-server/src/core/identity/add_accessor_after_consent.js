@@ -66,28 +66,55 @@ export async function addAccessorAfterCloseConsentRequest(
       identifier
     );
 
-    await tendermintNdid.addAccessor(
-      {
-        reference_group_code,
-        accessor_id,
-        accessor_public_key,
-        accessor_type,
-        request_id,
-      },
-      nodeId,
-      'identity.addAccessorAfterConsentAndBlockchain',
-      [
+    try {
+      await tendermintNdid.addAccessor(
         {
-          nodeId,
-          type,
+          reference_group_code,
           accessor_id,
-          reference_id,
+          accessor_public_key,
+          accessor_type,
           request_id,
         },
-        { callbackFnName, callbackAdditionalArgs },
-      ],
-      true
-    );
+        nodeId,
+        'identity.addAccessorAfterConsentAndBlockchain',
+        [
+          {
+            nodeId,
+            type,
+            accessor_id,
+            reference_id,
+            request_id,
+          },
+          { callbackFnName, callbackAdditionalArgs },
+        ],
+        true
+      );
+    } catch (error) {
+      logger.error({
+        message: 'Add accessor error',
+        tendermintResult: arguments[0],
+        additionalArgs: arguments[1],
+        options: arguments[2],
+        err: error,
+      });
+
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)(
+            { error, type, accessor_id, reference_id, request_id },
+            ...callbackAdditionalArgs
+          );
+        } else {
+          getFunction(callbackFnName)({
+            error,
+            type,
+            accessor_id,
+            reference_id,
+            request_id,
+          });
+        }
+      }
+    }
   } catch (error) {
     logger.error({
       message: 'Add accessor after close consent request error',

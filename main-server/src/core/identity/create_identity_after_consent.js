@@ -71,34 +71,61 @@ export async function createIdentityAfterCloseConsentRequest(
       mode_list = [2, 3];
     }
 
-    await tendermintNdid.registerIdentity(
-      {
-        reference_group_code,
-        new_identity_list,
-        ial,
-        lial,
-        laal,
-        mode_list,
-        accessor_id,
-        accessor_public_key,
-        accessor_type,
-        request_id,
-      },
-      nodeId,
-      'identity.createIdentityAfterCloseConsentAndBlockchain',
-      [
+    try {
+      await tendermintNdid.registerIdentity(
         {
-          nodeId,
-          type,
           reference_group_code,
+          new_identity_list,
+          ial,
+          lial,
+          laal,
+          mode_list,
           accessor_id,
-          reference_id,
+          accessor_public_key,
+          accessor_type,
           request_id,
         },
-        { callbackFnName, callbackAdditionalArgs },
-      ],
-      true
-    );
+        nodeId,
+        'identity.createIdentityAfterCloseConsentAndBlockchain',
+        [
+          {
+            nodeId,
+            type,
+            reference_group_code,
+            accessor_id,
+            reference_id,
+            request_id,
+          },
+          { callbackFnName, callbackAdditionalArgs },
+        ],
+        true
+      );
+    } catch (error) {
+      logger.error({
+        message: 'Register identity error',
+        tendermintResult: arguments[0],
+        additionalArgs: arguments[1],
+        options: arguments[2],
+        err: error,
+      });
+
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)(
+            { error, type, accessor_id, reference_id, request_id },
+            ...callbackAdditionalArgs
+          );
+        } else {
+          getFunction(callbackFnName)({
+            error,
+            type,
+            accessor_id,
+            reference_id,
+            request_id,
+          });
+        }
+      }
+    }
   } catch (error) {
     logger.error({
       message: 'Create identity after close consent request error',

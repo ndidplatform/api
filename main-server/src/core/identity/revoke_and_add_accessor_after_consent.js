@@ -60,29 +60,64 @@ export async function revokeAndAddAccessorAfterCloseConsentRequest(
       reference_id,
     } = identity;
 
-    await tendermintNdid.revokeAndAddAccessor(
-      {
-        revoking_accessor_id,
-        accessor_id,
-        accessor_public_key,
-        accessor_type,
-        request_id,
-      },
-      nodeId,
-      'identity.revokeAndAddAccessorAfterConsentAndBlockchain',
-      [
+    try {
+      await tendermintNdid.revokeAndAddAccessor(
         {
-          nodeId,
-          type,
           revoking_accessor_id,
           accessor_id,
-          reference_id,
+          accessor_public_key,
+          accessor_type,
           request_id,
         },
-        { callbackFnName, callbackAdditionalArgs },
-      ],
-      true
-    );
+        nodeId,
+        'identity.revokeAndAddAccessorAfterConsentAndBlockchain',
+        [
+          {
+            nodeId,
+            type,
+            revoking_accessor_id,
+            accessor_id,
+            reference_id,
+            request_id,
+          },
+          { callbackFnName, callbackAdditionalArgs },
+        ],
+        true
+      );
+    } catch (error) {
+      logger.error({
+        message: 'Revoke and add accessor error',
+        tendermintResult: arguments[0],
+        additionalArgs: arguments[1],
+        options: arguments[2],
+        err: error,
+      });
+
+      if (callbackFnName != null) {
+        if (callbackAdditionalArgs != null) {
+          getFunction(callbackFnName)(
+            {
+              error,
+              type,
+              revoking_accessor_id,
+              accessor_id,
+              reference_id,
+              request_id,
+            },
+            ...callbackAdditionalArgs
+          );
+        } else {
+          getFunction(callbackFnName)({
+            error,
+            type,
+            revoking_accessor_id,
+            accessor_id,
+            reference_id,
+            request_id,
+          });
+        }
+      }
+    }
   } catch (error) {
     logger.error({
       message: 'Revoke and add accessor after close consent request error',
