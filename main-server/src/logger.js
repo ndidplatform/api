@@ -24,6 +24,12 @@ import { initLogger } from 'ndid-logger';
 
 import * as config from './config';
 
+let optionalErrorLogFn;
+
+export function setOptionalErrorLogFn(fn) {
+  optionalErrorLogFn = fn;
+}
+
 const logger = initLogger({
   env: config.env,
   name: config.nodeId,
@@ -38,6 +44,11 @@ const logger = initLogger({
   logOneLine: config.logOneLine,
   // replaceForTooLongLog: config.replaceForTooLongLog,
   // logLengthThreshold: config.logLengthThreshold,
+  optionalErrorLogFn: (log) => {
+    if (optionalErrorLogFn) {
+      optionalErrorLogFn(log);
+    }
+  },
 });
 
 export default logger;

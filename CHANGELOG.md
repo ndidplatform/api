@@ -9,6 +9,13 @@ FEATURES:
 - Support simple API authentication.
   - Using API key set in HTTP header `X-API-Key`
   - Default config is NOT using API key auth. (Config can be set with environment variable `USE_API_KEY` and `API_KEY_HASH`.)
+- Telemetry data collection
+  - Add data collected:
+    - All error logs on main process
+
+BUG FIXES:
+
+- Fix telemetry incorrectly enabled on node with NDID role. (Node with `NDID_NODE` environment variable set to `true`.)
 
 OTHERS:
 

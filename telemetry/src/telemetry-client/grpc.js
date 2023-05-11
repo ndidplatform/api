@@ -185,6 +185,29 @@ export default class GRPCTelemetryClient {
     });
   }
 
+  sendProcessLogs({ nodeId, token, logs }) {
+    logger.info({
+      message: 'Attempt connecting GRPC server',
+      function: 'sendLogs',
+    });
+    return new Promise((resolve, reject) => {
+      const metadata = new grpc.Metadata();
+      metadata.add('version', GRPC_API_VERSION);
+      this.client.sendProcessLogs(
+        {
+          request_metadata: { node_id: nodeId, token },
+          data: logs,
+        },
+        metadata,
+        (err, result) => {
+          if (err) reject(err);
+          logger.debug(result);
+          resolve(result);
+        }
+      );
+    });
+  }
+
   sendRequestEvents({ nodeId, token, events }) {
     logger.info({
       message: 'Attempt connecting GRPC server',

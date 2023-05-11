@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "pino": "^6.14.0",
+    "pino-multi-stream": "^6.0.0",
     "pino-pretty": "^6.0.0"
   },
   "devDependencies": {
