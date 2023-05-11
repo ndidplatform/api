@@ -728,6 +728,11 @@ module.exports = {
     message: 'Invalid request type',
     clientError: true,
   },
+  INVALID_API_KEY: {
+    code: 20092,
+    message: 'Invalid API key',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

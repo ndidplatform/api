@@ -4,6 +4,12 @@
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v9.x.x_
 
+FEATURES:
+
+- Support simple API authentication.
+  - Using API key set in HTTP header `X-API-Key`
+  - Default config is NOT using API key auth. (Config can be set with environment variable `USE_API_KEY` and `API_KEY_HASH`.)
+
 OTHERS:
 
 - Compatibility with validations on CheckTx when making transactions to Tendermint/ABCI app.

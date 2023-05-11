@@ -28,6 +28,7 @@ import logger from '../../logger';
 
 import readyHandler from './middleware/ready_handler';
 import errorHandler from './middleware/error_handler';
+import apiKeyHandler from './middleware/api_key_handler';
 import apiV4Router from './v4';
 import apiV5Router from './v5';
 import serverInfo from './server_info';
@@ -87,6 +88,11 @@ if (config.env === 'development') {
 
     next();
   });
+}
+
+router.use(apiKeyHandler);
+
+if (config.env === 'development') {
   router.use('/debug', debugRouter);
 }
 

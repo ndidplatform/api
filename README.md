@@ -108,6 +108,8 @@
 - `DATA_DIRECTORY_PATH`: Directory path for persistence data files [Default: `__dirname/../data` (`data` directory in repository's directory)]
 - `DEFAULT_API_VERSION`: API version to serve on default path (without version path prefix) [Default: `5`]
 - `CALLBACK_API_VERSION`: Callback API version [Default: `5`]
+- `USE_API_KEY`: Simple API authentication by setting API key in HTTP request header `X-API-Key` [Default: `false`]
+- `API_KEY_HASH`: API key SHA-256 hash hex encoded string. Required when USE_API_KEY=true
 - `DB_IP`: IP address of DB (redis) server [Default: `localhost`]
 - `DB_PORT`: Port of DB (redis) server [Default: `6379`]
 - `DB_PASSWORD`: Authentication password for DB (redis) connection

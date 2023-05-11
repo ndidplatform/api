@@ -167,3 +167,13 @@ if (process.env.CALLBACK_API_VERSION != null) {
     process.exit(1);
   }
 }
+
+if (process.env.USE_API_KEY === 'true') {
+  if (!process.env.API_KEY_HASH) {
+    console.error(
+      'ERROR:',
+      '"API_KEY_HASH" environment variable is not set. Process will now exit.'
+    );
+    process.exit(1);
+  }
+}
