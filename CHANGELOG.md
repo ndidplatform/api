@@ -1,6 +1,6 @@
 # Changelog
 
-## TBD
+## 7.2.0 (TBD)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v9.x.x_
 
