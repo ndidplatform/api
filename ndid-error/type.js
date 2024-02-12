@@ -733,6 +733,11 @@ module.exports = {
     message: 'Invalid API key',
     clientError: true,
   },
+  INVALID_IDENTIFIER_KEY: {
+    code: 20093,
+    message: 'Invalid identifier',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

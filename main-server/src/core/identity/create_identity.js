@@ -126,6 +126,11 @@ export async function createIdentity(
           });
         }
 
+        common.validateIdentifier({
+          namespace,
+          identifier,
+        });
+
         const identityOnNode = await getIdentityInfo({
           nodeId: node_id,
           namespace,

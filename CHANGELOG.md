@@ -1,5 +1,15 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_
+
+FEATURES:
+
+- Validate identifier with namespace `citizen_id` as Thai citizen ID.
+  - On create request (mode 1)
+  - On create identity
+
 ## 7.2.0 (TBD)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v9.x.x_

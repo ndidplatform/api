@@ -20,6 +20,8 @@
  *
  */
 
+import { validateIdentifier } from './thai_citizen_id';
+
 import { getFunction } from '../../functions';
 import {
   getIdpMQDestinations,
@@ -444,6 +446,13 @@ export async function createRequest(
           errorType: errorType.INVALID_REQUEST_TYPE,
         });
       }
+    }
+
+    if (mode === 1) {
+      validateIdentifier({
+        namespace,
+        identifier,
+      });
     }
 
     const requestId = await cacheDb.getRequestIdByReferenceId(
