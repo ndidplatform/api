@@ -82,7 +82,6 @@ router.post(
         },
         {
           synchronous: false,
-          validateIdentifier: false,
           apiVersion,
           ndidMemberAppType,
           ndidMemberAppVersion,

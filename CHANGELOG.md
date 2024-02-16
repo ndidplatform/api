@@ -6,9 +6,10 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 
 FEATURES:
 
-- Validate identifier with namespace `citizen_id` as Thai citizen ID.
-  - On create request (mode 1)
-  - On create identity
+- API version 6.0
+  - Validate identifier with namespace `citizen_id` as Thai citizen ID.
+    - On create request (mode 1)
+    - On create identity
 
 ## 7.2.0 (TBD)
 

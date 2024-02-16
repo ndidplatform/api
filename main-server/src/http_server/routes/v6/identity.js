@@ -70,7 +70,6 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
         request_message,
       },
       {
-        validateIdentifier: false,
         apiVersion,
         ndidMemberAppType,
         ndidMemberAppVersion,
@@ -140,7 +139,6 @@ router.post(
           request_message,
         },
         {
-          validateIdentifier: false,
           apiVersion,
           ndidMemberAppType,
           ndidMemberAppVersion,

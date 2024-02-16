@@ -414,7 +414,10 @@ export async function createRequest(
     bypass_identity_check,
     request_type,
   } = createRequestParams;
-  const { synchronous = false } = options;
+  const {
+    synchronous = false,
+    validateIdentifier: _validateIdentifier = true,
+  } = options;
   let {
     request_id, // Pre-generated request ID. Used by create identity function.
   } = additionalParams;
@@ -448,7 +451,7 @@ export async function createRequest(
       }
     }
 
-    if (mode === 1) {
+    if (_validateIdentifier && mode === 1) {
       validateIdentifier({
         namespace,
         identifier,
