@@ -156,7 +156,7 @@ async function addKeyAndSetToken(nodeId, role, behindProxy, index) {
       ...node,
       max_ial: 3,
       max_aal: 3,
-      on_the_fly_support: false,
+      supported_feature_list: [],
     };
   }
 
@@ -218,6 +218,11 @@ export async function init() {
       master_public_key,
     });
     await ndid.endInit();
+
+    await ndid.addAllowedNodeSupportedFeature({
+      name: 'on_the_fly',
+    });
+
     await Promise.all(
       nodes.map(({ nodeId, role }, index) =>
         addKeyAndSetToken(nodeId, role, false, index)
@@ -292,6 +297,7 @@ export async function init() {
     console.log('========= Done =========');
   } catch (error) {
     console.error('Cannot initialize NDID platform:', error);
+    process.exit(1);
   }
 
   process.exit();

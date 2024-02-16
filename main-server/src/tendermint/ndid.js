@@ -904,7 +904,7 @@ export async function getIdpNodes({
   agent,
   min_ial,
   min_aal,
-  on_the_fly_support,
+  supported_feature_list,
   node_id_list,
   supported_request_message_type_list,
   mode_list,
@@ -927,7 +927,7 @@ export async function getIdpNodes({
       agent,
       min_ial,
       min_aal,
-      on_the_fly_support,
+      supported_feature_list,
       node_id_list,
       supported_request_message_type_list,
       mode_list,
@@ -1274,7 +1274,7 @@ export async function getServicePriceCeiling(service_id) {
 
 export async function getServicePriceMinEffectiveDatetimeDelay({ service_id }) {
   try {
-    return await tendermint.query('GetServicePriceMinEffectiveDatetimeDelay',{
+    return await tendermint.query('GetServicePriceMinEffectiveDatetimeDelay', {
       service_id,
     });
   } catch (error) {
@@ -1744,7 +1744,8 @@ export async function removeSuppressedIdentityModificationNotificationNode(
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot remove suppressed identity modification notification node',
+      message:
+        'Cannot remove suppressed identity modification notification node',
       cause: error,
     });
   }
@@ -1783,6 +1784,69 @@ export async function isSuppressedIdentityModificationNotificationNode({
     throw new CustomError({
       message:
         'Cannot check is suppressed identity modification notification node from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function addAllowedNodeSupportedFeature(
+  { name },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'AddAllowedNodeSupportedFeature',
+      params: { name },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot add allowed node supported feature',
+      cause: error,
+    });
+  }
+}
+
+export async function removeAllowedNodeSupportedFeature(
+  { name },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'RemoveAllowedNodeSupportedFeature',
+      params: { name },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove allowed node supported feature',
+      cause: error,
+    });
+  }
+}
+
+export async function getAllowedNodeSupportedFeatureList({ prefix } = {}) {
+  try {
+    const result = await tendermint.query(
+      'GetAllowedNodeSupportedFeatureList',
+      { prefix }
+    );
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get allowed node supported feature list',
       cause: error,
     });
   }

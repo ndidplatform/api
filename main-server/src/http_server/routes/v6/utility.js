@@ -31,14 +31,12 @@ import * as privateMessage from '../../../core/common/private_message';
 
 const router = express.Router();
 
-const ON_THE_FLY_FEATURE_FLAG = 'on_the_fly';
-
 router.get('/idp', validateQuery, async (req, res, next) => {
   try {
     const {
       min_ial = 0,
       min_aal = 0,
-      on_the_fly_support,
+      supported_feature_list,
       agent,
       filter_for_node_id,
     } = req.query;
@@ -50,34 +48,19 @@ router.get('/idp', validateQuery, async (req, res, next) => {
       agentFlag = false;
     }
 
-    const supportedFeatureList = [];
-    if (on_the_fly_support === 'true') {
-      supportedFeatureList.push(ON_THE_FLY_FEATURE_FLAG);
+    let supportedFeatureList = [];
+    if (supported_feature_list) {
+      supported_feature_list
+        .split(',')
+        .map((supportedFeature) => supportedFeature.trim());
     }
 
-    let idpNodes = await tendermintNdid.getIdpNodes({
+    const idpNodes = await tendermintNdid.getIdpNodes({
       min_ial: parseFloat(min_ial),
       min_aal: parseFloat(min_aal),
       supported_feature_list: supportedFeatureList,
       agent: agentFlag,
       filter_for_node_id,
-    });
-
-    idpNodes = idpNodes.map((idpNode) => {
-      return {
-        node_id: idpNode.node_id,
-        node_name: idpNode.node_name,
-        max_ial: idpNode.max_ial,
-        max_aal: idpNode.max_aal,
-        on_the_fly_support: idpNode.supported_feature_list.includes(
-          ON_THE_FLY_FEATURE_FLAG
-        ),
-        lial: idpNode.lial,
-        laal: idpNode.laal,
-        supported_request_message_data_url_type_list:
-          idpNode.supported_request_message_data_url_type_list,
-        agent: idpNode.agent,
-      };
     });
 
     res.status(200).json(idpNodes);
@@ -96,17 +79,19 @@ router.get(
       const {
         min_ial = 0,
         min_aal = 0,
-        on_the_fly_support,
+        supported_feature_list,
         mode,
         filter_for_node_id,
       } = req.query;
 
-      const supportedFeatureList = [];
-      if (on_the_fly_support === 'true') {
-        supportedFeatureList.push(ON_THE_FLY_FEATURE_FLAG);
+      let supportedFeatureList = [];
+      if (supported_feature_list) {
+        supported_feature_list
+          .split(',')
+          .map((supportedFeature) => supportedFeature.trim());
       }
 
-      let idpNodes = await tendermintNdid.getIdpNodes({
+      const idpNodes = await tendermintNdid.getIdpNodes({
         namespace,
         identifier,
         min_ial: parseFloat(min_ial),
@@ -114,23 +99,6 @@ router.get(
         supported_feature_list: supportedFeatureList,
         mode_list: mode ? [parseInt(mode)] : undefined,
         filter_for_node_id,
-      });
-
-      idpNodes = idpNodes.map((idpNode) => {
-        return {
-          node_id: idpNode.node_id,
-          node_name: idpNode.node_name,
-          max_ial: idpNode.max_ial,
-          max_aal: idpNode.max_aal,
-          on_the_fly_support: idpNode.supported_feature_list.includes(
-            ON_THE_FLY_FEATURE_FLAG
-          ),
-          lial: idpNode.lial,
-          laal: idpNode.laal,
-          supported_request_message_data_url_type_list:
-            idpNode.supported_request_message_data_url_type_list,
-          agent: idpNode.agent,
-        };
       });
 
       res.status(200).json(idpNodes);
@@ -258,28 +226,12 @@ router.get('/nodes/:node_id', async (req, res, next) => {
   try {
     const { node_id } = req.params;
 
-    let result = await tendermintNdid.getNodeInfo(node_id);
+    const result = await tendermintNdid.getNodeInfo(node_id);
 
     if (result == null) {
       res.status(404).end();
     } else {
-      res.status(200).json({
-        public_key: result.public_key,
-        master_public_key: result.master_public_key,
-        node_name: result.node_name,
-        role: result.role,
-        max_ial: result.max_ial,
-        max_aal: result.max_aal,
-        on_the_fly_support: result.supported_feature_list.includes(
-          ON_THE_FLY_FEATURE_FLAG
-        ),
-        supported_request_message_data_url_type_list:
-          result.supported_request_message_data_url_type_list,
-        agent: result.agent,
-        node_id_whitelist_active: result.node_id_whitelist_active,
-        mq: result.mq,
-        active: result.active,
-      });
+      res.status(200).json(result);
     }
     next();
   } catch (error) {
@@ -510,5 +462,22 @@ router.get(
     }
   }
 );
+
+router.get('/node_supported_features', async (req, res, next) => {
+  try {
+    const { prefix } = req.query;
+
+    const result = await tendermintNdid.getAllowedNodeSupportedFeatureList({ prefix });
+
+    if (result == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(result);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

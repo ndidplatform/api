@@ -1,5 +1,35 @@
 # Changelog
 
+## TBD
+
+BREAKING CHANGES:
+
+- API version 6.0
+  - Remove query string parameter `on_the_fly_support` from GET `/utility/idp`
+  - Add query string parameter `supported_feature_list` (list of strings separated by `,`) to GET `/utility/idp`
+  - Change response body JSON schema of GET `/utility/idp`.
+    - Remove `on_the_fly_support` (boolean) property.
+    - Add `supported_feature_list` (array of strings) property.
+  - Remove query string parameter `on_the_fly_support` from GET `/utility/idp/:namespace/:identifier`
+  - Add query string parameter `supported_feature_list` (list of strings separated by `,`) to GET `/utility/idp/:namespace/:identifier`
+  - Change response body JSON schema of GET `/utility/idp/:namespace/:identifier`.
+    - Remove `on_the_fly_support` (boolean) property.
+    - Add `supported_feature_list` (array of strings) property.
+  - Change response body JSON schema of GET `/utility/nodes/:node_id`.
+    - Remove `on_the_fly_support` (boolean) property.
+    - Add `supported_feature_list` (array of strings) property.
+  - NDID only APIs
+    - Remove `on_the_fly_support` property for registering node (POST `/ndid/register_node`) and updating node (POST `/ndid/update_node`).
+    - Add `supported_feature_list` property for registering node (POST `/ndid/register_node`) and updating node (POST `/ndid/update_node`).
+
+FEATURES:
+
+- API version 6.0
+  - New API: GET `/utility/node_supported_features`: Get valid node supported feature list.
+  - NDID only APIs
+    - New API: POST `/ndid/add_allowed_node_supported_feature`: Add allowed node supported feature
+    - New API: POST `/ndid/remove_allowed_node_supported_feature`: Remove allowed node supported feature
+
 ## 7.2.0 (TBD)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v9.x.x_
