@@ -36,6 +36,7 @@ import * as mq from '../../mq';
 import * as cacheDb from '../../db/cache';
 import privateMessageType from '../../mq/message/type';
 import * as utils from '../../utils';
+import * as cryptoUtils from '../../utils/crypto';
 import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -657,6 +658,7 @@ async function createRequestInternalAsync(
           as_id_list: dataRequest.as_id_list,
           min_as: dataRequest.min_as,
           request_params_hash: utils.hash(
+            cryptoUtils.hashAlgorithm.SHA256,
             (dataRequest.request_params != null
               ? dataRequest.request_params
               : '') + data_request_params_salt_list[index]
@@ -673,7 +675,10 @@ async function createRequestInternalAsync(
       min_ial,
       request_timeout,
       data_request_list: dataRequestListToBlockchain,
-      request_message_hash: utils.hash(request_message + request_message_salt),
+      request_message_hash: utils.hash(
+        cryptoUtils.hashAlgorithm.SHA256,
+        request_message + request_message_salt
+      ),
       idp_id_list,
       purpose,
       request_type,

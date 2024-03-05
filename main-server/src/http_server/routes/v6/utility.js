@@ -239,6 +239,23 @@ router.get('/nodes/:node_id', async (req, res, next) => {
   }
 });
 
+router.get('/nodes/:node_id/public_keys', async (req, res, next) => {
+  try {
+    const { node_id } = req.params;
+
+    const nodeKeyList = await tendermintNdid.getNodePublicKeyList(node_id);
+
+    if (nodeKeyList == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(nodeKeyList);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/nodes/:node_id/token', async (req, res, next) => {
   try {
     const { node_id } = req.params;

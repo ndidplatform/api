@@ -22,6 +22,7 @@
 
 import * as tendermint from '.';
 import * as utils from '../utils';
+import * as cryptoUtils from '../utils/crypto';
 import * as config from '../config';
 
 import CustomError from 'ndid-error/custom_error';
@@ -61,8 +62,12 @@ export async function setMqAddresses(
 
 export async function updateNode(
   {
-    public_key,
-    master_public_key,
+    signing_public_key,
+    signing_algorithm,
+    signing_master_public_key,
+    signing_master_algorithm,
+    encryption_public_key,
+    encryption_algorithm,
     supported_request_message_data_url_type_list,
   },
   nodeId,
@@ -75,8 +80,12 @@ export async function updateNode(
       nodeId,
       fnName: 'UpdateNode',
       params: {
-        public_key,
-        master_public_key,
+        signing_public_key,
+        signing_algorithm,
+        signing_master_public_key,
+        signing_master_algorithm,
+        encryption_public_key,
+        encryption_algorithm,
         supported_request_message_data_url_type_list,
       },
       callbackFnName,
@@ -134,7 +143,10 @@ export async function registerIdentity(
   try {
     new_identity_list = new_identity_list.map(({ namespace, identifier }) => ({
       identity_namespace: namespace,
-      identity_identifier_hash: utils.hash(identifier),
+      identity_identifier_hash: utils.hash(
+        cryptoUtils.hashAlgorithm.SHA256,
+        identifier
+      ),
     }));
 
     const result = await tendermint.transact({
@@ -175,7 +187,10 @@ export async function addIdentity(
   try {
     new_identity_list = new_identity_list.map(({ namespace, identifier }) => ({
       identity_namespace: namespace,
-      identity_identifier_hash: utils.hash(identifier),
+      identity_identifier_hash: utils.hash(
+        cryptoUtils.hashAlgorithm.SHA256,
+        identifier
+      ),
     }));
 
     const result = await tendermint.transact({
@@ -230,7 +245,7 @@ export async function addAccessor(
         reference_group_code,
         identity_namespace: namespace,
         identity_identifier_hash: identifier
-          ? utils.hash(identifier)
+          ? utils.hash(cryptoUtils.hashAlgorithm.SHA256, identifier)
           : undefined,
         accessor_id,
         accessor_public_key,
@@ -335,7 +350,7 @@ export async function updateIdentityModeList(
         reference_group_code,
         identity_namespace: namespace,
         identity_identifier_hash: identifier
-          ? utils.hash(identifier)
+          ? utils.hash(cryptoUtils.hashAlgorithm.SHA256, identifier)
           : undefined,
         mode_list,
         request_id,
@@ -375,7 +390,7 @@ export async function revokeIdentityAssociation(
         reference_group_code,
         identity_namespace: namespace,
         identity_identifier_hash: identifier
-          ? utils.hash(identifier)
+          ? utils.hash(cryptoUtils.hashAlgorithm.SHA256, identifier)
           : undefined,
         request_id,
       },
@@ -438,12 +453,12 @@ export async function mergeReferenceGroup(
         reference_group_code,
         identity_namespace: namespace,
         identity_identifier_hash: identifier
-          ? utils.hash(identifier)
+          ? utils.hash(cryptoUtils.hashAlgorithm.SHA256, identifier)
           : undefined,
         reference_group_code_to_merge,
         identity_namespace_to_merge: namespace_to_merge,
         identity_identifier_hash_to_merge: identifier_to_merge
-          ? utils.hash(identifier_to_merge)
+          ? utils.hash(cryptoUtils.hashAlgorithm.SHA256, identifier_to_merge)
           : undefined,
         request_id,
       },
@@ -601,7 +616,7 @@ export async function updateIdentity(
         reference_group_code,
         identity_namespace: namespace,
         identity_identifier_hash: identifier
-          ? utils.hash(identifier)
+          ? utils.hash(cryptoUtils.hashAlgorithm.SHA256, identifier)
           : undefined,
         ial,
         lial,
@@ -809,33 +824,67 @@ export async function getChainHistory() {
   }
 }
 
-export async function getNodePubKey(node_id) {
+export async function getNodeSigningPubKey(node_id) {
   try {
-    const result = await tendermint.query('GetNodePublicKey', { node_id });
-    if (result == null) {
-      return null;
-    }
-    return result.public_key;
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot get node public key from blockchain',
-      cause: error,
-    });
-  }
-}
-
-export async function getNodeMasterPubKey(node_id) {
-  try {
-    const result = await tendermint.query('GetNodeMasterPublicKey', {
+    const result = await tendermint.query('GetNodeSigningPublicKey', {
       node_id,
     });
     if (result == null) {
       return null;
     }
-    return result.master_public_key;
+    return result;
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get node master public key from blockchain',
+      message: 'Cannot get node signing public key from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function getNodeSigningMasterPubKey(node_id) {
+  try {
+    const result = await tendermint.query('GetNodeSigningMasterPublicKey', {
+      node_id,
+    });
+    if (result == null) {
+      return null;
+    }
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get node signing master public key from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function getNodeEncryptionPubKey(node_id) {
+  try {
+    const result = await tendermint.query('GetNodeEncryptionPublicKey', {
+      node_id,
+    });
+    if (result == null) {
+      return null;
+    }
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get node encryption public key from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function getNodePublicKeyList(node_id = config.nodeId) {
+  try {
+    const result = await tendermint.query('GetNodePublicKeyList', { node_id });
+    if (result == null) {
+      return null;
+    }
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get node public key list from blockchain',
       cause: error,
     });
   }
@@ -919,7 +968,9 @@ export async function getIdpNodes({
     const result = await tendermint.query('GetIdpNodes', {
       reference_group_code,
       identity_namespace: namespace,
-      identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
+      identity_identifier_hash: identifier
+        ? utils.hash(cryptoUtils.hashAlgorithm.SHA256, identifier)
+        : undefined,
       filter_for_node_id:
         filter_for_node_id != null && filter_for_node_id !== ''
           ? filter_for_node_id
@@ -961,7 +1012,9 @@ export async function getIdpNodesInfo({
     const result = await tendermint.query('GetIdpNodesInfo', {
       reference_group_code,
       identity_namespace: namespace,
-      identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
+      identity_identifier_hash: identifier
+        ? utils.hash(cryptoUtils.hashAlgorithm.SHA256, identifier)
+        : undefined,
       filter_for_node_id:
         filter_for_node_id != null && filter_for_node_id !== ''
           ? filter_for_node_id
@@ -1097,7 +1150,9 @@ export async function checkExistingIdentity({
     const result = await tendermint.query('CheckExistingIdentity', {
       reference_group_code,
       identity_namespace: namespace,
-      identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
+      identity_identifier_hash: identifier
+        ? utils.hash(cryptoUtils.hashAlgorithm.SHA256, identifier)
+        : undefined,
     });
     if (result == null) {
       return null;
@@ -1129,7 +1184,9 @@ export async function getIdentityInfo({
     return await tendermint.query('GetIdentityInfo', {
       reference_group_code,
       identity_namespace: namespace,
-      identity_identifier_hash: identifier ? utils.hash(identifier) : undefined,
+      identity_identifier_hash: identifier
+        ? utils.hash(cryptoUtils.hashAlgorithm.SHA256, identifier)
+        : undefined,
       node_id,
     });
   } catch (error) {
@@ -1144,7 +1201,10 @@ export async function getReferenceGroupCode(namespace, identifier) {
   try {
     const result = await tendermint.query('GetReferenceGroupCode', {
       identity_namespace: namespace,
-      identity_identifier_hash: utils.hash(identifier),
+      identity_identifier_hash: utils.hash(
+        cryptoUtils.hashAlgorithm.SHA256,
+        identifier
+      ),
     });
     if (result == null) {
       return null;
@@ -1274,7 +1334,7 @@ export async function getServicePriceCeiling(service_id) {
 
 export async function getServicePriceMinEffectiveDatetimeDelay({ service_id }) {
   try {
-    return await tendermint.query('GetServicePriceMinEffectiveDatetimeDelay',{
+    return await tendermint.query('GetServicePriceMinEffectiveDatetimeDelay', {
       service_id,
     });
   } catch (error) {
@@ -1744,7 +1804,8 @@ export async function removeSuppressedIdentityModificationNotificationNode(
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot remove suppressed identity modification notification node',
+      message:
+        'Cannot remove suppressed identity modification notification node',
       cause: error,
     });
   }

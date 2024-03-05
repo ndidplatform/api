@@ -28,6 +28,7 @@ import { ExponentialBackoff } from 'simple-backoff';
 
 import { publicEncrypt, randomBase64Bytes } from './utils/crypto';
 import { wait, hash, verifySignature } from './utils';
+import * as cryptoUtils from './utils/crypto';
 import * as tendermintNdid from './tendermint/ndid';
 import * as dataDb from './db/data';
 import CustomError from 'ndid-error/custom_error';
@@ -74,14 +75,15 @@ export async function checkCallbackUrls() {
   }
 }
 
-async function testSignCallback(url, publicKey, isMaster) {
+async function testSignCallback(url, publicKey, signatureAlgorithm, isMaster) {
   const body = {
     node_id: config.nodeId,
     request_message: TEST_MESSAGE_BASE_64,
-    request_message_hash: hash(TEST_MESSAGE),
-    hash_method: 'SHA256',
-    key_type: 'RSA',
-    sign_method: 'RSA-SHA256',
+    request_message_hash: hash(signatureAlgorithm.hashAlgorithm, TEST_MESSAGE), // FIXME
+    hash_method: signatureAlgorithm.hashAlgorithm,
+    key_type: signatureAlgorithm.keyAlgorithm,
+    sign_method: signatureAlgorithm.name, // FIXME: backward compatibility ('RSA-SHA256')
+    // sign_method: 'RSA-SHA256',
   };
   logger.info({
     message: 'Testing external sign with node key',
@@ -136,7 +138,14 @@ async function testSignCallback(url, publicKey, isMaster) {
     }
   }
 
-  if (!verifySignature(signature, publicKey, TEST_MESSAGE)) {
+  if (
+    !verifySignature(
+      signatureAlgorithm.name,
+      signature,
+      publicKey,
+      TEST_MESSAGE
+    )
+  ) {
     if (isMaster) {
       throw new CustomError({
         errorType: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_INVALID_SIGNATURE,
@@ -149,11 +158,12 @@ async function testSignCallback(url, publicKey, isMaster) {
   }
 }
 
-async function testDecryptCallback(url, publicKey) {
-  const encryptedMessageBuffer = publicEncrypt(
+async function testDecryptCallback(url, publicKey, encryptionAlgorithm) {
+  const encryptedMessageBuffer = cryptoUtils.publicEncrypt(
     {
       key: publicKey,
-      padding: crypto.constants.RSA_PKCS1_PADDING,
+      padding: encryptionAlgorithm.padding,
+      oaepHash: encryptionAlgorithm.oaepHash,
     },
     TEST_MESSAGE
   );
@@ -161,7 +171,7 @@ async function testDecryptCallback(url, publicKey) {
   const body = {
     node_id: config.nodeId,
     encrypted_message: encryptedMessage,
-    key_type: 'RSA',
+    key_type: encryptionAlgorithm.keyAlgorithm,
   };
 
   logger.info({
@@ -296,42 +306,64 @@ export async function setCallbackUrls({
   masterSignCallbackUrl,
   decryptCallbackUrl,
 }) {
-  let public_key;
-
   if (signCallbackUrl) {
-    if (public_key == null) {
-      public_key = await tendermintNdid.getNodePubKey(config.nodeId);
-      if (public_key == null) {
-        throw new CustomError({
-          errorType: errorType.EXTERNAL_SIGN_TEST_FAILED_NO_PUB_KEY,
-        });
-      }
+    const signingPubKey = await tendermintNdid.getNodeSigningPubKey(
+      config.nodeId
+    );
+    if (signingPubKey == null) {
+      throw new CustomError({
+        errorType: errorType.EXTERNAL_SIGN_TEST_FAILED_NO_PUB_KEY,
+      });
     }
-    await testSignCallback(signCallbackUrl, public_key);
+
+    const sigAlg = cryptoUtils.signatureAlgorithm[signingPubKey.algorithm];
+    if (sigAlg == null) {
+      throw new Error('unknown/unsupported algorithm');
+    }
+
+    await testSignCallback(signCallbackUrl, signingPubKey.public_key, sigAlg);
     await setSignCallbackUrl(signCallbackUrl);
   }
   if (masterSignCallbackUrl) {
-    const master_public_key = await tendermintNdid.getNodeMasterPubKey(
+    const signingMasterPubKey = await tendermintNdid.getNodeSigningMasterPubKey(
       config.nodeId
     );
-    if (master_public_key == null) {
+    if (signingMasterPubKey == null) {
       throw new CustomError({
         errorType: errorType.EXTERNAL_MASTER_SIGN_TEST_FAILED_NO_PUB_KEY,
       });
     }
-    await testSignCallback(masterSignCallbackUrl, master_public_key, true);
+
+    const sigAlg =
+      cryptoUtils.signatureAlgorithm[signingMasterPubKey.algorithm];
+    if (sigAlg == null) {
+      throw new Error('unknown/unsupported algorithm');
+    }
+
+    await testSignCallback(
+      masterSignCallbackUrl,
+      signingMasterPubKey.public_key,
+      sigAlg,
+      true
+    );
     await setMasterSignCallbackUrl(masterSignCallbackUrl);
   }
   if (decryptCallbackUrl) {
-    if (public_key == null) {
-      public_key = await tendermintNdid.getNodePubKey(config.nodeId);
-      if (public_key == null) {
-        throw new CustomError({
-          errorType: errorType.EXTERNAL_DECRYPT_TEST_FAILED_NO_PUB_KEY,
-        });
-      }
+    const encPubKey = await tendermintNdid.getNodeEncryptionPubKey(
+      config.nodeId
+    );
+    if (encPubKey == null) {
+      throw new CustomError({
+        errorType: errorType.EXTERNAL_DECRYPT_TEST_FAILED_NO_PUB_KEY,
+      });
     }
-    await testDecryptCallback(decryptCallbackUrl, public_key);
+
+    const encAlg = cryptoUtils.encryptionAlgorithm[encPubKey.algorithm];
+    if (encAlg == null) {
+      throw new Error('unknown/unsupported algorithm');
+    }
+
+    await testDecryptCallback(decryptCallbackUrl, encPubKey.public_key, encAlg);
     await setDecryptCallbackUrl(decryptCallbackUrl);
   }
   if (config.mode === MODE.WORKER) {
@@ -437,7 +469,11 @@ async function callbackWithRetry(url, body, logPrefix, type) {
   }
 }
 
-export async function decryptAsymetricKey(nodeId, encryptedMessage) {
+export async function decryptAsymetricKey(
+  nodeId,
+  encryptionAlgorithm,
+  encryptedMessage
+) {
   const url = await getDecryptCallbackUrl();
   if (url == null) {
     throw new CustomError({
@@ -447,7 +483,7 @@ export async function decryptAsymetricKey(nodeId, encryptedMessage) {
   const body = {
     node_id: nodeId,
     encrypted_message: encryptedMessage,
-    key_type: 'RSA',
+    key_type: encryptionAlgorithm.keyAlgorithm,
   };
   try {
     const responseBody = await callbackWithRetry(
@@ -512,6 +548,7 @@ export async function decryptAsymetricKey(nodeId, encryptedMessage) {
 }
 
 export async function createSignature(
+  signatureAlgorithm,
   messageBase64,
   messageHash,
   nodeId,
@@ -534,13 +571,15 @@ export async function createSignature(
       });
     }
   }
+
   const body = {
     node_id: nodeId,
     request_message: messageBase64,
     request_message_hash: messageHash,
-    hash_method: 'SHA256',
-    key_type: 'RSA',
-    sign_method: 'RSA-SHA256',
+    hash_method: signatureAlgorithm.hashAlgorithm,
+    key_type: signatureAlgorithm.keyAlgorithm,
+    sign_method: signatureAlgorithm.name, // FIXME: backward compatibility ('RSA-SHA256')
+    // sign_method: 'RSA-SHA256',
   };
   try {
     const responseBody = await callbackWithRetry(

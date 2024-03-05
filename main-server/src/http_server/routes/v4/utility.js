@@ -151,6 +151,12 @@ router.get('/nodes/:node_id', async (req, res, next) => {
         node_id_whitelist_active, // eslint-disable-line no-unused-vars
         ...rest
       } = result;
+      result.public_key = result.signing_public_key.public_key;
+      result.master_public_key = result.signing_master_public_key.public_key;
+      if (result.proxy != null) {
+        result.proxy.public_key = result.proxy.signing_public_key.public_key;
+        result.proxy.master_public_key = result.proxy.signing_master_public_key.public_key;
+      }
 
       res.status(200).json(rest);
     }

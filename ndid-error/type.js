@@ -461,7 +461,7 @@ module.exports = {
   },
   UNSUPPORTED_KEY_TYPE: {
     code: 20041,
-    message: 'Unsupported key type. Only RSA is allowed.',
+    message: 'Unsupported key type.',
     clientError: true,
   },
   MISMATCHED_KEY_TYPE: {
@@ -731,6 +731,11 @@ module.exports = {
   INVALID_API_KEY: {
     code: 20092,
     message: 'Invalid API key',
+    clientError: true,
+  },
+  UNSUPPORTED_SIGNING_ALGORITHM: {
+    code: 20093,
+    message: 'Unsupported signing algorithm.',
     clientError: true,
   },
 
@@ -1031,7 +1036,7 @@ module.exports = {
   },
   ABCI_UNSUPPORTED_KEY_TYPE: {
     code: 25030,
-    message: 'Unsupported key type. Only RSA and EC are allowed.',
+    message: 'Unsupported key type',
     clientError: true,
   },
   ABCI_UNKNOWN_KEY_TYPE: {

@@ -80,30 +80,49 @@ export function getNonce() {
   return randomBufferBytes(32);
 }
 
-export function hash(dataToHash) {
-  const hashBuffer = cryptoUtils.sha256(dataToHash);
+export function hash(hashAlgorithm, dataToHash) {
+  let hashBuffer;
+
+  if (hashAlgorithm === cryptoUtils.hashAlgorithm.SHA256) {
+    hashBuffer = cryptoUtils.sha256(dataToHash);
+  } else if (hashAlgorithm === cryptoUtils.hashAlgorithm.SHA384) {
+    hashBuffer = cryptoUtils.sha384(dataToHash);
+  } else if (hashAlgorithm === cryptoUtils.hashAlgorithm.SHA512) {
+    hashBuffer = cryptoUtils.sha512(dataToHash);
+  }
+
   return hashBuffer.toString('base64');
 }
 
 export async function decryptAsymetricKey(
   nodeId,
+  algorithm,
   encryptedSymKey,
   encryptedMessage
 ) {
+  const encAlg = cryptoUtils.encryptionAlgorithm[algorithm];
+  if (encAlg == null) {
+    throw new Error('unknown/unsupported algorithm');
+  }
+
   let symKeyBuffer;
   if (config.useExternalCryptoService) {
     symKeyBuffer = await externalCryptoService.decryptAsymetricKey(
       nodeId,
+      encAlg,
       encryptedSymKey.toString('base64')
     );
   } else {
-    const key = nodeKey.getLocalNodePrivateKey(nodeId);
-    const passphrase = nodeKey.getLocalNodePrivateKeyPassphrase(nodeId);
+    const key = nodeKey.getLocalNodeEncryptionPrivateKey(nodeId);
+    const passphrase =
+      nodeKey.getLocalNodeEncryptionPrivateKeyPassphrase(nodeId);
+
     symKeyBuffer = cryptoUtils.privateDecrypt(
       {
         key,
         passphrase,
-        padding: crypto.constants.RSA_PKCS1_PADDING,
+        padding: encAlg.padding,
+        oaepHash: encAlg.oaepHash,
       },
       encryptedSymKey
     );
@@ -112,12 +131,18 @@ export async function decryptAsymetricKey(
   return cryptoUtils.decryptAES256GCM(symKeyBuffer, encryptedMessage, false);
 }
 
-export function encryptAsymetricKey(publicKey, messageBuffer) {
+export function encryptAsymetricKey(algorithm, publicKey, messageBuffer) {
+  const encAlg = cryptoUtils.encryptionAlgorithm[algorithm];
+  if (encAlg == null) {
+    throw new Error('unknown/unsupported algorithm');
+  }
+
   const symKeyBuffer = crypto.randomBytes(32);
   const encryptedSymKey = cryptoUtils.publicEncrypt(
     {
       key: publicKey,
-      padding: crypto.constants.RSA_PKCS1_PADDING,
+      padding: encAlg.padding,
+      oaepHash: encAlg.oaepHash,
     },
     symKeyBuffer
   );
@@ -174,12 +199,18 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
 
 /**
  *
+ * @param {string} algorithm
  * @param {string|Buffer} messageToSign
  * @param {string} nodeId
  * @param {boolean} useMasterKey
  * @return {Buffer} signature
  */
-export async function createSignature(messageToSign, nodeId, useMasterKey) {
+export async function createSignature(
+  algorithm,
+  messageToSign,
+  nodeId,
+  useMasterKey
+) {
   if (typeof messageToSign === 'string') {
     messageToSign = Buffer.from(messageToSign, 'utf8');
   }
@@ -188,10 +219,22 @@ export async function createSignature(messageToSign, nodeId, useMasterKey) {
       message: 'Expected message to sign to be a Buffer',
     });
   }
-  const messageToSignHash = hash(messageToSign);
+
+  const sigAlg = cryptoUtils.signatureAlgorithm[algorithm];
+  if (sigAlg == null) {
+    throw new Error('unknown/unsupported algorithm');
+  }
+
+  let messageToSignHash;
+  if (sigAlg.hashAlgorithm != null) {
+    messageToSignHash = hash(sigAlg.hashAlgorithm, messageToSign);
+  } else {
+    messageToSignHash = null;
+  }
 
   if (config.useExternalCryptoService) {
     return await externalCryptoService.createSignature(
+      sigAlg,
       messageToSign.toString('base64'),
       messageToSignHash,
       nodeId,
@@ -200,13 +243,13 @@ export async function createSignature(messageToSign, nodeId, useMasterKey) {
   }
 
   const key = useMasterKey
-    ? nodeKey.getLocalNodeMasterPrivateKey(nodeId)
-    : nodeKey.getLocalNodePrivateKey(nodeId);
+    ? nodeKey.getLocalNodeSigningMasterPrivateKey(nodeId)
+    : nodeKey.getLocalNodeSigningPrivateKey(nodeId);
   const passphrase = useMasterKey
-    ? nodeKey.getLocalNodeMasterPrivateKeyPassphrase(nodeId)
-    : nodeKey.getLocalNodePrivateKeyPassphrase(nodeId);
+    ? nodeKey.getLocalNodeSigningMasterPrivateKeyPassphrase(nodeId)
+    : nodeKey.getLocalNodeSigningPrivateKeyPassphrase(nodeId);
 
-  return cryptoUtils.createSignature(messageToSign, {
+  return cryptoUtils.createSignature(algorithm, messageToSign, {
     key,
     passphrase,
   });
@@ -214,18 +257,19 @@ export async function createSignature(messageToSign, nodeId, useMasterKey) {
 
 /**
  *
+ * @param {string} algorithm
  * @param {string|Buffer} signature
  * @param {string|Buffer} publicKey
- * @param {string|Buffer} dataToVerify
+ * @param {string|Buffer} message
  */
-export function verifySignature(signature, publicKey, dataToVerify) {
+export function verifySignature(algorithm, signature, publicKey, message) {
   if (!Buffer.isBuffer(signature)) {
     signature = Buffer.from(signature, 'base64');
   }
-  if (!Buffer.isBuffer(dataToVerify)) {
-    dataToVerify = Buffer.from(dataToVerify, 'utf8');
+  if (!Buffer.isBuffer(message)) {
+    message = Buffer.from(message, 'utf8');
   }
-  return cryptoUtils.verifySignature(signature, publicKey, dataToVerify);
+  return cryptoUtils.verifySignature(algorithm, signature, publicKey, message);
 }
 
 function getDataHashWithCustomPadding(

@@ -251,7 +251,11 @@ async function processDataForRPInternalAsync(
         service_id: serviceId,
         initial_salt,
       });
+      const signingPublicKey = await tendermintNdid.getNodeSigningPubKey(
+        nodeId
+      );
       const signatureBuffer = await utils.createSignature(
+        signingPublicKey.algorithm,
         data + data_salt,
         nodeId
       );
@@ -482,10 +486,10 @@ async function sendDataToRP(nodeId, rpId, data) {
     receivers = [
       {
         node_id: rpId,
-        public_key: nodeInfo.public_key,
+        encryption_public_key: nodeInfo.encryption_public_key,
         proxy: {
           node_id: nodeInfo.proxy.node_id,
-          public_key: nodeInfo.proxy.public_key,
+          encryption_public_key: nodeInfo.proxy.encryption_public_key,
           ip: nodeInfo.proxy.mq[0].ip,
           port: nodeInfo.proxy.mq[0].port,
           config: nodeInfo.proxy.config,
@@ -505,7 +509,7 @@ async function sendDataToRP(nodeId, rpId, data) {
     receivers = [
       {
         node_id: rpId,
-        public_key: nodeInfo.public_key,
+        encryption_public_key: nodeInfo.encryption_public_key,
         ip: nodeInfo.mq[0].ip,
         port: nodeInfo.mq[0].port,
       },

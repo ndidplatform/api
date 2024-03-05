@@ -25,6 +25,7 @@ import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
 import * as utils from '../../utils';
+import * as cryptoUtils from '../../utils/crypto';
 import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -232,7 +233,10 @@ async function createMessageInternalAsync(
     if (hash_message) {
       messageDataToBlockchain = {
         message_id,
-        message: utils.hash(message + message_salt),
+        message: utils.hash(
+          cryptoUtils.hashAlgorithm.SHA256,
+          message + message_salt
+        ),
         purpose,
       };
     } else {

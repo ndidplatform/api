@@ -29,6 +29,7 @@ import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import { callbackToClient } from '../../callback';
 import * as utils from '../../utils';
+import * as cryptoUtils from '../../utils/crypto';
 import * as lt from '../../utils/long_timeout';
 import * as config from '../../config';
 import { getErrorObjectForClient } from '../../utils/error';
@@ -148,6 +149,7 @@ export function checkRequestMessageIntegrity(
   }
 
   const requestMessageHash = utils.hash(
+    cryptoUtils.hashAlgorithm.SHA256,
     request.request_message + request.request_message_salt
   );
 
@@ -214,10 +216,10 @@ export async function getIdpMQDestinations({
         }
         return {
           node_id: idpNode.node_id,
-          public_key: idpNode.public_key,
+          encryption_public_key: idpNode.encryption_public_key,
           proxy: {
             node_id: idpNode.proxy.node_id,
-            public_key: idpNode.proxy.public_key,
+            encryption_public_key: idpNode.proxy.encryption_public_key,
             ip: idpNode.proxy.mq[0].ip,
             port: idpNode.proxy.mq[0].port,
             config: idpNode.proxy.config,
@@ -229,7 +231,7 @@ export async function getIdpMQDestinations({
         }
         return {
           node_id: idpNode.node_id,
-          public_key: idpNode.public_key,
+          encryption_public_key: idpNode.encryption_public_key,
           ip: idpNode.mq[0].ip,
           port: idpNode.mq[0].port,
         };

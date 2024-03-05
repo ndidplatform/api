@@ -231,6 +231,13 @@ router.get('/nodes/:node_id', async (req, res, next) => {
     if (result == null) {
       res.status(404).end();
     } else {
+      result.public_key = result.signing_public_key.public_key;
+      result.master_public_key = result.signing_master_public_key.public_key;
+      if (result.proxy != null) {
+        result.proxy.public_key = result.proxy.signing_public_key.public_key;
+        result.proxy.master_public_key = result.proxy.signing_master_public_key.public_key;
+      }
+
       res.status(200).json(result);
     }
     next();

@@ -25,8 +25,10 @@ import base64url from 'base64url';
 import * as telemetryDb from '../db/telemetry';
 import * as telemetryEventsDb from '../db/telemetry_events';
 import * as node from '../node';
+import * as tendermintNdid from '../tendermint/ndid';
 import logger from '../logger';
 import * as utils from '../utils';
+import * as cryptoUtils from '../utils/crypto';
 import ROLE from '../role';
 import * as config from '../config';
 
@@ -83,11 +85,46 @@ async function onNewTokenRequest({ nodeId }) {
   }
 }
 
+const JWT_ALG = {
+  RS256: 'RS256',
+  RS384: 'RS384',
+  RS512: 'RS512',
+  PS256: 'PS256',
+  PS384: 'PS384',
+  PS512: 'PS512',
+  ES256: 'ES256',
+  ES384: 'ES384',
+  ES512: 'ES512',
+  ES256K: 'ES256K', // EC secp256k1
+  EdDSA: 'EdDSA',
+};
+
+const signingAlgorithmMap = {
+  [cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name]:
+    JWT_ALG.RS256,
+  [cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_384.name]:
+    JWT_ALG.RS384,
+  [cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_512.name]:
+    JWT_ALG.RS512,
+  [cryptoUtils.signatureAlgorithm.RSASSA_PSS_SHA_256.name]: JWT_ALG.PS256,
+  [cryptoUtils.signatureAlgorithm.RSASSA_PSS_SHA_384.name]: JWT_ALG.PS384,
+  [cryptoUtils.signatureAlgorithm.RSASSA_PSS_SHA_512.name]: JWT_ALG.PS512,
+  [cryptoUtils.signatureAlgorithm.ECDSA_SHA_256.name]: JWT_ALG.ES256,
+  [cryptoUtils.signatureAlgorithm.ECDSA_SHA_384.name]: JWT_ALG.ES384,
+  [cryptoUtils.signatureAlgorithm.Ed25519.name]: JWT_ALG.EdDSA,
+};
+
 // TOKEN Generation Module
 async function createJWT({ nodeId, payload }) {
+  const publicKey = await tendermintNdid.getNodeSigningPubKey(nodeId);
+
+  const jwtAlg = signingAlgorithmMap[publicKey.algorithm];
+  if (jwtAlg == null) {
+    throw new Error('unsupported jwt signing algorithm');
+  }
   const header = {
     type: 'JWT',
-    alg: 'RS256',
+    alg: jwtAlg,
   };
 
   const headerJSON = JSON.stringify(header);
@@ -97,7 +134,12 @@ async function createJWT({ nodeId, payload }) {
   const encodedPayload = base64url(payloadJSON);
 
   const token = encodedHeader + '.' + encodedPayload;
-  const signature = await utils.createSignature(token, nodeId, false);
+  const signature = await utils.createSignature(
+    publicKey.algorithm,
+    token,
+    nodeId,
+    false
+  );
   const signedToken = token + '.' + base64url(signature);
 
   return signedToken;

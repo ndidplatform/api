@@ -31,6 +31,7 @@ import privateMessageType from '../../mq/message/type';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import * as utils from '../../utils';
+import * as cryptoUtils from '../../utils/crypto';
 import { callbackToClient } from '../../callback';
 import logger from '../../logger';
 import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
@@ -496,6 +497,7 @@ function checkServiceRequestParamsIntegrity(requestId, request, requestDetail) {
     );
 
     const requestParamsHash = utils.hash(
+      cryptoUtils.hashAlgorithm.SHA256,
       (request_params != null ? request_params : '') + request_params_salt
     );
     const dataRequestParamsValid =

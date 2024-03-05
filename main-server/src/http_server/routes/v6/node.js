@@ -84,12 +84,15 @@ router.post('/update', validateBody, async (req, res, next) => {
       node_id,
       reference_id,
       callback_url,
-      node_key,
-      node_key_type,
-      // node_sign_method,
-      node_master_key,
-      node_master_key_type,
-      // node_master_sign_method,
+      signing_public_key,
+      signing_key_algorithm,
+      signing_algorithm,
+      signing_master_public_key,
+      signing_master_key_algorithm,
+      signing_master_algorithm,
+      encryption_public_key,
+      encryption_key_algorithm,
+      encryption_algorithm,
       check_string,
       signed_check_string,
       master_signed_check_string,
@@ -102,10 +105,15 @@ router.post('/update', validateBody, async (req, res, next) => {
         node_id,
         reference_id,
         callback_url,
-        public_key: node_key,
-        public_key_type: node_key_type,
-        master_public_key: node_master_key,
-        master_public_key_type: node_master_key_type,
+        signing_public_key,
+        signing_key_algorithm,
+        signing_algorithm,
+        signing_master_public_key,
+        signing_master_key_algorithm,
+        signing_master_algorithm,
+        encryption_public_key,
+        encryption_key_algorithm,
+        encryption_algorithm,
         check_string,
         signed_check_string,
         master_signed_check_string,
@@ -123,13 +131,11 @@ router.post('/update', validateBody, async (req, res, next) => {
 
 router.get('/callback', async (req, res, next) => {
   try {
-    const [
-      externalCryptoServiceCallbackUrls,
-      nodeCallbackUrls,
-    ] = await Promise.all([
-      externalCryptoService.getCallbackUrls(),
-      nodeCallback.getCallbackUrls(),
-    ]);
+    const [externalCryptoServiceCallbackUrls, nodeCallbackUrls] =
+      await Promise.all([
+        externalCryptoService.getCallbackUrls(),
+        nodeCallback.getCallbackUrls(),
+      ]);
 
     const urls = {
       ...externalCryptoServiceCallbackUrls,

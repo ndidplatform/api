@@ -99,12 +99,21 @@
 - `COMPRESS_MQ_MESSAGE`: Compress MQ message before sending to other nodes [Default: `false`]
 - `MQ_MESSAGE_COMPRESS_MIN_LENGTH`: Minimum message (to send over MQ) length in bytes to compress [Default: `1000`]
 - `SERVER_PORT`: API server port [Default: `8080`]
-- `PRIVATE_KEY_PATH`: Path to node's private key (if call back to create signature is not set) [Default: use pre-generated development key in development mode]
-- `PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key
-- `MASTER_PRIVATE_KEY_PATH`: Path to node's master private key (if call back to create signature is not set) [Default: use pre-generated development key in development mode]
-- `MASTER_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's master private key
-- `NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy private keys and passphrases [Default: use pre-generated development key in development mode]
-- `NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy master private keys and passphrases [Default: use pre-generated development key in development mode]
+- `PRIVATE_KEY_PATH`: Path to node's private key (if call back to create signature is not set) [Default: use pre-generated development key in development mode] (Deprecated. Use `SIGNING_PRIVATE_KEY_PATH` and `ENCRYPTION_PRIVATE_KEY_PATH` instead.)
+- `PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key (Deprecated. Use `SIGNING_PRIVATE_KEY_PASSPHRASE` and `ENCRYPTION_PRIVATE_KEY_PASSPHRASE` instead.)
+- `MASTER_PRIVATE_KEY_PATH`: Path to node's master private key (if call back to create signature is not set) [Default: use pre-generated development key in development mode] (Deprecated. Use `SIGNING_MASTER_PRIVATE_KEY_PATH` instead.)
+- `MASTER_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's master private key (Deprecated. Use `SIGNING_MASTER_PRIVATE_KEY_PASSPHRASE` instead.)
+- `NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy private keys and passphrases [Default: use pre-generated development key in development mode] (Deprecated. Use `NODE_BEHIND_PROXY_SIGNING_PRIVATE_KEY_DIRECTORY_PATH` and `NODE_BEHIND_PROXY_ENCRYPTION_PRIVATE_KEY_DIRECTORY_PATH` instead.)
+- `NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy master private keys and passphrases [Default: use pre-generated development key in development mode] (Deprecated. Use `NODE_BEHIND_PROXY_SIGNING_MASTER_PRIVATE_KEY_DIRECTORY_PATH` instead.)
+- `SIGNING_PRIVATE_KEY_PATH`: Path to node's private key for signing [Default: use pre-generated development key in development mode]
+- `SIGNING_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key for signing
+- `SIGNING_MASTER_PRIVATE_KEY_PATH`: Path to node's master private key for signing [Default: use pre-generated development key in development mode]
+- `SIGNING_MASTER_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's master private key for signing
+- `ENCRYPTION_PRIVATE_KEY_PATH`: Path to node's private key for encryption [Default: use pre-generated development key in development mode]
+- `ENCRYPTION_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key for encryption
+- `NODE_BEHIND_PROXY_SIGNING_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy private keys and passphrases for signing [Default: use pre-generated development key in development mode]
+- `NODE_BEHIND_PROXY_SIGNING_MASTER_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy master private keys and passphrases for signing [Default: use pre-generated development key in development mode]
+- `NODE_BEHIND_PROXY_ENCRYPTION_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy private keys and passphrases for encryption [Default: use pre-generated development key in development mode]
 - `DATA_DIRECTORY_PATH`: Directory path for persistence data files [Default: `__dirname/../data` (`data` directory in repository's directory)]
 - `DEFAULT_API_VERSION`: API version to serve on default path (without version path prefix) [Default: `5`]
 - `CALLBACK_API_VERSION`: Callback API version [Default: `5`]
