@@ -1252,6 +1252,14 @@ export async function transact({
 
   if (signingAlgorithm == null) {
     const publicKey = await tendermintNdid.getNodeSigningPubKey(nodeId);
+    if (publicKey == null) {
+      throw new CustomError({
+        errorType: errorType.NODE_INFO_NOT_FOUND,
+        details: {
+          nodeId,
+        },
+      });
+    }
     signingAlgorithm = publicKey.algorithm;
   }
 
