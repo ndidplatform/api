@@ -252,6 +252,7 @@ export async function createSignature(
   return cryptoUtils.createSignature(algorithm, messageToSign, {
     key,
     passphrase,
+    padding: sigAlg.padding,
   });
 }
 
@@ -269,7 +270,21 @@ export function verifySignature(algorithm, signature, publicKey, message) {
   if (!Buffer.isBuffer(message)) {
     message = Buffer.from(message, 'utf8');
   }
-  return cryptoUtils.verifySignature(algorithm, signature, publicKey, message);
+
+  const sigAlg = cryptoUtils.signatureAlgorithm[algorithm];
+  if (sigAlg == null) {
+    throw new Error('unknown/unsupported algorithm');
+  }
+
+  return cryptoUtils.verifySignature(
+    algorithm,
+    signature,
+    {
+      key: publicKey,
+      padding: sigAlg.padding,
+    },
+    message
+  );
 }
 
 function getDataHashWithCustomPadding(

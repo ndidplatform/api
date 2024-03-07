@@ -39,31 +39,37 @@ export const signatureAlgorithm = {
     name: 'RSASSA_PSS_SHA_256',
     keyAlgorithm: keyAlgorithm.RSA,
     hashAlgorithm: hashAlgorithm.SHA256,
+    padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
   },
   RSASSA_PSS_SHA_384: {
     name: 'RSASSA_PSS_SHA_384',
     keyAlgorithm: keyAlgorithm.RSA,
     hashAlgorithm: hashAlgorithm.SHA384,
+    padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
   },
   RSASSA_PSS_SHA_512: {
     name: 'RSASSA_PSS_SHA_512',
     keyAlgorithm: keyAlgorithm.RSA,
     hashAlgorithm: hashAlgorithm.SHA512,
+    padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
   },
   RSASSA_PKCS1_V1_5_SHA_256: {
     name: 'RSASSA_PKCS1_V1_5_SHA_256',
     keyAlgorithm: keyAlgorithm.RSA,
     hashAlgorithm: hashAlgorithm.SHA256,
+    padding: crypto.constants.RSA_PKCS1_PADDING,
   },
   RSASSA_PKCS1_V1_5_SHA_384: {
     name: 'RSASSA_PKCS1_V1_5_SHA_384',
     keyAlgorithm: keyAlgorithm.RSA,
     hashAlgorithm: hashAlgorithm.SHA384,
+    padding: crypto.constants.RSA_PKCS1_PADDING,
   },
   RSASSA_PKCS1_V1_5_SHA_512: {
     name: 'RSASSA_PKCS1_V1_5_SHA_512',
     keyAlgorithm: keyAlgorithm.RSA,
     hashAlgorithm: hashAlgorithm.SHA512,
+    padding: crypto.constants.RSA_PKCS1_PADDING,
   },
   ECDSA_SHA_256: {
     name: 'ECDSA_SHA_256',
