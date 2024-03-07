@@ -76,8 +76,8 @@ export default async function readyHandler(req, res, next) {
     if (config.useExternalCryptoService && !(await isCallbackUrlsSet())) {
       const responseBody = {
         error: {
-          message: errorType.WAITING_FOR_DPKI_CALLBACK_URL_SET.message,
-          code: errorType.WAITING_FOR_DPKI_CALLBACK_URL_SET.code,
+          message: errorType.WAITING_FOR_KMS_CALLBACK_URL_SET.message,
+          code: errorType.WAITING_FOR_KMS_CALLBACK_URL_SET.code,
         },
       };
       res.status(503).json(responseBody);

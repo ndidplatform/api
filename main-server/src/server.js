@@ -213,7 +213,7 @@ async function initialize() {
     }
 
     if (externalCryptoServiceReady != null) {
-      logger.info({ message: 'Waiting for DPKI callback URLs to be set' });
+      logger.info({ message: 'Waiting for KMS callback URLs to be set' });
       await externalCryptoServiceReady;
     }
 

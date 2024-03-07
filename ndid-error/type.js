@@ -147,9 +147,9 @@ module.exports = {
     code: 10028,
     message: 'Database error',
   },
-  WAITING_FOR_DPKI_CALLBACK_URL_SET: {
+  WAITING_FOR_KMS_CALLBACK_URL_SET: {
     code: 10029,
-    message: 'Waiting for DPKI callback URLs to be set',
+    message: 'Waiting for KMS callback URLs to be set',
   },
   CANNOT_WRITE_CALLBACK_URL_TO_FILE: {
     code: 10030,
