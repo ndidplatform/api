@@ -562,7 +562,13 @@ export function validateAccessorKey(key, keyAlgorithm, passphrase) {
     });
   }
   if (keyAlgorithm != null) {
-    if (keyAlgorithm !== cryptoUtils.keyAlgorithm.RSA) {
+    if (keyAlgorithm === cryptoUtils.keyAlgorithm.RSA) {
+      if (keyObject.asymmetricKeyType !== 'rsa') {
+        throw new CustomError({
+          errorType: errorType.MISMATCHED_KEY_TYPE,
+        });
+      }
+    } else {
       throw new CustomError({
         errorType: errorType.UNSUPPORTED_KEY_TYPE,
       });
