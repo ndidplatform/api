@@ -27,6 +27,7 @@ module.exports = {
     'object-shorthand': 1,
     'arrow-parens': 1,
     'no-await-in-loop': 1,
+    'no-useless-catch': 1,
 
     '@babel/new-cap': 1,
     '@babel/object-curly-spacing': 0,
