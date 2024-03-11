@@ -165,13 +165,7 @@ export async function processAsResponse({
 
 export async function processAsDataAfterSetDataReceived(
   { error, chainDisabledRetryLater },
-  {
-    nodeId,
-    requestId,
-    asNodeId,
-    serviceId,
-    asResponseId,
-  }
+  { nodeId, requestId, asNodeId, serviceId, asResponseId }
 ) {
   if (chainDisabledRetryLater) return;
   try {
@@ -223,23 +217,30 @@ async function cleanUpDataResponseFromAS(nodeId, asResponseId) {
 }
 
 async function isDataSignatureValid(asNodeId, signature, salt, data) {
-  const public_key = await tendermintNdid.getNodePubKey(asNodeId);
-  if (public_key == null) return;
+  const signingPublicKey = await tendermintNdid.getNodeSigningPubKey(asNodeId);
+  if (signingPublicKey == null) return;
 
   logger.debug({
     message: 'Verifying AS data signature',
     asNodeId,
-    asNodePublicKey: public_key,
+    asNodePublicKey: signingPublicKey,
     signature,
     salt,
     data,
   });
-  if (!utils.verifySignature(signature, public_key, data + salt)) {
+  if (
+    !utils.verifySignature(
+      signingPublicKey.algorithm,
+      signature,
+      signingPublicKey.public_key,
+      data + salt
+    )
+  ) {
     logger.warn({
       message: 'Data signature from AS is not valid',
       signature,
       asNodeId,
-      asNodePublicKey: public_key,
+      asNodePublicKey: signingPublicKey,
     });
     return false;
   }

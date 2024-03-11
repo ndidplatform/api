@@ -34,7 +34,7 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
 import * as utils from '../../utils';
-import { validateKey } from '../../utils/node_key';
+import { validateAccessorKey } from '../../utils/node_key';
 import { callbackToClient } from '../../callback';
 import logger from '../../logger';
 
@@ -103,7 +103,7 @@ export async function createIdentity(
       });
     }
 
-    validateKey(accessor_public_key, accessor_type);
+    validateAccessorKey(accessor_public_key, accessor_type);
 
     ial = parseFloat(ial);
 

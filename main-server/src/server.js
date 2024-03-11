@@ -213,7 +213,7 @@ async function initialize() {
     }
 
     if (externalCryptoServiceReady != null) {
-      logger.info({ message: 'Waiting for DPKI callback URLs to be set' });
+      logger.info({ message: 'Waiting for KMS callback URLs to be set' });
       await externalCryptoServiceReady;
     }
 
@@ -317,6 +317,9 @@ async function initialize() {
 const {
   privateKeyPassphrase, // eslint-disable-line no-unused-vars
   masterPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
+  signingPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
+  signingMasterPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
+  encryptionPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
   dbPassword, // eslint-disable-line no-unused-vars
   ...configToLog
 } = config;

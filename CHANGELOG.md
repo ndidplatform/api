@@ -1,5 +1,106 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_
+
+BREAKING CHANGES:
+
+- API version 6.0
+  - Change request body JSON schema of POST `/node/update`.
+    - Remove `node_key`
+    - Remove `node_key_type`
+    - Remove `node_sign_method`
+    - Remove `node_master_key`
+    - Remove `node_master_key_type`
+    - Remove `node_master_sign_method`
+    - Add `signing_public_key`
+    - Add `signing_key_algorithm`
+    - Add `signing_algorithm`
+    - Add `signing_master_public_key`
+    - Add `signing_master_key_algorithm`
+    - Add `signing_master_algorithm`
+    - Add `encryption_public_key`
+    - Add `encryption_key_algorithm`
+    - Add `encryption_algorithm`
+  - Change response body JSON schema of GET `/utility/nodes/:node_id`
+    - Remove `public_key`
+    - Remove `master_public_key`
+    - Remove `proxy.public_key`
+    - Remove `proxy.master_public_key`
+    - Add `signing_public_key`
+    - Add `signing_master_public_key`
+    - Add `encryption_public_key`
+    - Add `proxy.signing_public_key`
+    - Add `proxy.signing_master_public_key`
+    - Add `proxy.encryption_public_key`
+  - NDID only APIs
+    - Change request body JSON schema of POST `/ndid/init_ndid`.
+      - Remove `node_key`
+      - Remove `node_key_type`
+      - Remove `node_master_key`
+      - Remove `node_master_key_type`
+      - Add `signing_public_key`
+      - Add `signing_key_algorithm`
+      - Add `signing_algorithm`
+      - Add `signing_master_public_key`
+      - Add `signing_master_key_algorithm`
+      - Add `signing_master_algorithm`
+      - Add `encryption_public_key`
+      - Add `encryption_key_algorithm`
+      - Add `encryption_algorithm`
+    - Change request body JSON schema of POST `/ndid/register_node`.
+      - Remove `node_key`
+      - Remove `node_key_type`
+      - Remove `node_sign_method`
+      - Remove `node_master_key`
+      - Remove `node_master_key_type`
+      - Remove `node_master_sign_method`
+      - Add `signing_public_key`
+      - Add `signing_key_algorithm`
+      - Add `signing_algorithm`
+      - Add `signing_master_public_key`
+      - Add `signing_master_key_algorithm`
+      - Add `signing_master_algorithm`
+      - Add `encryption_public_key`
+      - Add `encryption_key_algorithm`
+      - Add `encryption_algorithm`
+
+FEATURES:
+
+- Separate node key usage types (signing and encryption).
+  - API version older than 6.0 uses node signing key as node encryption key.
+- Support new key algorithms for node signing public key and node signing master public key.
+  - EC
+    - curve: secp256r1/prime256v1
+    - curve: secp384r1
+  - Ed25519
+- Support new signing algorithms for node key and node master key.
+  - `RSASSA_PKCS1_V1_5_SHA_384`: RSA PKCS #1 v1.5 SHA-384
+  - `RSASSA_PKCS1_V1_5_SHA_512`: RSA PKCS #1 v1.5 SHA-512
+  - `RSASSA_PSS_SHA_256`: RSA PSS SHA-256
+  - `RSASSA_PSS_SHA_384`: RSA PSS SHA-384
+  - `RSASSA_PSS_SHA_512`: RSA PSS SHA-512
+  - `ECDSA_SHA_256` (EC key curve: secp256r1/prime256v1)
+  - `ECDSA_SHA_384` (EC key curve: secp384r1)
+  - `Ed25519`
+- Support new encryption algorithms for node key supported.
+  - `RSAES_OAEP_SHA_1`
+  - `RSAES_OAEP_SHA_256`
+- API version 6.0
+  - New API: GET `/utility/nodes/:node_id/public_keys`: Get node public key list (including previous key versions).
+- Add environment variables.
+  - `SIGNING_PRIVATE_KEY_PATH`: Path to node's private key for signing [Default: use pre-generated development key in development mode]
+  - `SIGNING_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key for signing
+  - `SIGNING_MASTER_PRIVATE_KEY_PATH`: Path to node's master private key for signing [Default: use pre-generated development key in development mode]
+  - `SIGNING_MASTER_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's master private key for signing
+  - `ENCRYPTION_PRIVATE_KEY_PATH`: Path to node's private key for encryption [Default: use pre-generated development key in development mode]
+  - `ENCRYPTION_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key for encryption
+  - `NODE_BEHIND_PROXY_SIGNING_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy private keys and passphrases for signing [Default: use pre-generated development key in development mode]
+  - `NODE_BEHIND_PROXY_SIGNING_MASTER_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy master private keys and passphrases for signing [Default: use pre-generated development key in development mode]
+  - `NODE_BEHIND_PROXY_ENCRYPTION_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy private keys and passphrases for encryption [Default: use pre-generated development key in development mode]
+- `PRIVATE_KEY_PATH`, `PRIVATE_KEY_PASSPHRASE`, `MASTER_PRIVATE_KEY_PATH`, `MASTER_PRIVATE_KEY_PASSPHRASE`, `NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH`, and `NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH` are still usable but considered deprecated.
+
 ## 7.2.0 (TBD)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v9.x.x_

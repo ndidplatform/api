@@ -34,7 +34,7 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
 import * as utils from '../../utils';
-import { validateKey } from '../../utils/node_key';
+import { validateAccessorKey } from '../../utils/node_key';
 import { callbackToClient } from '../../callback';
 import logger from '../../logger';
 
@@ -84,12 +84,10 @@ export async function addAccessor(addAccessorParams, { apiVersion } = {}) {
   }
 
   try {
-    validateKey(accessor_public_key, accessor_type);
+    validateAccessorKey(accessor_public_key, accessor_type);
 
-    const identityRequestData = await cacheDb.getIdentityRequestDataByReferenceId(
-      node_id,
-      reference_id
-    );
+    const identityRequestData =
+      await cacheDb.getIdentityRequestDataByReferenceId(node_id, reference_id);
     if (identityRequestData) {
       throw new CustomError({
         errorType: errorType.DUPLICATE_REFERENCE_ID,

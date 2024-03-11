@@ -1212,6 +1212,7 @@ export async function transact({
   fnName,
   params,
   nonce = utils.getNonce(),
+  signingAlgorithm,
   callbackFnName,
   callbackAdditionalArgs,
   useMasterKey = false,
@@ -1249,6 +1250,19 @@ export async function transact({
     retryCount,
   });
 
+  if (signingAlgorithm == null) {
+    const publicKey = await tendermintNdid.getNodeSigningPubKey(nodeId);
+    if (publicKey == null) {
+      throw new CustomError({
+        errorType: errorType.NODE_INFO_NOT_FOUND,
+        details: {
+          nodeId,
+        },
+      });
+    }
+    signingAlgorithm = publicKey.algorithm;
+  }
+
   let paramsJsonString;
   if (params != null) {
     paramsJsonString = JSON.stringify(params);
@@ -1260,12 +1274,13 @@ export async function transact({
       paramsJsonString != null ? Buffer.from(paramsJsonString, 'utf8') : null,
     nonce,
     signature: await utils.createSignature(
+      signingAlgorithm,
       Buffer.concat([
         Buffer.from(fnName, 'utf8'),
         Buffer.from(paramsJsonString, 'utf8'),
         Buffer.from(currentChainId, 'utf8'),
         nonce,
-      ]).toString('base64'),
+      ]),
       nodeId,
       useMasterKey
     ),

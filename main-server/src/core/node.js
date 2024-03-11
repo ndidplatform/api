@@ -22,7 +22,11 @@
 
 import * as tendermintNdid from '../tendermint/ndid';
 import { getErrorObjectForClient } from '../utils/error';
-import { validateKey, verifyNewKey } from '../utils/node_key';
+import {
+  validateSigningKey,
+  validateEncryptionKey,
+  verifyNewSigningKey,
+} from '../utils/node_key';
 import { callbackToClient } from '../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -37,10 +41,15 @@ import * as config from '../config';
  * @param {string} [updateNodeParams.node_id]
  * @param {string} updateNodeParams.reference_id
  * @param {string} updateNodeParams.callback_url
- * @param {string} [updateNodeParams.public_key]
- * @param {string} [updateNodeParams.public_key_type]
- * @param {string} [updateNodeParams.master_public_key]
- * @param {string} [updateNodeParams.master_public_key_type]
+ * @param {string} [updateNodeParams.signing_public_key]
+ * @param {string} [updateNodeParams.signing_key_algorithm]
+ * @param {string} [updateNodeParams.signing_algorithm]
+ * @param {string} [updateNodeParams.signing_master_public_key]
+ * @param {string} [updateNodeParams.signing_master_key_algorithm]
+ * @param {string} [updateNodeParams.signing_master_algorithm]
+ * @param {string} [updateNodeParams.encryption_public_key]
+ * @param {string} [updateNodeParams.encryption_key_algorithm]
+ * @param {string} [updateNodeParams.encryption_algorithm]
  * @param {string} [updateNodeParams.check_string]
  * @param {string} [updateNodeParams.signed_check_string]
  * @param {string} [updateNodeParams.master_signed_check_string]
@@ -53,10 +62,15 @@ import * as config from '../config';
 export async function updateNode(
   {
     node_id,
-    public_key,
-    public_key_type,
-    master_public_key,
-    master_public_key_type,
+    signing_public_key,
+    signing_key_algorithm,
+    signing_algorithm,
+    signing_master_public_key,
+    signing_master_key_algorithm,
+    signing_master_algorithm,
+    encryption_public_key,
+    encryption_key_algorithm,
+    encryption_algorithm,
     check_string,
     signed_check_string,
     master_signed_check_string,
@@ -69,23 +83,45 @@ export async function updateNode(
   }
 
   // Validate public keys
-  if (public_key != null) {
-    validateKey(public_key, public_key_type);
+  if (signing_public_key != null) {
+    validateSigningKey(
+      signing_public_key,
+      signing_key_algorithm,
+      signing_algorithm
+    );
     if (check_string != null) {
-      verifyNewKey(signed_check_string, public_key, check_string);
+      verifyNewSigningKey(
+        signing_algorithm,
+        signed_check_string,
+        signing_public_key,
+        check_string
+      );
     }
   }
 
-  if (master_public_key != null) {
-    validateKey(master_public_key, master_public_key_type);
+  if (signing_master_public_key != null) {
+    validateSigningKey(
+      signing_master_public_key,
+      signing_master_key_algorithm,
+      signing_master_algorithm
+    );
     if (check_string != null) {
-      verifyNewKey(
+      verifyNewSigningKey(
+        signing_master_algorithm,
         master_signed_check_string,
-        master_public_key,
+        signing_master_public_key,
         check_string,
         true
       );
     }
+  }
+
+  if (encryption_public_key != null) {
+    validateEncryptionKey(
+      encryption_public_key,
+      encryption_key_algorithm,
+      encryption_algorithm
+    );
   }
 
   if (supported_request_message_data_url_type_list != null) {
@@ -116,8 +152,12 @@ async function updateNodeInternalAsync(
   {
     reference_id,
     callback_url,
-    public_key,
-    master_public_key,
+    signing_public_key,
+    signing_algorithm,
+    signing_master_public_key,
+    signing_master_algorithm,
+    encryption_public_key,
+    encryption_algorithm,
     supported_request_message_data_url_type_list,
   },
   { synchronous = false } = {},
@@ -127,8 +167,12 @@ async function updateNodeInternalAsync(
     if (!synchronous) {
       await tendermintNdid.updateNode(
         {
-          public_key,
-          master_public_key,
+          signing_public_key,
+          signing_algorithm,
+          signing_master_public_key,
+          signing_master_algorithm,
+          encryption_public_key,
+          encryption_algorithm,
           supported_request_message_data_url_type_list,
         },
         nodeId,
@@ -138,8 +182,12 @@ async function updateNodeInternalAsync(
     } else {
       await tendermintNdid.updateNode(
         {
-          public_key,
-          master_public_key,
+          signing_public_key,
+          signing_algorithm,
+          signing_master_public_key,
+          signing_master_algorithm,
+          encryption_public_key,
+          encryption_algorithm,
           supported_request_message_data_url_type_list,
         },
         nodeId

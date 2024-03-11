@@ -26,6 +26,7 @@ import ajvKeywords from 'ajv-keywords';
 
 import schemasV4 from './json_schema/v4';
 import schemasV5 from './json_schema/v5';
+import schemasV6 from './json_schema/v6';
 import ndidSchemas from './json_schema/ndid';
 import configSchemas from './json_schema/config';
 
@@ -73,6 +74,9 @@ function validate({
     if (apiVersion === 5) {
       ajv.addSchema(schemasV5.defsSchema, 'defs');
     }
+    if (apiVersion === 6) {
+      ajv.addSchema(schemasV6.defsSchema, 'defs');
+    }
   }
 
   const jsonSchema = getJSONSchema({
@@ -114,6 +118,9 @@ function getJSONSchema({
     }
     if (apiVersion === 5) {
       return schemasV5[method][path][dataType];
+    }
+    if (apiVersion === 6) {
+      return schemasV6[method][path][dataType];
     }
   } catch (error) {
     throw new Error('Cannot find JSON schema for validation');

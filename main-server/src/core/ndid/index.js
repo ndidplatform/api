@@ -25,7 +25,10 @@ import validateDataSchema from './data_schema_validator';
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import logger from '../../logger';
-import { validateKey } from '../../utils/node_key';
+import {
+  validateSigningKey,
+  validateEncryptionKey,
+} from '../../utils/node_key';
 import { callbackToClient } from '../../callback';
 
 import CustomError from 'ndid-error/custom_error';
@@ -36,25 +39,46 @@ import * as config from '../../config';
 let init = false;
 
 export async function initNDID({
-  public_key,
-  public_key_type,
-  master_public_key,
-  master_public_key_type,
+  signing_public_key,
+  signing_key_algorithm,
+  signing_algorithm,
+  signing_master_public_key,
+  signing_master_key_algorithm,
+  signing_master_algorithm,
+  encryption_public_key,
+  encryption_key_algorithm,
+  encryption_algorithm,
   chain_history_info,
 }) {
   if (init) {
     logger.error({
-      message: 'NDID is already exist',
+      message: 'NDID already exists',
     });
     return false;
   }
   try {
-    if (public_key != null) {
-      validateKey(public_key, public_key_type);
+    if (signing_public_key != null) {
+      validateSigningKey(
+        signing_public_key,
+        signing_key_algorithm,
+        signing_algorithm
+      );
     }
 
-    if (master_public_key != null) {
-      validateKey(master_public_key, master_public_key_type);
+    if (signing_master_public_key != null) {
+      validateSigningKey(
+        signing_master_public_key,
+        signing_master_key_algorithm,
+        signing_master_algorithm
+      );
+    }
+
+    if (encryption_public_key != null) {
+      validateEncryptionKey(
+        encryption_public_key,
+        encryption_key_algorithm,
+        encryption_algorithm
+      );
     }
 
     await tendermint.transact({
@@ -62,10 +86,15 @@ export async function initNDID({
       fnName: 'InitNDID',
       params: {
         node_id: config.nodeId,
-        public_key,
-        master_public_key,
+        signing_public_key,
+        signing_algorithm,
+        signing_master_public_key,
+        signing_master_algorithm,
+        encryption_public_key,
+        encryption_algorithm,
         chain_history_info: JSON.stringify(chain_history_info),
       },
+      signingAlgorithm: signing_algorithm,
     });
   } catch (error) {
     logger.error({
@@ -164,12 +193,28 @@ export async function reduceNodeToken(data) {
 
 export async function registerNode(data, { synchronous = false } = {}) {
   try {
-    if (data.public_key != null) {
-      validateKey(data.public_key, data.public_key_type);
+    if (data.signing_public_key != null) {
+      validateSigningKey(
+        data.signing_public_key,
+        data.signing_key_algorithm,
+        data.signing_algorithm
+      );
     }
 
-    if (data.master_public_key != null) {
-      validateKey(data.master_public_key, data.master_public_key_type);
+    if (data.signing_master_public_key != null) {
+      validateSigningKey(
+        data.signing_master_public_key,
+        data.signing_master_key_algorithm,
+        data.signing_master_algorithm
+      );
+    }
+
+    if (data.encryption_public_key != null) {
+      validateEncryptionKey(
+        data.encryption_public_key,
+        data.encryption_key_algorithm,
+        data.encryption_algorithm
+      );
     }
 
     if (synchronous) {
@@ -188,18 +233,8 @@ export async function registerNode(data, { synchronous = false } = {}) {
 }
 
 async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
-  const {
-    reference_id,
-    callback_url,
-    node_id,
-    node_name,
-    public_key,
-    master_public_key,
-    role,
-    max_ial,
-    max_aal,
-    on_the_fly_support,
-  } = data;
+  const { reference_id, callback_url, max_ial, max_aal, on_the_fly_support } =
+    data;
 
   data.role = data.role.toUpperCase();
   if (data.role === 'IDP') {
@@ -227,7 +262,23 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
     await tendermint.transact({
       nodeId: config.nodeId,
       fnName: 'RegisterNode',
-      params: data,
+      params: {
+        node_id: data.node_id,
+        signing_public_key: data.signing_public_key,
+        signing_algorithm: data.signing_algorithm,
+        signing_master_public_key: data.signing_master_public_key,
+        signing_master_algorithm: data.signing_master_algorithm,
+        encryption_public_key: data.encryption_public_key,
+        encryption_algorithm: data.encryption_algorithm,
+        node_name: data.node_name,
+        role: data.role,
+        max_ial: data.max_ial,
+        max_aal: data.max_aal,
+        on_the_fly_support: data.on_the_fly_support,
+        agent: data.agent,
+        node_id_whitelist_active: data.node_id_whitelist_active,
+        node_id_whitelist: data.node_id_whitelist,
+      },
     });
 
     if (!synchronous) {

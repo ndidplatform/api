@@ -33,6 +33,7 @@ import * as tendermintNdid from '../tendermint/ndid';
 import * as cacheDb from '../db/cache';
 import * as longTermDb from '../db/long_term';
 import * as utils from '../utils';
+import * as cryptoUtils from '../utils/crypto';
 import logger from '../logger';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -56,21 +57,21 @@ const mqMessageProtobufRoot = mqMessageProtobufRootInstance.loadSync(
   { keepCase: true }
 );
 const encryptedMqMessageProtobufRootInstance = new protobuf.Root();
-const encryptedMqMessageProtobufRoot = encryptedMqMessageProtobufRootInstance.loadSync(
-  path.join(
-    __dirname,
-    '..',
-    '..',
-    '..',
-    'protos',
-    'encrypted_mq_message.proto'
-  ),
-  { keepCase: true }
-);
+const encryptedMqMessageProtobufRoot =
+  encryptedMqMessageProtobufRootInstance.loadSync(
+    path.join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      'protos',
+      'encrypted_mq_message.proto'
+    ),
+    { keepCase: true }
+  );
 const MqMessage = mqMessageProtobufRoot.lookupType('MqMessage');
-const EncryptedMqMessage = encryptedMqMessageProtobufRoot.lookupType(
-  'EncryptedMqMessage'
-);
+const EncryptedMqMessage =
+  encryptedMqMessageProtobufRoot.lookupType('EncryptedMqMessage');
 
 const prefixMsgId = utils.randomBase64Bytes(8);
 let outboundMessageIdCounter = 1;
@@ -232,9 +233,8 @@ async function sendSavedPendingOutboundMessages() {
   logger.info({
     message: 'Loading saved pending outbound messages',
   });
-  const savedPendingOutboundMessages = await cacheDb.getAllPendingOutboundMessages(
-    config.nodeId
-  );
+  const savedPendingOutboundMessages =
+    await cacheDb.getAllPendingOutboundMessages(config.nodeId);
   if (savedPendingOutboundMessages.length > 0) {
     logger.info({
       message: 'Sending saved pending outbound messages',
@@ -303,9 +303,11 @@ async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
     encrypted_mq_message: encryptedMqMessage,
   } = decodedMessage;
   let decryptedBuffer;
+  const publicKey = await tendermintNdid.getNodeEncryptionPubKey(nodeId);
   try {
     decryptedBuffer = await utils.decryptAsymetricKey(
       nodeId,
+      publicKey.algorithm,
       encryptedSymmetricKey,
       encryptedMqMessage
     );
@@ -371,10 +373,8 @@ export async function processRawMessage({
     messageLength: messageProtobuf.length,
   });
   try {
-    const outerLayerDecodedDecryptedMessage = await getMessageFromProtobufMessage(
-      messageProtobuf,
-      config.nodeId
-    );
+    const outerLayerDecodedDecryptedMessage =
+      await getMessageFromProtobufMessage(messageProtobuf, config.nodeId);
 
     logger.debug({
       message: 'Decrypted message from message queue',
@@ -404,7 +404,10 @@ export async function processRawMessage({
         outerLayerDecodedDecryptedMessage.message;
 
       // Verify signature
-      const proxyMessageHashBase64 = utils.hash(proxyDecodedDecryptedMessage);
+      const proxyMessageHashBase64 = utils.hash(
+        cryptoUtils.hashAlgorithm.SHA256,
+        proxyDecodedDecryptedMessage
+      );
       const senderNodeId = outerLayerDecodedDecryptedMessage.sender_node_id;
       signatureForProxy = outerLayerDecodedDecryptedMessage.signature;
       receiverNodeId = outerLayerDecodedDecryptedMessage.receiver_node_id;
@@ -421,11 +424,14 @@ export async function processRawMessage({
 
       const stringToVerify = `${proxyMessageHashBase64}|${receiverNodeId}|${senderNodeId}`;
 
-      const proxyPublicKey = await tendermintNdid.getNodePubKey(senderNodeId);
+      const proxyPublicKey = await tendermintNdid.getNodeSigningPubKey(
+        senderNodeId
+      );
 
       const signatureValid = utils.verifySignature(
+        proxyPublicKey.algorithm,
         signatureForProxy,
-        proxyPublicKey,
+        proxyPublicKey.public_key,
         stringToVerify
       );
 
@@ -489,11 +495,12 @@ export async function processRawMessage({
       });
     }
     const nodeInfo = await tendermintNdid.getNodeInfo(nodeId);
-    const publicKey = nodeInfo.public_key;
+    const signingPublicKey = nodeInfo.signing_public_key;
 
     const signatureValid = utils.verifySignature(
+      signingPublicKey.algorithm,
       messageSignature,
-      publicKey,
+      signingPublicKey.public_key,
       messageBuffer
     );
 
@@ -502,7 +509,7 @@ export async function processRawMessage({
       messageBuffer,
       messageSignature,
       nodeId,
-      publicKey,
+      signingPublicKey,
       signatureValid,
     });
 
@@ -623,12 +630,12 @@ export async function loadAndProcessBacklogMessages() {
  *
  * @param {Object[]} receivers
  * @param {string} receivers[].node_id
- * @param {string} receivers[].public_key
+ * @param {Object} receivers[].encryption_public_key
  * @param {string} [receivers[].ip]
  * @param {number} [receivers[].port]
  * @param {Object} [receivers[].proxy]
  * @param {string} receivers[].proxy.node_id
- * @param {string} receivers[].proxy.public_key
+ * @param {Object} receivers[].proxy.encryption_public_key
  * @param {string} receivers[].proxy.ip
  * @param {number} receivers[].proxy.port
  * @param {string} receivers[].proxy.config
@@ -651,9 +658,13 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
       message,
       config.compressMqMessage,
       config.mqMessageCompressMinLength,
-      config.mqMessageMaxLength,
+      config.mqMessageMaxLength
     );
+  const senderPublicKey = await tendermintNdid.getNodeSigningPubKey(
+    senderNodeId
+  );
   const messageSignatureBuffer = await utils.createSignature(
+    senderPublicKey.algorithm,
     messageBuffer,
     senderNodeId
   );
@@ -683,7 +694,8 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
   await Promise.all(
     receivers.map(async (receiver) => {
       const { encryptedSymKey, encryptedMessage } = utils.encryptAsymetricKey(
-        receiver.public_key,
+        receiver.encryption_public_key.algorithm,
+        receiver.encryption_public_key.public_key,
         protoBuffer
       );
 
@@ -702,10 +714,17 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
       let payloadBuffer;
       if (receiver.proxy != null) {
         // Encapsulate proxy layer
-        const proxyMessageHashBase64 = utils.hash(protoEncryptedBuffer);
+        const proxyMessageHashBase64 = utils.hash(
+          cryptoUtils.hashAlgorithm.SHA256,
+          protoEncryptedBuffer
+        );
         const receiverNodeId = receiver.node_id;
         const senderNodeId = config.nodeId;
+        const senderPublicKey = await tendermintNdid.getNodeSigningPubKey(
+          senderNodeId
+        );
         const proxySignatureBuffer = await utils.createSignature(
+          senderPublicKey.algorithm,
           `${proxyMessageHashBase64}|${receiverNodeId}|${senderNodeId}`,
           senderNodeId
         );
@@ -724,7 +743,8 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
           encryptedSymKey: proxyEncryptedSymmetricKey,
           encryptedMessage: proxyEncryptedMqMessage,
         } = utils.encryptAsymetricKey(
-          receiver.proxy.public_key,
+          receiver.proxy.encryption_public_key.algorithm,
+          receiver.proxy.encryption_public_key.public_key,
           proxyProtoBuffer
         );
 
@@ -813,17 +833,17 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
         if (receiver.proxy != null) {
           return {
             node_id: receiver.node_id,
-            public_key: receiver.public_key,
+            encryption_public_key: receiver.encryption_public_key,
             ip: receiver.proxy.ip,
             port: receiver.proxy.port,
             proxy_node_id: receiver.proxy.node_id,
-            proxy_public_key: receiver.proxy.public_key,
+            proxy_encryption_public_key: receiver.proxy.encryption_public_key,
             proxy_config: receiver.proxy.config,
           };
         } else {
           return {
             node_id: receiver.node_id,
-            public_key: receiver.public_key,
+            encryption_public_key: receiver.encryption_public_key,
             ip: receiver.ip,
             port: receiver.port,
           };

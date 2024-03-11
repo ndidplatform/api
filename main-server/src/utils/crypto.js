@@ -22,14 +22,100 @@
 
 import crypto from 'crypto';
 
+export const hashAlgorithm = {
+  SHA256: 'SHA256',
+  SHA384: 'SHA384',
+  SHA512: 'SHA512',
+};
+
+export const keyAlgorithm = {
+  RSA: 'RSA',
+  EC: 'EC',
+  Ed25519: 'Ed25519',
+};
+
+export const signatureAlgorithm = {
+  RSASSA_PSS_SHA_256: {
+    name: 'RSASSA_PSS_SHA_256',
+    keyAlgorithm: keyAlgorithm.RSA,
+    hashAlgorithm: hashAlgorithm.SHA256,
+    padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+  },
+  RSASSA_PSS_SHA_384: {
+    name: 'RSASSA_PSS_SHA_384',
+    keyAlgorithm: keyAlgorithm.RSA,
+    hashAlgorithm: hashAlgorithm.SHA384,
+    padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+  },
+  RSASSA_PSS_SHA_512: {
+    name: 'RSASSA_PSS_SHA_512',
+    keyAlgorithm: keyAlgorithm.RSA,
+    hashAlgorithm: hashAlgorithm.SHA512,
+    padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+  },
+  RSASSA_PKCS1_V1_5_SHA_256: {
+    name: 'RSASSA_PKCS1_V1_5_SHA_256',
+    keyAlgorithm: keyAlgorithm.RSA,
+    hashAlgorithm: hashAlgorithm.SHA256,
+    padding: crypto.constants.RSA_PKCS1_PADDING,
+  },
+  RSASSA_PKCS1_V1_5_SHA_384: {
+    name: 'RSASSA_PKCS1_V1_5_SHA_384',
+    keyAlgorithm: keyAlgorithm.RSA,
+    hashAlgorithm: hashAlgorithm.SHA384,
+    padding: crypto.constants.RSA_PKCS1_PADDING,
+  },
+  RSASSA_PKCS1_V1_5_SHA_512: {
+    name: 'RSASSA_PKCS1_V1_5_SHA_512',
+    keyAlgorithm: keyAlgorithm.RSA,
+    hashAlgorithm: hashAlgorithm.SHA512,
+    padding: crypto.constants.RSA_PKCS1_PADDING,
+  },
+  ECDSA_SHA_256: {
+    name: 'ECDSA_SHA_256',
+    keyAlgorithm: keyAlgorithm.EC,
+    hashAlgorithm: hashAlgorithm.SHA256,
+  },
+  ECDSA_SHA_384: {
+    name: 'ECDSA_SHA_384',
+    keyAlgorithm: keyAlgorithm.EC,
+    hashAlgorithm: hashAlgorithm.SHA384,
+  },
+  Ed25519: {
+    name: 'Ed25519',
+    keyAlgorithm: keyAlgorithm.Ed25519,
+    hashAlgorithm: null,
+  },
+};
+
+export const encryptionAlgorithm = {
+  RSAES_PKCS1_V1_5: {
+    name: 'RSAES_PKCS1_V1_5',
+    keyAlgorithm: keyAlgorithm.RSA,
+    padding: crypto.constants.RSA_PKCS1_PADDING,
+  },
+  RSAES_OAEP_SHA_1: {
+    name: 'RSAES_OAEP_SHA_1',
+    keyAlgorithm: keyAlgorithm.RSA,
+    padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+    oaepHash: 'sha1',
+  },
+  RSAES_OAEP_SHA_256: {
+    name: 'RSAES_OAEP_SHA_256',
+    keyAlgorithm: keyAlgorithm.RSA,
+    padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+    oaepHash: 'sha256',
+  },
+};
+
 const PBKDF2_ITERATIONS = 10000;
 const AES_KEY_LENGTH_IN_BYTES = 32;
 
 /**
  * Hash given string with SHA-256
- * 
+ *
  * @param {string|Buffer} dataToHash
- * 
+ *
  * @returns {Buffer} hash in Buffer
  */
 export function sha256(dataToHash) {
@@ -40,10 +126,38 @@ export function sha256(dataToHash) {
 }
 
 /**
+ * Hash given string with SHA-384
+ *
+ * @param {string|Buffer} dataToHash
+ *
+ * @returns {Buffer} hash in Buffer
+ */
+export function sha384(dataToHash) {
+  const hash = crypto.createHash('sha384');
+  hash.update(dataToHash);
+  const hashBuffer = hash.digest();
+  return hashBuffer;
+}
+
+/**
+ * Hash given string with SHA-512
+ *
+ * @param {string|Buffer} dataToHash
+ *
+ * @returns {Buffer} hash in Buffer
+ */
+export function sha512(dataToHash) {
+  const hash = crypto.createHash('sha512');
+  hash.update(dataToHash);
+  const hashBuffer = hash.digest();
+  return hashBuffer;
+}
+
+/**
  *
  * @param {({key: string, passphrase: string}|string)} privateKey
  * @param {(Buffer|string)} plaintext
- * 
+ *
  * @returns {Buffer} encrypted text
  */
 export function privateEncrypt(privateKey, plaintext) {
@@ -58,7 +172,7 @@ export function privateEncrypt(privateKey, plaintext) {
  *
  * @param {({key: string, passphrase: string}|string)} privateKey
  * @param {(Buffer|string)} ciphertext
- * 
+ *
  * @returns {Buffer} decrypted text
  */
 export function privateDecrypt(privateKey, ciphertext) {
@@ -73,7 +187,7 @@ export function privateDecrypt(privateKey, ciphertext) {
  *
  * @param {(Object|string)} publicKey
  * @param {(Buffer|string)} plaintext
- * 
+ *
  * @returns {Buffer} ciphertext
  */
 export function publicEncrypt(publicKey, plaintext) {
@@ -88,7 +202,7 @@ export function publicEncrypt(publicKey, plaintext) {
  *
  * @param {(Object|string)} publicKey
  * @param {(Buffer|string)} ciphertext base64 encoded ciphertext
- * 
+ *
  * @returns {Buffer} decrypted text
  */
 export function publicDecrypt(publicKey, ciphertext) {
@@ -103,35 +217,53 @@ export function publicDecrypt(publicKey, ciphertext) {
  *
  * @param {string|Buffer} message
  * @param {({key: string, passphrase: string}|string)} privateKey
- * 
+ *
  * @returns {Buffer} signature
  */
-export function createSignature(message, privateKey) {
-  return crypto
-    .createSign('SHA256')
-    .update(message)
-    .sign(privateKey);
+export function createSignature(algorithm, message, privateKey) {
+  const sigAlg = signatureAlgorithm[algorithm];
+  if (sigAlg == null) {
+    throw new Error('unknown/unsupported algorithm');
+  }
+
+  if (sigAlg.keyAlgorithm === keyAlgorithm.Ed25519) {
+    return crypto.sign(null, Buffer.from(message), privateKey);
+  } else {
+    return crypto
+      .createSign(sigAlg.hashAlgorithm)
+      .update(message)
+      .sign(privateKey);
+  }
 }
 
 /**
- * 
+ *
  * @param {Buffer} signature
- * @param {(string|Object)} publicKey 
- * @param {string|Buffer} dataToVerify 
- * 
+ * @param {(string|Object)} publicKey
+ * @param {string|Buffer} dataToVerify
+ *
  * @returns {boolean}
  */
-export function verifySignature(signature, publicKey, dataToVerify) {
-  return crypto
-    .createVerify('SHA256')
-    .update(dataToVerify)
-    .verify(publicKey, signature);
+export function verifySignature(algorithm, signature, publicKey, message) {
+  const sigAlg = signatureAlgorithm[algorithm];
+  if (sigAlg == null) {
+    throw new Error('unknown/unsupported algorithm');
+  }
+
+  if (sigAlg.keyAlgorithm === keyAlgorithm.Ed25519) {
+    return crypto.verify(null, Buffer.from(message), publicKey, signature);
+  } else {
+    return crypto
+      .createVerify(sigAlg.hashAlgorithm)
+      .update(message)
+      .verify(publicKey, signature);
+  }
 }
 
 /**
  *
  * @param {number} length random bytes length
- * 
+ *
  * @returns {string} hex string of random bytes
  */
 export function randomHexBytes(length) {
@@ -139,9 +271,9 @@ export function randomHexBytes(length) {
 }
 
 /**
- * 
+ *
  * @param {number} length random bytes length
- * 
+ *
  * @returns {string} base64 encoded string of random bytes
  */
 export function randomBase64Bytes(length) {
@@ -150,11 +282,11 @@ export function randomBase64Bytes(length) {
 
 /**
  * Encrypt plaintext using given key with AES-256-GCM
- * 
+ *
  * @param {(Buffer|string)} masterkey
  * @param {Buffer} plaintext
  * @param {boolean} deriveKey derive masterkey using pbkdf2
- * 
+ *
  * @returns {Buffer} encrypted text
  */
 export function encryptAES256GCM(masterkey, plaintext, deriveKey) {
@@ -196,11 +328,11 @@ export function encryptAES256GCM(masterkey, plaintext, deriveKey) {
 
 /**
  * Decrypt ciphertext using given key with AES-256-GCM
- * 
+ *
  * @param {(Buffer|string)} masterkey
  * @param {Buffer} ciphertext input data
  * @param {boolean} deriveKey derive masterkey using pbkdf2
- * 
+ *
  * @returns {Buffer} decrypted (original) text
  */
 export function decryptAES256GCM(masterkey, ciphertext, deriveKey) {

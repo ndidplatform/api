@@ -21,71 +21,114 @@
  */
 
 import path from 'path';
+import crypto from 'crypto';
 
-import { readFileAsync } from '.';
+import { readFileAsync, verifySignature } from '.';
+import * as cryptoUtils from './crypto';
 
-import { parseKey } from './asn1parser';
+// import { parseKey } from './asn1parser';
 import * as node from '../node';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import logger from '../logger';
-import { verifySignature } from '../utils';
 
 import * as config from '../config';
 
-let privateKey;
-let masterPrivateKey;
+let signingPrivateKey;
+let signingMasterPrivateKey;
+let encryptionPrivateKey;
 
-let nodeBehindProxyPrivateKeys = {};
-let nodeBehindProxyMasterPrivateKeys = {};
-let nodeBehindProxyPrivateKeyPassphrases = {};
-let nodeBehindProxyMasterPrivateKeyPassphrases = {};
+let nodeBehindProxySigningPrivateKeys = {};
+let nodeBehindProxySigningPrivateKeyPassphrases = {};
+let nodeBehindProxySigningMasterPrivateKeys = {};
+let nodeBehindProxySigningMasterPrivateKeyPassphrases = {};
+let nodeBehindProxyEncryptionPrivateKeys = {};
+let nodeBehindProxyEncryptionPrivateKeyPassphrases = {};
 
-async function readNodePrivateKeyFromFile() {
+async function readNodeSigningPrivateKeyFromFile() {
   let privateKey;
   try {
-    privateKey = await readFileAsync(config.privateKeyPath, 'utf8');
+    privateKey = await readFileAsync(config.signingPrivateKeyPath, 'utf8');
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot read node private key file',
+      message: 'Cannot read node signing private key file',
       cause: error,
     });
   }
   try {
-    validateKey(privateKey, null, config.privateKeyPassphrase);
+    validateSigningKey(
+      privateKey,
+      null,
+      null,
+      config.signingPrivateKeyPassphrase
+    );
   } catch (error) {
     throw new CustomError({
-      message: 'Error verifying node private key',
+      message: 'Error verifying signing node private key',
       cause: error,
     });
   }
   return privateKey;
 }
 
-async function readNodeMasterPrivateKeyFromFile() {
+async function readNodeSigningMasterPrivateKeyFromFile() {
   let masterPrivateKey;
   try {
-    masterPrivateKey = await readFileAsync(config.masterPrivateKeyPath, 'utf8');
+    masterPrivateKey = await readFileAsync(
+      config.signingMasterPrivateKeyPath,
+      'utf8'
+    );
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot read node master private key file',
+      message: 'Cannot read node signing master private key file',
       cause: error,
     });
   }
   try {
-    validateKey(masterPrivateKey, null, config.masterPrivateKeyPassphrase);
+    validateSigningKey(
+      masterPrivateKey,
+      null,
+      null,
+      config.signingMasterPrivateKeyPassphrase
+    );
   } catch (error) {
     throw new CustomError({
-      message: 'Error verifying node master private key',
+      message: 'Error verifying node signing master private key',
       cause: error,
     });
   }
   return masterPrivateKey;
 }
 
-async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
+async function readNodeEncryptionPrivateKeyFromFile() {
+  let privateKey;
+  try {
+    privateKey = await readFileAsync(config.encryptionPrivateKeyPath, 'utf8');
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot read node encryption private key file',
+      cause: error,
+    });
+  }
+  try {
+    validateEncryptionKey(
+      privateKey,
+      null,
+      null,
+      config.encryptionPrivateKeyPassphrase
+    );
+  } catch (error) {
+    throw new CustomError({
+      message: 'Error verifying encryption node private key',
+      cause: error,
+    });
+  }
+  return privateKey;
+}
+
+async function readNodeBehindProxySigningPrivateKeyFromFile(nodeId) {
   const keyFilePath = path.join(
-    config.nodeBehindProxyPrivateKeyDirectoryPath,
+    config.nodeBehindProxySigningPrivateKeyDirectoryPath,
     nodeId
   );
   let key;
@@ -93,7 +136,7 @@ async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
     key = await readFileAsync(keyFilePath, 'utf8');
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot read node behind proxy private key file',
+      message: 'Cannot read node behind proxy signing private key file',
       cause: error,
       details: {
         nodeId,
@@ -102,7 +145,7 @@ async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
   }
 
   const passphraseFilePath = path.join(
-    config.nodeBehindProxyPrivateKeyDirectoryPath,
+    config.nodeBehindProxySigningPrivateKeyDirectoryPath,
     `${nodeId}_passphrase`
   );
 
@@ -112,7 +155,8 @@ async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
   } catch (error) {
     if (error.code !== 'ENOENT') {
       throw new CustomError({
-        message: 'Cannot read node behind proxy private key passpharse file',
+        message:
+          'Cannot read node behind proxy signing private key passpharse file',
         cause: error,
         details: {
           nodeId,
@@ -121,10 +165,10 @@ async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
     }
   }
   try {
-    validateKey(key, null, passphrase);
+    validateSigningKey(key, null, null, passphrase);
   } catch (error) {
     throw new CustomError({
-      message: 'Error verifying node behind proxy private key',
+      message: 'Error verifying node behind proxy signing private key',
       cause: error,
       details: {
         nodeId,
@@ -140,9 +184,9 @@ async function readNodeBehindProxyPrivateKeyFromFile(nodeId) {
   };
 }
 
-async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
+async function readNodeBehindProxySigningMasterPrivateKeyFromFile(nodeId) {
   const keyFilePath = path.join(
-    config.nodeBehindProxyMasterPrivateKeyDirectoryPath,
+    config.nodeBehindProxySigningMasterPrivateKeyDirectoryPath,
     `${nodeId}_master`
   );
   let key;
@@ -150,7 +194,7 @@ async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
     key = await readFileAsync(keyFilePath, 'utf8');
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot read node behind proxy master private key file',
+      message: 'Cannot read node behind proxy signing master private key file',
       cause: error,
       details: {
         nodeId,
@@ -159,7 +203,7 @@ async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
   }
 
   const passphraseFilePath = path.join(
-    config.nodeBehindProxyMasterPrivateKeyDirectoryPath,
+    config.nodeBehindProxySigningMasterPrivateKeyDirectoryPath,
     `${nodeId}_master_passphrase`
   );
 
@@ -170,7 +214,7 @@ async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
     if (error.code !== 'ENOENT') {
       throw new CustomError({
         message:
-          'Cannot read node behind proxy master private key passpharse file',
+          'Cannot read node behind proxy signing master private key passpharse file',
         cause: error,
         details: {
           nodeId,
@@ -179,10 +223,68 @@ async function readNodeBehindProxyMasterPrivateKeyFromFile(nodeId) {
     }
   }
   try {
-    validateKey(key, null, passphrase);
+    validateSigningKey(key, null, null, passphrase);
   } catch (error) {
     throw new CustomError({
-      message: 'Error verifying node behind proxy master private key',
+      message: 'Error verifying node behind proxy signing master private key',
+      cause: error,
+      details: {
+        nodeId,
+        keyFilePath,
+        passphraseExists: passphrase != null,
+        passphraseFilePath,
+      },
+    });
+  }
+  return {
+    key,
+    passphrase,
+  };
+}
+
+async function readNodeBehindProxyEncryptionPrivateKeyFromFile(nodeId) {
+  const keyFilePath = path.join(
+    config.nodeBehindProxyEncryptionPrivateKeyDirectoryPath,
+    nodeId
+  );
+  let key;
+  try {
+    key = await readFileAsync(keyFilePath, 'utf8');
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot read node behind proxy encryption private key file',
+      cause: error,
+      details: {
+        nodeId,
+      },
+    });
+  }
+
+  const passphraseFilePath = path.join(
+    config.nodeBehindProxyEncryptionPrivateKeyDirectoryPath,
+    `${nodeId}_passphrase`
+  );
+
+  let passphrase;
+  try {
+    passphrase = await readFileAsync(passphraseFilePath, 'utf8');
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      throw new CustomError({
+        message:
+          'Cannot read node behind proxy encryption private key passpharse file',
+        cause: error,
+        details: {
+          nodeId,
+        },
+      });
+    }
+  }
+  try {
+    validateEncryptionKey(key, null, null, passphrase);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Error verifying node behind proxy encryption private key',
       cause: error,
       details: {
         nodeId,
@@ -203,56 +305,90 @@ export async function initialize() {
     message: 'Reading node keys from files',
   });
 
-  const newPrivateKey = await readNodePrivateKeyFromFile();
-  const newMasterPrivateKey = await readNodeMasterPrivateKeyFromFile();
+  const newSigningPrivateKey = await readNodeSigningPrivateKeyFromFile();
+  const newSigningMasterPrivateKey =
+    await readNodeSigningMasterPrivateKeyFromFile();
+  const newEncryptionPrivateKey = await readNodeEncryptionPrivateKeyFromFile();
 
   // Nodes behind proxy
   if (node.role === 'proxy') {
-    const nodesBehindProxyWithKeyOnProxy = await node.getNodesBehindProxyWithKeyOnProxy();
+    const nodesBehindProxyWithKeyOnProxy =
+      await node.getNodesBehindProxyWithKeyOnProxy();
     const nodeIds = nodesBehindProxyWithKeyOnProxy.map((node) => node.node_id);
 
-    const newNodeBehindProxyPrivateKeys = {};
-    const newNodeBehindProxyPrivateKeyPassphrases = {};
+    const newNodeBehindProxySigningPrivateKeys = {};
+    const newNodeBehindProxySigningPrivateKeyPassphrases = {};
 
-    const newNodeBehindProxyMasterPrivateKeys = {};
-    const newNodeBehindProxyMasterPrivateKeyPassphrases = {};
+    const newNodeBehindProxySigningMasterPrivateKeys = {};
+    const newNodeBehindProxySigningMasterPrivateKeyPassphrases = {};
+
+    const newNodeBehindProxyEncryptionPrivateKeys = {};
+    const newNodeBehindProxyEncryptionPrivateKeyPassphrases = {};
 
     await Promise.all(
       nodeIds.map(async (nodeId) => {
         const [
-          { key: privateKey, passphrase: privateKeyPassphrase },
-          { key: masterPrivateKey, passphrase: masterPrivateKeyPassphrase },
+          { key: signingPrivateKey, passphrase: signingPrivateKeyPassphrase },
+          {
+            key: signingMasterPrivateKey,
+            passphrase: signingMasterPrivateKeyPassphrase,
+          },
+          {
+            key: encryptionPrivateKey,
+            passphrase: encryptionPrivateKeyPassphrase,
+          },
         ] = await Promise.all([
-          readNodeBehindProxyPrivateKeyFromFile(nodeId),
-          readNodeBehindProxyMasterPrivateKeyFromFile(nodeId),
+          readNodeBehindProxySigningPrivateKeyFromFile(nodeId),
+          readNodeBehindProxySigningMasterPrivateKeyFromFile(nodeId),
+          readNodeBehindProxyEncryptionPrivateKeyFromFile(nodeId),
         ]);
-        newNodeBehindProxyPrivateKeys[nodeId] = privateKey;
-        if (privateKeyPassphrase != null) {
-          newNodeBehindProxyPrivateKeyPassphrases[
-            nodeId
-          ] = privateKeyPassphrase;
+        [nodeId] = signingPrivateKey;
+        if (signingPrivateKeyPassphrase != null) {
+          newNodeBehindProxySigningPrivateKeyPassphrases[nodeId] =
+            signingPrivateKeyPassphrase;
         }
-        newNodeBehindProxyMasterPrivateKeys[nodeId] = masterPrivateKey;
-        if (masterPrivateKeyPassphrase != null) {
-          newNodeBehindProxyMasterPrivateKeyPassphrases[
-            nodeId
-          ] = masterPrivateKeyPassphrase;
+        newNodeBehindProxySigningMasterPrivateKeys[nodeId] =
+          signingMasterPrivateKey;
+        if (signingMasterPrivateKeyPassphrase != null) {
+          newNodeBehindProxySigningMasterPrivateKeyPassphrases[nodeId] =
+            signingMasterPrivateKeyPassphrase;
+        }
+        newNodeBehindProxyEncryptionPrivateKeys[nodeId] = encryptionPrivateKey;
+        if (encryptionPrivateKeyPassphrase != null) {
+          newNodeBehindProxyEncryptionPrivateKeyPassphrases[nodeId] =
+            encryptionPrivateKeyPassphrase;
         }
       })
     );
-    nodeBehindProxyPrivateKeys = newNodeBehindProxyPrivateKeys;
-    nodeBehindProxyPrivateKeyPassphrases = newNodeBehindProxyPrivateKeyPassphrases;
 
-    nodeBehindProxyMasterPrivateKeys = newNodeBehindProxyMasterPrivateKeys;
-    nodeBehindProxyMasterPrivateKeyPassphrases = newNodeBehindProxyMasterPrivateKeyPassphrases;
+    nodeBehindProxySigningPrivateKeys = newNodeBehindProxySigningPrivateKeys;
+    nodeBehindProxySigningPrivateKeyPassphrases =
+      newNodeBehindProxySigningPrivateKeyPassphrases;
+
+    nodeBehindProxySigningMasterPrivateKeys =
+      newNodeBehindProxySigningMasterPrivateKeys;
+    nodeBehindProxySigningMasterPrivateKeyPassphrases =
+      newNodeBehindProxySigningMasterPrivateKeyPassphrases;
+
+    nodeBehindProxyEncryptionPrivateKeys =
+      newNodeBehindProxyEncryptionPrivateKeys;
+    nodeBehindProxyEncryptionPrivateKeyPassphrases =
+      newNodeBehindProxyEncryptionPrivateKeyPassphrases;
   }
 
-  privateKey = newPrivateKey;
-  masterPrivateKey = newMasterPrivateKey;
+  signingPrivateKey = newSigningPrivateKey;
+  signingMasterPrivateKey = newSigningMasterPrivateKey;
+  encryptionPrivateKey = newEncryptionPrivateKey;
 }
 
-export function verifyNewKey(signature, publicKey, plainText, isMaster) {
-  if (!verifySignature(signature, publicKey, plainText)) {
+export function verifyNewSigningKey(
+  algorithm,
+  signature,
+  publicKey,
+  plainText,
+  isMaster
+) {
+  if (!verifySignature(algorithm, signature, publicKey, plainText)) {
     throw new CustomError({
       errorType: isMaster
         ? errorType.UPDATE_MASTER_KEY_CHECK_FAILED
@@ -261,11 +397,18 @@ export function verifyNewKey(signature, publicKey, plainText, isMaster) {
   }
 }
 
-export function validateKey(key, keyType, passphrase) {
-  let parsedKey;
+export function validateSigningKey(
+  key,
+  keyAlgorithm,
+  signingAlgorithm,
+  passphrase
+) {
+  let keyObject;
   try {
-    parsedKey = parseKey({
+    keyObject = crypto.createPublicKey({
       key,
+      type: 'spki',
+      format: 'pem',
       passphrase,
     });
   } catch (error) {
@@ -274,28 +417,128 @@ export function validateKey(key, keyType, passphrase) {
       cause: error,
     });
   }
-  if (keyType != null) {
-    if (keyType === 'RSA') {
-      if (parsedKey.type !== 'rsa') {
+  if (keyAlgorithm != null) {
+    if (keyAlgorithm === cryptoUtils.keyAlgorithm.RSA) {
+      if (keyObject.asymmetricKeyType !== 'rsa') {
+        throw new CustomError({
+          errorType: errorType.MISMATCHED_KEY_TYPE,
+        });
+      }
+    } else if (keyAlgorithm === cryptoUtils.keyAlgorithm.EC) {
+      if (keyObject.asymmetricKeyType !== 'ec') {
+        throw new CustomError({
+          errorType: errorType.MISMATCHED_KEY_TYPE,
+        });
+      }
+    } else if (keyAlgorithm === cryptoUtils.keyAlgorithm.Ed25519) {
+      if (keyObject.asymmetricKeyType !== 'ed25519') {
         throw new CustomError({
           errorType: errorType.MISMATCHED_KEY_TYPE,
         });
       }
     }
   } else {
-    // Default to RSA type
-    if (parsedKey.type !== 'rsa') {
+    if (
+      keyObject.asymmetricKeyType !== 'rsa' &&
+      keyObject.asymmetricKeyType !== 'ec' &&
+      keyObject.asymmetricKeyType !== 'ed25519'
+    ) {
+      throw new CustomError({
+        errorType: errorType.UNSUPPORTED_KEY_TYPE,
+      });
+    }
+  }
+
+  // Check RSA key length to be at least 2048-bit
+  if (keyObject.asymmetricKeyType === 'rsa') {
+    if (keyObject.asymmetricKeyDetails.modulusLength < 2048) {
+      throw new CustomError({
+        errorType: errorType.RSA_KEY_LENGTH_TOO_SHORT,
+      });
+    }
+  }
+
+  // Check EC key algorithm and signing algorithm
+  if (keyObject.asymmetricKeyType === 'ec') {
+    if (
+      keyObject.asymmetricKeyDetails.namedCurve === 'prime256v1' ||
+      keyObject.asymmetricKeyDetails.namedCurve === 'secp256k1'
+    ) {
+      if (
+        signingAlgorithm != null &&
+        signingAlgorithm !== cryptoUtils.signatureAlgorithm.ECDSA_SHA_256.name
+      ) {
+        throw new CustomError({
+          errorType: errorType.UNSUPPORTED_SIGNING_ALGORITHM,
+          details: {
+            asymmetricKeyDetails: keyObject.asymmetricKeyDetails,
+            signingAlgorithm,
+          },
+        });
+      }
+    } else if (keyObject.asymmetricKeyDetails.namedCurve === 'secp384r1') {
+      if (
+        signingAlgorithm != null &&
+        signingAlgorithm !== cryptoUtils.signatureAlgorithm.ECDSA_SHA_384.name
+      ) {
+        throw new CustomError({
+          errorType: errorType.UNSUPPORTED_SIGNING_ALGORITHM,
+          details: {
+            asymmetricKeyDetails: keyObject.asymmetricKeyDetails,
+            signingAlgorithm,
+          },
+        });
+      }
+    } else {
+      throw new CustomError({
+        errorType: errorType.UNSUPPORTED_KEY_TYPE,
+        details: {
+          asymmetricKeyType: keyObject.asymmetricKeyType,
+          asymmetricKeyDetails: keyObject.asymmetricKeyDetails,
+        },
+      });
+    }
+  }
+}
+
+export function validateEncryptionKey(
+  key,
+  keyAlgorithm,
+  encryptionAlgorithm,
+  passphrase
+) {
+  let keyObject;
+  try {
+    keyObject = crypto.createPublicKey({
+      key,
+      type: 'spki',
+      format: 'pem',
+      passphrase,
+    });
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.INVALID_KEY_FORMAT,
+      cause: error,
+    });
+  }
+  if (keyAlgorithm != null) {
+    if (keyAlgorithm === cryptoUtils.keyAlgorithm.RSA) {
+      if (keyObject.asymmetricKeyType !== 'rsa') {
+        throw new CustomError({
+          errorType: errorType.MISMATCHED_KEY_TYPE,
+        });
+      }
+    }
+  } else {
+    if (keyObject.asymmetricKeyType !== 'rsa') {
       throw new CustomError({
         errorType: errorType.UNSUPPORTED_KEY_TYPE,
       });
     }
   }
   // Check RSA key length to be at least 2048-bit
-  if (parsedKey.type === 'rsa') {
-    if (
-      (parsedKey.data && parsedKey.data.modulus.bitLength() < 2048) ||
-      (parsedKey.privateKey && parsedKey.privateKey.modulus.bitLength() < 2048)
-    ) {
+  if (keyObject.asymmetricKeyType === 'rsa') {
+    if (keyObject.asymmetricKeyDetails.modulusLength < 2048) {
       throw new CustomError({
         errorType: errorType.RSA_KEY_LENGTH_TOO_SHORT,
       });
@@ -303,50 +546,117 @@ export function validateKey(key, keyType, passphrase) {
   }
 }
 
-export function getLocalNodePrivateKey(nodeId) {
+export function validateAccessorKey(key, keyAlgorithm, passphrase) {
+  let keyObject;
+  try {
+    keyObject = crypto.createPublicKey({
+      key,
+      type: 'spki',
+      format: 'pem',
+      passphrase,
+    });
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.INVALID_KEY_FORMAT,
+      cause: error,
+    });
+  }
+  if (keyAlgorithm != null) {
+    if (keyAlgorithm === cryptoUtils.keyAlgorithm.RSA) {
+      if (keyObject.asymmetricKeyType !== 'rsa') {
+        throw new CustomError({
+          errorType: errorType.MISMATCHED_KEY_TYPE,
+        });
+      }
+    } else {
+      throw new CustomError({
+        errorType: errorType.UNSUPPORTED_KEY_TYPE,
+      });
+    }
+  }
+  if (keyObject.asymmetricKeyType !== 'rsa') {
+    throw new CustomError({
+      errorType: errorType.UNSUPPORTED_KEY_TYPE,
+    });
+  }
+  // Check RSA key length to be at least 2048-bit
+  if (keyObject.asymmetricKeyType === 'rsa') {
+    if (keyObject.asymmetricKeyDetails.modulusLength < 2048) {
+      throw new CustomError({
+        errorType: errorType.RSA_KEY_LENGTH_TOO_SHORT,
+      });
+    }
+  }
+}
+
+export function getLocalNodeSigningPrivateKey(nodeId) {
   if (nodeId === config.nodeId) {
-    return privateKey;
+    return signingPrivateKey;
   }
 
   // Assume nodes behind proxy
-  if (nodeBehindProxyPrivateKeys[nodeId] == null) {
+  if (nodeBehindProxySigningPrivateKeys[nodeId] == null) {
     throw new CustomError({
       errorType: errorType.NODE_KEY_NOT_FOUND,
     });
   }
 
-  return nodeBehindProxyPrivateKeys[nodeId];
+  return nodeBehindProxySigningPrivateKeys[nodeId];
 }
 
-export function getLocalNodeMasterPrivateKey(nodeId) {
+export function getLocalNodeSigningMasterPrivateKey(nodeId) {
   if (nodeId === config.nodeId) {
-    return masterPrivateKey;
+    return signingMasterPrivateKey;
   }
 
   // Assume nodes behind proxy
-  if (nodeBehindProxyMasterPrivateKeys[nodeId] == null) {
+  if (nodeBehindProxySigningMasterPrivateKeys[nodeId] == null) {
     throw new CustomError({
       errorType: errorType.NODE_KEY_NOT_FOUND,
     });
   }
 
-  return nodeBehindProxyMasterPrivateKeys[nodeId];
+  return nodeBehindProxySigningMasterPrivateKeys[nodeId];
 }
 
-export function getLocalNodePrivateKeyPassphrase(nodeId) {
+export function getLocalNodeEncryptionPrivateKey(nodeId) {
   if (nodeId === config.nodeId) {
-    return config.privateKeyPassphrase;
+    return encryptionPrivateKey;
   }
 
   // Assume nodes behind proxy
-  return nodeBehindProxyPrivateKeyPassphrases[nodeId];
+  if (nodeBehindProxyEncryptionPrivateKeys[nodeId] == null) {
+    throw new CustomError({
+      errorType: errorType.NODE_KEY_NOT_FOUND,
+    });
+  }
+
+  return nodeBehindProxyEncryptionPrivateKeys[nodeId];
 }
 
-export function getLocalNodeMasterPrivateKeyPassphrase(nodeId) {
+export function getLocalNodeSigningPrivateKeyPassphrase(nodeId) {
   if (nodeId === config.nodeId) {
-    return config.masterPrivateKeyPassphrase;
+    return config.signingPrivateKeyPassphrase;
   }
 
   // Assume nodes behind proxy
-  return nodeBehindProxyMasterPrivateKeyPassphrases[nodeId];
+  return nodeBehindProxySigningPrivateKeyPassphrases[nodeId];
+}
+
+export function getLocalNodeSigningMasterPrivateKeyPassphrase(nodeId) {
+  if (nodeId === config.nodeId) {
+    return config.signingMasterPrivateKeyPassphrase;
+  }
+
+  // Assume nodes behind proxy
+  return nodeBehindProxySigningMasterPrivateKeyPassphrases[nodeId];
+}
+
+export function getLocalNodeEncryptionPrivateKeyPassphrase(nodeId) {
+  if (nodeId === config.nodeId) {
+    return config.encryptionPrivateKeyPassphrase;
+  }
+
+  // Assume nodes behind proxy
+  return nodeBehindProxyEncryptionPrivateKeyPassphrases[nodeId];
 }

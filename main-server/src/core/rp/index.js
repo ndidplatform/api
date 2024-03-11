@@ -161,10 +161,10 @@ async function getASReceiverList(data_request) {
         }
         return {
           node_id: asNode.node_id,
-          public_key: asNode.public_key,
+          encryption_public_key: asNode.encryption_public_key,
           proxy: {
             node_id: asNode.proxy.node_id,
-            public_key: asNode.proxy.public_key,
+            encryption_public_key: asNode.proxy.encryption_public_key,
             ip: asNode.proxy.mq[0].ip,
             port: asNode.proxy.mq[0].port,
             config: asNode.proxy.config,
@@ -176,7 +176,7 @@ async function getASReceiverList(data_request) {
         }
         return {
           node_id: asNode.node_id,
-          public_key: asNode.public_key,
+          encryption_public_key: asNode.encryption_public_key,
           ip: asNode.mq[0].ip,
           port: asNode.mq[0].port,
         };

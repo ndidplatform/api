@@ -231,7 +231,20 @@ router.get('/nodes/:node_id', async (req, res, next) => {
     if (result == null) {
       res.status(404).end();
     } else {
-      res.status(200).json(result);
+      const {
+        signing_public_key, // eslint-disable-line no-unused-vars
+        signing_master_public_key, // eslint-disable-line no-unused-vars
+        encryption_public_key, // eslint-disable-line no-unused-vars
+        ...rest
+      } = result;
+      rest.public_key = result.signing_public_key.public_key;
+      rest.master_public_key = result.signing_master_public_key.public_key;
+      if (result.proxy != null) {
+        rest.proxy.public_key = result.proxy.signing_public_key.public_key;
+        rest.proxy.master_public_key = result.proxy.signing_master_public_key.public_key;
+      }
+
+      res.status(200).json(rest);
     }
     next();
   } catch (error) {

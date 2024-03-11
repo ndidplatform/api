@@ -120,7 +120,7 @@ async function addKeyAndSetToken(nodeId, role, behindProxy, index) {
         nodeId + '.pub'
       )
     : path.join(__dirname, '..', 'dev_key', 'keys', nodeId + '.pub');
-  const public_key = fs.readFileSync(filePath, 'utf8').toString();
+  const signing_public_key = fs.readFileSync(filePath, 'utf8').toString();
 
   const masterFilePath = behindProxy
     ? path.join(
@@ -138,7 +138,23 @@ async function addKeyAndSetToken(nodeId, role, behindProxy, index) {
         'master_keys',
         nodeId + '_master.pub'
       );
-  const master_public_key = fs.readFileSync(masterFilePath, 'utf8').toString();
+  const signing_master_public_key = fs
+    .readFileSync(masterFilePath, 'utf8')
+    .toString();
+
+  const encryptionKeyFilePath = behindProxy
+    ? path.join(
+        __dirname,
+        '..',
+        'dev_key',
+        'behind_proxy',
+        'encryption_keys',
+        nodeId + '.pub'
+      )
+    : path.join(__dirname, '..', 'dev_key', 'encryption_keys', nodeId + '.pub');
+  const encryption_public_key = fs
+    .readFileSync(encryptionKeyFilePath, 'utf8')
+    .toString();
 
   let node = {
     node_id: nodeId,
@@ -147,8 +163,15 @@ async function addKeyAndSetToken(nodeId, role, behindProxy, index) {
       marketing_name_en: `${nodeId}_EN`,
       industry_code: `00${(index % 3) + 1}`,
     }),
-    public_key,
-    master_public_key,
+    signing_public_key,
+    signing_key_algorithm: 'RSA',
+    signing_algorithm: 'RSASSA_PKCS1_V1_5_SHA_256',
+    signing_master_public_key,
+    signing_master_key_algorithm: 'RSA',
+    signing_master_algorithm: 'RSASSA_PKCS1_V1_5_SHA_256',
+    encryption_public_key,
+    encryption_key_algorithm: 'RSA',
+    encryption_algorithm: 'RSAES_PKCS1_V1_5',
     role,
   };
   if (role === 'idp') {
@@ -207,15 +230,34 @@ export async function init() {
     'master_keys',
     'ndid1_master.pub'
   );
-  const public_key = fs.readFileSync(publicKeyFilePath, 'utf8').toString();
-  const master_public_key = fs
+  const encryptionPublicKeyFilePath = path.join(
+    __dirname,
+    '..',
+    'dev_key',
+    'encryption_keys',
+    'ndid1.pub'
+  );
+  const signing_public_key = fs
+    .readFileSync(publicKeyFilePath, 'utf8')
+    .toString();
+  const signing_master_public_key = fs
     .readFileSync(masterPublicKeyFilePath, 'utf8')
+    .toString();
+  const encryption_public_key = fs
+    .readFileSync(encryptionPublicKeyFilePath, 'utf8')
     .toString();
 
   try {
     await ndid.initNDID({
-      public_key,
-      master_public_key,
+      signing_public_key,
+      signing_key_algorithm: 'RSA',
+      signing_algorithm: 'RSASSA_PKCS1_V1_5_SHA_256',
+      signing_master_public_key,
+      signing_master_key_algorithm: 'RSA',
+      signing_master_algorithm: 'RSASSA_PKCS1_V1_5_SHA_256',
+      encryption_public_key,
+      encryption_key_algorithm: 'RSA',
+      encryption_algorithm: 'RSAES_PKCS1_V1_5',
     });
     await ndid.endInit();
     await Promise.all(
@@ -292,6 +334,7 @@ export async function init() {
     console.log('========= Done =========');
   } catch (error) {
     console.error('Cannot initialize NDID platform:', error);
+    process.exit(1);
   }
 
   process.exit();

@@ -28,6 +28,7 @@ import * as ndid from '../../../core/ndid';
 import * as node from '../../../core/node';
 import * as nodeCallback from '../../../core/node_callback';
 import * as externalCryptoService from '../../../external_crypto_service';
+import * as cryptoUtils from '../../../utils/crypto';
 
 const router = express.Router();
 
@@ -59,10 +60,18 @@ router.post(
           callback_url,
           node_id,
           node_name,
-          public_key: node_key,
-          public_key_type: node_key_type,
-          master_public_key: node_master_key,
-          master_public_key_type: node_master_key_type,
+          signing_public_key: node_key,
+          signing_key_algorithm: node_key_type,
+          signing_algorithm:
+            cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
+          signing_master_public_key: node_master_key,
+          signing_master_key_algorithm: node_master_key_type,
+          signing_master_algorithm:
+            cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
+          encryption_public_key: node_key,
+          encryption_key_algorithm: node_key_type,
+          encryption_algorithm:
+            cryptoUtils.encryptionAlgorithm.RSAES_PKCS1_V1_5.name,
           role,
           max_ial,
           max_aal,
@@ -102,10 +111,18 @@ router.post('/update', validateBody, async (req, res, next) => {
         node_id,
         reference_id,
         callback_url,
-        public_key: node_key,
-        public_key_type: node_key_type,
-        master_public_key: node_master_key,
-        master_public_key_type: node_master_key_type,
+        signing_public_key: node_key,
+        signing_key_algorithm: node_key_type,
+        signing_algorithm:
+          cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
+        signing_master_public_key: node_master_key,
+        signing_master_key_algorithm: node_master_key_type,
+        signing_master_algorithm:
+          cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
+        encryption_public_key: node_key,
+        encryption_key_algorithm: node_key_type,
+        encryption_algorithm:
+          cryptoUtils.encryptionAlgorithm.RSAES_PKCS1_V1_5.name,
         check_string,
         signed_check_string,
         master_signed_check_string,
@@ -123,13 +140,11 @@ router.post('/update', validateBody, async (req, res, next) => {
 
 router.get('/callback', async (req, res, next) => {
   try {
-    const [
-      externalCryptoServiceCallbackUrls,
-      nodeCallbackUrls,
-    ] = await Promise.all([
-      externalCryptoService.getCallbackUrls(),
-      nodeCallback.getCallbackUrls(),
-    ]);
+    const [externalCryptoServiceCallbackUrls, nodeCallbackUrls] =
+      await Promise.all([
+        externalCryptoService.getCallbackUrls(),
+        nodeCallback.getCallbackUrls(),
+      ]);
 
     const urls = {
       ...externalCryptoServiceCallbackUrls,
