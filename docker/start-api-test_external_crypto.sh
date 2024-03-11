@@ -148,7 +148,8 @@ register_node_id() {
   local NODE_NAME=${NODE_NAME:-"This is name: ${NODE_ID}"}
   local REQUEST_BODY
   if [ "${ROLE}" = "idp" ]; then
-    REQUEST_BODY="{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3},\"on_the_fly_support\":${ON_THE_FLY_SUPPORT:-true}}"
+    DEFAULT_IDP_SUPPORTED_FEATURE_LIST="[\"on_the_fly\"]"
+    REQUEST_BODY="{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3},\"supported_feature_list\":${SUPPORTED_FEATURE_LIST:-$DEFAULT_IDP_SUPPORTED_FEATURE_LIST}}"
   else
     REQUEST_BODY="{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\"}"
   fi
@@ -178,7 +179,7 @@ register_node_id_behind_proxy() {
   local NODE_NAME=${NODE_NAME:-"This is name: ${NODE_ID}"}
   local REQUEST_BODY
   if [ "${ROLE}" = "idp" ]; then
-    REQUEST_BODY="{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3},\"on_the_fly_support\":${ON_THE_FLY_SUPPORT:-true}}"
+    REQUEST_BODY="{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3},\"supported_feature_list\":${SUPPORTED_FEATURE_LIST:-[]}}"
   else
     REQUEST_BODY="{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\"}"
   fi

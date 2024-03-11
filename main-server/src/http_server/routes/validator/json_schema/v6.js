@@ -94,9 +94,7 @@ export default {
           min_aal: {
             $ref: 'defs#/definitions/aalString',
           },
-          on_the_fly_support: {
-            $ref: 'defs#/definitions/booleanString',
-          },
+          supported_feature_list: { type: 'string' },
           agent: {
             $ref: 'defs#/definitions/booleanString',
           },
@@ -115,9 +113,7 @@ export default {
           min_aal: {
             $ref: 'defs#/definitions/aalString',
           },
-          on_the_fly_support: {
-            $ref: 'defs#/definitions/booleanString',
-          },
+          supported_feature_list: { type: 'string' },
           mode: {
             $ref: 'defs#/definitions/modeString',
           },

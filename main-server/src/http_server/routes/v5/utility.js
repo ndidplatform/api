@@ -31,6 +31,8 @@ import * as privateMessage from '../../../core/common/private_message';
 
 const router = express.Router();
 
+const ON_THE_FLY_FEATURE_FLAG = 'on_the_fly';
+
 router.get('/idp', validateQuery, async (req, res, next) => {
   try {
     const {
@@ -48,19 +50,34 @@ router.get('/idp', validateQuery, async (req, res, next) => {
       agentFlag = false;
     }
 
-    let onTheFlySupport;
+    const supportedFeatureList = [];
     if (on_the_fly_support === 'true') {
-      onTheFlySupport = true;
-    } else if (on_the_fly_support === 'false') {
-      onTheFlySupport = false;
+      supportedFeatureList.push(ON_THE_FLY_FEATURE_FLAG);
     }
 
-    const idpNodes = await tendermintNdid.getIdpNodes({
+    let idpNodes = await tendermintNdid.getIdpNodes({
       min_ial: parseFloat(min_ial),
       min_aal: parseFloat(min_aal),
-      on_the_fly_support: onTheFlySupport,
+      supported_feature_list: supportedFeatureList,
       agent: agentFlag,
       filter_for_node_id,
+    });
+
+    idpNodes = idpNodes.map((idpNode) => {
+      return {
+        node_id: idpNode.node_id,
+        node_name: idpNode.node_name,
+        max_ial: idpNode.max_ial,
+        max_aal: idpNode.max_aal,
+        on_the_fly_support: idpNode.supported_feature_list.includes(
+          ON_THE_FLY_FEATURE_FLAG
+        ),
+        lial: idpNode.lial,
+        laal: idpNode.laal,
+        supported_request_message_data_url_type_list:
+          idpNode.supported_request_message_data_url_type_list,
+        agent: idpNode.agent,
+      };
     });
 
     res.status(200).json(idpNodes);
@@ -84,21 +101,36 @@ router.get(
         filter_for_node_id,
       } = req.query;
 
-      let onTheFlySupport;
+      const supportedFeatureList = [];
       if (on_the_fly_support === 'true') {
-        onTheFlySupport = true;
-      } else if (on_the_fly_support === 'false') {
-        onTheFlySupport = false;
+        supportedFeatureList.push(ON_THE_FLY_FEATURE_FLAG);
       }
 
-      const idpNodes = await tendermintNdid.getIdpNodes({
+      let idpNodes = await tendermintNdid.getIdpNodes({
         namespace,
         identifier,
         min_ial: parseFloat(min_ial),
         min_aal: parseFloat(min_aal),
-        on_the_fly_support: onTheFlySupport,
+        supported_feature_list: supportedFeatureList,
         mode_list: mode ? [parseInt(mode)] : undefined,
         filter_for_node_id,
+      });
+
+      idpNodes = idpNodes.map((idpNode) => {
+        return {
+          node_id: idpNode.node_id,
+          node_name: idpNode.node_name,
+          max_ial: idpNode.max_ial,
+          max_aal: idpNode.max_aal,
+          on_the_fly_support: idpNode.supported_feature_list.includes(
+            ON_THE_FLY_FEATURE_FLAG
+          ),
+          lial: idpNode.lial,
+          laal: idpNode.laal,
+          supported_request_message_data_url_type_list:
+            idpNode.supported_request_message_data_url_type_list,
+          agent: idpNode.agent,
+        };
       });
 
       res.status(200).json(idpNodes);
@@ -226,7 +258,7 @@ router.get('/nodes/:node_id', async (req, res, next) => {
   try {
     const { node_id } = req.params;
 
-    const result = await tendermintNdid.getNodeInfo(node_id);
+    let result = await tendermintNdid.getNodeInfo(node_id);
 
     if (result == null) {
       res.status(404).end();
@@ -235,14 +267,20 @@ router.get('/nodes/:node_id', async (req, res, next) => {
         signing_public_key, // eslint-disable-line no-unused-vars
         signing_master_public_key, // eslint-disable-line no-unused-vars
         encryption_public_key, // eslint-disable-line no-unused-vars
+        supported_feature_list, // eslint-disable-line no-unused-vars
         ...rest
       } = result;
       rest.public_key = result.signing_public_key.public_key;
       rest.master_public_key = result.signing_master_public_key.public_key;
       if (result.proxy != null) {
         rest.proxy.public_key = result.proxy.signing_public_key.public_key;
-        rest.proxy.master_public_key = result.proxy.signing_master_public_key.public_key;
+        rest.proxy.master_public_key =
+          result.proxy.signing_master_public_key.public_key;
       }
+
+      rest.on_the_fly_support = result.supported_feature_list.includes(
+        ON_THE_FLY_FEATURE_FLAG
+      );
 
       res.status(200).json(rest);
     }

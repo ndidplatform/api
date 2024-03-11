@@ -98,6 +98,11 @@ router.post('/register_node', validateBody, async (req, res, next) => {
       node_id_whitelist,
     } = req.body;
 
+    const supportedFeatureList = [];
+    if (on_the_fly_support) {
+      supportedFeatureList.push('on_the_fly');
+    }
+
     await ndid.registerNode(
       {
         node_id,
@@ -109,7 +114,7 @@ router.post('/register_node', validateBody, async (req, res, next) => {
         role,
         max_aal,
         max_ial,
-        on_the_fly_support,
+        supported_feature_list: supportedFeatureList,
         agent,
         node_id_whitelist_active,
         node_id_whitelist,
@@ -138,6 +143,11 @@ router.post('/update_node', validateBody, async (req, res, next) => {
       node_id_whitelist,
     } = req.body;
 
+    const supportedFeatureList = [];
+    if (on_the_fly_support) {
+      supportedFeatureList.push('on_the_fly');
+    }
+
     await ndid.updateNode(
       {
         node_id,
@@ -145,7 +155,7 @@ router.post('/update_node', validateBody, async (req, res, next) => {
         // role,
         max_aal,
         max_ial,
-        on_the_fly_support,
+        supported_feature_list: supportedFeatureList,
         agent,
         node_id_whitelist_active,
         node_id_whitelist,

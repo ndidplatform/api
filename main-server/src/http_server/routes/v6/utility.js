@@ -36,7 +36,7 @@ router.get('/idp', validateQuery, async (req, res, next) => {
     const {
       min_ial = 0,
       min_aal = 0,
-      on_the_fly_support,
+      supported_feature_list,
       agent,
       filter_for_node_id,
     } = req.query;
@@ -48,17 +48,17 @@ router.get('/idp', validateQuery, async (req, res, next) => {
       agentFlag = false;
     }
 
-    let onTheFlySupport;
-    if (on_the_fly_support === 'true') {
-      onTheFlySupport = true;
-    } else if (on_the_fly_support === 'false') {
-      onTheFlySupport = false;
+    let supportedFeatureList = [];
+    if (supported_feature_list) {
+      supported_feature_list
+        .split(',')
+        .map((supportedFeature) => supportedFeature.trim());
     }
 
     const idpNodes = await tendermintNdid.getIdpNodes({
       min_ial: parseFloat(min_ial),
       min_aal: parseFloat(min_aal),
-      on_the_fly_support: onTheFlySupport,
+      supported_feature_list: supportedFeatureList,
       agent: agentFlag,
       filter_for_node_id,
     });
@@ -79,16 +79,16 @@ router.get(
       const {
         min_ial = 0,
         min_aal = 0,
-        on_the_fly_support,
+        supported_feature_list,
         mode,
         filter_for_node_id,
       } = req.query;
 
-      let onTheFlySupport;
-      if (on_the_fly_support === 'true') {
-        onTheFlySupport = true;
-      } else if (on_the_fly_support === 'false') {
-        onTheFlySupport = false;
+      let supportedFeatureList = [];
+      if (supported_feature_list) {
+        supported_feature_list
+          .split(',')
+          .map((supportedFeature) => supportedFeature.trim());
       }
 
       const idpNodes = await tendermintNdid.getIdpNodes({
@@ -96,7 +96,7 @@ router.get(
         identifier,
         min_ial: parseFloat(min_ial),
         min_aal: parseFloat(min_aal),
-        on_the_fly_support: onTheFlySupport,
+        supported_feature_list: supportedFeatureList,
         mode_list: mode ? [parseInt(mode)] : undefined,
         filter_for_node_id,
       });
@@ -479,5 +479,22 @@ router.get(
     }
   }
 );
+
+router.get('/node_supported_features', async (req, res, next) => {
+  try {
+    const { prefix } = req.query;
+
+    const result = await tendermintNdid.getAllowedNodeSupportedFeatureList({ prefix });
+
+    if (result == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(result);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

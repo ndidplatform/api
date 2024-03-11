@@ -40,7 +40,7 @@ router.get('/idp', validateQuery, async (req, res, next) => {
 
     idpNodes = idpNodes.map((idp) => {
       const {
-        on_the_fly_support, // eslint-disable-line no-unused-vars
+        supported_feature_list, // eslint-disable-line no-unused-vars
         agent, // eslint-disable-line no-unused-vars
         ...rest
       } = idp;
@@ -72,7 +72,7 @@ router.get(
 
       idpNodes = idpNodes.map((idp) => {
         const {
-          on_the_fly_support, // eslint-disable-line no-unused-vars
+          supported_feature_list, // eslint-disable-line no-unused-vars
           lial, // eslint-disable-line no-unused-vars
           laal, // eslint-disable-line no-unused-vars
           agent, // eslint-disable-line no-unused-vars
@@ -145,7 +145,7 @@ router.get('/nodes/:node_id', async (req, res, next) => {
       res.status(404).end();
     } else {
       const {
-        on_the_fly_support, // eslint-disable-line no-unused-vars
+        supported_feature_list, // eslint-disable-line no-unused-vars
         agent, // eslint-disable-line no-unused-vars
         node_id_whitelist, // eslint-disable-line no-unused-vars
         node_id_whitelist_active, // eslint-disable-line no-unused-vars

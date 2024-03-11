@@ -136,7 +136,10 @@ export default {
           role: { type: 'string', enum: ['rp', 'idp', 'as', 'proxy'] },
           max_ial: { $ref: 'defs#/definitions/ial' },
           max_aal: { $ref: 'defs#/definitions/aal' },
-          on_the_fly_support: { type: 'boolean' },
+          supported_feature_list: {
+            type: 'array',
+            items: { type: 'string', minLength: 1 },
+          },
           agent: { type: 'boolean' },
           node_id_whitelist_active: { type: 'boolean' },
           node_id_whitelist: {
@@ -169,7 +172,10 @@ export default {
           node_name: { type: 'string', minLength: 1 },
           max_ial: { $ref: 'defs#/definitions/ial' },
           max_aal: { $ref: 'defs#/definitions/aal' },
-          on_the_fly_support: { type: 'boolean' },
+          supported_feature_list: {
+            type: 'array',
+            items: { type: 'string', minLength: 1 },
+          },
           agent: { type: 'boolean' },
           node_id_whitelist_active: { type: 'boolean' },
           node_id_whitelist: {
@@ -547,6 +553,24 @@ export default {
           node_id: { type: 'string', minLength: 1 },
         },
         required: ['node_id'],
+      },
+    },
+    '/ndid/add_allowed_node_supported_feature': {
+      body: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', minLength: 1 },
+        },
+        required: ['name'],
+      },
+    },
+    '/ndid/remove_allowed_node_supported_feature': {
+      body: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', minLength: 1 },
+        },
+        required: ['name'],
       },
     },
   },

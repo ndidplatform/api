@@ -105,7 +105,7 @@ router.post('/register_node', validateBody, async (req, res, next) => {
       role,
       max_aal,
       max_ial,
-      on_the_fly_support,
+      supported_feature_list,
       agent,
       node_id_whitelist_active,
       node_id_whitelist,
@@ -127,7 +127,7 @@ router.post('/register_node', validateBody, async (req, res, next) => {
         role,
         max_aal,
         max_ial,
-        on_the_fly_support,
+        supported_feature_list,
         agent,
         node_id_whitelist_active,
         node_id_whitelist,
@@ -150,7 +150,7 @@ router.post('/update_node', validateBody, async (req, res, next) => {
       // role,
       max_aal,
       max_ial,
-      on_the_fly_support,
+      supported_feature_list,
       agent,
       node_id_whitelist_active,
       node_id_whitelist,
@@ -163,7 +163,7 @@ router.post('/update_node', validateBody, async (req, res, next) => {
         // role,
         max_aal,
         max_ial,
-        on_the_fly_support,
+        supported_feature_list,
         agent,
         node_id_whitelist_active,
         node_id_whitelist,
@@ -678,5 +678,27 @@ router.post(
     }
   }
 );
+
+router.post('/add_allowed_node_supported_feature', validateBody, async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    await ndid.addAllowedNodeSupportedFeature({ name });
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/remove_allowed_node_supported_feature', validateBody, async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    await ndid.removeAllowedNodeSupportedFeature({ name });
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

@@ -179,7 +179,7 @@ async function addKeyAndSetToken(nodeId, role, behindProxy, index) {
       ...node,
       max_ial: 3,
       max_aal: 3,
-      on_the_fly_support: false,
+      supported_feature_list: [],
     };
   }
 
@@ -260,6 +260,11 @@ export async function init() {
       encryption_algorithm: 'RSAES_PKCS1_V1_5',
     });
     await ndid.endInit();
+
+    await ndid.addAllowedNodeSupportedFeature({
+      name: 'on_the_fly',
+    });
+
     await Promise.all(
       nodes.map(({ nodeId, role }, index) =>
         addKeyAndSetToken(nodeId, role, false, index)

@@ -233,8 +233,12 @@ export async function registerNode(data, { synchronous = false } = {}) {
 }
 
 async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
-  const { reference_id, callback_url, max_ial, max_aal, on_the_fly_support } =
-    data;
+  const {
+    reference_id,
+    callback_url,
+    max_ial,
+    max_aal,
+  } = data;
 
   data.role = data.role.toUpperCase();
   if (data.role === 'IDP') {
@@ -244,16 +248,11 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
         message: 'IdP role must have property "max_ial" and "max_aal"',
       });
     }
-    if (on_the_fly_support == null) {
-      throw new CustomError({
-        message: 'IdP role must have property "on_the_fly_support"',
-      });
-    }
   } else {
-    if (max_ial != null || max_aal != null || on_the_fly_support != null) {
+    if (max_ial != null || max_aal != null) {
       throw new CustomError({
         message:
-          'Roles other than IdP should not have property "max_ial", "max_aal", and/or "on_the_fly_support"',
+          'Roles other than IdP should not have property "max_ial" and/or "max_aal"',
       });
     }
   }
@@ -274,7 +273,7 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
         role: data.role,
         max_ial: data.max_ial,
         max_aal: data.max_aal,
-        on_the_fly_support: data.on_the_fly_support,
+        supported_feature_list: data.supported_feature_list,
         agent: data.agent,
         node_id_whitelist_active: data.node_id_whitelist_active,
         node_id_whitelist: data.node_id_whitelist,
@@ -790,6 +789,28 @@ export async function removeSuppressedIdentityModificationNotificationNode({
   try {
     await tendermintNdid.removeSuppressedIdentityModificationNotificationNode(
       { node_id },
+      config.nodeId
+    );
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function addAllowedNodeSupportedFeature({ name }) {
+  try {
+    await tendermintNdid.addAllowedNodeSupportedFeature(
+      { name },
+      config.nodeId
+    );
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function removeAllowedNodeSupportedFeature({ name }) {
+  try {
+    await tendermintNdid.removeAllowedNodeSupportedFeature(
+      { name },
       config.nodeId
     );
   } catch (error) {
