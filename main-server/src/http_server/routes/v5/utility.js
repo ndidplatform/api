@@ -64,19 +64,16 @@ router.get('/idp', validateQuery, async (req, res, next) => {
     });
 
     idpNodes = idpNodes.map((idpNode) => {
+      const {
+        supported_feature_list, // eslint-disable-line no-unused-vars
+        ...rest
+      } = idpNode;
+
       return {
-        node_id: idpNode.node_id,
-        node_name: idpNode.node_name,
-        max_ial: idpNode.max_ial,
-        max_aal: idpNode.max_aal,
+        ...rest,
         on_the_fly_support: idpNode.supported_feature_list.includes(
           ON_THE_FLY_FEATURE_FLAG
         ),
-        lial: idpNode.lial,
-        laal: idpNode.laal,
-        supported_request_message_data_url_type_list:
-          idpNode.supported_request_message_data_url_type_list,
-        agent: idpNode.agent,
       };
     });
 
@@ -117,19 +114,16 @@ router.get(
       });
 
       idpNodes = idpNodes.map((idpNode) => {
+        const {
+          supported_feature_list, // eslint-disable-line no-unused-vars
+          ...rest
+        } = idpNode;
+
         return {
-          node_id: idpNode.node_id,
-          node_name: idpNode.node_name,
-          max_ial: idpNode.max_ial,
-          max_aal: idpNode.max_aal,
+          ...rest,
           on_the_fly_support: idpNode.supported_feature_list.includes(
             ON_THE_FLY_FEATURE_FLAG
           ),
-          lial: idpNode.lial,
-          laal: idpNode.laal,
-          supported_request_message_data_url_type_list:
-            idpNode.supported_request_message_data_url_type_list,
-          agent: idpNode.agent,
         };
       });
 
