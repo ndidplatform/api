@@ -140,7 +140,22 @@ async function createJWT({ nodeId, payload }) {
     nodeId,
     false
   );
-  const signedToken = token + '.' + base64url(signature);
+
+  let jwtSignature;
+  if (
+    [JWT_ALG.ES256, JWT_ALG.ES384, JWT_ALG.ES512, JWT_ALG.ES256K].includes(
+      jwtAlg
+    )
+  ) {
+    jwtSignature = cryptoUtils.convertEcdsaASN1SigToIEEEP1363Sig(
+      publicKey.algorithm,
+      signature
+    );
+  } else {
+    jwtSignature = signature;
+  }
+
+  const signedToken = token + '.' + base64url(jwtSignature);
 
   return signedToken;
 }

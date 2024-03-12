@@ -22,6 +22,8 @@
 
 import crypto from 'crypto';
 
+import asn1 from 'asn1.js';
+
 export const hashAlgorithm = {
   SHA256: 'SHA256',
   SHA384: 'SHA384',
@@ -258,6 +260,32 @@ export function verifySignature(algorithm, signature, publicKey, message) {
       .update(message)
       .verify(publicKey, signature);
   }
+}
+
+const EcdsaDerSig = asn1.define('ECPrivateKey', function () {
+  return this.seq().obj(this.key('r').int(), this.key('s').int());
+});
+
+export function convertEcdsaASN1SigToIEEEP1363Sig(algorithm, asn1SigBuffer) {
+  const sigAlg = signatureAlgorithm[algorithm];
+  if (sigAlg == null) {
+    throw new Error('unknown/unsupported algorithm');
+  }
+
+  let keySize;
+  if (sigAlg === signatureAlgorithm.ECDSA_SHA_256) {
+    keySize = 32;
+  } else if (sigAlg === signatureAlgorithm.ECDSA_SHA_384) {
+    keySize = 48;
+  } else {
+    throw new Error('unsupported signature algorithm');
+  }
+
+  const rsSig = EcdsaDerSig.decode(asn1SigBuffer, 'der');
+  return Buffer.concat([
+    rsSig.r.toArrayLike(Buffer, 'be', keySize),
+    rsSig.s.toArrayLike(Buffer, 'be', keySize),
+  ]);
 }
 
 /**
