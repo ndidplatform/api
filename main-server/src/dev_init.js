@@ -32,6 +32,7 @@ import * as cacheDb from './db/cache';
 import * as ndid from './core/ndid';
 import * as tendermint from './tendermint';
 import * as nodeKey from './utils/node_key';
+import * as cryptoUtils from './utils/crypto';
 
 import * as config from './config';
 
@@ -164,14 +165,16 @@ async function addKeyAndSetToken(nodeId, role, behindProxy, index) {
       industry_code: `00${(index % 3) + 1}`,
     }),
     signing_public_key,
-    signing_key_algorithm: 'RSA',
-    signing_algorithm: 'RSASSA_PKCS1_V1_5_SHA_256',
+    signing_key_algorithm: cryptoUtils.keyAlgorithm.RSA,
+    signing_algorithm:
+      cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
     signing_master_public_key,
-    signing_master_key_algorithm: 'RSA',
-    signing_master_algorithm: 'RSASSA_PKCS1_V1_5_SHA_256',
+    signing_master_key_algorithm: cryptoUtils.keyAlgorithm.RSA,
+    signing_master_algorithm:
+      cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
     encryption_public_key,
-    encryption_key_algorithm: 'RSA',
-    encryption_algorithm: 'RSAES_PKCS1_V1_5',
+    encryption_key_algorithm: cryptoUtils.keyAlgorithm.RSA,
+    encryption_algorithm: cryptoUtils.encryptionAlgorithm.RSAES_PKCS1_V1_5.name,
     role,
   };
   if (role === 'idp') {
