@@ -342,7 +342,7 @@ export async function initialize() {
           readNodeBehindProxySigningMasterPrivateKeyFromFile(nodeId),
           readNodeBehindProxyEncryptionPrivateKeyFromFile(nodeId),
         ]);
-        [nodeId] = signingPrivateKey;
+        newNodeBehindProxySigningPrivateKeys[nodeId] = signingPrivateKey;
         if (signingPrivateKeyPassphrase != null) {
           newNodeBehindProxySigningPrivateKeyPassphrases[nodeId] =
             signingPrivateKeyPassphrase;
