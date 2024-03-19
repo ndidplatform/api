@@ -32,6 +32,7 @@ import {
 import { callbackToClient } from '../../callback';
 
 import CustomError from 'ndid-error/custom_error';
+import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
 
 import * as config from '../../config';
@@ -192,6 +193,8 @@ export async function reduceNodeToken(data) {
 }
 
 export async function registerNode(data, { synchronous = false } = {}) {
+  const { max_ial, max_aal } = data;
+
   try {
     if (data.signing_public_key != null) {
       validateSigningKey(
@@ -217,6 +220,45 @@ export async function registerNode(data, { synchronous = false } = {}) {
       );
     }
 
+    if (data.role.toLowerCase() === 'idp') {
+      if (max_ial == null || max_aal == null) {
+        throw new CustomError({
+          message: 'IdP role must have property "max_ial" and "max_aal"',
+        });
+      }
+
+      // validate IAL
+      const { supported_ial_list } = await tendermintNdid.getSupportedIALList();
+      if (!supported_ial_list.includes(max_ial)) {
+        throw new CustomError({
+          errorType: errorType.UNSUPPORTED_IAL,
+          details: {
+            supported_ial_list,
+            max_ial,
+          },
+        });
+      }
+
+      // validate AAL
+      const { supported_aal_list } = await tendermintNdid.getSupportedAALList();
+      if (!supported_aal_list.includes(max_aal)) {
+        throw new CustomError({
+          errorType: errorType.UNSUPPORTED_AAL,
+          details: {
+            supported_aal_list,
+            max_aal,
+          },
+        });
+      }
+    } else {
+      if (max_ial != null || max_aal != null) {
+        throw new CustomError({
+          message:
+            'Roles other than IdP should not have property "max_ial" and/or "max_aal"',
+        });
+      }
+    }
+
     if (synchronous) {
       await registerNodeInternalAsync(...arguments);
     } else {
@@ -233,29 +275,7 @@ export async function registerNode(data, { synchronous = false } = {}) {
 }
 
 async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
-  const {
-    reference_id,
-    callback_url,
-    max_ial,
-    max_aal,
-  } = data;
-
-  data.role = data.role.toUpperCase();
-  if (data.role === 'IDP') {
-    data.role = 'IdP';
-    if (max_ial == null || max_aal == null) {
-      throw new CustomError({
-        message: 'IdP role must have property "max_ial" and "max_aal"',
-      });
-    }
-  } else {
-    if (max_ial != null || max_aal != null) {
-      throw new CustomError({
-        message:
-          'Roles other than IdP should not have property "max_ial" and/or "max_aal"',
-      });
-    }
-  }
+  const { reference_id, callback_url } = data;
 
   try {
     await tendermint.transact({
@@ -320,7 +340,37 @@ async function registerNodeInternalAsync(data, { synchronous = false } = {}) {
 }
 
 export async function updateNode(data, { synchronous = false } = {}) {
+  const { max_ial, max_aal } = data;
+
   try {
+    if (max_ial) {
+      // validate IAL
+      const { supported_ial_list } = await tendermintNdid.getSupportedIALList();
+      if (!supported_ial_list.includes(max_ial)) {
+        throw new CustomError({
+          errorType: errorType.UNSUPPORTED_IAL,
+          details: {
+            supported_ial_list,
+            max_ial,
+          },
+        });
+      }
+    }
+
+    if (max_aal) {
+      // validate AAL
+      const { supported_aal_list } = await tendermintNdid.getSupportedAALList();
+      if (!supported_aal_list.includes(max_aal)) {
+        throw new CustomError({
+          errorType: errorType.UNSUPPORTED_AAL,
+          details: {
+            supported_aal_list,
+            max_aal,
+          },
+        });
+      }
+    }
+
     if (synchronous) {
       await updateNodeInternalAsync(...arguments);
     } else {
@@ -716,6 +766,18 @@ export async function setAllowedMinIalForRegisterIdentityAtFirstIdp({
   min_ial,
 }) {
   try {
+    // validate IAL
+    const { supported_ial_list } = await tendermintNdid.getSupportedIALList();
+    if (!supported_ial_list.includes(min_ial)) {
+      throw new CustomError({
+        errorType: errorType.UNSUPPORTED_IAL,
+        details: {
+          supported_ial_list,
+          min_ial,
+        },
+      });
+    }
+
     await tendermintNdid.setAllowedMinIalForRegisterIdentityAtFirstIdp(
       { min_ial },
       config.nodeId
@@ -814,6 +876,36 @@ export async function removeAllowedNodeSupportedFeature({ name }) {
       config.nodeId
     );
   } catch (error) {
+    throw error;
+  }
+}
+
+export async function setSupportedIALList({ supported_ial_list }) {
+  try {
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'SetSupportedIALList',
+      params: {
+        supported_ial_list,
+      },
+    });
+  } catch (error) {
+    // TODO:
+    throw error;
+  }
+}
+
+export async function setSupportedAALList({ supported_aal_list }) {
+  try {
+    await tendermint.transact({
+      nodeId: config.nodeId,
+      fnName: 'SetSupportedAALList',
+      params: {
+        supported_aal_list,
+      },
+    });
+  } catch (error) {
+    // TODO:
     throw error;
   }
 }

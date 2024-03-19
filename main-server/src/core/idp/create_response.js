@@ -74,6 +74,28 @@ export async function createResponse(createResponseParams, options = {}) {
   );
 
   try {
+    const { supported_ial_list } = await tendermintNdid.getSupportedIALList();
+    if (!supported_ial_list.includes(ial)) {
+      throw new CustomError({
+        errorType: errorType.UNSUPPORTED_IAL,
+        details: {
+          supported_ial_list,
+          ial,
+        },
+      });
+    }
+
+    const { supported_aal_list } = await tendermintNdid.getSupportedAALList();
+    if (!supported_aal_list.includes(aal)) {
+      throw new CustomError({
+        errorType: errorType.UNSUPPORTED_AAL,
+        details: {
+          supported_aal_list,
+          aal,
+        },
+      });
+    }
+
     const request = await tendermintNdid.getRequestDetail({
       requestId: request_id,
     });

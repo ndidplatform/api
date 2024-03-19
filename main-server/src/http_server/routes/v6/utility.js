@@ -484,12 +484,44 @@ router.get('/node_supported_features', async (req, res, next) => {
   try {
     const { prefix } = req.query;
 
-    const result = await tendermintNdid.getAllowedNodeSupportedFeatureList({ prefix });
+    const result = await tendermintNdid.getAllowedNodeSupportedFeatureList({
+      prefix,
+    });
 
     if (result == null) {
       res.status(404).end();
     } else {
       res.status(200).json(result);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/supported_ial', async (req, res, next) => {
+  try {
+    const result = await tendermintNdid.getSupportedIALList();
+
+    if (result == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(result.supported_ial_list);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/supported_aal', async (req, res, next) => {
+  try {
+    const result = await tendermintNdid.getSupportedAALList();
+
+    if (result == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(result.supported_aal_list);
     }
     next();
   } catch (error) {

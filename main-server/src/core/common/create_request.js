@@ -447,6 +447,28 @@ export async function createRequest(
       }
     }
 
+    const { supported_ial_list } = await tendermintNdid.getSupportedIALList();
+    if (!supported_ial_list.includes(min_ial)) {
+      throw new CustomError({
+        errorType: errorType.UNSUPPORTED_IAL,
+        details: {
+          supported_ial_list,
+          min_ial,
+        },
+      });
+    }
+
+    const { supported_aal_list } = await tendermintNdid.getSupportedAALList();
+    if (!supported_aal_list.includes(min_aal)) {
+      throw new CustomError({
+        errorType: errorType.UNSUPPORTED_AAL,
+        details: {
+          supported_aal_list,
+          min_aal,
+        },
+      });
+    }
+
     const requestId = await cacheDb.getRequestIdByReferenceId(
       node_id,
       reference_id

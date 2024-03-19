@@ -323,6 +323,18 @@ export async function init() {
       })
     );
 
+    console.log('========= Adding supported IAL list =========');
+    await ndid.setSupportedIALList({
+      supported_ial_list: [1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3],
+    });
+    console.log('========= Done adding supported IAL list =========');
+
+    console.log('========= Adding supported AAL list =========');
+    await ndid.setSupportedAALList({
+      supported_aal_list: [1, 2.1, 2.2, 3],
+    });
+    console.log('========= Done adding supported AAL list =========');
+
     console.log('========= Adding IdP error codes =========');
     await ndid.addErrorCode({
       type: 'idp',

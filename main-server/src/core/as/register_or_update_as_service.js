@@ -81,6 +81,32 @@ export async function registerOrUpdateASService(
       }
     }
 
+    if (min_ial != null) {
+      const { supported_ial_list } = await tendermintNdid.getSupportedIALList();
+      if (!supported_ial_list.includes(min_ial)) {
+        throw new CustomError({
+          errorType: errorType.UNSUPPORTED_IAL,
+          details: {
+            supported_ial_list,
+            min_ial,
+          },
+        });
+      }
+    }
+
+    if (min_aal != null) {
+      const { supported_aal_list } = await tendermintNdid.getSupportedAALList();
+      if (!supported_aal_list.includes(min_aal)) {
+        throw new CustomError({
+          errorType: errorType.UNSUPPORTED_AAL,
+          details: {
+            supported_aal_list,
+            min_aal,
+          },
+        });
+      }
+    }
+
     if (supported_namespace_list != null) {
       const allowedNamespaces = await tendermintNdid.getNamespaceList();
       supported_namespace_list.forEach((namespace) => {

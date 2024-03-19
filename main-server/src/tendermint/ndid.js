@@ -1911,3 +1911,27 @@ export async function getAllowedNodeSupportedFeatureList({ prefix } = {}) {
     });
   }
 }
+
+export async function getSupportedIALList() {
+  try {
+    const result = await tendermint.query('GetSupportedIALList');
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get supported IAL list',
+      cause: error,
+    });
+  }
+}
+
+export async function getSupportedAALList() {
+  try {
+    const result = await tendermint.query('GetSupportedAALList');
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get supported AAL list',
+      cause: error,
+    });
+  }
+}

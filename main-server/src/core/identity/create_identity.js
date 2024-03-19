@@ -169,6 +169,17 @@ export async function createIdentity(
       reference_group_code = uuidv4();
     }
 
+    const { supported_ial_list } = await tendermintNdid.getSupportedIALList();
+    if (!supported_ial_list.includes(ial)) {
+      throw new CustomError({
+        errorType: errorType.UNSUPPORTED_IAL,
+        details: {
+          supported_ial_list,
+          ial,
+        },
+      });
+    }
+
     //check ial
     const { max_ial } = await tendermintNdid.getNodeInfo(node_id);
     if (ial > max_ial) {

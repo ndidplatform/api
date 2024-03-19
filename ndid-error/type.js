@@ -738,6 +738,16 @@ module.exports = {
     message: 'Unsupported signing algorithm.',
     clientError: true,
   },
+  UNSUPPORTED_IAL: {
+    code: 20094,
+    message: 'Unsupported IAL',
+    clientError: true,
+  },
+  UNSUPPORTED_AAL: {
+    code: 20095,
+    message: 'Unsupported AAL',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

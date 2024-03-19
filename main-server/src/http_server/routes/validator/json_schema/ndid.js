@@ -23,16 +23,16 @@
 export default {
   defsSchema: {
     definitions: {
-      ial: { type: 'number', enum: [1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3] },
-      aal: { type: 'number', enum: [1, 2.1, 2.2, 3] },
-      ialString: {
-        type: 'string',
-        enum: ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3'],
-      },
-      aalString: {
-        type: 'string',
-        enum: ['1', '2.1', '2.2', '3'],
-      },
+      // ial: { type: 'number', enum: [1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3] },
+      // aal: { type: 'number', enum: [1, 2.1, 2.2, 3] },
+      // ialString: {
+      //   type: 'string',
+      //   enum: ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3'],
+      // },
+      // aalString: {
+      //   type: 'string',
+      //   enum: ['1', '2.1', '2.2', '3'],
+      // },
       url: {
         type: 'string',
         format: 'uri',
@@ -82,7 +82,9 @@ export default {
         type: 'object',
         properties: {
           signing_public_key: { type: 'string', minLength: 1 },
-          signing_key_algorithm: { $ref: 'defs#/definitions/keyAlgorithmForSigning' },
+          signing_key_algorithm: {
+            $ref: 'defs#/definitions/keyAlgorithmForSigning',
+          },
           signing_algorithm: { $ref: 'defs#/definitions/signingAlgorithm' },
           signing_master_public_key: { type: 'string', minLength: 1 },
           signing_master_key_algorithm: {
@@ -92,7 +94,9 @@ export default {
             $ref: 'defs#/definitions/signingAlgorithm',
           },
           encryption_public_key: { type: 'string', minLength: 1 },
-          encryption_key_algorithm: { $ref: 'defs#/definitions/keyAlgorithmForEncryption' },
+          encryption_key_algorithm: {
+            $ref: 'defs#/definitions/keyAlgorithmForEncryption',
+          },
           encryption_algorithm: {
             $ref: 'defs#/definitions/encryptionAlgorithm',
           },
@@ -119,7 +123,9 @@ export default {
           node_id: { type: 'string', minLength: 1 },
           node_name: { type: 'string', minLength: 1 },
           signing_public_key: { type: 'string', minLength: 1 },
-          signing_key_algorithm: { $ref: 'defs#/definitions/keyAlgorithmForSigning' },
+          signing_key_algorithm: {
+            $ref: 'defs#/definitions/keyAlgorithmForSigning',
+          },
           signing_algorithm: { $ref: 'defs#/definitions/signingAlgorithm' },
           signing_master_public_key: { type: 'string', minLength: 1 },
           signing_master_key_algorithm: {
@@ -129,13 +135,15 @@ export default {
             $ref: 'defs#/definitions/signingAlgorithm',
           },
           encryption_public_key: { type: 'string', minLength: 1 },
-          encryption_key_algorithm: { $ref: 'defs#/definitions/keyAlgorithmForEncryption' },
+          encryption_key_algorithm: {
+            $ref: 'defs#/definitions/keyAlgorithmForEncryption',
+          },
           encryption_algorithm: {
             $ref: 'defs#/definitions/encryptionAlgorithm',
           },
           role: { type: 'string', enum: ['rp', 'idp', 'as', 'proxy'] },
-          max_ial: { $ref: 'defs#/definitions/ial' },
-          max_aal: { $ref: 'defs#/definitions/aal' },
+          max_ial: { type: 'number' },
+          max_aal: { type: 'number' },
           supported_feature_list: {
             type: 'array',
             items: { type: 'string', minLength: 1 },
@@ -170,8 +178,8 @@ export default {
         properties: {
           node_id: { type: 'string', minLength: 1 },
           node_name: { type: 'string', minLength: 1 },
-          max_ial: { $ref: 'defs#/definitions/ial' },
-          max_aal: { $ref: 'defs#/definitions/aal' },
+          max_ial: { type: 'number' },
+          max_aal: { type: 'number' },
           supported_feature_list: {
             type: 'array',
             items: { type: 'string', minLength: 1 },
@@ -484,7 +492,7 @@ export default {
         $schema: 'http://json-schema.org/draft-07/schema#',
         type: 'object',
         properties: {
-          min_ial: { $ref: 'defs#/definitions/ial' },
+          min_ial: { type: 'number' },
         },
         required: ['min_ial'],
       },
@@ -571,6 +579,30 @@ export default {
           name: { type: 'string', minLength: 1 },
         },
         required: ['name'],
+      },
+    },
+    '/ndid/set_supported_ial_list': {
+      body: {
+        type: 'object',
+        properties: {
+          supported_ial_list: {
+            type: 'array',
+            items: { type: 'number', minimum: 0 },
+          },
+        },
+        required: ['supported_ial_list'],
+      },
+    },
+    '/ndid/set_supported_aal_list': {
+      body: {
+        type: 'object',
+        properties: {
+          supported_aal_list: {
+            type: 'array',
+            items: { type: 'number', minimum: 0 },
+          },
+        },
+        required: ['supported_aal_list'],
       },
     },
   },

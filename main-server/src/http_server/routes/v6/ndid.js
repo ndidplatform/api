@@ -701,4 +701,30 @@ router.post('/remove_allowed_node_supported_feature', validateBody, async (req, 
   }
 });
 
+router.post('/set_supported_ial_list', validateBody, async (req, res, next) => {
+  try {
+    const { supported_ial_list } = req.body;
+    await ndid.setSupportedIALList({
+      supported_ial_list,
+    });
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/set_supported_aal_list', validateBody, async (req, res, next) => {
+  try {
+    const { supported_aal_list } = req.body;
+    await ndid.setSupportedAALList({
+      supported_aal_list,
+    });
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

@@ -77,6 +77,17 @@ export async function updateIal(
       });
     }
 
+    const { supported_ial_list } = await tendermintNdid.getSupportedIALList();
+    if (!supported_ial_list.includes(ial)) {
+      throw new CustomError({
+        errorType: errorType.UNSUPPORTED_IAL,
+        details: {
+          supported_ial_list,
+          ial,
+        },
+      });
+    }
+
     //check max_ial
     ial = parseFloat(ial);
     let { max_ial } = await tendermintNdid.getNodeInfo(node_id);

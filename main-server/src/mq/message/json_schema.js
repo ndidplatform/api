@@ -25,8 +25,8 @@ import messageTypes from './type';
 export default {
   defsSchema: {
     definitions: {
-      ial: { type: 'number', enum: [1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3] },
-      aal: { type: 'number', enum: [1, 2.1, 2.2, 3] },
+      // ial: { type: 'number', enum: [1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3] },
+      // aal: { type: 'number', enum: [1, 2.1, 2.2, 3] },
     },
   },
   [messageTypes.AS_RESPONSE]: {
@@ -103,8 +103,8 @@ export default {
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },
           request_id: { type: 'string', minLength: 1 },
-          min_ial: { $ref: 'defs#/definitions/ial' },
-          min_aal: { $ref: 'defs#/definitions/aal' },
+          min_ial: { type: 'number' },
+          min_aal: { type: 'number' },
           request_timeout: { type: 'integer', minimum: 1 },
           data_request_list: {
             type: 'array',
@@ -174,8 +174,8 @@ export default {
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },
           request_id: { type: 'string', minLength: 1 },
-          min_ial: { $ref: 'defs#/definitions/ial' },
-          min_aal: { $ref: 'defs#/definitions/aal' },
+          min_ial: { type: 'number' },
+          min_aal: { type: 'number' },
           request_timeout: { type: 'integer', minimum: 1 },
           data_request_list: {
             type: 'array',

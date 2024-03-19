@@ -2,7 +2,7 @@
 
 ## TBD
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v9.x.x_
 
 BREAKING CHANGES:
 
@@ -106,9 +106,13 @@ FEATURES:
 - API version 6.0
   - New API: GET `/utility/nodes/:node_id/public_keys`: Get node public key list (including previous key versions).
   - New API: GET `/utility/node_supported_features`: Get valid node supported feature list.
+  - New API: GET `/utility/supported_ial`: Get valid/supported IAL list.
+  - New API: GET `/utility/supported_aal`: Get valid/supported AAL list.
   - NDID only APIs
     - New API: POST `/ndid/add_allowed_node_supported_feature`: Add allowed node supported feature
     - New API: POST `/ndid/remove_allowed_node_supported_feature`: Remove allowed node supported feature
+    - New API: POST `/ndid/set_supported_ial_list`: Set supported IAL list
+    - New API: POST `/ndid/set_supported_aal_list`: Set supported AAL list
 - Add environment variables.
   - `SIGNING_PRIVATE_KEY_PATH`: Path to node's private key for signing [Default: use pre-generated development key in development mode]
   - `SIGNING_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key for signing
