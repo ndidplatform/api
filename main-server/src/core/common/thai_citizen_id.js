@@ -31,7 +31,7 @@ export function validateIdentifier({ namespace, identifier }) {
     const valid = thaiIdUtils.validateThaiIdNumber(identifier);
     if (!valid) {
       throw new CustomError({
-        errorType: errorType.INVALID_IDENTIFIER_KEY,
+        errorType: errorType.INVALID_IDENTIFIER,
         details: {
           namespace,
           identifier,

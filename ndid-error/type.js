@@ -748,7 +748,7 @@ module.exports = {
     message: 'Unsupported AAL',
     clientError: true,
   },
-  INVALID_IDENTIFIER_KEY: {
+  INVALID_IDENTIFIER: {
     code: 20096,
     message: 'Invalid identifier',
     clientError: true,
