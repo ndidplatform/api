@@ -41,14 +41,8 @@ import { role } from '../../node';
 
 export async function createResponse(createResponseParams, options = {}) {
   let { node_id } = createResponseParams;
-  const {
-    request_id,
-    ial,
-    aal,
-    accessor_id,
-    signature,
-    error_code,
-  } = createResponseParams;
+  const { request_id, ial, aal, accessor_id, signature, error_code } =
+    createResponseParams;
   const { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = options;
 
   if (role === 'proxy') {
@@ -74,28 +68,6 @@ export async function createResponse(createResponseParams, options = {}) {
   );
 
   try {
-    const { supported_ial_list } = await tendermintNdid.getSupportedIALList();
-    if (!supported_ial_list.includes(ial)) {
-      throw new CustomError({
-        errorType: errorType.UNSUPPORTED_IAL,
-        details: {
-          supported_ial_list,
-          ial,
-        },
-      });
-    }
-
-    const { supported_aal_list } = await tendermintNdid.getSupportedAALList();
-    if (!supported_aal_list.includes(aal)) {
-      throw new CustomError({
-        errorType: errorType.UNSUPPORTED_AAL,
-        details: {
-          supported_aal_list,
-          aal,
-        },
-      });
-    }
-
     const request = await tendermintNdid.getRequestDetail({
       requestId: request_id,
     });
@@ -171,6 +143,28 @@ export async function createResponse(createResponseParams, options = {}) {
         apiVersion,
       });
     } else {
+      const { supported_ial_list } = await tendermintNdid.getSupportedIALList();
+      if (!supported_ial_list.includes(ial)) {
+        throw new CustomError({
+          errorType: errorType.UNSUPPORTED_IAL,
+          details: {
+            supported_ial_list,
+            ial,
+          },
+        });
+      }
+
+      const { supported_aal_list } = await tendermintNdid.getSupportedAALList();
+      if (!supported_aal_list.includes(aal)) {
+        throw new CustomError({
+          errorType: errorType.UNSUPPORTED_AAL,
+          details: {
+            supported_aal_list,
+            aal,
+          },
+        });
+      }
+
       if (ial < request.min_ial) {
         throw new CustomError({
           errorType: errorType.IAL_IS_LESS_THAN_REQUEST_MIN_IAL,
@@ -239,9 +233,8 @@ export async function createResponse(createResponseParams, options = {}) {
           });
         }
 
-        const accessorReferenceGroupCode = await tendermintNdid.getReferenceGroupCodeByAccessorId(
-          accessor_id
-        );
+        const accessorReferenceGroupCode =
+          await tendermintNdid.getReferenceGroupCodeByAccessorId(accessor_id);
 
         if (referenceGroupCode !== accessorReferenceGroupCode) {
           throw new CustomError({
@@ -391,12 +384,8 @@ export async function createErrorResponseInternal(
   createResponseParams,
   additionalParams = {}
 ) {
-  const {
-    reference_id,
-    callback_url,
-    request_id,
-    error_code,
-  } = createResponseParams;
+  const { reference_id, callback_url, request_id, error_code } =
+    createResponseParams;
   const { nodeId, requestData, apiVersion } = additionalParams;
   try {
     const dataToBlockchain = {
