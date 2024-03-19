@@ -104,6 +104,9 @@ FEATURES:
   - `RSAES_OAEP_SHA_1`
   - `RSAES_OAEP_SHA_256`
 - API version 6.0
+  - Validate identifier with namespace `citizen_id` as Thai citizen ID.
+    - On create request (mode 1)
+    - On create identity
   - New API: GET `/utility/nodes/:node_id/public_keys`: Get node public key list (including previous key versions).
   - New API: GET `/utility/node_supported_features`: Get valid node supported feature list.
   - New API: GET `/utility/supported_ial`: Get valid/supported IAL list.

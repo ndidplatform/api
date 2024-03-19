@@ -71,7 +71,7 @@ import { createIdentityAfterCloseConsentRequest } from './create_identity_after_
  */
 export async function createIdentity(
   createIdentityParams,
-  { apiVersion } = {}
+  { validateIdentifier = true, apiVersion } = {}
 ) {
   let { node_id, ial, accessor_id } = createIdentityParams;
   const {
@@ -123,6 +123,13 @@ export async function createIdentity(
             details: {
               namespace,
             },
+          });
+        }
+
+        if (validateIdentifier) {
+          common.validateIdentifier({
+            namespace,
+            identifier,
           });
         }
 

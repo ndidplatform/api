@@ -20,6 +20,8 @@
  *
  */
 
+import { validateIdentifier } from './thai_citizen_id';
+
 import { getFunction } from '../../functions';
 import {
   getIdpMQDestinations,
@@ -413,7 +415,10 @@ export async function createRequest(
     bypass_identity_check,
     request_type,
   } = createRequestParams;
-  const { synchronous = false } = options;
+  const {
+    synchronous = false,
+    validateIdentifier: _validateIdentifier = true,
+  } = options;
   let {
     request_id, // Pre-generated request ID. Used by create identity function.
   } = additionalParams;
@@ -466,6 +471,13 @@ export async function createRequest(
           supported_aal_list,
           min_aal,
         },
+      });
+    }
+
+    if (_validateIdentifier && mode === 1) {
+      validateIdentifier({
+        namespace,
+        identifier,
       });
     }
 

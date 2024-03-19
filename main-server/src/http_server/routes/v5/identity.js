@@ -69,7 +69,12 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
         laal,
         request_message,
       },
-      { apiVersion, ndidMemberAppType, ndidMemberAppVersion }
+      {
+        validateIdentifier: false,
+        apiVersion,
+        ndidMemberAppType,
+        ndidMemberAppVersion,
+      }
     );
 
     res.status(202).json(result);
@@ -135,6 +140,7 @@ router.post(
           request_message,
         },
         {
+          validateIdentifier: false,
           apiVersion,
           ndidMemberAppType,
           ndidMemberAppVersion,

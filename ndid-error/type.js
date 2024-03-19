@@ -748,6 +748,11 @@ module.exports = {
     message: 'Unsupported AAL',
     clientError: true,
   },
+  INVALID_IDENTIFIER_KEY: {
+    code: 20096,
+    message: 'Invalid identifier',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

@@ -56,7 +56,10 @@ import { addIdentityAfterCloseConsentRequest } from './add_identity_after_consen
  *
  * @returns {{ request_id: string }}
  */
-export async function addIdentity(addIdentityParams, { apiVersion } = {}) {
+export async function addIdentity(
+  addIdentityParams,
+  { validateIdentifier = true, apiVersion } = {}
+) {
   let { node_id } = addIdentityParams;
   const {
     reference_id,
@@ -78,10 +81,8 @@ export async function addIdentity(addIdentityParams, { apiVersion } = {}) {
   }
 
   try {
-    const identityRequestData = await cacheDb.getIdentityRequestDataByReferenceId(
-      node_id,
-      reference_id
-    );
+    const identityRequestData =
+      await cacheDb.getIdentityRequestDataByReferenceId(node_id, reference_id);
     if (identityRequestData) {
       throw new CustomError({
         errorType: errorType.DUPLICATE_REFERENCE_ID,
@@ -107,6 +108,13 @@ export async function addIdentity(addIdentityParams, { apiVersion } = {}) {
           });
         }
 
+        if (validateIdentifier) {
+          common.validateIdentifier({
+            namespace,
+            identifier,
+          });
+        }
+
         const identityOnNode = await getIdentityInfo({
           nodeId: node_id,
           namespace,
@@ -123,10 +131,8 @@ export async function addIdentity(addIdentityParams, { apiVersion } = {}) {
           });
         }
 
-        const identityReferenceGroupCode = await tendermintNdid.getReferenceGroupCode(
-          namespace,
-          identifier
-        );
+        const identityReferenceGroupCode =
+          await tendermintNdid.getReferenceGroupCode(namespace, identifier);
 
         if (identityReferenceGroupCode != null) {
           if (reference_group_code !== identityReferenceGroupCode) {

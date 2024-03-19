@@ -46,6 +46,7 @@ import { getFunction } from '../../functions';
 export * from './create_request';
 export * from './close_request';
 export * from './create_message';
+export * from './thai_citizen_id';
 
 let processingInboundMessagesCount = 0;
 
