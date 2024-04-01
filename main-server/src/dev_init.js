@@ -25,7 +25,7 @@ import 'source-map-support/register';
 
 import fs from 'fs';
 import path from 'path';
-import mkdirp from 'mkdirp';
+import { mkdirp } from 'mkdirp';
 
 import * as cacheDb from './db/cache';
 
@@ -276,11 +276,15 @@ export async function init() {
     });
     console.log('========= Done adding supported AAL list =========');
 
-    console.log('========= Adding allowed node supported feature (on_the_fly) =========');
+    console.log(
+      '========= Adding allowed node supported feature (on_the_fly) ========='
+    );
     await ndid.addAllowedNodeSupportedFeature({
       name: 'on_the_fly',
     });
-    console.log('========= Done adding allowed node supported feature (on_the_fly) =========');
+    console.log(
+      '========= Done adding allowed node supported feature (on_the_fly) ========='
+    );
 
     await Promise.all(
       nodes.map(({ nodeId, role }, index) =>

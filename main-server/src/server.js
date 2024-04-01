@@ -23,7 +23,7 @@
 import 'source-map-support/register';
 
 import 'dotenv/config';
-import mkdirp from 'mkdirp';
+import { mkdirp } from 'mkdirp';
 
 import './env_var_validate';
 

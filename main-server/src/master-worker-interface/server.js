@@ -23,7 +23,7 @@
 import path from 'path';
 import EventEmitter from 'events';
 
-import * as grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 
 import { getArgsProtobuf } from './message';
@@ -79,10 +79,10 @@ export async function initialize() {
     'grpc.keepalive_time_ms': config.grpcPingInterval,
     'grpc.keepalive_timeout_ms': config.grpcPingTimeout,
     'grpc.keepalive_permit_without_calls': 1,
-    'grpc.http2.max_pings_without_data': 0,
-    'grpc.http2.min_ping_interval_without_data_ms':
-      config.grpcExpectedClientPingInterval,
-    'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
+    // 'grpc.http2.max_pings_without_data': 0,
+    // 'grpc.http2.min_ping_interval_without_data_ms':
+    //   config.grpcExpectedClientPingInterval,
+    // 'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
     'grpc.max_receive_message_length': -1,
   });
   const MASTER_SERVER_ADDRESS = `0.0.0.0:${config.masterServerPort}`;
@@ -97,7 +97,17 @@ export async function initialize() {
     workerStoppingCall,
   });
 
-  const port = server.bind(
+  const serverBindAsync = (...args) => {
+    return new Promise((resolve, reject) => {
+      server.bindAsync(...args, (err, port) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(port);
+      });
+    });
+  };
+  const port = await serverBindAsync(
     MASTER_SERVER_ADDRESS,
     config.grpcSsl
       ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
@@ -109,7 +119,7 @@ export async function initialize() {
       : grpc.ServerCredentials.createInsecure()
   );
 
-  server.start();
+  // server.start();
 
   logger.info({
     message: 'Master gRPC server initialzed',

@@ -326,10 +326,10 @@ export const grpcPingTimeout = process.env.GRPC_PING_TIMEOUT_MS
   ? parseInt(process.env.GRPC_PING_TIMEOUT_MS)
   : 20000;
 
-export const grpcExpectedClientPingInterval = process.env
-  .GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS
-  ? parseInt(process.env.GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS)
-  : 30000;
+// export const grpcExpectedClientPingInterval = process.env
+//   .GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS
+//   ? parseInt(process.env.GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS)
+//   : 30000;
 
 export const grpcCallTimeout = process.env.GRPC_CALL_TIMEOUT_MS
   ? parseInt(process.env.GRPC_CALL_TIMEOUT_MS)

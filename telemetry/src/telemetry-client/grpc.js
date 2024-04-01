@@ -20,7 +20,7 @@
  *
  */
 
-import * as grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import path from 'path';
 import fs from 'fs';
 import tls from 'tls';
@@ -86,8 +86,8 @@ export default class GRPCTelemetryClient {
         'grpc.keepalive_time_ms': config.grpcPingInterval,
         'grpc.keepalive_timeout_ms': config.grpcPingTimeout,
         'grpc.keepalive_permit_without_calls': 1,
-        'grpc.http2.max_pings_without_data': 0,
-        'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
+        // 'grpc.http2.max_pings_without_data': 0,
+        // 'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
       }
     );
   }

@@ -23,7 +23,7 @@
 import path from 'path';
 import EventEmitter from 'events';
 
-import * as grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 
 import { ExponentialBackoff } from 'simple-backoff';
@@ -169,8 +169,8 @@ export async function initialize() {
       'grpc.keepalive_time_ms': config.grpcPingInterval,
       'grpc.keepalive_timeout_ms': config.grpcPingTimeout,
       'grpc.keepalive_permit_without_calls': 1,
-      'grpc.http2.max_pings_without_data': 0,
-      'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
+      // 'grpc.http2.max_pings_without_data': 0,
+      // 'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
       'grpc.max_receive_message_length': -1,
     }
   );

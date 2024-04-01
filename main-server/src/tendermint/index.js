@@ -1425,6 +1425,10 @@ function getAppHashFromNewBlockEvent(result) {
   return result.data.value.block.header.app_hash;
 }
 
+export function status() {
+  return tendermintWsPool.getConnection().status();
+}
+
 function incrementExpectedTxsCount() {
   expectedTxsCount++;
   metricsEventEmitter.emit('expectedTxsCount', expectedTxsCount);

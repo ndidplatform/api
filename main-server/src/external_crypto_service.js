@@ -20,13 +20,11 @@
  *
  */
 
-import crypto from 'crypto';
 import { EventEmitter } from 'events';
 
 import fetch from 'node-fetch';
 import { ExponentialBackoff } from 'simple-backoff';
 
-import { publicEncrypt, randomBase64Bytes } from './utils/crypto';
 import { wait, hash, verifySignature } from './utils';
 import * as cryptoUtils from './utils/crypto';
 import * as tendermintNdid from './tendermint/ndid';
@@ -375,7 +373,7 @@ export async function setCallbackUrls({
 async function callbackWithRetry(url, body, logPrefix, type) {
   incrementPendingCallbacksCount();
 
-  const cbId = randomBase64Bytes(10);
+  const cbId = cryptoUtils.randomBase64Bytes(10);
   logger.info({
     message: `[${logPrefix}] Calling callback`,
     url,

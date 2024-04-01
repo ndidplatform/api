@@ -58,7 +58,7 @@
 - `MAX_MQ_SOCKET`: Maximum limit for MQ sending sockets [Default: `10000`]
 - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds [Default: `300000`]
 - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds [Default: `20000`]
-- `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than `GRPC_PING_INTERVAL_MS` config on API server pair. [Default: `30000`]
+<!-- - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than `GRPC_PING_INTERVAL_MS` config on API server pair. [Default: `30000`] -->
 - `LOG_LEVEL`: _Description below_
 - `LOG_PRETTY_PRINT`: _Description below_
 - `LOG_COLOR`: _Description below_
@@ -142,7 +142,7 @@
 - `MAX_INTERVAL_TENDERMINT_SYNC_CHECK`: Maximum time interval in milliseconds for polling Tendermint syncing status on server start [Default: `15000`]
 - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds [Default: `60000`]
 - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds [Default: `20000`]
-- `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Used by `master` mode process. Must be less than `GRPC_PING_INTERVAL_MS` config on worker processes. [Default: `30000`]
+<!-- - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Used by `master` mode process. Must be less than `GRPC_PING_INTERVAL_MS` config on worker processes. [Default: `30000`] -->
 - `GRPC_CALL_TIMEOUT_MS`: gRPC call timeout in milliseconds [Default: `60000`]
 - `PROMETHEUS`: Enable prometheus metrics and HTTP server for querying metrics [Default: `false`]
 - `PROMETHEUS_SERVER_PORT`: HTTP server port for querying Prometheus metrics [Default: `8888`]
