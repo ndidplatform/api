@@ -9,7 +9,7 @@ Collect activities on NDID API server and forward to NDID telemetry server
 
 ## Prerequisites
 
-- Node.js 12 or later (Recommended: latest version of Node.js 16 LTS)
+- Node.js 18 or later (Recommended: latest version of Node.js 20 LTS)
 - npm 8 or later
 - Redis **5.0** or later
 
