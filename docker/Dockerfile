@@ -1,4 +1,4 @@
-FROM node:18-alpine3.19 as build
+FROM node:20-alpine3.19 as build
 
 WORKDIR /tmp
 
@@ -28,7 +28,7 @@ RUN npm run build && npm prune --production
 RUN apk del .build-deps
 
 
-FROM node:18-alpine3.19
+FROM node:20-alpine3.19
 LABEL maintainer="NDID IT Team <it@ndid.co.th>"
 
 # Directory path for persistence data files
@@ -54,4 +54,4 @@ COPY docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 
 WORKDIR /api/main-server
 
-ENTRYPOINT [ "/usr/bin/docker-entrypoint.sh", "node", "/api/main-server/build/server.js" ]
+ENTRYPOINT [ "/usr/bin/docker-entrypoint.sh", "node", "--security-revert=CVE-2023-46809", "/api/main-server/build/server.js" ]
