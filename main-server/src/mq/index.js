@@ -341,10 +341,7 @@ async function processRawMessageSwitch(messageId, messageProtobuf, timestamp) {
   }
 }
 
-function handleProcessedRawMessage(
-  error,
-  [messageId, message, receiverNodeId]
-) {
+function handleProcessedRawMessage(error, processedRawMessage) {
   if (error) {
     // logger.error()
     if (errorHandlerFunction) {
@@ -352,6 +349,8 @@ function handleProcessedRawMessage(
     }
     return;
   }
+
+  const [messageId, message, receiverNodeId] = processedRawMessage;
 
   if (messageHandlerFunction) {
     messageHandlerFunction(messageId, message, receiverNodeId);
