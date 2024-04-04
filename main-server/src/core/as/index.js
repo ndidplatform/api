@@ -594,7 +594,7 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
       return false;
     }
 
-    const accessor_public_key = await tendermintNdid.getAccessorKey(
+    const accessor_public_key = await tendermintNdid.getAccessorPublicKey(
       response_private_data_list[i].accessor_id
     );
     const response = requestDetail.response_list.find(

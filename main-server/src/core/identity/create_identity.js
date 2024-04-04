@@ -202,7 +202,7 @@ export async function createIdentity(
       accessor_id = uuidv4();
     }
 
-    const checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(
+    const checkDuplicateAccessorId = await tendermintNdid.getAccessorPublicKey(
       accessor_id
     );
     if (checkDuplicateAccessorId != null) {

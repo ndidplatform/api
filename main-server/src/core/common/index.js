@@ -426,7 +426,7 @@ export async function getAndSaveIdpResponseValid({
       requestDataFromMq.accessor_id
     );
     if (requestReferenceGroupCode === responseReferenceGroupCode) {
-      const accessor_public_key = await tendermintNdid.getAccessorKey(
+      const accessor_public_key = await tendermintNdid.getAccessorPublicKey(
         requestDataFromMq.accessor_id
       );
 

@@ -111,7 +111,7 @@ export async function addAccessor(addAccessorParams, { apiVersion } = {}) {
       accessor_id = uuidv4();
     }
 
-    let checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(
+    let checkDuplicateAccessorId = await tendermintNdid.getAccessorPublicKey(
       accessor_id
     );
     if (checkDuplicateAccessorId != null) {

@@ -88,17 +88,15 @@ export async function revokeAndAddAccessor(
   }
 
   try {
-    const identityRequestData = await cacheDb.getIdentityRequestDataByReferenceId(
-      node_id,
-      reference_id
-    );
+    const identityRequestData =
+      await cacheDb.getIdentityRequestDataByReferenceId(node_id, reference_id);
     if (identityRequestData) {
       throw new CustomError({
         errorType: errorType.DUPLICATE_REFERENCE_ID,
       });
     }
 
-    const existingAccessorPublicKey = await tendermintNdid.getAccessorKey(
+    const existingAccessorPublicKey = await tendermintNdid.getAccessorPublicKey(
       revoking_accessor_id
     );
     if (existingAccessorPublicKey == null) {
@@ -130,7 +128,7 @@ export async function revokeAndAddAccessor(
       accessor_id = uuidv4();
     }
 
-    let checkDuplicateAccessorId = await tendermintNdid.getAccessorKey(
+    let checkDuplicateAccessorId = await tendermintNdid.getAccessorPublicKey(
       accessor_id
     );
     if (checkDuplicateAccessorId != null) {

@@ -111,6 +111,7 @@ FEATURES:
   - New API: GET `/utility/node_supported_features`: Get valid node supported feature list.
   - New API: GET `/utility/supported_ial`: Get valid/supported IAL list.
   - New API: GET `/utility/supported_aal`: Get valid/supported AAL list.
+  - New API: GET `/utility/accessors/:accessor_id`: Get accessor key details.
   - NDID only APIs
     - New API: POST `/ndid/add_allowed_node_supported_feature`: Add allowed node supported feature
     - New API: POST `/ndid/remove_allowed_node_supported_feature`: Remove allowed node supported feature

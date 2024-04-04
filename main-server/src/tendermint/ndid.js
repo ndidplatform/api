@@ -1101,13 +1101,25 @@ export async function getAccessorGroupId(accessor_id) {
 
 export async function getAccessorKey(accessor_id) {
   try {
-    const accessorPubKeyObj = await tendermint.query('GetAccessorKey', {
+    const accessorKey = await tendermint.query('GetAccessorKey', {
       accessor_id,
     });
-    if (accessorPubKeyObj == null || !accessorPubKeyObj.active) {
+    return accessorKey;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get accessor key from blockchain',
+      cause: error,
+    });
+  }
+}
+
+export async function getAccessorPublicKey(accessor_id) {
+  try {
+    const accessorKey = await getAccessorKey(accessor_id);
+    if (accessorKey == null || !accessorKey.active) {
       return null;
     }
-    return accessorPubKeyObj.accessor_public_key;
+    return accessorKey.accessor_public_key;
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get accessor public key from blockchain',

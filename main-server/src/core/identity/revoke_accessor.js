@@ -105,7 +105,7 @@ export async function revokeAccessor(
       });
     }
 
-    const accessor_public_key = await tendermintNdid.getAccessorKey(
+    const accessor_public_key = await tendermintNdid.getAccessorPublicKey(
       accessor_id
     );
     if (accessor_public_key == null) {

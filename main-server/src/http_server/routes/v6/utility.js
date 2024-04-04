@@ -25,6 +25,7 @@ import express from 'express';
 import { validateQuery } from '../middleware/validation';
 import * as tendermintNdid from '../../../tendermint/ndid';
 import * as coreRequest from '../../../core/request';
+import * as coreIdentity from '../../../core/identity';
 import * as coreServicePrice from '../../../core/service_price';
 import * as coreMessage from '../../../core/message';
 import * as privateMessage from '../../../core/common/private_message';
@@ -216,6 +217,27 @@ router.get('/requests/:request_id', async (req, res, next) => {
     }
 
     res.status(200).json(request);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/accessors/:accessor_id', async (req, res, next) => {
+  try {
+    const { accessor_id } = req.params;
+
+    const accessor = await coreIdentity.getAccessor({
+      accessorId: accessor_id,
+    });
+
+    if (accessor == null) {
+      res.status(404).end();
+      next();
+      return;
+    }
+
+    res.status(200).json(accessor);
     next();
   } catch (error) {
     next(error);

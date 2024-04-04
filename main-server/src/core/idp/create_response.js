@@ -247,7 +247,7 @@ export async function createResponse(createResponseParams, options = {}) {
           });
         }
 
-        accessorPublicKey = await tendermintNdid.getAccessorKey(accessor_id);
+        accessorPublicKey = await tendermintNdid.getAccessorPublicKey(accessor_id);
         if (accessorPublicKey == null) {
           throw new CustomError({
             errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE,

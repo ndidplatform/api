@@ -110,7 +110,9 @@ export async function getRequestMessagePaddedHash(
       });
     }
 
-    const accessorPublicKey = await tendermintNdid.getAccessorKey(accessor_id);
+    const accessorPublicKey = await tendermintNdid.getAccessorPublicKey(
+      accessor_id
+    );
     if (accessorPublicKey == null) {
       throw new CustomError({
         errorType: errorType.ACCESSOR_PUBLIC_KEY_NOT_FOUND_OR_NOT_ACTIVE,

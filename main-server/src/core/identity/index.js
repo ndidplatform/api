@@ -54,6 +54,7 @@ export * from './revoke_identity_association_after_consent';
 export * from './upgrade_identity_mode';
 export * from './upgrade_identity_mode_after_consent';
 export * from './notification';
+export * from './accessor';
 
 export async function getIdentityRequestDataByReferenceId(nodeId, referenceId) {
   try {
