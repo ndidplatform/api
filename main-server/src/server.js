@@ -54,7 +54,7 @@ import * as jobWorker from './master-worker-interface/client';
 import * as prometheus from './prometheus';
 import * as telemetryToken from './telemetry/token';
 
-import logger, { setOptionalErrorLogFn } from './logger';
+import logger from './logger';
 
 import TelemetryLogger from './telemetry';
 
@@ -100,13 +100,13 @@ async function initialize() {
         telemetryDb.initialize();
         telemetryEventsDb.initialize();
 
-        setOptionalErrorLogFn((log) => {
-          TelemetryLogger.logProcessLog({
-            nodeId: config.nodeId,
-            process_name: 'main',
-            log,
-          });
-        });
+        // setOptionalErrorLogFn((log) => {
+        //   TelemetryLogger.logProcessLog({
+        //     nodeId: config.nodeId,
+        //     process_name: 'main',
+        //     log,
+        //   });
+        // });
       }
     }
 

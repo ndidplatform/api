@@ -44,11 +44,11 @@ const logger = initLogger({
   logOneLine: config.logOneLine,
   // replaceForTooLongLog: config.replaceForTooLongLog,
   // logLengthThreshold: config.logLengthThreshold,
-  optionalErrorLogFn: (log) => {
-    if (optionalErrorLogFn) {
-      optionalErrorLogFn(log);
-    }
-  },
+  // optionalErrorLogFn: (log) => {
+  //   if (optionalErrorLogFn) {
+  //     optionalErrorLogFn(log);
+  //   }
+  // },
 });
 
 export default logger;
