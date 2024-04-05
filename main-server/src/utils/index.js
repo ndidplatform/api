@@ -97,6 +97,7 @@ export function hash(hashAlgorithm, dataToHash) {
 export async function decryptAsymetricKey(
   nodeId,
   algorithm,
+  keyVersion,
   encryptedSymKey,
   encryptedMessage
 ) {
@@ -110,6 +111,7 @@ export async function decryptAsymetricKey(
     symKeyBuffer = await externalCryptoService.decryptAsymetricKey(
       nodeId,
       encAlg,
+      keyVersion,
       encryptedSymKey.toString('base64')
     );
   } else {
@@ -200,6 +202,7 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
 /**
  *
  * @param {string} algorithm
+ * @param {number} keyVersion
  * @param {string|Buffer} messageToSign
  * @param {string} nodeId
  * @param {boolean} useMasterKey
@@ -207,6 +210,7 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
  */
 export async function createSignature(
   algorithm,
+  keyVersion,
   messageToSign,
   nodeId,
   useMasterKey
@@ -235,6 +239,7 @@ export async function createSignature(
   if (config.useExternalCryptoService) {
     return await externalCryptoService.createSignature(
       sigAlg,
+      keyVersion,
       messageToSign.toString('base64'),
       messageToSignHash,
       nodeId,

@@ -78,6 +78,16 @@ BREAKING CHANGES:
   - Change response body JSON schema of GET `/utility/nodes/:node_id`.
     - Remove `on_the_fly_support` (boolean) property.
     - Add `supported_feature_list` (array of strings) property.
+  - Change body JSON schema of sign and sign with master key external crypto service (KMS) callback API.
+    - Change property name `hash_method` to `hash_algorithm`.
+    - Change property name `key_type` to `key_algorithm`.
+    - Remove `sign_method` property.
+    - Add `signing_algorithm` property.
+    - Add `key_version` (number) property.
+  - Change body JSON schema of decrypt external crypto service (KMS) callback API.
+    - Change property name `key_type` to `key_algorithm`.
+    - Add `encryption_algorithm` property.
+    - Add `key_version` (number) property.
   - NDID only APIs
     - Remove `on_the_fly_support` property for registering node (POST `/ndid/register_node`) and updating node (POST `/ndid/update_node`).
     - Add `supported_feature_list` property for registering node (POST `/ndid/register_node`) and updating node (POST `/ndid/update_node`).
@@ -128,6 +138,8 @@ FEATURES:
   - `NODE_BEHIND_PROXY_SIGNING_MASTER_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy master private keys and passphrases for signing [Default: use pre-generated development key in development mode]
   - `NODE_BEHIND_PROXY_ENCRYPTION_PRIVATE_KEY_DIRECTORY_PATH`: Directory path for nodes behind proxy private keys and passphrases for encryption [Default: use pre-generated development key in development mode]
 - `PRIVATE_KEY_PATH`, `PRIVATE_KEY_PASSPHRASE`, `MASTER_PRIVATE_KEY_PATH`, `MASTER_PRIVATE_KEY_PASSPHRASE`, `NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH`, and `NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH` are still usable but considered deprecated.
+- Add new environment variable options
+  - `EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION`: Callback API version for external crypto service (KMS). If not set, it will be the same as `CALLBACK_API_VERSION`.
 - Support simple API authentication.
   - Using API key set in HTTP header `X-API-Key`
   - Default config is NOT using API key auth. (Config can be set with environment variable `USE_API_KEY` and `API_KEY_HASH`.)

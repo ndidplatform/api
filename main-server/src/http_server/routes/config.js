@@ -34,6 +34,9 @@ router.get('/', function (req, res, next) {
     const {
       privateKeyPassphrase, // eslint-disable-line no-unused-vars
       masterPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
+      signingPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
+      signingMasterPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
+      encryptionPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
       dbPassword, // eslint-disable-line no-unused-vars
       ...configNoCredential
     } = config;
@@ -49,6 +52,7 @@ router.post('/set', validateBody, function (req, res, next) {
   try {
     const {
       CALLBACK_API_VERSION,
+      EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION,
       AUTO_CLOSE_REQUEST_ON_COMPLETED,
       AUTO_CLOSE_REQUEST_ON_REJECTED,
       AUTO_CLOSE_REQUEST_ON_COMPLICATED,
@@ -57,6 +61,10 @@ router.post('/set', validateBody, function (req, res, next) {
 
     if (CALLBACK_API_VERSION != null) {
       config.callbackApiVersion = CALLBACK_API_VERSION;
+    }
+    if (EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION != null) {
+      config.externalCryptoServiceCallbackApiVersion =
+        EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION;
     }
     if (AUTO_CLOSE_REQUEST_ON_COMPLETED != null) {
       config.autoCloseRequestOnCompleted = AUTO_CLOSE_REQUEST_ON_COMPLETED;
@@ -74,6 +82,9 @@ router.post('/set', validateBody, function (req, res, next) {
     const {
       privateKeyPassphrase, // eslint-disable-line no-unused-vars
       masterPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
+      signingPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
+      signingMasterPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
+      encryptionPrivateKeyPassphrase, // eslint-disable-line no-unused-vars
       dbPassword, // eslint-disable-line no-unused-vars
       ...configNoCredential
     } = config;

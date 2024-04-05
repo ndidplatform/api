@@ -73,16 +73,86 @@ export async function checkCallbackUrls() {
   }
 }
 
-async function testSignCallback(url, publicKey, signatureAlgorithm, isMaster) {
-  const body = {
-    node_id: config.nodeId,
-    request_message: TEST_MESSAGE_BASE_64,
-    request_message_hash: hash(signatureAlgorithm.hashAlgorithm, TEST_MESSAGE), // FIXME
-    hash_method: signatureAlgorithm.hashAlgorithm,
-    key_type: signatureAlgorithm.keyAlgorithm,
-    sign_method: signatureAlgorithm.name, // FIXME: backward compatibility ('RSA-SHA256')
-    // sign_method: 'RSA-SHA256',
-  };
+function getSignCallbackBody({
+  nodeId,
+  requestMessage,
+  requestMessageHash,
+  hashAlgorithm,
+  keyAlgorithm,
+  signingAlgorithm,
+  keyVersion,
+}) {
+  if (
+    config.externalCryptoServiceCallbackApiVersion === '4.0' ||
+    config.externalCryptoServiceCallbackApiVersion === '5.2'
+  ) {
+    return {
+      node_id: nodeId,
+      request_message: requestMessage,
+      request_message_hash: requestMessageHash,
+      hash_method: hashAlgorithm,
+      key_type: keyAlgorithm,
+      sign_method: signingAlgorithm, // FIXME: backward compatibility ('RSA-SHA256')
+      // sign_method: 'RSA-SHA256',
+    };
+  } else {
+    // latest (v6)
+    return {
+      node_id: nodeId,
+      request_message: requestMessage,
+      request_message_hash: requestMessageHash,
+      hash_algorithm: hashAlgorithm,
+      key_algorithm: keyAlgorithm,
+      signing_algorithm: signingAlgorithm,
+      key_version: keyVersion,
+    };
+  }
+}
+
+function getDecryptCallbackBody({
+  nodeId,
+  encryptedMessage,
+  keyAlgorithm,
+  encryptionAlgorithm,
+  keyVersion,
+}) {
+  if (
+    config.externalCryptoServiceCallbackApiVersion === '4.0' ||
+    config.externalCryptoServiceCallbackApiVersion === '5.2'
+  ) {
+    return {
+      node_id: nodeId,
+      encrypted_message: encryptedMessage,
+      key_type: keyAlgorithm,
+    };
+  } else {
+    // latest (v6)
+    return {
+      node_id: nodeId,
+      encrypted_message: encryptedMessage,
+      key_algorithm: keyAlgorithm,
+      encryption_algorithm: encryptionAlgorithm,
+      key_version: keyVersion,
+    };
+  }
+}
+
+async function testSignCallback(
+  url,
+  publicKey,
+  signatureAlgorithm,
+  keyVersion,
+  isMaster
+) {
+  const body = getSignCallbackBody({
+    nodeId: config.nodeId,
+    requestMessage: TEST_MESSAGE_BASE_64,
+    requestMessageHash: hash(signatureAlgorithm.hashAlgorithm, TEST_MESSAGE),
+    hashAlgorithm: signatureAlgorithm.hashAlgorithm,
+    keyAlgorithm: signatureAlgorithm.keyAlgorithm,
+    signingAlgorithm: signatureAlgorithm.name,
+    keyVersion,
+  });
   logger.info({
     message: 'Testing external sign with node key',
     url,
@@ -156,7 +226,12 @@ async function testSignCallback(url, publicKey, signatureAlgorithm, isMaster) {
   }
 }
 
-async function testDecryptCallback(url, publicKey, encryptionAlgorithm) {
+async function testDecryptCallback(
+  url,
+  publicKey,
+  encryptionAlgorithm,
+  keyVersion
+) {
   const encryptedMessageBuffer = cryptoUtils.publicEncrypt(
     {
       key: publicKey,
@@ -166,11 +241,14 @@ async function testDecryptCallback(url, publicKey, encryptionAlgorithm) {
     TEST_MESSAGE
   );
   const encryptedMessage = encryptedMessageBuffer.toString('base64');
-  const body = {
-    node_id: config.nodeId,
-    encrypted_message: encryptedMessage,
-    key_type: encryptionAlgorithm.keyAlgorithm,
-  };
+
+  const body = getDecryptCallbackBody({
+    nodeId: config.nodeId,
+    encryptedMessage,
+    keyAlgorithm: encryptionAlgorithm.keyAlgorithm,
+    encryptionAlgorithm: encryptionAlgorithm.name,
+    keyVersion,
+  });
 
   logger.info({
     message: 'Testing external decrypt with node key',
@@ -319,7 +397,12 @@ export async function setCallbackUrls({
       throw new Error('unknown/unsupported algorithm');
     }
 
-    await testSignCallback(signCallbackUrl, signingPubKey.public_key, sigAlg);
+    await testSignCallback(
+      signCallbackUrl,
+      signingPubKey.public_key,
+      sigAlg,
+      signingPubKey.version
+    );
     await setSignCallbackUrl(signCallbackUrl);
   }
   if (masterSignCallbackUrl) {
@@ -342,6 +425,7 @@ export async function setCallbackUrls({
       masterSignCallbackUrl,
       signingMasterPubKey.public_key,
       sigAlg,
+      signingMasterPubKey.version,
       true
     );
     await setMasterSignCallbackUrl(masterSignCallbackUrl);
@@ -361,7 +445,12 @@ export async function setCallbackUrls({
       throw new Error('unknown/unsupported algorithm');
     }
 
-    await testDecryptCallback(decryptCallbackUrl, encPubKey.public_key, encAlg);
+    await testDecryptCallback(
+      decryptCallbackUrl,
+      encPubKey.public_key,
+      encAlg,
+      encPubKey.version
+    );
     await setDecryptCallbackUrl(decryptCallbackUrl);
   }
   if (config.mode === MODE.WORKER) {
@@ -470,6 +559,7 @@ async function callbackWithRetry(url, body, logPrefix, type) {
 export async function decryptAsymetricKey(
   nodeId,
   encryptionAlgorithm,
+  keyVersion,
   encryptedMessage
 ) {
   const url = await getDecryptCallbackUrl();
@@ -478,11 +568,14 @@ export async function decryptAsymetricKey(
       errorType: errorType.EXTERNAL_DECRYPT_URL_NOT_SET,
     });
   }
-  const body = {
-    node_id: nodeId,
-    encrypted_message: encryptedMessage,
-    key_type: encryptionAlgorithm.keyAlgorithm,
-  };
+
+  const body = getDecryptCallbackBody({
+    nodeId,
+    encryptedMessage,
+    keyAlgorithm: encryptionAlgorithm.keyAlgorithm,
+    encryptionAlgorithm: encryptionAlgorithm.name,
+    keyVersion,
+  });
   try {
     const responseBody = await callbackWithRetry(
       url,
@@ -547,6 +640,7 @@ export async function decryptAsymetricKey(
 
 export async function createSignature(
   signatureAlgorithm,
+  keyVersion,
   messageBase64,
   messageHash,
   nodeId,
@@ -570,15 +664,15 @@ export async function createSignature(
     }
   }
 
-  const body = {
-    node_id: nodeId,
-    request_message: messageBase64,
-    request_message_hash: messageHash,
-    hash_method: signatureAlgorithm.hashAlgorithm,
-    key_type: signatureAlgorithm.keyAlgorithm,
-    sign_method: signatureAlgorithm.name, // FIXME: backward compatibility ('RSA-SHA256')
-    // sign_method: 'RSA-SHA256',
-  };
+  const body = getSignCallbackBody({
+    nodeId,
+    requestMessage: messageBase64,
+    requestMessageHash: messageHash,
+    hashAlgorithm: signatureAlgorithm.hashAlgorithm,
+    keyAlgorithm: signatureAlgorithm.keyAlgorithm,
+    signingAlgorithm: signatureAlgorithm.name,
+    keyVersion,
+  });
   try {
     const responseBody = await callbackWithRetry(
       url,

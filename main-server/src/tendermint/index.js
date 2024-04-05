@@ -1250,6 +1250,7 @@ export async function transact({
     retryCount,
   });
 
+  let keyVersion = null;
   if (signingAlgorithm == null) {
     const publicKey = await tendermintNdid.getNodeSigningPubKey(nodeId);
     if (publicKey == null) {
@@ -1261,6 +1262,7 @@ export async function transact({
       });
     }
     signingAlgorithm = publicKey.algorithm;
+    keyVersion = publicKey.version;
   }
 
   let paramsJsonString;
@@ -1275,6 +1277,7 @@ export async function transact({
     nonce,
     signature: await utils.createSignature(
       signingAlgorithm,
+      keyVersion,
       Buffer.concat([
         Buffer.from(fnName, 'utf8'),
         Buffer.from(paramsJsonString, 'utf8'),

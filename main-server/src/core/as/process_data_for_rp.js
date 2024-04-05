@@ -256,6 +256,7 @@ async function processDataForRPInternalAsync(
       );
       const signatureBuffer = await utils.createSignature(
         signingPublicKey.algorithm,
+        signingPublicKey.version,
         data + data_salt,
         nodeId
       );

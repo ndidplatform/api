@@ -63,10 +63,20 @@ if (_callbackApiVersion === '4') {
   _callbackApiVersion = '4.0';
 } else if (_callbackApiVersion === '5') {
   _callbackApiVersion = '5.2';
-} else if (_defaultApiVersion === '6') {
-  _defaultApiVersion = '6.0';
+} else if (_callbackApiVersion === '6') {
+  _callbackApiVersion = '6.0';
 }
 export const callbackApiVersion = _callbackApiVersion;
+
+let _externalCryptoServiceCallbackApiVersion = process.env.EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION;
+if (_externalCryptoServiceCallbackApiVersion === '5') {
+  _externalCryptoServiceCallbackApiVersion = '5.2';
+} else if (_externalCryptoServiceCallbackApiVersion === '6') {
+  _externalCryptoServiceCallbackApiVersion = '6.0';
+} else {
+  _externalCryptoServiceCallbackApiVersion = callbackApiVersion;
+}
+export const externalCryptoServiceCallbackApiVersion = _externalCryptoServiceCallbackApiVersion;
 
 // Simple auth - API key
 export const useApiKey =

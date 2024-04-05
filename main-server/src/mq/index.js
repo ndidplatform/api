@@ -308,6 +308,7 @@ async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
     decryptedBuffer = await utils.decryptAsymetricKey(
       nodeId,
       publicKey.algorithm,
+      publicKey.version,
       encryptedSymmetricKey,
       encryptedMqMessage
     );
@@ -664,6 +665,7 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
   );
   const messageSignatureBuffer = await utils.createSignature(
     senderPublicKey.algorithm,
+    senderPublicKey.version,
     messageBuffer,
     senderNodeId
   );
@@ -724,6 +726,7 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
         );
         const proxySignatureBuffer = await utils.createSignature(
           senderPublicKey.algorithm,
+          senderPublicKey.version,
           `${proxyMessageHashBase64}|${receiverNodeId}|${senderNodeId}`,
           senderNodeId
         );

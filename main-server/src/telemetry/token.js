@@ -136,6 +136,7 @@ async function createJWT({ nodeId, payload }) {
   const token = encodedHeader + '.' + encodedPayload;
   const signature = await utils.createSignature(
     publicKey.algorithm,
+    publicKey.version,
     token,
     nodeId,
     false
