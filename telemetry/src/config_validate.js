@@ -29,6 +29,6 @@
   'TELEMETRY_NODE_GRPC_PORT',
 ].forEach((conf) => {
   if (process.env[conf] == undefined) {
-    throw `${conf} config is missing`;
+    throw new Error(`${conf} config is missing`);
   }
 });

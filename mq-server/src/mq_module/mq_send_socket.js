@@ -106,7 +106,7 @@ export default class MQSendSocket extends EventEmitter {
           return socket.id === socketId;
         });
         if (index === -1) {
-          throw 'Something is wrong';
+          throw new Error('Something is wrong');
         }
         this.socketListByDest[destKey].splice(index, 1);
         if (this.socketListByDest[destKey].length === 0) {
@@ -115,7 +115,7 @@ export default class MQSendSocket extends EventEmitter {
         delete this.socketDestMap[socketId];
       }
     } else {
-      throw 'Something is wrong';
+      throw new Error('Something is wrong');
     }
     this.socketMap.delete(seqId);
   }
