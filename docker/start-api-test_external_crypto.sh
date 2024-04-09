@@ -93,7 +93,7 @@ does_node_id_exist() {
 
   echo "Checking if node_id=${_NODE_ID} exist..."
   local PARAMS="{\"node_id\":\"${_NODE_ID}\"}"
-  local DATA=$(printf "\x0a\x10GetNodePublicKey\x12\x$(printf %x ${#PARAMS})${PARAMS}" | xxd -p -c 1000)
+  local DATA=$(printf "\x0a\x17GetNodeSigningPublicKey\x12\x$(printf %x ${#PARAMS})${PARAMS}" | xxd -p -c 1000)
   if [ "$(curl -s http://${TENDERMINT_IP}:${TENDERMINT_PORT}/abci_query?data=0x${DATA} | jq -r .result.response.value | base64 -d | jq -r .public_key)" = "" ]; then
     echo "node_id=${_NODE_ID} does not exist"
     return 1
@@ -106,11 +106,21 @@ does_node_id_exist() {
 init_ndid() {
   echo "Initializing NDID node..."
 
-  local PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
-  local MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${MASTER_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local SIGNING_PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local SIGNING_KEY_ALGORITHM="RSA"
+  local SIGNING_ALGORITHM="RSASSA_PKCS1_V1_5_SHA_256"
+
+  local SIGNING_MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${MASTER_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local SIGNING_MASTER_KEY_ALGORITHM="RSA"
+  local SIGNING_MASTER_ALGORITHM="RSASSA_PKCS1_V1_5_SHA_256"
+
+  local ENCRYPTION_PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local ENCRYPTION_KEY_ALGORITHM="RSA"
+  local ENCRYPTION_ALGORITHM="RSAES_PKCS1_V1_5"
+
   local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/init_ndid \
     -H "Content-Type: application/json" \
-    -d "{\"public_key\":\"${PUBLIC_KEY}\",\"master_public_key\":\"${MASTER_PUBLIC_KEY}\"}" \
+    -d "{\"signing_public_key\":\"${SIGNING_PUBLIC_KEY}\",\"signing_key_algorithm\":\"${SIGNING_KEY_ALGORITHM}\",\"signing_algorithm\":\"${SIGNING_ALGORITHM}\",\"signing_master_public_key\":\"${SIGNING_MASTER_PUBLIC_KEY}\",\"signing_master_key_algorithm\":\"${SIGNING_MASTER_KEY_ALGORITHM}\",\"signing_master_algorithm\":\"${SIGNING_MASTER_ALGORITHM}\",\"encryption_public_key\":\"${ENCRYPTION_PUBLIC_KEY}\",\"encryption_key_algorithm\":\"${ENCRYPTION_KEY_ALGORITHM}\",\"encryption_algorithm\":\"${ENCRYPTION_ALGORITHM}\"}" \
     -w '%{http_code}' \
     -o /dev/null)
 
@@ -140,18 +150,85 @@ end_init() {
   fi
 }
 
+set_supported_ial_list() {
+  local SUPPORTED_IAL_LIST=$1
+  echo "Setting supported IAL list ${SUPPORTED_IAL_LIST}..."
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/set_supported_ial_list \
+    -H "Content-Type: application/json" \
+    -d "{\"supported_ial_list\":${SUPPORTED_IAL_LIST}}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Setting supported IAL list ${SUPPORTED_IAL_LIST} succeeded"
+    return 0
+  else
+    echo "Setting supported IAL list ${SUPPORTED_IAL_LIST} node failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
+set_supported_aal_list() {
+  local SUPPORTED_AAL_LIST=$1
+  echo "Setting supported AAL list ${SUPPORTED_AAL_LIST}..."
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/set_supported_aal_list \
+    -H "Content-Type: application/json" \
+    -d "{\"supported_aal_list\":${SUPPORTED_AAL_LIST}}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Setting supported AAL list ${SUPPORTED_AAL_LIST} succeeded"
+    return 0
+  else
+    echo "Setting supported AAL list ${SUPPORTED_AAL_LIST} node failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
+add_allowed_node_supported_feature() {
+  local NODE_SUPPORTED_FEATURE=$1
+  echo "Adding allowed node supported feature ${NODE_SUPPORTED_FEATURE}..."
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/add_allowed_node_supported_feature \
+    -H "Content-Type: application/json" \
+    -d "{\"name\":\"${NODE_SUPPORTED_FEATURE}\"}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Adding allowed node supported feature ${NODE_SUPPORTED_FEATURE} succeeded"
+    return 0
+  else
+    echo "Adding allowed node supported feature ${NODE_SUPPORTED_FEATURE} node failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
 register_node_id() {
   echo "Registering ${NODE_ID} node..."
   
-  local PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
-  local MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${MASTER_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local SIGNING_PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local SIGNING_KEY_ALGORITHM="RSA"
+  local SIGNING_ALGORITHM="RSASSA_PKCS1_V1_5_SHA_256"
+  
+  local SIGNING_MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${MASTER_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local SIGNING_MASTER_KEY_ALGORITHM="RSA"
+  local SIGNING_MASTER_ALGORITHM="RSASSA_PKCS1_V1_5_SHA_256"
+
+  local ENCRYPTION_PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local ENCRYPTION_KEY_ALGORITHM="RSA"
+  local ENCRYPTION_ALGORITHM="RSAES_PKCS1_V1_5"
+
   local NODE_NAME=${NODE_NAME:-"This is name: ${NODE_ID}"}
   local REQUEST_BODY
   if [ "${ROLE}" = "idp" ]; then
     DEFAULT_IDP_SUPPORTED_FEATURE_LIST="[\"on_the_fly\"]"
-    REQUEST_BODY="{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3},\"supported_feature_list\":${SUPPORTED_FEATURE_LIST:-$DEFAULT_IDP_SUPPORTED_FEATURE_LIST}}"
+    REQUEST_BODY="{\"signing_public_key\":\"${SIGNING_PUBLIC_KEY}\",\"signing_key_algorithm\":\"${SIGNING_KEY_ALGORITHM}\",\"signing_algorithm\":\"${SIGNING_ALGORITHM}\",\"signing_master_public_key\":\"${SIGNING_MASTER_PUBLIC_KEY}\",\"signing_master_key_algorithm\":\"${SIGNING_MASTER_KEY_ALGORITHM}\",\"signing_master_algorithm\":\"${SIGNING_MASTER_ALGORITHM}\",\"encryption_public_key\":\"${ENCRYPTION_PUBLIC_KEY}\",\"encryption_key_algorithm\":\"${ENCRYPTION_KEY_ALGORITHM}\",\"encryption_algorithm\":\"${ENCRYPTION_ALGORITHM}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3},\"supported_feature_list\":${SUPPORTED_FEATURE_LIST:-$DEFAULT_IDP_SUPPORTED_FEATURE_LIST}}"
   else
-    REQUEST_BODY="{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\"}"
+    REQUEST_BODY="{\"signing_public_key\":\"${SIGNING_PUBLIC_KEY}\",\"signing_key_algorithm\":\"${SIGNING_KEY_ALGORITHM}\",\"signing_algorithm\":\"${SIGNING_ALGORITHM}\",\"signing_master_public_key\":\"${SIGNING_MASTER_PUBLIC_KEY}\",\"signing_master_key_algorithm\":\"${SIGNING_MASTER_KEY_ALGORITHM}\",\"signing_master_algorithm\":\"${SIGNING_MASTER_ALGORITHM}\",\"encryption_public_key\":\"${ENCRYPTION_PUBLIC_KEY}\",\"encryption_key_algorithm\":\"${ENCRYPTION_KEY_ALGORITHM}\",\"encryption_algorithm\":\"${ENCRYPTION_ALGORITHM}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\"}"
   fi
 
   local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/register_node \
@@ -173,15 +250,25 @@ register_node_id_behind_proxy() {
   local NODE_ID=$1
   local ROLE=$2
   echo "Registering ${NODE_ID} node..."
+
+  local SIGNING_PUBLIC_KEY=$(tr '\n' '#' < ${NODE_BEHIND_PROXY_PUBLIC_KEY_PATH}${NODE_ID}.pub | sed 's/#/\\n/g')
+  local SIGNING_KEY_ALGORITHM="RSA"
+  local SIGNING_ALGORITHM="RSASSA_PKCS1_V1_5_SHA_256"
   
-  local PUBLIC_KEY=$(tr '\n' '#' < ${NODE_BEHIND_PROXY_PUBLIC_KEY_PATH}${NODE_ID}.pub | sed 's/#/\\n/g')
-  local MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${NODE_BEHIND_PROXY_MASTER_PUBLIC_KEY_PATH}${NODE_ID}_master.pub | sed 's/#/\\n/g')
+  local SIGNING_MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${NODE_BEHIND_PROXY_MASTER_PUBLIC_KEY_PATH}${NODE_ID}_master.pub | sed 's/#/\\n/g')
+  local SIGNING_MASTER_KEY_ALGORITHM="RSA"
+  local SIGNING_MASTER_ALGORITHM="RSASSA_PKCS1_V1_5_SHA_256"
+
+  local ENCRYPTION_PUBLIC_KEY=$(tr '\n' '#' < ${NODE_BEHIND_PROXY_PUBLIC_KEY_PATH}${NODE_ID}.pub | sed 's/#/\\n/g')
+  local ENCRYPTION_KEY_ALGORITHM="RSA"
+  local ENCRYPTION_ALGORITHM="RSAES_PKCS1_V1_5"
+
   local NODE_NAME=${NODE_NAME:-"This is name: ${NODE_ID}"}
   local REQUEST_BODY
   if [ "${ROLE}" = "idp" ]; then
-    REQUEST_BODY="{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3},\"supported_feature_list\":${SUPPORTED_FEATURE_LIST:-[]}}"
+    REQUEST_BODY="{\"signing_public_key\":\"${SIGNING_PUBLIC_KEY}\",\"signing_key_algorithm\":\"${SIGNING_KEY_ALGORITHM}\",\"signing_algorithm\":\"${SIGNING_ALGORITHM}\",\"signing_master_public_key\":\"${SIGNING_MASTER_PUBLIC_KEY}\",\"signing_master_key_algorithm\":\"${SIGNING_MASTER_KEY_ALGORITHM}\",\"signing_master_algorithm\":\"${SIGNING_MASTER_ALGORITHM}\",\"encryption_public_key\":\"${ENCRYPTION_PUBLIC_KEY}\",\"encryption_key_algorithm\":\"${ENCRYPTION_KEY_ALGORITHM}\",\"encryption_algorithm\":\"${ENCRYPTION_ALGORITHM}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\",\"max_ial\":${MAX_IAL:-3},\"max_aal\":${MAX_AAL:-3},\"supported_feature_list\":${SUPPORTED_FEATURE_LIST:-[]}}"
   else
-    REQUEST_BODY="{\"node_key\":\"${PUBLIC_KEY}\",\"node_master_key\":\"${MASTER_PUBLIC_KEY}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\"}"
+    REQUEST_BODY="{\"signing_public_key\":\"${SIGNING_PUBLIC_KEY}\",\"signing_key_algorithm\":\"${SIGNING_KEY_ALGORITHM}\",\"signing_algorithm\":\"${SIGNING_ALGORITHM}\",\"signing_master_public_key\":\"${SIGNING_MASTER_PUBLIC_KEY}\",\"signing_master_key_algorithm\":\"${SIGNING_MASTER_KEY_ALGORITHM}\",\"signing_master_algorithm\":\"${SIGNING_MASTER_ALGORITHM}\",\"encryption_public_key\":\"${ENCRYPTION_PUBLIC_KEY}\",\"encryption_key_algorithm\":\"${ENCRYPTION_KEY_ALGORITHM}\",\"encryption_algorithm\":\"${ENCRYPTION_ALGORITHM}\",\"node_id\":\"${NODE_ID}\",\"node_name\":\"${NODE_NAME}\",\"role\":\"${ROLE}\"}"
   fi
 
   local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/register_node \
@@ -471,6 +558,9 @@ case ${ROLE} in
       wait_for_ndid_node_to_be_ready && \
       until init_ndid; do sleep 1; done && \
       until end_init; do sleep 1; done && \
+      until set_supported_ial_list "[1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3]"; do sleep 1; done && \
+      until set_supported_aal_list "[1, 2.1, 2.2, 3]"; do sleep 1; done && \
+      until add_allowed_node_supported_feature "on_the_fly"; do sleep 1; done && \
       until 
         register_namespace "citizen_id" "Thai citizen ID" && \
         register_namespace "passport_num" "Passport Number" && \
@@ -517,6 +607,9 @@ case ${ROLE} in
     ;;
 esac
 
-export PRIVATE_KEY_PATH=${KEY_PATH} 
-export MASTER_PRIVATE_KEY_PATH=${MASTER_KEY_PATH} 
-node /api/main-server/build/server.js
+export SIGNING_PRIVATE_KEY_PATH=${KEY_PATH} 
+export SIGNING_MASTER_PRIVATE_KEY_PATH=${MASTER_KEY_PATH} 
+export ENCRYPTION_PRIVATE_KEY_PATH=${KEY_PATH} 
+
+# node /api/main-server/build/server.js
+node --security-revert=CVE-2023-46809 /api/main-server/build/server.js
