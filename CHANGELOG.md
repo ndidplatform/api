@@ -151,6 +151,7 @@ BUG FIXES:
 OTHERS:
 
 - Compatibility with validations on CheckTx when making transactions to Tendermint/ABCI app.
+- Change telemetry events timer trigger behavior to wait for response from telemetry server before starting the next interval / try sending again.
 
 ## 7.1.0 (August 18, 2022)
 

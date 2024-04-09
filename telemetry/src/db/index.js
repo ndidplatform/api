@@ -33,11 +33,14 @@ class TriggerTimeout {
     this.timeLimit = options.timeLimit || 10000;
 
     this.resetCounter();
-    this.startTimer(this.timeLimit);
+    if (options.startImmediately) {
+      this.trigger();
+    } else {
+      this.startTimer(this.timeLimit);
+    }
   }
 
   async trigger() {
-    this.stopTimer();
     this.resetCounter();
     const result = await this.triggerFn();
     this.restartTimer();
@@ -68,7 +71,9 @@ class TriggerTimeout {
   }
 
   stopTimer() {
-    this.restartTimer(undefined);
+    if (this.triggerTimerID) {
+      clearTimeout(this.triggerTimerID);
+    }
   }
 
   startTimer(timeLimit) {
@@ -128,22 +133,24 @@ export default class TelemetryDb {
         });
 
         setTimeout(() => {
-          const buffer = new TriggerTimeout(
-            async () => this.connected && db.onReadStreamData(onDataReceived),
+          const timer = new TriggerTimeout(
+            async () => {
+              if (this.connected) {
+                await db.onReadStreamData(onDataReceived);
+              }
+            },
             {
               countLimit,
               timeLimit,
+              startImmediately: true, // initial trigger
             }
           );
 
           // subscribe for event counter
           // this.client.subscribe(channelName, (data) => (data != undefined) && buffer.increaseCounter());
-
-          // initial trigger
-          buffer.trigger();
         }, delayStart);
       } else {
-        throw `undefined db type ${type}`;
+        throw new Error(`undefined db type ${type}`);
       }
 
       this.dbs[id] = db;
