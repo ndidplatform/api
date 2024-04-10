@@ -147,6 +147,7 @@ FEATURES:
 BUG FIXES:
 
 - Fix telemetry incorrectly enabled on node with NDID role. (Node with `NDID_NODE` environment variable set to `true`.)
+- Fix error in master-worker mode when master receives error from worker processing MQ message.
 
 OTHERS:
 
