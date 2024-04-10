@@ -1350,6 +1350,36 @@ module.exports = {
     message: 'Not an IdP node',
     clientError: true,
   },
+  ABCI_INCOMPATIBLE_KEY_ALGORITHM: {
+    code: 25090,
+    message: 'Incompatible key algorithm',
+    clientError: true,
+  },
+  ABCI_UNSUPPORTED_SIGNING_ALGORITHM: {
+    code: 25091,
+    message: 'Unsupported signing algorithm',
+    clientError: true,
+  },
+  ABCI_NODE_SUPPORTED_FEATURE_ALREADY_EXISTS: {
+    code: 25092,
+    message: 'Node supported feature already exists',
+    clientError: true,
+  },
+  ABCI_NODE_SUPPORTED_FEATURE_DOES_NOT_EXIST: {
+    code: 25093,
+    message: 'Node supported feature does not exist',
+    clientError: true,
+  },
+  ABCI_INVALID_VALIDATOR_VOTING_POWER: {
+    code: 25094,
+    message: 'Invalid validator voting power',
+    clientError: true,
+  },
+  ABCI_INVALID_VALIDATOR_PUBLIC_KEY: {
+    code: 25095,
+    message: 'Invalid validator public key',
+    clientError: true,
+  },
 
   ABCI_UNAUTHORIZED: {
     code: 35001,

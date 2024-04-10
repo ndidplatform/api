@@ -148,6 +148,12 @@ import errorType from 'ndid-error/type';
 // SuppressedIdentityModificationNotificationNodeIDDoesNotExist  uint32 = 124
 // NotIdPNode                                                    uint32 = 125
 // ChainIsAlreadyInitialized                                     uint32 = 126
+// IncompatibleKeyAlgorithm                                      uint32 = 127
+// UnsupportedSigningAlgorithm                                   uint32 = 128
+// NodeSupportedFeatureAlreadyExists                             uint32 = 129
+// NodeSupportedFeatureDoesNotExist                              uint32 = 130
+// InvalidValidatorVotingPower                                   uint32 = 131
+// InvalidValidatorPublicKey                                     uint32 = 132
 // UnknownError                                       uint32 = 999
 
 const codeMapping = {
@@ -277,6 +283,12 @@ const codeMapping = {
   124: errorType.ABCI_SUPPRESSED_IDENTITY_MODIFICATION_NOTIFICATION_NODE_ID_DOES_NOT_EXIST,
   125: errorType.ABCI_NOT_IDP_NODE,
   126: errorType.ABCI_CHAIN_IS_ALREADY_INITIALIZED,
+  127: errorType.ABCI_INCOMPATIBLE_KEY_ALGORITHM,
+  128: errorType.ABCI_UNSUPPORTED_SIGNING_ALGORITHM,
+  129: errorType.ABCI_NODE_SUPPORTED_FEATURE_ALREADY_EXISTS,
+  130: errorType.ABCI_NODE_SUPPORTED_FEATURE_DOES_NOT_EXIST,
+  131: errorType.ABCI_INVALID_VALIDATOR_VOTING_POWER,
+  132: errorType.ABCI_INVALID_VALIDATOR_PUBLIC_KEY,
 
   999: errorType.UNKNOWN_ERROR,
 };
