@@ -68,7 +68,8 @@ if (_callbackApiVersion === '4') {
 }
 export const callbackApiVersion = _callbackApiVersion;
 
-let _externalCryptoServiceCallbackApiVersion = process.env.EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION;
+let _externalCryptoServiceCallbackApiVersion =
+  process.env.EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION;
 if (_externalCryptoServiceCallbackApiVersion === '5') {
   _externalCryptoServiceCallbackApiVersion = '5.2';
 } else if (_externalCryptoServiceCallbackApiVersion === '6') {
@@ -76,7 +77,8 @@ if (_externalCryptoServiceCallbackApiVersion === '5') {
 } else {
   _externalCryptoServiceCallbackApiVersion = callbackApiVersion;
 }
-export const externalCryptoServiceCallbackApiVersion = _externalCryptoServiceCallbackApiVersion;
+export const externalCryptoServiceCallbackApiVersion =
+  _externalCryptoServiceCallbackApiVersion;
 
 // Simple auth - API key
 export const useApiKey =
@@ -171,8 +173,6 @@ export const useExternalCryptoService =
 // for backward compatibility
 export const privateKeyPath = useExternalCryptoService
   ? null
-  : process.env.PRIVATE_KEY_PATH == null && env === 'development'
-  ? path.join(__dirname, '..', 'dev_key', 'keys', nodeId)
   : process.env.PRIVATE_KEY_PATH; // Deprecated
 export const privateKeyPassphrase = useExternalCryptoService
   ? null
@@ -181,8 +181,6 @@ export const privateKeyPassphrase = useExternalCryptoService
 // for backward compatibility
 export const masterPrivateKeyPath = useExternalCryptoService
   ? null
-  : process.env.MASTER_PRIVATE_KEY_PATH == null && env === 'development'
-  ? path.join(__dirname, '..', 'dev_key', 'master_keys', nodeId + '_master')
   : process.env.MASTER_PRIVATE_KEY_PATH; // Deprecated
 export const masterPrivateKeyPassphrase = useExternalCryptoService
   ? null
@@ -190,10 +188,12 @@ export const masterPrivateKeyPassphrase = useExternalCryptoService
 
 export const signingPrivateKeyPath = useExternalCryptoService
   ? null
-  : process.env.SIGNING_PRIVATE_KEY_PATH == null && env === 'development'
-  ? path.join(__dirname, '..', 'dev_key', 'keys', `${nodeId}`)
-  : process.env.SIGNING_PRIVATE_KEY_PATH == null
+  : process.env.SIGNING_PRIVATE_KEY_PATH != null
+  ? process.env.SIGNING_PRIVATE_KEY_PATH
+  : privateKeyPath != null
   ? privateKeyPath
+  : env === 'development'
+  ? path.join(__dirname, '..', 'dev_key', 'keys', `${nodeId}`)
   : process.env.SIGNING_PRIVATE_KEY_PATH;
 export const signingPrivateKeyPassphrase = useExternalCryptoService
   ? null
@@ -203,10 +203,12 @@ export const signingPrivateKeyPassphrase = useExternalCryptoService
 
 export const signingMasterPrivateKeyPath = useExternalCryptoService
   ? null
-  : process.env.SIGNING_MASTER_PRIVATE_KEY_PATH == null && env === 'development'
-  ? path.join(__dirname, '..', 'dev_key', 'master_keys', `${nodeId}_master`)
-  : process.env.SIGNING_MASTER_PRIVATE_KEY_PATH == null
+  : process.env.SIGNING_MASTER_PRIVATE_KEY_PATH != null
+  ? process.env.SIGNING_MASTER_PRIVATE_KEY_PATH
+  : masterPrivateKeyPath != null
   ? masterPrivateKeyPath
+  : env === 'development'
+  ? path.join(__dirname, '..', 'dev_key', 'master_keys', `${nodeId}_master`)
   : process.env.SIGNING_MASTER_PRIVATE_KEY_PATH;
 export const signingMasterPrivateKeyPassphrase = useExternalCryptoService
   ? null
@@ -216,10 +218,12 @@ export const signingMasterPrivateKeyPassphrase = useExternalCryptoService
 
 export const encryptionPrivateKeyPath = useExternalCryptoService
   ? null
-  : process.env.ENCRYPTION_PRIVATE_KEY_PATH == null && env === 'development'
-  ? path.join(__dirname, '..', 'dev_key', 'encryption_keys', `${nodeId}`)
-  : process.env.ENCRYPTION_PRIVATE_KEY_PATH == null
+  : process.env.ENCRYPTION_PRIVATE_KEY_PATH != null
+  ? process.env.ENCRYPTION_PRIVATE_KEY_PATH
+  : privateKeyPath != null
   ? privateKeyPath
+  : env === 'development'
+  ? path.join(__dirname, '..', 'dev_key', 'encryption_keys', `${nodeId}`)
   : process.env.ENCRYPTION_PRIVATE_KEY_PATH;
 export const encryptionPrivateKeyPassphrase = useExternalCryptoService
   ? null
@@ -230,49 +234,46 @@ export const encryptionPrivateKeyPassphrase = useExternalCryptoService
 // for backward compatibility
 export const nodeBehindProxyPrivateKeyDirectoryPath = useExternalCryptoService
   ? null
-  : process.env.NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH == null &&
-    env === 'development'
-  ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'keys')
   : process.env.NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH; // Deprecated
 // for backward compatibility
 export const nodeBehindProxyMasterPrivateKeyDirectoryPath =
   useExternalCryptoService
     ? null
-    : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH == null &&
-      env === 'development'
-    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
     : process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH; // Deprecated
 
 export const nodeBehindProxySigningPrivateKeyDirectoryPath =
   useExternalCryptoService
     ? null
-    : process.env.NODE_BEHIND_PROXY_SIGNING_PRIVATE_KEY_DIRECTORY_PATH ==
-        null && env === 'development'
-    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'keys')
-    : process.env.NODE_BEHIND_PROXY_SIGNING_PRIVATE_KEY_DIRECTORY_PATH == null
+    : process.env.NODE_BEHIND_PROXY_SIGNING_PRIVATE_KEY_DIRECTORY_PATH != null
+    ? process.env.NODE_BEHIND_PROXY_SIGNING_PRIVATE_KEY_DIRECTORY_PATH
+    : nodeBehindProxyPrivateKeyDirectoryPath != null
     ? nodeBehindProxyPrivateKeyDirectoryPath
+    : env === 'development'
+    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'keys')
     : process.env.NODE_BEHIND_PROXY_SIGNING_PRIVATE_KEY_DIRECTORY_PATH;
 
 export const nodeBehindProxySigningMasterPrivateKeyDirectoryPath =
   useExternalCryptoService
     ? null
-    : process.env.NODE_BEHIND_PROXY_SIGNING_MASTER_PRIVATE_KEY_DIRECTORY_PATH ==
-        null && env === 'development'
-    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
-    : process.env.NODE_BEHIND_PROXY_SIGNING_MASTER_PRIVATE_KEY_DIRECTORY_PATH ==
+    : process.env.NODE_BEHIND_PROXY_SIGNING_MASTER_PRIVATE_KEY_DIRECTORY_PATH !=
       null
+    ? process.env.NODE_BEHIND_PROXY_SIGNING_MASTER_PRIVATE_KEY_DIRECTORY_PATH
+    : nodeBehindProxyMasterPrivateKeyDirectoryPath != null
     ? nodeBehindProxyMasterPrivateKeyDirectoryPath
+    : env === 'development'
+    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'master_keys')
     : process.env.NODE_BEHIND_PROXY_SIGNING_MASTER_PRIVATE_KEY_DIRECTORY_PATH;
 
 export const nodeBehindProxyEncryptionPrivateKeyDirectoryPath =
   useExternalCryptoService
     ? null
-    : process.env.NODE_BEHIND_PROXY_ENCRYPTION_PRIVATE_KEY_DIRECTORY_PATH ==
-        null && env === 'development'
-    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'encryption_keys')
-    : process.env.NODE_BEHIND_PROXY_ENCRYPTION_PRIVATE_KEY_DIRECTORY_PATH ==
+    : process.env.NODE_BEHIND_PROXY_ENCRYPTION_PRIVATE_KEY_DIRECTORY_PATH !=
       null
+    ? process.env.NODE_BEHIND_PROXY_ENCRYPTION_PRIVATE_KEY_DIRECTORY_PATH
+    : nodeBehindProxyPrivateKeyDirectoryPath != null
     ? nodeBehindProxyPrivateKeyDirectoryPath
+    : env === 'development'
+    ? path.join(__dirname, '..', 'dev_key', 'behind_proxy', 'encryption_keys')
     : process.env.NODE_BEHIND_PROXY_ENCRYPTION_PRIVATE_KEY_DIRECTORY_PATH;
 
 export const autoCloseRequestOnCompleted =

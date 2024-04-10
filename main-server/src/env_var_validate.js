@@ -204,3 +204,32 @@ if (process.env.USE_API_KEY === 'true') {
     process.exit(1);
   }
 }
+
+/**
+ * Deprecation warnings
+ */
+
+if (process.env.PRIVATE_KEY_PATH != null) {
+  console.warn('"PRIVATE_KEY_PATH" environment variable is deprecated');
+}
+if (process.env.PRIVATE_KEY_PASSPHRASE != null) {
+  console.warn('"PRIVATE_KEY_PASSPHRASE" environment variable is deprecated');
+}
+if (process.env.MASTER_PRIVATE_KEY_PATH != null) {
+  console.warn('"MASTER_PRIVATE_KEY_PATH" environment variable is deprecated');
+}
+if (process.env.MASTER_PRIVATE_KEY_PASSPHRASE != null) {
+  console.warn(
+    '"MASTER_PRIVATE_KEY_PASSPHRASE" environment variable is deprecated'
+  );
+}
+if (process.env.NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH != null) {
+  console.warn(
+    '"NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH" environment variable is deprecated'
+  );
+}
+if (process.env.NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH != null) {
+  console.warn(
+    '"NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH" environment variable is deprecated'
+  );
+}
