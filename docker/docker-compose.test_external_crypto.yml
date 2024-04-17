@@ -235,19 +235,19 @@ services:
 
   # redis
   api-redis:
-    image: redis:4-alpine
+    image: redis:5-alpine
     security_opt:
       - no-new-privileges
     networks:
       - ndidplatform
   api-redis-proxy-1:
-    image: redis:4-alpine
+    image: redis:5-alpine
     security_opt:
       - no-new-privileges
     networks:
       - ndidplatform
   api-redis-proxy-2:
-    image: redis:4-alpine
+    image: redis:5-alpine
     security_opt:
       - no-new-privileges
     networks:
