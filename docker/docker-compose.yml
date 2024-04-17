@@ -6,7 +6,7 @@ services:
       - ROLE=ndid
       - NODE_ID=ndid1
       - NDID_IP=api-ndid
-      - TENDERMINT_IP=tm-ndid
+      - TENDERMINT_IP=tm-1
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - DB_IP=api-redis
       - SERVER_PORT=${API_PORT:-8080}
@@ -27,7 +27,7 @@ services:
       - ROLE=idp
       - NODE_ID=idp1
       - NDID_IP=api-ndid
-      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_IP=tm-1
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-idp-1
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
@@ -50,7 +50,7 @@ services:
       - ROLE=idp
       - NODE_ID=idp2
       - NDID_IP=api-ndid
-      - TENDERMINT_IP=tm-idp
+      - TENDERMINT_IP=tm-1
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-idp-2
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
@@ -73,7 +73,7 @@ services:
       - ROLE=rp
       - NODE_ID=rp1
       - NDID_IP=api-ndid
-      - TENDERMINT_IP=tm-rp
+      - TENDERMINT_IP=tm-2
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-rp
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
@@ -96,7 +96,7 @@ services:
       - ROLE=as
       - NODE_ID=as1
       - NDID_IP=api-ndid
-      - TENDERMINT_IP=tm-as
+      - TENDERMINT_IP=tm-3
       - TENDERMINT_PORT=${TM_RPC_PORT:-45000}
       - MQ_CONTACT_IP=mq-as
       - MQ_BINDING_PORT=${MQ_PORT:-5555}
