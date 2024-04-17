@@ -42,13 +42,16 @@ if [ -z ${NDID_IP} ]; then exit_missing_env NDID_IP; fi
 
 if [ -z ${NDID_PORT} ]; then NDID_PORT=${SERVER_PORT}; fi
 
-KEY_PATH=${PRIVATE_KEY_PATH:-/api/main-server/dev_key/keys/${NODE_ID}}
-MASTER_KEY_PATH=${MASTER_PRIVATE_KEY_PATH:-/api/main-server/dev_key/master_keys/${NODE_ID}_master}
-PUBLIC_KEY_PATH=${PUBLIC_KEY_PATH:-/api/main-server/dev_key/keys/${NODE_ID}.pub}
-MASTER_PUBLIC_KEY_PATH=${MASTER_PUBLIC_KEY_PATH:-/api/main-server/dev_key/master_keys/${NODE_ID}_master.pub}
+SIGNING_KEY_PATH=${SIGNING_PRIVATE_KEY_PATH:-/api/main-server/dev_key/keys/${NODE_ID}}
+SIGNING_MASTER_KEY_PATH=${SIGNING_MASTER_PRIVATE_KEY_PATH:-/api/main-server/dev_key/master_keys/${NODE_ID}_master}
+ENCRYPTION_KEY_PATH=${ENCRYPTION_PRIVATE_KEY_PATH:-/api/main-server/dev_key/encryption_keys/${NODE_ID}}
+SIGNING_PUBLIC_KEY_PATH=${SIGNING_PUBLIC_KEY_PATH:-/api/main-server/dev_key/keys/${NODE_ID}.pub}
+SIGNING_MASTER_PUBLIC_KEY_PATH=${SIGNING_MASTER_PUBLIC_KEY_PATH:-/api/main-server/dev_key/master_keys/${NODE_ID}_master.pub}
+ENCRYPTION_PUBLIC_KEY_PATH=${ENCRYPTION_PUBLIC_KEY_PATH:-/api/main-server/dev_key/encryption_keys/${NODE_ID}.pub}
 
-NODE_BEHIND_PROXY_PUBLIC_KEY_PATH=${NODE_BEHIND_PROXY_PUBLIC_KEY_PATH:-/api/main-server/dev_key/behind_proxy/keys/}
-NODE_BEHIND_PROXY_MASTER_PUBLIC_KEY_PATH=${NODE_BEHIND_PROXY_MASTER_PUBLIC_KEY_PATH:-/api/main-server/dev_key/behind_proxy/master_keys/}
+NODE_BEHIND_PROXY_SIGNING_PUBLIC_KEY_PATH=${NODE_BEHIND_PROXY_SIGNING_PUBLIC_KEY_PATH:-/api/main-server/dev_key/behind_proxy/keys/}
+NODE_BEHIND_PROXY_SIGNING_MASTER_PUBLIC_KEY_PATH=${NODE_BEHIND_PROXY_SIGNING_MASTER_PUBLIC_KEY_PATH:-/api/main-server/dev_key/behind_proxy/master_keys/}
+NODE_BEHIND_PROXY_ENCRYPTION_PUBLIC_KEY_PATH=${NODE_BEHIND_PROXY_ENCRYPTION_PUBLIC_KEY_PATH:-/api/main-server/dev_key/behind_proxy/encryption_keys/}
 
 tendermint_wait_for_sync_complete() {
   echo "Waiting for tendermint at ${TENDERMINT_IP}:${TENDERMINT_PORT} to be ready..."
@@ -59,29 +62,43 @@ tendermint_wait_for_sync_complete() {
 }
 
 generate_key() {
-  mkdir -p $(dirname ${KEY_PATH}) && \
-  openssl genrsa -out ${KEY_PATH} 2048 && \
-  openssl rsa -in ${KEY_PATH} -pubout -out ${PUBLIC_KEY_PATH}
+  mkdir -p $(dirname ${SIGNING_KEY_PATH}) && \
+  openssl genrsa -out ${SIGNING_KEY_PATH} 2048 && \
+  openssl rsa -in ${SIGNING_KEY_PATH} -pubout -out ${SIGNING_PUBLIC_KEY_PATH}
 
   if [ $? -eq 0 ]; then
-    echo "Keypair is generated at ${KEY_PATH} and ${PUBLIC_KEY_PATH}"
+    echo "Keypair is generated at ${SIGNING_KEY_PATH} and ${SIGNING_PUBLIC_KEY_PATH}"
     return 0
   else
-    echo "Failed to generate keypair at ${KEY_PATH} and ${PUBLIC_KEY_PATH}"
+    echo "Failed to generate keypair at ${SIGNING_KEY_PATH} and ${SIGNING_PUBLIC_KEY_PATH}"
     return 1
   fi
 }
 
 generate_master_key() {
-  mkdir -p $(dirname ${MASTER_KEY_PATH}) && \
-  openssl genrsa -out ${MASTER_KEY_PATH} 2048 && \
-  openssl rsa -in ${MASTER_KEY_PATH} -pubout -out ${MASTER_PUBLIC_KEY_PATH}
+  mkdir -p $(dirname ${SIGNING_MASTER_KEY_PATH}) && \
+  openssl genrsa -out ${SIGNING_MASTER_KEY_PATH} 2048 && \
+  openssl rsa -in ${SIGNING_MASTER_KEY_PATH} -pubout -out ${SIGNING_MASTER_PUBLIC_KEY_PATH}
 
   if [ $? -eq 0 ]; then
-    echo "Keypair is generated at ${MASTER_KEY_PATH} and ${MASTER_PUBLIC_KEY_PATH}"
+    echo "Keypair is generated at ${SIGNING_MASTER_KEY_PATH} and ${SIGNING_MASTER_PUBLIC_KEY_PATH}"
     return 0
   else
-    echo "Failed to generate keypair at ${MASTER_KEY_PATH} and ${MASTER_PUBLIC_KEY_PATH}"
+    echo "Failed to generate keypair at ${SIGNING_MASTER_KEY_PATH} and ${SIGNING_MASTER_PUBLIC_KEY_PATH}"
+    return 1
+  fi
+}
+
+generate_encryption_key() {
+  mkdir -p $(dirname ${ENCRYPTION_KEY_PATH}) && \
+  openssl genrsa -out ${ENCRYPTION_KEY_PATH} 2048 && \
+  openssl rsa -in ${ENCRYPTION_KEY_PATH} -pubout -out ${ENCRYPTION_PUBLIC_KEY_PATH}
+
+  if [ $? -eq 0 ]; then
+    echo "Keypair is generated at ${ENCRYPTION_KEY_PATH} and ${ENCRYPTION_PUBLIC_KEY_PATH}"
+    return 0
+  else
+    echo "Failed to generate keypair at ${ENCRYPTION_KEY_PATH} and ${ENCRYPTION_PUBLIC_KEY_PATH}"
     return 1
   fi
 }
@@ -106,15 +123,15 @@ does_node_id_exist() {
 init_ndid() {
   echo "Initializing NDID node..."
 
-  local SIGNING_PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local SIGNING_PUBLIC_KEY=$(tr '\n' '#' < ${SIGNING_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
   local SIGNING_KEY_ALGORITHM="RSA"
   local SIGNING_ALGORITHM="RSASSA_PKCS1_V1_5_SHA_256"
 
-  local SIGNING_MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${MASTER_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local SIGNING_MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${SIGNING_MASTER_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
   local SIGNING_MASTER_KEY_ALGORITHM="RSA"
   local SIGNING_MASTER_ALGORITHM="RSASSA_PKCS1_V1_5_SHA_256"
 
-  local ENCRYPTION_PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local ENCRYPTION_PUBLIC_KEY=$(tr '\n' '#' < ${ENCRYPTION_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
   local ENCRYPTION_KEY_ALGORITHM="RSA"
   local ENCRYPTION_ALGORITHM="RSAES_PKCS1_V1_5"
 
@@ -210,15 +227,15 @@ add_allowed_node_supported_feature() {
 register_node_id() {
   echo "Registering ${NODE_ID} node..."
   
-  local SIGNING_PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local SIGNING_PUBLIC_KEY=$(tr '\n' '#' < ${SIGNING_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
   local SIGNING_KEY_ALGORITHM="RSA"
   local SIGNING_ALGORITHM="RSASSA_PKCS1_V1_5_SHA_256"
   
-  local SIGNING_MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${MASTER_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local SIGNING_MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${SIGNING_MASTER_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
   local SIGNING_MASTER_KEY_ALGORITHM="RSA"
   local SIGNING_MASTER_ALGORITHM="RSASSA_PKCS1_V1_5_SHA_256"
 
-  local ENCRYPTION_PUBLIC_KEY=$(tr '\n' '#' < ${PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
+  local ENCRYPTION_PUBLIC_KEY=$(tr '\n' '#' < ${ENCRYPTION_PUBLIC_KEY_PATH} | sed 's/#/\\n/g')
   local ENCRYPTION_KEY_ALGORITHM="RSA"
   local ENCRYPTION_ALGORITHM="RSAES_PKCS1_V1_5"
 
@@ -251,15 +268,15 @@ register_node_id_behind_proxy() {
   local ROLE=$2
   echo "Registering ${NODE_ID} node..."
 
-  local SIGNING_PUBLIC_KEY=$(tr '\n' '#' < ${NODE_BEHIND_PROXY_PUBLIC_KEY_PATH}${NODE_ID}.pub | sed 's/#/\\n/g')
+  local SIGNING_PUBLIC_KEY=$(tr '\n' '#' < ${NODE_BEHIND_PROXY_SIGNING_PUBLIC_KEY_PATH}${NODE_ID}.pub | sed 's/#/\\n/g')
   local SIGNING_KEY_ALGORITHM="RSA"
   local SIGNING_ALGORITHM="RSASSA_PKCS1_V1_5_SHA_256"
   
-  local SIGNING_MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${NODE_BEHIND_PROXY_MASTER_PUBLIC_KEY_PATH}${NODE_ID}_master.pub | sed 's/#/\\n/g')
+  local SIGNING_MASTER_PUBLIC_KEY=$(tr '\n' '#' < ${NODE_BEHIND_PROXY_SIGNING_MASTER_PUBLIC_KEY_PATH}${NODE_ID}_master.pub | sed 's/#/\\n/g')
   local SIGNING_MASTER_KEY_ALGORITHM="RSA"
   local SIGNING_MASTER_ALGORITHM="RSASSA_PKCS1_V1_5_SHA_256"
 
-  local ENCRYPTION_PUBLIC_KEY=$(tr '\n' '#' < ${NODE_BEHIND_PROXY_PUBLIC_KEY_PATH}${NODE_ID}.pub | sed 's/#/\\n/g')
+  local ENCRYPTION_PUBLIC_KEY=$(tr '\n' '#' < ${NODE_BEHIND_PROXY_ENCRYPTION_PUBLIC_KEY_PATH}${NODE_ID}.pub | sed 's/#/\\n/g')
   local ENCRYPTION_KEY_ALGORITHM="RSA"
   local ENCRYPTION_ALGORITHM="RSAES_PKCS1_V1_5"
 
@@ -439,6 +456,39 @@ approve_service_node_behind_proxy() {
   fi
 }
 
+register_error_code() {
+  local ERROR_CODE=$1
+  local ERROR_DESCRIPTION=$2
+  local TYPE=$3
+  echo "Registering error code ${ERROR_CODE} (${ERROR_DESCRIPTION})..."
+
+  local RESPONSE_CODE=$(curl -skX POST ${PROTOCOL}://${NDID_IP}:${NDID_PORT}/ndid/add_error_code \
+    -H "Content-Type: application/json" \
+    -d "{\"type\":\"${TYPE}\",\"error_code\":${ERROR_CODE},\"description\":\"${ERROR_DESCRIPTION}\"}" \
+    -w '%{http_code}' \
+    -o /dev/null)
+
+  if [ "${RESPONSE_CODE}" = "204" ]; then
+    echo "Registering error code ${ERROR_CODE} (${ERROR_DESCRIPTION}) succeeded"
+    return 0
+  else
+    echo "Registering error code ${ERROR_CODE} (${ERROR_DESCRIPTION}) failed: ${RESPONSE_CODE}"
+    return 1
+  fi
+}
+
+register_idp_error_code() {
+  local ERROR_CODE=$1
+  local ERROR_DESCRIPTION=$2
+  register_error_code $ERROR_CODE "$ERROR_DESCRIPTION" "idp"
+}
+
+register_as_error_code() {
+  local ERROR_CODE=$1
+  local ERROR_DESCRIPTION=$2
+  register_error_code $ERROR_CODE "$ERROR_DESCRIPTION" "as"
+}
+
 did_namespace_exist() {
   local NAMESPACE=$1
 
@@ -549,11 +599,14 @@ case ${ROLE} in
   ndid)
     tendermint_wait_for_sync_complete
     if ! does_node_id_exist; then
-      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]); then
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${SIGNING_KEY_PATH} ] || [ ! -f ${SIGNING_PUBLIC_KEY_PATH} ]); then
         generate_key
       fi
-      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${MASTER_KEY_PATH} ] || [ ! -f ${MASTER_PUBLIC_KEY_PATH} ]); then
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${SIGNING_MASTER_KEY_PATH} ] || [ ! -f ${SIGNING_MASTER_PUBLIC_KEY_PATH} ]); then
         generate_master_key
+      fi
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${ENCRYPTION_KEY_PATH} ] || [ ! -f ${ENCRYPTION_PUBLIC_KEY_PATH} ]); then
+        generate_encryption_key
       fi
       wait_for_ndid_node_to_be_ready && \
       until init_ndid; do sleep 1; done && \
@@ -566,6 +619,8 @@ case ${ROLE} in
         register_namespace "passport_num" "Passport Number" && \
         register_service "bank_statement" "All transactions in the past 3 months" && \
         register_service "customer_info" "Customer Information"
+        register_idp_error_code 10101 "Unknown identity"
+        register_as_error_code 10101 "Unknown identity"
       do
         sleep 1; 
       done &
@@ -575,11 +630,14 @@ case ${ROLE} in
     tendermint_wait_for_sync_complete
     
     if ! does_node_id_exist; then
-      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${KEY_PATH} ] || [ ! -f ${PUBLIC_KEY_PATH} ]); then
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${SIGNING_KEY_PATH} ] || [ ! -f ${SIGNING_PUBLIC_KEY_PATH} ]); then
         generate_key
       fi
-      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${MASTER_KEY_PATH} ] || [ ! -f ${MASTER_PUBLIC_KEY_PATH} ]); then
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${SIGNING_MASTER_KEY_PATH} ] || [ ! -f ${SIGNING_MASTER_PUBLIC_KEY_PATH} ]); then
         generate_master_key
+      fi
+      if [ ! "${USE_EXTERNAL_CRYPTO_SERVICE}" = "true" ] && ([ ! -f ${ENCRYPTION_KEY_PATH} ] || [ ! -f ${ENCRYPTION_PUBLIC_KEY_PATH} ]); then
+        generate_encryption_key
       fi
       wait_until_ndid_node_initialized
       wait_until_namespace_exist "citizen_id"
@@ -607,9 +665,9 @@ case ${ROLE} in
     ;;
 esac
 
-export SIGNING_PRIVATE_KEY_PATH=${KEY_PATH} 
-export SIGNING_MASTER_PRIVATE_KEY_PATH=${MASTER_KEY_PATH} 
-export ENCRYPTION_PRIVATE_KEY_PATH=${KEY_PATH} 
+export SIGNING_PRIVATE_KEY_PATH=${SIGNING_KEY_PATH} 
+export SIGNING_MASTER_PRIVATE_KEY_PATH=${SIGNING_MASTER_KEY_PATH} 
+export ENCRYPTION_PRIVATE_KEY_PATH=${ENCRYPTION_KEY_PATH} 
 
 # node /api/main-server/build/server.js
 node --security-revert=CVE-2023-46809 /api/main-server/build/server.js
