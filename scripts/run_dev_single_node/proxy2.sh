@@ -35,6 +35,6 @@ SERVER_PORT=8401 \
 NODE_ID=proxy2 \
 DB_PORT=6381 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
-node build/server.js &
+node --security-revert=CVE-2023-46809 build/server.js &
 
 wait

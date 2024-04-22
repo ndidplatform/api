@@ -34,6 +34,6 @@ MQ_SERVICE_SERVER_PORT=51000 \
 SERVER_PORT=8200 \
 NODE_ID=rp1 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
-node build/server.js &
+node --security-revert=CVE-2023-46809 build/server.js &
 
 wait
