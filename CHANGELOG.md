@@ -34,6 +34,29 @@ BREAKING CHANGES:
     - Add `proxy.signing_public_key`
     - Add `proxy.signing_master_public_key`
     - Add `proxy.encryption_public_key`
+  - Remove query string parameter `on_the_fly_support` from GET `/utility/idp`
+  - Add query string parameter `supported_feature_list` (list of strings separated by `,`) to GET `/utility/idp`
+  - Change response body JSON schema of GET `/utility/idp`.
+    - Remove `on_the_fly_support` (boolean) property.
+    - Add `supported_feature_list` (array of strings) property.
+  - Remove query string parameter `on_the_fly_support` from GET `/utility/idp/:namespace/:identifier`
+  - Add query string parameter `supported_feature_list` (list of strings separated by `,`) to GET `/utility/idp/:namespace/:identifier`
+  - Change response body JSON schema of GET `/utility/idp/:namespace/:identifier`.
+    - Remove `on_the_fly_support` (boolean) property.
+    - Add `supported_feature_list` (array of strings) property.
+  - Change response body JSON schema of GET `/utility/nodes/:node_id`.
+    - Remove `on_the_fly_support` (boolean) property.
+    - Add `supported_feature_list` (array of strings) property.
+  - Change body JSON schema of sign and sign with master key external crypto service (KMS) callback API.
+    - Change property name `hash_method` to `hash_algorithm`.
+    - Change property name `key_type` to `key_algorithm`.
+    - Remove `sign_method` property.
+    - Add `signing_algorithm` property.
+    - Add `key_version` (number) property.
+  - Change body JSON schema of decrypt external crypto service (KMS) callback API.
+    - Change property name `key_type` to `key_algorithm`.
+    - Add `encryption_algorithm` property.
+    - Add `key_version` (number) property.
   - NDID only APIs
     - Change request body JSON schema of POST `/ndid/init_ndid`.
       - Remove `node_key`
@@ -65,30 +88,6 @@ BREAKING CHANGES:
       - Add `encryption_public_key`
       - Add `encryption_key_algorithm`
       - Add `encryption_algorithm`
-  - Remove query string parameter `on_the_fly_support` from GET `/utility/idp`
-  - Add query string parameter `supported_feature_list` (list of strings separated by `,`) to GET `/utility/idp`
-  - Change response body JSON schema of GET `/utility/idp`.
-    - Remove `on_the_fly_support` (boolean) property.
-    - Add `supported_feature_list` (array of strings) property.
-  - Remove query string parameter `on_the_fly_support` from GET `/utility/idp/:namespace/:identifier`
-  - Add query string parameter `supported_feature_list` (list of strings separated by `,`) to GET `/utility/idp/:namespace/:identifier`
-  - Change response body JSON schema of GET `/utility/idp/:namespace/:identifier`.
-    - Remove `on_the_fly_support` (boolean) property.
-    - Add `supported_feature_list` (array of strings) property.
-  - Change response body JSON schema of GET `/utility/nodes/:node_id`.
-    - Remove `on_the_fly_support` (boolean) property.
-    - Add `supported_feature_list` (array of strings) property.
-  - Change body JSON schema of sign and sign with master key external crypto service (KMS) callback API.
-    - Change property name `hash_method` to `hash_algorithm`.
-    - Change property name `key_type` to `key_algorithm`.
-    - Remove `sign_method` property.
-    - Add `signing_algorithm` property.
-    - Add `key_version` (number) property.
-  - Change body JSON schema of decrypt external crypto service (KMS) callback API.
-    - Change property name `key_type` to `key_algorithm`.
-    - Add `encryption_algorithm` property.
-    - Add `key_version` (number) property.
-  - NDID only APIs
     - Remove `on_the_fly_support` property for registering node (POST `/ndid/register_node`) and updating node (POST `/ndid/update_node`).
     - Add `supported_feature_list` property for registering node (POST `/ndid/register_node`) and updating node (POST `/ndid/update_node`).
 
