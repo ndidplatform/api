@@ -157,8 +157,16 @@ router.get('/nodes/:node_id', async (req, res, next) => {
       rest.public_key = result.signing_public_key.public_key;
       rest.master_public_key = result.signing_master_public_key.public_key;
       if (result.proxy != null) {
-        rest.proxy.public_key = result.proxy.signing_public_key.public_key;
-        rest.proxy.master_public_key = result.proxy.signing_master_public_key.public_key;
+        const {
+          signing_public_key, // eslint-disable-line no-unused-vars
+          signing_master_public_key, // eslint-disable-line no-unused-vars
+          encryption_public_key, // eslint-disable-line no-unused-vars
+          ...restProxy
+        } = result.proxy;
+        restProxy.public_key = result.proxy.signing_public_key.public_key;
+        restProxy.master_public_key =
+          result.proxy.signing_master_public_key.public_key;
+        rest.proxy = restProxy;
       }
 
       res.status(200).json(rest);

@@ -271,3 +271,100 @@ export async function updateNodeInternalAsyncAfterBlockchain(
     throw error;
   }
 }
+
+export async function getNode({ nodeId }) {
+  const node = await tendermintNdid.getNodeInfo(nodeId);
+
+  if (node == null) {
+    return null;
+  }
+
+  if (node.signing_public_key.creation_block_height <= 0) {
+    node.signing_public_key.creation_block_height = null;
+  }
+  if (node.signing_public_key.creation_chain_id === '') {
+    node.signing_public_key.creation_chain_id = null;
+  }
+
+  if (node.signing_master_public_key.creation_block_height <= 0) {
+    node.signing_master_public_key.creation_block_height = null;
+  }
+  if (node.signing_master_public_key.creation_chain_id === '') {
+    node.signing_master_public_key.creation_chain_id = null;
+  }
+
+  if (node.encryption_public_key.creation_block_height <= 0) {
+    node.encryption_public_key.creation_block_height = null;
+  }
+  if (node.encryption_public_key.creation_chain_id === '') {
+    node.encryption_public_key.creation_chain_id = null;
+  }
+
+  if (node.proxy != null) {
+    if (node.proxy.signing_public_key.creation_block_height <= 0) {
+      node.proxy.signing_public_key.creation_block_height = null;
+    }
+    if (node.proxy.signing_public_key.creation_chain_id === '') {
+      node.proxy.signing_public_key.creation_chain_id = null;
+    }
+
+    if (node.proxy.signing_master_public_key.creation_block_height <= 0) {
+      node.proxy.signing_master_public_key.creation_block_height = null;
+    }
+    if (node.proxy.signing_master_public_key.creation_chain_id === '') {
+      node.proxy.signing_master_public_key.creation_chain_id = null;
+    }
+
+    if (node.proxy.encryption_public_key.creation_block_height <= 0) {
+      node.proxy.encryption_public_key.creation_block_height = null;
+    }
+    if (node.proxy.encryption_public_key.creation_chain_id === '') {
+      node.proxy.encryption_public_key.creation_chain_id = null;
+    }
+  }
+
+  return node;
+}
+
+export async function getNodePublicKeyList({ nodeId }) {
+  const nodePublicKeyList = await tendermintNdid.getNodePublicKeyList(nodeId);
+
+  nodePublicKeyList.signing_public_key_list =
+    nodePublicKeyList.signing_public_key_list.map((nodePublicKey) => {
+      if (nodePublicKey.creation_block_height <= 0) {
+        nodePublicKey.creation_block_height = null;
+      }
+
+      if (nodePublicKey.creation_chain_id === '') {
+        nodePublicKey.creation_chain_id = null;
+      }
+
+      return nodePublicKey;
+    });
+  nodePublicKeyList.signing_master_public_key_list =
+    nodePublicKeyList.signing_master_public_key_list.map((nodePublicKey) => {
+      if (nodePublicKey.creation_block_height <= 0) {
+        nodePublicKey.creation_block_height = null;
+      }
+
+      if (nodePublicKey.creation_chain_id === '') {
+        nodePublicKey.creation_chain_id = null;
+      }
+
+      return nodePublicKey;
+    });
+  nodePublicKeyList.encryption_public_key_list =
+    nodePublicKeyList.encryption_public_key_list.map((nodePublicKey) => {
+      if (nodePublicKey.creation_block_height <= 0) {
+        nodePublicKey.creation_block_height = null;
+      }
+
+      if (nodePublicKey.creation_chain_id === '') {
+        nodePublicKey.creation_chain_id = null;
+      }
+
+      return nodePublicKey;
+    });
+
+  return nodePublicKeyList;
+}

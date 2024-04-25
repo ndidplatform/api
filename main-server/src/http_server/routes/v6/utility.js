@@ -24,6 +24,7 @@ import express from 'express';
 
 import { validateQuery } from '../middleware/validation';
 import * as tendermintNdid from '../../../tendermint/ndid';
+import * as coreNode from '../../../core/node';
 import * as coreRequest from '../../../core/request';
 import * as coreIdentity from '../../../core/identity';
 import * as coreServicePrice from '../../../core/service_price';
@@ -248,7 +249,7 @@ router.get('/nodes/:node_id', async (req, res, next) => {
   try {
     const { node_id } = req.params;
 
-    const result = await tendermintNdid.getNodeInfo(node_id);
+    const result = await coreNode.getNode({ nodeId: node_id });
 
     if (result == null) {
       res.status(404).end();
@@ -265,7 +266,9 @@ router.get('/nodes/:node_id/public_keys', async (req, res, next) => {
   try {
     const { node_id } = req.params;
 
-    const nodeKeyList = await tendermintNdid.getNodePublicKeyList(node_id);
+    const nodeKeyList = await coreNode.getNodePublicKeyList({
+      nodeId: node_id,
+    });
 
     if (nodeKeyList == null) {
       res.status(404).end();
