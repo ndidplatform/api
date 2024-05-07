@@ -52,7 +52,7 @@ router.get('/idp', validateQuery, async (req, res, next) => {
 
     let supportedFeatureList = [];
     if (supported_feature_list) {
-      supported_feature_list
+      supportedFeatureList = supported_feature_list
         .split(',')
         .map((supportedFeature) => supportedFeature.trim());
     }
@@ -88,7 +88,7 @@ router.get(
 
       let supportedFeatureList = [];
       if (supported_feature_list) {
-        supported_feature_list
+        supportedFeatureList = supported_feature_list
           .split(',')
           .map((supportedFeature) => supportedFeature.trim());
       }
