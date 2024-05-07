@@ -25,6 +25,8 @@ import validate from '../validator';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
+const DEFAULT_API_VERSION = 6;
+
 function getBaseUrlAndApiVersion(req) {
   let baseUrl = req.baseUrl;
   if (baseUrl.startsWith('/config')) {
@@ -47,7 +49,7 @@ function getBaseUrlAndApiVersion(req) {
     baseUrl = splittedBaseUrl.join('/');
     apiVersion = parseInt(matchedPath[1]);
   } else {
-    apiVersion = 5;
+    apiVersion = DEFAULT_API_VERSION;
   }
   return {
     baseUrl,
