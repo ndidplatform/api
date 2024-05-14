@@ -99,7 +99,7 @@ export async function notifyMessageQueueSuccessSend({
   });
   const callbackUrl = await getFunction(getCallbackUrlFnName)();
   if (callbackUrl == null) {
-    logger.warn({
+    logger.debug({
       message: 'MQ success send callback URL has not been set',
     });
     return;
