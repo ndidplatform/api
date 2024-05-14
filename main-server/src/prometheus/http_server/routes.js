@@ -26,9 +26,9 @@ import Prometheus from 'prom-client';
 
 const router = express.Router();
 
-router.get('/metrics', (req, res) => {
+router.get('/metrics', async (req, res) => {
   res.set('Content-Type', Prometheus.register.contentType);
-  res.end(Prometheus.register.metrics());
+  res.end(await Prometheus.register.metrics());
 });
 
 router.use('*', function(req, res) {
