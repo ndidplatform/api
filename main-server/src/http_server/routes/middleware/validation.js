@@ -22,10 +22,10 @@
 
 import validate from '../validator';
 
+import * as config from '../../../config';
+
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
-
-const DEFAULT_API_VERSION = 6;
 
 function getBaseUrlAndApiVersion(req) {
   let baseUrl = req.baseUrl;
@@ -49,7 +49,7 @@ function getBaseUrlAndApiVersion(req) {
     baseUrl = splittedBaseUrl.join('/');
     apiVersion = parseInt(matchedPath[1]);
   } else {
-    apiVersion = DEFAULT_API_VERSION;
+    apiVersion = parseInt(config.defaultApiVersion.split('.')[0]);
   }
   return {
     baseUrl,
