@@ -25,6 +25,7 @@ import express from 'express';
 import { validateBody } from '../middleware/validation';
 import { ndidOnlyHandler } from '../middleware/role_handler';
 import * as ndid from '../../../core/ndid';
+import * as cryptoUtils from '../../../utils/crypto';
 
 const router = express.Router();
 
@@ -41,10 +42,18 @@ router.post('/init_ndid', validateBody, async (req, res, next) => {
     } = req.body;
 
     await ndid.initNDID({
-      public_key,
-      public_key_type,
-      master_public_key,
-      master_public_key_type,
+      signing_public_key: public_key,
+      signing_key_algorithm: public_key_type,
+      signing_algorithm:
+        cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
+      signing_master_public_key: master_public_key,
+      signing_master_key_algorithm: master_public_key_type,
+      signing_master_algorithm:
+        cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
+      encryption_public_key: public_key,
+      encryption_key_algorithm: public_key_type,
+      encryption_algorithm:
+        cryptoUtils.encryptionAlgorithm.RSAES_PKCS1_V1_5.name,
       chain_history_info,
     });
     res.status(204).end();
@@ -107,10 +116,18 @@ router.post('/register_node', validateBody, async (req, res, next) => {
       {
         node_id,
         node_name,
-        public_key: node_key,
-        public_key_type: node_key_type,
-        master_public_key: node_master_key,
-        master_public_key_type: node_master_key_type,
+        signing_public_key: node_key,
+        signing_key_algorithm: node_key_type,
+        signing_algorithm:
+          cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
+        signing_master_public_key: node_master_key,
+        signing_master_key_algorithm: node_master_key_type,
+        signing_master_algorithm:
+          cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
+        encryption_public_key: node_key,
+        encryption_key_algorithm: node_key_type,
+        encryption_algorithm:
+          cryptoUtils.encryptionAlgorithm.RSAES_PKCS1_V1_5.name,
         role,
         max_aal,
         max_ial,

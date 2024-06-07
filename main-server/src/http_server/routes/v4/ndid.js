@@ -25,6 +25,7 @@ import express from 'express';
 import { validateBody } from '../middleware/validation';
 import { ndidOnlyHandler } from '../middleware/role_handler';
 import * as ndid from '../../../core/ndid';
+import * as cryptoUtils from '../../../utils/crypto';
 
 const router = express.Router();
 
@@ -41,10 +42,18 @@ router.post('/init_ndid', validateBody, async (req, res, next) => {
     } = req.body;
 
     await ndid.initNDID({
-      public_key,
-      public_key_type,
-      master_public_key,
-      master_public_key_type,
+      signing_public_key: public_key,
+      signing_key_algorithm: public_key_type,
+      signing_algorithm:
+        cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
+      signing_master_public_key: master_public_key,
+      signing_master_key_algorithm: master_public_key_type,
+      signing_master_algorithm:
+        cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
+      encryption_public_key: public_key,
+      encryption_key_algorithm: public_key_type,
+      encryption_algorithm:
+        cryptoUtils.encryptionAlgorithm.RSAES_PKCS1_V1_5.name,
       chain_history_info,
     });
     res.status(204).end();
@@ -98,10 +107,18 @@ router.post('/register_node', validateBody, async (req, res, next) => {
       {
         node_id,
         node_name,
-        public_key: node_key,
-        public_key_type: node_key_type,
-        master_public_key: node_master_key,
-        master_public_key_type: node_master_key_type,
+        signing_public_key: node_key,
+        signing_key_algorithm: node_key_type,
+        signing_algorithm:
+          cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
+        signing_master_public_key: node_master_key,
+        signing_master_key_algorithm: node_master_key_type,
+        signing_master_algorithm:
+          cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name,
+        encryption_public_key: node_key,
+        encryption_key_algorithm: node_key_type,
+        encryption_algorithm:
+          cryptoUtils.encryptionAlgorithm.RSAES_PKCS1_V1_5.name,
         role,
         max_aal,
         max_ial,
@@ -296,12 +313,8 @@ router.post('/disable_namespace', validateBody, async (req, res, next) => {
 
 router.post('/create_service', validateBody, async (req, res, next) => {
   try {
-    const {
-      service_id,
-      service_name,
-      data_schema,
-      data_schema_version,
-    } = req.body;
+    const { service_id, service_name, data_schema, data_schema_version } =
+      req.body;
 
     await ndid.addService({
       service_id,
@@ -318,12 +331,8 @@ router.post('/create_service', validateBody, async (req, res, next) => {
 
 router.post('/update_service', validateBody, async (req, res, next) => {
   try {
-    const {
-      service_id,
-      service_name,
-      data_schema,
-      data_schema_version,
-    } = req.body;
+    const { service_id, service_name, data_schema, data_schema_version } =
+      req.body;
 
     await ndid.updateService({
       service_id,
@@ -497,7 +506,8 @@ router.post(
   '/get_allowed_min_ial_for_register_identity_at_first_idp',
   async (req, res, next) => {
     try {
-      const min_ial = await ndid.getAllowedMinIalForRegisterIdentityAtFirstIdp();
+      const min_ial =
+        await ndid.getAllowedMinIalForRegisterIdentityAtFirstIdp();
       res.status(200).json({ min_ial });
       next();
     } catch (error) {

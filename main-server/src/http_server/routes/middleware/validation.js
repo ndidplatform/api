@@ -35,12 +35,7 @@ function getBaseUrlAndApiVersion(req) {
       baseUrl,
     };
   }
-  if (baseUrl.startsWith('/ndid')) {
-    return {
-      ndidApi: true,
-      baseUrl,
-    };
-  }
+
   const matchedPath = baseUrl.match(/^\/v([0-9]+)/);
   let apiVersion;
   if (matchedPath != null) {
@@ -51,7 +46,14 @@ function getBaseUrlAndApiVersion(req) {
   } else {
     apiVersion = parseInt(config.defaultApiVersion.split('.')[0]);
   }
+
+  let ndidApi = false;
+  if (baseUrl.startsWith('/ndid')) {
+    ndidApi = true;
+  }
+
   return {
+    ndidApi,
     baseUrl,
     apiVersion,
   };
@@ -99,7 +101,8 @@ export function validateQuery(req, res, next) {
 }
 
 export function validateBody(req, res, next) {
-  const { configApi, ndidApi, baseUrl, apiVersion } = getBaseUrlAndApiVersion(req);
+  const { configApi, ndidApi, baseUrl, apiVersion } =
+    getBaseUrlAndApiVersion(req);
   const bodyValidationResult = validate({
     configApi,
     ndidApi,
