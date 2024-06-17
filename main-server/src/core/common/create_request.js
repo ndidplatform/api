@@ -474,11 +474,13 @@ export async function createRequest(
       });
     }
 
-    if (_validateIdentifier && mode === 1) {
-      validateIdentifier({
-        namespace,
-        identifier,
-      });
+    if (_validateIdentifier) {
+      if (mode === 1 || ((mode === 2 || mode === 3) && bypass_identity_check)) {
+        validateIdentifier({
+          namespace,
+          identifier,
+        });
+      }
     }
 
     const requestId = await cacheDb.getRequestIdByReferenceId(
