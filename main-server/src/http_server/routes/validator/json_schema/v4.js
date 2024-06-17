@@ -23,16 +23,16 @@
 export default {
   defsSchema: {
     definitions: {
-      ial: { type: 'number', enum: [1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3] },
-      aal: { type: 'number', enum: [1, 2.1, 2.2, 3] },
-      ialString: {
-        type: 'string',
-        enum: ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3'],
-      },
-      aalString: {
-        type: 'string',
-        enum: ['1', '2.1', '2.2', '3'],
-      },
+      // ial: { type: 'number', enum: [1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3] },
+      // aal: { type: 'number', enum: [1, 2.1, 2.2, 3] },
+      // ialString: {
+      //   type: 'string',
+      //   enum: ['1.1', '1.2', '1.3', '2.1', '2.2', '2.3', '3'],
+      // },
+      // aalString: {
+      //   type: 'string',
+      //   enum: ['1', '2.1', '2.2', '3'],
+      // },
       modeString: {
         type: 'string',
         enum: ['2', '3'],
@@ -58,10 +58,10 @@ export default {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           min_ial: {
-            $ref: 'defs#/definitions/ialString',
+            type: 'string',
           },
           min_aal: {
-            $ref: 'defs#/definitions/aalString',
+            type: 'string',
           },
         },
       },
@@ -71,10 +71,10 @@ export default {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
           min_ial: {
-            $ref: 'defs#/definitions/ialString',
+            type: 'string',
           },
           min_aal: {
-            $ref: 'defs#/definitions/aalString',
+            type: 'string',
           },
           mode: {
             $ref: 'defs#/definitions/modeString',
@@ -151,8 +151,8 @@ export default {
                 uniqueItems: true,
               },
               request_message: { type: 'string' },
-              min_ial: { $ref: 'defs#/definitions/ial' },
-              min_aal: { $ref: 'defs#/definitions/aal' },
+              min_ial: { type: 'number' },
+              min_aal: { type: 'number' },
               min_idp: { type: 'integer', minimum: 1 },
               request_timeout: { type: 'integer', minimum: 1 },
             },
@@ -211,8 +211,8 @@ export default {
                 uniqueItems: true,
               },
               request_message: { type: 'string' },
-              min_ial: { $ref: 'defs#/definitions/ial' },
-              min_aal: { $ref: 'defs#/definitions/aal' },
+              min_ial: { type: 'number' },
+              min_aal: { type: 'number' },
               min_idp: { type: 'integer', minimum: 1 },
               request_timeout: { type: 'integer', minimum: 1 },
               bypass_identity_check: { type: 'boolean' },
@@ -283,8 +283,8 @@ export default {
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
           request_id: { type: 'string', minLength: 1 },
-          ial: { $ref: 'defs#/definitions/ial' },
-          aal: { $ref: 'defs#/definitions/aal' },
+          ial: { type: 'number' },
+          aal: { type: 'number' },
           status: {
             type: 'string',
             enum: ['accept', 'reject'],
@@ -311,8 +311,8 @@ export default {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
-          min_ial: { $ref: 'defs#/definitions/ial' },
-          min_aal: { $ref: 'defs#/definitions/aal' },
+          min_ial: { type: 'number' },
+          min_aal: { type: 'number' },
           url: {
             $ref: 'defs#/definitions/url',
           },
@@ -377,8 +377,8 @@ export default {
           node_master_key_type: { $ref: 'defs#/definitions/keyType' },
           node_master_sign_method: { $ref: 'defs#/definitions/signMethod' },
           role: { type: 'string', enum: ['rp', 'idp', 'as'] },
-          max_ial: { $ref: 'defs#/definitions/ial' },
-          max_aal: { $ref: 'defs#/definitions/aal' },
+          max_ial: { type: 'number' },
+          max_aal: { type: 'number' },
         },
         required: [
           'reference_id',
@@ -506,7 +506,7 @@ export default {
           accessor_type: { $ref: 'defs#/definitions/keyType' },
           accessor_public_key: { type: 'string', minLength: 1 },
           accessor_id: { type: 'string', minLength: 1 },
-          ial: { $ref: 'defs#/definitions/ial' },
+          ial: { type: 'number' },
           request_message: { type: 'string' },
         },
         required: [
@@ -552,7 +552,7 @@ export default {
           node_id: { type: 'string', minLength: 1 },
           reference_id: { type: 'string', minLength: 1 },
           callback_url: { $ref: 'defs#/definitions/url' },
-          ial: { $ref: 'defs#/definitions/ial' },
+          ial: { type: 'number' },
         },
         required: ['reference_id', 'callback_url', 'ial'],
       },
