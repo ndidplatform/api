@@ -59,7 +59,7 @@ router.post('/', idpOnlyHandler, validateBody, async (req, res, next) => {
         ial,
         request_message,
       },
-      { apiVersion }
+      { validateIdentifier: false, apiVersion }
     );
 
     res.status(202).json(result);
@@ -119,7 +119,8 @@ router.post(
           request_message,
         },
         {
-          apiVersion: apiVersion,
+          validateIdentifier: false,
+          apiVersion,
         }
       );
 

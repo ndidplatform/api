@@ -113,9 +113,10 @@ FEATURES:
   - `RSAES_OAEP_SHA_1`
   - `RSAES_OAEP_SHA_256`
 - API version 6.0
-  - Validate identifier with namespace `citizen_id` as Thai citizen ID.
-    - On create request (mode 1)
+  - Validate identifier with namespace `citizen_id` as Thai citizen ID (by validating check digit/checksum). Can be disabled by setting environment variable `VALIDATE_IDENTIFIER` to `false`.
+    - On create request (mode 1 and mode 2,3 when `bypass_identity_check` is set to `true`)
     - On create identity
+    - On add identity
   - New API: GET `/utility/nodes/:node_id/public_keys`: Get node public key list (including previous key versions).
   - New API: GET `/utility/node_supported_features`: Get valid node supported feature list.
   - New API: GET `/utility/supported_ial`: Get valid/supported IAL list.
@@ -139,9 +140,15 @@ FEATURES:
 - `PRIVATE_KEY_PATH`, `PRIVATE_KEY_PASSPHRASE`, `MASTER_PRIVATE_KEY_PATH`, `MASTER_PRIVATE_KEY_PASSPHRASE`, `NODE_BEHIND_PROXY_PRIVATE_KEY_DIRECTORY_PATH`, and `NODE_BEHIND_PROXY_MASTER_PRIVATE_KEY_DIRECTORY_PATH` are still usable but considered deprecated.
 - Add new environment variable options
   - `EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION`: Callback API version for external crypto service (KMS). If not set, it will be the same as `CALLBACK_API_VERSION`.
+  - `VALIDATE_IDENTIFIER`: Validate identifier on creating identity, adding identity, and creating request on API v6 and later. Defaults to `true`.
 - Support simple API authentication.
   - Using API key set in HTTP header `X-API-Key`
   - Default config is NOT using API key auth. (Config can be set with environment variable `USE_API_KEY` and `API_KEY_HASH`.)
+
+IMPROVEMENTS:
+
+- Update dependencies.
+- [Docker] Change Node.js version used in images to 20.
 
 BUG FIXES:
 

@@ -73,7 +73,8 @@ router.post(
         },
         {
           synchronous: false,
-          apiVersion: apiVersion,
+          validateIdentifier: false,
+          apiVersion,
         }
       );
 

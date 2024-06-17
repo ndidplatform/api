@@ -417,7 +417,7 @@ export async function createRequest(
   } = createRequestParams;
   const {
     synchronous = false,
-    validateIdentifier: _validateIdentifier = true,
+    validateIdentifier: _validateIdentifier = config.validateIdentifier,
   } = options;
   let {
     request_id, // Pre-generated request ID. Used by create identity function.

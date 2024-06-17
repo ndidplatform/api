@@ -58,7 +58,7 @@ import { addIdentityAfterCloseConsentRequest } from './add_identity_after_consen
  */
 export async function addIdentity(
   addIdentityParams,
-  { validateIdentifier = true, apiVersion } = {}
+  { validateIdentifier = config.validateIdentifier, apiVersion } = {}
 ) {
   let { node_id } = addIdentityParams;
   const {

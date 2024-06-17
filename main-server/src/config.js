@@ -420,3 +420,6 @@ export const dcontractConfig = {
   validateContract,
   fetchTimeout: process.env.DCONTRACT_FETCH_TIMEOUT || 30000,
 };
+
+export const validateIdentifier =
+  process.env.VALIDATE_IDENTIFIER?.toLowerCase() === 'false' ? false : true;
