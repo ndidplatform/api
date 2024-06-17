@@ -92,8 +92,11 @@ function getSignCallbackBody({
       request_message_hash: requestMessageHash,
       hash_method: hashAlgorithm,
       key_type: keyAlgorithm,
-      sign_method: signingAlgorithm, // FIXME: backward compatibility ('RSA-SHA256')
-      // sign_method: 'RSA-SHA256',
+      sign_method:
+        signingAlgorithm ===
+        cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name
+          ? 'RSA-SHA256' // backward compatibility ('RSA-SHA256')
+          : signingAlgorithm,
     };
   } else {
     // latest (v6)
