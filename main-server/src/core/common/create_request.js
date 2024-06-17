@@ -861,6 +861,12 @@ export async function createRequestInternalAsyncAfterBlockchain(
         ndid_member_app_type: ndidMemberAppType,
         ndid_member_app_version: ndidMemberAppVersion,
         bypass_identity_check,
+        idp_node_ids_with_registered_identity: bypass_identity_check
+          ? receiversWithRefGroupCode.map(({ node_id }) => node_id)
+          : undefined,
+        idp_node_ids_without_registered_identity: bypass_identity_check
+          ? receiversWithSid.map(({ node_id }) => node_id)
+          : undefined,
       }
     );
 
