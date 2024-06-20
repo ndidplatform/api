@@ -33,8 +33,8 @@ export default {
       body: {
         $schema: 'http://json-schema.org/draft-07/schema#',
         properties: {
-          CALLBACK_API_VERSION: { type: 'string', enum: ['4.0', '5.2', '6.0'] },
-          EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION: { type: 'string', enum: ['5.2', '6.0'] },
+          CALLBACK_API_VERSION: { type: 'string', enum: ['4.0', '5.3', '6.0'] },
+          EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION: { type: 'string', enum: ['5.3', '6.0'] },
           AUTO_CLOSE_REQUEST_ON_COMPLETED: { type: 'boolean' },
           AUTO_CLOSE_REQUEST_ON_REJECTED: { type: 'boolean' },
           AUTO_CLOSE_REQUEST_ON_COMPLICATED: { type: 'boolean' },

@@ -127,6 +127,9 @@ FEATURES:
     - New API: POST `/ndid/remove_allowed_node_supported_feature`: Remove allowed node supported feature
     - New API: POST `/ndid/set_supported_ial_list`: Set supported IAL list
     - New API: POST `/ndid/set_supported_aal_list`: Set supported AAL list
+- API version 5.3
+  - New API: GET `/utility/supported_ial`: Get valid/supported IAL list.
+  - New API: GET `/utility/supported_aal`: Get valid/supported AAL list.
 - Add environment variables.
   - `SIGNING_PRIVATE_KEY_PATH`: Path to node's private key for signing [Default: use pre-generated development key in development mode]
   - `SIGNING_PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key for signing
