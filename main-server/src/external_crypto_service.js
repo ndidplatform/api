@@ -84,7 +84,7 @@ function getSignCallbackBody({
 }) {
   if (
     config.externalCryptoServiceCallbackApiVersion === '4.0' ||
-    config.externalCryptoServiceCallbackApiVersion === '5.2'
+    config.externalCryptoServiceCallbackApiVersion === '5.3'
   ) {
     return {
       node_id: nodeId,
@@ -121,7 +121,7 @@ function getDecryptCallbackBody({
 }) {
   if (
     config.externalCryptoServiceCallbackApiVersion === '4.0' ||
-    config.externalCryptoServiceCallbackApiVersion === '5.2'
+    config.externalCryptoServiceCallbackApiVersion === '5.3'
   ) {
     return {
       node_id: nodeId,

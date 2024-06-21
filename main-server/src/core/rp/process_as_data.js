@@ -86,14 +86,15 @@ export async function processAsResponse({
   if (signatureFromBlockchain == null) {
     return;
   }
+  const dataSignatureVerificationResult = await verifyDataSignature(
+    asNodeId,
+    signatureFromBlockchain,
+    dataSalt,
+    data
+  );
   if (
     signature !== signatureFromBlockchain ||
-    !(await isDataSignatureValid(
-      asNodeId,
-      signatureFromBlockchain,
-      dataSalt,
-      data
-    ))
+    !dataSignatureVerificationResult.valid
   ) {
     const err = new CustomError({
       errorType: errorType.INVALID_DATA_RESPONSE_SIGNATURE,
@@ -116,7 +117,8 @@ export async function processAsResponse({
     source_node_id: asNodeId,
     service_id: serviceId,
     source_signature: signature,
-    signature_sign_method: 'RSA-SHA256',
+    signature_signing_algorithm:
+      dataSignatureVerificationResult.signingPublicKey.algorithm,
     data_salt: dataSalt,
     data,
   });
@@ -216,9 +218,11 @@ async function cleanUpDataResponseFromAS(nodeId, asResponseId) {
   }
 }
 
-async function isDataSignatureValid(asNodeId, signature, salt, data) {
+async function verifyDataSignature(asNodeId, signature, salt, data) {
   const signingPublicKey = await tendermintNdid.getNodeSigningPubKey(asNodeId);
-  if (signingPublicKey == null) return;
+  if (signingPublicKey == null) {
+    return { valid: false };
+  }
 
   logger.debug({
     message: 'Verifying AS data signature',
@@ -242,7 +246,7 @@ async function isDataSignatureValid(asNodeId, signature, salt, data) {
       asNodeId,
       asNodePublicKey: signingPublicKey,
     });
-    return false;
+    return { valid: false, signingPublicKey };
   }
-  return true;
+  return { valid: true, signingPublicKey };
 }

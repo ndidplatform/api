@@ -110,7 +110,17 @@ router.get('/request_data/:request_id', async (req, res, next) => {
 
     const data = await rp.getDataFromAS(node_id, request_id);
     if (data != null) {
-      res.status(200).json(data);
+      const resData = data.map((item) => {
+        return {
+          source_node_id: item.source_node_id,
+          service_id: item.service_id,
+          source_signature: item.source_signature,
+          signature_sign_method: item.signature_signing_algorithm,
+          data_salt: item.data_salt,
+          data: item.data,
+        };
+      });
+      res.status(200).json(resData);
     } else {
       res.status(404).end();
     }

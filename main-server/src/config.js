@@ -50,7 +50,7 @@ let _defaultApiVersion = process.env.DEFAULT_API_VERSION
 if (_defaultApiVersion === '4') {
   _defaultApiVersion = '4.0';
 } else if (_defaultApiVersion === '5') {
-  _defaultApiVersion = '5.2';
+  _defaultApiVersion = '5.3';
 } else if (_defaultApiVersion === '6') {
   _defaultApiVersion = '6.0';
 }
@@ -62,7 +62,7 @@ let _callbackApiVersion = process.env.CALLBACK_API_VERSION
 if (_callbackApiVersion === '4') {
   _callbackApiVersion = '4.0';
 } else if (_callbackApiVersion === '5') {
-  _callbackApiVersion = '5.2';
+  _callbackApiVersion = '5.3';
 } else if (_callbackApiVersion === '6') {
   _callbackApiVersion = '6.0';
 }
@@ -71,7 +71,7 @@ export const callbackApiVersion = _callbackApiVersion;
 let _externalCryptoServiceCallbackApiVersion =
   process.env.EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION;
 if (_externalCryptoServiceCallbackApiVersion === '5') {
-  _externalCryptoServiceCallbackApiVersion = '5.2';
+  _externalCryptoServiceCallbackApiVersion = '5.3';
 } else if (_externalCryptoServiceCallbackApiVersion === '6') {
   _externalCryptoServiceCallbackApiVersion = '6.0';
 } else {

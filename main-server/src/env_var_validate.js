@@ -138,7 +138,7 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
-const DEFAULT_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.2', '6', '6.0'];
+const DEFAULT_API_VERSION_ALLOWED_VALUES = ['4', '4.0', '5', '5.3', '6', '6.0'];
 if (process.env.DEFAULT_API_VERSION != null) {
   if (
     !DEFAULT_API_VERSION_ALLOWED_VALUES.includes(
@@ -147,7 +147,7 @@ if (process.env.DEFAULT_API_VERSION != null) {
   ) {
     console.error(
       'ERROR:',
-      'Unsupported "DEFAULT_API_VERSION" environment variable value. Only "4.0", "5.2", and "6.0" are allowed. Process will now exit.'
+      'Unsupported "DEFAULT_API_VERSION" environment variable value. Only "4.0", "5.3", and "6.0" are allowed. Process will now exit.'
     );
     process.exit(1);
   }
@@ -157,7 +157,7 @@ const CALLBACK_API_VERSION_ALLOWED_VALUES = [
   '4',
   '4.0',
   '5',
-  '5.2',
+  '5.3',
   '6',
   '6.0',
 ];
@@ -169,7 +169,7 @@ if (process.env.CALLBACK_API_VERSION != null) {
   ) {
     console.error(
       'ERROR:',
-      'Unsupported "CALLBACK_API_VERSION" environment variable value. Only "4.0", "5.2", and "6.0" are allowed. Process will now exit.'
+      'Unsupported "CALLBACK_API_VERSION" environment variable value. Only "4.0", "5.3", and "6.0" are allowed. Process will now exit.'
     );
     process.exit(1);
   }
@@ -177,7 +177,7 @@ if (process.env.CALLBACK_API_VERSION != null) {
 
 const EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION_ALLOWED_VALUES = [
   '5',
-  '5.2',
+  '5.3',
   '6',
   '6.0',
 ];
@@ -189,7 +189,7 @@ if (process.env.EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION != null) {
   ) {
     console.error(
       'ERROR:',
-      'Unsupported "EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION" environment variable value. Only "5.2", and "6.0" are allowed. Process will now exit.'
+      'Unsupported "EXTERNAL_CRYPTO_SERVICE_CALLBACK_API_VERSION" environment variable value. Only "5.3", and "6.0" are allowed. Process will now exit.'
     );
     process.exit(1);
   }
