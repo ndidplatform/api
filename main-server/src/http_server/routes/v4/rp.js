@@ -27,6 +27,8 @@ import { rpOnlyHandler } from '../middleware/role_handler';
 import * as rp from '../../../core/rp';
 import * as common from '../../../core/common';
 
+import * as cryptoUtils from '../../../utils/crypto';
+
 import { apiVersion } from './version';
 
 const router = express.Router();
@@ -115,7 +117,11 @@ router.get('/request_data/:request_id', async (req, res, next) => {
           source_node_id: item.source_node_id,
           service_id: item.service_id,
           source_signature: item.source_signature,
-          signature_sign_method: item.signature_signing_algorithm,
+          signature_sign_method:
+            item.signature_signing_algorithm ===
+            cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name
+              ? 'RSA-SHA256' // backward compatibility ('RSA-SHA256')
+              : item.signature_signing_algorithm,
           data_salt: item.data_salt,
           data: item.data,
         };
