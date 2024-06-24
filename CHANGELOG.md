@@ -60,6 +60,7 @@ BREAKING CHANGES:
   - Change response body JSON schema of GET `/rp/request_data/:request_id`
     - Remove `signature_sign_method`
     - Add `signature_signing_algorithm`
+    - Add `signature_signing_key_version`
   - NDID only APIs
     - Change request body JSON schema of POST `/ndid/init_ndid`.
       - Remove `node_key`

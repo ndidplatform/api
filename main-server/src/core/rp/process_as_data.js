@@ -119,6 +119,8 @@ export async function processAsResponse({
     source_signature: signature,
     signature_signing_algorithm:
       dataSignatureVerificationResult.signingPublicKey.algorithm,
+    signature_signing_key_version:
+      dataSignatureVerificationResult.signingPublicKey.version,
     data_salt: dataSalt,
     data,
   });
