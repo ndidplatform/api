@@ -728,6 +728,7 @@ async function createRequestInternalAsync(
         [
           {
             node_id,
+            mode,
             reference_id,
             callback_url,
             request_id,
@@ -759,6 +760,7 @@ async function createRequestInternalAsync(
         { height },
         {
           node_id,
+          mode,
           reference_id,
           callback_url,
           request_id,
@@ -827,6 +829,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
   { height, error, chainDisabledRetryLater },
   {
     node_id,
+    mode,
     reference_id,
     callback_url,
     request_id,
@@ -860,13 +863,16 @@ export async function createRequestInternalAsyncAfterBlockchain(
         api_spec_version: apiVersion,
         ndid_member_app_type: ndidMemberAppType,
         ndid_member_app_version: ndidMemberAppVersion,
-        bypass_identity_check,
-        idp_node_ids_with_registered_identity: bypass_identity_check
-          ? receiversWithRefGroupCode.map(({ node_id }) => node_id)
-          : undefined,
-        idp_node_ids_without_registered_identity: bypass_identity_check
-          ? receiversWithSid.map(({ node_id }) => node_id)
-          : undefined,
+        bypass_identity_check:
+          mode === 2 || mode === 3 ? bypass_identity_check : undefined,
+        idp_node_ids_with_registered_identity:
+          (mode === 2 || mode === 3) && bypass_identity_check
+            ? receiversWithRefGroupCode.map(({ node_id }) => node_id)
+            : undefined,
+        idp_node_ids_without_registered_identity:
+          (mode === 2 || mode === 3) && bypass_identity_check
+            ? receiversWithSid.map(({ node_id }) => node_id)
+            : undefined,
       }
     );
 
