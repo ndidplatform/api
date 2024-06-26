@@ -58,8 +58,7 @@ BREAKING CHANGES:
     - Add `encryption_algorithm` property.
     - Add `key_version` (number) property.
   - Change response body JSON schema of GET `/rp/request_data/:request_id`
-    - Remove `signature_sign_method`
-    - Add `signature_signing_algorithm`
+    - Change property name `signature_sign_method` to `signature_signing_algorithm`
     - Add `signature_signing_key_version`
   - NDID only APIs
     - Change request body JSON schema of POST `/ndid/init_ndid`.
