@@ -126,7 +126,12 @@ router.get('/request_data/:request_id', async (req, res, next) => {
           source_node_id: item.source_node_id,
           service_id: item.service_id,
           source_signature: item.source_signature,
-          signature_sign_method: item.signature_signing_algorithm,
+          // check "signature_sign_method" for backward compatibility with old data structure (data saved by previous version)
+          // use in transitioning period to new version of data structure
+          signature_sign_method:
+            item.signature_sign_method != null
+              ? item.signature_sign_method
+              : item.signature_signing_algorithm,
           data_salt: item.data_salt,
           data: item.data,
         };
