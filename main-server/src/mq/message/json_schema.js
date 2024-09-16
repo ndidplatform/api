@@ -119,7 +119,7 @@ export default {
                   type: 'array',
                   items: {
                     type: 'string',
-                    minimum: 1,
+                    minLength: 1,
                   },
                 },
                 min_as: {
@@ -190,7 +190,7 @@ export default {
                   type: 'array',
                   items: {
                     type: 'string',
-                    minimum: 1,
+                    minLength: 1,
                   },
                 },
                 min_as: {
