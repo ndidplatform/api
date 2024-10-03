@@ -14,7 +14,7 @@ service NDIDTelemetry {
   rpc SendTendermintAndABCIVersionLogs(SendTendermintAndABCIVersionLogsRequest) returns (Response) {}
   rpc SendProcessLogs(SendProcessLogsRequest) returns (Response) {}
   rpc SendRequestEvents(SendRequestEventsRequest) returns (Response) {}
-  rpc SendSystemInformtation(SendSystemInformationRequest) returns (Response) {}
+  rpc SendSystemInformation(SendSystemInformationRequest) returns (Response) {}
 }
 
 message Empty {}
