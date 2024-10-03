@@ -110,8 +110,10 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
-      - setup_remote_docker:
-          version: 20.10.11
+      # default remote docker
+      - setup_remote_docker
+      # - setup_remote_docker:
+      #     version: 20.10.11
       - run:
           name: Build docker images
           command: |
@@ -140,8 +142,10 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
-      - setup_remote_docker:
-          version: 20.10.11
+      # default remote docker
+      - setup_remote_docker
+      # - setup_remote_docker:
+      #     version: 20.10.11
       - run:
           name: Build docker images
           command: |
