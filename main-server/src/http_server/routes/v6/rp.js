@@ -26,6 +26,7 @@ import { validateBody } from '../middleware/validation';
 import { rpOnlyHandler } from '../middleware/role_handler';
 import * as rp from '../../../core/rp';
 import * as common from '../../../core/common';
+import * as cryptoUtils from '../../../utils/crypto';
 
 import { apiVersion } from './version';
 import { HTTP_HEADER_FIELDS } from './private_http_header';
@@ -120,7 +121,26 @@ router.get('/request_data/:request_id', async (req, res, next) => {
 
     const data = await rp.getDataFromAS(node_id, request_id);
     if (data != null) {
-      res.status(200).json(data);
+      const resData = data.map((item) => {
+        if (item.signature_sign_method != null) {
+          // check "signature_sign_method" for backward compatibility with old data structure (data saved by previous version)
+          // use in transitioning period to new version of data structure
+          return {
+            source_node_id: item.source_node_id,
+            service_id: item.service_id,
+            source_signature: item.source_signature,
+            signature_signing_algorithm:
+              item.signature_sign_method === 'RSA-SHA256'
+                ? cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name
+                : item.signature_sign_method,
+            data_salt: item.data_salt,
+            data: item.data,
+          };
+        } else {
+          return item;
+        }
+      });
+      res.status(200).json(resData);
     } else {
       res.status(404).end();
     }

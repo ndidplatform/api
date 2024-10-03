@@ -1,5 +1,13 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v9.x.x_
+
+BUG FIXES:
+
+- Fix backward compatibility with old data structure (data saved by previous version) when getting request data from AS.
+
 ## 8.0.0 (August 1, 2024)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v9.x.x_
