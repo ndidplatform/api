@@ -1,5 +1,13 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v9.x.x_
+
+BUG FIXES:
+
+- Fix telemetry gRPC method name typo.
+
 ## 8.0.1 (October 3, 2024)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v9.x.x_
