@@ -329,6 +329,10 @@ export async function getNode({ nodeId }) {
 export async function getNodePublicKeyList({ nodeId }) {
   const nodePublicKeyList = await tendermintNdid.getNodePublicKeyList(nodeId);
 
+  if (nodePublicKeyList == null) {
+    return null;
+  }
+
   nodePublicKeyList.signing_public_key_list =
     nodePublicKeyList.signing_public_key_list.map((nodePublicKey) => {
       if (nodePublicKey.creation_block_height <= 0) {
