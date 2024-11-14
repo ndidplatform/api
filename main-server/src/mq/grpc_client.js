@@ -275,7 +275,7 @@ export function subscribeToRecvMessages() {
   recvMessageChannel = client.subscribeToRecvMessages(null);
   subscribedToRecvMessages = true;
   recvMessageChannel.on('data', onRecvMessage);
-  recvMessageChannel.on('end', async function onRecvMessageChannelEnded() {
+  recvMessageChannel.on('end', function onRecvMessageChannelEnded() {
     recvMessageChannel.cancel();
     recvMessageChannel = null;
     logger.debug({
@@ -283,24 +283,21 @@ export function subscribeToRecvMessages() {
         '[MQ Service] Subscription to receive messages has ended due to server close (stream ended)',
     });
   });
-  recvMessageChannel.on(
-    'error',
-    async function onRecvMessageChannelError(error) {
-      if (error.code !== grpc.status.CANCELLED) {
-        const err = new CustomError({
-          message: 'Receive Message channel error',
-          cause: error,
-        });
-        logger.error({ err });
-        recvMessageChannel.cancel();
-        recvMessageChannel = null;
-        logger.debug({
-          message:
-            '[MQ Service] Subscription to receive messages has ended due to error',
-        });
-      }
+  recvMessageChannel.on('error', function onRecvMessageChannelError(error) {
+    if (error.code !== grpc.status.CANCELLED) {
+      const err = new CustomError({
+        message: 'Receive Message channel error',
+        cause: error,
+      });
+      logger.error({ err });
+      recvMessageChannel.cancel();
+      recvMessageChannel = null;
+      logger.debug({
+        message:
+          '[MQ Service] Subscription to receive messages has ended due to error',
+      });
     }
-  );
+  });
 }
 
 export function sendAckForRecvMessage(msgId) {
