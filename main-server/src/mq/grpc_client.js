@@ -56,7 +56,7 @@ const MQ_SERVICE_SERVER_ADDRESS = `${config.mqServiceServerIp}:${config.mqServic
 export const eventEmitter = new EventEmitter();
 
 let client;
-let connectivityState = null;
+// let connectivityState = null;
 let closing = false;
 const calls = [];
 
@@ -72,64 +72,58 @@ let stopSendMessageRetry = false;
 
 let subscribedToRecvMessages = false;
 
+// should call after first waitForReady otherwise it may cause duplicate subscribeToRecvMessages calls
 function watchForNextConnectivityStateChange() {
   if (client == null) {
     throw new Error('client is not initialized');
   }
+  const connectivityState = client.getChannel().getConnectivityState(true);
   client
     .getChannel()
-    .watchConnectivityState(
-      client.getChannel().getConnectivityState(true),
-      Infinity,
-      async (error) => {
-        if (closing) return;
-        if (error) {
-          logger.error({
-            message: 'MQ service gRPC connectivity state watch error',
-            err: error,
-          });
-        } else {
-          const newConnectivityState = client
-            .getChannel()
-            .getConnectivityState();
-          logger.debug({
-            message: 'MQ service gRPC connectivity state changed',
-            connectivityState,
-            newConnectivityState,
-          });
+    .watchConnectivityState(connectivityState, Infinity, async (error) => {
+      if (closing) return;
+      if (error) {
+        logger.error({
+          message: 'MQ service gRPC connectivity state watch error',
+          err: error,
+        });
+      } else {
+        const newConnectivityState = client.getChannel().getConnectivityState();
+        logger.debug({
+          message: 'MQ service gRPC connectivity state changed',
+          previousConnectivityState: connectivityState,
+          newConnectivityState,
+        });
 
-          // on reconnect (IF watchForNextConnectivityStateChange() this called after first waitForReady)
-          if (connectivityState === 1 && newConnectivityState === 2) {
-            logger.info({
-              message: 'MQ service gRPC reconnect',
+        // on reconnect (if watchForNextConnectivityStateChange() is called after first waitForReady)
+        if (newConnectivityState === grpc.connectivityState.READY) {
+          logger.info({
+            message: 'MQ service gRPC reconnect',
+          });
+          try {
+            mqServiceServerInfo = await getInfo();
+            checkNodeIdToMatch(mqServiceServerInfo);
+          } catch (error) {
+            const err = new CustomError({
+              message: 'Node ID check failed on reconnect',
+              cause: error,
             });
-            try {
-              mqServiceServerInfo = await getInfo();
-              checkNodeIdToMatch(mqServiceServerInfo);
-            } catch (error) {
-              const err = new CustomError({
-                message: 'Node ID check failed on reconnect',
-                cause: error,
-              });
-              logger.error({ err });
-            }
-            if (nodeIdMatched) {
-              if (subscribedToRecvMessages) {
-                // Subscribe on reconnect if previously subscribed
-                subscribeToRecvMessages();
-              }
-            }
-
-            if (telemetryLogVersions) {
-              telemetryLogVersions(mqServiceServerInfo.version);
+            logger.error({ err });
+          }
+          if (nodeIdMatched) {
+            if (subscribedToRecvMessages) {
+              // Subscribe on reconnect if previously subscribed
+              subscribeToRecvMessages();
             }
           }
 
-          connectivityState = newConnectivityState;
+          if (telemetryLogVersions) {
+            telemetryLogVersions(mqServiceServerInfo.version);
+          }
         }
-        watchForNextConnectivityStateChange();
       }
-    );
+      watchForNextConnectivityStateChange();
+    });
 }
 
 export async function initialize({
@@ -160,6 +154,8 @@ export async function initialize({
       'grpc.keepalive_time_ms': config.grpcPingInterval,
       'grpc.keepalive_timeout_ms': config.grpcPingTimeout,
       'grpc.keepalive_permit_without_calls': 1,
+      // 'grpc.initial_reconnect_backoff_ms': 1 * 1000, // default 1s
+      // 'grpc.max_reconnect_backoff_ms': 120 * 1000, // default 120s
       // 'grpc.http2.max_pings_without_data': 0,
       // 'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
     }
@@ -287,23 +283,24 @@ export function subscribeToRecvMessages() {
         '[MQ Service] Subscription to receive messages has ended due to server close (stream ended)',
     });
   });
-  recvMessageChannel.on('error', async function onRecvMessageChannelError(
-    error
-  ) {
-    if (error.code !== grpc.status.CANCELLED) {
-      const err = new CustomError({
-        message: 'Receive Message channel error',
-        cause: error,
-      });
-      logger.error({ err });
-      recvMessageChannel.cancel();
-      recvMessageChannel = null;
-      logger.debug({
-        message:
-          '[MQ Service] Subscription to receive messages has ended due to error',
-      });
+  recvMessageChannel.on(
+    'error',
+    async function onRecvMessageChannelError(error) {
+      if (error.code !== grpc.status.CANCELLED) {
+        const err = new CustomError({
+          message: 'Receive Message channel error',
+          cause: error,
+        });
+        logger.error({ err });
+        recvMessageChannel.cancel();
+        recvMessageChannel = null;
+        logger.debug({
+          message:
+            '[MQ Service] Subscription to receive messages has ended due to error',
+        });
+      }
     }
-  });
+  );
 }
 
 export function sendAckForRecvMessage(msgId) {

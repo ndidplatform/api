@@ -6,6 +6,7 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 
 BUG FIXES:
 
+- Fix MQ service gRPC client does not re-subcribe incoming messages on reconnect.
 - Fix error when calling GET `/utility/nodes/:node_id/public_keys` with non-existent node ID.
 - Fix telemetry gRPC method name typo.
 
