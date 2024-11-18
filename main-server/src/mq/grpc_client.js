@@ -84,13 +84,13 @@ function watchForNextConnectivityStateChange() {
       if (closing) return;
       if (error) {
         logger.error({
-          message: 'MQ service gRPC connectivity state watch error',
+          message: '[MQ service] gRPC connectivity state watch error',
           err: error,
         });
       } else {
         const newConnectivityState = client.getChannel().getConnectivityState();
         logger.debug({
-          message: 'MQ service gRPC connectivity state changed',
+          message: '[MQ service] gRPC connectivity state changed',
           previousConnectivityState: connectivityState,
           newConnectivityState,
         });
@@ -98,7 +98,7 @@ function watchForNextConnectivityStateChange() {
         // on reconnect (if watchForNextConnectivityStateChange() is called after first waitForReady)
         if (newConnectivityState === grpc.connectivityState.READY) {
           logger.info({
-            message: 'MQ service gRPC reconnect',
+            message: '[MQ service] gRPC reconnect',
           });
           try {
             mqServiceServerInfo = await getInfo();
@@ -197,7 +197,7 @@ export function close() {
   stopSendMessageRetry = true;
   waitPromises.forEach((waitPromise) => waitPromise.stop());
   if (client) {
-    if (recvMessageChannel) {
+    if (recvMessageChannel != null) {
       recvMessageChannel.cancel();
     }
     calls.forEach((call) => call.cancel());
@@ -272,12 +272,17 @@ export function subscribeToRecvMessages() {
     });
   }
   if (recvMessageChannel != null) return;
+  logger.debug({
+    message: '[MQ Service] Subscribing to receiving/incoming messages',
+  });
   recvMessageChannel = client.subscribeToRecvMessages(null);
   subscribedToRecvMessages = true;
   recvMessageChannel.on('data', onRecvMessage);
   recvMessageChannel.on('end', function onRecvMessageChannelEnded() {
-    recvMessageChannel.cancel();
-    recvMessageChannel = null;
+    if (recvMessageChannel != null) {
+      recvMessageChannel.cancel();
+      recvMessageChannel = null;
+    }
     logger.debug({
       message:
         '[MQ Service] Subscription to receive messages has ended due to server close (stream ended)',
@@ -290,8 +295,10 @@ export function subscribeToRecvMessages() {
         cause: error,
       });
       logger.error({ err });
-      recvMessageChannel.cancel();
-      recvMessageChannel = null;
+      if (recvMessageChannel != null) {
+        recvMessageChannel.cancel();
+        recvMessageChannel = null;
+      }
       logger.debug({
         message:
           '[MQ Service] Subscription to receive messages has ended due to error',
