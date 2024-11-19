@@ -68,3 +68,13 @@ export async function subscribeToNodeTokenDelete({ onNewTokenRequest }) {
     // TODO: retry
   }
 }
+
+export async function unsubscribeFromNodeTokenDelete() {
+  try {
+    const key = 'token:request_new';
+
+    await getRedis().unsubscribe(key);
+  } catch (err) {
+    logger.error({ err });
+  }
+}

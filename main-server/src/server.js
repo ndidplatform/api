@@ -375,6 +375,10 @@ async function shutDown() {
 
   if (!config.ndidNode) {
     if (config.telemetryLoggingEnabled) {
+      if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
+        await telemetryToken.stop();
+      }
+
       await telemetryDb.close();
       await telemetryEventsDb.close();
     }

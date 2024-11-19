@@ -247,3 +247,11 @@ export async function reissueToken() {
     'token-type': 'manually-generated',
   });
 }
+
+export async function stop() {
+  disableTokenGeneration();
+
+  await telemetryEventsDb.unsubscribeFromNodeTokenDelete();
+
+  initialized = false;
+}
