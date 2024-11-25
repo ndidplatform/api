@@ -12,7 +12,7 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@babel/runtime": "^7.25.0",
-    "@grpc/grpc-js": "^1.11.1",
+    "@grpc/grpc-js": "^1.12.2",
     "@grpc/proto-loader": "^0.7.13",
     "ioredis": "^5.4.1",
     "ndid-logger": "file:../ndid-logger",

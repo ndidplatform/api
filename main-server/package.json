@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.25.0",
-    "@grpc/grpc-js": "^1.11.1",
+    "@grpc/grpc-js": "^1.12.2",
     "@grpc/proto-loader": "^0.7.12",
     "ajv": "^8.17.1",
     "ajv-formats": "^2.1.1",
