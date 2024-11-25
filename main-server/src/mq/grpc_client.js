@@ -95,11 +95,16 @@ function watchForNextConnectivityStateChange() {
           newConnectivityState,
         });
 
+        if (newConnectivityState !== grpc.connectivityState.READY) {
+          nodeIdMatched = false;
+        }
+
         // on reconnect (if watchForNextConnectivityStateChange() is called after first waitForReady)
         if (newConnectivityState === grpc.connectivityState.READY) {
           logger.info({
             message: '[MQ service] gRPC reconnect',
           });
+
           try {
             mqServiceServerInfo = await getInfo();
             checkNodeIdToMatch(mqServiceServerInfo);
@@ -110,15 +115,16 @@ function watchForNextConnectivityStateChange() {
             });
             logger.error({ err });
           }
+
           if (nodeIdMatched) {
             if (subscribedToRecvMessages) {
               // Subscribe on reconnect if previously subscribed
               subscribeToRecvMessages();
             }
-          }
 
-          if (telemetryLogVersions) {
-            telemetryLogVersions(mqServiceServerInfo.version);
+            if (telemetryLogVersions) {
+              telemetryLogVersions(mqServiceServerInfo.version);
+            }
           }
         }
       }
