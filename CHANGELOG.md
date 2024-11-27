@@ -1,6 +1,6 @@
 # Changelog
 
-## TBD
+## 8.0.2 (November 27, 2024)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v9.x.x_
 
