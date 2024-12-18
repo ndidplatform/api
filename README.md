@@ -220,6 +220,12 @@ Required
 - Docker CE 17.06+ [Install docker](https://docs.docker.com/install/)
 - docker-compose 1.14.0+ [Install docker-compose](https://docs.docker.com/compose/install/)
 
+### Checkout to development branch
+
+```
+git checkout development
+```
+
 ### Build
 
 ```
