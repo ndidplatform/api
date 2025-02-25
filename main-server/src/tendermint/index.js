@@ -1252,7 +1252,12 @@ export async function transact({
 
   let keyVersion = null;
   if (signingAlgorithm == null) {
-    const publicKey = await tendermintNdid.getNodeSigningPubKey(nodeId);
+    let publicKey;
+    if (useMasterKey) {
+      publicKey = await tendermintNdid.getNodeSigningMasterPubKey(nodeId);
+    } else {
+      publicKey = await tendermintNdid.getNodeSigningPubKey(nodeId);
+    }
     if (publicKey == null) {
       throw new CustomError({
         errorType: errorType.NODE_INFO_NOT_FOUND,
