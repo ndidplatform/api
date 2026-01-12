@@ -909,3 +909,47 @@ export async function setSupportedAALList({ supported_aal_list }) {
     throw error;
   }
 }
+
+export async function addNodeToYourDataRPNodeWhitelist({ rpNodeId }) {
+  return tendermintNdid.addNodeToYourDataRPNodeWhitelist(
+    { rpNodeId },
+    config.nodeId
+  );
+}
+
+export async function removeNodeFromYourDataRPNodeWhitelist({ rpNodeId }) {
+  return tendermintNdid.removeNodeFromYourDataRPNodeWhitelist(
+    { rpNodeId },
+    config.nodeId
+  );
+}
+
+export async function enableYourDataRPNodeWhitelist() {
+  return tendermintNdid.enableYourDataRPNodeWhitelist({}, config.nodeId);
+}
+
+export async function disableYourDataRPNodeWhitelist() {
+  return tendermintNdid.disableYourDataRPNodeWhitelist({}, config.nodeId);
+}
+
+export async function addNodeToYourDataASNodeWhitelist({ asNodeId }) {
+  return tendermintNdid.addNodeToYourDataASNodeWhitelist(
+    { asNodeId },
+    config.nodeId
+  );
+}
+
+export async function removeNodeFromYourDataASNodeWhitelist({ asNodeId }) {
+  return tendermintNdid.removeNodeFromYourDataASNodeWhitelist(
+    { asNodeId },
+    config.nodeId
+  );
+}
+
+export async function enableYourDataASNodeWhitelist() {
+  return tendermintNdid.enableYourDataASNodeWhitelist({}, config.nodeId);
+}
+
+export async function disableYourDataASNodeWhitelist() {
+  return tendermintNdid.disableYourDataASNodeWhitelist({}, config.nodeId);
+}

@@ -34,6 +34,8 @@ import { apiVersion as apiV4Version } from './v4/version';
 import apiV5Router from './v5';
 import { apiVersion as apiV5Version } from './v5/version';
 import apiV6Router from './v6';
+import { apiVersion as apiV6Version } from './v6/version';
+import apiV7Router from './v7';
 import serverInfo from './server_info';
 import configRouter from './config';
 import reinitNodeKeys from './reinit_node_keys';
@@ -129,12 +131,15 @@ if (config.defaultApiVersion === apiV4Version) {
   router.use(apiV4Router);
 } else if (config.defaultApiVersion === apiV5Version) {
   router.use(apiV5Router);
-} else {
+} else if (config.defaultApiVersion === apiV6Version) {
   router.use(apiV6Router);
+} else {
+  router.use(apiV7Router);
 }
 router.use('/v4', apiV4Router);
 router.use('/v5', apiV5Router);
 router.use('/v6', apiV6Router);
+router.use('/v7', apiV7Router);
 
 router.use(errorHandler);
 

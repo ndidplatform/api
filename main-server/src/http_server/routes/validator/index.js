@@ -27,9 +27,11 @@ import ajvKeywords from 'ajv-keywords';
 import schemasV4 from './json_schema/v4';
 import schemasV5 from './json_schema/v5';
 import schemasV6 from './json_schema/v6';
+import schemasV7 from './json_schema/v7';
 import ndidSchemasV4 from './json_schema/ndid_v4';
 import ndidSchemasV5 from './json_schema/ndid_v5';
 import ndidSchemasV6 from './json_schema/ndid_v6';
+import ndidSchemasV7 from './json_schema/ndid_v7';
 import configSchemas from './json_schema/config';
 
 const ajvOptions = {
@@ -89,6 +91,13 @@ function validate({
         ajv.addSchema(schemasV6.defsSchema, 'defs');
       }
     }
+    if (apiVersion === 7) {
+      if (ndidApi) {
+        ajv.addSchema(ndidSchemasV7.defsSchema, 'defs');
+      } else {
+        ajv.addSchema(schemasV7.defsSchema, 'defs');
+      }
+    }
   }
 
   const jsonSchema = getJSONSchema({
@@ -138,6 +147,12 @@ function getJSONSchema({
         return ndidSchemasV6[method][path][dataType];
       }
       return schemasV6[method][path][dataType];
+    }
+    if (apiVersion === 7) {
+      if (ndidApi) {
+        return ndidSchemasV7[method][path][dataType];
+      }
+      return schemasV7[method][path][dataType];
     }
   } catch (error) {
     throw new Error('Cannot find JSON schema for validation');

@@ -1947,3 +1947,247 @@ export async function getSupportedAALList() {
     });
   }
 }
+
+//
+// YourData
+//
+
+export async function addNodeToYourDataRPNodeWhitelist(
+  { rpNodeId },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'AddNodeToYourDataRPNodeWhitelist',
+      params: { rp_node_id: rpNodeId },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot add node to YourData RP node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function removeNodeFromYourDataRPNodeWhitelist(
+  { rpNodeId },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'RemoveNodeFromYourDataRPNodeWhitelist',
+      params: { rp_node_id: rpNodeId },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove node from YourData RP node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function enableYourDataRPNodeWhitelist(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'EnableYourDataRPNodeWhitelist',
+      params: {},
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot enable YourData RP node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function disableYourDataRPNodeWhitelist(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'DisableYourDataRPNodeWhitelist',
+      params: {},
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot disable YourData RP node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function getYourDataRPNodeWhitelist() {
+  try {
+    const result = await tendermint.query('GetYourDataRPNodeWhitelist');
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get YourData RP node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function getYourDataRPPermissionStatus() {
+  try {
+    const result = await tendermint.query('GetYourDataRPPermissionStatus');
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get YourData RP node permission status',
+      cause: error,
+    });
+  }
+}
+
+export async function addNodeToYourDataASNodeWhitelist(
+  { asNodeId },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'AddNodeToYourDataASNodeWhitelist',
+      params: { as_node_id: asNodeId },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot add node to YourData AS node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function removeNodeFromYourDataASNodeWhitelist(
+  { asNodeId },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'RemoveNodeFromYourDataASNodeWhitelist',
+      params: { as_node_id: asNodeId },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove node from YourData AS node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function enableYourDataASNodeWhitelist(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'EnableYourDataASNodeWhitelist',
+      params: {},
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot enable YourData AS node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function disableYourDataASNodeWhitelist(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'DisableYourDataASNodeWhitelist',
+      params: {},
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot disable YourData AS node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function getYourDataASNodeWhitelist() {
+  try {
+    const result = await tendermint.query('GetYourDataASNodeWhitelist');
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get YourData AS node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function getYourDataASPermissionStatus() {
+  try {
+    const result = await tendermint.query('GetYourDataASPermissionStatus');
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get YourData AS node permission status',
+      cause: error,
+    });
+  }
+}
