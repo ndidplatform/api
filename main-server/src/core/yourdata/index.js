@@ -57,9 +57,28 @@ export async function createToken({ nodeId, payload }) {
     });
   }
 
-  const tokenId = uuidv4();
+  const nowUnixSeconds = Math.floor(Date.now() / 1000)
 
-  const issueDatetimeUnixSeconds = Math.floor(Date.now() / 1000);
+  // validations
+
+  if (payload.expiration_datetime <= nowUnixSeconds) {
+    throw new CustomError({
+      errorType: errorType.TOKEN_EXPIRATION_TIME_MUST_BE_LATER_THAN_CURRENT_TIME,
+      details: {
+        nowUnixSeconds,
+        expirationDatetime: payload.expiration_datetime,
+      }
+    });
+  }
+
+  // TODO: other validations?
+  // - rp_node_id ?
+  // - namespace + identifier ?
+  // - source_request_id_list ?
+
+  //
+
+  const tokenId = uuidv4();
 
   const publicKey = nodeInfo.signing_public_key;
 
@@ -68,7 +87,7 @@ export async function createToken({ nodeId, payload }) {
   const payloadtoSign = {
     token_id: tokenId,
     ...payload,
-    issue_datetime: issueDatetimeUnixSeconds,
+    issue_datetime: nowUnixSeconds,
     as_node_signing_key_version: asNodeSigningKeyVersion,
   };
 

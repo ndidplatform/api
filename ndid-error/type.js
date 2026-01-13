@@ -758,6 +758,11 @@ module.exports = {
     message: 'Must be AS node',
     clientError: true,
   },
+  TOKEN_EXPIRATION_TIME_MUST_BE_LATER_THAN_CURRENT_TIME: {
+    code: 20098,
+    message: 'Token expiration time must be later than current time',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
@@ -1342,12 +1347,14 @@ module.exports = {
   },
   ABCI_SUPPRESSED_IDENTITY_MODIFICATION_NOTIFICATION_NODE_ID_ALREADY_EXISTS: {
     code: 25087,
-    message: 'Suppressed identity modification notification node ID already exists',
+    message:
+      'Suppressed identity modification notification node ID already exists',
     clientError: true,
   },
   ABCI_SUPPRESSED_IDENTITY_MODIFICATION_NOTIFICATION_NODE_ID_DOES_NOT_EXIST: {
     code: 25088,
-    message: 'Suppressed identity modification notification node ID does not exist',
+    message:
+      'Suppressed identity modification notification node ID does not exist',
     clientError: true,
   },
   ABCI_NOT_IDP_NODE: {
