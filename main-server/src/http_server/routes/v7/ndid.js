@@ -844,9 +844,8 @@ router.post(
     try {
       const { error_code, type, description } = req.body;
 
-      // TODO
+      await ndid.addYourDataErrorCode({ error_code, type, description });
 
-      // await ndid.addErrorCode({ error_code, type, description });
       res.status(204).end();
       next();
     } catch (error) {
@@ -862,9 +861,8 @@ router.post(
     try {
       const { error_code, type } = req.body;
 
-      // TODO
+      await ndid.removeYourDataErrorCode({ error_code, type });
 
-      // await ndid.removeErrorCode({ error_code, type });
       res.status(204).end();
       next();
     } catch (error) {

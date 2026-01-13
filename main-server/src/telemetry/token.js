@@ -20,15 +20,12 @@
  *
  */
 
-import base64url from 'base64url';
-
 import * as telemetryDb from '../db/telemetry';
 import * as telemetryEventsDb from '../db/telemetry_events';
 import * as node from '../node';
 import * as tendermintNdid from '../tendermint/ndid';
 import logger from '../logger';
-import * as utils from '../utils';
-import * as cryptoUtils from '../utils/crypto';
+import { createJWT } from '../utils/jwt';
 import ROLE from '../role';
 import * as config from '../config';
 
@@ -85,82 +82,6 @@ async function onNewTokenRequest({ nodeId }) {
   }
 }
 
-const JWT_ALG = {
-  RS256: 'RS256',
-  RS384: 'RS384',
-  RS512: 'RS512',
-  PS256: 'PS256',
-  PS384: 'PS384',
-  PS512: 'PS512',
-  ES256: 'ES256',
-  ES384: 'ES384',
-  ES512: 'ES512',
-  ES256K: 'ES256K', // EC secp256k1
-  EdDSA: 'EdDSA',
-};
-
-const signingAlgorithmMap = {
-  [cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_256.name]:
-    JWT_ALG.RS256,
-  [cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_384.name]:
-    JWT_ALG.RS384,
-  [cryptoUtils.signatureAlgorithm.RSASSA_PKCS1_V1_5_SHA_512.name]:
-    JWT_ALG.RS512,
-  [cryptoUtils.signatureAlgorithm.RSASSA_PSS_SHA_256.name]: JWT_ALG.PS256,
-  [cryptoUtils.signatureAlgorithm.RSASSA_PSS_SHA_384.name]: JWT_ALG.PS384,
-  [cryptoUtils.signatureAlgorithm.RSASSA_PSS_SHA_512.name]: JWT_ALG.PS512,
-  [cryptoUtils.signatureAlgorithm.ECDSA_SHA_256.name]: JWT_ALG.ES256,
-  [cryptoUtils.signatureAlgorithm.ECDSA_SHA_384.name]: JWT_ALG.ES384,
-  [cryptoUtils.signatureAlgorithm.Ed25519.name]: JWT_ALG.EdDSA,
-};
-
-// TOKEN Generation Module
-async function createJWT({ nodeId, payload }) {
-  const publicKey = await tendermintNdid.getNodeSigningPubKey(nodeId);
-
-  const jwtAlg = signingAlgorithmMap[publicKey.algorithm];
-  if (jwtAlg == null) {
-    throw new Error('unsupported jwt signing algorithm');
-  }
-  const header = {
-    type: 'JWT',
-    alg: jwtAlg,
-  };
-
-  const headerJSON = JSON.stringify(header);
-  const encodedHeader = base64url(headerJSON);
-
-  const payloadJSON = JSON.stringify(payload);
-  const encodedPayload = base64url(payloadJSON);
-
-  const token = encodedHeader + '.' + encodedPayload;
-  const signature = await utils.createSignature(
-    publicKey.algorithm,
-    publicKey.version,
-    token,
-    nodeId,
-    false
-  );
-
-  let jwtSignature;
-  if (
-    [JWT_ALG.ES256, JWT_ALG.ES384, JWT_ALG.ES512, JWT_ALG.ES256K].includes(
-      jwtAlg
-    )
-  ) {
-    jwtSignature = cryptoUtils.convertEcdsaASN1SigToIEEEP1363Sig(
-      publicKey.algorithm,
-      signature
-    );
-  } else {
-    jwtSignature = signature;
-  }
-
-  const signedToken = token + '.' + base64url(jwtSignature);
-
-  return signedToken;
-}
-
 /*
  * Generate a new token and public it to redis db
  *
@@ -175,16 +96,19 @@ async function generateToken(timeoutSec = 6 * 60 * 60, extraInfo = {}) {
   const timeNow = Math.floor(Date.now() / 1000);
   const timePadding = 60 * 60; // an hour padding
 
+  const nodeId = config.nodeId;
+
   const payload = {
     iat: timeNow - timePadding,
     exp: timeNow + timeoutSec + timePadding,
 
-    node_id: config.nodeId,
+    node_id: nodeId,
     nonce: Math.random(),
     ...extraInfo,
   };
 
-  const jwt = await createJWT({ nodeId: config.nodeId, payload });
+  const publicKey = await tendermintNdid.getNodeSigningPubKey(nodeId);
+  const jwt = await createJWT({ nodeId, publicKey, payload });
   await Promise.all(
     managedNodeIds.map(async (nodeId) => {
       await telemetryDb.setToken(nodeId, jwt);

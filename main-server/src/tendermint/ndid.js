@@ -2191,3 +2191,64 @@ export async function getYourDataASPermissionStatus() {
     });
   }
 }
+
+export async function addYourDataErrorCode(
+  { error_code, type, description },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'AddYourDataErrorCode',
+      params: { error_code, type, description },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot add YourData error code',
+      cause: error,
+    });
+  }
+}
+
+export async function removeYourDataErrorCode(
+  { error_code, type },
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'RemoveYourDataErrorCode',
+      params: { error_code, type },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove YourData error code',
+      cause: error,
+    });
+  }
+}
+
+export async function getYourDataErrorCodeList(type) {
+  try {
+    return await tendermint.query('GetYourDataErrorCodeList', {
+      type,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get YourData error code list from blockchain',
+      cause: error,
+    });
+  }
+}

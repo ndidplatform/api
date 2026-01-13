@@ -24,15 +24,21 @@ import express from 'express';
 
 import { validateQuery } from '../../middleware/validation';
 import * as tendermintNdid from '../../../../tendermint/ndid';
-// import * as coreNode from '../../../../core/node';
+import * as coreYourData from '../../../../core/yourdata';
 
 const router = express.Router();
 
 router.post('/token', async (req, res, next) => {
   try {
-    // TODO
+    const payload = req.body;
+    const { as_node_id } = payload;
 
-    // res.status(200).json(result);
+    const { token } = await coreYourData.createToken({
+      nodeId: as_node_id,
+      payload,
+    });
+
+    res.status(200).json(token);
 
     next();
   } catch (error) {
@@ -42,9 +48,7 @@ router.post('/token', async (req, res, next) => {
 
 router.get('/as_error_codes', async (req, res, next) => {
   try {
-    // TODO
-
-    // res.status(200).json(await tendermintNdid.getErrorCodeList('as'));
+    res.status(200).json(await tendermintNdid.getYourDataErrorCodeList('as'));
 
     next();
   } catch (error) {

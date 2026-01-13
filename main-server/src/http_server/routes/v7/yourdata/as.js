@@ -22,19 +22,22 @@
 
 import express from 'express';
 
-import { validateQuery } from '../../middleware/validation';
+import { validateQuery, validateBody } from '../../middleware/validation';
 import * as tendermintNdid from '../../../../tendermint/ndid';
+import * as coreYourDataAS from '../../../../core/yourdata/as';
 
 const router = express.Router();
 
-router.post('/callback', async (req, res, next) => {
+router.post('/callback', validateBody, async (req, res, next) => {
   try {
     const { incoming_request_status_update_url, error_url } = req.body;
 
-    // TODO
+    await coreYourDataAS.setCallbackUrls({
+      incoming_request_status_update_url,
+      error_url,
+    });
 
-    // res.status(200).json(result);
-
+    res.status(204).end();
     next();
   } catch (error) {
     next(error);
@@ -43,10 +46,13 @@ router.post('/callback', async (req, res, next) => {
 
 router.get('/callback', async (req, res, next) => {
   try {
-    // TODO
+    const urls = await coreYourDataAS.getCallbackUrls();
 
-    // res.status(200).json(result);
-
+    if (Object.keys(urls).length > 0) {
+      res.status(200).json(urls);
+    } else {
+      res.status(404).end();
+    }
     next();
   } catch (error) {
     next(error);

@@ -910,6 +910,8 @@ export async function setSupportedAALList({ supported_aal_list }) {
   }
 }
 
+// YourData
+
 export async function addNodeToYourDataRPNodeWhitelist({ rpNodeId }) {
   return tendermintNdid.addNodeToYourDataRPNodeWhitelist(
     { rpNodeId },
@@ -952,4 +954,18 @@ export async function enableYourDataASNodeWhitelist() {
 
 export async function disableYourDataASNodeWhitelist() {
   return tendermintNdid.disableYourDataASNodeWhitelist({}, config.nodeId);
+}
+
+export async function addYourDataErrorCode({ error_code, type, description }) {
+  return tendermintNdid.addYourDataErrorCode(
+    { error_code, type, description },
+    config.nodeId
+  );
+}
+
+export async function removeYourDataErrorCode({ error_code, type }) {
+  return tendermintNdid.removeYourDataErrorCode(
+    { error_code, type },
+    config.nodeId
+  );
 }

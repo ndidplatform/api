@@ -753,6 +753,11 @@ module.exports = {
     message: 'Invalid identifier',
     clientError: true,
   },
+  MUST_BE_AS_NODE: {
+    code: 20097,
+    message: 'Must be AS node',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
