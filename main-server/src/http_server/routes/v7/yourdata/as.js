@@ -22,19 +22,20 @@
 
 import express from 'express';
 
-import { validateQuery, validateBody } from '../../middleware/validation';
-import * as tendermintNdid from '../../../../tendermint/ndid';
+import { validateBody } from '../../middleware/validation';
+import { asOnlyHandler } from '../../middleware/role_handler';
 import * as coreYourDataAS from '../../../../core/yourdata/as';
 
 const router = express.Router();
 
+router.use(asOnlyHandler);
+
 router.post('/callback', validateBody, async (req, res, next) => {
   try {
-    const { incoming_request_status_update_url, error_url } = req.body;
+    const { incoming_request_status_update_url } = req.body;
 
     await coreYourDataAS.setCallbackUrls({
       incoming_request_status_update_url,
-      error_url,
     });
 
     res.status(204).end();
@@ -59,8 +60,9 @@ router.get('/callback', async (req, res, next) => {
   }
 });
 
-router.post('/service/:service_id', async (req, res, next) => {
+router.post('/service/:service_id', validateBody, async (req, res, next) => {
   try {
+    const { service_id } = req.params;
     const {
       node_id,
       service_url,
@@ -69,9 +71,16 @@ router.post('/service/:service_id', async (req, res, next) => {
       service_availability,
     } = req.body;
 
-    // TODO
+    await coreYourDataAS.registerOrUpdateASService({
+      node_id,
+      service_id,
+      service_url,
+      supported_namespace_list,
+      supported_authorization,
+      service_availability,
+    });
 
-    // res.status(200).json(result);
+    res.status(204).end();
 
     next();
   } catch (error) {
@@ -81,25 +90,16 @@ router.post('/service/:service_id', async (req, res, next) => {
 
 router.get('/service/:service_id', async (req, res, next) => {
   try {
-    const { as_node_id } = req.query;
+    const { node_id } = req.query;
+    const { service_id } = req.params;
 
-    // TODO
+    const result = await coreYourDataAS.getServiceDetail(node_id, service_id);
 
-    // res.status(200).json(result);
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post('/data', async (req, res, next) => {
-  try {
-    const { as_node_id, request_id, data } = req.body;
-
-    // TODO
-
-    // res.status(200).json(result);
+    if (result == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(result);
+    }
 
     next();
   } catch (error) {
@@ -107,13 +107,36 @@ router.post('/data', async (req, res, next) => {
   }
 });
 
-router.post('/error', async (req, res, next) => {
+router.post('/data', validateBody, async (req, res, next) => {
   try {
-    const { as_node_id, request_id, error_code, error_message } = req.body;
+    const { node_id, request_id, data } = req.body;
 
-    // TODO
+    await coreYourDataAS.respondDataToRP({
+      node_id,
+      request_id,
+      data,
+    });
 
-    // res.status(200).json(result);
+    res.status(204).end();
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/error', validateBody, async (req, res, next) => {
+  try {
+    const { node_id, request_id, error_code, error_message } = req.body;
+
+    await coreYourDataAS.respondErrorToRP({
+      node_id,
+      request_id,
+      error_code,
+      error_message,
+    });
+
+    res.status(204).end();
 
     next();
   } catch (error) {

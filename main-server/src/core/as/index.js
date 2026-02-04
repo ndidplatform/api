@@ -435,7 +435,7 @@ async function getDataAndSendBackToRP(
           request_timeout: requestDetail.request_timeout,
         },
         retry: true,
-        shouldRetryFnName: 'common.isRequestClosedOrTimedOut',
+        shouldRetryFnName: 'common.isRequestNotClosedOrTimedOut',
         shouldRetryArguments: [request.request_id],
         responseCallbackFnName: 'as.afterGotDataFromCallback',
         dataForResponseCallback: {

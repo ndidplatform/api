@@ -562,6 +562,8 @@ export async function addService({
   service_name,
   data_schema,
   data_schema_version,
+  domain,
+  requester_node_whitelist_enabled,
 }) {
   try {
     if (data_schema != null && data_schema !== 'n/a') {
@@ -576,7 +578,14 @@ export async function addService({
     await tendermint.transact({
       nodeId: config.nodeId,
       fnName: 'AddService',
-      params: { service_id, service_name, data_schema, data_schema_version },
+      params: {
+        service_id,
+        service_name,
+        data_schema,
+        data_schema_version,
+        domain,
+        requester_node_whitelist_enabled,
+      },
     });
   } catch (error) {
     // TODO:
@@ -589,6 +598,8 @@ export async function updateService({
   service_name,
   data_schema,
   data_schema_version,
+  domain,
+  requester_node_whitelist_enabled,
 }) {
   try {
     if (data_schema != null && data_schema !== 'n/a') {
@@ -603,7 +614,14 @@ export async function updateService({
     await tendermint.transact({
       nodeId: config.nodeId,
       fnName: 'UpdateService',
-      params: { service_id, service_name, data_schema, data_schema_version },
+      params: {
+        service_id,
+        service_name,
+        data_schema,
+        data_schema_version,
+        domain,
+        requester_node_whitelist_enabled,
+      },
     });
   } catch (error) {
     // TODO:
@@ -910,51 +928,101 @@ export async function setSupportedAALList({ supported_aal_list }) {
   }
 }
 
+export async function addNodeToServiceRequesterNodeWhitelist({
+  nodeId,
+  serviceId,
+}) {
+  return tendermintNdid.addNodeToServiceRequesterNodeWhitelist(
+    { nodeId, serviceId },
+    config.nodeId
+  );
+}
+
+export async function removeNodeFromServiceRequesterNodeWhitelist({
+  nodeId,
+  serviceId,
+}) {
+  return tendermintNdid.removeNodeFromServiceRequesterNodeWhitelist(
+    { nodeId, serviceId },
+    config.nodeId
+  );
+}
+
+export async function enableServiceRequesterNodeWhitelist() {
+  return tendermintNdid.enableServiceRequesterNodeWhitelist({}, config.nodeId);
+}
+
+export async function disableServiceRequesterNodeWhitelist() {
+  return tendermintNdid.disableServiceRequesterNodeWhitelist({}, config.nodeId);
+}
+
 // YourData
 
-export async function addNodeToYourDataRPNodeWhitelist({ rpNodeId }) {
-  return tendermintNdid.addNodeToYourDataRPNodeWhitelist(
-    { rpNodeId },
+export async function addNodeToYourDataNodeWhitelist({ nodeId }) {
+  return tendermintNdid.addNodeToYourDataNodeWhitelist(
+    { nodeId },
     config.nodeId
   );
 }
 
-export async function removeNodeFromYourDataRPNodeWhitelist({ rpNodeId }) {
-  return tendermintNdid.removeNodeFromYourDataRPNodeWhitelist(
-    { rpNodeId },
+export async function removeNodeFromYourDataNodeWhitelist({ nodeId }) {
+  return tendermintNdid.removeNodeFromYourDataNodeWhitelist(
+    { nodeId },
     config.nodeId
   );
 }
 
-export async function enableYourDataRPNodeWhitelist() {
-  return tendermintNdid.enableYourDataRPNodeWhitelist({}, config.nodeId);
+export async function enableYourDataNodeWhitelist() {
+  return tendermintNdid.enableYourDataNodeWhitelist({}, config.nodeId);
 }
 
-export async function disableYourDataRPNodeWhitelist() {
-  return tendermintNdid.disableYourDataRPNodeWhitelist({}, config.nodeId);
+export async function disableYourDataNodeWhitelist() {
+  return tendermintNdid.disableYourDataNodeWhitelist({}, config.nodeId);
 }
 
-export async function addNodeToYourDataASNodeWhitelist({ asNodeId }) {
-  return tendermintNdid.addNodeToYourDataASNodeWhitelist(
-    { asNodeId },
-    config.nodeId
-  );
-}
+// export async function addNodeToYourDataRPNodeWhitelist({ rpNodeId }) {
+//   return tendermintNdid.addNodeToYourDataRPNodeWhitelist(
+//     { rpNodeId },
+//     config.nodeId
+//   );
+// }
 
-export async function removeNodeFromYourDataASNodeWhitelist({ asNodeId }) {
-  return tendermintNdid.removeNodeFromYourDataASNodeWhitelist(
-    { asNodeId },
-    config.nodeId
-  );
-}
+// export async function removeNodeFromYourDataRPNodeWhitelist({ rpNodeId }) {
+//   return tendermintNdid.removeNodeFromYourDataRPNodeWhitelist(
+//     { rpNodeId },
+//     config.nodeId
+//   );
+// }
 
-export async function enableYourDataASNodeWhitelist() {
-  return tendermintNdid.enableYourDataASNodeWhitelist({}, config.nodeId);
-}
+// export async function enableYourDataRPNodeWhitelist() {
+//   return tendermintNdid.enableYourDataRPNodeWhitelist({}, config.nodeId);
+// }
 
-export async function disableYourDataASNodeWhitelist() {
-  return tendermintNdid.disableYourDataASNodeWhitelist({}, config.nodeId);
-}
+// export async function disableYourDataRPNodeWhitelist() {
+//   return tendermintNdid.disableYourDataRPNodeWhitelist({}, config.nodeId);
+// }
+
+// export async function addNodeToYourDataASNodeWhitelist({ asNodeId }) {
+//   return tendermintNdid.addNodeToYourDataASNodeWhitelist(
+//     { asNodeId },
+//     config.nodeId
+//   );
+// }
+
+// export async function removeNodeFromYourDataASNodeWhitelist({ asNodeId }) {
+//   return tendermintNdid.removeNodeFromYourDataASNodeWhitelist(
+//     { asNodeId },
+//     config.nodeId
+//   );
+// }
+
+// export async function enableYourDataASNodeWhitelist() {
+//   return tendermintNdid.enableYourDataASNodeWhitelist({}, config.nodeId);
+// }
+
+// export async function disableYourDataASNodeWhitelist() {
+//   return tendermintNdid.disableYourDataASNodeWhitelist({}, config.nodeId);
+// }
 
 export async function addYourDataErrorCode({ error_code, type, description }) {
   return tendermintNdid.addYourDataErrorCode(

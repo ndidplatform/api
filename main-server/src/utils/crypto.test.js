@@ -109,4 +109,142 @@ NQIDAQAB
     expect(decryptedMessage).to.be.instanceof(Buffer);
     expect(decryptedMessage).to.deep.equal(messageBuffer);
   });
+
+  describe('ECDSA Signature Format Conversion', () => {
+    const testCases = [
+      { name: 'ECDSA_SHA_256', keySize: 32 },
+      { name: 'ECDSA_SHA_384', keySize: 48 },
+    ];
+
+    testCases.forEach(({ name, keySize }) => {
+      describe(`Algorithm: ${name}`, () => {
+        it('should convert IEEE P1363 to ASN.1 and back (Symmetry)', () => {
+          // Create a fake IEEE P1363 signature (R + S)
+          // Filling with non-zero values to ensure padding logic is tested
+          const r = Buffer.alloc(keySize, 0x01);
+          const s = Buffer.alloc(keySize, 0x02);
+          const originalIEEE = Buffer.concat([r, s]);
+
+          // IEEE -> ASN.1
+          const asn1Sig = cryptoUtils.convertEcdsaIEEEP1363SigToASN1Sig(
+            name,
+            originalIEEE
+          );
+          expect(Buffer.isBuffer(asn1Sig)).to.be.true;
+
+          // ASN.1 -> IEEE
+          const resultIEEE = cryptoUtils.convertEcdsaASN1SigToIEEEP1363Sig(
+            name,
+            asn1Sig
+          );
+
+          expect(resultIEEE.length).to.equal(originalIEEE.length);
+          expect(resultIEEE.equals(originalIEEE)).to.be.true;
+        });
+
+        it('should handle ASN.1 signatures that require DER padding (R/S with high bit set)', () => {
+          // DER requires a leading 0x00 if the first bit of the integer is 1 (>= 0x80)
+          // This tests that the conversion handles the variable length of DER integers
+          const r = Buffer.alloc(keySize, 0x80);
+          const s = Buffer.alloc(keySize, 0xff);
+          const originalIEEE = Buffer.concat([r, s]);
+
+          const asn1Sig = cryptoUtils.convertEcdsaIEEEP1363SigToASN1Sig(
+            name,
+            originalIEEE
+          );
+          const resultIEEE = cryptoUtils.convertEcdsaASN1SigToIEEEP1363Sig(
+            name,
+            asn1Sig
+          );
+
+          expect(resultIEEE.equals(originalIEEE)).to.be.true;
+        });
+      });
+    });
+
+    describe('Error Handling', () => {
+      it('should throw for unsupported algorithm names', () => {
+        const bogusData = Buffer.alloc(64);
+        expect(() => {
+          cryptoUtils.convertEcdsaIEEEP1363SigToASN1Sig(
+            'INVALID_ALG',
+            bogusData
+          );
+        }).to.throw('unknown/unsupported algorithm');
+      });
+
+      it('should throw if input buffer length is incorrect for IEEE P1363', () => {
+        const invalidLengthData = Buffer.alloc(10); // Too short for SHA-256 (64)
+        expect(() => {
+          cryptoUtils.convertEcdsaIEEEP1363SigToASN1Sig(
+            'ECDSA_SHA_256',
+            invalidLengthData
+          );
+        }).to.throw(/Invalid signature length/);
+      });
+
+      it('should throw for non-ECDSA algorithms (e.g. Ed25519)', () => {
+        const bogusData = Buffer.alloc(64);
+        expect(() => {
+          cryptoUtils.convertEcdsaIEEEP1363SigToASN1Sig('Ed25519', bogusData);
+        }).to.throw('unsupported signature algorithm');
+      });
+    });
+
+    describe('Real ECDSA key', () => {
+      const curves = [
+        {
+          name: 'ECDSA_SHA_256',
+          hashAlgorithm: 'SHA256',
+          curve: 'prime256v1',
+          keySize: 32,
+        },
+        {
+          name: 'ECDSA_SHA_384',
+          hashAlgorithm: 'SHA384',
+          curve: 'secp384r1',
+          keySize: 48,
+        },
+      ];
+
+      curves.forEach(({ name, hashAlgorithm, curve, keySize }) => {
+        it(`should correctly convert ${name} signature`, () => {
+          // Generate a EC Key Pair
+          const { privateKey, publicKey } = crypto.generateKeyPairSync('ec', {
+            namedCurve: curve,
+          });
+
+          const data = Buffer.from('test data');
+
+          // Sign data (Node.js returns ASN.1 DER by default)
+          const derSignature = crypto
+            .createSign(hashAlgorithm)
+            .update(data)
+            .sign(privateKey);
+
+          // Convert DER -> IEEE P1363
+          const ieeeSignature = cryptoUtils.convertEcdsaASN1SigToIEEEP1363Sig(
+            name,
+            derSignature
+          );
+
+          // Validation: P1363 must be exactly 2 * keySize
+          expect(ieeeSignature.length).to.equal(keySize * 2);
+
+          // Convert IEEE P1363 -> DER
+          const reconstructedDer =
+            cryptoUtils.convertEcdsaIEEEP1363SigToASN1Sig(name, ieeeSignature);
+
+          // Verify the reconstructed DER signature using the public Key
+          const isValid = crypto
+            .createVerify(hashAlgorithm)
+            .update(data)
+            .verify(publicKey, reconstructedDer);
+
+          expect(isValid).to.be.true;
+        });
+      });
+    });
+  });
 });

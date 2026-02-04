@@ -22,19 +22,21 @@
 
 import express from 'express';
 
-import { validateQuery } from '../../middleware/validation';
-import * as tendermintNdid from '../../../../tendermint/ndid';
+import { validateBody } from '../../middleware/validation';
+import { rpOnlyHandler } from '../../middleware/role_handler';
+import * as coreYourDataRP from '../../../../core/yourdata/rp';
 
 const router = express.Router();
 
-router.post('/request', async (req, res, next) => {
+router.use(rpOnlyHandler);
+
+router.post('/requests', validateBody, async (req, res, next) => {
   try {
     const {
       node_id,
       service_id,
       service_version,
       service_extension,
-      rp_node_id,
       as_node_id,
       reference_id,
       callback_url,
@@ -45,9 +47,22 @@ router.post('/request', async (req, res, next) => {
       request_timeout,
     } = req.body;
 
-    // TODO
+    const result = await coreYourDataRP.createRequest({
+      node_id,
+      service_id,
+      service_version,
+      service_extension,
+      as_node_id,
+      reference_id,
+      callback_url,
+      namespace,
+      identifier,
+      request_params,
+      authorization,
+      request_timeout,
+    });
 
-    // res.status(200).json(result);
+    res.status(200).json(result);
 
     next();
   } catch (error) {
@@ -60,9 +75,12 @@ router.get('/request_data/:request_id', async (req, res, next) => {
     const { node_id } = req.query;
     const { request_id } = req.params;
 
-    // TODO
-
-    // res.status(200).json(result);
+    const result = await coreYourDataRP.getDataFromAS(node_id, request_id);
+    if (result != null) {
+      res.status(200).json(result);
+    } else {
+      res.status(404).end();
+    }
 
     next();
   } catch (error) {
@@ -70,13 +88,13 @@ router.get('/request_data/:request_id', async (req, res, next) => {
   }
 });
 
-router.post('/request_data_removal', async (req, res, next) => {
+router.post('/request_data_removal', validateBody, async (req, res, next) => {
   try {
-    const { node_id, rp_node_id, request_id } = req.body;
+    const { node_id, request_id } = req.body;
 
-    // TODO
+    await coreYourDataRP.removeDataFromAS(node_id, request_id);
 
-    // res.status(200).json(result);
+    res.status(204).end();
 
     next();
   } catch (error) {

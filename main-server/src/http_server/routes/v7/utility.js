@@ -309,7 +309,22 @@ router.get('/namespaces', async (req, res, next) => {
 
 router.get('/services', async (req, res, next) => {
   try {
-    res.status(200).json(await tendermintNdid.getServiceList());
+    const { domain } = req.query;
+
+    let domainFilter;
+    if (domain == null) {
+      domainFilter = '';
+    } else if (domain === 'all') {
+      domainFilter = undefined;
+    } else {
+      domainFilter = domain;
+    }
+
+    const services = await tendermintNdid.getServiceList({
+      domain: domainFilter,
+    });
+
+    res.status(200).json(services);
     next();
   } catch (error) {
     next(error);

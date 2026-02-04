@@ -86,3 +86,33 @@ export function removeCallbackUrl(nodeId, callbackName) {
     key: callbackName,
   });
 }
+
+// YourData (AS)
+
+export function getYourDataASService(nodeId, serviceId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'YourData_asService',
+    key: serviceId,
+  });
+}
+
+export function setYourDataASService(nodeId, serviceId, serviceInfo) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'YourData_asService',
+    key: serviceId,
+    value: serviceInfo,
+  });
+}
+
+export function removeYourDataASService(nodeId, serviceId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'YourData_asService',
+    key: serviceId,
+  });
+}

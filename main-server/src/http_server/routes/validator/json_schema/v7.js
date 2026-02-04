@@ -947,7 +947,7 @@ export default {
       },
     },
     // YourData
-    '/yourdata/rp/request': {
+    '/yourdata/rp/requests': {
       body: {
         type: 'object',
         properties: {
@@ -982,7 +982,7 @@ export default {
       body: {
         type: 'object',
         properties: {
-          rp_node_id: { type: 'string', minLength: 1 },
+          node_id: { type: 'string', minLength: 1 },
           request_id: { type: 'string', minLength: 1 },
         },
         required: [
@@ -995,9 +995,6 @@ export default {
         type: 'object',
         properties: {
           incoming_request_status_update_url: {
-            $ref: 'defs#/definitions/url',
-          },
-          error_url: {
             $ref: 'defs#/definitions/url',
           },
         },
@@ -1025,14 +1022,17 @@ export default {
                 'no_token_needed',
                 'token_one_time',
                 'token_continuous_with_expire',
+                'token_continuous_no_expire',
               ],
             },
-            // uniqueItems: true,
+            uniqueItems: true,
           },
           service_availability: { type: 'boolean' },
         },
         required: [
-          // TODO
+          'service_url',
+          'supported_namespace_list',
+          'supported_authorization',
         ],
       },
     },
@@ -1040,23 +1040,23 @@ export default {
       body: {
         type: 'object',
         properties: {
-          as_node_id: { type: 'string', minLength: 1 },
+          node_id: { type: 'string', minLength: 1 },
           request_id: { type: 'string', minLength: 1 },
           data: { type: 'string', minLength: 1 },
         },
-        required: [],
+        required: ['request_id', 'data'],
       },
     },
     '/yourdata/as/error': {
       body: {
         type: 'object',
         properties: {
-          as_node_id: { type: 'string', minLength: 1 },
+          node_id: { type: 'string', minLength: 1 },
           request_id: { type: 'string', minLength: 1 },
           error_code: { $ref: 'defs#/definitions/errorCode' },
           error_message: { type: 'string', minLength: 1 },
         },
-        required: [],
+        required: ['request_id', 'error_code', 'error_message'],
       },
     },
     '/yourdata/utility/token': {
@@ -1074,14 +1074,14 @@ export default {
               type: 'object',
               properties: {
                 namespace: { type: 'string' },
-                idenfifier: { type: 'string' },
+                identifier: { type: 'string' },
                 visible_identifier: { type: 'string' },
                 identifier_extension: { type: 'string' },
               },
               required: [
-                // TODO: check
+                // TODO: check with NDID
                 // 'namespace',
-                // 'idenfifier',
+                // 'identifier',
                 // 'visible_identifier',
                 // 'identifier_extension',
               ],
@@ -1101,7 +1101,7 @@ export default {
               },
               required: [
                 'service_id',
-                // TODO: check
+                // TODO: check with NDID
                 // 'service_version',
                 // 'service_extension',
               ],
@@ -1127,7 +1127,6 @@ export default {
         required: [
           'rp_node_id',
           'as_node_id',
-          // TODO
         ],
       },
     },

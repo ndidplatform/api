@@ -28,7 +28,10 @@ import logger from '../../logger';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as requestProcessManager from '../request_process_manager';
+import * as yourDataAS from '../yourdata/as';
+import * as yourDataRequestQueueManager from '../yourdata/request_queue_manager';
 import * as cacheDb from '../../db/cache';
+import { isYourDataMessageType } from '../../mq/message/type';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../callback';
 
@@ -53,12 +56,27 @@ export async function handleMessageFromQueue(
   const startTime = Date.now();
 
   const requestId = message.request_id;
+
   try {
-    const addToProcessQueue = await requestProcessManager.handleMessageFromMqWithBlockWait(
-      messageId,
-      message,
-      nodeId
-    );
+    if (isYourDataMessageType(message.type)) {
+      yourDataRequestQueueManager.enqueue(
+        nodeId,
+        requestId,
+        yourDataAS.processMessage,
+        nodeId,
+        messageId,
+        message
+      );
+
+      return;
+    }
+
+    const addToProcessQueue =
+      await requestProcessManager.handleMessageFromMqWithBlockWait(
+        messageId,
+        message,
+        nodeId
+      );
 
     if (addToProcessQueue) {
       await requestProcessManager.addMqMessageTaskToQueue({
@@ -186,9 +204,8 @@ export async function processRequestUpdate(nodeId, requestId, height, cleanUp) {
   if (callbackUrl != null) {
     let requestDetailsForCallback;
     if (config.callbackApiVersion === '4.0') {
-      const detailedRequestStatus = utils.getDetailedRequestStatusLegacy(
-        requestDetail
-      );
+      const detailedRequestStatus =
+        utils.getDetailedRequestStatusLegacy(requestDetail);
 
       requestDetailsForCallback = {
         ...detailedRequestStatus,

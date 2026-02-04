@@ -25,6 +25,23 @@ const TYPES = {
   AS_RESPONSE: 'as_response',
   CONSENT_REQUEST: 'consent_request',
   DATA_REQUEST: 'data_request',
+  // YourData
+  YOURDATA_DATA_REQUEST: 'yourdata_data_request', // originate from RP
+  YOURDATA_AS_RESPONSE: 'yourdata_as_response', // originate from AS
+  YOURDATA_DATA_DECRYPTION_KEY_REQUEST: 'yourdata_decryption_key_request', // originate from RP
+  YOURDATA_DATA_DECRYPTION_KEY_RESPONSE:
+    'yourdata_data_decryption_key_response', // originate from AS
+  YOURDATA_STATUS_SYNC: 'yourdata_status_sync', // originate from RP
 };
+
+export function isYourDataMessageType(messageType) {
+  return [
+    TYPES.YOURDATA_DATA_REQUEST,
+    TYPES.YOURDATA_AS_RESPONSE,
+    TYPES.YOURDATA_DATA_DECRYPTION_KEY_REQUEST,
+    TYPES.YOURDATA_DATA_DECRYPTION_KEY_RESPONSE,
+    TYPES.YOURDATA_STATUS_SYNC,
+  ].includes(messageType);
+}
 
 export default TYPES;

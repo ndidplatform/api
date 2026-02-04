@@ -22,23 +22,23 @@
 
 import express from 'express';
 
-import { validateQuery } from '../../middleware/validation';
+import { validateBody } from '../../middleware/validation';
 import * as tendermintNdid from '../../../../tendermint/ndid';
 import * as coreYourData from '../../../../core/yourdata';
 
 const router = express.Router();
 
-router.post('/token', async (req, res, next) => {
+router.post('/token', validateBody, async (req, res, next) => {
   try {
     const payload = req.body;
     const { as_node_id } = payload;
 
-    const { token } = await coreYourData.createToken({
+    const result = await coreYourData.createSignedToken({
       nodeId: as_node_id,
       payload,
     });
 
-    res.status(200).json(token);
+    res.status(200).json(result);
 
     next();
   } catch (error) {
@@ -56,21 +56,9 @@ router.get('/as_error_codes', async (req, res, next) => {
   }
 });
 
-router.get('/rp_node_whitelist', async (req, res, next) => {
+router.get('/node_whitelist', async (req, res, next) => {
   try {
-    const result = await tendermintNdid.getYourDataRPNodeWhitelist();
-
-    res.status(200).json(result);
-
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get('/as_node_whitelist', async (req, res, next) => {
-  try {
-    const result = await tendermintNdid.getYourDataASNodeWhitelist();
+    const result = await tendermintNdid.getYourDataNodeWhitelist();
 
     res.status(200).json(result);
 

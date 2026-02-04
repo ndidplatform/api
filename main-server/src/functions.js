@@ -26,6 +26,8 @@ import * as idp from './core/idp';
 import * as as from './core/as';
 import * as proxy from './core/proxy';
 import * as identity from './core/identity';
+import * as yourDataRP from './core/yourdata/rp';
+import * as yourDataAS from './core/yourdata/as';
 import * as node from './core/node';
 import * as nodeCallback from './core/node_callback';
 import * as tendermint from './tendermint';
@@ -44,8 +46,8 @@ export function getFunction(fnName) {
       return common.createMessageInternalAsyncAfterBlockchain;
     case 'common.closeRequestInternalAsyncAfterBlockchain':
       return common.closeRequestInternalAsyncAfterBlockchain;
-    case 'common.isRequestClosedOrTimedOut':
-      return common.isRequestClosedOrTimedOut;
+    case 'common.isRequestNotClosedOrTimedOut':
+      return common.isRequestNotClosedOrTimedOut;
     case 'common.timeoutRequestAfterBlockchain':
       return common.timeoutRequestAfterBlockchain;
     case 'common.runTimeoutScheduler':
@@ -164,6 +166,18 @@ export function getFunction(fnName) {
       return as.processMessage;
     case 'as.processRequestUpdate':
       return as.processRequestUpdate;
+    // YourData
+    case 'yourdata.as.afterGotDataFromCallback':
+      return yourDataAS.afterGotDataFromCallback;
+    // YourData Callback
+    case 'yourdata.as.isRequestNotTimedOut':
+      return yourDataAS.isRequestNotTimedOut;
+    case 'yourdata.as.getCallbackUrls':
+      return yourDataAS.getCallbackUrls;
+    case 'yourdata.as.getIncomingRequestStatusUpdateCallbackUrl':
+      return yourDataAS.getIncomingRequestStatusUpdateCallbackUrl;
+    case 'yourdata.as.getServiceCallbackUrl':
+      return yourDataAS.getServiceCallbackUrl;
     // Node Callback
     case 'nodeCallback.getMessageQueueSendSuccessCallbackUrl':
       return nodeCallback.getMessageQueueSendSuccessCallbackUrl;

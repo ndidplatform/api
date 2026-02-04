@@ -22,37 +22,12 @@
 
 import EventEmitter from 'events';
 
-import cacheDbRedisInstance from './cache/redis';
-import longTermDbRedisInstance from './long_term/redis';
-import dataDbRedisInstance from './data/redis';
-import telemetryRedisInstance from './telemetry/redis';
-
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
+import { getRedis, getRedisVersion } from './common';
+
 export const metricsEventEmitter = new EventEmitter();
-
-function getRedisInstance(dbName) {
-  switch (dbName) {
-    case 'cache':
-      return cacheDbRedisInstance;
-    case 'long-term':
-      return longTermDbRedisInstance;
-    case 'data':
-      return dataDbRedisInstance;
-    case 'telemetry':
-      return telemetryRedisInstance;
-    default:
-      throw new CustomError({ message: 'Unknown database name' });
-  }
-}
-function getRedis(dbName) {
-  return getRedisInstance(dbName).redis;
-}
-
-function getRedisVersion(dbName) {
-  return getRedisInstance(dbName).version;
-}
 
 export async function getList({ nodeId, dbName, name, key }) {
   const operation = 'getList';
@@ -431,16 +406,35 @@ export async function set({
   name,
   key,
   value,
+  ttl,
+  keepTtl,
   jsonStringifyValue = true,
 }) {
   const operation = 'set';
   const startTime = Date.now();
   try {
     const redis = getRedis(dbName);
+    const redisVersion = getRedisVersion(dbName);
+    const keyToSet = `${nodeId}:${dbName}:${name}:${key}`;
     if (jsonStringifyValue) {
       value = JSON.stringify(value);
     }
-    await redis.set(`${nodeId}:${dbName}:${name}:${key}`, value);
+    if (keepTtl) {
+      if (redisVersion.major >= '6') {
+        await redis.set(keyToSet, value, 'KEEPTTL');
+      } else {
+        const currentTtl = await redis.ttl(keyToSet);
+        if (currentTtl >= 0) {
+          await redis.set(keyToSet, value, 'EX', currentTtl);
+        } else {
+          await redis.set(keyToSet, value);
+        }
+      }
+    } else if (ttl) {
+      await redis.set(keyToSet, value, 'EX', ttl);
+    } else {
+      await redis.set(keyToSet, value);
+    }
     metricsEventEmitter.emit(
       'operationTime',
       operation,
@@ -519,6 +513,45 @@ export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
       Date.now() - startTime
     );
     return retVal;
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
+export async function getAllLists({ nodeId, dbName, name, keyName, valueName }) {
+  const operation = 'getAllLists';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+    const prefix = `${nodeId}:${dbName}:${name}:`;
+    const stream = redis.scanStream({ match: `${prefix}*`, count: 100 });
+
+    let result = [];
+
+    for await (const keys of stream) {
+      for (const key of keys) {
+        const listData = await redis.lrange(key, 0, -1);
+
+        const parsedTasks = listData.map((item) => JSON.parse(item));
+
+        result.push({
+          [keyName]: key.replace(prefix, ''),
+          [valueName]: parsedTasks,
+        });
+      }
+    }
+
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
+
+    return result;
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,

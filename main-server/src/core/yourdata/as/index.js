@@ -23,7 +23,7 @@
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
-import * as tendermintNdid from '../../../tendermint/ndid';
+import * as cacheDb from '../../../db/cache';
 import * as dataDb from '../../../db/data';
 
 import logger from '../../../logger';
@@ -31,9 +31,12 @@ import logger from '../../../logger';
 import * as config from '../../../config';
 import { role } from '../../../node';
 
+export * from './register_or_update_as_service';
+export * from './respond_to_rp';
+export * from './message_handlers';
+
 const CALLBACK_URL_NAME = {
   INCOMING_REQUEST_STATUS_UPDATE: 'incoming_request_status_update_url',
-  ERROR: 'error_url',
 };
 const CALLBACK_URL_NAME_ARR = Object.values(CALLBACK_URL_NAME);
 
@@ -54,10 +57,7 @@ export async function checkCallbackUrls() {
   }
 }
 
-export async function setCallbackUrls({
-  incoming_request_status_update_url,
-  error_url,
-}) {
+export async function setCallbackUrls({ incoming_request_status_update_url }) {
   const promises = [];
   if (incoming_request_status_update_url != null) {
     promises.push(
@@ -65,15 +65,6 @@ export async function setCallbackUrls({
         config.nodeId,
         `yourdata_as.${CALLBACK_URL_NAME.INCOMING_REQUEST_STATUS_UPDATE}`,
         incoming_request_status_update_url
-      )
-    );
-  }
-  if (error_url != null) {
-    promises.push(
-      dataDb.setCallbackUrl(
-        config.nodeId,
-        `yourdata_as.${CALLBACK_URL_NAME.ERROR}`,
-        error_url
       )
     );
   }
@@ -99,13 +90,6 @@ export async function getCallbackUrls() {
   return callbackUrls;
 }
 
-export function getErrorCallbackUrl() {
-  return dataDb.getCallbackUrl(
-    config.nodeId,
-    `yourdata_as.${CALLBACK_URL_NAME.ERROR}`
-  );
-}
-
 export function getIncomingRequestStatusUpdateCallbackUrl() {
   return dataDb.getCallbackUrl(
     config.nodeId,
@@ -113,12 +97,14 @@ export function getIncomingRequestStatusUpdateCallbackUrl() {
   );
 }
 
-export function setServiceCallbackUrl(nodeId, serviceId, url) {
-  return dataDb.setCallbackUrl(nodeId, `yourdata_service-${serviceId}`, url);
-}
+export async function getServiceCallbackUrl(nodeId, serviceId) {
+  const serviceInfo = await dataDb.getYourDataASService(nodeId, serviceId);
+  if (serviceInfo == null) {
+    // FIXME: throw error instead?
+    return null;
+  }
 
-export function getServiceCallbackUrl(nodeId, serviceId) {
-  return dataDb.getCallbackUrl(nodeId, `yourdata_service-${serviceId}`);
+  return serviceInfo.service_url;
 }
 
 //
@@ -135,27 +121,44 @@ export async function getServiceDetail(nodeId, serviceId) {
       nodeId = config.nodeId;
     }
 
-    // TODO
+    const serviceInfo = await dataDb.getYourDataASService(nodeId, serviceId);
 
-    // const services = await tendermintNdid.getServicesByAsID({
-    //   as_id: nodeId,
-    // });
-    // const service = services.find((service) => {
-    //   return service.service_id === service_id;
-    // });
-    // if (service == null) return null;
-    // return {
-    //   url: await getServiceCallbackUrl(nodeId, service_id),
-    //   supported_namespace_list: service.supported_namespace_list,
-    //   min_ial: service.min_ial,
-    //   min_aal: service.min_aal,
-    //   active: service.active,
-    //   suspended: service.suspended,
-    // };
+    if (serviceInfo == null) {
+      return null;
+    }
+
+    return {
+      service_id: serviceInfo.service_id,
+      service_url: serviceInfo.service_url,
+      supported_namespace_list: serviceInfo.supported_namespace_list,
+      supported_authorization: serviceInfo.supported_authorization,
+      service_availability: serviceInfo.service_availability,
+    };
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get YourData service details',
       cause: error,
     });
   }
+}
+
+/**
+ * Returns false if request is timed out
+ * @param {string} requestId
+ * @returns {boolean}
+ */
+export async function isRequestNotTimedOut(nodeId, requestId) {
+  const request = await cacheDb.getYourDataRequestData(nodeId, requestId);
+  if (request == null) {
+    return false;
+  }
+
+  const requestTimeoutMsec = request.request_timeout * 1000;
+  const requestTimeoutAt = request.request_time + requestTimeoutMsec;
+  const timedout = Date.now() > requestTimeoutAt;
+  if (timedout) {
+    return false;
+  }
+
+  return true;
 }

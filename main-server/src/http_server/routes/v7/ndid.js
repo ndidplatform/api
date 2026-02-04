@@ -330,14 +330,22 @@ router.post('/disable_namespace', validateBody, async (req, res, next) => {
 
 router.post('/create_service', validateBody, async (req, res, next) => {
   try {
-    const { service_id, service_name, data_schema, data_schema_version } =
-      req.body;
+    const {
+      service_id,
+      service_name,
+      data_schema,
+      data_schema_version,
+      domain,
+      requester_node_whitelist_enabled,
+    } = req.body;
 
     await ndid.addService({
       service_id,
       service_name,
       data_schema,
       data_schema_version,
+      domain,
+      requester_node_whitelist_enabled,
     });
     res.status(201).end();
     next();
@@ -348,14 +356,22 @@ router.post('/create_service', validateBody, async (req, res, next) => {
 
 router.post('/update_service', validateBody, async (req, res, next) => {
   try {
-    const { service_id, service_name, data_schema, data_schema_version } =
-      req.body;
+    const {
+      service_id,
+      service_name,
+      data_schema,
+      data_schema_version,
+      domain,
+      requester_node_whitelist_enabled,
+    } = req.body;
 
     await ndid.updateService({
       service_id,
       service_name,
       data_schema,
       data_schema_version,
+      domain,
+      requester_node_whitelist_enabled,
     });
     res.status(204).end();
     next();
@@ -735,14 +751,77 @@ router.post('/set_supported_aal_list', validateBody, async (req, res, next) => {
   }
 });
 
+router.post(
+  '/add_node_to_service_requester_node_whitelist',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { node_id, service_id } = req.body;
+      await ndid.addNodeToServiceRequesterNodeWhitelist({
+        nodeId: node_id,
+        serviceId: service_id,
+      });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/remove_node_from_service_requester_node_whitelist',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { node_id, service_id } = req.body;
+      await ndid.removeNodeFromServiceRequesterNodeWhitelist({
+        nodeId: node_id,
+        serviceId: service_id,
+      });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/enable_service_requester_node_whitelist',
+  async (req, res, next) => {
+    try {
+      await ndid.enableServiceRequesterNodeWhitelist();
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/disable_service_requester_node_whitelist',
+  async (req, res, next) => {
+    try {
+      await ndid.disableServiceRequesterNodeWhitelist();
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 // YourData
 
 router.post(
-  '/add_node_to_your_data_rp_node_whitelist',
+  '/add_node_to_your_data_node_whitelist',
+  validateBody,
   async (req, res, next) => {
     try {
-      const { rp_node_id } = req.body;
-      await ndid.addNodeToYourDataRPNodeWhitelist({ rpNodeId: rp_node_id });
+      const { node_id } = req.body;
+      await ndid.addNodeToYourDataNodeWhitelist({ nodeId: node_id });
       res.status(204).end();
       next();
     } catch (error) {
@@ -752,12 +831,13 @@ router.post(
 );
 
 router.post(
-  '/remove_node_from_your_data_rp_node_whitelist',
+  '/remove_node_from_your_data_node_whitelist',
+  validateBody,
   async (req, res, next) => {
     try {
-      const { rp_node_id } = req.body;
-      await ndid.removeNodeFromYourDataRPNodeWhitelist({
-        rpNodeId: rp_node_id,
+      const { node_id } = req.body;
+      await ndid.removeNodeFromYourDataNodeWhitelist({
+        nodeId: node_id,
       });
       res.status(204).end();
       next();
@@ -767,9 +847,9 @@ router.post(
   }
 );
 
-router.post('/enable_your_data_rp_node_whitelist', async (req, res, next) => {
+router.post('/enable_your_data_node_whitelist', async (req, res, next) => {
   try {
-    await ndid.enableYourDataRPNodeWhitelist();
+    await ndid.enableYourDataNodeWhitelist();
     res.status(204).end();
     next();
   } catch (error) {
@@ -777,59 +857,9 @@ router.post('/enable_your_data_rp_node_whitelist', async (req, res, next) => {
   }
 });
 
-router.post('/disable_your_data_rp_node_whitelist', async (req, res, next) => {
+router.post('/disable_your_data_node_whitelist', async (req, res, next) => {
   try {
-    await ndid.disableYourDataRPNodeWhitelist();
-    res.status(204).end();
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post(
-  '/add_node_to_your_data_as_node_whitelist',
-  async (req, res, next) => {
-    try {
-      const { as_node_id } = req.body;
-      await ndid.addNodeToYourDataASNodeWhitelist({ asNodeId: as_node_id });
-      res.status(204).end();
-      next();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.post(
-  '/remove_node_from_your_data_as_node_whitelist',
-  async (req, res, next) => {
-    try {
-      const { as_node_id } = req.body;
-      await ndid.removeNodeFromYourDataASNodeWhitelist({
-        asNodeId: as_node_id,
-      });
-      res.status(204).end();
-      next();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.post('/enable_your_data_as_node_whitelist', async (req, res, next) => {
-  try {
-    await ndid.enableYourDataASNodeWhitelist();
-    res.status(204).end();
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post('/disable_your_data_as_node_whitelist', async (req, res, next) => {
-  try {
-    await ndid.disableYourDataASNodeWhitelist();
+    await ndid.disableYourDataNodeWhitelist();
     res.status(204).end();
     next();
   } catch (error) {

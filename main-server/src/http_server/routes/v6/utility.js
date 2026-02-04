@@ -309,7 +309,20 @@ router.get('/namespaces', async (req, res, next) => {
 
 router.get('/services', async (req, res, next) => {
   try {
-    res.status(200).json(await tendermintNdid.getServiceList());
+    const services = await tendermintNdid.getServiceList({ domain: '' });
+
+    const result = services.map((service) => {
+      const svc = { ...service };
+
+      delete svc.domain;
+      delete svc.requester_node_whitelist_enabled;
+
+      return {
+        ...svc,
+      };
+    });
+
+    res.status(200).json(result);
     next();
   } catch (error) {
     next(error);
@@ -331,6 +344,9 @@ router.get('/services/:service_id', async (req, res, next) => {
       if (serviceDetail.data_schema_version === 'n/a') {
         delete serviceDetail.data_schema_version;
       }
+
+      delete serviceDetail.domain;
+      delete serviceDetail.requester_node_whitelist_enabled;
 
       res.status(200).json(serviceDetail);
     }

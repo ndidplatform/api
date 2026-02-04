@@ -177,7 +177,7 @@ export async function notifyIncomingRequestByCallback(
       ...eventDataForCallback,
     },
     retry: true,
-    shouldRetry: 'common.isRequestClosedOrTimedOut',
+    shouldRetry: 'common.isRequestNotClosedOrTimedOut',
     shouldRetryArguments: [eventDataForCallback.request_id],
   });
 

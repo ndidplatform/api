@@ -312,6 +312,10 @@ export default {
         properties: {
           service_id: { type: 'string', minLength: 1 },
           service_name: { type: 'string', minLength: 1 },
+          data_schema: { type: 'string', minLength: 1 },
+          data_schema_version: { type: 'string', minLength: 1 },
+          domain: { type: 'string', minLength: 1 },
+          requester_node_whitelist_enabled: { type: 'boolean' },
         },
         required: ['service_id', 'service_name'],
       },
@@ -323,8 +327,12 @@ export default {
         properties: {
           service_id: { type: 'string', minLength: 1 },
           service_name: { type: 'string', minLength: 1 },
+          data_schema: { type: 'string', minLength: 1 },
+          data_schema_version: { type: 'string', minLength: 1 },
+          domain: { type: 'string', minLength: 1 },
+          requester_node_whitelist_enabled: { type: 'boolean' },
         },
-        required: ['service_id', 'service_name'],
+        required: ['service_id'],
       },
     },
     '/ndid/enable_service': {
@@ -605,62 +613,58 @@ export default {
         required: ['supported_aal_list'],
       },
     },
+    '/ndid/add_node_to_service_requester_node_whitelist': {
+      body: {
+        type: 'object',
+        properties: {
+          node_id: {
+            type: 'string',
+            minLength: 1,
+          },
+          service_id: {
+            type: 'string',
+            minLength: 1,
+          },
+        },
+      },
+    },
+    '/ndid/remove_node_from_service_requester_node_whitelist': {
+      body: {
+        type: 'object',
+        properties: {
+          node_id: {
+            type: 'string',
+            minLength: 1,
+          },
+          service_id: {
+            type: 'string',
+            minLength: 1,
+          },
+        },
+      },
+    },
     // YourData
-    '/ndid/add_node_to_your_data_rp_node_whitelist': {
+    '/ndid/add_node_to_your_data_node_whitelist': {
       body: {
         type: 'object',
         properties: {
-          rp_node_id: {
+          node_id: {
             type: 'string',
             minLength: 1,
           },
         },
       },
     },
-    '/ndid/remove_node_from_your_data_rp_node_whitelist': {
+    '/ndid/remove_node_from_your_data_node_whitelist': {
       body: {
         type: 'object',
         properties: {
-          rp_node_id: {
+          node_id: {
             type: 'string',
             minLength: 1,
           },
         },
       },
-    },
-    '/ndid/enable_your_data_rp_node_whitelist': {
-      body: {},
-    },
-    '/ndid/disable_your_data_rp_node_whitelist': {
-      body: {},
-    },
-    '/ndid/add_node_to_your_data_as_node_whitelist': {
-      body: {
-        type: 'object',
-        properties: {
-          as_node_id: {
-            type: 'string',
-            minLength: 1,
-          },
-        },
-      },
-    },
-    '/ndid/remove_node_from_your_data_as_node_whitelist': {
-      body: {
-        type: 'object',
-        properties: {
-          as_node_id: {
-            type: 'string',
-            minLength: 1,
-          },
-        },
-      },
-    },
-    '/ndid/enable_your_data_as_node_whitelist': {
-      body: {},
-    },
-    '/ndid/disable_your_data_as_node_whitelist': {
-      body: {},
     },
     '/ndid/add_yourdata_error_code': {
       body: {

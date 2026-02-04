@@ -31,6 +31,8 @@ import {
 
 import parseDataURL from 'data-urls';
 
+import serviceDomain from './service_domain';
+
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as nodeCallback from '../node_callback';
@@ -175,6 +177,7 @@ async function checkIdpListCondition({
 }
 
 async function checkAsListCondition({
+  node_id,
   data_request_list,
   namespace,
   min_ial,
@@ -195,11 +198,51 @@ async function checkAsListCondition({
     });
   }
 
+  const services = await tendermintNdid.getServiceList();
+
+  // for node domain permission check (e.g. YourData)
+  const containsServiceDomains = new Set();
+
   await Promise.all(
     data_request_list.map(async (dataRequest) => {
-      const { service_id } = dataRequest;
-      let { as_id_list, min_as } = dataRequest;
-      if (as_id_list != null && as_id_list.length === 0) as_id_list = null;
+      const { service_id, min_as } = dataRequest;
+
+      const service = services.find(
+        (service) => service.service_id === service_id
+      );
+      if (service == null) {
+        throw new CustomError({
+          errorType: errorType.SERVICE_ID_NOT_FOUND,
+          details: {
+            service_id,
+          },
+        });
+      }
+      if (service.domain != null) {
+        containsServiceDomains.add(service.domain);
+      }
+
+      // check if requester node ID is allowed to create request with this service ID
+      if (service.requester_node_whitelist_enabled) {
+        const { allowed } =
+          await tendermintNdid.getServiceRequesterNodePermission({
+            nodeId: node_id,
+            serviceId: service_id,
+          });
+        if (!allowed) {
+          throw new CustomError({
+            errorType: errorType.SERVICE_REQUEST_NOT_ALLOWED,
+            details: {
+              service_id,
+            },
+          });
+        }
+      }
+
+      let { as_id_list } = dataRequest;
+      if (as_id_list != null && as_id_list.length === 0) {
+        as_id_list = null;
+      }
 
       //all as_list offer the service
       let potential_as_list = await tendermintNdid.getAsNodesInfoByServiceId({
@@ -288,6 +331,33 @@ async function checkAsListCondition({
         dataRequest.as_id_list = potential_as_list.map(
           (node_info) => node_info.node_id
         );
+      }
+    })
+  );
+
+  // If service IDs in data request list are in a domain (e.g. YourData),
+  // check if caller node ID is allowed to use that domain
+  await Promise.all(
+    [...containsServiceDomains].map(async (domain) => {
+      if (domain === serviceDomain.YOURDATA) {
+        const { allowed } = await tendermintNdid.getYourDataPermissionStatus({
+          nodeId: node_id,
+        });
+        if (!allowed) {
+          throw new CustomError({
+            errorType: errorType.SERVICE_REQUEST_NOT_ALLOWED,
+            details: {
+              domain,
+            },
+          });
+        }
+      } else {
+        throw new CustomError({
+          errorType: errorType.SERVICE_REQUEST_NOT_ALLOWED,
+          details: {
+            domain,
+          },
+        });
       }
     })
   );
@@ -434,9 +504,8 @@ export async function createRequest(
   }
 
   try {
-    const { allowed_mode_list } = await tendermintNdid.getAllowedModeList(
-      purpose
-    );
+    const { allowed_mode_list } =
+      await tendermintNdid.getAllowedModeList(purpose);
     if (!allowed_mode_list.includes(mode)) {
       throw new CustomError({
         errorType: errorType.UNSUPPORTED_MODE,
@@ -531,6 +600,7 @@ export async function createRequest(
 
     if (data_request_list != null && data_request_list.length > 0) {
       await checkAsListCondition({
+        node_id,
         data_request_list,
         namespace,
         min_ial,
@@ -882,7 +952,11 @@ export async function createRequestInternalAsyncAfterBlockchain(
       creation_time,
     });
 
-    await setTimeoutScheduler(node_id, request_id, request_timeout);
+    await setTimeoutScheduler({
+      nodeId: node_id,
+      requestId: request_id,
+      secondsToTimeout: request_timeout,
+    });
 
     const {
       min_idp: _1, // eslint-disable-line no-unused-vars

@@ -30,23 +30,19 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import { callbackToClient } from '../../callback';
 import * as utils from '../../utils';
 import * as cryptoUtils from '../../utils/crypto';
-import * as lt from '../../utils/long_timeout';
 import * as config from '../../config';
 import { getErrorObjectForClient } from '../../utils/error';
 import * as cacheDb from '../../db/cache';
 
-import { delegateToWorker } from '../../master-worker-interface/server';
-import { broadcastRemoveRequestTimeoutScheduler } from '../../master-worker-interface/client';
-
 import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
-import MODE from '../../mode';
 import { getFunction } from '../../functions';
 
 export * from './create_request';
 export * from './close_request';
 export * from './create_message';
 export * from './thai_citizen_id';
+export * from './timeout_scheduler';
 
 let processingInboundMessagesCount = 0;
 
@@ -92,31 +88,6 @@ export async function setMessageQueueAddress() {
     }
     messageQueueAddressesSet = true;
   }
-}
-
-export async function resumeTimeoutScheduler(nodeIds) {
-  if (nodeIds == null) return;
-  nodeIds.forEach(async (nodeId) => {
-    const schedulers = await cacheDb.getAllTimeoutScheduler(nodeId);
-    schedulers.forEach(({ requestId, unixTimeout }) => {
-      const timeoutInSeconds = (unixTimeout - Date.now()) / 1000;
-      logger.info({
-        message: 'Resuming timeout schedulers',
-        nodeId,
-        requestId,
-        unixTimeout,
-        timeoutInSeconds,
-      });
-      if (config.mode === MODE.STANDALONE) {
-        runTimeoutScheduler(nodeId, requestId, unixTimeout);
-      } else if (config.mode === MODE.MASTER) {
-        delegateToWorker({
-          fnName: 'common.runTimeoutScheduler',
-          args: [nodeId, requestId, unixTimeout],
-        });
-      }
-    });
-  });
 }
 
 export function checkRequestMessageIntegrity(
@@ -244,14 +215,6 @@ export async function getIdpMQDestinations({
 
 //=========================================== Request related ========================================
 
-export let timeoutScheduler = {};
-
-export function stopAllTimeoutScheduler() {
-  for (let nodeIdAndrequestId in timeoutScheduler) {
-    lt.clearTimeout(timeoutScheduler[nodeIdAndrequestId]);
-  }
-}
-
 export async function timeoutRequest(nodeId, requestId) {
   try {
     if (!tendermint.blockchainInitialized) {
@@ -330,48 +293,6 @@ export function timeoutRequestAfterBlockchain(
       err: error,
     });
   }
-}
-
-export function runTimeoutScheduler(nodeId, requestId, unixTimeout) {
-  const now = Date.now();
-  if (now >= unixTimeout) {
-    timeoutRequest(nodeId, requestId);
-  } else {
-    if (config.mode === MODE.WORKER) {
-      pendingRequestTimeout[requestId] = { deadline: unixTimeout };
-    }
-    const timeout = unixTimeout - now;
-    timeoutScheduler[`${nodeId}:${requestId}`] = lt.setTimeout(() => {
-      timeoutRequest(nodeId, requestId);
-    }, timeout);
-  }
-}
-
-export async function setTimeoutScheduler(nodeId, requestId, secondsToTimeout) {
-  const unixTimeout = Date.now() + secondsToTimeout * 1000;
-  await cacheDb.setTimeoutScheduler(nodeId, requestId, unixTimeout);
-  runTimeoutScheduler(nodeId, requestId, unixTimeout);
-}
-
-export function removeTimeoutScheduler(nodeId, requestId) {
-  if (
-    config.mode === MODE.WORKER &&
-    timeoutScheduler[`${nodeId}:${requestId}`] == null
-  ) {
-    // Scheduler may be on another worker
-    return broadcastRemoveRequestTimeoutScheduler({ nodeId, requestId });
-  } else {
-    return removeTimeoutSchedulerInternal(nodeId, requestId);
-  }
-}
-
-export async function removeTimeoutSchedulerInternal(nodeId, requestId) {
-  lt.clearTimeout(timeoutScheduler[`${nodeId}:${requestId}`]);
-  await cacheDb.removeTimeoutScheduler(nodeId, requestId);
-  if (config.mode === MODE.WORKER) {
-    delete pendingRequestTimeout[requestId];
-  }
-  delete timeoutScheduler[`${nodeId}:${requestId}`];
 }
 
 export async function getAndSaveIdpResponseValid({
@@ -487,7 +408,7 @@ export async function getAndSaveIdpResponseValid({
  * @param {string} requestId
  * @returns {boolean}
  */
-export async function isRequestClosedOrTimedOut(requestId) {
+export async function isRequestNotClosedOrTimedOut(requestId) {
   if (requestId) {
     const requestDetail = await tendermintNdid.getRequestDetail({ requestId });
     if (requestDetail.closed || requestDetail.timed_out) {

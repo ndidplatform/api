@@ -763,6 +763,81 @@ module.exports = {
     message: 'Token expiration time must be later than current time',
     clientError: true,
   },
+  SERVICE_REQUEST_NOT_ALLOWED: {
+    code: 20099,
+    message: 'Service request not allowed',
+    clientError: true,
+  },
+  TOKEN_EXPIRATION_TIME_MUST_BE_LATER_THAN_ISSUE_TIME: {
+    code: 20100,
+    message: 'Token expiration time must be later than issue time',
+    clientError: true,
+  },
+  TOKEN_MUST_NOT_HAVE_EXPIRATION_TIME: {
+    code: 20101,
+    message: 'Token must not have expiration time',
+    clientError: true,
+  },
+  TOKEN_MUST_HAVE_EXPIRATION_TIME: {
+    code: 20102,
+    message: 'Token must have expiration time',
+    clientError: true,
+  },
+  NODE_IS_NOT_ACTIVE: {
+    code: 20103,
+    message: 'Node is not active',
+    clientError: true,
+  },
+  NO_YOURDATA_PERMISSION: {
+    code: 20104,
+    message: 'No YourData permission',
+    clientError: true,
+  },
+  AS_NODE_NO_YOURDATA_PERMISSION: {
+    code: 20105,
+    message: 'AS node has no YourData permission',
+    clientError: true,
+  },
+  TOKEN_EXPIRED: {
+    code: 20106,
+    message: 'Token is expired',
+    clientError: true,
+  },
+  TOKEN_RP_NODE_ID_MISMATCH: {
+    code: 20107,
+    message: 'Mismatch RP node ID in token',
+    clientError: true,
+  },
+  TOKEN_AS_NODE_ID_MISMATCH: {
+    code: 20108,
+    message: 'Mismatch AS node ID in token',
+    clientError: true,
+  },
+  TOKEN_NAMESPACE_MISMATCH: {
+    code: 20109,
+    message: 'Mismatch namespace in token',
+    clientError: true,
+  },
+  TOKEN_IDENTIFIER_MISMATCH: {
+    code: 20110,
+    message: 'Mismatch identifier in token',
+    clientError: true,
+  },
+  REQUESTED_SERVICE_ID_NOT_FOUND_IN_TOKEN: {
+    code: 20111,
+    message: 'Requested service ID not found in token',
+    clientError: true,
+  },
+  REQUESTED_SERVICE_EXTENSION_NOT_FOUND_IN_TOKEN: {
+    code: 20112,
+    message: 'Requested service extension not found in token',
+    clientError: true,
+  },
+  INVALID_ENCRYPTED_DATA_HASH: {
+    code: 20113,
+    message: 'Invalid encrypted data hash (hash not matched)',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

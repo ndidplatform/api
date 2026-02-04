@@ -54,6 +54,14 @@ const signingAlgorithmMap = {
   [cryptoUtils.signatureAlgorithm.Ed25519.name]: JWT_ALG.EdDSA,
 };
 
+const jwtToSigningAlgorithmMap = Object.entries(signingAlgorithmMap).reduce(
+  (acc, [internalName, jwtAlg]) => {
+    acc[jwtAlg] = internalName;
+    return acc;
+  },
+  {}
+);
+
 export async function createJWT({ nodeId, publicKey, payload }) {
   // `publicKey` from result of tendermintNdid.getNodeSigningPubKey(nodeId)
 
@@ -98,4 +106,53 @@ export async function createJWT({ nodeId, publicKey, payload }) {
   const signedToken = token + '.' + base64url(jwtSignature);
 
   return signedToken;
+}
+
+export function parseJWT(signedToken) {
+  const signedTokenParts = signedToken.split('.');
+
+  if (signedTokenParts.length !== 3) {
+    throw new Error('invalid token format');
+  }
+
+  const encodedHeader = signedTokenParts[0];
+  const encodedPayload = signedTokenParts[1];
+  const encodedSignature = signedTokenParts[2];
+
+  const headerJSON = base64url.decode(encodedHeader);
+  const payloadJSON = base64url.decode(encodedPayload);
+  const jwtSignature = base64url.toBuffer(encodedSignature);
+
+  const header = JSON.parse(headerJSON);
+  const payload = JSON.parse(payloadJSON);
+
+  const jwtAlg = header.alg;
+  const signingAlgorithm = jwtToSigningAlgorithmMap[jwtAlg];
+  if (jwtAlg == null) {
+    throw new Error(`unsupported signing algorithm: ${jwtAlg}`);
+  }
+
+  let signature;
+  if (
+    [JWT_ALG.ES256, JWT_ALG.ES384, JWT_ALG.ES512, JWT_ALG.ES256K].includes(
+      header.alg
+    )
+  ) {
+    signature = cryptoUtils.convertEcdsaIEEEP1363SigToASN1Sig(
+      signingAlgorithm,
+      jwtSignature
+    );
+  } else {
+    signature = jwtSignature;
+  }
+
+  const token = encodedHeader + '.' + encodedPayload;
+
+  return {
+    header,
+    payload,
+    token, // for signature verification
+    signature, // ASN.1 DER
+    signingAlgorithm,
+  };
 }

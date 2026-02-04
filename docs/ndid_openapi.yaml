@@ -1,0 +1,1227 @@
+openapi: 3.0.3
+info:
+  title: NDID Role API
+  description: API specific to the National Digital ID (NDID) role for blockchain and node management.
+  version: '7.0'
+servers:
+  - url: http://localhost:8080
+    description: Local NDID API server
+paths:
+  /ndid/init_ndid:
+    post:
+      summary: Initialize blockchain
+      description: Initialize blockchain with public keys of NDID node.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - signing_public_key
+                - signing_key_algorithm
+                - signing_algorithm
+                - signing_master_public_key
+                - signing_master_key_algorithm
+                - signing_master_algorithm
+                - encryption_public_key
+                - encryption_key_algorithm
+                - encryption_algorithm
+              properties:
+                signing_public_key:
+                  type: string
+                  description: Node signing public key
+                signing_key_algorithm:
+                  type: string
+                  enum:
+                    - RSA
+                    - EC
+                    - Ed25519
+                  description: Signing algorithm for this node
+                signing_algorithm:
+                  type: string
+                  enum:
+                    - RSASSA_PSS_SHA_256
+                    - RSASSA_PSS_SHA_384
+                    - RSASSA_PSS_SHA_512
+                    - RSASSA_PKCS1_V1_5_SHA_256
+                    - RSASSA_PKCS1_V1_5_SHA_384
+                    - RSASSA_PKCS1_V1_5_SHA_512
+                    - ECDSA_SHA_256
+                    - ECDSA_SHA_384
+                    - Ed25519
+                  description: Key algorithm of signing_public_key.
+                signing_master_public_key:
+                  type: string
+                  description: Node signing master public key
+                signing_master_key_algorithm:
+                  type: string
+                  enum:
+                    - RSA
+                    - EC
+                    - Ed25519
+                  description: Signing algorithm for this node's master key
+                signing_master_algorithm:
+                  type: string
+                  enum:
+                    - RSASSA_PSS_SHA_256
+                    - RSASSA_PSS_SHA_384
+                    - RSASSA_PSS_SHA_512
+                    - RSASSA_PKCS1_V1_5_SHA_256
+                    - RSASSA_PKCS1_V1_5_SHA_384
+                    - RSASSA_PKCS1_V1_5_SHA_512
+                    - ECDSA_SHA_256
+                    - ECDSA_SHA_384
+                    - Ed25519
+                  description: Key algorithm of signing_master_public_key.
+                encryption_public_key:
+                  type: string
+                  description: Node encryption public key
+                encryption_key_algorithm:
+                  type: string
+                  enum: [RSA]
+                  description: Encryption algorithm for this node
+                encryption_algorithm:
+                  type: string
+                  enum:
+                    - RSAES_PKCS1_V1_5
+                    - RSAES_OAEP_SHA_1
+                    - RSAES_OAEP_SHA_256
+                  description: Key algorithm of encryption_public_key.
+                chain_history_info:
+                  type: string
+                  description: Arbitrary string containing information of previous chains from migration.
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/end_init:
+    post:
+      summary: End initialization
+      description: Call when initialization is done (e.g. after migration).
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/register_node:
+    post:
+      summary: Register a new node
+      tags:
+        - Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeRegistration'
+      responses:
+        '201':
+          description: Created
+
+  /ndid/update_node:
+    post:
+      summary: Update node properties
+      tags:
+        - Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeUpdate'
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/enable_node:
+    post:
+      summary: Re-enable node
+      tags:
+        - Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id]
+              properties:
+                node_id:
+                  type: string
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/disable_node:
+    post:
+      summary: Disable node
+      tags:
+        - Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id]
+              properties:
+                node_id:
+                  type: string
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/set_node_token:
+    post:
+      summary: Set node token
+      tags:
+        - Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenAdjustment'
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/add_node_token:
+    post:
+      summary: Add node token
+      tags:
+        - Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenAdjustment'
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/reduce_node_token:
+    post:
+      summary: Reduce node token
+      tags:
+        - Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenAdjustment'
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/create_namespace:
+    post:
+      summary: Create namespace
+      tags:
+        - Namespace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Namespace'
+      responses:
+        '201':
+          description: Created
+
+  /ndid/update_namespace:
+    post:
+      summary: Update namespace
+      tags:
+        - Namespace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Namespace'
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/enable_namespace:
+    post:
+      summary: Enable namespace
+      tags:
+        - Namespace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [namespace]
+              properties:
+                namespace:
+                  type: string
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/disable_namespace:
+    post:
+      summary: Disable namespace
+      tags:
+        - Namespace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [namespace]
+              properties:
+                namespace:
+                  type: string
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/create_service:
+    post:
+      summary: Create service
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCreation'
+      responses:
+        '201':
+          description: Created
+
+  /ndid/update_service:
+    post:
+      summary: Update service
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceUpdate'
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/enable_service:
+    post:
+      summary: Enable service
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service_id]
+              properties:
+                service_id:
+                  type: string
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/disable_service:
+    post:
+      summary: Disable service
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service_id]
+              properties:
+                service_id:
+                  type: string
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/set_service_price_ceiling:
+    post:
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service_id, price_ceiling_by_currency_list]
+              properties:
+                service_id:
+                  type: string
+                price_ceiling_by_currency_list:
+                  type: array
+                  items:
+                    type: object
+                    required: [currency, price]
+                    properties:
+                      currency:
+                        type: string
+                      price:
+                        type: number
+                        minimum: 0
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/set_service_price_min_effective_datetime_delay:
+    post:
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [duration_second]
+              properties:
+                service_id:
+                  type: string
+                duration_second:
+                  type: integer
+                  minimum: 1
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/set_validator:
+    post:
+      summary: Set Tendermint validator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [public_key, power]
+              properties:
+                public_key:
+                  type: string
+                power:
+                  type: number
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/approve_service:
+    post:
+      summary: Approve AS node service
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id, service_id]
+              properties:
+                node_id:
+                  type: string
+                service_id:
+                  type: string
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/enable_service_destination:
+    post:
+      summary: Re-enable approved AS service
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id, service_id]
+              properties:
+                node_id:
+                  type: string
+                service_id:
+                  type: string
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/disable_service_destination:
+    post:
+      summary: Disable approved AS service
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id, service_id]
+              properties:
+                node_id:
+                  type: string
+                service_id:
+                  type: string
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/add_node_to_proxy_node:
+    post:
+      summary: Add child to proxy node
+      tags:
+        - Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProxyNodeAddition'
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/update_node_proxy_node:
+    post:
+      summary: Update proxy child node
+      tags:
+        - Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProxyNodeUpdate'
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/remove_node_from_proxy_node:
+    post:
+      summary: Remove child from proxy node
+      tags:
+        - Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id]
+              properties:
+                node_id:
+                  type: string
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/set_last_block:
+    post:
+      summary: Set last block height
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [block_height]
+              properties:
+                block_height:
+                  type: number
+                  minimum: -1
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/set_allowed_mode_list:
+    post:
+      summary: Set allowed modes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [purpose, allowed_mode_list]
+              properties:
+                purpose:
+                  type: string
+                allowed_mode_list:
+                  type: array
+                  items:
+                    type: number
+                    enum: [1, 2, 3]
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/get_allowed_min_ial_for_register_identity_at_first_idp:
+    post:
+      summary: Get allowed min IAL
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [min_ial]
+                properties:
+                  min_ial:
+                    type: number
+              example:
+                min_ial: 2.1
+
+  /ndid/set_allowed_min_ial_for_register_identity_at_first_idp:
+    post:
+      summary: Set allowed min IAL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [min_ial]
+              properties:
+                min_ial:
+                  type: number
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/get_node_id_list:
+    post:
+      summary: Get node ID list
+      tags:
+        - Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum: ['', rp, idp, as]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [node_id_list]
+                properties:
+                  node_id_list:
+                    type: array
+                    items:
+                      type: string
+
+  /ndid/add_error_code:
+    post:
+      summary: Add error code
+      tags:
+        - Error Code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [error_code, type, description]
+              properties:
+                error_code:
+                  $ref: '#/components/schemas/ErrorCode'
+                type:
+                  type: string
+                  enum: [idp, as]
+                description:
+                  type: string
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/remove_error_code:
+    post:
+      summary: Remove error code
+      tags:
+        - Error Code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [error_code, type]
+              properties:
+                error_code:
+                  $ref: '#/components/schemas/ErrorCode'
+                type:
+                  type: string
+                  enum: [idp, as]
+      responses:
+        '204':
+          description: No Content
+
+  /ndid/add_request_type:
+    post:
+      summary: Add request type
+      tags:
+        - Request Type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully added.
+
+  /ndid/remove_request_type:
+    post:
+      summary: Remove request type
+      tags:
+        - Request Type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully removed.
+
+  /ndid/add_suppressed_identity_modification_notification_node:
+    post:
+      summary: Suppress identity modification notifications for a node
+      tags:
+        - Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id]
+              properties:
+                node_id:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully added.
+
+  /ndid/remove_suppressed_identity_modification_notification_node:
+    post:
+      summary: Unsuppress identity modification notifications for a node
+      tags:
+        - Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id]
+              properties:
+                node_id:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully removed.
+
+  /ndid/add_allowed_node_supported_feature:
+    post:
+      summary: Add supported feature to allowed list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully added.
+
+  /ndid/remove_allowed_node_supported_feature:
+    post:
+      summary: Remove supported feature from allowed list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully removed.
+
+  /ndid/set_supported_ial_list:
+    post:
+      summary: Set global supported IAL list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supported_ial_list]
+              properties:
+                supported_ial_list:
+                  type: array
+                  items:
+                    type: number
+                    minimum: 0
+      responses:
+        '204':
+          description: Successfully updated.
+
+  /ndid/set_supported_aal_list:
+    post:
+      summary: Set global supported AAL list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supported_aal_list]
+              properties:
+                supported_aal_list:
+                  type: array
+                  items:
+                    type: number
+                    minimum: 0
+      responses:
+        '204':
+          description: Successfully updated.
+
+  /ndid/add_node_to_service_requester_node_whitelist:
+    post:
+      summary: Add node to service requester node whitelist
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                node_id:
+                  type: string
+                  minLength: 1
+                service_id:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully added.
+
+  /ndid/remove_node_from_service_requester_node_whitelist:
+    post:
+      summary: Remove node from service requester node whitelist
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                node_id:
+                  type: string
+                  minLength: 1
+                service_id:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully removed.
+
+  /ndid/enable_service_requester_node_whitelist:
+    post:
+      summary: Enable service requester node whitelist
+      tags:
+        - Service
+      responses:
+        '204':
+          description: Successfully enabled.
+
+  /ndid/disable_service_requester_node_whitelist:
+    post:
+      summary: Disable service requester node whitelist
+      tags:
+        - Service
+      responses:
+        '204':
+          description: Successfully disabled.
+
+  # YourData
+
+  /ndid/add_node_to_your_data_node_whitelist:
+    post:
+      summary: Add node to YourData whitelist
+      tags:
+        - YourData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id]
+              properties:
+                node_id:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully added.
+
+  /ndid/remove_node_from_your_data_node_whitelist:
+    post:
+      summary: Remove node from YourData whitelist
+      tags:
+        - YourData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [node_id]
+              properties:
+                node_id:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully removed.
+
+  /ndid/enable_your_data_node_whitelist:
+    post:
+      summary: Enable YourData node whitelist
+      tags:
+        - YourData
+      responses:
+        '204':
+          description: Successfully enabled.
+
+  /ndid/disable_your_data_node_whitelist:
+    post:
+      summary: Disable YourData node whitelist
+      tags:
+        - YourData
+      responses:
+        '204':
+          description: Successfully disabled.
+
+  /ndid/add_yourdata_error_code:
+    post:
+      summary: Add YourData error code
+      tags:
+        - YourData - Error Code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [error_code, type, description]
+              properties:
+                error_code:
+                  $ref: '#/components/schemas/ErrorCode'
+                type:
+                  type: string
+                  enum: [as]
+                description:
+                  type: string
+      responses:
+        '204':
+          description: Successfully added.
+
+  /ndid/remove_yourdata_error_code:
+    post:
+      summary: Remove YourData error code
+      tags:
+        - YourData - Error Code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [error_code, type]
+              properties:
+                error_code:
+                  $ref: '#/components/schemas/ErrorCode'
+                type:
+                  type: string
+                  enum: [as]
+      responses:
+        '204':
+          description: Successfully removed.
+
+components:
+  schemas:
+    NodeRegistration:
+      type: object
+      required:
+        - node_id
+        - node_name
+        - signing_public_key
+        - signing_key_algorithm
+        - signing_algorithm
+        - signing_master_public_key
+        - signing_master_key_algorithm
+        - signing_master_algorithm
+        - encryption_public_key
+        - encryption_key_algorithm
+        - encryption_algorithm
+        - role
+      properties:
+        node_id:
+          type: string
+        node_name:
+          type: string
+        signing_public_key:
+          type: string
+          description: Node signing public key
+        signing_key_algorithm:
+          type: string
+          enum:
+            - RSA
+            - EC
+            - Ed25519
+          description: Signing algorithm for this node
+        signing_algorithm:
+          type: string
+          enum:
+            - RSASSA_PSS_SHA_256
+            - RSASSA_PSS_SHA_384
+            - RSASSA_PSS_SHA_512
+            - RSASSA_PKCS1_V1_5_SHA_256
+            - RSASSA_PKCS1_V1_5_SHA_384
+            - RSASSA_PKCS1_V1_5_SHA_512
+            - ECDSA_SHA_256
+            - ECDSA_SHA_384
+            - Ed25519
+          description: Key algorithm of signing_public_key.
+        signing_master_public_key:
+          type: string
+          description: Node signing master public key
+        signing_master_key_algorithm:
+          type: string
+          enum:
+            - RSA
+            - EC
+            - Ed25519
+          description: Signing algorithm for this node's master key
+        signing_master_algorithm:
+          type: string
+          enum:
+            - RSASSA_PSS_SHA_256
+            - RSASSA_PSS_SHA_384
+            - RSASSA_PSS_SHA_512
+            - RSASSA_PKCS1_V1_5_SHA_256
+            - RSASSA_PKCS1_V1_5_SHA_384
+            - RSASSA_PKCS1_V1_5_SHA_512
+            - ECDSA_SHA_256
+            - ECDSA_SHA_384
+            - Ed25519
+          description: Key algorithm of signing_master_public_key.
+        encryption_public_key:
+          type: string
+          description: Node encryption public key
+        encryption_key_algorithm:
+          type: string
+          enum: [RSA]
+          description: Encryption algorithm for this node
+        encryption_algorithm:
+          type: string
+          enum:
+            - RSAES_PKCS1_V1_5
+            - RSAES_OAEP_SHA_1
+            - RSAES_OAEP_SHA_256
+          description: Key algorithm of encryption_public_key.
+        role:
+          type: string
+          enum: [rp, idp, as, proxy]
+        max_ial:
+          type: number
+        max_aal:
+          type: number
+        supported_feature_list:
+          type: array
+          items:
+            type: string
+        agent:
+          type: boolean
+        node_id_whitelist_active:
+          type: boolean
+        node_id_whitelist:
+          type: array
+          items:
+            type: string
+
+    NodeUpdate:
+      type: object
+      required: [node_id]
+      properties:
+        node_id:
+          type: string
+        node_name:
+          type: string
+        max_ial:
+          type: number
+        max_aal:
+          type: number
+        agent:
+          type: boolean
+        supported_feature_list:
+          type: array
+          items:
+            type: string
+        node_id_whitelist_active:
+          type: boolean
+        node_id_whitelist:
+          type: array
+          items:
+            type: string
+
+    TokenAdjustment:
+      type: object
+      required: [node_id, amount]
+      properties:
+        node_id:
+          type: string
+        amount:
+          type: number
+          minimum: 0
+
+    Namespace:
+      type: object
+      required: [namespace]
+      properties:
+        namespace:
+          type: string
+        description:
+          type: string
+        allowed_identifier_count_in_reference_group:
+          type: number
+          minimum: -1
+        allowed_active_identifier_count_in_reference_group:
+          type: number
+          minimum: -1
+
+    ServiceCreation:
+      type: object
+      required: [service_id, service_name]
+      properties:
+        service_id:
+          type: string
+        service_name:
+          type: string
+        data_schema:
+          type: string
+        data_schema_version:
+          type: string
+        domain:
+          $ref: '#/components/schemas/ServiceDomain'
+        requester_node_whitelist_enabled:
+          type: boolean
+
+    ServiceUpdate:
+      type: object
+      required: [service_id]
+      properties:
+        service_id:
+          type: string
+        service_name:
+          type: string
+        data_schema:
+          type: string
+        data_schema_version:
+          type: string
+        domain:
+          $ref: '#/components/schemas/ServiceDomain'
+        requester_node_whitelist_enabled:
+          type: boolean
+
+    ProxyNodeAddition:
+      type: object
+      required: [node_id, proxy_node_id, config]
+      properties:
+        node_id:
+          type: string
+        proxy_node_id:
+          type: string
+        config:
+          $ref: '#/components/schemas/NodeBehindProxyNodeConfig'
+
+    ProxyNodeUpdate:
+      type: object
+      required: [node_id, proxy_node_id]
+      properties:
+        node_id:
+          type: string
+        proxy_node_id:
+          type: string
+        config:
+          $ref: '#/components/schemas/NodeBehindProxyNodeConfig'
+
+    NodeBehindProxyNodeConfig:
+      type: string
+      enum: [KEY_ON_PROXY, KEY_ON_NODE]
+
+    ErrorCode:
+      type: integer
+      minimum: 1
+
+    ServiceDomain:
+      type: string
+      enum: [YourData]

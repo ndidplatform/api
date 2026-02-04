@@ -22,6 +22,7 @@
 
 import crypto from 'crypto';
 
+import { BN } from 'bn.js';
 import asn1 from 'asn1.js';
 
 export const hashAlgorithm = {
@@ -282,10 +283,47 @@ export function convertEcdsaASN1SigToIEEEP1363Sig(algorithm, asn1SigBuffer) {
   }
 
   const rsSig = EcdsaDerSig.decode(asn1SigBuffer, 'der');
+
   return Buffer.concat([
     rsSig.r.toArrayLike(Buffer, 'be', keySize),
     rsSig.s.toArrayLike(Buffer, 'be', keySize),
   ]);
+}
+
+export function convertEcdsaIEEEP1363SigToASN1Sig(
+  algorithm,
+  ieeeP1363SigBuffer
+) {
+  const sigAlg = signatureAlgorithm[algorithm];
+  if (sigAlg == null) {
+    throw new Error('unknown/unsupported algorithm');
+  }
+
+  let keySize;
+  if (sigAlg === signatureAlgorithm.ECDSA_SHA_256) {
+    keySize = 32;
+  } else if (sigAlg === signatureAlgorithm.ECDSA_SHA_384) {
+    keySize = 48;
+  } else {
+    throw new Error('unsupported signature algorithm for ECDSA conversion');
+  }
+
+  // IEEE P1363 format is simply R followed by S, both fixed length
+  if (ieeeP1363SigBuffer.length !== 2 * keySize) {
+    throw new Error('Invalid signature length');
+  }
+
+  const rBuf = ieeeP1363SigBuffer.slice(0, keySize);
+  const sBuf = ieeeP1363SigBuffer.slice(keySize);
+
+  // Encode the r and s values into the ASN.1 DER sequence
+  return EcdsaDerSig.encode(
+    {
+      r: new BN(rBuf),
+      s: new BN(sBuf),
+    },
+    'der'
+  );
 }
 
 /**

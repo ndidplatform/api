@@ -367,4 +367,129 @@ export default {
       },
     ],
   },
+  //
+  // YourData
+  //
+  [messageTypes.YOURDATA_DATA_REQUEST]: {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    type: 'object',
+    properties: {
+      request_id: { type: 'string', minLength: 1 },
+      service_id: { type: 'string', minLength: 1 },
+      service_version: { type: 'string', minLength: 1 },
+      service_extension: { type: 'string', minLength: 1 },
+      rp_node_id: { type: 'string', minLength: 1 },
+      namespace: { type: 'string', minLength: 1 },
+      identifier: { type: 'string', minLength: 1 },
+      request_params: { type: 'string', minLength: 1 },
+      authorization: { type: 'string', minLength: 1 },
+      request_time: { type: 'integer', minimum: 1 },
+      request_timeout: { type: 'integer', minimum: 1 },
+    },
+    required: [
+      'request_id',
+      'service_id',
+      'rp_node_id',
+      'namespace',
+      'identifier',
+      'request_params',
+      'authorization',
+      'request_time',
+      'request_timeout',
+    ],
+  },
+  [messageTypes.YOURDATA_AS_RESPONSE]: {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    anyOf: [
+      {
+        type: 'object',
+        properties: {
+          request_id: { type: 'string', minLength: 1 },
+          as_node_id: { type: 'string', minLength: 1 },
+          service_id: { type: 'string', minLength: 1 },
+          signature: { type: 'string', minLength: 1 },
+          data_salt: { type: 'string', minLength: 1 },
+          packed_data: {
+            type: 'object',
+            properties: {
+              buffer_base64: { type: 'string', minLength: 1 },
+              metadata: {
+                type: 'object',
+                properties: {
+                  compression_algorithm: { type: ['string', 'null'] },
+                  base64_data_url: { type: 'boolean' },
+                  data_url_prefix: { type: 'string', minLength: 1 },
+                },
+                required: ['compression_algorithm'],
+              },
+            },
+            required: ['buffer_base64', 'metadata'],
+          },
+        },
+        required: [
+          'request_id',
+          'as_node_id',
+          'service_id',
+          'signature',
+          'data_salt',
+          'packed_data',
+        ],
+      },
+      // Error response
+      {
+        type: 'object',
+        properties: {
+          request_id: { type: 'string', minLength: 1 },
+          as_node_id: { type: 'string', minLength: 1 },
+          service_id: { type: 'string', minLength: 1 },
+          error_code: { type: 'string', minLength: 1 },
+          error_message: { type: 'string', minLength: 1 },
+        },
+        required: [
+          'request_id',
+          'as_node_id',
+          'service_id',
+          'error_code',
+          'error_message',
+        ],
+      },
+    ],
+  },
+  [messageTypes.YOURDATA_DATA_DECRYPTION_KEY_REQUEST]: {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    type: 'object',
+    properties: {
+      request_id: { type: 'string', minLength: 1 },
+      service_id: { type: 'string', minLength: 1 },
+      rp_node_id: { type: 'string', minLength: 1 },
+      encrypted_data_hash_base64: { type: 'string', minLength: 1 },
+    },
+    required: [
+      'request_id',
+      'service_id',
+      'rp_node_id',
+      'encrypted_data_hash_base64',
+    ],
+  },
+  [messageTypes.YOURDATA_DATA_DECRYPTION_KEY_RESPONSE]: {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    type: 'object',
+    properties: {
+      request_id: { type: 'string', minLength: 1 },
+      as_node_id: { type: 'string', minLength: 1 },
+      key_base64: { type: 'string', minLength: 1 },
+    },
+    required: ['request_id', 'as_node_id', 'key_base64'],
+  },
+  [messageTypes.YOURDATA_STATUS_SYNC]: {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    type: 'object',
+    properties: {
+      request_id: { type: 'string', minLength: 1 },
+      rp_node_id: { type: 'string', minLength: 1 },
+      status: { type: 'string', minLength: 1 },
+      timed_out: { type: 'boolean' },
+    },
+    required: ['request_id', 'rp_node_id', 'status', 'timed_out'],
+  },
 };

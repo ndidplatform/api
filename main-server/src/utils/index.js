@@ -206,7 +206,7 @@ export function extractPaddingFromPrivateEncrypt(cipher, publicKey) {
  * @param {string|Buffer} messageToSign
  * @param {string} nodeId
  * @param {boolean} useMasterKey
- * @return {Buffer} signature
+ * @return {Promise<Buffer>} signature
  */
 export async function createSignature(
   algorithm,

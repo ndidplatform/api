@@ -567,19 +567,17 @@ export function getAllTimeoutScheduler(nodeId) {
     dbName,
     name: 'timeoutScheduler',
     keyName: 'requestId',
-    valueName: 'unixTimeout',
+    valueName: 'timeoutMetadata',
   });
 }
 
-export function setTimeoutScheduler(nodeId, requestId, unixTimeout) {
+export function setTimeoutScheduler(nodeId, requestId, timeoutMetadata) {
   return db.set({
     nodeId,
     dbName,
     name: 'timeoutScheduler',
-    keyName: 'requestId',
     key: requestId,
-    valueName: 'unixTimeout',
-    value: unixTimeout,
+    value: timeoutMetadata,
   });
 }
 
@@ -588,7 +586,6 @@ export function removeTimeoutScheduler(nodeId, requestId) {
     nodeId,
     dbName,
     name: 'timeoutScheduler',
-    keyName: 'requestId',
     key: requestId,
   });
 }
@@ -974,7 +971,7 @@ export function addTaskToRequestProcessQueue(nodeId, requestId, task) {
 }
 
 export function getAllTasksInRequestProcessQueue(nodeId) {
-  return db.getAll({
+  return db.getAllLists({
     nodeId,
     dbName,
     name: 'persistentRequestProcessQueue',
@@ -1145,5 +1142,164 @@ export function removeMessageCreationMetadata(nodeId, messageId) {
     name: 'messageCreationMetadata',
     keyName: 'messageId',
     key: messageId,
+  });
+}
+
+// YourData
+
+export function getYourDataRequestData(nodeId, requestId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'YourData_requestData',
+    key: requestId,
+  });
+}
+
+export function setYourDataRequestData(nodeId, requestId, request, ttl) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'YourData_requestData',
+    key: requestId,
+    value: request,
+    ttl,
+  });
+}
+
+export function removeYourDataRequestData(nodeId, requestId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'YourData_requestData',
+    key: requestId,
+  });
+}
+
+// YourData current request status
+
+export function getYourDataCurrentRequestStatus(nodeId, requestId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'YourData_currentRequestStatus',
+    key: requestId,
+  });
+}
+
+export function setYourDataCurrentRequestStatus(
+  nodeId,
+  requestId,
+  status,
+  ttl,
+  keepTtl
+) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'YourData_currentRequestStatus',
+    key: requestId,
+    value: status,
+    ttl,
+    keepTtl,
+  });
+}
+
+export function removeYourDataCurrentRequestStatus(nodeId, requestId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'YourData_currentRequestStatus',
+    key: requestId,
+  });
+}
+
+// data encryption key
+
+export function getYourDataDataEncryptionKey(nodeId, requestId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'YourData_dataEncryptionKey',
+    key: requestId,
+  });
+}
+
+export function setYourDataDataEncryptionKey(nodeId, requestId, key) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'YourData_dataEncryptionKey',
+    key: requestId,
+    value: key,
+  });
+}
+
+export function removeYourDataDataEncryptionKey(nodeId, requestId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'YourData_dataEncryptionKey',
+    key: requestId,
+  });
+}
+
+// encrypted data received from AS
+
+export function getYourDataEncryptedData(nodeId, requestId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'YourData_encryptionData',
+    key: requestId,
+  });
+}
+
+export function setYourDataEncryptedData(nodeId, requestId, data) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'YourData_encryptionData',
+    key: requestId,
+    value: data,
+  });
+}
+
+export function removeYourDataEncryptedData(nodeId, requestId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'YourData_encryptionData',
+    key: requestId,
+  });
+}
+
+// decrypted data
+
+export function getYourDataDataFromAS(nodeId, requestId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'YourData_dataFromAS',
+    key: requestId,
+  });
+}
+
+export function setYourDataDataFromAS(nodeId, requestId, data) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'YourData_dataFromAS',
+    key: requestId,
+    value: data,
+  });
+}
+
+export function removeYourDataDataFromAS(nodeId, requestId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'YourData_dataFromAS',
+    key: requestId,
   });
 }

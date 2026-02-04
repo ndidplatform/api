@@ -35,6 +35,7 @@ import * as idp from './core/idp';
 import * as as from './core/as';
 import * as proxy from './core/proxy';
 import * as requestProcessManager from './core/request_process_manager';
+import * as yourDataRequestQueueManager from './core/yourdata/request_queue_manager';
 import * as nodeCallback from './core/node_callback';
 import * as nodeKey from './utils/node_key';
 import { getFunction } from './functions';
@@ -361,9 +362,13 @@ async function shutDown() {
     await jobWorker.shutdown();
   }
 
+  mq.stopInbound();
+
   // Wait for async operations which going to use TM/MQ/DB to finish before
   // closing connections
   await requestProcessManager.stop();
+
+  await yourDataRequestQueueManager.stop();
 
   await mq.close();
   tendermint.tendermintWsClient.close();

@@ -424,9 +424,8 @@ export async function processRawMessage({
 
       const stringToVerify = `${proxyMessageHashBase64}|${receiverNodeId}|${senderNodeId}`;
 
-      const proxyPublicKey = await tendermintNdid.getNodeSigningPubKey(
-        senderNodeId
-      );
+      const proxyPublicKey =
+        await tendermintNdid.getNodeSigningPubKey(senderNodeId);
 
       const signatureValid = utils.verifySignature(
         proxyPublicKey.algorithm,
@@ -487,8 +486,8 @@ export async function processRawMessage({
       messageCompressionAlgorithm
     );
 
-    const { idp_id, rp_id, as_id } = message;
-    const nodeId = idp_id || rp_id || as_id;
+    const { idp_id, rp_id, rp_node_id, as_id, as_node_id } = message;
+    const nodeId = idp_id || rp_id || rp_node_id || as_id || as_node_id;
     if (nodeId == null) {
       throw new CustomError({
         errorType: errorType.MESSAGE_FROM_UNKNOWN_NODE,
@@ -660,9 +659,8 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
       config.mqMessageCompressMinLength,
       config.mqMessageMaxLength
     );
-  const senderPublicKey = await tendermintNdid.getNodeSigningPubKey(
-    senderNodeId
-  );
+  const senderPublicKey =
+    await tendermintNdid.getNodeSigningPubKey(senderNodeId);
   const messageSignatureBuffer = await utils.createSignature(
     senderPublicKey.algorithm,
     senderPublicKey.version,
@@ -721,9 +719,8 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
         );
         const receiverNodeId = receiver.node_id;
         const senderNodeId = config.nodeId;
-        const senderPublicKey = await tendermintNdid.getNodeSigningPubKey(
-          senderNodeId
-        );
+        const senderPublicKey =
+          await tendermintNdid.getNodeSigningPubKey(senderNodeId);
         const proxySignatureBuffer = await utils.createSignature(
           senderPublicKey.algorithm,
           senderPublicKey.version,
@@ -854,6 +851,10 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
       timestamp,
     }
   );
+}
+
+export function stopInbound() {
+  mqService.eventEmitter.removeAllListeners('message');
 }
 
 export async function close() {

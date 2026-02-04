@@ -44,6 +44,16 @@ function getName(messageType) {
       return 'consentRequestMessage';
     case privateMessageType.DATA_REQUEST:
       return 'dataRequestMessage';
+    case privateMessageType.YOURDATA_DATA_REQUEST:
+      return 'yourdata.dataRequestMessage';
+    case privateMessageType.YOURDATA_AS_RESPONSE:
+      return 'yourdata.asResponseMessage';
+    case privateMessageType.YOURDATA_DATA_DECRYPTION_KEY_REQUEST:
+      return 'yourdata.decryptionKeyRequestMessage';
+    case privateMessageType.YOURDATA_DATA_DECRYPTION_KEY_RESPONSE:
+      return 'yourdata.dataDecryptionKeyResponseMessage';
+    case privateMessageType.YOURDATA_STATUS_SYNC:
+      return 'yourdata.statusSyncMessage';
     default:
       throw new CustomError({
         message: 'Unknown message type',

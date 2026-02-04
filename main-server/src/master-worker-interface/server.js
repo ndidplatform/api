@@ -176,11 +176,11 @@ function handleRequestTimeoutWorkerLost(workerId) {
   );
   const requestTimeoutTask = requestTimeout.tasks;
   for (let requestId in requestTimeoutTask) {
-    const { deadline } = requestTimeoutTask[requestId];
+    const { domain, deadline } = requestTimeoutTask[requestId];
     if (Date.now() < deadline) {
       delegateToWorker({
         fnName: 'common.runTimeoutScheduler',
-        args: [config.nodeId, requestId, deadline],
+        args: [config.nodeId, requestId, domain, deadline],
       });
     }
   }

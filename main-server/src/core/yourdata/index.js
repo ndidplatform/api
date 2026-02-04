@@ -25,13 +25,15 @@ import { v4 as uuidv4 } from 'uuid';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
+import { USAGE_TYPE } from './authorization_token';
+
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as jwtUtils from '../../utils/jwt';
 
 import * as config from '../../config';
 import { role } from '../../node';
 
-export async function createToken({ nodeId, payload }) {
+export async function createSignedToken({ nodeId, payload }) {
   if (role === 'proxy') {
     if (nodeId == null) {
       throw new CustomError({
@@ -57,24 +59,57 @@ export async function createToken({ nodeId, payload }) {
     });
   }
 
-  const nowUnixSeconds = Math.floor(Date.now() / 1000)
+  const nowUnixSeconds = Math.floor(Date.now() / 1000);
 
   // validations
 
-  if (payload.expiration_datetime <= nowUnixSeconds) {
+  if (
+    payload.expiration_datetime != null &&
+    payload.expiration_datetime <= nowUnixSeconds
+  ) {
     throw new CustomError({
-      errorType: errorType.TOKEN_EXPIRATION_TIME_MUST_BE_LATER_THAN_CURRENT_TIME,
+      errorType:
+        errorType.TOKEN_EXPIRATION_TIME_MUST_BE_LATER_THAN_CURRENT_TIME,
       details: {
         nowUnixSeconds,
         expirationDatetime: payload.expiration_datetime,
-      }
+      },
     });
+  }
+
+  if (payload.issue_datetime != null && payload.expiration_datetime != null) {
+    if (payload.issue_datetime >= payload.expiration_datetime) {
+      throw new CustomError({
+        errorType:
+          errorType.TOKEN_EXPIRATION_TIME_MUST_BE_LATER_THAN_ISSUE_TIME,
+        details: {
+          issueDatetime: payload.issue_datetime,
+          expirationDatetime: payload.expiration_datetime,
+        },
+      });
+    }
   }
 
   // TODO: other validations?
   // - rp_node_id ?
   // - namespace + identifier ?
   // - source_request_id_list ?
+
+  // - usage_type
+  // if not "continuous_no_expire", "expiration_datetime" must not be present, otherwise "expiration_datetime" must be included?
+  if (payload.usage_type === USAGE_TYPE.CONTINUOUS_NO_EXPIRE) {
+    if (payload.expiration_datetime != null) {
+      throw new CustomError({
+        errorType: errorType.TOKEN_MUST_NOT_HAVE_EXPIRATION_TIME,
+      });
+    }
+  } else {
+    if (payload.expiration_datetime == null) {
+      throw new CustomError({
+        errorType: errorType.TOKEN_MUST_HAVE_EXPIRATION_TIME,
+      });
+    }
+  }
 
   //
 
@@ -87,9 +122,12 @@ export async function createToken({ nodeId, payload }) {
   const payloadtoSign = {
     token_id: tokenId,
     ...payload,
-    issue_datetime: nowUnixSeconds,
     as_node_signing_key_version: asNodeSigningKeyVersion,
   };
+
+  if (payload.issue_datetime == null) {
+    payloadtoSign.issue_datetime = nowUnixSeconds;
+  }
 
   const jwt = await jwtUtils.createJWT({
     nodeId,

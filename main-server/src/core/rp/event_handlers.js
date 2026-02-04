@@ -25,7 +25,10 @@ import { isAllIdpResponsesValid } from '.';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as common from '../common';
 import * as requestProcessManager from '../request_process_manager';
+import * as yourDataRP from '../yourdata/rp';
+import * as yourDataRequestQueueManager from '../yourdata/request_queue_manager';
 import * as cacheDb from '../../db/cache';
+import { isYourDataMessageType } from '../../mq/message/type';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
@@ -54,6 +57,19 @@ export async function handleMessageFromQueue(
   const requestId = message.request_id;
 
   try {
+    if (isYourDataMessageType(message.type)) {
+      yourDataRequestQueueManager.enqueue(
+        nodeId,
+        requestId,
+        yourDataRP.processMessage,
+        nodeId,
+        messageId,
+        message
+      );
+
+      return;
+    }
+
     const addToProcessQueue =
       await requestProcessManager.handleMessageFromMqWithBlockWait(
         messageId,
