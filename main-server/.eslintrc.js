@@ -28,6 +28,10 @@ module.exports = {
     'arrow-parens': 1,
     'no-await-in-loop': 1,
     'no-useless-catch': 1,
+    'no-use-before-define': [
+      'error',
+      { functions: false, classes: true, variables: true },
+    ],
 
     '@babel/new-cap': 1,
     '@babel/object-curly-spacing': 0,
