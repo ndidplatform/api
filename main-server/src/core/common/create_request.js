@@ -203,6 +203,9 @@ async function checkAsListCondition({
   // for node domain permission check (e.g. YourData)
   const containsServiceDomains = new Set();
 
+  // for destination (AS) node domain permission check (e.g. YourData)
+  const asNodeServiceDomains = new Map();
+
   await Promise.all(
     data_request_list.map(async (dataRequest) => {
       const { service_id, min_as } = dataRequest;
@@ -332,11 +335,23 @@ async function checkAsListCondition({
           (node_info) => node_info.node_id
         );
       }
+
+      if (service.domain != null) {
+        dataRequest.as_id_list.map((asNodeId) => {
+          if (asNodeServiceDomains.has(asNodeId)) {
+            asNodeServiceDomains.get(asNodeId).add(service.domain);
+          } else {
+            const domains = new Set();
+            domains.add(service.domain);
+            asNodeServiceDomains.set(asNodeId, domains);
+          }
+        });
+      }
     })
   );
 
   // If service IDs in data request list are in a domain (e.g. YourData),
-  // check if caller node ID is allowed to use that domain
+  // check if caller node ID is allowed to use domains in request
   await Promise.all(
     [...containsServiceDomains].map(async (domain) => {
       if (domain === serviceDomain.YOURDATA) {
@@ -355,6 +370,40 @@ async function checkAsListCondition({
         throw new CustomError({
           errorType: errorType.SERVICE_REQUEST_NOT_ALLOWED,
           details: {
+            domain,
+          },
+        });
+      }
+    })
+  );
+
+  // check if destination (AS) node ID is allowed to use domains in request
+  const asNodeServiceDomainsFlatten = [];
+  for (const [asNodeId, domains] of asNodeServiceDomains) {
+    [...domains].forEach((domain) => {
+      asNodeServiceDomainsFlatten.push({ asNodeId, domain });
+    });
+  }
+  await Promise.all(
+    asNodeServiceDomainsFlatten.map(async ({ asNodeId, domain }) => {
+      if (domain === serviceDomain.YOURDATA) {
+        const { allowed } = await tendermintNdid.getYourDataPermissionStatus({
+          nodeId: asNodeId,
+        });
+        if (!allowed) {
+          throw new CustomError({
+            errorType: errorType.SERVICE_REQUEST_NOT_ALLOWED,
+            details: {
+              asNodeId,
+              domain,
+            },
+          });
+        }
+      } else {
+        throw new CustomError({
+          errorType: errorType.SERVICE_REQUEST_NOT_ALLOWED,
+          details: {
+            asNodeId,
             domain,
           },
         });
