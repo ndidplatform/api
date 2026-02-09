@@ -1006,6 +1006,24 @@ paths:
         '204':
           description: Successfully removed.
 
+  /ndid/allow_your_data_service_to_be_mixed_in_request:
+    post:
+      summary: Allow YourData service to be mixed in request
+      tags:
+        - YourData
+      responses:
+        '204':
+          description: Successfully allowed.
+
+  /ndid/disallow_your_data_service_to_be_mixed_in_request:
+    post:
+      summary: Disallow YourData service to be mixed in request
+      tags:
+        - YourData
+      responses:
+        '204':
+          description: Successfully disallowed.
+
 components:
   schemas:
     NodeRegistration:

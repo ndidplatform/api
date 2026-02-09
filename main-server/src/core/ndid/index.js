@@ -980,50 +980,6 @@ export async function disableYourDataNodeWhitelist() {
   return tendermintNdid.disableYourDataNodeWhitelist({}, config.nodeId);
 }
 
-// export async function addNodeToYourDataRPNodeWhitelist({ rpNodeId }) {
-//   return tendermintNdid.addNodeToYourDataRPNodeWhitelist(
-//     { rpNodeId },
-//     config.nodeId
-//   );
-// }
-
-// export async function removeNodeFromYourDataRPNodeWhitelist({ rpNodeId }) {
-//   return tendermintNdid.removeNodeFromYourDataRPNodeWhitelist(
-//     { rpNodeId },
-//     config.nodeId
-//   );
-// }
-
-// export async function enableYourDataRPNodeWhitelist() {
-//   return tendermintNdid.enableYourDataRPNodeWhitelist({}, config.nodeId);
-// }
-
-// export async function disableYourDataRPNodeWhitelist() {
-//   return tendermintNdid.disableYourDataRPNodeWhitelist({}, config.nodeId);
-// }
-
-// export async function addNodeToYourDataASNodeWhitelist({ asNodeId }) {
-//   return tendermintNdid.addNodeToYourDataASNodeWhitelist(
-//     { asNodeId },
-//     config.nodeId
-//   );
-// }
-
-// export async function removeNodeFromYourDataASNodeWhitelist({ asNodeId }) {
-//   return tendermintNdid.removeNodeFromYourDataASNodeWhitelist(
-//     { asNodeId },
-//     config.nodeId
-//   );
-// }
-
-// export async function enableYourDataASNodeWhitelist() {
-//   return tendermintNdid.enableYourDataASNodeWhitelist({}, config.nodeId);
-// }
-
-// export async function disableYourDataASNodeWhitelist() {
-//   return tendermintNdid.disableYourDataASNodeWhitelist({}, config.nodeId);
-// }
-
 export async function addYourDataErrorCode({ error_code, type, description }) {
   return tendermintNdid.addYourDataErrorCode(
     { error_code, type, description },
@@ -1036,4 +992,12 @@ export async function removeYourDataErrorCode({ error_code, type }) {
     { error_code, type },
     config.nodeId
   );
+}
+
+export async function allowYourDataServiceToBeMixedInRequest() {
+  return tendermintNdid.allowYourDataServiceToBeMixedInRequest({}, config.nodeId);
+}
+
+export async function disallowYourDataServiceToBeMixedInRequest() {
+  return tendermintNdid.disallowYourDataServiceToBeMixedInRequest({}, config.nodeId);
 }
