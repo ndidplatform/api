@@ -2010,7 +2010,9 @@ export async function enableServiceRequesterNodeWhitelist(
     await tendermint.transact({
       nodeId,
       fnName: 'EnableServiceRequesterNodeWhitelist',
-      params: {},
+      params: {
+        service_id: params.serviceId,
+      },
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
@@ -2034,7 +2036,9 @@ export async function disableServiceRequesterNodeWhitelist(
     await tendermint.transact({
       nodeId,
       fnName: 'DisableServiceRequesterNodeWhitelist',
-      params: {},
+      params: {
+        service_id: params.serviceId,
+      },
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,

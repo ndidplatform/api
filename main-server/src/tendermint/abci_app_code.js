@@ -154,6 +154,12 @@ import errorType from 'ndid-error/type';
 // NodeSupportedFeatureDoesNotExist                              uint32 = 130
 // InvalidValidatorVotingPower                                   uint32 = 131
 // InvalidValidatorPublicKey                                     uint32 = 132
+// InvalidStateChange                                            uint32 = 133
+// ServiceRequestNotAllowed                                      uint32 = 134
+// DuplicateEntry                                                uint32 = 135
+// NotFound                                                      uint32 = 136
+// InvalidServiceDomain                                          uint32 = 137
+// MixedServiceDomainsNotAllowed                                  uint32 = 138
 // UnknownError                                       uint32 = 999
 
 const codeMapping = {
@@ -289,6 +295,12 @@ const codeMapping = {
   130: errorType.ABCI_NODE_SUPPORTED_FEATURE_DOES_NOT_EXIST,
   131: errorType.ABCI_INVALID_VALIDATOR_VOTING_POWER,
   132: errorType.ABCI_INVALID_VALIDATOR_PUBLIC_KEY,
+  133: errorType.ABCI_INVALID_STATE_CHANGE,
+  134: errorType.ABCI_SERVICE_REQUEST_NOT_ALLOWED,
+  135: errorType.ABCI_DUPLICATE_ENTRY,
+  136: errorType.ABCI_NOT_FOUND,
+  137: errorType.ABCI_INVALID_SERVICE_DOMAIN,
+  138: errorType.ABCI_MIXED_SERVICE_DOMAINS_NOT_ALLOWED,
 
   999: errorType.UNKNOWN_ERROR,
 };

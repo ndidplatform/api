@@ -599,7 +599,6 @@ export async function updateService({
   data_schema,
   data_schema_version,
   domain,
-  requester_node_whitelist_enabled,
 }) {
   try {
     if (data_schema != null && data_schema !== 'n/a') {
@@ -620,7 +619,6 @@ export async function updateService({
         data_schema,
         data_schema_version,
         domain,
-        requester_node_whitelist_enabled,
       },
     });
   } catch (error) {
@@ -948,12 +946,18 @@ export async function removeNodeFromServiceRequesterNodeWhitelist({
   );
 }
 
-export async function enableServiceRequesterNodeWhitelist() {
-  return tendermintNdid.enableServiceRequesterNodeWhitelist({}, config.nodeId);
+export async function enableServiceRequesterNodeWhitelist({ serviceId }) {
+  return tendermintNdid.enableServiceRequesterNodeWhitelist(
+    { serviceId },
+    config.nodeId
+  );
 }
 
-export async function disableServiceRequesterNodeWhitelist() {
-  return tendermintNdid.disableServiceRequesterNodeWhitelist({}, config.nodeId);
+export async function disableServiceRequesterNodeWhitelist({ serviceId }) {
+  return tendermintNdid.disableServiceRequesterNodeWhitelist(
+    { serviceId },
+    config.nodeId
+  );
 }
 
 // YourData
@@ -995,9 +999,15 @@ export async function removeYourDataErrorCode({ error_code, type }) {
 }
 
 export async function allowYourDataServiceToBeMixedInRequest() {
-  return tendermintNdid.allowYourDataServiceToBeMixedInRequest({}, config.nodeId);
+  return tendermintNdid.allowYourDataServiceToBeMixedInRequest(
+    {},
+    config.nodeId
+  );
 }
 
 export async function disallowYourDataServiceToBeMixedInRequest() {
-  return tendermintNdid.disallowYourDataServiceToBeMixedInRequest({}, config.nodeId);
+  return tendermintNdid.disallowYourDataServiceToBeMixedInRequest(
+    {},
+    config.nodeId
+  );
 }

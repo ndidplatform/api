@@ -1467,6 +1467,36 @@ module.exports = {
     message: 'Invalid validator public key',
     clientError: true,
   },
+  ABCI_INVALID_STATE_CHANGE: {
+    code: 25096,
+    message: 'Invalid state change',
+    clientError: true,
+  },
+  ABCI_SERVICE_REQUEST_NOT_ALLOWED: {
+    code: 25097,
+    message: 'Service request not allowed',
+    clientError: true,
+  },
+  ABCI_DUPLICATE_ENTRY: {
+    code: 25098,
+    message: 'Duplicate entry',
+    clientError: true,
+  },
+  ABCI_NOT_FOUND: {
+    code: 25099,
+    message: 'Not found',
+    clientError: true,
+  },
+  ABCI_INVALID_SERVICE_DOMAIN: {
+    code: 25100,
+    message: 'Invalid service domain',
+    clientError: true,
+  },
+  ABCI_MIXED_SERVICE_DOMAINS_NOT_ALLOWED: {
+    code: 25101,
+    message: 'Mixed service domains not allowed',
+    clientError: true,
+  },
 
   ABCI_UNAUTHORIZED: {
     code: 35001,

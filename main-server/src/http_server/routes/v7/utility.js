@@ -355,6 +355,25 @@ router.get('/services/:service_id', async (req, res, next) => {
   }
 });
 
+router.get(
+  '/services/:service_id/requester_node_whitelist',
+  async (req, res, next) => {
+    try {
+      const { service_id } = req.params;
+
+      const requesterNodeWhitelist =
+        await tendermintNdid.getServiceRequesterNodeWhitelistByServiceId({
+          serviceId: service_id,
+        });
+
+      res.status(200).json(requesterNodeWhitelist);
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 router.get('/idp_error_codes', async (req, res, next) => {
   try {
     res.status(200).json(await tendermintNdid.getErrorCodeList('idp'));

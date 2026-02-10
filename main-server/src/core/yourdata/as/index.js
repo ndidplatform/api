@@ -72,7 +72,7 @@ export async function setCallbackUrls({ incoming_request_status_update_url }) {
 }
 
 export async function getCallbackUrls() {
-  const callbackNames = CALLBACK_URL_NAME_ARR.map((name) => `as.${name}`);
+  const callbackNames = CALLBACK_URL_NAME_ARR.map((name) => `yourdata_as.${name}`);
   const callbackUrlsArr = await dataDb.getCallbackUrls(
     config.nodeId,
     callbackNames

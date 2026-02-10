@@ -362,7 +362,6 @@ router.post('/update_service', validateBody, async (req, res, next) => {
       data_schema,
       data_schema_version,
       domain,
-      requester_node_whitelist_enabled,
     } = req.body;
 
     await ndid.updateService({
@@ -371,7 +370,6 @@ router.post('/update_service', validateBody, async (req, res, next) => {
       data_schema,
       data_schema_version,
       domain,
-      requester_node_whitelist_enabled,
     });
     res.status(204).end();
     next();
@@ -791,7 +789,8 @@ router.post(
   '/enable_service_requester_node_whitelist',
   async (req, res, next) => {
     try {
-      await ndid.enableServiceRequesterNodeWhitelist();
+      const { service_id } = req.body;
+      await ndid.enableServiceRequesterNodeWhitelist({ serviceId: service_id });
       res.status(204).end();
       next();
     } catch (error) {
@@ -804,7 +803,10 @@ router.post(
   '/disable_service_requester_node_whitelist',
   async (req, res, next) => {
     try {
-      await ndid.disableServiceRequesterNodeWhitelist();
+      const { service_id } = req.body;
+      await ndid.disableServiceRequesterNodeWhitelist({
+        serviceId: service_id,
+      });
       res.status(204).end();
       next();
     } catch (error) {
@@ -901,24 +903,30 @@ router.post(
   }
 );
 
-router.post('/allow_your_data_service_to_be_mixed_in_request', async (req, res, next) => {
-  try {
-    await ndid.allowYourDataServiceToBeMixedInRequest();
-    res.status(204).end();
-    next();
-  } catch (error) {
-    next(error);
+router.post(
+  '/allow_your_data_service_to_be_mixed_in_request',
+  async (req, res, next) => {
+    try {
+      await ndid.allowYourDataServiceToBeMixedInRequest();
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
-router.post('/disallow_your_data_service_to_be_mixed_in_request', async (req, res, next) => {
-  try {
-    await ndid.disallowYourDataServiceToBeMixedInRequest();
-    res.status(204).end();
-    next();
-  } catch (error) {
-    next(error);
+router.post(
+  '/disallow_your_data_service_to_be_mixed_in_request',
+  async (req, res, next) => {
+    try {
+      await ndid.disallowYourDataServiceToBeMixedInRequest();
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 export default router;

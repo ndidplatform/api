@@ -330,7 +330,6 @@ export default {
           data_schema: { type: 'string', minLength: 1 },
           data_schema_version: { type: 'string', minLength: 1 },
           domain: { type: 'string', minLength: 1 },
-          requester_node_whitelist_enabled: { type: 'boolean' },
         },
         required: ['service_id'],
       },
