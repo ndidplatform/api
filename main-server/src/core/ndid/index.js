@@ -997,17 +997,3 @@ export async function removeYourDataErrorCode({ error_code, type }) {
     config.nodeId
   );
 }
-
-export async function allowYourDataServiceToBeMixedInRequest() {
-  return tendermintNdid.allowYourDataServiceToBeMixedInRequest(
-    {},
-    config.nodeId
-  );
-}
-
-export async function disallowYourDataServiceToBeMixedInRequest() {
-  return tendermintNdid.disallowYourDataServiceToBeMixedInRequest(
-    {},
-    config.nodeId
-  );
-}

@@ -903,30 +903,4 @@ router.post(
   }
 );
 
-router.post(
-  '/allow_your_data_service_to_be_mixed_in_request',
-  async (req, res, next) => {
-    try {
-      await ndid.allowYourDataServiceToBeMixedInRequest();
-      res.status(204).end();
-      next();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.post(
-  '/disallow_your_data_service_to_be_mixed_in_request',
-  async (req, res, next) => {
-    try {
-      await ndid.disallowYourDataServiceToBeMixedInRequest();
-      res.status(204).end();
-      next();
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
 export default router;

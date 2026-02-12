@@ -1492,11 +1492,6 @@ module.exports = {
     message: 'Invalid service domain',
     clientError: true,
   },
-  ABCI_MIXED_SERVICE_DOMAINS_NOT_ALLOWED: {
-    code: 25101,
-    message: 'Mixed service domains not allowed',
-    clientError: true,
-  },
 
   ABCI_UNAUTHORIZED: {
     code: 35001,

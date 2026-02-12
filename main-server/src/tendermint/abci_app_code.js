@@ -159,7 +159,6 @@ import errorType from 'ndid-error/type';
 // DuplicateEntry                                                uint32 = 135
 // NotFound                                                      uint32 = 136
 // InvalidServiceDomain                                          uint32 = 137
-// MixedServiceDomainsNotAllowed                                  uint32 = 138
 // UnknownError                                       uint32 = 999
 
 const codeMapping = {
@@ -300,7 +299,6 @@ const codeMapping = {
   135: errorType.ABCI_DUPLICATE_ENTRY,
   136: errorType.ABCI_NOT_FOUND,
   137: errorType.ABCI_INVALID_SERVICE_DOMAIN,
-  138: errorType.ABCI_MIXED_SERVICE_DOMAINS_NOT_ALLOWED,
 
   999: errorType.UNKNOWN_ERROR,
 };
