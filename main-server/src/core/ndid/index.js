@@ -960,40 +960,57 @@ export async function disableServiceRequesterNodeWhitelist({ serviceId }) {
   );
 }
 
-// YourData
+// Domain
 
-export async function addNodeToYourDataNodeWhitelist({ nodeId }) {
-  return tendermintNdid.addNodeToYourDataNodeWhitelist(
-    { nodeId },
+export async function addDomain({ domain }) {
+  return tendermintNdid.addDomain({ domain }, config.nodeId);
+}
+
+export async function enableDomain({ domain }) {
+  return tendermintNdid.enableDomain({ domain }, config.nodeId);
+}
+
+export async function disableDomain({ domain }) {
+  return tendermintNdid.disableDomain({ domain }, config.nodeId);
+}
+
+export async function addNodeToDomainNodeWhitelist({ domain, nodeId }) {
+  return tendermintNdid.addNodeToDomainNodeWhitelist(
+    { domain, nodeId },
     config.nodeId
   );
 }
 
-export async function removeNodeFromYourDataNodeWhitelist({ nodeId }) {
-  return tendermintNdid.removeNodeFromYourDataNodeWhitelist(
-    { nodeId },
+export async function removeNodeFromDomainNodeWhitelist({ domain, nodeId }) {
+  return tendermintNdid.removeNodeFromDomainNodeWhitelist(
+    { domain, nodeId },
     config.nodeId
   );
 }
 
-export async function enableYourDataNodeWhitelist() {
-  return tendermintNdid.enableYourDataNodeWhitelist({}, config.nodeId);
+export async function enableDomainNodeWhitelist({ domain }) {
+  return tendermintNdid.enableDomainNodeWhitelist({ domain }, config.nodeId);
 }
 
-export async function disableYourDataNodeWhitelist() {
-  return tendermintNdid.disableYourDataNodeWhitelist({}, config.nodeId);
+export async function disableDomainNodeWhitelist({ domain }) {
+  return tendermintNdid.disableDomainNodeWhitelist({ domain }, config.nodeId);
 }
 
-export async function addYourDataErrorCode({ error_code, type, description }) {
-  return tendermintNdid.addYourDataErrorCode(
-    { error_code, type, description },
+export async function addDomainErrorCode({
+  domain,
+  error_code,
+  type,
+  description,
+}) {
+  return tendermintNdid.addDomainErrorCode(
+    { domain, error_code, type, description },
     config.nodeId
   );
 }
 
-export async function removeYourDataErrorCode({ error_code, type }) {
-  return tendermintNdid.removeYourDataErrorCode(
-    { error_code, type },
+export async function removeDomainErrorCode({ domain, error_code, type }) {
+  return tendermintNdid.removeDomainErrorCode(
+    { domain, error_code, type },
     config.nodeId
   );
 }

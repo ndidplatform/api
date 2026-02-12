@@ -31,6 +31,7 @@ import {
   setTimeoutScheduler,
   removeTimeoutScheduler,
 } from '../../common/timeout_scheduler';
+import domain from '../../domain';
 
 import * as tendermintNdid from '../../../tendermint/ndid';
 import * as cacheDb from '../../../db/cache';
@@ -100,13 +101,13 @@ export async function createRequest(createRequestParams) {
       });
     }
 
-    const nodeYourDataPermissionStatus =
-      await tendermintNdid.getYourDataPermissionStatus({
-        nodeId: node_id,
-      });
-    if (!nodeYourDataPermissionStatus.allowed) {
+    const nodeDomainPermission = await tendermintNdid.getDomainNodePermission({
+      nodeId: node_id,
+      domain: domain.YOURDATA,
+    });
+    if (!nodeDomainPermission.allowed) {
       throw new CustomError({
-        errorType: errorType.NO_YOURDATA_PERMISSION,
+        errorType: errorType.NO_DOMAIN_PERMISSION,
         details: {
           node_id,
         },
@@ -135,13 +136,15 @@ export async function createRequest(createRequestParams) {
       });
     }
 
-    const asNodeYourDataPermissionStatus =
-      await tendermintNdid.getYourDataPermissionStatus({
+    const asNodeDomainPermission = await tendermintNdid.getDomainNodePermission(
+      {
         nodeId: asNodeId,
-      });
-    if (!asNodeYourDataPermissionStatus.allowed) {
+        domain: domain.YOURDATA,
+      }
+    );
+    if (!asNodeDomainPermission.allowed) {
       throw new CustomError({
-        errorType: errorType.AS_NODE_NO_YOURDATA_PERMISSION,
+        errorType: errorType.AS_NODE_NO_DOMAIN_PERMISSION,
         details: {
           asNodeId,
         },

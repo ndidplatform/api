@@ -158,7 +158,10 @@ import errorType from 'ndid-error/type';
 // ServiceRequestNotAllowed                                      uint32 = 134
 // DuplicateEntry                                                uint32 = 135
 // NotFound                                                      uint32 = 136
-// InvalidServiceDomain                                          uint32 = 137
+// DomainAlreadyExists                                           uint32 = 137
+// DomainDoesNotExist                                            uint32 = 138
+// DomainNotActive                                               uint32 = 139
+// DomainCannotBeEmpty                                           uint32 = 140
 // UnknownError                                       uint32 = 999
 
 const codeMapping = {
@@ -298,7 +301,10 @@ const codeMapping = {
   134: errorType.ABCI_SERVICE_REQUEST_NOT_ALLOWED,
   135: errorType.ABCI_DUPLICATE_ENTRY,
   136: errorType.ABCI_NOT_FOUND,
-  137: errorType.ABCI_INVALID_SERVICE_DOMAIN,
+  137: errorType.ABCI_DOMAIN_ALREADY_EXISTS,
+  138: errorType.ABCI_DOMAIN_DOES_NOT_EXIST,
+  139: errorType.ABCI_DOMAIN_NOT_ACTIVE,
+  140: errorType.ABCI_DOMAIN_CANNOT_BE_EMPTY,
 
   999: errorType.UNKNOWN_ERROR,
 };

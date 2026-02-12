@@ -788,14 +788,14 @@ module.exports = {
     message: 'Node is not active',
     clientError: true,
   },
-  NO_YOURDATA_PERMISSION: {
+  NO_DOMAIN_PERMISSION: {
     code: 20104,
-    message: 'No YourData permission',
+    message: 'No domain permission',
     clientError: true,
   },
-  AS_NODE_NO_YOURDATA_PERMISSION: {
+  AS_NODE_NO_DOMAIN_PERMISSION: {
     code: 20105,
-    message: 'AS node has no YourData permission',
+    message: 'AS node has no domain permission',
     clientError: true,
   },
   TOKEN_EXPIRED: {
@@ -1487,9 +1487,24 @@ module.exports = {
     message: 'Not found',
     clientError: true,
   },
-  ABCI_INVALID_SERVICE_DOMAIN: {
+  ABCI_DOMAIN_ALREADY_EXISTS: {
     code: 25100,
-    message: 'Invalid service domain',
+    message: 'Domain already exists',
+    clientError: true,
+  },
+  ABCI_DOMAIN_DOES_NOT_EXIST: {
+    code: 25101,
+    message: 'Domain does not exist',
+    clientError: true,
+  },
+  ABCI_DOMAIN_NOT_ACTIVE: {
+    code: 25102,
+    message: 'Domain is not active',
+    clientError: true,
+  },
+  ABCI_DOMAIN_CANNOT_BE_EMPTY: {
+    code: 25103,
+    message: 'Domain name cannot be empty',
     clientError: true,
   },
 

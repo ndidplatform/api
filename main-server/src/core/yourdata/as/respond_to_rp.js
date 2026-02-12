@@ -28,6 +28,7 @@ import errorType from 'ndid-error/type';
 import { getIncomingRequestStatusUpdateCallbackUrl } from '.';
 import yourDataRequestStatus from '../request_status';
 import { packData } from '../../as_data_helper';
+import domain from '../../domain';
 
 import * as tendermintNdid from '../../../tendermint/ndid';
 import * as cacheDb from '../../../db/cache';
@@ -212,7 +213,10 @@ export async function respondErrorToRP(respondErrorToRPParams) {
   }
 
   try {
-    const errorCodeList = await tendermintNdid.getYourDataErrorCodeList('as');
+    const errorCodeList = await tendermintNdid.getDomainErrorCodeList({
+      domain: domain.YOURDATA,
+      type: 'as',
+    });
     if (
       errorCodeList.find((error) => error.error_code === error_code) == null
     ) {

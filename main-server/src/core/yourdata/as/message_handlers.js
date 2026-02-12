@@ -32,6 +32,7 @@ import { validateAuthorization, USAGE_TYPE } from '../authorization_token';
 import yourDataRequestStatus from '../request_status';
 
 import * as common from '../../common';
+import domain from '../../domain';
 import * as tendermintNdid from '../../../tendermint/ndid';
 import * as cacheDb from '../../../db/cache';
 import * as dataDb from '../../../db/data';
@@ -173,13 +174,15 @@ async function processDataRequest(nodeId, message) {
     return;
   }
 
-  const requesterNodeYourDataPermissionStatus =
-    await tendermintNdid.getYourDataPermissionStatus({
+  const requesterNodeDomainPermission =
+    await tendermintNdid.getDomainNodePermission({
       nodeId: requester_node_id,
+      domain: domain.YOURDATA,
     });
-  if (!requesterNodeYourDataPermissionStatus.allowed) {
+  if (!requesterNodeDomainPermission.allowed) {
     logger.warn({
-      message: 'Requester node is not allowed to make YourData request',
+      message: 'Requester node is not allowed to make domain request',
+      domain: domain.YOURDATA,
       request_id,
       service_id,
       requester_node_id,
@@ -200,14 +203,16 @@ async function processDataRequest(nodeId, message) {
   //   return;
   // }
 
-  // const nodeYourDataPermissionStatus =
-  //   await tendermintNdid.getYourDataPermissionStatus({
+  // const nodeDomainPermission =
+  //   await tendermintNdid.getDomainNodePermission({
   //     nodeId,
+  //     domain: domain.YOURDATA,
   //   });
-  // if (!nodeYourDataPermissionStatus.allowed) {
+  // if (!nodeDomainPermission.allowed) {
   //   logger.debug({
-  //     message: 'This node is not allowed to serve YourData request',
+  //     message: 'This node is not allowed to serve domain request',
   //     nodeId,
+  //     domain: domain.YOURDATA,
   //   });
   //   return;
   // }

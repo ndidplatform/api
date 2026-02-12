@@ -31,8 +31,6 @@ import {
 
 import parseDataURL from 'data-urls';
 
-import serviceDomain from './service_domain';
-
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as nodeCallback from '../node_callback';
@@ -354,19 +352,11 @@ async function checkAsListCondition({
   // check if caller node ID is allowed to use domains in request
   await Promise.all(
     [...containsServiceDomains].map(async (domain) => {
-      if (domain === serviceDomain.YOURDATA) {
-        const { allowed } = await tendermintNdid.getYourDataPermissionStatus({
-          nodeId: node_id,
-        });
-        if (!allowed) {
-          throw new CustomError({
-            errorType: errorType.SERVICE_REQUEST_NOT_ALLOWED,
-            details: {
-              domain,
-            },
-          });
-        }
-      } else {
+      const { allowed } = await tendermintNdid.getDomainNodePermission({
+        nodeId: node_id,
+        domain,
+      });
+      if (!allowed) {
         throw new CustomError({
           errorType: errorType.SERVICE_REQUEST_NOT_ALLOWED,
           details: {
@@ -386,20 +376,11 @@ async function checkAsListCondition({
   }
   await Promise.all(
     asNodeServiceDomainsFlatten.map(async ({ asNodeId, domain }) => {
-      if (domain === serviceDomain.YOURDATA) {
-        const { allowed } = await tendermintNdid.getYourDataPermissionStatus({
-          nodeId: asNodeId,
-        });
-        if (!allowed) {
-          throw new CustomError({
-            errorType: errorType.SERVICE_REQUEST_NOT_ALLOWED,
-            details: {
-              asNodeId,
-              domain,
-            },
-          });
-        }
-      } else {
+      const { allowed } = await tendermintNdid.getDomainNodePermission({
+        nodeId: asNodeId,
+        domain,
+      });
+      if (!allowed) {
         throw new CustomError({
           errorType: errorType.SERVICE_REQUEST_NOT_ALLOWED,
           details: {

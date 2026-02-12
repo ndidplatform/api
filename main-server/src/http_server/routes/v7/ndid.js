@@ -787,6 +787,7 @@ router.post(
 
 router.post(
   '/enable_service_requester_node_whitelist',
+  validateBody,
   async (req, res, next) => {
     try {
       const { service_id } = req.body;
@@ -801,6 +802,7 @@ router.post(
 
 router.post(
   '/disable_service_requester_node_whitelist',
+  validateBody,
   async (req, res, next) => {
     try {
       const { service_id } = req.body;
@@ -815,15 +817,48 @@ router.post(
   }
 );
 
-// YourData
+// Domain
+
+router.post('/add_domain', validateBody, async (req, res, next) => {
+  try {
+    const { domain } = req.body;
+    await ndid.addDomain({ domain });
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/enable_domain', validateBody, async (req, res, next) => {
+  try {
+    const { domain } = req.body;
+    await ndid.enableDomain({ domain });
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/disable_domain', validateBody, async (req, res, next) => {
+  try {
+    const { domain } = req.body;
+    await ndid.disableDomain({ domain });
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.post(
-  '/add_node_to_your_data_node_whitelist',
+  '/add_node_to_domain_node_whitelist',
   validateBody,
   async (req, res, next) => {
     try {
-      const { node_id } = req.body;
-      await ndid.addNodeToYourDataNodeWhitelist({ nodeId: node_id });
+      const { domain, node_id } = req.body;
+      await ndid.addNodeToDomainNodeWhitelist({ domain, nodeId: node_id });
       res.status(204).end();
       next();
     } catch (error) {
@@ -833,12 +868,13 @@ router.post(
 );
 
 router.post(
-  '/remove_node_from_your_data_node_whitelist',
+  '/remove_node_from_domain_node_whitelist',
   validateBody,
   async (req, res, next) => {
     try {
-      const { node_id } = req.body;
-      await ndid.removeNodeFromYourDataNodeWhitelist({
+      const { domain, node_id } = req.body;
+      await ndid.removeNodeFromDomainNodeWhitelist({
+        domain,
         nodeId: node_id,
       });
       res.status(204).end();
@@ -849,35 +885,13 @@ router.post(
   }
 );
 
-router.post('/enable_your_data_node_whitelist', async (req, res, next) => {
-  try {
-    await ndid.enableYourDataNodeWhitelist();
-    res.status(204).end();
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post('/disable_your_data_node_whitelist', async (req, res, next) => {
-  try {
-    await ndid.disableYourDataNodeWhitelist();
-    res.status(204).end();
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
 router.post(
-  '/add_yourdata_error_code',
+  '/enable_domain_node_whitelist',
   validateBody,
   async (req, res, next) => {
     try {
-      const { error_code, type, description } = req.body;
-
-      await ndid.addYourDataErrorCode({ error_code, type, description });
-
+      const { domain } = req.body;
+      await ndid.enableDomainNodeWhitelist({ domain });
       res.status(204).end();
       next();
     } catch (error) {
@@ -887,13 +901,41 @@ router.post(
 );
 
 router.post(
-  '/remove_yourdata_error_code',
+  '/disable_domain_node_whitelist',
   validateBody,
   async (req, res, next) => {
     try {
-      const { error_code, type } = req.body;
+      const { domain } = req.body;
+      await ndid.disableDomainNodeWhitelist({ domain });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
-      await ndid.removeYourDataErrorCode({ error_code, type });
+router.post('/add_domain_error_code', validateBody, async (req, res, next) => {
+  try {
+    const { domain, error_code, type, description } = req.body;
+
+    await ndid.addDomainErrorCode({ domain, error_code, type, description });
+
+    res.status(204).end();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post(
+  '/remove_domain_error_code',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { domain, error_code, type } = req.body;
+
+      await ndid.removeDomainErrorCode({ domain, error_code, type });
 
       res.status(204).end();
       next();

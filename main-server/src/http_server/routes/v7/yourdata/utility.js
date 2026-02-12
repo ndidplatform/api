@@ -25,6 +25,7 @@ import express from 'express';
 import { validateBody } from '../../middleware/validation';
 import * as tendermintNdid from '../../../../tendermint/ndid';
 import * as coreYourData from '../../../../core/yourdata';
+import domain from '../../../../core/domain';
 
 const router = express.Router();
 
@@ -48,7 +49,12 @@ router.post('/token', validateBody, async (req, res, next) => {
 
 router.get('/as_error_codes', async (req, res, next) => {
   try {
-    res.status(200).json(await tendermintNdid.getYourDataErrorCodeList('as'));
+    res.status(200).json(
+      await tendermintNdid.getDomainErrorCodeList({
+        domain: domain.YOURDATA,
+        type: 'as',
+      })
+    );
 
     next();
   } catch (error) {
@@ -58,7 +64,9 @@ router.get('/as_error_codes', async (req, res, next) => {
 
 router.get('/node_whitelist', async (req, res, next) => {
   try {
-    const result = await tendermintNdid.getYourDataNodeWhitelist();
+    const result = await tendermintNdid.getDomainNodeWhitelistByDomain({
+      domain: domain.YOURDATA,
+    });
 
     res.status(200).json(result);
 

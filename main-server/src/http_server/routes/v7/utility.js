@@ -588,4 +588,21 @@ router.get('/supported_aal', async (req, res, next) => {
   }
 });
 
+router.get('/domains', async (req, res, next) => {
+  try {
+    const { prefix } = req.query;
+
+    const result = await tendermintNdid.getDomainList({ prefix });
+
+    if (result == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(result.domain_list);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

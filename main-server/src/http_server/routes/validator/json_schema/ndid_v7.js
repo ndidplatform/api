@@ -72,6 +72,10 @@ export default {
         type: 'integer',
         minimum: 1,
       },
+      domain: {
+        type: 'string',
+        enum: ['YourData'],
+      },
     },
   },
   GET: {},
@@ -642,11 +646,66 @@ export default {
         },
       },
     },
-    // YourData
-    '/ndid/add_node_to_your_data_node_whitelist': {
+    '/ndid/enable_service_requester_node_whitelist': {
       body: {
         type: 'object',
         properties: {
+          service_id: {
+            type: 'string',
+            minLength: 1,
+          },
+        },
+      },
+    },
+    '/ndid/disable_service_requester_node_whitelist': {
+      body: {
+        type: 'object',
+        properties: {
+          service_id: {
+            type: 'string',
+            minLength: 1,
+          },
+        },
+      },
+    },
+    // Domain
+    '/ndid/add_domain': {
+      body: {
+        type: 'object',
+        properties: {
+          domain: {
+            $ref: 'defs#/definitions/domain',
+          },
+        },
+      },
+    },
+    '/ndid/enable_domain': {
+      body: {
+        type: 'object',
+        properties: {
+          domain: {
+            $ref: 'defs#/definitions/domain',
+          },
+        },
+      },
+    },
+    '/ndid/disable_domain': {
+      body: {
+        type: 'object',
+        properties: {
+          domain: {
+            $ref: 'defs#/definitions/domain',
+          },
+        },
+      },
+    },
+    '/ndid/add_node_to_domain_node_whitelist': {
+      body: {
+        type: 'object',
+        properties: {
+          domain: {
+            $ref: 'defs#/definitions/domain',
+          },
           node_id: {
             type: 'string',
             minLength: 1,
@@ -654,10 +713,13 @@ export default {
         },
       },
     },
-    '/ndid/remove_node_from_your_data_node_whitelist': {
+    '/ndid/remove_node_from_domain_node_whitelist': {
       body: {
         type: 'object',
         properties: {
+          domain: {
+            $ref: 'defs#/definitions/domain',
+          },
           node_id: {
             type: 'string',
             minLength: 1,
@@ -665,10 +727,33 @@ export default {
         },
       },
     },
-    '/ndid/add_yourdata_error_code': {
+    '/ndid/enable_domain_node_whitelist': {
       body: {
         type: 'object',
         properties: {
+          domain: {
+            $ref: 'defs#/definitions/domain',
+          },
+        },
+      },
+    },
+    '/ndid/disable_domain_node_whitelist': {
+      body: {
+        type: 'object',
+        properties: {
+          domain: {
+            $ref: 'defs#/definitions/domain',
+          },
+        },
+      },
+    },
+    '/ndid/add_domain_error_code': {
+      body: {
+        type: 'object',
+        properties: {
+          domain: {
+            $ref: 'defs#/definitions/domain',
+          },
           error_code: { $ref: 'defs#/definitions/errorCode' },
           type: { type: 'string', enum: ['as'] },
           description: { type: 'string' },
@@ -676,10 +761,13 @@ export default {
         required: ['error_code', 'type', 'description'],
       },
     },
-    '/ndid/remove_yourdata_error_code': {
+    '/ndid/remove_domain_error_code': {
       body: {
         type: 'object',
         properties: {
+          domain: {
+            $ref: 'defs#/definitions/domain',
+          },
           error_code: { $ref: 'defs#/definitions/errorCode' },
           type: { type: 'string', enum: ['as'] },
         },

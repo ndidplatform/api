@@ -2097,11 +2097,9 @@ export async function getServiceRequesterNodePermission({ nodeId, serviceId }) {
   }
 }
 
-//
-// YourData
-//
+// Domain
 
-export async function addNodeToYourDataNodeWhitelist(
+export async function addDomain(
   params,
   nodeId,
   callbackFnName,
@@ -2111,21 +2109,21 @@ export async function addNodeToYourDataNodeWhitelist(
   try {
     await tendermint.transact({
       nodeId,
-      fnName: 'AddNodeToYourDataNodeWhitelist',
-      params: { node_id: params.nodeId },
+      fnName: 'AddDomain',
+      params: { domain: params.domain },
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot add node to YourData node whitelist',
+      message: 'Cannot add domain',
       cause: error,
     });
   }
 }
 
-export async function removeNodeFromYourDataNodeWhitelist(
+export async function enableDomain(
   params,
   nodeId,
   callbackFnName,
@@ -2135,21 +2133,21 @@ export async function removeNodeFromYourDataNodeWhitelist(
   try {
     await tendermint.transact({
       nodeId,
-      fnName: 'RemoveNodeFromYourDataNodeWhitelist',
-      params: { node_id: params.nodeId },
+      fnName: 'EnableDomain',
+      params: { domain: params.domain },
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot remove node from YourData node whitelist',
+      message: 'Cannot enable domain',
       cause: error,
     });
   }
 }
 
-export async function enableYourDataNodeWhitelist(
+export async function disableDomain(
   params,
   nodeId,
   callbackFnName,
@@ -2159,72 +2157,177 @@ export async function enableYourDataNodeWhitelist(
   try {
     await tendermint.transact({
       nodeId,
-      fnName: 'EnableYourDataNodeWhitelist',
-      params: {},
+      fnName: 'DisableDomain',
+      params: { domain: params.domain },
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot enable YourData node whitelist',
+      message: 'Cannot disable domain',
       cause: error,
     });
   }
 }
 
-export async function disableYourDataNodeWhitelist(
-  params,
-  nodeId,
-  callbackFnName,
-  callbackAdditionalArgs,
-  saveForRetryOnChainDisabled
-) {
+export async function getDomainList({ prefix } = {}) {
   try {
-    await tendermint.transact({
-      nodeId,
-      fnName: 'DisableYourDataNodeWhitelist',
-      params: {},
-      callbackFnName,
-      callbackAdditionalArgs,
-      saveForRetryOnChainDisabled,
-    });
-  } catch (error) {
-    throw new CustomError({
-      message: 'Cannot disable YourData node whitelist',
-      cause: error,
-    });
-  }
-}
-
-export async function getYourDataNodeWhitelist() {
-  try {
-    const result = await tendermint.query('GetYourDataNodeWhitelist');
+    const result = await tendermint.query('GetDomainList', { prefix });
     return result;
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get YourData node whitelist',
+      message: 'Cannot get domain list',
       cause: error,
     });
   }
 }
 
-export async function getYourDataPermissionStatus({ nodeId }) {
+export async function addNodeToDomainNodeWhitelist(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
   try {
-    const result = await tendermint.query('GetYourDataPermissionStatus', {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'AddNodeToDomainNodeWhitelist',
+      params: {
+        domain: params.domain,
+        node_id: params.nodeId,
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot add node to domain node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function removeNodeFromDomainNodeWhitelist(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'RemoveNodeFromDomainNodeWhitelist',
+      params: {
+        domain: params.domain,
+        node_id: params.nodeId,
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove node from domain node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function enableDomainNodeWhitelist(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'EnableDomainNodeWhitelist',
+      params: { name: params.domain },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot enable domain node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function disableDomainNodeWhitelist(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'DisableDomainNodeWhitelist',
+      params: { name: params.domain },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot disable domain node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function getDomainNodeWhitelist() {
+  try {
+    const result = await tendermint.query('GetDomainNodeWhitelist');
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get domain node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function getDomainNodeWhitelistByDomain({ domain }) {
+  try {
+    const result = await tendermint.query('GetDomainNodeWhitelistByDomain', {
+      domain,
+    });
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get domain node whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function getDomainNodePermission({ nodeId, domain }) {
+  try {
+    const result = await tendermint.query('GetDomainNodePermission', {
       node_id: nodeId,
+      domain,
     });
     return result;
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get YourData node permission status',
+      message: 'Cannot get domain node permission',
       cause: error,
     });
   }
 }
 
-export async function addYourDataErrorCode(
-  { error_code, type, description },
+export async function addDomainErrorCode(
+  { domain, error_code, type, description },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
@@ -2233,22 +2336,22 @@ export async function addYourDataErrorCode(
   try {
     await tendermint.transact({
       nodeId,
-      fnName: 'AddYourDataErrorCode',
-      params: { error_code, type, description },
+      fnName: 'AddDomainErrorCode',
+      params: { domain, error_code, type, description },
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot add YourData error code',
+      message: 'Cannot add domain error code',
       cause: error,
     });
   }
 }
 
-export async function removeYourDataErrorCode(
-  { error_code, type },
+export async function removeDomainErrorCode(
+  { domain, error_code, type },
   nodeId,
   callbackFnName,
   callbackAdditionalArgs,
@@ -2257,28 +2360,29 @@ export async function removeYourDataErrorCode(
   try {
     await tendermint.transact({
       nodeId,
-      fnName: 'RemoveYourDataErrorCode',
-      params: { error_code, type },
+      fnName: 'RemoveDomainErrorCode',
+      params: { domain, error_code, type },
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot remove YourData error code',
+      message: 'Cannot remove domain error code',
       cause: error,
     });
   }
 }
 
-export async function getYourDataErrorCodeList(type) {
+export async function getDomainErrorCodeList({ domain, type }) {
   try {
-    return await tendermint.query('GetYourDataErrorCodeList', {
+    return await tendermint.query('GetDomainErrorCodeList', {
+      domain,
       type,
     });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get YourData error code list from blockchain',
+      message: 'Cannot get domain error code list from blockchain',
       cause: error,
     });
   }
