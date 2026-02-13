@@ -676,6 +676,7 @@ export default {
           domain: {
             $ref: 'defs#/definitions/domain',
           },
+          node_whitelist_enabled: { type: 'boolean' },
         },
       },
     },

@@ -2110,7 +2110,10 @@ export async function addDomain(
     await tendermint.transact({
       nodeId,
       fnName: 'AddDomain',
-      params: { domain: params.domain },
+      params: {
+        domain: params.domain,
+        node_whitelist_enabled: params.nodeWhitelistEnabled,
+      },
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,

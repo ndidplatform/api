@@ -900,21 +900,82 @@ paths:
         '204':
           description: Successfully disabled.
 
-  # YourData
+  # Domain
 
-  /ndid/add_node_to_your_data_node_whitelist:
+  /ndid/add_domain:
     post:
-      summary: Add node to YourData whitelist
+      summary: Add new domain
       tags:
-        - YourData
+        - Domain
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [node_id]
+              required: [domain]
               properties:
+                domain:
+                  $ref: '#/components/schemas/Domain'
+                node_whitelist_enabled:
+                  type: boolean
+      responses:
+        '204':
+          description: Successfully added.
+  
+  /ndid/enable_domain:
+    post:
+      summary: Enable domain (Set active)
+      tags:
+        - Domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domain]
+              properties:
+                domain:
+                  $ref: '#/components/schemas/Domain'
+      responses:
+        '204':
+          description: Successfully set to active.
+
+  /ndid/disable_domain:
+    post:
+      summary: Disable domain
+      tags:
+        - Domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domain]
+              properties:
+                domain:
+                  $ref: '#/components/schemas/Domain'
+      responses:
+        '204':
+          description: Successfully set to not active.
+
+  /ndid/add_node_to_domain_node_whitelist:
+    post:
+      summary: Add node to domain node whitelist
+      tags:
+        - Domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domain, node_id]
+              properties:
+                domain:
+                  $ref: '#/components/schemas/Domain'
                 node_id:
                   type: string
                   minLength: 1
@@ -922,19 +983,21 @@ paths:
         '204':
           description: Successfully added.
 
-  /ndid/remove_node_from_your_data_node_whitelist:
+  /ndid/remove_node_from_domain_node_whitelist:
     post:
-      summary: Remove node from YourData whitelist
+      summary: Remove node from domain node whitelist
       tags:
-        - YourData
+        - Domain
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [node_id]
+              required: [domain, node_id]
               properties:
+                domain:
+                  $ref: '#/components/schemas/Domain'
                 node_id:
                   type: string
                   minLength: 1
@@ -942,37 +1005,59 @@ paths:
         '204':
           description: Successfully removed.
 
-  /ndid/enable_your_data_node_whitelist:
+  /ndid/enable_domain_node_whitelist:
     post:
-      summary: Enable YourData node whitelist
+      summary: Enable domain node whitelist
       tags:
-        - YourData
-      responses:
-        '204':
-          description: Successfully enabled.
-
-  /ndid/disable_your_data_node_whitelist:
-    post:
-      summary: Disable YourData node whitelist
-      tags:
-        - YourData
-      responses:
-        '204':
-          description: Successfully disabled.
-
-  /ndid/add_yourdata_error_code:
-    post:
-      summary: Add YourData error code
-      tags:
-        - YourData - Error Code
+        - Domain
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [error_code, type, description]
+              required: [domain]
               properties:
+                domain:
+                  $ref: '#/components/schemas/Domain'
+      responses:
+        '204':
+          description: Successfully enabled.
+
+  /ndid/disable_domain_node_whitelist:
+    post:
+      summary: Disable domain node whitelist
+      tags:
+        - Domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domain]
+              properties:
+                domain:
+                  $ref: '#/components/schemas/Domain'
+      responses:
+        '204':
+          description: Successfully disabled.
+
+  /ndid/add_domain_error_code:
+    post:
+      summary: Add domain error code
+      tags:
+        - Domain - Error Code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domain, error_code, type, description]
+              properties:
+                domain:
+                  $ref: '#/components/schemas/Domain'
                 error_code:
                   $ref: '#/components/schemas/ErrorCode'
                 type:
@@ -984,19 +1069,21 @@ paths:
         '204':
           description: Successfully added.
 
-  /ndid/remove_yourdata_error_code:
+  /ndid/remove_domain_error_code:
     post:
-      summary: Remove YourData error code
+      summary: Remove domain error code
       tags:
-        - YourData - Error Code
+        - Domain - Error Code
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [error_code, type]
+              required: [domain, error_code, type]
               properties:
+                domain:
+                  $ref: '#/components/schemas/Domain'
                 error_code:
                   $ref: '#/components/schemas/ErrorCode'
                 type:
@@ -1171,7 +1258,7 @@ components:
         data_schema_version:
           type: string
         domain:
-          $ref: '#/components/schemas/ServiceDomain'
+          type: string
         requester_node_whitelist_enabled:
           type: boolean
 
@@ -1188,7 +1275,7 @@ components:
         data_schema_version:
           type: string
         domain:
-          $ref: '#/components/schemas/ServiceDomain'
+          type: string
         requester_node_whitelist_enabled:
           type: boolean
 
@@ -1222,6 +1309,6 @@ components:
       type: integer
       minimum: 1
 
-    ServiceDomain:
+    Domain:
       type: string
       enum: [YourData]

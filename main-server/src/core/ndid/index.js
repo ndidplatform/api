@@ -962,8 +962,11 @@ export async function disableServiceRequesterNodeWhitelist({ serviceId }) {
 
 // Domain
 
-export async function addDomain({ domain }) {
-  return tendermintNdid.addDomain({ domain }, config.nodeId);
+export async function addDomain({ domain, nodeWhitelistEnabled }) {
+  return tendermintNdid.addDomain(
+    { domain, nodeWhitelistEnabled },
+    config.nodeId
+  );
 }
 
 export async function enableDomain({ domain }) {

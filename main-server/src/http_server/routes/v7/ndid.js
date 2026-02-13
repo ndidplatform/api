@@ -821,8 +821,11 @@ router.post(
 
 router.post('/add_domain', validateBody, async (req, res, next) => {
   try {
-    const { domain } = req.body;
-    await ndid.addDomain({ domain });
+    const { domain, node_whitelist_enabled } = req.body;
+    await ndid.addDomain({
+      domain,
+      nodeWhitelistEnabled: node_whitelist_enabled,
+    });
     res.status(204).end();
     next();
   } catch (error) {
