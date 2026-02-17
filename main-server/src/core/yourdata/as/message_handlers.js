@@ -700,6 +700,7 @@ async function processDataStatusSync(nodeId, message) {
   // expected status list does not include "pending" since AS side does not have callback status update for it
   if (
     ![
+      yourDataRequestStatus.PENDING,
       yourDataRequestStatus.DATA_DECRYPTION_PENDING,
       yourDataRequestStatus.DATA_DECRYPTION_KEY_REQUESTED,
       yourDataRequestStatus.DATA_DECRYPTION_KEY_AVAILABLE,
@@ -723,11 +724,13 @@ async function processDataStatusSync(nodeId, message) {
     );
     currentTimedOut = true;
 
-    logger.warn({
-      message: 'Current status on timeout not matched',
-      statusFromRP: status,
-      localStatus: currentRequestStatus,
-    });
+    if (currentRequestStatus !== status) {
+      logger.warn({
+        message: 'Current status on timeout not matched',
+        statusFromRP: status,
+        localStatus: currentRequestStatus,
+      });
+    }
   }
 
   // the request has reached its end state (completed or timed out)

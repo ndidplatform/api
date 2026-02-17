@@ -44,8 +44,10 @@ export async function timeoutRequest(nodeId, requestId) {
       });
     }
 
-    const currentRequestStatus =
-      await cacheDb.removeYourDataCurrentRequestStatus(nodeId, requestId);
+    const currentRequestStatus = await cacheDb.getYourDataCurrentRequestStatus(
+      nodeId,
+      requestId
+    );
 
     // callback to RP app
     const eventDataForCallback = {
