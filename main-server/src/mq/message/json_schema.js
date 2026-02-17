@@ -442,7 +442,7 @@ export default {
           request_id: { type: 'string', minLength: 1 },
           as_node_id: { type: 'string', minLength: 1 },
           service_id: { type: 'string', minLength: 1 },
-          error_code: { type: 'string', minLength: 1 },
+          error_code: { type: 'number', minLength: 1 },
           error_message: { type: 'string', minLength: 1 },
         },
         required: [
