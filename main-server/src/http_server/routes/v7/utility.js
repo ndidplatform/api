@@ -605,4 +605,23 @@ router.get('/domains', async (req, res, next) => {
   }
 });
 
+router.get('/domains/:domain/node_whitelist', async (req, res, next) => {
+  try {
+    const { domain } = req.params;
+
+    const result = await tendermintNdid.getDomainNodeWhitelistByDomain({
+      domain,
+    });
+
+    if (result == null) {
+      res.status(404).end();
+    } else {
+      res.status(200).json(result);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
