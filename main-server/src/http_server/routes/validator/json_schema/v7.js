@@ -983,11 +983,17 @@ export default {
         type: 'object',
         properties: {
           node_id: { type: 'string', minLength: 1 },
-          request_id: { type: 'string', minLength: 1 },
         },
-        required: [
-          // 'request_id',
-        ],
+        required: [],
+      },
+    },
+    '/yourdata/rp/request_data_removal/:request_id': {
+      body: {
+        type: 'object',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+        },
+        required: [],
       },
     },
     '/yourdata/as/callback': {
@@ -1124,10 +1130,7 @@ export default {
             items: { type: 'string', minLength: 1 },
           },
         },
-        required: [
-          'rp_node_id',
-          'as_node_id',
-        ],
+        required: ['rp_node_id', 'as_node_id'],
       },
     },
   },

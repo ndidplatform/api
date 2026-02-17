@@ -90,9 +90,9 @@ router.get('/request_data/:request_id', async (req, res, next) => {
 
 router.post('/request_data_removal', validateBody, async (req, res, next) => {
   try {
-    const { node_id, request_id } = req.body;
+    const { node_id } = req.body;
 
-    await coreYourDataRP.removeDataFromAS(node_id, request_id);
+    await coreYourDataRP.removeAllDataFromAS(node_id);
 
     res.status(204).end();
 
@@ -101,5 +101,24 @@ router.post('/request_data_removal', validateBody, async (req, res, next) => {
     next(error);
   }
 });
+
+router.post(
+  '/request_data_removal/:request_id',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { request_id } = req.params;
+      const { node_id } = req.body;
+
+      await coreYourDataRP.removeDataFromAS(node_id, request_id);
+
+      res.status(204).end();
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

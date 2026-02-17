@@ -1303,3 +1303,11 @@ export function removeYourDataDataFromAS(nodeId, requestId) {
     key: requestId,
   });
 }
+
+export function removeAllYourDataDataFromAS(nodeId) {
+  return db.removeAll({
+    nodeId,
+    dbName,
+    name: 'YourData_dataFromAS',
+  });
+}

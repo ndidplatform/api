@@ -70,3 +70,24 @@ export async function removeDataFromAS(nodeId, requestId) {
     });
   }
 }
+
+export async function removeAllDataFromAS(nodeId) {
+  try {
+    if (role === 'proxy') {
+      if (nodeId == null) {
+        throw new CustomError({
+          errorType: errorType.MISSING_NODE_ID,
+        });
+      }
+    } else {
+      nodeId = config.nodeId;
+    }
+
+    return await cacheDb.removeAllDataFromAS(nodeId);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove all data received from AS',
+      cause: error,
+    });
+  }
+}
