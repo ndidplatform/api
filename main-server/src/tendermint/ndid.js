@@ -2251,7 +2251,7 @@ export async function enableDomainNodeWhitelist(
     await tendermint.transact({
       nodeId,
       fnName: 'EnableDomainNodeWhitelist',
-      params: { name: params.domain },
+      params: { domain: params.domain },
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
@@ -2275,7 +2275,7 @@ export async function disableDomainNodeWhitelist(
     await tendermint.transact({
       nodeId,
       fnName: 'DisableDomainNodeWhitelist',
-      params: { name: params.domain },
+      params: { domain: params.domain },
       callbackFnName,
       callbackAdditionalArgs,
       saveForRetryOnChainDisabled,
