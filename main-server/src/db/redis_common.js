@@ -406,6 +406,7 @@ export async function set({
   name,
   key,
   value,
+  onlyIfNotExist,
   ttl,
   keepTtl,
   jsonStringifyValue = true,
@@ -419,27 +420,33 @@ export async function set({
     if (jsonStringifyValue) {
       value = JSON.stringify(value);
     }
+    let redisAdditionalArgs = [];
+    if (onlyIfNotExist) {
+      redisAdditionalArgs.push('NX');
+    }
     if (keepTtl) {
       if (redisVersion.major >= '6') {
-        await redis.set(keyToSet, value, 'KEEPTTL');
+        redisAdditionalArgs.push('KEEPTTL');
       } else {
         const currentTtl = await redis.ttl(keyToSet);
         if (currentTtl >= 0) {
-          await redis.set(keyToSet, value, 'EX', currentTtl);
-        } else {
-          await redis.set(keyToSet, value);
+          redisAdditionalArgs.push('EX', currentTtl);
         }
       }
     } else if (ttl) {
-      await redis.set(keyToSet, value, 'EX', ttl);
-    } else {
-      await redis.set(keyToSet, value);
+      redisAdditionalArgs.push('EX', ttl);
     }
+    const result = await redis.set(keyToSet, value, ...redisAdditionalArgs);
     metricsEventEmitter.emit(
       'operationTime',
       operation,
       Date.now() - startTime
     );
+    if (result === 'OK') {
+      return true;
+    } else {
+      return false;
+    }
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,
@@ -522,7 +529,13 @@ export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
   }
 }
 
-export async function getAllLists({ nodeId, dbName, name, keyName, valueName }) {
+export async function getAllLists({
+  nodeId,
+  dbName,
+  name,
+  keyName,
+  valueName,
+}) {
   const operation = 'getAllLists';
   const startTime = Date.now();
   try {

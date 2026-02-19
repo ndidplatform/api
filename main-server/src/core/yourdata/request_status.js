@@ -29,7 +29,7 @@
 // 5. "completed"
 //
 
-export default {
+const requestStatus = {
   PENDING: 'pending',
   DATA_DECRYPTION_PENDING: 'data_decryption_pending',
   DATA_DECRYPTION_KEY_REQUESTED: 'data_decryption_key_requested',
@@ -37,3 +37,5 @@ export default {
   COMPLETED: 'completed',
   ERRORED: 'errored',
 };
+
+export default requestStatus;

@@ -26,6 +26,7 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
 import { getIncomingRequestStatusUpdateCallbackUrl } from '.';
+import * as yourDataRequestQueueManager from '../request_queue_manager';
 import yourDataRequestStatus from '../request_status';
 import { packData } from '../../as_data_helper';
 import domain from '../../domain';
@@ -44,7 +45,7 @@ import { role } from '../../../node';
 
 export async function respondDataToRP(respondDataToRPParams) {
   let { node_id: nodeId } = respondDataToRPParams;
-  const { request_id, data } = respondDataToRPParams;
+  const { request_id } = respondDataToRPParams;
 
   if (role === 'proxy') {
     if (nodeId == null) {
@@ -57,12 +58,52 @@ export async function respondDataToRP(respondDataToRPParams) {
   }
 
   try {
+    await yourDataRequestQueueManager.enqueue(
+      nodeId,
+      request_id,
+      respondDataToRPInternal,
+      {
+        ...respondDataToRPParams,
+        node_id: nodeId,
+      }
+    );
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot respond data to RP',
+      params: respondDataToRPParams,
+      cause: error,
+    });
+  }
+}
+
+// use this function with request process queue
+// to prevent some inconsistencies with status change
+// e.g. AS app call send data API multiple times, timeout status sync from RP happening at the same time
+async function respondDataToRPInternal(respondDataToRPParams) {
+  let { node_id: nodeId } = respondDataToRPParams;
+  const { request_id, data } = respondDataToRPParams;
+
+  try {
     // check request is still active / not timed out yet
     // -> get request data from cache if not exist assume timed out
     const request = await cacheDb.getYourDataRequestData(nodeId, request_id);
     if (request == null) {
       throw new CustomError({
-        message: 'Request is already timed out or does not exist',
+        errorType: errorType.REQUEST_IS_TIMED_OUT_OR_NOT_EXIST,
+      });
+    }
+
+    // get request status and check state. If at wrong state, return error
+    const currentRequestStatus = await cacheDb.getYourDataCurrentRequestStatus(
+      nodeId,
+      request_id
+    );
+    if (currentRequestStatus !== yourDataRequestStatus.PENDING) {
+      throw new CustomError({
+        errorType: errorType.UNEXPECTED_ACTION_AT_CURRENT_REQUEST_STATE,
+        details: {
+          currentRequestStatus,
+        },
       });
     }
 
@@ -86,31 +127,70 @@ export async function respondDataToRP(respondDataToRPParams) {
       maxResultDataLength: config.asDataMaxLength,
     });
 
+    const dataHashBase64 = utils.hash(
+      cryptoUtils.hashAlgorithm.SHA256,
+      Buffer.from(packedData.buffer_base64, 'base64')
+    );
+
     // generate encryption key (symmetric key)
-    const encryptionKey = crypto.randomBytes(32);
+    let encryptionKey = crypto.randomBytes(32);
 
     // encrypt packedData
-    const encryptedPackedDataBuffer = cryptoUtils.encryptAES256GCM(
+    let encryptedPackedDataBuffer = cryptoUtils.encryptAES256GCM(
       encryptionKey,
       Buffer.from(packedData.buffer_base64, 'base64'),
       false
     );
 
-    const encryptedPackedData = {
+    let encryptedPackedData = {
       buffer_base64: encryptedPackedDataBuffer.toString('base64'),
       metadata: packedData.metadata,
     };
 
-    const encryptedDataHashBase64 = utils.hash(
+    let encryptedDataHashBase64 = utils.hash(
       cryptoUtils.hashAlgorithm.SHA256,
       encryptedPackedDataBuffer
     );
 
-    // save encryption key to cache
-    await cacheDb.setYourDataDataEncryptionKey(nodeId, request_id, {
+    // save encryption key to cache if it does not already exist
+    const set = await cacheDb.setYourDataDataEncryptionKey(nodeId, request_id, {
       key_base64: encryptionKey.toString('base64'),
+      data_hash_base64: dataHashBase64,
       encrypted_data_hash_base64: encryptedDataHashBase64,
     });
+    if (!set) {
+      // key already exists -> cause: possible multiple call / retry
+      // use existing key instead
+
+      const dataEncryptionKey = await cacheDb.getYourDataDataEncryptionKey(
+        nodeId,
+        request_id
+      );
+
+      if (dataHashBase64 !== dataEncryptionKey.data_hash_base64) {
+        throw new CustomError({
+          errorType: errorType.DUPLICATE_DATA_RESPONSE_WITH_DIFFERENT_DATA,
+        });
+      }
+
+      encryptionKey = Buffer.from(dataEncryptionKey.key_base64, 'base64');
+
+      encryptedPackedDataBuffer = cryptoUtils.encryptAES256GCM(
+        encryptionKey,
+        Buffer.from(packedData.buffer_base64, 'base64'),
+        false
+      );
+
+      encryptedPackedData = {
+        buffer_base64: encryptedPackedDataBuffer.toString('base64'),
+        metadata: packedData.metadata,
+      };
+
+      encryptedDataHashBase64 = utils.hash(
+        cryptoUtils.hashAlgorithm.SHA256,
+        encryptedPackedDataBuffer
+      );
+    }
 
     // signature salt
     const salt = utils.randomBase64Bytes(config.saltLength);
@@ -140,30 +220,37 @@ export async function respondDataToRP(respondDataToRPParams) {
       packed_data: encryptedPackedData,
     };
 
-    await sendDataToRP(nodeId, rpNodeId, request, dataToSendToRP);
+    const onSendSuccess = async () => {
+      // request status update
+      // status: "data_decryption_pending"
 
-    // request status update
-    // status: "data_decryption_pending"
+      await cacheDb.setYourDataCurrentRequestStatus(
+        nodeId,
+        request.request_id,
+        yourDataRequestStatus.DATA_DECRYPTION_PENDING,
+        null,
+        true
+      );
 
-    await cacheDb.setYourDataCurrentRequestStatus(
+      // callback to AS app
+      callbackStatusUpdateDataDecryptionPending({
+        nodeId,
+        requesterNodeId: request.requester_node_id,
+        requestId: request.request_id,
+        requestTimeout: request.request_timeout,
+      });
+    };
+
+    await sendDataToRP(
       nodeId,
-      request.request_id,
-      yourDataRequestStatus.DATA_DECRYPTION_PENDING,
-      null,
-      true
+      rpNodeId,
+      request,
+      dataToSendToRP,
+      onSendSuccess
     );
-
-    // TODO: move to onSuccess on mq.send() ?
-    // callback to AS app
-    callbackStatusUpdateDataDecryptionPending({
-      nodeId,
-      requesterNodeId: request.requester_node_id,
-      requestId: request.request_id,
-      requestTimeout: request.request_timeout,
-    });
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot respond data to RP',
+      message: 'Cannot respond data to RP (internal queue)',
       params: respondDataToRPParams,
       cause: error,
     });
@@ -200,7 +287,7 @@ async function callbackStatusUpdateDataDecryptionPending({
 
 export async function respondErrorToRP(respondErrorToRPParams) {
   let { node_id: nodeId } = respondErrorToRPParams;
-  const { request_id, error_code, error_message } = respondErrorToRPParams;
+  const { request_id, error_code } = respondErrorToRPParams;
 
   if (role === 'proxy') {
     if (nodeId == null) {
@@ -228,12 +315,52 @@ export async function respondErrorToRP(respondErrorToRPParams) {
       });
     }
 
+    await yourDataRequestQueueManager.enqueue(
+      nodeId,
+      request_id,
+      respondErrorToRPInternal,
+      {
+        ...respondErrorToRPParams,
+        node_id: nodeId,
+      }
+    );
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot respond error to RP',
+      params: respondErrorToRPParams,
+      cause: error,
+    });
+  }
+}
+
+// use this function with request process queue
+// to prevent some inconsistencies with status change
+// e.g. AS app call send data API multiple times, timeout status sync from RP happening at the same time
+async function respondErrorToRPInternal(respondErrorToRPParams) {
+  let { node_id: nodeId } = respondErrorToRPParams;
+  const { request_id, error_code, error_message } = respondErrorToRPParams;
+
+  try {
     // check request is still active / not timed out yet
     // -> get request data from cache if not exist assume timed out
     const request = await cacheDb.getYourDataRequestData(nodeId, request_id);
     if (request == null) {
       throw new CustomError({
-        message: 'Request is already timed out or does not exist',
+        errorType: errorType.REQUEST_IS_TIMED_OUT_OR_NOT_EXIST,
+      });
+    }
+
+    // get request status and check state. If at wrong state, return error
+    const currentRequestStatus = await cacheDb.getYourDataCurrentRequestStatus(
+      nodeId,
+      request_id
+    );
+    if (currentRequestStatus !== yourDataRequestStatus.PENDING) {
+      throw new CustomError({
+        errorType: errorType.UNEXPECTED_ACTION_AT_CURRENT_REQUEST_STATE,
+        details: {
+          currentRequestStatus,
+        },
       });
     }
 
@@ -259,31 +386,39 @@ export async function respondErrorToRP(respondErrorToRPParams) {
       error_message,
     };
 
-    await sendDataToRP(nodeId, rpNodeId, request, dataToSendToRP);
+    const onSendSuccess = async () => {
+      // request status update
+      // status: "errored"
 
-    // request's final state
+      // request's final state
 
-    // cleanup
-    await Promise.all([
-      cacheDb.removeYourDataRequestData(nodeId, request.request_id),
-      cacheDb.removeYourDataCurrentRequestStatus(nodeId, request.request_id),
-    ]);
+      // cleanup
+      await Promise.all([
+        cacheDb.removeYourDataRequestData(nodeId, request.request_id),
+        cacheDb.removeYourDataCurrentRequestStatus(nodeId, request.request_id),
+      ]);
 
-    // request status update
-    // status: "errored"
+      // callback to AS app
+      callbackStatusUpdateErrored({
+        nodeId,
+        requesterNodeId: request.requester_node_id,
+        requestId: request.request_id,
+        requestTimeout: request.request_timeout,
+        errorCode: error_code,
+        errorMessage: error_message,
+      });
+    };
 
-    // callback to AS app
-    callbackStatusUpdateErrored({
+    await sendDataToRP(
       nodeId,
-      requesterNodeId: request.requester_node_id,
-      requestId: request.request_id,
-      requestTimeout: request.request_timeout,
-      errorCode: error_code,
-      errorMessage: error_message,
-    });
+      rpNodeId,
+      request,
+      dataToSendToRP,
+      onSendSuccess
+    );
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot respond error to RP',
+      message: 'Cannot respond error to RP (internal queue)',
       params: respondErrorToRPParams,
       cause: error,
     });
@@ -322,7 +457,7 @@ async function callbackStatusUpdateErrored({
   }
 }
 
-async function sendDataToRP(nodeId, rpNodeId, request, data) {
+async function sendDataToRP(nodeId, rpNodeId, request, data, onSendSuccess) {
   const nodeInfo = await tendermintNdid.getNodeInfo(rpNodeId);
   if (nodeInfo == null) {
     throw new CustomError({
@@ -392,6 +527,8 @@ async function sendDataToRP(nodeId, rpNodeId, request, data) {
     },
     senderNodeId: nodeId,
     onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+      onSendSuccess();
+
       // FIXME
       //
       // log request event: AS_SENDS_DATA_TO_RP
@@ -403,11 +540,6 @@ async function sendDataToRP(nodeId, rpNodeId, request, data) {
       //     service_id: data.service_id,
       //   }
       // );
-      // TODO
-      // request status update
-      // status: "encrypted_data_sent" if data is sent
-      // status: "error" if error is sent
-      // callback to AS app
       //
       // FIXME
       //

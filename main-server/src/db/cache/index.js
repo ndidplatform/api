@@ -1232,6 +1232,7 @@ export function setYourDataDataEncryptionKey(nodeId, requestId, key) {
     name: 'YourData_dataEncryptionKey',
     key: requestId,
     value: key,
+    onlyIfNotExist: true,
   });
 }
 

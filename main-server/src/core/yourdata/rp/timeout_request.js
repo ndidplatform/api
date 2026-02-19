@@ -23,7 +23,7 @@
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
-import { cleanupRequestCacheData } from '.';
+import { cleanupRequestCachedData } from '.';
 
 import { removeTimeoutScheduler } from '../../common/timeout_scheduler';
 
@@ -49,6 +49,11 @@ export async function timeoutRequest(nodeId, requestId) {
       requestId
     );
 
+    // request's final state
+
+    // stop timeout timer
+    removeTimeoutScheduler(nodeId, requestId);
+
     // callback to RP app
     const eventDataForCallback = {
       node_id: nodeId,
@@ -68,13 +73,8 @@ export async function timeoutRequest(nodeId, requestId) {
       retry: true,
     });
 
-    // request's final state
-
-    // stop timeout timer
-    removeTimeoutScheduler(nodeId, requestId);
-
     // remove request data from cache
-    await cleanupRequestCacheData({
+    await cleanupRequestCachedData({
       nodeId,
       requestId,
       referenceId: request.reference_id,

@@ -27,7 +27,7 @@ export * from './as_data';
 export * from './timeout_request';
 export * from './message_handlers';
 
-export async function cleanupRequestCacheData({
+export async function cleanupRequestCachedData({
   nodeId,
   requestId,
   referenceId,

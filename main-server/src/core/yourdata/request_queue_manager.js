@@ -34,7 +34,7 @@ export function enqueue(nodeId, requestId, fn, ...args) {
   });
 
   // queue task without waiting for task to start and finish
-  yourDataRequestQueue.enqueue(requestId, fn, ...args);
+  return yourDataRequestQueue.enqueue(requestId, fn, ...args);
 }
 
 async function waitForAllTasksToFinish() {

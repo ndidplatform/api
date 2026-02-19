@@ -444,7 +444,7 @@ export async function afterGotDataFromCallback(
       }
       if (typeof result.error_message !== 'string') {
         throw new CustomError({
-          errorType: errorType.INVALID_ERROR_CODE_TYPE_IN_AS_RESPONSE,
+          errorType: errorType.INVALID_ERROR_MESSAGE_TYPE_IN_AS_RESPONSE,
           details: {
             errorMessageType: typeof result.error_message,
           },
@@ -612,7 +612,39 @@ async function processDataDecryptionKeyRequest(nodeId, message) {
       key_base64: encryptionKeyBase64,
     },
     senderNodeId: nodeId,
-    onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+    onSuccess: async ({ mqDestAddress, receiverNodeId }) => {
+      // request status update
+      // status: "data_decryption_key_available"
+
+      await cacheDb.setYourDataCurrentRequestStatus(
+        nodeId,
+        request_id,
+        yourDataRequestStatus.DATA_DECRYPTION_KEY_AVAILABLE,
+        null,
+        true
+      );
+
+      // callback to AS app
+      if (callbackUrl != null) {
+        const eventDataForCallback = {
+          node_id: nodeId,
+          type: 'yourdata.request_status',
+          requester_node_id: request.requester_node_id,
+          as_node_id: nodeId,
+          request_id,
+          request_timeout: request.request_timeout,
+          timed_out: false,
+          status: yourDataRequestStatus.DATA_DECRYPTION_KEY_AVAILABLE,
+        };
+
+        await callbackToClient({
+          getCallbackUrlFnName:
+            'yourdata.as.getIncomingRequestStatusUpdateCallbackUrl',
+          body: eventDataForCallback,
+          retry: true,
+        });
+      }
+
       // FIXME
       //
       // log request event: AS_SENDS_DATA_TO_RP
@@ -624,11 +656,6 @@ async function processDataDecryptionKeyRequest(nodeId, message) {
       //     service_id: data.service_id,
       //   }
       // );
-      // TODO
-      // request status update
-      // status: "encrypted_data_sent" if data is sent
-      // status: "error" if error is sent
-      // callback to AS app
       //
       // FIXME
       //
@@ -643,38 +670,6 @@ async function processDataDecryptionKeyRequest(nodeId, message) {
       // });
     },
   });
-
-  // request status update
-  // status: "data_decryption_key_available"
-
-  await cacheDb.setYourDataCurrentRequestStatus(
-    nodeId,
-    request_id,
-    yourDataRequestStatus.DATA_DECRYPTION_KEY_AVAILABLE,
-    null,
-    true
-  );
-
-  // callback to AS app
-  if (callbackUrl != null) {
-    const eventDataForCallback = {
-      node_id: nodeId,
-      type: 'yourdata.request_status',
-      requester_node_id: request.requester_node_id,
-      as_node_id: nodeId,
-      request_id,
-      request_timeout: request.request_timeout,
-      timed_out: false,
-      status: yourDataRequestStatus.DATA_DECRYPTION_KEY_AVAILABLE,
-    };
-
-    await callbackToClient({
-      getCallbackUrlFnName:
-        'yourdata.as.getIncomingRequestStatusUpdateCallbackUrl',
-      body: eventDataForCallback,
-      retry: true,
-    });
-  }
 }
 
 async function processDataStatusSync(nodeId, message) {

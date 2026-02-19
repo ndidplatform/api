@@ -23,7 +23,7 @@
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
-import { cleanupRequestCacheData } from '.';
+import { cleanupRequestCachedData } from '.';
 
 import { validateAuthorization } from '../authorization_token';
 import yourDataRequestStatus from '../request_status';
@@ -321,7 +321,7 @@ export async function createRequest(createRequestParams) {
     if (requestId) {
       await removeTimeoutScheduler(node_id, requestId);
 
-      await cleanupRequestCacheData({
+      await cleanupRequestCachedData({
         nodeId: node_id,
         requestId,
         referenceId: reference_id,

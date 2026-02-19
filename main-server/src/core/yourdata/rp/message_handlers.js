@@ -23,7 +23,7 @@
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
-import { cleanupRequestCacheData } from '.';
+import { cleanupRequestCachedData } from '.';
 
 import yourDataRequestStatus from '../request_status';
 
@@ -111,6 +111,20 @@ async function processASResponse(nodeId, message) {
   // 1. encrypted data
   // 2. error
 
+  const currentRequestStatus = await cacheDb.getYourDataCurrentRequestStatus(
+    nodeId,
+    request_id
+  );
+
+  if (currentRequestStatus !== yourDataRequestStatus.PENDING) {
+    logger.info({
+      message: 'Unexpected action at current request state. Discarding.',
+      requestId: request_id,
+      currentRequestStatus,
+    });
+    return;
+  }
+
   if (error_code != null) {
     // request status update
     // status: "error"
@@ -142,7 +156,7 @@ async function processASResponse(nodeId, message) {
 
     // request's final state
     // remove request data from cache
-    await cleanupRequestCacheData({
+    await cleanupRequestCachedData({
       nodeId,
       requestId: request_id,
       referenceId: request.reference_id,
@@ -265,7 +279,39 @@ async function processASResponse(nodeId, message) {
         encrypted_data_hash_base64: encryptDataHashBase64, // SHA256 hash
       },
       senderNodeId: nodeId,
-      onSuccess: ({ mqDestAddress, receiverNodeId }) => {
+      onSuccess: async ({ mqDestAddress, receiverNodeId }) => {
+        // request status update
+        // status: "data_decryption_key_requested"
+
+        await cacheDb.setYourDataCurrentRequestStatus(
+          nodeId,
+          request_id,
+          yourDataRequestStatus.DATA_DECRYPTION_KEY_REQUESTED,
+          null,
+          true
+        );
+
+        // callback to RP app
+        eventDataForCallback = {
+          node_id: nodeId,
+          type: 'yourdata.request_status',
+          requester_node_id: nodeId,
+          as_node_id: request.as_node_id,
+          request_id,
+          request_timeout: request.request_timeout,
+          timed_out: false,
+          status: yourDataRequestStatus.DATA_DECRYPTION_KEY_REQUESTED,
+        };
+
+        callbackUrl = request.callback_url;
+        await callbackToClient({
+          callbackUrl,
+          body: eventDataForCallback,
+          retry: true,
+        });
+
+        //
+
         // FIXME
         //
         // log request event: AS_SENDS_DATA_TO_RP
@@ -277,11 +323,6 @@ async function processASResponse(nodeId, message) {
         //     service_id: data.service_id,
         //   }
         // );
-        // TODO
-        // request status update
-        // status: "encrypted_data_sent" if data is sent
-        // status: "error" if error is sent
-        // callback to AS app
         //
         // FIXME
         //
@@ -295,38 +336,6 @@ async function processASResponse(nodeId, message) {
         //   requestId: data.request_id,
         // });
       },
-    });
-
-    //
-
-    // request status update
-    // status: "data_decryption_key_requested"
-
-    await cacheDb.setYourDataCurrentRequestStatus(
-      nodeId,
-      request_id,
-      yourDataRequestStatus.DATA_DECRYPTION_KEY_REQUESTED,
-      null,
-      true
-    );
-
-    // callback to RP app
-    eventDataForCallback = {
-      node_id: nodeId,
-      type: 'yourdata.request_status',
-      requester_node_id: nodeId,
-      as_node_id: request.as_node_id,
-      request_id,
-      request_timeout: request.request_timeout,
-      timed_out: false,
-      status: yourDataRequestStatus.DATA_DECRYPTION_KEY_REQUESTED,
-    };
-
-    callbackUrl = request.callback_url;
-    await callbackToClient({
-      callbackUrl,
-      body: eventDataForCallback,
-      retry: true,
     });
   }
 }
@@ -483,7 +492,7 @@ async function processDataDecryptionKeyResponse(nodeId, message) {
 
   // request's final state
   // remove request data from cache
-  await cleanupRequestCacheData({
+  await cleanupRequestCachedData({
     nodeId,
     requestId: request_id,
     referenceId: request.reference_id,
@@ -569,11 +578,6 @@ async function processDataDecryptionKeyResponse(nodeId, message) {
       //     service_id: data.service_id,
       //   }
       // );
-      // TODO
-      // request status update
-      // status: "encrypted_data_sent" if data is sent
-      // status: "error" if error is sent
-      // callback to AS app
       //
       // FIXME
       //

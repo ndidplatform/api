@@ -838,6 +838,26 @@ module.exports = {
     message: 'Invalid encrypted data hash (hash not matched)',
     clientError: true,
   },
+  REQUEST_IS_TIMED_OUT_OR_NOT_EXIST: {
+    code: 20114,
+    message: 'Request is already timed out or does not exist',
+    clientError: true,
+  },
+  UNEXPECTED_ACTION_AT_CURRENT_REQUEST_STATE: {
+    code: 20115,
+    message: 'Unexpected action at current request state',
+    clientError: true,
+  },
+  DUPLICATE_DATA_RESPONSE_WITH_DIFFERENT_DATA: {
+    code: 20116,
+    message: 'Data hash mismatch. Duplicate data response with different data',
+    clientError: true,
+  },
+  INVALID_ERROR_MESSAGE_TYPE_IN_AS_RESPONSE: {
+    code: 20117,
+    message: 'Invalid error message data type in AS response. Expected string.',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
