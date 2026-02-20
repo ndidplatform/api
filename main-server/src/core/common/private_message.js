@@ -32,7 +32,12 @@ import * as config from '../../config';
 
 const privateMessageTypes = Object.values(PRIVATE_MESSAGE_TYPES);
 
-export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
+export async function getPrivateMessages({
+  nodeId,
+  requestId,
+  type,
+  skipRequestIdCheck = false, // option for bypassing request ID on blockchain check for requests in domains (e.g. YourData)
+} = {}) {
   if (role === 'proxy') {
     if (nodeId == null) {
       throw new CustomError({
@@ -83,9 +88,11 @@ export async function getPrivateMessages({ nodeId, requestId, type } = {}) {
         return [...inboundMessages, ...outboundMessages];
       }
     } else {
-      const request = await tendermintNdid.getRequest({ requestId });
-      if (request == null) {
-        return null;
+      if (!skipRequestIdCheck) {
+        const request = await tendermintNdid.getRequest({ requestId });
+        if (request == null) {
+          return null;
+        }
       }
       if (type == null) {
         const allTypesMessages = await Promise.all(

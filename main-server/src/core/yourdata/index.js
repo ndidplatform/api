@@ -53,11 +53,11 @@ export async function createSignedToken({ nodeId, payload }) {
       },
     });
   }
-  if (nodeInfo.role.toLowerCase() !== 'as') {
-    throw new CustomError({
-      errorType: errorType.MUST_BE_AS_NODE,
-    });
-  }
+  // if (nodeInfo.role.toLowerCase() !== 'as') {
+  //   throw new CustomError({
+  //     errorType: errorType.MUST_BE_AS_NODE,
+  //   });
+  // }
 
   const nowUnixSeconds = Math.floor(Date.now() / 1000);
 

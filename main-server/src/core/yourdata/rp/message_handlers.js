@@ -29,6 +29,8 @@ import yourDataRequestStatus from '../request_status';
 
 import * as common from '../../common';
 import { unpackData } from '../../as_data_helper';
+import * as nodeCallback from '../../node_callback';
+
 import * as tendermintNdid from '../../../tendermint/ndid';
 import * as cacheDb from '../../../db/cache';
 import { callbackToClient } from '../../../callback';
@@ -323,18 +325,16 @@ async function processASResponse(nodeId, message) {
         //     service_id: data.service_id,
         //   }
         // );
-        //
-        // FIXME
-        //
-        // nodeCallback.notifyMessageQueueSuccessSend({
-        //   nodeId,
-        //   getCallbackUrlFnName:
-        //     'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
-        //   destNodeId: receiverNodeId,
-        //   destIp: mqDestAddress.ip,
-        //   destPort: mqDestAddress.port,
-        //   requestId: data.request_id,
-        // });
+
+        nodeCallback.notifyMessageQueueSuccessSend({
+          nodeId,
+          getCallbackUrlFnName:
+            'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
+          destNodeId: receiverNodeId,
+          destIp: mqDestAddress.ip,
+          destPort: mqDestAddress.port,
+          requestId: request_id,
+        });
       },
     });
   }
@@ -578,18 +578,16 @@ async function processDataDecryptionKeyResponse(nodeId, message) {
       //     service_id: data.service_id,
       //   }
       // );
-      //
-      // FIXME
-      //
-      // nodeCallback.notifyMessageQueueSuccessSend({
-      //   nodeId,
-      //   getCallbackUrlFnName:
-      //     'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
-      //   destNodeId: receiverNodeId,
-      //   destIp: mqDestAddress.ip,
-      //   destPort: mqDestAddress.port,
-      //   requestId: data.request_id,
-      // });
+
+      nodeCallback.notifyMessageQueueSuccessSend({
+        nodeId,
+        getCallbackUrlFnName:
+          'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
+        destNodeId: receiverNodeId,
+        destIp: mqDestAddress.ip,
+        destPort: mqDestAddress.port,
+        requestId: request_id,
+      });
     },
   });
 }

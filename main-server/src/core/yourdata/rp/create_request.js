@@ -32,6 +32,7 @@ import {
   removeTimeoutScheduler,
 } from '../../common/timeout_scheduler';
 import domain from '../../domain';
+import * as nodeCallback from '../../node_callback';
 
 import * as tendermintNdid from '../../../tendermint/ndid';
 import * as cacheDb from '../../../db/cache';
@@ -78,7 +79,7 @@ export async function createRequest(createRequestParams) {
     // validations
 
     // check (active) duplicate reference ID from cache
-    const existingRequestId = await cacheDb.getRequestIdByReferenceId(
+    const existingRequestId = await cacheDb.getYourDataRequestIdByReferenceId(
       node_id,
       reference_id
     );
@@ -193,7 +194,11 @@ export async function createRequest(createRequestParams) {
 
     await Promise.all([
       cacheDb.setYourDataRequestData(node_id, requestId, requestData),
-      cacheDb.setRequestIdByReferenceId(node_id, reference_id, requestId),
+      cacheDb.setYourDataRequestIdByReferenceId(
+        node_id,
+        reference_id,
+        requestId
+      ),
     ]);
 
     // set timeout
@@ -277,15 +282,16 @@ export async function createRequest(createRequestParams) {
         //     as_node_id: receiverNodeId,
         //   }
         // );
-        // nodeCallback.notifyMessageQueueSuccessSend({
-        //   nodeId: node_id,
-        //   getCallbackUrlFnName:
-        //     'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
-        //   destNodeId: receiverNodeId,
-        //   destIp: mqDestAddress.ip,
-        //   destPort: mqDestAddress.port,
-        //   requestId: request_id,
-        // });
+
+        nodeCallback.notifyMessageQueueSuccessSend({
+          nodeId: node_id,
+          getCallbackUrlFnName:
+            'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
+          destNodeId: receiverNodeId,
+          destIp: mqDestAddress.ip,
+          destPort: mqDestAddress.port,
+          requestId,
+        });
       },
     });
 

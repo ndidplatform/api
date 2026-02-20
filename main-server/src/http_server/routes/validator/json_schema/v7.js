@@ -1121,7 +1121,7 @@ export default {
             enum: [
               'one_time',
               'continuous_with_expire',
-              'continuous_no_expire ',
+              'continuous_no_expire',
             ],
           },
           expiration_datetime: { type: 'integer', minimum: 1 },

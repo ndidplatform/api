@@ -33,6 +33,8 @@ import yourDataRequestStatus from '../request_status';
 
 import * as common from '../../common';
 import domain from '../../domain';
+import * as nodeCallback from '../../node_callback';
+
 import * as tendermintNdid from '../../../tendermint/ndid';
 import * as cacheDb from '../../../db/cache';
 import * as dataDb from '../../../db/data';
@@ -656,18 +658,16 @@ async function processDataDecryptionKeyRequest(nodeId, message) {
       //     service_id: data.service_id,
       //   }
       // );
-      //
-      // FIXME
-      //
-      // nodeCallback.notifyMessageQueueSuccessSend({
-      //   nodeId,
-      //   getCallbackUrlFnName:
-      //     'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
-      //   destNodeId: receiverNodeId,
-      //   destIp: mqDestAddress.ip,
-      //   destPort: mqDestAddress.port,
-      //   requestId: data.request_id,
-      // });
+
+      nodeCallback.notifyMessageQueueSuccessSend({
+        nodeId,
+        getCallbackUrlFnName:
+          'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
+        destNodeId: receiverNodeId,
+        destIp: mqDestAddress.ip,
+        destPort: mqDestAddress.port,
+        requestId: request_id,
+      });
     },
   });
 }

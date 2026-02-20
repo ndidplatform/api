@@ -1176,6 +1176,41 @@ export function removeYourDataRequestData(nodeId, requestId) {
   });
 }
 
+// request ref
+
+export function getYourDataRequestIdByReferenceId(nodeId, referenceId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'YourData_referenceIdRequestIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'requestId',
+  });
+}
+
+export function setYourDataRequestIdByReferenceId(nodeId, referenceId, requestId) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'YourData_referenceIdRequestIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'requestId',
+    value: requestId,
+  });
+}
+
+export function removeYourDataRequestIdByReferenceId(nodeId, referenceId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'YourData_referenceIdRequestIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+  });
+}
+
 // YourData current request status
 
 export function getYourDataCurrentRequestStatus(nodeId, requestId) {

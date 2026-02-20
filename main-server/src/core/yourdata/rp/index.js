@@ -20,12 +20,39 @@
  *
  */
 
+import CustomError from 'ndid-error/custom_error';
+import errorType from 'ndid-error/type';
+
 import * as cacheDb from '../../../db/cache';
+
+import * as config from '../../../config';
+import { role } from '../../../node';
 
 export * from './create_request';
 export * from './as_data';
 export * from './timeout_request';
 export * from './message_handlers';
+
+export async function getRequestIdByReferenceId(nodeId, referenceId) {
+  try {
+    if (role === 'proxy') {
+      if (nodeId == null) {
+        throw new CustomError({
+          errorType: errorType.MISSING_NODE_ID,
+        });
+      }
+    } else {
+      nodeId = config.nodeId;
+    }
+
+    return await cacheDb.getYourDataRequestIdByReferenceId(nodeId, referenceId);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get Your Data request ID by reference ID',
+      cause: error,
+    });
+  }
+}
 
 export async function cleanupRequestCachedData({
   nodeId,
@@ -35,6 +62,6 @@ export async function cleanupRequestCachedData({
   await Promise.all([
     cacheDb.removeYourDataRequestData(nodeId, requestId),
     cacheDb.removeYourDataCurrentRequestStatus(nodeId, requestId),
-    cacheDb.removeRequestIdByReferenceId(nodeId, referenceId),
+    cacheDb.removeYourDataRequestIdByReferenceId(nodeId, referenceId),
   ]);
 }

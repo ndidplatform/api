@@ -70,6 +70,26 @@ router.post('/requests', validateBody, async (req, res, next) => {
   }
 });
 
+router.get('/request_references/:reference_id', async (req, res, next) => {
+  try {
+    const { node_id } = req.query;
+    const { reference_id } = req.params;
+
+    const requestId = await coreYourDataRP.getRequestIdByReferenceId(
+      node_id,
+      reference_id
+    );
+    if (requestId != null) {
+      res.status(200).json({ request_id: requestId });
+    } else {
+      res.status(404).end();
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/request_data/:request_id', async (req, res, next) => {
   try {
     const { node_id } = req.query;

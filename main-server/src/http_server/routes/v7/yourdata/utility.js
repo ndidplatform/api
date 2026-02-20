@@ -26,6 +26,7 @@ import { validateBody } from '../../middleware/validation';
 import * as tendermintNdid from '../../../../tendermint/ndid';
 import * as coreYourData from '../../../../core/yourdata';
 import domain from '../../../../core/domain';
+import * as privateMessage from '../../../../core/common/private_message';
 
 const router = express.Router();
 
@@ -70,6 +71,28 @@ router.get('/node_whitelist', async (req, res, next) => {
 
     res.status(200).json(result);
 
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/private_messages/:request_id', async (req, res, next) => {
+  try {
+    const { request_id } = req.params;
+    const { node_id, type } = req.query;
+    const messages = await privateMessage.getPrivateMessages({
+      nodeId: node_id,
+      requestId: request_id,
+      type,
+      skipRequestIdCheck: true,
+    });
+    if (messages == null) {
+      res.status(404).end();
+      next();
+      return;
+    }
+    res.status(200).json(messages);
     next();
   } catch (error) {
     next(error);

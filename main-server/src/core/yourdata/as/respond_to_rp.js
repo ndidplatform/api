@@ -30,6 +30,7 @@ import * as yourDataRequestQueueManager from '../request_queue_manager';
 import yourDataRequestStatus from '../request_status';
 import { packData } from '../../as_data_helper';
 import domain from '../../domain';
+import * as nodeCallback from '../../node_callback';
 
 import * as tendermintNdid from '../../../tendermint/ndid';
 import * as cacheDb from '../../../db/cache';
@@ -540,18 +541,16 @@ async function sendDataToRP(nodeId, rpNodeId, request, data, onSendSuccess) {
       //     service_id: data.service_id,
       //   }
       // );
-      //
-      // FIXME
-      //
-      // nodeCallback.notifyMessageQueueSuccessSend({
-      //   nodeId,
-      //   getCallbackUrlFnName:
-      //     'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
-      //   destNodeId: receiverNodeId,
-      //   destIp: mqDestAddress.ip,
-      //   destPort: mqDestAddress.port,
-      //   requestId: data.request_id,
-      // });
+
+      nodeCallback.notifyMessageQueueSuccessSend({
+        nodeId,
+        getCallbackUrlFnName:
+          'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
+        destNodeId: receiverNodeId,
+        destIp: mqDestAddress.ip,
+        destPort: mqDestAddress.port,
+        requestId: data.request_id,
+      });
     },
   });
 }

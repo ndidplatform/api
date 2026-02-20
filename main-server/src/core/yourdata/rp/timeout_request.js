@@ -26,6 +26,7 @@ import errorType from 'ndid-error/type';
 import { cleanupRequestCachedData } from '.';
 
 import { removeTimeoutScheduler } from '../../common/timeout_scheduler';
+import * as nodeCallback from '../../node_callback';
 
 import * as tendermintNdid from '../../../tendermint/ndid';
 import * as cacheDb from '../../../db/cache';
@@ -160,23 +161,17 @@ export async function timeoutRequest(nodeId, requestId) {
         //     service_id: data.service_id,
         //   }
         // );
-        // TODO
-        // request status update
-        // status: "encrypted_data_sent" if data is sent
-        // status: "error" if error is sent
-        // callback to AS app
         //
-        // FIXME
-        //
-        // nodeCallback.notifyMessageQueueSuccessSend({
-        //   nodeId,
-        //   getCallbackUrlFnName:
-        //     'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
-        //   destNodeId: receiverNodeId,
-        //   destIp: mqDestAddress.ip,
-        //   destPort: mqDestAddress.port,
-        //   requestId: data.request_id,
-        // });
+
+        nodeCallback.notifyMessageQueueSuccessSend({
+          nodeId,
+          getCallbackUrlFnName:
+            'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
+          destNodeId: receiverNodeId,
+          destIp: mqDestAddress.ip,
+          destPort: mqDestAddress.port,
+          requestId,
+        });
       },
     });
   } catch (error) {
