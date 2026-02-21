@@ -19,7 +19,8 @@ paths:
   /yourdata/as/request/{service_id}:
     post:
       summary: Incoming data request from AS node to AS.
-      description: (Callback) Incoming data request from AS node to AS.
+      description: >-
+        (Callback) Incoming data request from AS node to AS. Note: Path is as provided when adding or updating service offered.
       operationId: as_receive_request
       parameters:
         - in: path
@@ -50,7 +51,8 @@ paths:
   /yourdata/as/request_status_update:
     post:
       summary: Request (which pair of AS-RP node is involved) status update
-      description: (Callback) Request (which pair of AS-RP node is involved) status update
+      description: >-
+        (Callback) Request (which pair of AS-RP node is involved) status update. Note: Path is as provided when setting callback.
       requestBody:
         content:
           application/json:
