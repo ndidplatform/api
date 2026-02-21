@@ -408,11 +408,12 @@ router.get('/as_error_codes', async (req, res, next) => {
 router.get('/private_messages/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
-    const { node_id, type } = req.query;
+    const { node_id, type, skip_request_id_check } = req.query;
     const messages = await privateMessage.getPrivateMessages({
       nodeId: node_id,
       requestId: request_id,
       type,
+      skipRequestIdCheck: skip_request_id_check === 'true',
     });
     if (messages == null) {
       res.status(404).end();
