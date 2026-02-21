@@ -1,0 +1,305 @@
+openapi: 3.0.3
+info:
+  title: Your Data API
+  description: |-
+    Utility API related to Your Data feature.
+  version: '7.0'
+servers:
+  - url: http://localhost:8200
+    description: Local NDID RP role API server
+  - url: http://localhost:8300
+    description: Local NDID AS role API server
+
+tags:
+  - name: Your Data
+    description: Everything related to Your Data programme.
+    externalDocs:
+      description: Find out more
+      url: https://www.bot.or.th
+
+paths:
+  /yourdata/utility/token:
+    post:
+      summary: 'Create new signed token'
+      description: 'Create token signed by node signing key'
+      operationId: create_new_token
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YourDataConsentTokenBodyInput'
+        required: true
+      responses:
+        '200':
+          description: Create new token Successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YourDataConsentToken'
+        '400':
+          description: 'Client error'
+        '500':
+          description: 'Server error'
+
+  /yourdata/utility/as_error_codes:
+    get:
+      summary: 'Get AS error codes'
+      description: 'Get all AS error codes'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorCodeList'
+        '500':
+          description: 'Server error'
+
+  /yourdata/utility/node_whitelist:
+    get:
+      summary: 'Get Your Data domain node whitelist'
+      description: ''
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainNodeWhitelist'
+        '500':
+          description: 'Server error'
+
+components:
+  schemas:
+    YourDataConsentToken:
+      type: object
+      properties:
+        header:
+          type: object
+          properties:
+            alg:
+              type: string
+              example: 'HS256'
+            typ:
+              type: string
+              example: 'JWT'
+        payload:
+          $ref: '#/components/schemas/YourDataConsentTokenBody'
+        secret:
+          type: string
+
+    YourDataConsentTokenBody:
+      type: object
+      description: >-
+        This is part of JWT token (Payload part)
+      required:
+        - token_id
+        - rp_node_id
+        - as_node_id
+      properties:
+        token_id:
+          type: string
+        rp_node_id:
+          type: string
+          example: 'rp1'
+        as_node_id:
+          type: string
+          example: 'as1'
+        namespace:
+          type: string
+          example: 'citizen_id'
+        identifier:
+          type: string
+          example: '1234567890123'
+        token_objective:
+          type: string
+          description: >-
+            Spcify purpose of consent e.g., for loan application, for personalized finance management, etc.
+        sub_identity_list:
+          type: array
+          items:
+            type: object
+            required:
+              - account_id
+            properties:
+              namespace:
+                type: string
+                example: 'account_no'
+              idenfifier:
+                type: string
+                example: '123-45678-90'
+                description: This identifier must be unique across customers
+              visible_identifier:
+                type: string
+                example: '123-45XXX-XX'
+              identifier_extension:
+                type: string
+                description: This should be in a form of JSON string containing additional property.
+                example: '{account_type:savings}'
+        service_id_list:
+          type: array
+          items:
+            type: object
+            properties:
+              service_id:
+                type: string
+                example: 'deposit_statement'
+              service_version:
+                type: string
+                example: 'v1'
+              service_extension:
+                type: array
+                description: >-
+                  Supplementaty field for addtional information
+                  For example
+                  - for generating one-time token along with list of accounts (in pre-consent step), list of required service_id can be stored here
+                  - for generating a complete token (either one-time or recurring), service permission e.g., statment-simple AND/OR statment-detail can be stored here
+                items:
+                  type: string
+                example: ['statement-basic', 'statement-detail']
+        validate_identifier:
+          type: boolean
+          default: true
+          description: >-
+            True for YourData, False for Connext.
+        validate_service_id:
+          type: boolean
+          default: true
+          description: >-
+            True for YourData (service_id in list), False for Connext
+        validate_service_extension:
+          type: boolean
+          description: >-
+            For YourData, set to "True" if checking permission (in list) is needed
+
+        usage_type:
+          type: string
+          enum:
+            - one_time
+            - continuous_with_expire
+            - continuous_no_expire
+        issue_datetime:
+          type: number
+        expiration_datetime:
+          type: number
+        source_request_id_list:
+          type: array
+          items:
+            type: string
+        as_node_signing_key_version:
+          type: number
+
+    YourDataConsentTokenBodyInput:
+      type: object
+      description: >-
+        Input object for token creation
+      required:
+        - rp_node_id
+        - as_node_id
+      properties:
+        rp_node_id:
+          type: string
+          example: 'rp1'
+        as_node_id:
+          type: string
+          example: 'as1'
+        namespace:
+          type: string
+          example: 'citizen_id'
+        identifier:
+          type: string
+          example: '1234567890123'
+
+        token_objective:
+          type: string
+          description: >-
+            Spcify purpose of consent e.g., for loan application, for personalized finance management, etc.
+        sub_identity_list:
+          type: array
+          items:
+            type: object
+            required:
+              - account_id
+            properties:
+              namespace:
+                type: string
+                example: 'account_no'
+              idenfifier:
+                type: string
+                example: '123-45678-90'
+                description: This identifier must be unique across customers
+              visible_identifier:
+                type: string
+                example: '123-45XXX-XX'
+              identifier_extension:
+                type: string
+                example: '{account_type:savings}'
+        service_id_list:
+          type: array
+          items:
+            type: object
+            properties:
+              service_id:
+                type: string
+                example: 'deposit_statement'
+              service_version:
+                type: string
+                example: 'v1'
+              service_extension:
+                type: array
+                items:
+                  type: string
+                  description: >-
+                    Supplementaty field for addtional information
+                    For example
+                    - for generating one-time token along with list of accounts (in pre-consent step), list of required service_id can be stored here
+                    - for generating a complete token (either one-time or recurring), service permission e.g., statment-simple AND/OR statment-detail can be stored here
+                example: ['statement-basic', 'statement-detail']
+        validate_identifier:
+          type: boolean
+          default: true
+          description: >-
+            True for YourData, False for Connext.
+        validate_service_id:
+          type: boolean
+          default: true
+          description: >-
+            True for YourData, False for Connext
+        validate_service_extension:
+          type: boolean
+          description: >-
+            For YourData, set to "True" if checking permission (in list) is needed
+
+        usage_type:
+          type: string
+          enum:
+            - one_time
+            - continuous_with_expire
+            - continuous_no_expire
+        expiration_datetime:
+          type: number
+        source_request_id_list:
+          type: array
+          items:
+            type: string
+
+    ErrorCodeList:
+      type: array
+      items:
+        type: object
+        properties:
+          error_code:
+            type: integer
+          description:
+            type: string
+
+    DomainNodeWhitelist:
+      type: object
+      properties:
+        node_id_list:
+          type: array
+          items:
+            type: string
+        enabled:
+          type: boolean

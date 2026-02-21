@@ -1,0 +1,137 @@
+openapi: 3.0.3
+info:
+  title: Your Data API (Callback)
+  description: |-
+    API related to Your Data feature. API that RP MUST IMPLEMENT to be called by the platform.
+  version: '7.0'
+servers:
+  - description: Your RP application server
+    url: https://your-rp-app-server
+
+tags:
+  - name: Your Data
+    description: Everything related to Your Data programme.
+    externalDocs:
+      description: Find out more
+      url: https://www.bot.or.th
+
+paths:
+  /yourdata/rp/request_status_update:
+    post:
+      summary: Request (which this node is involved) status update
+      description: >-
+        Callback from NDID platform notifying request (which this node is involved) status update. Note: Path is as provided when creating request.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YourDataRequestStatus'
+        description: Request status update
+        required: true
+      responses:
+        '204':
+          description: Status Update Acknowledged
+
+components:
+  schemas:
+    YourDataRequestStatus:
+      oneOf:
+        - type: object
+          required:
+            - node_id
+            - type
+            - requester_node_id
+            - as_node_id
+            - request_id
+            - request_timeout
+            - timed_out
+            - status
+          properties:
+            node_id:
+              type: string
+              description: This node's ID
+            type:
+              type: string
+              enum:
+                - 'yourdata.request_status'
+            requester_node_id:
+              type: string
+              description: Requester's (RP's) node ID
+            as_node_id:
+              type: string
+              description: AS node ID
+            request_id:
+              type: string
+              example: '54302ae9453ec0738133b393e329963efdb6b39f8136aa24606fec4cd4a1cb33'
+            request_timeout:
+              type: integer
+              description: Timeout for the request. Unit in seconds.
+            timed_out:
+              type: boolean
+              default: false
+              # description: If timed_out is true and status = data_received, then RP may request for key to resume decryption
+            status:
+              type: string
+              enum:
+                - pending
+                - data_decryption_pending
+                - data_decryption_key_requested
+                - data_decryption_key_available
+                - completed
+              description: >-
+                'pending' means RP node sent request to AS node 
+                'data_decryption_pending' means AS node sent encrypted data to RP node.
+                'data_decryption_key_requested' means RP node received encrypted data and sent request for decryption key to AS node.
+                'data_decryption_key_available' means AS node sent decryption key to RP node.
+                'completed' means RP node is able to decrypt data from AS and the request is successful. This is request's terminal state.
+                'errored' means AS node sent an error instead of data back to RP. This is request's terminal state.
+        - type: object
+          required:
+            - type
+            - requester_node_id
+            - as_node_id
+            - request_id
+            - request_timeout
+            - timed_out
+            - status
+            - error_code
+            - error_message
+          properties:
+            node_id:
+              type: string
+              description: This node's ID
+            type:
+              type: string
+              enum:
+                - 'yourdata.request_status'
+            requester_node_id:
+              type: string
+              description: Requester's (RP's) node ID
+            as_node_id:
+              type: string
+              description: AS node ID
+            request_id:
+              type: string
+              example: '54302ae9453ec0738133b393e329963efdb6b39f8136aa24606fec4cd4a1cb33'
+            request_timeout:
+              type: integer
+              description: Timeout for the request. Unit in seconds.
+            timed_out:
+              type: boolean
+              default: false
+              # description: If timed_out is true and status = data_received, then RP may request for key to resume decryption
+            status:
+              type: string
+              enum:
+                - errored
+              description: >-
+                'pending' means RP node sent request to AS node 
+                'data_decryption_pending' means AS node sent encrypted data to RP node.
+                'data_decryption_key_requested' means RP node received encrypted data and sent request for decryption key to AS node.
+                'data_decryption_key_available' means AS node sent decryption key to RP node.
+                'completed' means RP node is able to decrypt data from AS and the request is successful. This is request's terminal state.
+                'errored' means AS node sent an error instead of data back to RP. This is request's terminal state.
+            error_code:
+              type: integer
+            error_message:
+              type: string

@@ -1,0 +1,312 @@
+openapi: 3.0.3
+info:
+  title: Your Data API
+  description: |-
+    API related to Your Data feature for RP.
+  version: '7.0'
+servers:
+  - url: http://localhost:8200
+    description: Local NDID RP role API server
+
+tags:
+  - name: Your Data
+    description: Everything related to Your Data programme.
+    externalDocs:
+      description: Find out more
+      url: https://www.bot.or.th
+
+paths:
+  /yourdata/rp/request:
+    post:
+      summary: Outgoing data request from RP to AS node.
+      description: Initial step for data request for Your Data request.
+      operationId: data_request
+      requestBody:
+        description: Common payload across various data shemas
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YourDataRPRequest'
+        required: true
+      responses:
+        '200':
+          description: Response with request_id and status='Pending'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YourDataRPRequestResponse'
+
+  /yourdata/rp/request_references/{reference_id}:
+    get:
+      summary: Get request ID for the unfinished (not completed or timed out) request with reference ID
+      description: Get request ID for the unfinished (not completed or timed out) request with reference ID -- Only request from this RP will succeed, reference number is not propagated to other nodes.
+      operationId: get_request_id_from_reference_number
+      parameters:
+        - name: reference_id
+          in: path
+          description: reference ID
+          required: true
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          description: Call this API as node ID (for proxy)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Requests exist
+          content:
+            application/json:
+              schema:
+                required:
+                  - request_id
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    example: '54302ae9453ec0738133b393e329963efdb6b39f8136aa24606fec4cd4a1cb33'
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No reference ID in the system
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /yourdata/rp/request_data/{request_id}:
+    get:
+      summary: Get Data requested from AS
+      operationId: get_request_data
+      parameters:
+        - name: request_id
+          in: path
+          description: Request ID
+          required: true
+          schema:
+            type: string
+        - name: rp_node_id
+          in: query
+          description: Call this API as RP node ID (for proxy)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Data found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/YourDataRPRequestData'
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Request does not exist (Incorrect request_id)
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /yourdata/rp/request_data_removal/{request_id}:
+    post:
+      summary: Delete Data requested from AS
+      parameters:
+        - name: request_id
+          in: path
+          description: Request ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                node_id:
+                  type: string
+                  description: Call this API as node ID (for proxy)
+        required: false
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /yourdata/rp/request_data_removal:
+    post:
+      summary: Delete ALL Data requested from AS
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: object
+              properties:
+                node_id:
+                  type: string
+                  description: Call this API as node ID (for proxy)
+        required: false
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    YourDataRPRequest:
+      ## note : internal "service catalog" within platform must have service_category
+      type: object
+      required:
+        - service_id
+        - as_node_id
+        - reference_id
+        - callback_url
+        - namespace
+        - identifier
+        - request_params
+        - authorization
+        - request_timeout
+      properties:
+        node_id:
+          type: string
+          example: 'rp1'
+          description: Call this API as node ID (for proxy)
+        service_id:
+          type: string
+          example: 'deposit_balance'
+          description: >-
+            service_id is a combination of {dataset_id} + {data_api}
+            For example : "deposit_statment" means "/deposit/statement"
+        service_version:
+          type: string
+          example: 'v1'
+        service_extension:
+          type: string
+          example: '[statement-detail]'
+          description: >-
+            Supplement property of this service.
+            For YourData = service permission
+        as_node_id:
+          type: string
+          example: 'as1'
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+          description: >-
+            Callback URL for notifying request status update.
+            [Request status update callback API specs](./yourdata_rp_callback.yaml#/yourdata/rp/request_status_update)
+        namespace:
+          type: string
+          example: 'citizen_id'
+        identifier:
+          type: string
+          example: '1234567890123'
+        request_params:
+          type: string
+        authorization:
+          type: string
+          description: >-
+            JWT signed with AS node key.
+            [Token payload schema](./yourdata_utility.yaml#/components/schemas/YourDataConsentTokenBody)
+        request_timeout:
+          type: integer
+          description: >-
+            Timeout for the request. Unit in seconds.
+
+    YourDataRPRequestResponse:
+      type: object
+      required:
+        - request_id
+      properties:
+        request_id:
+          type: string
+          example: '54302ae9453ec0738133b393e329963efdb6b39f8136aa24606fec4cd4a1cb33'
+
+    YourDataRPRequestData:
+      type: object
+      required:
+        - source_node_id
+        - service_id
+        - source_signature
+        - signature_signing_algorithm
+        - signature_signing_key_version
+        - data_salt
+        - data
+      properties:
+        source_node_id:
+          type: string
+          description: AS node ID that provided the data
+        service_id:
+          type: string
+          description: requested serivce ID
+        source_signature:
+          type: string
+          description: Digital Signature signed by source node key in base64 encoded string
+          example: <base64_string>
+        signature_signing_algorithm:
+          type: string
+          enum:
+            - RSASSA_PKCS1_V1_5_SHA_256
+            - RSASSA_PKCS1_V1_5_SHA_384
+            - RSASSA_PKCS1_V1_5_SHA_512
+            - RSASSA_PSS_SHA_256
+            - RSASSA_PSS_SHA_384
+            - RSASSA_PSS_SHA_512
+            - ECDSA_SHA_256
+            - ECDSA_SHA_384
+            - Ed25519
+        signature_signing_key_version:
+          type: number
+          example: 1
+        data_salt:
+          type: string
+        data:
+          type: string
+          description: requested data
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: number
+            message:
+              type: string

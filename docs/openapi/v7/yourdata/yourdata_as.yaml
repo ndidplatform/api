@@ -1,0 +1,312 @@
+openapi: 3.0.3
+info:
+  title: Your Data API
+  description: |-
+    API related to Your Data feature. for AS.
+  version: '7.0'
+servers:
+  - url: http://localhost:8300
+    description: Local NDID AS role API server
+
+tags:
+  - name: Your Data
+    description: Everything related to Your Data programme.
+    externalDocs:
+      description: Find out more
+      url: https://www.bot.or.th
+
+paths:
+  /yourdata/as/callback:
+    post:
+      summary: Register callback
+      operationId: as_register_callback
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                incoming_request_status_update_url:
+                  type: string
+                  description: 'Callback URL for related request status updates'
+      responses:
+        '204':
+          description: Callback set
+        '400':
+          description: 'Client error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: 'Server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: 'Retrieve set callback URLs'
+      description: ''
+      operationId: get_callback_url
+      responses:
+        '200':
+          description: Callback URLs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  incoming_request_status_update_url:
+                    type: string
+                    description: 'Callback URL for related request status updates'
+        '404':
+          description: 'Callback URL has not been set'
+        '400':
+          description: 'Client error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: 'Server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /yourdata/as/service/{service_id}:
+    post:
+      summary: 'Add or Update service offered by this AS'
+      description: ''
+      operationId: register_service
+      parameters:
+        - in: path
+          name: service_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YourDataASServiceUpdate'
+        required: true
+      responses:
+        '200':
+          description: Create or Update Successful
+        '400':
+          description: 'Client error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: 'Server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: 'Get information about service offered by this AS'
+      description: ''
+      operationId: get_service
+      parameters:
+        - in: path
+          name: service_id
+          description: 'service ID'
+          schema:
+            type: string
+          required: true
+        - name: as_node_id
+          in: query
+          description: 'Call this API as node ID'
+          schema:
+            type: string
+          required: false
+      responses:
+        '200':
+          description: Service Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YourDataASServiceView'
+        '404':
+          description: Service Not Found
+        '400':
+          description: 'Client error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: 'Server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /yourdata/as/data:
+    post:
+      summary: 'Respond data back to RP'
+      description: ''
+      operationId: send_data
+      requestBody:
+        description: 'Data'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YourDataASDataMessage'
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Bad request e.g., Invalid schema'
+        '500':
+          description: 'Server error'
+
+  /yourdata/as/error:
+    post:
+      summary: 'Respond error back to RP'
+      description: ''
+      operationId: send_error
+      requestBody:
+        description: 'Data'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YourDataASErrorMessage'
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Bad request e.g., Invalid schema'
+        '500':
+          description: 'Server error'
+
+components:
+  schemas:
+    YourDataASServiceUpdate:
+      type: object
+      required:
+        - service_url
+        - supported_namespace_list
+        - supported_authorization
+      properties:
+        node_id:
+          type: string
+          description: Call this API as AS node ID (for proxy)
+        service_url:
+          type: string
+          description: >-
+            Callback URL for receiving incoming requests for this service.
+            [Incoming request callback API specs](./yourdata_as_callback.yaml#/yourdata/as/request/{service_id})
+        supported_namespace_list:
+          type: array
+          items:
+            type: string
+            uniqueItems: true
+          example: ['citizen_id']
+        supported_authorization:
+          type: array
+          items:
+            type: string
+            enum:
+              - no_token_needed
+              - token_one_time
+              - token_continuous_with_expire
+              - token_continuous_no_expire
+            uniqueItems: true
+          example: [token_one_time, token_continuous_with_expire]
+        service_availability:
+          type: boolean
+          default: true
+          description: Service status. Setting to `false` will reject incoming requests for this service.
+          ## note : this is separated from suspended, which is controlled by NDID
+
+    YourDataASServiceView:
+      type: object
+      required:
+        - service_id
+        - service_url
+        - supported_namespace_list
+        - supported_authorization
+        - service_availability
+      properties:
+        node_id:
+          type: string
+          description: Call this API as AS node ID (for proxy)
+        service_id:
+          type: string
+          example: 'deposit_statement'
+        service_url:
+          type: string
+          description: >-
+            Callback URL for receiving incoming requests for this service.
+        supported_namespace_list:
+          type: array
+          items:
+            type: string
+            uniqueItems: true
+          example: ['citizen_id']
+        supported_authorization:
+          type: array
+          items:
+            type: string
+            enum:
+              - no_token_needed
+              - token_one_time
+              - token_continuous_with_expire
+              - token_continuous_no_expire
+            uniqueItems: true
+          example: ['token_one_time', 'token_continuous_with_expire']
+        service_availability:
+          type: boolean
+          default: true
+          description: Service status. Setting to `false` will reject incoming requests for this service.
+          ## note : this is separated from suspended, which is controlled by NDID
+
+    YourDataASDataMessage:
+      type: object
+      required:
+        - request_id
+        - data
+      properties:
+        node_id:
+          type: string
+          description: Call this API as AS node ID (for proxy)
+        request_id:
+          type: string
+          example: '54302ae9453ec0738133b393e329963efdb6b39f8136aa24606fec4cd4a1cb33'
+        data:
+          type: string
+          description: "Data URI is supported for files e.g. 'data:application/pdf;base64,Z9msE6b26FZYHbOsifdkZw=='. When sending a file, using data URL with base64 encoding helps reduce MQ message payload size. Although data URL with base64 encoding like '   data:  application/pdf  ;  base64  ,   Z9msE6b26FZ   YHbOsifdkZw==   ' is parsable, it is not supported since having whitespaces will cause invalid data signature check"
+
+    YourDataASErrorMessage:
+      type: object
+      required:
+        - request_id
+        - error_code
+        - error_message
+      properties:
+        node_id:
+          type: string
+          description: Call this API as AS node ID (for proxy)
+        request_id:
+          type: string
+          example: '54302ae9453ec0738133b393e329963efdb6b39f8136aa24606fec4cd4a1cb33'
+        error_code:
+          type: integer
+        error_message:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: number
+            message:
+              type: string
