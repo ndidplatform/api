@@ -118,7 +118,7 @@ router.get('/as/:service_id', async (req, res, next) => {
       service_id,
     });
     if (asNodes.length === 0) {
-      const services = await tendermintNdid.getServiceList();
+      const services = await tendermintNdid.getServiceList({ active: true });
       const service = services.find(
         (service) => service.service_id === service_id
       );
@@ -309,7 +309,16 @@ router.get('/namespaces', async (req, res, next) => {
 
 router.get('/services', async (req, res, next) => {
   try {
-    const { domain } = req.query;
+    const { active = 'true', domain } = req.query;
+
+    let activeFilter;
+    if (active == null) {
+      activeFilter = true;
+    } else if (active === 'all') {
+      activeFilter = undefined;
+    } else {
+      activeFilter = active === 'true';
+    }
 
     let domainFilter;
     if (domain == null) {
@@ -321,6 +330,7 @@ router.get('/services', async (req, res, next) => {
     }
 
     const services = await tendermintNdid.getServiceList({
+      active: activeFilter,
       domain: domainFilter,
     });
 

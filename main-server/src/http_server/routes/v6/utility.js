@@ -118,7 +118,7 @@ router.get('/as/:service_id', async (req, res, next) => {
       service_id,
     });
     if (asNodes.length === 0) {
-      const services = await tendermintNdid.getServiceList();
+      const services = await tendermintNdid.getServiceList({ active: true });
       const service = services.find(
         (service) => service.service_id === service_id
       );
@@ -309,7 +309,10 @@ router.get('/namespaces', async (req, res, next) => {
 
 router.get('/services', async (req, res, next) => {
   try {
-    const services = await tendermintNdid.getServiceList({ domain: '' });
+    const services = await tendermintNdid.getServiceList({
+      active: true,
+      domain: '',
+    });
 
     const result = services.map((service) => {
       const svc = { ...service };

@@ -1297,9 +1297,9 @@ export async function getNamespaceList() {
   }
 }
 
-export async function getServiceList({ domain } = {}) {
+export async function getServiceList({ active, domain } = {}) {
   try {
-    return (await tendermint.query('GetServiceList', { domain })) || [];
+    return (await tendermint.query('GetServiceList', { active, domain })) || [];
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get service list from blockchain',

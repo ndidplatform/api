@@ -219,6 +219,14 @@ async function checkAsListCondition({
           },
         });
       }
+      if (!service.active) {
+        throw new CustomError({
+          errorType: errorType.SERVICE_IS_NOT_ACTIVE,
+          details: {
+            service_id,
+          },
+        });
+      }
       if (service.domain != null) {
         containsServiceDomains.add(service.domain);
       }

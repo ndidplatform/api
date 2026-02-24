@@ -858,6 +858,11 @@ module.exports = {
     message: 'Invalid error message data type in AS response. Expected string.',
     clientError: true,
   },
+  SERVICE_IS_NOT_ACTIVE: {
+    code: 20118,
+    message: 'Service is not active (disabled)',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
