@@ -221,6 +221,53 @@ export default class TelemetryClient {
     }
   }
 
+  async receiveYourDataRequestEventData(nodeId, events) {
+    if (!events || events.length === 0) return; // no events
+
+    const token = await this.tokenManager.getTokenFromNodeId(nodeId);
+    if (token == null) {
+      // no token for this nodeId
+      // cannot send the data
+      logger.warn({
+        message: `No auth token of node ID: "${nodeId}"; Unable to send`,
+      });
+      this.tokenManager.requestNewToken(nodeId);
+      return false;
+    }
+
+    try {
+      logger.info({
+        message: 'Sending YourData request events',
+        count: events.length,
+        nodeId,
+      });
+      const result = await this.client.sendYourDataRequestEvents({
+        nodeId,
+        token,
+        events,
+      });
+
+      // incase the operation is invalid, remove the token manager and try the operation again
+      if (this.client.isTokenInvalid(result)) {
+        logger.info({
+          message: 'Invalidating token',
+          nodeId,
+          token,
+        });
+        await this.tokenManager.invalidateToken(nodeId, token);
+        return this.receiveYourDataRequestEventData(nodeId, events);
+      }
+
+      return this.client.isOk(result);
+    } catch (error) {
+      logger.error({
+        message: 'Error sending YourData request events',
+        err: error,
+      });
+      return false;
+    }
+  }
+
   async receiveProcessLogData(nodeId, logs) {
     if (!logs || logs.length === 0) return; // no events
 

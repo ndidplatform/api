@@ -74,6 +74,11 @@ export const requestEventStreamMaxCapacity = process.env
   ? parseInt(process.env.REQUEST_EVENT_STREAM_MAX_CAPACITY)
   : 1000000;
 
+export const yourDataRequestEventStreamMaxCapacity = process.env
+  .YOURDATA_REQUEST_EVENT_STREAM_MAX_CAPACITY
+  ? parseInt(process.env.YOURDATA_REQUEST_EVENT_STREAM_MAX_CAPACITY)
+  : 1000000;
+
 export const flushIntervalMs =
   (parseInt(process.env.FLUSH_INTERVAL_SEC) || 10) * 1000;
 

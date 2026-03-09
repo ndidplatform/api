@@ -75,8 +75,21 @@ const db = new TelemetryDb([
     },
     delayStart: intervalPerNode * idx,
     countLimit: 300,
-    timeLimit: config.flushIntervalMs, // flush every 5 seconds
+    timeLimit: config.flushIntervalMs, // msec
     streamMaxCapacity: config.requestEventStreamMaxCapacity,
+  })),
+  // Your Data request events
+  ...nodeIds.map((nodeId, idx) => ({
+    id: `yourdata-request-event-stream:${nodeId}`,
+    type: 'stream',
+    channelName: `${nodeId}:yourdata-request-events`,
+    onDataReceived: (events) => {
+      return client.receiveYourDataRequestEventData(nodeId, events);
+    },
+    delayStart: intervalPerNode * idx,
+    countLimit: 300,
+    timeLimit: config.flushIntervalMs, // msec
+    streamMaxCapacity: config.yourDataRequestEventStreamMaxCapacity,
   })),
   // Main version log
   ...nodeIds.map((nodeId) => ({
@@ -88,7 +101,7 @@ const db = new TelemetryDb([
     },
     delayStart: 0,
     countLimit: 100,
-    timeLimit: config.flushIntervalMs, // flush every 5 seconds
+    timeLimit: config.flushIntervalMs, // msec
     streamMaxCapacity: 10000,
   })),
   // MQ service version log
@@ -101,7 +114,7 @@ const db = new TelemetryDb([
     },
     delayStart: 0,
     countLimit: 100,
-    timeLimit: config.flushIntervalMs, // flush every 5 seconds
+    timeLimit: config.flushIntervalMs, // msec
     streamMaxCapacity: 10000,
   })),
   // Tendermint and ABCI version log
@@ -114,7 +127,7 @@ const db = new TelemetryDb([
     },
     delayStart: 0,
     countLimit: 100,
-    timeLimit: config.flushIntervalMs, // flush every 5 seconds
+    timeLimit: config.flushIntervalMs, // msec
     streamMaxCapacity: 10000,
   })),
   ...nodeIds.map((nodeId) => ({
@@ -126,7 +139,7 @@ const db = new TelemetryDb([
     },
     delayStart: 0,
     countLimit: 100,
-    timeLimit: config.flushIntervalMs, // flush every 5 seconds
+    timeLimit: config.flushIntervalMs, // msec
     streamMaxCapacity: 10000,
   })),
 ]);

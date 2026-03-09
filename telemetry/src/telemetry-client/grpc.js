@@ -38,7 +38,7 @@ const APP_RESPONSE_CODE = {
   UNKNOWN_VERSION: 1001,
 };
 
-const GRPC_API_VERSION = '1.0';
+const GRPC_API_VERSION = '1.1';
 
 export default class GRPCTelemetryClient {
   constructor() {
@@ -217,6 +217,29 @@ export default class GRPCTelemetryClient {
       const metadata = new grpc.Metadata();
       metadata.add('version', GRPC_API_VERSION);
       this.client.sendRequestEvents(
+        {
+          request_metadata: { node_id: nodeId, token },
+          data: events,
+        },
+        metadata,
+        (err, result) => {
+          if (err) reject(err);
+          logger.debug(result);
+          resolve(result);
+        }
+      );
+    });
+  }
+
+  sendYourDataRequestEvents({ nodeId, token, events }) {
+    logger.info({
+      message: 'Attempt connecting GRPC server',
+      function: 'sendYourDataRequestEvents',
+    });
+    return new Promise((resolve, reject) => {
+      const metadata = new grpc.Metadata();
+      metadata.add('version', GRPC_API_VERSION);
+      this.client.sendYourDataRequestEvents(
         {
           request_metadata: { node_id: nodeId, token },
           data: events,

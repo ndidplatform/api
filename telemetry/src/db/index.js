@@ -81,19 +81,21 @@ class TriggerTimeout {
   }
 }
 
+/**
+ * @typedef {Object} TelemetryDbChannel
+ * @property {string} id
+ * @property {"key-value" | "stream"} type
+ * @property {function(): void} onCreated - a callback function called when a channel is created
+ * @property {function(): boolean} onDataReceived - a callback function called when there are enough messages to transport or the timer is trigger
+ * @property {string} channelName - name of the channel
+ * @property {integer} timeLimit - a time limit (in ms) before timer is triggered
+ * @property {integer} countLimit - a number of events to read/get from redis stream at a time
+ */
+
 export default class TelemetryDb {
-  /*
-   @param {Object} channels
-    an object of connection channels with `channelID` as key and `channel` as value
-   @param {function () => bool} channel.onDataReceived
-    a callback function called when there are enough messages to transport or the timer is trigger
-   @param {string} channelName
-    name of the channel
-   @param {integer} channel.timeLimit
-    a timelimit (in ms) before timer is trigger
-   @param {integer] channel.countLimit
-    a number of events before timer is trigger
-  */
+  /**
+   * @param {TelemetryDbChannel[]} channels - an object of connection channels with `channelID` as key and `channel` as value
+   */
   constructor(channels) {
     this.backoff = new ExponentialBackoff({
       min: 1000,
