@@ -863,6 +863,21 @@ module.exports = {
     message: 'Service is not active (disabled)',
     clientError: true,
   },
+  REQUEST_STILL_IN_PROGRESS: {
+    code: 20119,
+    message: 'Request is still in progress (not yet timed out)',
+    clientError: true,
+  },
+  ENCRYPTED_DATA_NOT_FOUND: {
+    code: 20120,
+    message: 'Encrypted data not found',
+    clientError: true,
+  },
+  RETRY_ENCRYPTED_DATA_KEY_REQUEST_IN_PROGRESS: {
+    code: 20121,
+    message: 'Retry encrypted data key request is in progress',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors

@@ -54,6 +54,10 @@ function getName(messageType) {
       return 'yourdata.dataDecryptionKeyResponseMessage';
     case privateMessageType.YOURDATA_STATUS_SYNC:
       return 'yourdata.statusSyncMessage';
+    case privateMessageType.YOURDATA_DATA_DECRYPTION_KEY_RETRY_REQUEST:
+      return 'yourdata.decryptionKeyRetryRequestMessage';
+    case privateMessageType.YOURDATA_DATA_DECRYPTION_KEY_RETRY_RESPONSE:
+      return 'yourdata.dataDecryptionKeyRetryResponseMessage';
     default:
       throw new CustomError({
         message: 'Unknown message type',

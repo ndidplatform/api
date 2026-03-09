@@ -44,6 +44,7 @@ import { callbackToClient } from '../../../callback';
 import * as utils from '../../../utils';
 import * as jwtUtils from '../../../utils/jwt';
 
+import TelemetryLogger, { YOURDATA_REQUEST_EVENTS } from '../../../telemetry';
 import logger from '../../../logger';
 
 export async function processMessage(nodeId, messageId, message) {
@@ -64,6 +65,11 @@ export async function processMessage(nodeId, messageId, message) {
       await processDataDecryptionKeyRequest(nodeId, message);
     } else if (message.type === privateMessageType.YOURDATA_STATUS_SYNC) {
       await processDataStatusSync(nodeId, message);
+    } else if (
+      message.type ===
+      privateMessageType.YOURDATA_DATA_DECRYPTION_KEY_RETRY_REQUEST
+    ) {
+      await processDataDecryptionKeyRetryRequest(nodeId, message);
     } else {
       logger.warn({
         message: 'Cannot process unknown message type',
@@ -90,8 +96,7 @@ export async function processMessage(nodeId, messageId, message) {
 async function processDataRequest(nodeId, message) {
   // TODO: telemetry logging
   //
-  // log request event: AS_RECEIVES_RP_REQUEST
-  // TelemetryLogger.logRequestEvent(
+  // TelemetryLogger.logYourDataRequestEvent(
   //   requestId,
   //   nodeId,
   //   REQUEST_EVENTS.AS_RECEIVES_RP_REQUEST
@@ -304,6 +309,8 @@ async function processDataRequest(nodeId, message) {
 
   // --- end of validations ---
 
+  const sourceRequestIdList = parsedJwt.payload.source_request_id_list;
+
   // save request data to cache
   const request = {
     request_id,
@@ -317,6 +324,10 @@ async function processDataRequest(nodeId, message) {
     authorization,
     request_time,
     request_timeout,
+    //
+    tokenPayload: {
+      sourceRequestIdList,
+    },
   };
   // cache TTL - request timeout + message send retry duration
   const ttlSeconds = request_timeout + 600; // request timeout + 10 minutes
@@ -647,18 +658,6 @@ async function processDataDecryptionKeyRequest(nodeId, message) {
         });
       }
 
-      // FIXME
-      //
-      // log request event: AS_SENDS_DATA_TO_RP
-      // TelemetryLogger.logRequestEvent(
-      //   data.request_id,
-      //   nodeId,
-      //   REQUEST_EVENTS.AS_SENDS_DATA_TO_RP,
-      //   {
-      //     service_id: data.service_id,
-      //   }
-      // );
-
       nodeCallback.notifyMessageQueueSuccessSend({
         nodeId,
         getCallbackUrlFnName:
@@ -670,6 +669,17 @@ async function processDataDecryptionKeyRequest(nodeId, message) {
       });
     },
   });
+
+  TelemetryLogger.logYourDataRequestEvent(
+    request_id,
+    nodeId,
+    YOURDATA_REQUEST_EVENTS.AS_SENDS_DATA_DECRYPTION_KEY,
+    {
+      source_request_id_list: request.tokenPayload.sourceRequestIdList,
+      service_id: request.service_id,
+      requester_node_id: requesterNodeId,
+    }
+  );
 }
 
 async function processDataStatusSync(nodeId, message) {
@@ -763,4 +773,210 @@ async function processDataStatusSync(nodeId, message) {
       retry: true,
     });
   }
+}
+
+async function processDataDecryptionKeyRetryRequest(nodeId, message) {
+  const {
+    request_id,
+    service_id,
+    rp_node_id: requesterNodeId,
+    data_for_retry: dataForRetry,
+  } = message;
+
+  // check request is still active / not timed out yet
+  // -> get request data from cache if not exist assume timed out
+  const request = await cacheDb.getYourDataRequestData(nodeId, request_id);
+  if (request != null) {
+    logger.info({
+      message:
+        'Request is in progress (not yet timed out). Dropping data decryption key retry request.',
+      requestId: request_id,
+    });
+    return;
+  }
+
+  // validations
+
+  if (requesterNodeId !== dataForRetry.requester_node_id) {
+    logger.info({
+      message:
+        'Mismatch requester node ID for data decryption key retry request',
+      requestId: request_id,
+    });
+    return;
+  }
+
+  // TODO
+  // rate limit
+  // 10 times per hour per request ID
+  //
+
+  // verify signature
+  const nodeSigningKey = await tendermintNdid.getNodeSigningPubKey(
+    nodeId,
+    dataForRetry.signing_key_version
+  );
+  if (nodeSigningKey == null) {
+    throw new CustomError({
+      errorType: errorType.NODE_INFO_NOT_FOUND,
+      details: {
+        request_id,
+        signing_key_version: dataForRetry.signing_key_version,
+      },
+    });
+  }
+
+  const signature = Buffer.from(dataForRetry.signature, 'base64');
+
+  const dataForRetryForSignatureVerification = {
+    request_id,
+    encrypted_encryption_key: dataForRetry.encrypted_encryption_key,
+    requester_node_id: dataForRetry.requester_node_id,
+    signing_key_version: dataForRetry.signing_key_version,
+  };
+
+  if (
+    !utils.verifySignature(
+      nodeSigningKey.algorithm,
+      signature,
+      nodeSigningKey.public_key,
+      JSON.stringify(dataForRetryForSignatureVerification)
+    )
+  ) {
+    logger.info({
+      message:
+        'Invalid data for retry (decryption key retry request) signature',
+      requestId: request_id,
+    });
+    return;
+  }
+
+  // decrypt encryption key
+
+  const encryptedEncryptionKey = dataForRetry.encrypted_encryption_key;
+
+  const nodeEncryptionKey = await tendermintNdid.getNodeEncryptionPubKey(
+    nodeId,
+    encryptedEncryptionKey.encryption_key_version
+  );
+  if (nodeEncryptionKey == null) {
+    throw new CustomError({
+      errorType: errorType.NODE_INFO_NOT_FOUND,
+      details: {
+        request_id,
+        encryption_key_version: encryptedEncryptionKey.encryption_key_version,
+      },
+    });
+  }
+
+  const encryptedSymmetricKey = Buffer.from(
+    encryptedEncryptionKey.encrypted_symmetric_key_base64,
+    'base64'
+  );
+  const encryptedMessage = Buffer.from(
+    encryptedEncryptionKey.encrypted_data_base64,
+    'base64'
+  );
+
+  const encryptionKey = await utils.decryptAsymetricKey(
+    nodeId,
+    nodeEncryptionKey.algorithm,
+    nodeEncryptionKey.version,
+    encryptedSymmetricKey,
+    encryptedMessage
+  );
+
+  const encryptionKeyBase64 = encryptionKey.toString('base64');
+
+  // send key to RP
+
+  const requesterNodeInfo = await tendermintNdid.getNodeInfo(requesterNodeId);
+  if (requesterNodeInfo == null) {
+    throw new CustomError({
+      errorType: errorType.NODE_INFO_NOT_FOUND,
+      details: {
+        request_id,
+        requester_node_id: requesterNodeId,
+      },
+    });
+  }
+
+  let receivers;
+  if (requesterNodeInfo.proxy != null) {
+    if (
+      requesterNodeInfo.proxy.mq == null ||
+      requesterNodeInfo.proxy.mq.length === 0
+    ) {
+      throw new CustomError({
+        errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+        details: {
+          request_id,
+          requester_node_id: requesterNodeId,
+        },
+      });
+    }
+    receivers = [
+      {
+        node_id: requesterNodeId,
+        encryption_public_key: requesterNodeInfo.encryption_public_key,
+        proxy: {
+          node_id: requesterNodeInfo.proxy.node_id,
+          encryption_public_key: requesterNodeInfo.proxy.encryption_public_key,
+          ip: requesterNodeInfo.proxy.mq[0].ip,
+          port: requesterNodeInfo.proxy.mq[0].port,
+          config: requesterNodeInfo.proxy.config,
+        },
+      },
+    ];
+  } else {
+    if (requesterNodeInfo.mq == null || requesterNodeInfo.mq.length === 0) {
+      throw new CustomError({
+        errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
+        details: {
+          request_id,
+          requester_node_id: requesterNodeId,
+        },
+      });
+    }
+    receivers = [
+      {
+        node_id: requesterNodeId,
+        encryption_public_key: requesterNodeInfo.encryption_public_key,
+        ip: requesterNodeInfo.mq[0].ip,
+        port: requesterNodeInfo.mq[0].port,
+      },
+    ];
+  }
+
+  await mq.send({
+    receivers,
+    message: {
+      type: privateMessageType.YOURDATA_DATA_DECRYPTION_KEY_RETRY_RESPONSE,
+      request_id,
+      as_node_id: nodeId,
+      key_base64: encryptionKeyBase64,
+    },
+    senderNodeId: nodeId,
+    onSuccess: async ({ mqDestAddress, receiverNodeId }) => {
+      nodeCallback.notifyMessageQueueSuccessSend({
+        nodeId,
+        getCallbackUrlFnName:
+          'nodeCallback.getMessageQueueSendSuccessCallbackUrl',
+        destNodeId: receiverNodeId,
+        destIp: mqDestAddress.ip,
+        destPort: mqDestAddress.port,
+        requestId: request_id,
+      });
+    },
+  });
+
+  TelemetryLogger.logYourDataRequestEvent(
+    request_id,
+    nodeId,
+    YOURDATA_REQUEST_EVENTS.AS_SENDS_DATA_DECRYPTION_KEY_RETRY_RESPONSE,
+    {
+      service_id,
+      requester_node_id: requesterNodeId,
+    }
+  );
 }

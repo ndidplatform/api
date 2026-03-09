@@ -24,8 +24,11 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
 import { cleanupRequestCachedData } from '.';
+import { cleanupDataDecryptionKeyRetryRequestCachedData } from './data_decryption_key_retry_request';
 
-import yourDataRequestStatus from '../request_status';
+import yourDataRequestStatus, {
+  dataDecryptionKeyRetryRequestStatus,
+} from '../request_status';
 
 import * as common from '../../common';
 import { unpackData } from '../../as_data_helper';
@@ -38,8 +41,9 @@ import * as mq from '../../../mq';
 import privateMessageType from '../../../mq/message/type';
 import * as utils from '../../../utils';
 import * as cryptoUtils from '../../../utils/crypto';
-
+import TelemetryLogger, { YOURDATA_REQUEST_EVENTS } from '../../../telemetry';
 import logger from '../../../logger';
+
 import * as config from '../../../config';
 
 export async function processMessage(nodeId, messageId, message) {
@@ -58,6 +62,11 @@ export async function processMessage(nodeId, messageId, message) {
       message.type === privateMessageType.YOURDATA_DATA_DECRYPTION_KEY_RESPONSE
     ) {
       await processDataDecryptionKeyResponse(nodeId, message);
+    } else if (
+      message.type ===
+      privateMessageType.YOURDATA_DATA_DECRYPTION_KEY_RETRY_RESPONSE
+    ) {
+      await processDataDecryptionKeyRetryResponse(nodeId, message);
     } else {
       logger.warn({
         message: 'Cannot process unknown message type',
@@ -89,6 +98,7 @@ async function processASResponse(nodeId, message) {
     signature,
     data_salt,
     packed_data,
+    data_for_retry,
     error_code,
     error_message,
   } = message;
@@ -198,9 +208,12 @@ async function processASResponse(nodeId, message) {
 
     // save encrypted data to cache
     await cacheDb.setYourDataEncryptedData(nodeId, request_id, {
+      as_node_id: request.as_node_id,
+      service_id,
       signature,
       data_salt,
       packed_data,
+      data_for_retry,
     });
 
     const encryptedPackedDataBuffer = Buffer.from(
@@ -314,18 +327,6 @@ async function processASResponse(nodeId, message) {
 
         //
 
-        // FIXME
-        //
-        // log request event: AS_SENDS_DATA_TO_RP
-        // TelemetryLogger.logRequestEvent(
-        //   data.request_id,
-        //   nodeId,
-        //   REQUEST_EVENTS.AS_SENDS_DATA_TO_RP,
-        //   {
-        //     service_id: data.service_id,
-        //   }
-        // );
-
         nodeCallback.notifyMessageQueueSuccessSend({
           nodeId,
           getCallbackUrlFnName:
@@ -337,6 +338,17 @@ async function processASResponse(nodeId, message) {
         });
       },
     });
+
+    TelemetryLogger.logYourDataRequestEvent(
+      request_id,
+      nodeId,
+      YOURDATA_REQUEST_EVENTS.RP_REQUESTS_DATA_DECRYPTION_KEY,
+      {
+        source_request_id_list: request.tokenPayload.sourceRequestIdList,
+        service_id,
+        as_node_id: asNodeId,
+      }
+    );
   }
 }
 
@@ -567,18 +579,6 @@ async function processDataDecryptionKeyResponse(nodeId, message) {
     },
     senderNodeId: nodeId,
     onSuccess: ({ mqDestAddress, receiverNodeId }) => {
-      // FIXME
-      //
-      // log request event: AS_SENDS_DATA_TO_RP
-      // TelemetryLogger.logRequestEvent(
-      //   data.request_id,
-      //   nodeId,
-      //   REQUEST_EVENTS.AS_SENDS_DATA_TO_RP,
-      //   {
-      //     service_id: data.service_id,
-      //   }
-      // );
-
       nodeCallback.notifyMessageQueueSuccessSend({
         nodeId,
         getCallbackUrlFnName:
@@ -589,6 +589,132 @@ async function processDataDecryptionKeyResponse(nodeId, message) {
         requestId: request_id,
       });
     },
+  });
+}
+
+async function processDataDecryptionKeyRetryResponse(nodeId, message) {
+  const { request_id, key_base64 } = message;
+
+  logger.info({
+    message: 'Processing data decryption key retry response',
+    requestId: request_id,
+  });
+
+  // check request is still active / not timed out yet
+  // -> get request data from cache if not exist assume timed out
+  const retryRequest = await cacheDb.getYourDataRetryRequestData(
+    nodeId,
+    request_id
+  );
+  if (retryRequest == null) {
+    logger.info({
+      message:
+        'Data decryption key retry request is already timed out or does not exist',
+      requestId: request_id,
+    });
+    return;
+  }
+
+  // get encrypted data and signature received from AS from cache
+  const encryptedDataFromAS = await cacheDb.getYourDataEncryptedData(
+    nodeId,
+    request_id
+  );
+
+  // decrypt data with key from AS
+  const key = Buffer.from(key_base64, 'base64');
+  const encryptedPackedDataBuffer = Buffer.from(
+    encryptedDataFromAS.packed_data.buffer_base64,
+    'base64'
+  );
+  const decryptedDataBuffer = cryptoUtils.decryptAES256GCM(
+    key,
+    encryptedPackedDataBuffer,
+    false
+  );
+
+  const packedData = {
+    buffer_base64: decryptedDataBuffer.toString('base64'),
+    metadata: encryptedDataFromAS.packed_data.metadata,
+  };
+
+  const data = await unpackData({
+    packedData,
+    maxUncompressedLength: config.asDataMaxUncompressedLength,
+  });
+
+  // verify signature
+  const signature = encryptedDataFromAS.signature;
+  const dataSalt = encryptedDataFromAS.data_salt;
+
+  const dataSignatureVerificationResult = await verifyDataSignature(
+    retryRequest.as_node_id,
+    signature,
+    dataSalt,
+    data
+  );
+  if (!dataSignatureVerificationResult.valid) {
+    const err = new CustomError({
+      errorType: errorType.INVALID_DATA_RESPONSE_SIGNATURE,
+      details: {
+        request_id,
+      },
+    });
+    logger.error({ err });
+    await common.notifyError({
+      nodeId,
+      getCallbackUrlFnName: 'rp.getErrorCallbackUrl',
+      action: 'yourdata.processDataDecryptionKeyRetryResponse',
+      error: err,
+      requestId: request_id,
+    });
+    return;
+  }
+
+  // set/store decrypted data to cache
+  await cacheDb.setYourDataDataFromAS(nodeId, request_id, {
+    source_node_id: retryRequest.as_node_id,
+    service_id: retryRequest.service_id,
+    source_signature: signature,
+    signature_signing_algorithm:
+      dataSignatureVerificationResult.signingPublicKey.algorithm,
+    signature_signing_key_version:
+      dataSignatureVerificationResult.signingPublicKey.version,
+    data_salt: dataSalt,
+    data,
+  });
+
+  await cacheDb.removeYourDataEncryptedData(nodeId, request_id);
+
+  // stop timeout timer
+  common.removeTimeoutScheduler(nodeId, request_id);
+
+  //
+
+  // callback to RP app
+  const eventDataForCallback = {
+    node_id: nodeId,
+    type: 'yourdata.data_decryption_key_retry_request_status',
+    requester_node_id: nodeId,
+    as_node_id: retryRequest.as_node_id,
+    request_id,
+    request_timeout: retryRequest.request_timeout,
+    timed_out: false,
+    status: dataDecryptionKeyRetryRequestStatus.COMPLETED,
+  };
+
+  const callbackUrl = retryRequest.callback_url;
+  await callbackToClient({
+    callbackUrl,
+    body: eventDataForCallback,
+    retry: true,
+  });
+
+  // remove data decryption key retry request data from cache
+  await cleanupDataDecryptionKeyRetryRequestCachedData({
+    nodeId,
+    requestId: request_id,
+    referenceId: retryRequest.reference_id,
   });
 }
 

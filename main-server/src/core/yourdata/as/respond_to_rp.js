@@ -39,12 +39,16 @@ import privateMessageType from '../../../mq/message/type';
 import { callbackToClient } from '../../../callback';
 import * as utils from '../../../utils';
 import * as cryptoUtils from '../../../utils/crypto';
+import TelemetryLogger, { YOURDATA_REQUEST_EVENTS } from '../../../telemetry';
 import logger from '../../../logger';
 
 import * as config from '../../../config';
 import { role } from '../../../node';
 
-export async function respondDataToRP(respondDataToRPParams) {
+export async function respondDataToRP(
+  respondDataToRPParams,
+  { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = {}
+) {
   let { node_id: nodeId } = respondDataToRPParams;
   const { request_id } = respondDataToRPParams;
 
@@ -66,7 +70,8 @@ export async function respondDataToRP(respondDataToRPParams) {
       {
         ...respondDataToRPParams,
         node_id: nodeId,
-      }
+      },
+      { apiVersion, ndidMemberAppType, ndidMemberAppVersion }
     );
   } catch (error) {
     throw new CustomError({
@@ -80,7 +85,10 @@ export async function respondDataToRP(respondDataToRPParams) {
 // use this function with request process queue
 // to prevent some inconsistencies with status change
 // e.g. AS app call send data API multiple times, timeout status sync from RP happening at the same time
-async function respondDataToRPInternal(respondDataToRPParams) {
+async function respondDataToRPInternal(
+  respondDataToRPParams,
+  { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = {}
+) {
   let { node_id: nodeId } = respondDataToRPParams;
   const { request_id, data } = respondDataToRPParams;
 
@@ -211,7 +219,50 @@ async function respondDataToRPInternal(respondDataToRPParams) {
     );
     const signature = signatureBuffer.toString('base64');
 
-    const rpNodeId = request.requester_node_id;
+    const requesterNodeId = request.requester_node_id;
+
+    // prepare data for data encryption key request retry for RP
+    //
+    // - encrypt "encryptionKey" with node's public key
+    // - sign encrypted key with other metadata (request ID, requester node ID)
+
+    const nodeInfo = await tendermintNdid.getNodeInfo(nodeId);
+
+    const { encryptedSymKey, encryptedMessage } = utils.encryptAsymetricKey(
+      nodeInfo.encryption_public_key.algorithm,
+      nodeInfo.encryption_public_key.public_key,
+      encryptionKey
+    );
+
+    const encryptedEncryptionKey = {
+      encrypted_symmetric_key_base64: encryptedSymKey.toString('base64'),
+      encrypted_data_base64: encryptedMessage.toString('base64'),
+      encryption_key_version: nodeInfo.encryption_public_key.version,
+    };
+
+    const dataForRetryWithoutSignature = {
+      encrypted_encryption_key: encryptedEncryptionKey,
+      requester_node_id: requesterNodeId,
+      signing_key_version: nodeInfo.signing_public_key.version,
+    };
+
+    const dataForRetryForSigning = {
+      request_id,
+      ...dataForRetryWithoutSignature,
+    };
+
+    const dataForRetrySignature = await utils.createSignature(
+      nodeInfo.signing_public_key.algorithm,
+      nodeInfo.signing_public_key.version,
+      JSON.stringify(dataForRetryForSigning),
+      nodeId
+    );
+
+    const dataForRetry = {
+      ...dataForRetryWithoutSignature,
+      signature: dataForRetrySignature.toString('base64'),
+    };
+
     const dataToSendToRP = {
       request_id,
       as_node_id: nodeId,
@@ -219,6 +270,7 @@ async function respondDataToRPInternal(respondDataToRPParams) {
       signature,
       data_salt,
       packed_data: encryptedPackedData,
+      data_for_retry: dataForRetry,
     };
 
     const onSendSuccess = async () => {
@@ -242,12 +294,13 @@ async function respondDataToRPInternal(respondDataToRPParams) {
       });
     };
 
-    await sendDataToRP(
+    await sendResponseToRequester(
       nodeId,
-      rpNodeId,
+      requesterNodeId,
       request,
       dataToSendToRP,
-      onSendSuccess
+      onSendSuccess,
+      { apiVersion, ndidMemberAppType, ndidMemberAppVersion }
     );
   } catch (error) {
     throw new CustomError({
@@ -286,7 +339,10 @@ async function callbackStatusUpdateDataDecryptionPending({
   }
 }
 
-export async function respondErrorToRP(respondErrorToRPParams) {
+export async function respondErrorToRP(
+  respondErrorToRPParams,
+  { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = {}
+) {
   let { node_id: nodeId } = respondErrorToRPParams;
   const { request_id, error_code } = respondErrorToRPParams;
 
@@ -323,7 +379,8 @@ export async function respondErrorToRP(respondErrorToRPParams) {
       {
         ...respondErrorToRPParams,
         node_id: nodeId,
-      }
+      },
+      { apiVersion, ndidMemberAppType, ndidMemberAppVersion }
     );
   } catch (error) {
     throw new CustomError({
@@ -337,7 +394,10 @@ export async function respondErrorToRP(respondErrorToRPParams) {
 // use this function with request process queue
 // to prevent some inconsistencies with status change
 // e.g. AS app call send data API multiple times, timeout status sync from RP happening at the same time
-async function respondErrorToRPInternal(respondErrorToRPParams) {
+async function respondErrorToRPInternal(
+  respondErrorToRPParams,
+  { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = {}
+) {
   let { node_id: nodeId } = respondErrorToRPParams;
   const { request_id, error_code, error_message } = respondErrorToRPParams;
 
@@ -378,7 +438,7 @@ async function respondErrorToRPInternal(respondErrorToRPParams) {
       });
     }
 
-    const rpNodeId = request.requester_node_id;
+    const requesterNodeId = request.requester_node_id;
     const dataToSendToRP = {
       request_id,
       as_node_id: nodeId,
@@ -410,12 +470,13 @@ async function respondErrorToRPInternal(respondErrorToRPParams) {
       });
     };
 
-    await sendDataToRP(
+    await sendResponseToRequester(
       nodeId,
-      rpNodeId,
+      requesterNodeId,
       request,
       dataToSendToRP,
-      onSendSuccess
+      onSendSuccess,
+      { apiVersion, ndidMemberAppType, ndidMemberAppVersion }
     );
   } catch (error) {
     throw new CustomError({
@@ -458,8 +519,15 @@ async function callbackStatusUpdateErrored({
   }
 }
 
-async function sendDataToRP(nodeId, rpNodeId, request, data, onSendSuccess) {
-  const nodeInfo = await tendermintNdid.getNodeInfo(rpNodeId);
+async function sendResponseToRequester(
+  nodeId,
+  requesterNodeId,
+  request,
+  data,
+  onSendSuccess,
+  { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = {}
+) {
+  const nodeInfo = await tendermintNdid.getNodeInfo(requesterNodeId);
   if (nodeInfo == null) {
     throw new CustomError({
       errorType: errorType.NODE_INFO_NOT_FOUND,
@@ -476,13 +544,13 @@ async function sendDataToRP(nodeId, rpNodeId, request, data, onSendSuccess) {
         errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
         details: {
           request_id: data.request_id,
-          nodeId: rpNodeId,
+          nodeId: requesterNodeId,
         },
       });
     }
     receivers = [
       {
-        node_id: rpNodeId,
+        node_id: requesterNodeId,
         encryption_public_key: nodeInfo.encryption_public_key,
         proxy: {
           node_id: nodeInfo.proxy.node_id,
@@ -499,13 +567,13 @@ async function sendDataToRP(nodeId, rpNodeId, request, data, onSendSuccess) {
         errorType: errorType.MESSAGE_QUEUE_ADDRESS_NOT_FOUND,
         details: {
           request_id: data.request_id,
-          nodeId: rpNodeId,
+          nodeId: requesterNodeId,
         },
       });
     }
     receivers = [
       {
-        node_id: rpNodeId,
+        node_id: requesterNodeId,
         encryption_public_key: nodeInfo.encryption_public_key,
         ip: nodeInfo.mq[0].ip,
         port: nodeInfo.mq[0].port,
@@ -523,24 +591,13 @@ async function sendDataToRP(nodeId, rpNodeId, request, data, onSendSuccess) {
       signature: data.signature,
       data_salt: data.data_salt,
       packed_data: data.packed_data,
+      data_for_retry: data.data_for_retry,
       error_code: data.error_code,
       error_message: data.error_message,
     },
     senderNodeId: nodeId,
     onSuccess: ({ mqDestAddress, receiverNodeId }) => {
       onSendSuccess();
-
-      // FIXME
-      //
-      // log request event: AS_SENDS_DATA_TO_RP
-      // TelemetryLogger.logRequestEvent(
-      //   data.request_id,
-      //   nodeId,
-      //   REQUEST_EVENTS.AS_SENDS_DATA_TO_RP,
-      //   {
-      //     service_id: data.service_id,
-      //   }
-      // );
 
       nodeCallback.notifyMessageQueueSuccessSend({
         nodeId,
@@ -553,4 +610,20 @@ async function sendDataToRP(nodeId, rpNodeId, request, data, onSendSuccess) {
       });
     },
   });
+
+  TelemetryLogger.logYourDataRequestEvent(
+    data.request_id,
+    nodeId,
+    YOURDATA_REQUEST_EVENTS.AS_SENDS_RESPONSE,
+    {
+      api_spec_version: apiVersion,
+      ndid_member_app_type: ndidMemberAppType,
+      ndid_member_app_version: ndidMemberAppVersion,
+      source_request_id_list: request.tokenPayload.sourceRequestIdList,
+      service_id: data.service_id,
+      requester_node_id: requesterNodeId,
+      error_code: data.error_code,
+      error_message: data.error_message,
+    }
+  );
 }

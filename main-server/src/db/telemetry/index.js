@@ -163,6 +163,34 @@ export async function addNewRequestEvent(
   }
 }
 
+export async function addNewYourDataRequestEvent(
+  nodeId,
+  { request_id, node_id, state_code, source_timestamp, additional_data }
+) {
+  try {
+    let additionalData = [];
+    if (additional_data != null) {
+      additionalData = ['additional_data', JSON.stringify(additional_data)];
+    }
+
+    await getRedis().xadd(
+      `${nodeId}:yourdata-request-events`,
+      '*',
+      'request_id',
+      request_id,
+      'node_id',
+      node_id,
+      'state_code',
+      state_code,
+      'source_timestamp',
+      source_timestamp,
+      ...additionalData
+    );
+  } catch (err) {
+    logger.error({ err });
+  }
+}
+
 export async function setToken(nodeId, token) {
   try {
     await getRedis().set(`token:${nodeId}`, token);

@@ -44,7 +44,7 @@ export async function getDataFromAS(nodeId, requestId) {
     return await cacheDb.getYourDataDataFromAS(nodeId, requestId);
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot get data received from AS',
+      message: 'Cannot get YourData data received from AS',
       cause: error,
     });
   }
@@ -62,10 +62,13 @@ export async function removeDataFromAS(nodeId, requestId) {
       nodeId = config.nodeId;
     }
 
-    return await cacheDb.removeYourDataDataFromAS(nodeId, requestId);
+    await Promise.all([
+      cacheDb.removeYourDataDataFromAS(nodeId, requestId),
+      cacheDb.removeYourDataEncryptedData(nodeId, requestId),
+    ]);
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot remove data received from AS',
+      message: 'Cannot remove YourData data received from AS',
       cause: error,
     });
   }
@@ -83,10 +86,13 @@ export async function removeAllDataFromAS(nodeId) {
       nodeId = config.nodeId;
     }
 
-    return await cacheDb.removeAllDataFromAS(nodeId);
+    await Promise.all([
+      cacheDb.removeAllYourDataDataFromAS(nodeId),
+      cacheDb.removeAllYourDataEncryptedData(nodeId),
+    ]);
   } catch (error) {
     throw new CustomError({
-      message: 'Cannot remove all data received from AS',
+      message: 'Cannot remove all YourData data received from AS',
       cause: error,
     });
   }

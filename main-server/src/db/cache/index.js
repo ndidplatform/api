@@ -1189,7 +1189,11 @@ export function getYourDataRequestIdByReferenceId(nodeId, referenceId) {
   });
 }
 
-export function setYourDataRequestIdByReferenceId(nodeId, referenceId, requestId) {
+export function setYourDataRequestIdByReferenceId(
+  nodeId,
+  referenceId,
+  requestId
+) {
   return db.set({
     nodeId,
     dbName,
@@ -1286,7 +1290,7 @@ export function getYourDataEncryptedData(nodeId, requestId) {
   return db.get({
     nodeId,
     dbName,
-    name: 'YourData_encryptionData',
+    name: 'YourData_encryptedData',
     key: requestId,
   });
 }
@@ -1295,7 +1299,7 @@ export function setYourDataEncryptedData(nodeId, requestId, data) {
   return db.set({
     nodeId,
     dbName,
-    name: 'YourData_encryptionData',
+    name: 'YourData_encryptedData',
     key: requestId,
     value: data,
   });
@@ -1305,8 +1309,16 @@ export function removeYourDataEncryptedData(nodeId, requestId) {
   return db.remove({
     nodeId,
     dbName,
-    name: 'YourData_encryptionData',
+    name: 'YourData_encryptedData',
     key: requestId,
+  });
+}
+
+export function removeAllYourDataEncryptedData(nodeId) {
+  return db.removeAll({
+    nodeId,
+    dbName,
+    name: 'YourData_encryptedData',
   });
 }
 
@@ -1345,5 +1357,76 @@ export function removeAllYourDataDataFromAS(nodeId) {
     nodeId,
     dbName,
     name: 'YourData_dataFromAS',
+  });
+}
+
+// retry data encryption key request ref
+
+export function getYourDataRetryRequestIdByReferenceId(nodeId, referenceId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'YourData_referenceIdRetryRequestIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'requestId',
+  });
+}
+
+export function setYourDataRetryRequestIdByReferenceId(
+  nodeId,
+  referenceId,
+  requestId
+) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'YourData_referenceIdRetryRequestIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+    valueName: 'requestId',
+    value: requestId,
+  });
+}
+
+export function removeYourDataRetryRequestIdByReferenceId(nodeId, referenceId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'YourData_referenceIdRetryRequestIdMapping',
+    keyName: 'referenceId',
+    key: referenceId,
+  });
+}
+
+// retry data encryption key request
+
+export function getYourDataRetryRequestData(nodeId, requestId) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'YourData_keyRetryRequestData',
+    key: requestId,
+  });
+}
+
+export function setYourDataRetryRequestData(nodeId, requestId, request, ttl) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'YourData_keyRetryRequestData',
+    key: requestId,
+    value: request,
+    ttl,
+    onlyIfNotExist: true,
+  });
+}
+
+export function removeYourDataRetryRequestData(nodeId, requestId) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'YourData_keyRetryRequestData',
+    key: requestId,
   });
 }

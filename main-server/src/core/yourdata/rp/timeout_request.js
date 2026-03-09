@@ -33,7 +33,6 @@ import * as cacheDb from '../../../db/cache';
 import { callbackToClient } from '../../../callback';
 import * as mq from '../../../mq';
 import privateMessageType from '../../../mq/message/type';
-import TelemetryLogger from '../../../telemetry';
 import logger from '../../../logger';
 
 export async function timeoutRequest(nodeId, requestId) {
@@ -150,19 +149,6 @@ export async function timeoutRequest(nodeId, requestId) {
       },
       senderNodeId: nodeId,
       onSuccess: ({ mqDestAddress, receiverNodeId }) => {
-        // FIXME
-        //
-        // log request event: AS_SENDS_DATA_TO_RP
-        // TelemetryLogger.logRequestEvent(
-        //   data.request_id,
-        //   nodeId,
-        //   REQUEST_EVENTS.AS_SENDS_DATA_TO_RP,
-        //   {
-        //     service_id: data.service_id,
-        //   }
-        // );
-        //
-
         nodeCallback.notifyMessageQueueSuccessSend({
           nodeId,
           getCallbackUrlFnName:

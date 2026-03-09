@@ -32,6 +32,22 @@ paths:
         '204':
           description: Status Update Acknowledged
 
+  /yourdata/rp/data_decryption_key_retry_request_status_update:
+    post:
+      summary: Data decryption key retry request (which this node is involved) status update
+      description: >-
+        Callback from NDID platform notifying data decryption key retry request (which this node is involved) status update. Note: Path is as provided when creating data decryption key retry request.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YourDataDecryptionKeyRetryRequestStatus'
+        description: Request status update
+        required: true
+      responses:
+        '204':
+          description: Status Update Acknowledged
+
 components:
   schemas:
     YourDataRequestStatus:
@@ -135,3 +151,46 @@ components:
               type: integer
             error_message:
               type: string
+
+    YourDataDecryptionKeyRetryRequestStatus:
+      type: object
+      required:
+        - node_id
+        - type
+        - requester_node_id
+        - as_node_id
+        - request_id
+        - request_timeout
+        - timed_out
+        - status
+      properties:
+        node_id:
+          type: string
+          description: This node's ID
+        type:
+          type: string
+          enum:
+            - 'yourdata.data_decryption_key_retry_request_status'
+        requester_node_id:
+          type: string
+          description: Requester's (RP's) node ID
+        as_node_id:
+          type: string
+          description: AS node ID
+        request_id:
+          type: string
+          example: '54302ae9453ec0738133b393e329963efdb6b39f8136aa24606fec4cd4a1cb33'
+        request_timeout:
+          type: integer
+          description: Timeout for the retry request. Unit in seconds.
+        timed_out:
+          type: boolean
+          default: false
+        status:
+          type: string
+          enum:
+            - pending
+            - completed
+          description: >-
+            'pending' means RP node sent retry request to AS node 
+            'completed' means RP node is able to decrypt data from AS and the request is successful. This is request's terminal state.

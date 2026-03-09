@@ -41,13 +41,16 @@ import privateMessageType from '../../../mq/message/type';
 import { callbackToClient } from '../../../callback';
 import * as utils from '../../../utils';
 import * as jwtUtils from '../../../utils/jwt';
-import TelemetryLogger from '../../../telemetry';
+import TelemetryLogger, { YOURDATA_REQUEST_EVENTS } from '../../../telemetry';
 import logger from '../../../logger';
 
 import * as config from '../../../config';
 import { role } from '../../../node';
 
-export async function createRequest(createRequestParams) {
+export async function createRequest(
+  createRequestParams,
+  { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = {}
+) {
   let { node_id } = createRequestParams;
   const {
     service_id,
@@ -169,6 +172,8 @@ export async function createRequest(createRequestParams) {
 
     // --- end of validations ---
 
+    const sourceRequestIdList = parsedJwt.payload.source_request_id_list;
+
     // generate request ID
     requestId = utils.createRequestId();
 
@@ -190,6 +195,10 @@ export async function createRequest(createRequestParams) {
       request_timeout,
       reference_id,
       callback_url,
+      //
+      tokenPayload: {
+        sourceRequestIdList,
+      },
     };
 
     await Promise.all([
@@ -205,7 +214,7 @@ export async function createRequest(createRequestParams) {
     await setTimeoutScheduler({
       nodeId: node_id,
       requestId,
-      domain: 'yourdata',
+      type: 'yourdata',
       secondsToTimeout: request_timeout,
     });
 
@@ -267,22 +276,12 @@ export async function createRequest(createRequestParams) {
       request_time: requestTime,
       request_timeout,
     };
+
     await mq.send({
       receivers,
       message: mqMessage,
       senderNodeId: node_id,
       onSuccess: ({ mqDestAddress, receiverNodeId }) => {
-        // FIXME
-        //
-        // TelemetryLogger.logRequestEvent(
-        //   request_id,
-        //   node_id,
-        //   REQUEST_EVENTS.RP_SENDS_REQUEST_TO_IDP,
-        //   {
-        //     as_node_id: receiverNodeId,
-        //   }
-        // );
-
         nodeCallback.notifyMessageQueueSuccessSend({
           nodeId: node_id,
           getCallbackUrlFnName:
@@ -295,6 +294,20 @@ export async function createRequest(createRequestParams) {
       },
     });
 
+    TelemetryLogger.logYourDataRequestEvent(
+      requestId,
+      node_id,
+      YOURDATA_REQUEST_EVENTS.RP_REQUESTS_DATA,
+      {
+        api_spec_version: apiVersion,
+        ndid_member_app_type: ndidMemberAppType,
+        ndid_member_app_version: ndidMemberAppVersion,
+        source_request_id_list: sourceRequestIdList, // copy from "authorization" token payload
+        service_id,
+        as_node_id: asNodeId,
+      }
+    );
+
     // request status update
     // status: "pending"
 
@@ -304,7 +317,6 @@ export async function createRequest(createRequestParams) {
       yourDataRequestStatus.PENDING
     );
 
-    // TODO: move to onSuccess on mq.send() ?
     // callback to RP app
     callbackStatusUpdatePending({
       nodeId: node_id,

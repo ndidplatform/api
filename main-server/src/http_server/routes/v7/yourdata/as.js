@@ -26,6 +26,9 @@ import { validateBody } from '../../middleware/validation';
 import { asOnlyHandler } from '../../middleware/role_handler';
 import * as coreYourDataAS from '../../../../core/yourdata/as';
 
+import { apiVersion } from '../version';
+import { HTTP_HEADER_FIELDS } from '../private_http_header';
+
 const router = express.Router();
 
 router.use(asOnlyHandler);
@@ -110,12 +113,23 @@ router.get('/service/:service_id', async (req, res, next) => {
 router.post('/data', validateBody, async (req, res, next) => {
   try {
     const { node_id, request_id, data } = req.body;
+    const {
+      [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+      [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+    } = req.headers;
 
-    await coreYourDataAS.respondDataToRP({
-      node_id,
-      request_id,
-      data,
-    });
+    await coreYourDataAS.respondDataToRP(
+      {
+        node_id,
+        request_id,
+        data,
+      },
+      {
+        apiVersion,
+        ndidMemberAppType,
+        ndidMemberAppVersion,
+      }
+    );
 
     res.status(204).end();
 
@@ -128,13 +142,24 @@ router.post('/data', validateBody, async (req, res, next) => {
 router.post('/error', validateBody, async (req, res, next) => {
   try {
     const { node_id, request_id, error_code, error_message } = req.body;
+    const {
+      [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+      [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+    } = req.headers;
 
-    await coreYourDataAS.respondErrorToRP({
-      node_id,
-      request_id,
-      error_code,
-      error_message,
-    });
+    await coreYourDataAS.respondErrorToRP(
+      {
+        node_id,
+        request_id,
+        error_code,
+        error_message,
+      },
+      {
+        apiVersion,
+        ndidMemberAppType,
+        ndidMemberAppVersion,
+      }
+    );
 
     res.status(204).end();
 

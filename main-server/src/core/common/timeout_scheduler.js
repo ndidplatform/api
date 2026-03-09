@@ -25,6 +25,7 @@ import EventEmitter from 'events';
 import { timeoutRequest } from '.';
 import * as yourDataRequestQueueManager from '../yourdata/request_queue_manager';
 import { timeoutRequest as timeoutYourDataRequest } from '../yourdata/rp/timeout_request';
+import { timeoutDataDecryptionKeyRetryRequest } from '../yourdata/rp/data_decryption_key_retry_request';
 
 import * as lt from '../../utils/long_timeout';
 import * as config from '../../config';
@@ -48,7 +49,7 @@ export async function resumeTimeoutScheduler(nodeIds) {
   nodeIds.forEach(async (nodeId) => {
     const schedulers = await cacheDb.getAllTimeoutScheduler(nodeId);
     schedulers.forEach(({ requestId, timeoutMetadata }) => {
-      const { domain, unixTimeout } = timeoutMetadata;
+      const { type, unixTimeout } = timeoutMetadata;
       const timeoutInSeconds = (unixTimeout - Date.now()) / 1000;
       logger.info({
         message: 'Resuming timeout schedulers',
@@ -58,11 +59,11 @@ export async function resumeTimeoutScheduler(nodeIds) {
         timeoutInSeconds,
       });
       if (config.mode === MODE.STANDALONE) {
-        runTimeoutScheduler(nodeId, requestId, domain, unixTimeout);
+        runTimeoutScheduler(nodeId, requestId, type, unixTimeout);
       } else if (config.mode === MODE.MASTER) {
         delegateToWorker({
           fnName: 'common.runTimeoutScheduler',
-          args: [nodeId, requestId, domain, unixTimeout],
+          args: [nodeId, requestId, type, unixTimeout],
         });
       }
     });
@@ -75,14 +76,22 @@ export function stopAllTimeoutScheduler() {
   }
 }
 
-export function runTimeoutScheduler(nodeId, requestId, domain, unixTimeout) {
+export function runTimeoutScheduler(nodeId, requestId, type, unixTimeout) {
   const now = Date.now();
   if (now >= unixTimeout) {
-    if (domain === 'yourdata') {
+    if (type === 'yourdata') {
       yourDataRequestQueueManager.enqueue(
         nodeId,
         requestId,
         timeoutYourDataRequest,
+        nodeId,
+        requestId
+      );
+    } else if (type === 'yourdata.data_decryption_key_retry_request') {
+      yourDataRequestQueueManager.enqueue(
+        nodeId,
+        requestId,
+        timeoutDataDecryptionKeyRetryRequest,
         nodeId,
         requestId
       );
@@ -91,15 +100,23 @@ export function runTimeoutScheduler(nodeId, requestId, domain, unixTimeout) {
     }
   } else {
     if (config.mode === MODE.WORKER) {
-      pendingRequestTimeout[requestId] = { domain, deadline: unixTimeout };
+      pendingRequestTimeout[requestId] = { type, deadline: unixTimeout };
     }
     const timeout = unixTimeout - now;
     timeoutScheduler[`${nodeId}:${requestId}`] = lt.setTimeout(() => {
-      if (domain === 'yourdata') {
+      if (type === 'yourdata') {
         yourDataRequestQueueManager.enqueue(
           nodeId,
           requestId,
           timeoutYourDataRequest,
+          nodeId,
+          requestId
+        );
+      } else if (type === 'yourdata.data_decryption_key_retry_request') {
+        yourDataRequestQueueManager.enqueue(
+          nodeId,
+          requestId,
+          timeoutDataDecryptionKeyRetryRequest,
           nodeId,
           requestId
         );
@@ -113,13 +130,13 @@ export function runTimeoutScheduler(nodeId, requestId, domain, unixTimeout) {
 export async function setTimeoutScheduler({
   nodeId,
   requestId,
-  domain,
+  type,
   secondsToTimeout,
 }) {
   const unixTimeout = Date.now() + secondsToTimeout * 1000;
-  const timeoutMetadata = { domain, unixTimeout };
+  const timeoutMetadata = { type, unixTimeout };
   await cacheDb.setTimeoutScheduler(nodeId, requestId, timeoutMetadata);
-  runTimeoutScheduler(nodeId, requestId, domain, unixTimeout);
+  runTimeoutScheduler(nodeId, requestId, type, unixTimeout);
   return { timeoutAtMsec: unixTimeout };
 }
 

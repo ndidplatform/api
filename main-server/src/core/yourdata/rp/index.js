@@ -31,6 +31,7 @@ import { role } from '../../../node';
 export * from './create_request';
 export * from './as_data';
 export * from './timeout_request';
+export * from './data_decryption_key_retry_request';
 export * from './message_handlers';
 
 export async function getRequestIdByReferenceId(nodeId, referenceId) {
@@ -64,4 +65,25 @@ export async function cleanupRequestCachedData({
     cacheDb.removeYourDataCurrentRequestStatus(nodeId, requestId),
     cacheDb.removeYourDataRequestIdByReferenceId(nodeId, referenceId),
   ]);
+}
+
+export async function getDataDecryptionKeyRetryRequestIdByReferenceId(nodeId, referenceId) {
+  try {
+    if (role === 'proxy') {
+      if (nodeId == null) {
+        throw new CustomError({
+          errorType: errorType.MISSING_NODE_ID,
+        });
+      }
+    } else {
+      nodeId = config.nodeId;
+    }
+
+    return await cacheDb.getYourDataRetryRequestIdByReferenceId(nodeId, referenceId);
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get Your Data data decryption key retry request ID by reference ID',
+      cause: error,
+    });
+  }
 }

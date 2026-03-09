@@ -20,7 +20,10 @@
  *
  */
 
-import TelemetryLogger, { REQUEST_EVENTS } from './logger';
+import TelemetryLogger, {
+  REQUEST_EVENTS,
+  YOURDATA_REQUEST_EVENTS,
+} from './logger';
 
 import * as config from '../config';
 
@@ -28,5 +31,5 @@ const logger = new TelemetryLogger({
   enable: config.telemetryLoggingEnabled,
 });
 
-export { REQUEST_EVENTS };
+export { REQUEST_EVENTS, YOURDATA_REQUEST_EVENTS };
 export default logger;

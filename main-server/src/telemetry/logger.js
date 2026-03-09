@@ -45,7 +45,18 @@ export const REQUEST_EVENTS = {
   AS_RECEIVES_PAYMENT: 18,
 };
 
+export const YOURDATA_REQUEST_EVENTS = {
+  RP_REQUESTS_DATA: 1, // A1 (RP)
+  AS_SENDS_RESPONSE: 2, // A2 (AS) a,b - data,error
+  RP_REQUESTS_DATA_DECRYPTION_KEY: 3, // B1 (RP)
+  AS_SENDS_DATA_DECRYPTION_KEY: 4, // B2 (AS)
+  // data key decryption retry request
+  RP_REQUESTS_DATA_DECRYPTION_KEY_RETRY: 5, // R1
+  AS_SENDS_DATA_DECRYPTION_KEY_RETRY_RESPONSE: 6, // R2
+};
+
 const validRequestEventCodes = Object.values(REQUEST_EVENTS);
+const validYourDataRequestEventCodes = Object.values(YOURDATA_REQUEST_EVENTS);
 
 export default class TelemetryLogger {
   /*
@@ -168,6 +179,7 @@ export default class TelemetryLogger {
     }
 
     const data = {
+      // event_id: // uuidv7
       request_id,
       node_id,
       state_code,
@@ -176,5 +188,37 @@ export default class TelemetryLogger {
     };
 
     await telemetryDb.addNewRequestEvent(node_id, data);
+  }
+
+  /*
+   * logYourDataRequestEvent saves the information regarding Your Data request
+   */
+  async logYourDataRequestEvent(
+    request_id,
+    node_id,
+    state_code,
+    additional_data
+  ) {
+    if (!this.enable) return;
+    if (!validYourDataRequestEventCodes.includes(state_code)) {
+      throw new Error(`Unknown state code: ${state_code}`);
+    }
+
+    // TODO
+    // - validate properties (that are going to use to create signature) in additional_data
+    // - create signature
+
+    const data = {
+      // event_id: // uuidv7
+      request_id,
+      node_id,
+      state_code,
+      source_timestamp: this.getCurrentTime(),
+      additional_data,
+      // signature,
+      // key metadata (key version)
+    };
+
+    await telemetryDb.addNewYourDataRequestEvent(node_id, data);
   }
 }

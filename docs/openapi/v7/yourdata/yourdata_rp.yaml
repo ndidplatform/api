@@ -39,8 +39,69 @@ paths:
   /yourdata/rp/request_references/{reference_id}:
     get:
       summary: Get request ID for the unfinished (not completed or timed out) request with reference ID
-      description: Get request ID for the unfinished (not completed or timed out) request with reference ID -- Only request from this RP will succeed, reference number is not propagated to other nodes.
-      operationId: get_request_id_from_reference_number
+      description: Get request ID for the unfinished (not completed or timed out) request with reference ID -- Only request from this RP will succeed, reference ID is not propagated to other nodes.
+      operationId: get_request_id_from_reference_id
+      parameters:
+        - name: reference_id
+          in: path
+          description: reference ID
+          required: true
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          description: Call this API as node ID (for proxy)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Requests exist
+          content:
+            application/json:
+              schema:
+                required:
+                  - request_id
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    example: '54302ae9453ec0738133b393e329963efdb6b39f8136aa24606fec4cd4a1cb33'
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No reference ID in the system
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /yourdata/rp/data_decryption_key_retry_requests:
+    post:
+      summary: Create data decryption key retry request from RP to AS node.
+      description: Retry requesting for data decryption key from AS. A retry request can only be created when normal scenario request is already timed out and data received from AS is not yet internally decrypted.
+      operationId: data_decryption_key_retry_request
+      requestBody:
+        description: Retry request parameters
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YourDataRPDataDecryptionRetryRequest'
+        required: true
+      responses:
+        '204':
+          description: Requested
+
+  /yourdata/rp/data_decryption_key_retry_request_references/{reference_id}:
+    get:
+      summary: Get request ID for the unfinished (not completed or timed out) data decryption key retry request with reference ID
+      description: Get request ID for the unfinished (not completed or timed out) data decryption key retry request with reference ID -- Only request from this RP will succeed, reference ID is not propagated to other nodes.
+      operationId: get_data_decryption_key_retry_request_id_from_reference_id
       parameters:
         - name: reference_id
           in: path
@@ -248,6 +309,32 @@ components:
             Timeout for the request. Unit in seconds.
 
     YourDataRPRequestResponse:
+      type: object
+      required:
+        - request_id
+        - reference_id
+        - callback_url
+        - request_timeout
+      properties:
+        node_id:
+          type: string
+          example: 'rp1'
+          description: Call this API as node ID (for proxy)
+        request_id:
+          type: string
+          example: '54302ae9453ec0738133b393e329963efdb6b39f8136aa24606fec4cd4a1cb33'
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+          description: >-
+            Callback URL for notifying retry request status update.
+        request_timeout:
+          type: integer
+          description: >-
+            Timeout for the retry request. Unit in seconds.
+
+    YourDataRPDataDecryptionRetryRequest:
       type: object
       required:
         - request_id

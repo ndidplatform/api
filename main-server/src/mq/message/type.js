@@ -32,6 +32,10 @@ const TYPES = {
   YOURDATA_DATA_DECRYPTION_KEY_RESPONSE:
     'yourdata_data_decryption_key_response', // originate from AS
   YOURDATA_STATUS_SYNC: 'yourdata_status_sync', // originate from RP
+  YOURDATA_DATA_DECRYPTION_KEY_RETRY_REQUEST:
+    'yourdata_decryption_key_retry_request', // originate from RP
+  YOURDATA_DATA_DECRYPTION_KEY_RETRY_RESPONSE:
+    'yourdata_data_decryption_key_retry_response', // originate from AS
 };
 
 export function isYourDataMessageType(messageType) {
@@ -41,6 +45,8 @@ export function isYourDataMessageType(messageType) {
     TYPES.YOURDATA_DATA_DECRYPTION_KEY_REQUEST,
     TYPES.YOURDATA_DATA_DECRYPTION_KEY_RESPONSE,
     TYPES.YOURDATA_STATUS_SYNC,
+    TYPES.YOURDATA_DATA_DECRYPTION_KEY_RETRY_REQUEST,
+    TYPES.YOURDATA_DATA_DECRYPTION_KEY_RETRY_RESPONSE,
   ].includes(messageType);
 }
 

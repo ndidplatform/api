@@ -978,6 +978,24 @@ export default {
         ],
       },
     },
+    '/yourdata/rp/data_decryption_key_retry_requests': {
+      body: {
+        type: 'object',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          request_id: { type: 'string', minLength: 1 },
+          reference_id: { type: 'string', minLength: 1 },
+          callback_url: { $ref: 'defs#/definitions/url' },
+          request_timeout: { type: 'integer', minimum: 1 },
+        },
+        required: [
+          'request_id',
+          'reference_id',
+          'callback_url',
+          'request_timeout',
+        ],
+      },
+    },
     '/yourdata/rp/request_data_removal': {
       body: {
         type: 'object',

@@ -27,6 +27,36 @@ export default {
     definitions: {
       // ial: { type: 'number', enum: [1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3] },
       // aal: { type: 'number', enum: [1, 2.1, 2.2, 3] },
+      yourdataDataForRetry: {
+        type: 'object',
+        properties: {
+          encrypted_encryption_key: {
+            type: 'object',
+            properties: {
+              encrypted_symmetric_key_base64: {
+                type: 'string',
+                minLength: 1,
+              },
+              encrypted_data_base64: { type: 'string', minLength: 1 },
+              encryption_key_version: { type: 'integer', minimum: 1 },
+            },
+            required: [
+              'encrypted_symmetric_key_base64',
+              'encrypted_data_base64',
+              'encryption_key_version',
+            ],
+          },
+          requester_node_id: { type: 'string', minLength: 1 },
+          signing_key_version: { type: 'integer', minimum: 1 },
+          signature: { type: 'string', minLength: 1 },
+        },
+        required: [
+          'encrypted_encryption_key',
+          'requester_node_id',
+          'signing_key_version',
+          'signature',
+        ],
+      },
     },
   },
   [messageTypes.AS_RESPONSE]: {
@@ -425,6 +455,9 @@ export default {
             },
             required: ['buffer_base64', 'metadata'],
           },
+          data_for_retry: {
+            $ref: 'defs#/definitions/yourdataDataForRetry',
+          },
         },
         required: [
           'request_id',
@@ -433,6 +466,7 @@ export default {
           'signature',
           'data_salt',
           'packed_data',
+          'data_for_retry',
         ],
       },
       // Error response
@@ -491,5 +525,28 @@ export default {
       timed_out: { type: 'boolean' },
     },
     required: ['request_id', 'rp_node_id', 'status', 'timed_out'],
+  },
+  [messageTypes.YOURDATA_DATA_DECRYPTION_KEY_RETRY_REQUEST]: {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    type: 'object',
+    properties: {
+      request_id: { type: 'string', minLength: 1 },
+      service_id: { type: 'string', minLength: 1 },
+      rp_node_id: { type: 'string', minLength: 1 },
+      data_for_retry: {
+        $ref: 'defs#/definitions/yourdataDataForRetry',
+      },
+    },
+    required: ['request_id', 'service_id', 'rp_node_id', 'data_for_retry'],
+  },
+  [messageTypes.YOURDATA_DATA_DECRYPTION_KEY_RETRY_RESPONSE]: {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    type: 'object',
+    properties: {
+      request_id: { type: 'string', minLength: 1 },
+      as_node_id: { type: 'string', minLength: 1 },
+      key_base64: { type: 'string', minLength: 1 },
+    },
+    required: ['request_id', 'as_node_id', 'key_base64'],
   },
 };

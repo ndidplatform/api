@@ -26,6 +26,9 @@ import { validateBody } from '../../middleware/validation';
 import { rpOnlyHandler } from '../../middleware/role_handler';
 import * as coreYourDataRP from '../../../../core/yourdata/rp';
 
+import { apiVersion } from '../version';
+import { HTTP_HEADER_FIELDS } from '../private_http_header';
+
 const router = express.Router();
 
 router.use(rpOnlyHandler);
@@ -46,21 +49,32 @@ router.post('/requests', validateBody, async (req, res, next) => {
       authorization,
       request_timeout,
     } = req.body;
+    const {
+      [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+      [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+    } = req.headers;
 
-    const result = await coreYourDataRP.createRequest({
-      node_id,
-      service_id,
-      service_version,
-      service_extension,
-      as_node_id,
-      reference_id,
-      callback_url,
-      namespace,
-      identifier,
-      request_params,
-      authorization,
-      request_timeout,
-    });
+    const result = await coreYourDataRP.createRequest(
+      {
+        node_id,
+        service_id,
+        service_version,
+        service_extension,
+        as_node_id,
+        reference_id,
+        callback_url,
+        namespace,
+        identifier,
+        request_params,
+        authorization,
+        request_timeout,
+      },
+      {
+        apiVersion,
+        ndidMemberAppType,
+        ndidMemberAppVersion,
+      }
+    );
 
     res.status(200).json(result);
 
@@ -89,6 +103,71 @@ router.get('/request_references/:reference_id', async (req, res, next) => {
     next(error);
   }
 });
+
+router.post(
+  '/data_decryption_key_retry_requests',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const {
+        node_id,
+        request_id,
+        reference_id,
+        callback_url,
+        request_timeout,
+      } = req.body;
+      const {
+        [HTTP_HEADER_FIELDS.ndidMemberAppType]: ndidMemberAppType,
+        [HTTP_HEADER_FIELDS.ndidMemberAppVersion]: ndidMemberAppVersion,
+      } = req.headers;
+
+      await coreYourDataRP.createDataDecryptionKeyRetryRequest(
+        {
+          node_id,
+          request_id,
+          reference_id,
+          callback_url,
+          request_timeout,
+        },
+        {
+          apiVersion,
+          ndidMemberAppType,
+          ndidMemberAppVersion,
+        }
+      );
+
+      res.status(204).end();
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
+  '/data_decryption_key_retry_request_references/:reference_id',
+  async (req, res, next) => {
+    try {
+      const { node_id } = req.query;
+      const { reference_id } = req.params;
+
+      const requestId =
+        await coreYourDataRP.getDataDecryptionKeyRetryRequestIdByReferenceId(
+          node_id,
+          reference_id
+        );
+      if (requestId != null) {
+        res.status(200).json({ request_id: requestId });
+      } else {
+        res.status(404).end();
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 router.get('/request_data/:request_id', async (req, res, next) => {
   try {
