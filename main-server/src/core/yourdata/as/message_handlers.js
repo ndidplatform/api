@@ -94,15 +94,6 @@ export async function processMessage(nodeId, messageId, message) {
 }
 
 async function processDataRequest(nodeId, message) {
-  // TODO: telemetry logging
-  //
-  // TelemetryLogger.logYourDataRequestEvent(
-  //   requestId,
-  //   nodeId,
-  //   REQUEST_EVENTS.AS_RECEIVES_RP_REQUEST
-  // );
-  //
-
   const {
     request_id,
     service_id,
@@ -806,10 +797,19 @@ async function processDataDecryptionKeyRetryRequest(nodeId, message) {
     return;
   }
 
-  // TODO
   // rate limit
   // 10 times per hour per request ID
-  //
+  const { allowed } = await cacheDb.checkYourDataRetryRequestRateLimit(
+    nodeId,
+    request_id
+  );
+  if (!allowed) {
+    logger.info({
+      message: 'Too many data decryption key retry request',
+      requestId: request_id,
+    });
+    return;
+  }
 
   // verify signature
   const nodeSigningKey = await tendermintNdid.getNodeSigningPubKey(

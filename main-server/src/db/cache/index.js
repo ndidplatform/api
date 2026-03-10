@@ -1399,7 +1399,7 @@ export function removeYourDataRetryRequestIdByReferenceId(nodeId, referenceId) {
   });
 }
 
-// retry data encryption key request
+// data encryption key retry request
 
 export function getYourDataRetryRequestData(nodeId, requestId) {
   return db.get({
@@ -1428,5 +1428,18 @@ export function removeYourDataRetryRequestData(nodeId, requestId) {
     dbName,
     name: 'YourData_keyRetryRequestData',
     key: requestId,
+  });
+}
+
+// data encryption key retry rate limiting
+
+export function checkYourDataRetryRequestRateLimit(nodeId, requestId) {
+  return db.checkRateLimit({
+    nodeId,
+    dbName,
+    name: 'YourData_keyRetryRequestDataRateLimit',
+    key: requestId,
+    windowMs: 1 * 60 * 60 * 1000, // 1 hour
+    limit: 10,
   });
 }

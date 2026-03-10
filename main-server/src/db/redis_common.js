@@ -21,6 +21,7 @@
  */
 
 import EventEmitter from 'events';
+import crypto from 'crypto';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -870,6 +871,45 @@ export async function setToNewKey({ nodeId, dbName, name, key, newKey }) {
       operation,
       Date.now() - startTime
     );
+  } catch (error) {
+    throw new CustomError({
+      errorType: errorType.DB_ERROR,
+      cause: error,
+      details: { operation, dbName, name },
+    });
+  }
+}
+
+export async function checkRateLimit({
+  nodeId,
+  dbName,
+  name,
+  key,
+  now = Date.now(),
+  windowMs,
+  limit,
+}) {
+  const operation = 'checkRateLimit';
+  const startTime = Date.now();
+  try {
+    const redis = getRedis(dbName);
+    const nonce = crypto.randomBytes(4).toString('hex');
+    const [allowed, remaining] = await redis.checkRateLimit(
+      `${nodeId}:${dbName}:${name}:${key}`,
+      now,
+      windowMs,
+      limit,
+      nonce
+    );
+    metricsEventEmitter.emit(
+      'operationTime',
+      operation,
+      Date.now() - startTime
+    );
+    return {
+      allowed: allowed === 1,
+      remaining,
+    };
   } catch (error) {
     throw new CustomError({
       errorType: errorType.DB_ERROR,
