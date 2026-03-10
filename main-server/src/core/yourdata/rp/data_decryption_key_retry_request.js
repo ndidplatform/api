@@ -128,7 +128,7 @@ export async function createDataDecryptionKeyRetryRequest(
     // set timeout
     await setTimeoutScheduler({
       nodeId: node_id,
-      request_id,
+      requestId: request_id,
       type: 'yourdata.data_decryption_key_retry_request',
       secondsToTimeout: request_timeout,
     });
@@ -276,6 +276,7 @@ export async function timeoutDataDecryptionKeyRetryRequest(nodeId, requestId) {
       requester_node_id: nodeId,
       as_node_id: retryRequest.as_node_id,
       request_id: requestId,
+      request_timeout: retryRequest.request_timeout,
       timed_out: true,
       status: dataDecryptionKeyRetryRequestStatus.PENDING,
     };
