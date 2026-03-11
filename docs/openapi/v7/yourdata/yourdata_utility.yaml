@@ -36,7 +36,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/YourDataConsentToken'
+                $ref: '#/components/schemas/YourDataConsentTokenRes'
         '400':
           description: 'Client error'
         '500':
@@ -95,12 +95,12 @@ components:
         This is part of JWT token (Payload part)
       required:
         - token_id
-        - rp_node_id
+        - requester_node_id
         - as_node_id
       properties:
         token_id:
           type: string
-        rp_node_id:
+        requester_node_id:
           type: string
           example: 'rp1'
         as_node_id:
@@ -195,10 +195,10 @@ components:
       description: >-
         Input object for token creation
       required:
-        - rp_node_id
+        - requester_node_id
         - as_node_id
       properties:
-        rp_node_id:
+        requester_node_id:
           type: string
           example: 'rp1'
         as_node_id:
@@ -283,6 +283,16 @@ components:
           type: array
           items:
             type: string
+
+    YourDataConsentTokenRes:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          description: >-
+            Signed JWT
 
     ErrorCodeList:
       type: array
