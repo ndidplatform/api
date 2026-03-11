@@ -341,7 +341,8 @@ async function callbackStatusUpdateDataDecryptionPending({
 
 export async function respondErrorToRP(
   respondErrorToRPParams,
-  { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = {}
+  { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = {},
+  otherParams = {}
 ) {
   let { node_id: nodeId } = respondErrorToRPParams;
   const { request_id, error_code } = respondErrorToRPParams;
@@ -380,7 +381,8 @@ export async function respondErrorToRP(
         ...respondErrorToRPParams,
         node_id: nodeId,
       },
-      { apiVersion, ndidMemberAppType, ndidMemberAppVersion }
+      { apiVersion, ndidMemberAppType, ndidMemberAppVersion },
+      otherParams
     );
   } catch (error) {
     throw new CustomError({
@@ -396,33 +398,36 @@ export async function respondErrorToRP(
 // e.g. AS app call send data API multiple times, timeout status sync from RP happening at the same time
 async function respondErrorToRPInternal(
   respondErrorToRPParams,
-  { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = {}
+  { apiVersion, ndidMemberAppType, ndidMemberAppVersion } = {},
+  {
+    request, // for bypassing request check in cache
+  } = {}
 ) {
   let { node_id: nodeId } = respondErrorToRPParams;
   const { request_id, error_code, error_message } = respondErrorToRPParams;
 
   try {
-    // check request is still active / not timed out yet
-    // -> get request data from cache if not exist assume timed out
-    const request = await cacheDb.getYourDataRequestData(nodeId, request_id);
     if (request == null) {
-      throw new CustomError({
-        errorType: errorType.REQUEST_IS_TIMED_OUT_OR_NOT_EXIST,
-      });
-    }
+      // check request is still active / not timed out yet
+      // -> get request data from cache if not exist assume timed out
+      request = await cacheDb.getYourDataRequestData(nodeId, request_id);
+      if (request == null) {
+        throw new CustomError({
+          errorType: errorType.REQUEST_IS_TIMED_OUT_OR_NOT_EXIST,
+        });
+      }
 
-    // get request status and check state. If at wrong state, return error
-    const currentRequestStatus = await cacheDb.getYourDataCurrentRequestStatus(
-      nodeId,
-      request_id
-    );
-    if (currentRequestStatus !== yourDataRequestStatus.PENDING) {
-      throw new CustomError({
-        errorType: errorType.UNEXPECTED_ACTION_AT_CURRENT_REQUEST_STATE,
-        details: {
-          currentRequestStatus,
-        },
-      });
+      // get request status and check state. If at wrong state, return error
+      const currentRequestStatus =
+        await cacheDb.getYourDataCurrentRequestStatus(nodeId, request_id);
+      if (currentRequestStatus !== yourDataRequestStatus.PENDING) {
+        throw new CustomError({
+          errorType: errorType.UNEXPECTED_ACTION_AT_CURRENT_REQUEST_STATE,
+          details: {
+            currentRequestStatus,
+          },
+        });
+      }
     }
 
     // check if request is not yet timed out

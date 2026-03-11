@@ -1083,6 +1083,40 @@ export default {
         required: ['request_id', 'error_code', 'error_message'],
       },
     },
+    '/yourdata/as/auto_error_responses': {
+      body: {
+        type: 'object',
+        properties: {
+          node_id: { type: 'string', minLength: 1 },
+          bypass_error_code_check: { type: 'boolean' },
+          service_not_available: {
+            type: ['object', 'null'],
+            properties: {
+              error_code: { $ref: 'defs#/definitions/errorCode' },
+              error_message: { type: 'string', minLength: 1 },
+            },
+            required: ['error_code', 'error_message'],
+          },
+          unsupported_namespace: {
+            type: ['object', 'null'],
+            properties: {
+              error_code: { $ref: 'defs#/definitions/errorCode' },
+              error_message: { type: 'string', minLength: 1 },
+            },
+            required: ['error_code', 'error_message'],
+          },
+          unsupported_authorization: {
+            type: ['object', 'null'],
+            properties: {
+              error_code: { $ref: 'defs#/definitions/errorCode' },
+              error_message: { type: 'string', minLength: 1 },
+            },
+            required: ['error_code', 'error_message'],
+          },
+        },
+        required: [],
+      },
+    },
     '/yourdata/utility/token': {
       body: {
         type: 'object',

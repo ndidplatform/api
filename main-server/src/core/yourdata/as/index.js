@@ -33,6 +33,7 @@ import { role } from '../../../node';
 
 export * from './register_or_update_as_service';
 export * from './respond_to_rp';
+export * from './auto_error_responses';
 export * from './message_handlers';
 
 const CALLBACK_URL_NAME = {

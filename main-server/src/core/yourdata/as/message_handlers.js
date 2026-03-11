@@ -27,6 +27,9 @@ import {
   getIncomingRequestStatusUpdateCallbackUrl,
   respondDataToRP,
   respondErrorToRP,
+  getServiceNotAvailableAutoErrorResponseConfig,
+  getUnsupportedNamespaceAutoErrorResponseConfig,
+  getUnsupportedAuthorizationAutoErrorResponseConfig,
 } from '.';
 import { validateAuthorization, USAGE_TYPE } from '../authorization_token';
 import yourDataRequestStatus from '../request_status';
@@ -215,6 +218,26 @@ async function processDataRequest(nodeId, message) {
   //   return;
   // }
 
+  const sourceRequestIdList = parsedJwt.payload.source_request_id_list;
+
+  const request = {
+    request_id,
+    service_id,
+    service_version,
+    service_extension,
+    requester_node_id,
+    namespace,
+    identifier,
+    request_params,
+    authorization,
+    request_time,
+    request_timeout,
+    //
+    tokenPayload: {
+      sourceRequestIdList,
+    },
+  };
+
   // get AS service data
   const service = await dataDb.getYourDataASService(nodeId, service_id);
   if (service == null) {
@@ -228,28 +251,83 @@ async function processDataRequest(nodeId, message) {
   }
 
   if (!service.service_availability) {
-    logger.warn({
-      message: 'Service disabled',
+    logger.info({
+      message: 'Received data request with disabled service',
       request_id,
       service_id,
       requester_node_id,
     });
-    // TODO: clarify how this should be handled with NDID.
-    // simply drop the request or return some kind of error back to RP?
+
+    const serviceNotAvailableAutoErrorResponseConfig =
+      await getServiceNotAvailableAutoErrorResponseConfig(nodeId);
+    if (serviceNotAvailableAutoErrorResponseConfig != null) {
+      const { error_code, error_message } =
+        serviceNotAvailableAutoErrorResponseConfig;
+
+      logger.info({
+        message: 'Auto error respond to data request with disabled service',
+        request_id,
+        error_code,
+        error_message,
+      });
+
+      // don't "await" here or it will cause dead lock (same request ID waiting in queue)
+      respondErrorToRP(
+        {
+          node_id: nodeId,
+          request_id,
+          error_code,
+          error_message,
+        },
+        undefined,
+        {
+          request, // don't get request data from cache since there's nothing there (not set to cache yet)
+        }
+      );
+    }
+
     return;
   }
 
   // supported namespace check
   if (!service.supported_namespace_list.includes(namespace)) {
-    logger.warn({
-      message: 'Unsupported namespace',
+    logger.info({
+      message: 'Received data request with unsupported namespace',
       request_id,
       service_id,
       requester_node_id,
       namespace,
     });
-    // TODO: clarify with NDID how this should be handled.
-    // simply drop the request or return some kind of error back to RP?
+
+    const unsupportedNamespaceAutoErrorResponseConfig =
+      await getUnsupportedNamespaceAutoErrorResponseConfig(nodeId);
+    if (unsupportedNamespaceAutoErrorResponseConfig != null) {
+      const { error_code, error_message } =
+        unsupportedNamespaceAutoErrorResponseConfig;
+
+      logger.info({
+        message:
+          'Auto error respond to data request with unsupported namespace',
+        request_id,
+        error_code,
+        error_message,
+      });
+
+      // don't "await" here or it will cause dead lock (same request ID waiting in queue)
+      respondErrorToRP(
+        {
+          node_id: nodeId,
+          request_id,
+          error_code,
+          error_message,
+        },
+        undefined,
+        {
+          request, // don't get request data from cache since there's nothing there (not set to cache yet)
+        }
+      );
+    }
+
     return;
   }
 
@@ -275,15 +353,43 @@ async function processDataRequest(nodeId, message) {
     (parsedJwt.payload.usage_type === USAGE_TYPE.CONTINUOUS_NO_EXPIRE &&
       !service.supported_authorization.includes('token_continuous_no_expire'))
   ) {
-    logger.warn({
-      message: 'Unsupported authorization',
+    logger.info({
+      message: 'Received data request with unsupported authorization',
       request_id,
       service_id,
       requester_node_id,
       token_usage_type: parsedJwt.payload.usage_type,
     });
-    // TODO: clarify with NDID how this should be handled.
-    // simply drop the request or return some kind of error back to RP?
+
+    const unsupportedAuthorizationAutoErrorResponseConfig =
+      await getUnsupportedAuthorizationAutoErrorResponseConfig(nodeId);
+    if (unsupportedAuthorizationAutoErrorResponseConfig != null) {
+      const { error_code, error_message } =
+        unsupportedAuthorizationAutoErrorResponseConfig;
+
+      logger.info({
+        message:
+          'Auto error respond to data request with unsupported authorization',
+        request_id,
+        error_code,
+        error_message,
+      });
+
+      // don't "await" here or it will cause dead lock (same request ID waiting in queue)
+      respondErrorToRP(
+        {
+          node_id: nodeId,
+          request_id,
+          error_code,
+          error_message,
+        },
+        undefined,
+        {
+          request, // don't get request data from cache since there's nothing there (not set to cache yet)
+        }
+      );
+    }
+
     return;
   }
 
@@ -300,26 +406,8 @@ async function processDataRequest(nodeId, message) {
 
   // --- end of validations ---
 
-  const sourceRequestIdList = parsedJwt.payload.source_request_id_list;
-
   // save request data to cache
-  const request = {
-    request_id,
-    service_id,
-    service_version,
-    service_extension,
-    requester_node_id,
-    namespace,
-    identifier,
-    request_params,
-    authorization,
-    request_time,
-    request_timeout,
-    //
-    tokenPayload: {
-      sourceRequestIdList,
-    },
-  };
+
   // cache TTL - request timeout + message send retry duration
   const ttlSeconds = request_timeout + 600; // request timeout + 10 minutes
   await Promise.all([

@@ -116,3 +116,37 @@ export function removeYourDataASService(nodeId, serviceId) {
     key: serviceId,
   });
 }
+
+//
+
+export function getYourDataASAutoErrorResponseConfig(nodeId, type) {
+  return db.get({
+    nodeId,
+    dbName,
+    name: 'YourData_asAutoErrorResponseConfig',
+    key: type,
+  });
+}
+
+export function setYourDataASAutoErrorResponseConfig(
+  nodeId,
+  type,
+  errorResponse
+) {
+  return db.set({
+    nodeId,
+    dbName,
+    name: 'YourData_asAutoErrorResponseConfig',
+    key: type,
+    value: errorResponse,
+  });
+}
+
+export function removeYourDataASAutoErrorResponseConfig(nodeId, type) {
+  return db.remove({
+    nodeId,
+    dbName,
+    name: 'YourData_asAutoErrorResponseConfig',
+    key: type,
+  });
+}

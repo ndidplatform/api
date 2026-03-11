@@ -169,4 +169,46 @@ router.post('/error', validateBody, async (req, res, next) => {
   }
 });
 
+router.post('/auto_error_responses', validateBody, async (req, res, next) => {
+  try {
+    const {
+      node_id,
+      bypass_error_code_check,
+      service_not_available,
+      unsupported_namespace,
+      unsupported_authorization,
+    } = req.body;
+
+    await coreYourDataAS.setAutoErrorResponses({
+      node_id,
+      bypass_error_code_check,
+      service_not_available,
+      unsupported_namespace,
+      unsupported_authorization,
+    });
+
+    res.status(204).end();
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/auto_error_responses', async (req, res, next) => {
+  try {
+    const { node_id } = req.query;
+
+    const result = await coreYourDataAS.getAutoErrorResponses({
+      node_id,
+    });
+
+    res.status(200).json(result);
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
