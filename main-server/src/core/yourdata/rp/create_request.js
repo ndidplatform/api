@@ -162,7 +162,7 @@ export async function createRequest(
 
     await validateAuthorization({
       parsedAuthorizationTokenPayload: parsedJwt.payload,
-      rpNodeId: node_id,
+      requesterNodeId: node_id,
       asNodeId,
       namespace,
       identifier,

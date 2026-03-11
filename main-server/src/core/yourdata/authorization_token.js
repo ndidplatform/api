@@ -33,7 +33,7 @@ export const USAGE_TYPE = {
 
 export async function validateAuthorization({
   parsedAuthorizationTokenPayload: payload,
-  rpNodeId,
+  requesterNodeId,
   asNodeId,
   namespace,
   identifier,
@@ -55,14 +55,14 @@ export async function validateAuthorization({
     }
   }
 
-  // check if "rp_node_id" and "as_node_id" in payload match with the ones in the parameter
-  if (payload.rp_node_id !== rpNodeId) {
+  // check if "requester_node_id" and "as_node_id" in payload match with the ones in the parameter
+  if (payload.requester_node_id !== requesterNodeId) {
     // mismatch RP node ID
     throw new CustomError({
-      errorType: errorType.TOKEN_RP_NODE_ID_MISMATCH,
+      errorType: errorType.TOKEN_REQUESTER_NODE_ID_MISMATCH,
       details: {
-        rp_node_id: payload.rp_node_id,
-        requestRpNodeId: rpNodeId,
+        requester_node_id: payload.requester_node_id,
+        requesterNodeId,
       },
     });
   }

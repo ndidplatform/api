@@ -803,9 +803,9 @@ module.exports = {
     message: 'Token is expired',
     clientError: true,
   },
-  TOKEN_RP_NODE_ID_MISMATCH: {
+  TOKEN_REQUESTER_NODE_ID_MISMATCH: {
     code: 20107,
-    message: 'Mismatch RP node ID in token',
+    message: 'Mismatch requester node ID in token',
     clientError: true,
   },
   TOKEN_AS_NODE_ID_MISMATCH: {

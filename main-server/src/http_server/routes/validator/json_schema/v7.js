@@ -957,7 +957,6 @@ export default {
           service_id: { type: 'string', minLength: 1 },
           service_version: { type: 'string', minLength: 1 },
           service_extension: { type: 'string', minLength: 1 },
-          rp_node_id: { type: 'string', minLength: 1 },
           as_node_id: { type: 'string', minLength: 1 },
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },
@@ -1121,7 +1120,7 @@ export default {
       body: {
         type: 'object',
         properties: {
-          rp_node_id: { type: 'string', minLength: 1 },
+          requester_node_id: { type: 'string', minLength: 1 },
           as_node_id: { type: 'string', minLength: 1 },
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },
@@ -1182,7 +1181,7 @@ export default {
             items: { type: 'string', minLength: 1 },
           },
         },
-        required: ['rp_node_id', 'as_node_id'],
+        required: ['requester_node_id', 'as_node_id'],
       },
     },
   },
