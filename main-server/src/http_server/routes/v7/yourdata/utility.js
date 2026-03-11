@@ -26,7 +26,6 @@ import { validateBody } from '../../middleware/validation';
 import * as tendermintNdid from '../../../../tendermint/ndid';
 import * as coreYourData from '../../../../core/yourdata';
 import domain from '../../../../core/domain';
-import * as privateMessage from '../../../../core/common/private_message';
 
 const router = express.Router();
 
