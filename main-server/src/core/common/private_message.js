@@ -36,7 +36,7 @@ export async function getPrivateMessages({
   nodeId,
   requestId,
   type,
-  skipRequestIdCheck = false, // option for bypassing request ID on blockchain check for requests in domains (e.g. YourData)
+  domain,
 } = {}) {
   if (role === 'proxy') {
     if (nodeId == null) {
@@ -88,7 +88,8 @@ export async function getPrivateMessages({
         return [...inboundMessages, ...outboundMessages];
       }
     } else {
-      if (!skipRequestIdCheck) {
+      // don't check for valid request ID on blockchain for request with domains (e.g. YourData)
+      if (domain == null || domain === '') {
         const request = await tendermintNdid.getRequest({ requestId });
         if (request == null) {
           return null;
