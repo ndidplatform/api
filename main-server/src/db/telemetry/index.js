@@ -137,7 +137,14 @@ export async function addProcessLog(nodeId, { node_id, process_name, log }) {
 
 export async function addNewRequestEvent(
   nodeId,
-  { request_id, node_id, state_code, source_timestamp, additional_data }
+  {
+    event_id,
+    request_id,
+    node_id,
+    state_code,
+    source_timestamp,
+    additional_data,
+  }
 ) {
   try {
     let additionalData = [];
@@ -148,6 +155,8 @@ export async function addNewRequestEvent(
     await getRedis().xadd(
       `${nodeId}:request-events`,
       '*',
+      'event_id',
+      event_id,
       'request_id',
       request_id,
       'node_id',
@@ -165,7 +174,16 @@ export async function addNewRequestEvent(
 
 export async function addNewYourDataRequestEvent(
   nodeId,
-  { request_id, node_id, state_code, source_timestamp, additional_data }
+  {
+    event_id,
+    request_id,
+    node_id,
+    state_code,
+    source_timestamp,
+    additional_data,
+    signature,
+    signing_key_version,
+  }
 ) {
   try {
     let additionalData = [];
@@ -176,6 +194,8 @@ export async function addNewYourDataRequestEvent(
     await getRedis().xadd(
       `${nodeId}:yourdata-request-events`,
       '*',
+      'event_id',
+      event_id,
       'request_id',
       request_id,
       'node_id',
@@ -184,7 +204,11 @@ export async function addNewYourDataRequestEvent(
       state_code,
       'source_timestamp',
       source_timestamp,
-      ...additionalData
+      ...additionalData,
+      'signature',
+      signature,
+      'signing_key_version',
+      signing_key_version
     );
   } catch (err) {
     logger.error({ err });

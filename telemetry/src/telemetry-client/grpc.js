@@ -38,7 +38,7 @@ const APP_RESPONSE_CODE = {
   UNKNOWN_VERSION: 1001,
 };
 
-const GRPC_API_VERSION = '1.1';
+const GRPC_API_VERSION = '2.0';
 
 export default class GRPCTelemetryClient {
   constructor() {
@@ -242,7 +242,12 @@ export default class GRPCTelemetryClient {
       this.client.sendYourDataRequestEvents(
         {
           request_metadata: { node_id: nodeId, token },
-          data: events,
+          data: events.map((event) => {
+            return {
+              ...event,
+              signature: Buffer.from(event.signature, 'base64'),
+            };
+          }),
         },
         metadata,
         (err, result) => {

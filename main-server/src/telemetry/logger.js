@@ -20,7 +20,11 @@
  *
  */
 
+import { v7 as uuidv7 } from 'uuid';
+
 import * as telemetryDb from '../db/telemetry';
+import * as tendermintNdid from '../tendermint/ndid';
+import * as utils from '../utils';
 // import logger from '../logger';
 
 export const REQUEST_EVENTS = {
@@ -178,12 +182,17 @@ export default class TelemetryLogger {
       throw new Error(`Unknown state code: ${state_code}`);
     }
 
+    const sourceTimestamp = this.getCurrentTime();
+    const eventId = uuidv7({
+      msecs: sourceTimestamp,
+    });
+
     const data = {
-      // event_id: // uuidv7
+      event_id: eventId,
       request_id,
       node_id,
       state_code,
-      source_timestamp: this.getCurrentTime(),
+      source_timestamp: sourceTimestamp,
       additional_data,
     };
 
@@ -204,19 +213,39 @@ export default class TelemetryLogger {
       throw new Error(`Unknown state code: ${state_code}`);
     }
 
-    // TODO
-    // - validate properties (that are going to use to create signature) in additional_data
-    // - create signature
+    const sourceTimestamp = this.getCurrentTime();
+    const eventId = uuidv7({
+      msecs: sourceTimestamp,
+    });
 
-    const data = {
-      // event_id: // uuidv7
+    const signingPublicKey = await tendermintNdid.getNodeSigningPubKey(node_id);
+
+    const dataForSignature = JSON.stringify({
+      event_id: eventId,
       request_id,
       node_id,
       state_code,
-      source_timestamp: this.getCurrentTime(),
+      source_timestamp: sourceTimestamp,
+      additional_data: JSON.stringify(additional_data),
+    });
+
+    const signature = await utils.createSignature(
+      signingPublicKey.algorithm,
+      signingPublicKey.version,
+      dataForSignature,
+      node_id
+    );
+
+    const data = {
+      event_id: eventId,
+      request_id,
+      node_id,
+      state_code,
+      source_timestamp: sourceTimestamp,
       additional_data,
-      // signature,
-      // key metadata (key version)
+      //
+      signature: signature.toString('base64'),
+      signing_key_version: signingPublicKey.version,
     };
 
     await telemetryDb.addNewYourDataRequestEvent(node_id, data);
