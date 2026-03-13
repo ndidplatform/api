@@ -36,7 +36,6 @@ export async function getPrivateMessages({
   nodeId,
   requestId,
   type,
-  domain,
 } = {}) {
   if (role === 'proxy') {
     if (nodeId == null) {
@@ -88,13 +87,6 @@ export async function getPrivateMessages({
         return [...inboundMessages, ...outboundMessages];
       }
     } else {
-      // don't check for valid request ID on blockchain for request with domains (e.g. YourData)
-      if (domain == null || domain === '') {
-        const request = await tendermintNdid.getRequest({ requestId });
-        if (request == null) {
-          return null;
-        }
-      }
       if (type == null) {
         const allTypesMessages = await Promise.all(
           privateMessageTypes.map(async (type) => {

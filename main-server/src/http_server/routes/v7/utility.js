@@ -418,12 +418,11 @@ router.get('/as_error_codes', async (req, res, next) => {
 router.get('/private_messages/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
-    const { node_id, type, domain } = req.query;
+    const { node_id, type } = req.query;
     const messages = await privateMessage.getPrivateMessages({
       nodeId: node_id,
       requestId: request_id,
       type,
-      domain,
     });
     if (messages == null) {
       res.status(404).end();
