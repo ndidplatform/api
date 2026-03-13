@@ -174,6 +174,7 @@ router.post('/auto_error_responses', validateBody, async (req, res, next) => {
     const {
       node_id,
       bypass_error_code_check,
+      unsupported_service,
       service_not_available,
       unsupported_namespace,
       unsupported_authorization,
@@ -182,6 +183,7 @@ router.post('/auto_error_responses', validateBody, async (req, res, next) => {
     await coreYourDataAS.setAutoErrorResponses({
       node_id,
       bypass_error_code_check,
+      unsupported_service,
       service_not_available,
       unsupported_namespace,
       unsupported_authorization,

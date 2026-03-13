@@ -27,6 +27,7 @@ import {
   getIncomingRequestStatusUpdateCallbackUrl,
   respondDataToRP,
   respondErrorToRP,
+  getUnsupportedServiceAutoErrorResponseConfig,
   getServiceNotAvailableAutoErrorResponseConfig,
   getUnsupportedNamespaceAutoErrorResponseConfig,
   getUnsupportedAuthorizationAutoErrorResponseConfig,
@@ -241,12 +242,42 @@ async function processDataRequest(nodeId, message) {
   // get AS service data
   const service = await dataDb.getYourDataASService(nodeId, service_id);
   if (service == null) {
-    logger.warn({
-      message: 'Received data request with unknown/unregistered service',
+    logger.info({
+      message: 'Received data request with unsupported/unknown service',
       request_id,
       service_id,
       requester_node_id,
     });
+
+    const unsupportedServiceAutoErrorResponseConfig =
+      await getUnsupportedServiceAutoErrorResponseConfig(nodeId);
+    if (unsupportedServiceAutoErrorResponseConfig != null) {
+      const { error_code, error_message } =
+        unsupportedServiceAutoErrorResponseConfig;
+
+      logger.info({
+        message:
+          'Auto error respond to data request with unsupported/unknown service',
+        request_id,
+        error_code,
+        error_message,
+      });
+
+      // don't "await" here or it will cause dead lock (same request ID waiting in queue)
+      respondErrorToRP(
+        {
+          node_id: nodeId,
+          request_id,
+          error_code,
+          error_message,
+        },
+        undefined,
+        {
+          request, // don't get request data from cache since there's nothing there (not set to cache yet)
+        }
+      );
+    }
+
     return;
   }
 

@@ -35,6 +35,7 @@ export async function setAutoErrorResponses(params) {
   let { node_id: nodeId } = params;
   const {
     bypass_error_code_check = false,
+    unsupported_service,
     service_not_available,
     unsupported_namespace,
     unsupported_authorization,
@@ -59,6 +60,42 @@ export async function setAutoErrorResponses(params) {
   }
 
   const promises = [];
+  if (unsupported_service != null) {
+    if (!bypass_error_code_check) {
+      if (
+        errorCodeList.find(
+          (error) => error.error_code === unsupported_service.error_code
+        ) == null
+      ) {
+        throw new CustomError({
+          errorType: errorType.INVALID_ERROR_CODE,
+          details: {
+            as_error_code: unsupported_service.error_code,
+          },
+        });
+      }
+    }
+
+    promises.push(
+      dataDb.setYourDataASAutoErrorResponseConfig(
+        nodeId,
+        'unsupported_service',
+        {
+          error_code: unsupported_service.error_code,
+          error_message: unsupported_service.error_message,
+        }
+      )
+    );
+  } else if (unsupported_service === null) {
+    // null => unset
+    promises.push(
+      dataDb.removeYourDataASAutoErrorResponseConfig(
+        nodeId,
+        'unsupported_service'
+      )
+    );
+  }
+
   if (service_not_available != null) {
     if (!bypass_error_code_check) {
       if (
@@ -183,6 +220,11 @@ export async function getAutoErrorResponses(params) {
     nodeId = config.nodeId;
   }
 
+  const unsupported_service = await dataDb.getYourDataASAutoErrorResponseConfig(
+    nodeId,
+    'unsupported_service'
+  );
+
   const service_not_available =
     await dataDb.getYourDataASAutoErrorResponseConfig(
       nodeId,
@@ -202,10 +244,18 @@ export async function getAutoErrorResponses(params) {
     );
 
   return {
+    unsupported_service,
     service_not_available,
     unsupported_namespace,
     unsupported_authorization,
   };
+}
+
+export async function getUnsupportedServiceAutoErrorResponseConfig(nodeId) {
+  return await dataDb.getYourDataASAutoErrorResponseConfig(
+    nodeId,
+    'unsupported_service'
+  );
 }
 
 export async function getServiceNotAvailableAutoErrorResponseConfig(nodeId) {

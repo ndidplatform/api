@@ -1088,6 +1088,14 @@ export default {
         properties: {
           node_id: { type: 'string', minLength: 1 },
           bypass_error_code_check: { type: 'boolean' },
+          unsupported_service: {
+            type: ['object', 'null'],
+            properties: {
+              error_code: { $ref: 'defs#/definitions/errorCode' },
+              error_message: { type: 'string', minLength: 1 },
+            },
+            required: ['error_code', 'error_message'],
+          },
           service_not_available: {
             type: ['object', 'null'],
             properties: {
