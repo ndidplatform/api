@@ -11,24 +11,24 @@
   "author": "",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
-    "@babel/runtime": "^7.25.0",
-    "@grpc/grpc-js": "^1.12.2",
-    "@grpc/proto-loader": "^0.7.13",
-    "ioredis": "^5.4.1",
+    "@babel/runtime": "^7.29.2",
+    "@grpc/grpc-js": "^1.14.3",
+    "@grpc/proto-loader": "^0.8.0",
+    "ioredis": "^5.10.0",
     "ndid-logger": "file:../ndid-logger",
     "simple-backoff": "^1.1.0",
     "source-map-support": "^0.5.21"
   },
   "devDependencies": {
-    "@babel/cli": "^7.24.8",
-    "@babel/core": "^7.25.2",
-    "@babel/eslint-parser": "^7.25.1",
-    "@babel/eslint-plugin": "^7.25.1",
+    "@babel/cli": "^7.28.6",
+    "@babel/core": "^7.29.0",
+    "@babel/eslint-parser": "^7.28.6",
+    "@babel/eslint-plugin": "^7.27.1",
     "@babel/plugin-proposal-object-rest-spread": "^7.20.7",
-    "@babel/plugin-transform-runtime": "^7.24.7",
-    "@babel/preset-env": "^7.25.2",
-    "@babel/register": "^7.24.6",
-    "eslint": "^8.57.0"
+    "@babel/plugin-transform-runtime": "^7.29.0",
+    "@babel/preset-env": "^7.29.2",
+    "@babel/register": "^7.28.6",
+    "eslint": "^8.57.1"
   },
   "main": "index.js",
   "keywords": []
