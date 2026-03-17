@@ -1,4 +1,4 @@
-FROM node:20-alpine3.20 AS build
+FROM node:20-alpine3.23 AS build
 
 WORKDIR /tmp
 
@@ -28,7 +28,7 @@ RUN npm run build && npm prune --production
 RUN apk del .build-deps
 
 
-FROM node:20-alpine3.20
+FROM node:20-alpine3.23
 LABEL maintainer="NDID IT Team <it@ndid.co.th>"
 
 # Directory path for persistence data files
@@ -46,7 +46,6 @@ COPY --from=build /tmp/api/ndid-logger /api/ndid-logger
 COPY --from=build /tmp/api/main-server /api/main-server
 
 COPY ./protos /api/protos
-COPY ./dev_cert /api/dev_cert
 COPY COPYING /api/main-server/build
 COPY VERSION /api/
 
