@@ -13,6 +13,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# dev keys
+dev_cert
+main-server/dev_key
+main-server/dev_https_key
+mq-server/dev_https_key
+
+# 
+.circleci
+
 # misc
 .DS_Store
 
