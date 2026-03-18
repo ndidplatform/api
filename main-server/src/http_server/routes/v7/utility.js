@@ -309,23 +309,15 @@ router.get('/namespaces', async (req, res, next) => {
 
 router.get('/services', async (req, res, next) => {
   try {
-    const { active = 'true', domain } = req.query;
+    const { active, domain } = req.query;
 
     let activeFilter;
-    if (active == null) {
-      activeFilter = true;
-    } else if (active === 'all') {
-      activeFilter = undefined;
-    } else {
+    if (active != null) {
       activeFilter = active === 'true';
     }
 
     let domainFilter;
-    if (domain == null) {
-      domainFilter = '';
-    } else if (domain === 'all') {
-      domainFilter = undefined;
-    } else {
+    if (domain != null) {
       domainFilter = domain;
     }
 
