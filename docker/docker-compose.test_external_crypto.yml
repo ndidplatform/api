@@ -16,6 +16,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
@@ -42,6 +43,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
@@ -68,6 +70,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
@@ -94,6 +97,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
@@ -120,6 +124,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
@@ -146,6 +151,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
@@ -172,6 +178,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
@@ -198,6 +205,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
@@ -224,6 +232,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges
@@ -250,6 +259,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test_external_crypto.sh:/api/start-api-test_external_crypto.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test_external_crypto.sh
     security_opt:
       - no-new-privileges

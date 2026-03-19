@@ -15,6 +15,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
@@ -40,6 +41,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
@@ -65,6 +67,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
@@ -90,6 +93,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
@@ -115,6 +119,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
@@ -140,6 +145,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
@@ -165,6 +171,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
@@ -190,6 +197,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
@@ -215,6 +223,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
@@ -240,6 +249,7 @@ services:
       - ENABLE_CONFIG_HTTP_ROUTE_PATH=true
     volumes:
       - ./start-api-test.sh:/api/start-api-test.sh
+      - ../main-server/dev_key:/api/main-server/dev_key:ro
     entrypoint: /api/start-api-test.sh
     security_opt:
       - no-new-privileges
