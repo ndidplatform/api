@@ -22,43 +22,58 @@
 
 import EventEmitter from 'events';
 
-import zmq from 'zeromq';
+import * as zmq from 'zeromq';
 
 export default class MQRecvSocket extends EventEmitter {
   constructor(config) {
     super();
-    this.receivingSocket = zmq.socket('router');
+
+    this.receivingSocket = new zmq.Router();
+
     // maximum receiver size ( -1 receive all )
-    this.receivingSocket.setsockopt(
-      zmq.ZMQ_MAXMSGSIZE,
-      config.maxMsgSize || -1
-    );
-    //no lingering time after socket close. we want to control send by business logic
-    this.receivingSocket.setsockopt(zmq.ZMQ_LINGER, 0);
-    // no socket identity ( every time the app restart, we don't resume)
-    //this.receivingSocket.setsockopt(zmq.ZMQ_IDENTITY,{}) ;
-    this.receivingSocket.bindSync('tcp://*:' + config.port);
+    this.receivingSocket.maxMessageSize = config.maxMsgSize || -1;
+    // no lingering time after socket close. we want to control send by business logic
+    this.receivingSocket.linger = 0;
 
-    this.receivingSocket.on(
-      'message',
-      function(identity, emptyDelimiter, messageBuffer) {
-        this.emit('message', identity, messageBuffer);
-      }.bind(this)
-    );
+    this.port = config.port;
+    this.closed = false;
 
-    this.receivingSocket.on(
-      'error',
-      function(error) {
-        this.emit('error', error);
-      }.bind(this)
-    );
+    // Initialize the socket and start the receive loop
+    this._init();
   }
 
-  send(identity, payload) {
-    this.receivingSocket.send([identity, Buffer.alloc(0), payload]);
+  async _init() {
+    try {
+      await this.receivingSocket.bind(`tcp://*:${this.port}`);
+
+      this._receiveLoop();
+    } catch (err) {
+      this.emit('error', err);
+    }
+  }
+
+  async _receiveLoop() {
+    try {
+      for await (const [identity, emptyDelimiter, messageBuffer] of this
+        .receivingSocket) {
+        this.emit('message', identity, messageBuffer);
+
+        if (this.closed) break;
+      }
+    } catch (err) {
+      if (!this.closed) {
+        this.emit('error', err);
+      }
+    }
+  }
+
+  async send(identity, payload) {
+    // Router sockets require the [identity, empty, payload] structure
+    await this.receivingSocket.send([identity, Buffer.alloc(0), payload]);
   }
 
   close() {
+    this.closed = true;
     this.receivingSocket.close();
   }
 }

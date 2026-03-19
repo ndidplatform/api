@@ -53,20 +53,20 @@ export const grpcSsl = process.env.GRPC_SSL === 'true';
 export const grpcSslRootCertFilePath = process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
   ? process.env.GRPC_SSL_ROOT_CERT_FILE_PATH
   : env === 'development'
-  ? path.join(__dirname, '..', '..', 'dev_cert', 'grpc', 'ca.crt')
-  : null;
+    ? path.join(__dirname, '..', '..', 'dev_cert', 'grpc', 'ca.crt')
+    : null;
 
 export const grpcSslKeyFilePath = process.env.GRPC_SSL_KEY_FILE_PATH
   ? process.env.GRPC_SSL_KEY_FILE_PATH
   : env === 'development'
-  ? path.join(__dirname, '..', '..', 'dev_cert', 'grpc', 'server.key')
-  : null;
+    ? path.join(__dirname, '..', '..', 'dev_cert', 'grpc', 'server.key')
+    : null;
 
 export const grpcSslCertFilePath = process.env.GRPC_SSL_CERT_FILE_PATH
   ? process.env.GRPC_SSL_CERT_FILE_PATH
   : env === 'development'
-  ? path.join(__dirname, '..', '..', 'dev_cert', 'grpc', 'server.crt')
-  : null;
+    ? path.join(__dirname, '..', '..', 'dev_cert', 'grpc', 'server.crt')
+    : null;
 
 export const nodeId = process.env.NODE_ID;
 
@@ -88,7 +88,9 @@ export const logOneLine = process.env.LOG_ONE_LINE === 'true';
 export const maxConcurrentMessagesPerMqSocket =
   process.env.MAX_CONCURRENT_MESSAGES_PER_MQ_SOCKET || 16;
 
-export const maxMqSockets = process.env.MAX_MQ_SOCKETS || 10000;
+export const maxMqSockets = process.env.MAX_MQ_SOCKETS
+  ? parseInt(process.env.MAX_MQ_SOCKETS)
+  : 10000;
 
 export const prometheusEnabled = process.env.PROMETHEUS === 'true';
 

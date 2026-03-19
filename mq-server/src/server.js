@@ -32,7 +32,7 @@ import EventEmitter from 'events';
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 
-import zmq from 'zeromq';
+import * as zmq from 'zeromq';
 
 import MQSend from './mq_module/mq_send_controller';
 import MQRecv from './mq_module/mq_recv_controller';

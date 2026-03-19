@@ -20,40 +20,42 @@
  *
  */
 
-let maxConn = 0;
-let count = 0;
-
 import EventEmitter from 'events';
-
-import zmq from 'zeromq';
 import crypto from 'crypto';
 
-import { maxConcurrentMessagesPerMqSocket, maxMqSockets } from '../config';
+import * as zmq from 'zeromq';
+
+import { maxConcurrentMessagesPerMqSocket, maxMqSockets } from '../config.js';
+
+zmq.context.maxSockets = maxMqSockets;
+
+let maxConn = 0;
+let count = 0;
 
 export default class MQSendSocket extends EventEmitter {
   constructor() {
     super();
-    this.socketMap = new Map();
-    this.socketUsedBy = {};
-    this.socketDestMap = {};
-    this.socketListByDest = {};
-    this.seqIdList = {};
-    zmq.Context.setMaxSockets(maxMqSockets);
+    this.socketMap = new Map(); // seqId -> socket
+    this.socketUsedBy = {}; // socketId -> [seqIds]
+    this.socketDestMap = {}; // socketId -> destKey
+    this.socketListByDest = {}; // destKey -> [sockets]
+    this.seqIdList = {}; // msgId -> [seqIds]
   }
 
-  send(dest, payload, msgId, seqId) {
+  async send(dest, payload, msgId, seqId) {
     if (!this.seqIdList[msgId]) {
       this.seqIdList[msgId] = [];
     }
     this.seqIdList[msgId].push(seqId);
-    const destKey = dest.ip + ':' + dest.port;
+
+    const destKey = `${dest.ip}:${dest.port}`;
     let currentSocket = null;
+
     if (!this.socketListByDest[destKey]) {
       this.socketListByDest[destKey] = [];
     }
 
-    for (let i = 0; i < this.socketListByDest[destKey].length; i++) {
-      let socket = this.socketListByDest[destKey][i];
+    for (const socket of this.socketListByDest[destKey]) {
       if (
         this.socketUsedBy[socket.id] &&
         this.socketUsedBy[socket.id].length < maxConcurrentMessagesPerMqSocket
@@ -62,29 +64,35 @@ export default class MQSendSocket extends EventEmitter {
         break;
       }
     }
-    if (currentSocket == null) {
-      const newSocket = this._init(dest, msgId);
-      this.socketDestMap[newSocket.id] = destKey;
+
+    if (!currentSocket) {
+      currentSocket = this._init(dest, msgId);
+      this.socketDestMap[currentSocket.id] = destKey;
       count++;
       this.emit('new_socket_connection', count);
       if (count > maxConn) {
-        // console.log(count);
         maxConn = count;
       }
-      this.socketListByDest[destKey].push(newSocket);
-      currentSocket = newSocket;
+      this.socketListByDest[destKey].push(currentSocket);
     }
 
     if (!this.socketUsedBy[currentSocket.id]) {
       this.socketUsedBy[currentSocket.id] = [];
     }
+
     this.socketUsedBy[currentSocket.id].push(seqId);
     this.socketMap.set(seqId, currentSocket);
-    currentSocket.send([Buffer.alloc(0), payload]);
+
+    // Dealer sockets usually expect [empty, payload]
+    try {
+      await currentSocket.instance.send([Buffer.alloc(0), payload]);
+    } catch (err) {
+      this.emit('error', msgId, err);
+    }
   }
 
   cleanUp(msgId, ackSeqId) {
-    if (!this.seqIdList[msgId]) return; //ack for same msgId
+    if (!this.seqIdList[msgId]) return; // ack for same msgId
     this.seqIdList[msgId].forEach((seqId) => {
       this._cleanUp(seqId);
     });
@@ -92,75 +100,81 @@ export default class MQSendSocket extends EventEmitter {
   }
 
   _cleanUp(seqId) {
-    let socketId = this.socketMap.get(seqId).id;
-    let index = this.socketUsedBy[socketId].indexOf(seqId);
+    const socket = this.socketMap.get(seqId);
+    if (!socket) return;
+
+    const socketId = socket.id;
+    const index = this.socketUsedBy[socketId].indexOf(seqId);
+
     if (index !== -1) {
       this.socketUsedBy[socketId].splice(index, 1);
+
       if (this.socketUsedBy[socketId].length === 0) {
-        this.socketMap.get(seqId).close();
+        socket.instance.close();
         count--;
         this.emit('socket_connection_closed', count);
+
         delete this.socketUsedBy[socketId];
-        let destKey = this.socketDestMap[socketId];
-        let index = this.socketListByDest[destKey].findIndex((socket) => {
-          return socket.id === socketId;
-        });
-        if (index === -1) {
-          throw new Error('Something is wrong');
+        const destKey = this.socketDestMap[socketId];
+
+        const listIndex = this.socketListByDest[destKey].findIndex(
+          (s) => s.id === socketId
+        );
+        if (listIndex !== -1) {
+          this.socketListByDest[destKey].splice(listIndex, 1);
         }
-        this.socketListByDest[destKey].splice(index, 1);
+
         if (this.socketListByDest[destKey].length === 0) {
           delete this.socketListByDest[destKey];
         }
         delete this.socketDestMap[socketId];
       }
-    } else {
-      throw new Error('Something is wrong');
     }
     this.socketMap.delete(seqId);
   }
 
   closeAll() {
     const socketsClosed = this.socketMap.size;
-    for (let [seqId, sendingSocket] of this.socketMap) {
-      sendingSocket.close();
+    for (let [seqId, socket] of this.socketMap) {
+      socket.instance.close();
       this.socketMap.delete(seqId);
     }
     return socketsClosed;
   }
 
-  // init socket and connection to destination (init source socket too, which should provide limitation but is cleaner)
+  // init socket and connection to destination
   _init(dest, msgId) {
-    const sendingSocket = zmq.socket('dealer');
+    const socket = new zmq.Dealer();
+
     // socket option
-    // small lingering time ( 50ms ) after socket close. we want to control send by business logic
-    sendingSocket.setsockopt(zmq.ZMQ_LINGER, 0);
-    //not setting means unlimited number of queueing message
-    //sendingSocket.setsockopt(zmq.ZMQ_HWM, 0);
-    //ALL in MEMORY --
-    //sendingSocket.setsockopt(zmq.ZMQ_SWAP, 0);
-    //no block // wait forever until close
-    sendingSocket.setsockopt(zmq.ZMQ_RCVTIMEO, 0);
-    //no block // wait forever until close
-    sendingSocket.setsockopt(zmq.ZMQ_SNDTIMEO, 0);
+    // no lingering time after socket close. we want to control send by business logic
+    socket.linger = 0;
+    socket.receiveTimeout = -1;
+    socket.sendTimeout = -1;
 
-    sendingSocket.on(
-      'error',
-      function(err) {
-        this.emit('error', msgId, err);
-      }.bind(this)
-    );
-
-    sendingSocket.on(
-      'message',
-      function(emptyDelimiter, messageBuffer) {
-        this.emit('message', messageBuffer);
-      }.bind(this)
-    );
+    const socketWrapper = {
+      instance: socket,
+      id: crypto.randomBytes(16).toString('base64'),
+    };
 
     const destUri = `tcp://${dest.ip}:${dest.port}`;
-    sendingSocket.connect(destUri);
-    sendingSocket.id = crypto.randomBytes(16).toString('base64');
-    return sendingSocket;
+    socket.connect(destUri);
+
+    this._startReceiveLoop(socket, msgId);
+
+    return socketWrapper;
+  }
+
+  async _startReceiveLoop(socket, msgId) {
+    try {
+      for await (const [emptyDelimiter, messageBuffer] of socket) {
+        this.emit('message', messageBuffer);
+      }
+    } catch (err) {
+      // Ignore errors if the socket was closed intentionally
+      if (socket.writable) {
+        this.emit('error', msgId, err);
+      }
+    }
   }
 }
