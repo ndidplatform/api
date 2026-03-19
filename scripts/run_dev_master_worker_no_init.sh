@@ -78,7 +78,7 @@ NODE_ID=ndid1 \
 NDID_NODE=true \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=false \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 MODE=master \
 MASTER_SERVER_PORT=7000 \
@@ -93,7 +93,7 @@ SERVER_PORT=8100 \
 NODE_ID=idp1 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 MODE=worker \
 MASTER_SERVER_IP=127.0.0.1 \
@@ -109,7 +109,7 @@ SERVER_PORT=8100 \
 NODE_ID=idp1 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45000 \
@@ -120,7 +120,7 @@ SERVER_PORT=8101 \
 NODE_ID=idp2 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45000 \
@@ -131,7 +131,7 @@ SERVER_PORT=8102 \
 NODE_ID=idp3 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 MODE=master \
 MASTER_SERVER_PORT=7001 \
@@ -144,7 +144,7 @@ SERVER_PORT=8200 \
 NODE_ID=rp1 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 MODE=worker \
 MASTER_SERVER_IP=127.0.0.1 \
@@ -158,7 +158,7 @@ SERVER_PORT=8200 \
 NODE_ID=rp1 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45001 \
@@ -169,7 +169,7 @@ SERVER_PORT=8201 \
 NODE_ID=rp2 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 MODE=master \
 MASTER_SERVER_PORT=7002 \
@@ -182,7 +182,7 @@ SERVER_PORT=8300 \
 NODE_ID=as1 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 MODE=worker \
 MASTER_SERVER_IP=127.0.0.1 \
@@ -196,7 +196,7 @@ SERVER_PORT=8300 \
 NODE_ID=as1 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45002 \
@@ -207,7 +207,7 @@ SERVER_PORT=8301 \
 NODE_ID=as2 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 MODE=master \
 MASTER_SERVER_PORT=7003 \
@@ -221,7 +221,7 @@ NODE_ID=proxy1 \
 DB_PORT=6380 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 MODE=worker \
 MASTER_SERVER_IP=127.0.0.1 \
@@ -236,7 +236,7 @@ NODE_ID=proxy1 \
 DB_PORT=6380 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45003 \
@@ -248,6 +248,6 @@ NODE_ID=proxy2 \
 DB_PORT=6381 \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 wait

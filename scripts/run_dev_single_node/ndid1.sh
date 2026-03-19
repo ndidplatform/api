@@ -25,6 +25,6 @@ NODE_ID=ndid1 \
 NDID_NODE=true \
 ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=false \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 wait

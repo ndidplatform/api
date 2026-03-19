@@ -98,7 +98,7 @@ ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=false \
 PROMETHEUS=true \
 PROMETHEUS_SERVER_PORT=10001 \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45000 \
@@ -113,7 +113,7 @@ ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
 PROMETHEUS=true \
 PROMETHEUS_SERVER_PORT=11001 \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45000 \
@@ -126,7 +126,7 @@ ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
 PROMETHEUS=true \
 PROMETHEUS_SERVER_PORT=11002 \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45000 \
@@ -139,7 +139,7 @@ ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
 PROMETHEUS=true \
 PROMETHEUS_SERVER_PORT=11003 \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45001 \
@@ -152,7 +152,7 @@ ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
 PROMETHEUS=true \
 PROMETHEUS_SERVER_PORT=12001 \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45001 \
@@ -165,7 +165,7 @@ ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
 PROMETHEUS=true \
 PROMETHEUS_SERVER_PORT=12002 \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45002 \
@@ -178,7 +178,7 @@ ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
 PROMETHEUS=true \
 PROMETHEUS_SERVER_PORT=13001 \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45002 \
@@ -191,7 +191,7 @@ ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
 PROMETHEUS=true \
 PROMETHEUS_SERVER_PORT=13002 \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45003 \
@@ -205,7 +205,7 @@ ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
 PROMETHEUS=true \
 PROMETHEUS_SERVER_PORT=14001 \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 TENDERMINT_IP=127.0.0.1 \
 TENDERMINT_PORT=45003 \
@@ -219,6 +219,6 @@ ENABLE_CONFIG_HTTP_ROUTE_PATH=true \
 ENABLE_TELEMETRY_LOGGING=true \
 PROMETHEUS=true \
 PROMETHEUS_SERVER_PORT=14002 \
-node --security-revert=CVE-2023-46809 build/server.js &
+node build/server.js &
 
 wait

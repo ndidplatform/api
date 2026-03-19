@@ -511,4 +511,4 @@ export SIGNING_MASTER_PRIVATE_KEY_PATH=${MASTER_KEY_PATH}
 export ENCRYPTION_PRIVATE_KEY_PATH=${KEY_PATH} 
 
 # exec node /api/main-server/build/server.js
-exec node --security-revert=CVE-2023-46809 /api/main-server/build/server.js
+exec node /api/main-server/build/server.js
