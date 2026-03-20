@@ -6,7 +6,7 @@ import assert from 'assert';
 
 import MQRecv from './mq_recv_controller';
 import MQSend from './mq_send_controller';
-import zmq from 'zeromq';
+import * as zmq from 'zeromq';
 import errorType from 'ndid-error/type';
 
 const expect = chai.expect;
@@ -16,9 +16,9 @@ function getMsgId() {
   return crypto.randomBytes(8).toString('base64');
 }
 
-describe('Functional Test for MQ receiver with real socket', function() {
+describe('Functional Test for MQ receiver with real socket', function () {
   let portIdx = 5655;
-  let getPort = function(numports) {
+  let getPort = function (numports) {
     let ret = [];
     for (let i = 0; i < numports; i++) {
       portIdx++;
@@ -27,7 +27,7 @@ describe('Functional Test for MQ receiver with real socket', function() {
     return ret;
   };
 
-  it('should receive data from 3 sources at the same time properly', function(done) {
+  it('should receive data from 3 sources at the same time properly', function (done) {
     let count = 0;
     let ports = getPort(1);
 
@@ -37,7 +37,7 @@ describe('Functional Test for MQ receiver with real socket', function() {
     let mqNodeRecv = new MQRecv({ port: ports[0] });
     let expectedResults = [1111111, 222222, 333333];
 
-    mqNodeRecv.on('message', function({ message, sendAck }) {
+    mqNodeRecv.on('message', function ({ message, sendAck }) {
       expect(message).to.be.instanceof(Buffer);
       expect(parseInt(message.toString())).to.be.oneOf(expectedResults);
 
@@ -75,20 +75,20 @@ describe('Functional Test for MQ receiver with real socket', function() {
     );
   });
 
-  it('should block message that are bigger than maxMsgSize from coming', function(done) {
+  it('should block message that are bigger than maxMsgSize from coming', function (done) {
     let ports = getPort(1);
 
     this.timeout(10000);
     let mqRecvSmallSize = new MQRecv({ port: ports[0], maxMsgSize: 10 });
-    mqRecvSmallSize.on('message', function() {
+    mqRecvSmallSize.on('message', function () {
       assert.fail('there should not be message coming through');
     });
-    mqRecvSmallSize.on('error', function() {
+    mqRecvSmallSize.on('error', function () {
       assert.fail('there should be no error at receiving part');
     });
 
     let mqNode = new MQSend({ timeout: 500, totalTimeout: 1500 });
-    mqNode.on('error', function(err) {
+    mqNode.on('error', function (err) {
       mqRecvSmallSize.close();
       done();
     });
@@ -100,10 +100,10 @@ describe('Functional Test for MQ receiver with real socket', function() {
     );
   });
 
-  it('should fire error but not die when receive wrong protocol message', function(done) {
+  it('should fire error but not die when receive wrong protocol message', function (done) {
     let ports = getPort(1);
     let mqNodeRecv = new MQRecv({ port: ports[0] });
-    mqNodeRecv.on('error', function(error) {
+    mqNodeRecv.on('error', function (error) {
       expect(error.getCode()).to.be.eql(
         errorType.WRONG_MESSAGE_QUEUE_PROTOCOL.code
       );
@@ -112,14 +112,14 @@ describe('Functional Test for MQ receiver with real socket', function() {
       done();
     });
 
-    mqNodeRecv.on('message', function() {
+    mqNodeRecv.on('message', function () {
       assert.fail('Should not recieve wrong protocol message');
     });
 
-    const sendingSocket = zmq.socket('req');
-    sendingSocket.setsockopt(zmq.ZMQ_LINGER, 0);
-    sendingSocket.setsockopt(zmq.ZMQ_RCVTIMEO, 0);
-    sendingSocket.setsockopt(zmq.ZMQ_SNDTIMEO, 0);
+    const sendingSocket = new zmq.Request();
+    sendingSocket.linger = 0;
+    sendingSocket.receiveTimeout = -1;
+    sendingSocket.sendTimeout = -1;
 
     const destUri = `tcp://localhost:${ports[0]}`;
     sendingSocket.connect(destUri);
