@@ -195,128 +195,136 @@ function getInfo(call, callback) {
 }
 
 async function initialize() {
-  if (config.prometheusEnabled) {
-    prometheus.initialize();
-  }
+  try {
+    if (config.prometheusEnabled) {
+      prometheus.initialize();
+    }
 
-  mqSend = new MQSend({
-    senderId: config.nodeId,
-    timeout: MQ_SEND_TIMEOUT,
-    totalTimeout: MQ_SEND_TOTAL_TIMEOUT,
-  });
-  mqRecv = new MQRecv({
-    senderId: config.nodeId,
-    port: config.mqPort,
-    maxMsgSize: MQ_RECV_MAX_MESSAGE_SIZE,
-  });
-
-  mqRecv.on('message', ({ message, msgId, senderId, sendAck }) => {
-    logger.debug({
-      message: 'Inbound message',
-      msgId,
-      senderId,
+    mqSend = new MQSend({
+      senderId: config.nodeId,
+      timeout: MQ_SEND_TIMEOUT,
+      totalTimeout: MQ_SEND_TOTAL_TIMEOUT,
     });
-    sendACKs[msgId] = sendAck;
-    onRecvMessage({ message, msgId, senderId });
-  });
+    mqRecv = new MQRecv({
+      senderId: config.nodeId,
+      port: config.mqPort,
+      maxMsgSize: MQ_RECV_MAX_MESSAGE_SIZE,
+    });
+    await mqRecv.init();
 
-  mqSend.on('error', (msgId, error) => {
-    logger.error({ err: error });
-    if (sendCalls[msgId]) {
-      const { callback } = sendCalls[msgId];
-      callback({
-        code: error.code,
-        message: error.message,
+    mqRecv.on('message', ({ message, msgId, senderId, sendAck }) => {
+      logger.debug({
+        message: 'Inbound message',
+        msgId,
+        senderId,
       });
-      delete sendCalls[msgId];
-    }
-    if (error.code === errorType.MQ_SEND_TIMEOUT.code) {
-      metricsEventEmitter.emit('outgoing_message_send_timeout');
-    } else {
-      metricsEventEmitter.emit('outgoing_message_error');
-    }
-  });
-  mqSend.on('ack_received', (msgId) => {
-    logger.debug({
-      message: 'MQ send socket ACK received',
-      msgId,
+      sendACKs[msgId] = sendAck;
+      onRecvMessage({ message, msgId, senderId });
     });
-    if (sendCalls[msgId]) {
-      const { callback } = sendCalls[msgId];
-      callback(null);
-      delete sendCalls[msgId];
-    }
-    metricsEventEmitter.emit('outgoing_message_ack_received');
-  });
-  mqSend.on('retry_send', (msgId, retryCount) => {
+
+    mqSend.on('error', (msgId, error) => {
+      logger.error({ err: error });
+      if (sendCalls[msgId]) {
+        const { callback } = sendCalls[msgId];
+        callback({
+          code: error.code,
+          message: error.message,
+        });
+        delete sendCalls[msgId];
+      }
+      if (error.code === errorType.MQ_SEND_TIMEOUT.code) {
+        metricsEventEmitter.emit('outgoing_message_send_timeout');
+      } else {
+        metricsEventEmitter.emit('outgoing_message_error');
+      }
+    });
+    mqSend.on('ack_received', (msgId) => {
+      logger.debug({
+        message: 'MQ send socket ACK received',
+        msgId,
+      });
+      if (sendCalls[msgId]) {
+        const { callback } = sendCalls[msgId];
+        callback(null);
+        delete sendCalls[msgId];
+      }
+      metricsEventEmitter.emit('outgoing_message_ack_received');
+    });
+    mqSend.on('retry_send', (msgId, retryCount) => {
+      logger.info({
+        message: 'MQ send retry',
+        msgId,
+        retryCount,
+      });
+      metricsEventEmitter.emit('outgoing_message_retry');
+    });
+
+    mqRecv.on('error', (error) => {
+      logger.error({ err: error });
+      onRecvError({ error: { code: error.code, message: error.message } });
+    });
+
+    mqSend.on('new_socket_connection', (count) =>
+      metricsEventEmitter.emit('sending_socket_connection_count', count)
+    );
+    mqSend.on('socket_connection_closed', (count) =>
+      metricsEventEmitter.emit('sending_socket_connection_count', count)
+    );
+
     logger.info({
-      message: 'MQ send retry',
-      msgId,
-      retryCount,
+      message: 'Message queue initialized',
     });
-    metricsEventEmitter.emit('outgoing_message_retry');
-  });
 
-  mqRecv.on('error', (error) => {
-    logger.error({ err: error });
-    onRecvError({ error: { code: error.code, message: error.message } });
-  });
+    let grpcSslRootCert;
+    let grpcSslKey;
+    let grpcSslCert;
+    if (config.grpcSsl) {
+      grpcSslRootCert = await readFileAsync(config.grpcSslRootCertFilePath);
+      grpcSslKey = await readFileAsync(config.grpcSslKeyFilePath);
+      grpcSslCert = await readFileAsync(config.grpcSslCertFilePath);
+    }
 
-  mqSend.on('new_socket_connection', (count) =>
-    metricsEventEmitter.emit('sending_socket_connection_count', count)
-  );
-  mqSend.on('socket_connection_closed', (count) =>
-    metricsEventEmitter.emit('sending_socket_connection_count', count)
-  );
+    server.addService(proto.MessageQueue.service, {
+      subscribeToRecvMessages,
+      sendAckForRecvMessage,
+      sendMessage,
+      getInfo,
+    });
 
-  logger.info({
-    message: 'Message queue initialized',
-  });
-
-  let grpcSslRootCert;
-  let grpcSslKey;
-  let grpcSslCert;
-  if (config.grpcSsl) {
-    grpcSslRootCert = await readFileAsync(config.grpcSslRootCertFilePath);
-    grpcSslKey = await readFileAsync(config.grpcSslKeyFilePath);
-    grpcSslCert = await readFileAsync(config.grpcSslCertFilePath);
-  }
-
-  server.addService(proto.MessageQueue.service, {
-    subscribeToRecvMessages,
-    sendAckForRecvMessage,
-    sendMessage,
-    getInfo,
-  });
-
-  const serverBindAsync = (...args) => {
-    return new Promise((resolve, reject) => {
-      server.bindAsync(...args, (err, port) => {
-        if (err) {
-          return reject(err);
-        }
-        resolve(port);
+    const serverBindAsync = (...args) => {
+      return new Promise((resolve, reject) => {
+        server.bindAsync(...args, (err, port) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(port);
+        });
       });
+    };
+    const port = await serverBindAsync(
+      SERVER_ADDRESS,
+      config.grpcSsl
+        ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
+            {
+              cert_chain: grpcSslCert,
+              private_key: grpcSslKey,
+            },
+          ])
+        : grpc.ServerCredentials.createInsecure()
+    );
+
+    // server.start();
+
+    logger.info({
+      message: 'Server initialized',
+      grpcPort: port,
     });
-  };
-  const port = await serverBindAsync(
-    SERVER_ADDRESS,
-    config.grpcSsl
-      ? grpc.ServerCredentials.createSsl(grpcSslRootCert, [
-          {
-            cert_chain: grpcSslCert,
-            private_key: grpcSslKey,
-          },
-        ])
-      : grpc.ServerCredentials.createInsecure()
-  );
-
-  // server.start();
-
-  logger.info({
-    message: 'Server initialized',
-    grpcPort: port,
-  });
+  } catch (error) {
+    logger.error({
+      message: 'Cannot initialize server',
+      err: error,
+    });
+  }
 }
 
 logger.info({

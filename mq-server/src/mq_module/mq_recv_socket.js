@@ -37,19 +37,13 @@ export default class MQRecvSocket extends EventEmitter {
 
     this.port = config.port;
     this.closed = false;
-
-    // Initialize the socket and start the receive loop
-    this._init();
   }
 
-  async _init() {
-    try {
-      await this.receivingSocket.bind(`tcp://*:${this.port}`);
+  // Initialize the socket and start the receive loop
+  async init() {
+    await this.receivingSocket.bind(`tcp://*:${this.port}`);
 
-      this._receiveLoop();
-    } catch (err) {
-      this.emit('error', err);
-    }
+    this._receiveLoop();
   }
 
   async _receiveLoop() {

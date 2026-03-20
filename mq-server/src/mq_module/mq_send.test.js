@@ -32,6 +32,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     let ports = getPort(1);
     let sendNode = new MQSend({});
     let recvNode = new MQRecv({ port: ports[0] });
+    recvNode.init();
 
     recvNode.on('message', function ({ message, sendAck }) {
       expect(message).to.be.instanceof(Buffer);
@@ -54,6 +55,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
   it('should send data in Thai successfully', function (done) {
     let ports = getPort(1);
     let recvNode = new MQRecv({ port: ports[0] });
+    recvNode.init();
     recvNode.on('message', function ({ message, sendAck }) {
       expect(message).to.be.instanceof(Buffer);
       expect(message.toString()).to.equal('นี่คือเทสแมสเซจ');
@@ -76,6 +78,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
   it('should send data to 1 source, 3 times, once after another properly', function (done) {
     let ports = getPort(1);
     let recvNode = new MQRecv({ port: ports[0] });
+    recvNode.init();
     let alreadyRecv = [];
 
     recvNode.on('message', function ({ message, sendAck }) {
@@ -116,8 +119,11 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     let alreadyRecv = [];
 
     let mqNode1 = new MQRecv({ port: ports[0] });
+    mqNode1.init();
     let mqNode2 = new MQRecv({ port: ports[1] });
+    mqNode2.init();
     let mqNode3 = new MQRecv({ port: ports[2] });
+    mqNode3.init();
 
     mqNode1.on('message', function ({ message, sendAck }) {
       expect(message).to.be.instanceof(Buffer);
@@ -201,6 +207,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
 
     let id = setTimeout(function () {
       let mqNode2 = new MQRecv({ port: ports[0] });
+      mqNode2.init();
 
       mqNode2.on('message', function ({ message, sendAck }) {
         expect(message).to.be.instanceof(Buffer);
@@ -252,6 +259,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     // create proper one later
     let id = setTimeout(function () {
       let mqNode2 = new MQRecv({ port: ports[0] });
+      mqNode2.init();
       mqNode2.on('message', function ({ message, sendAck }) {
         expect(message).to.be.instanceof(Buffer);
         expect(message.toString()).to.equal('test');
@@ -308,6 +316,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     let ports = getPort(1);
 
     let mqRecvSmallSize = new MQRecv({ port: ports[0], maxMsgSize: 10 });
+    mqRecvSmallSize.init();
     let mqNode = new MQSend({ timeout: 500, totalTimeout: 1500 });
     mqNode.on('error', function (msgId, err) {
       expect(err.code).to.equal(errorType.MQ_SEND_TIMEOUT.code);
@@ -362,6 +371,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     // create proper one later
     let id = setTimeout(function () {
       let mqNode2 = new MQRecv({ port: ports[0] });
+      mqNode2.init();
       mqNode2.on('message', function ({ message, sendAck }) {
         assert.fail('this one should not receive no more');
       });
@@ -391,6 +401,7 @@ describe.skip('mq extreme case. Keep it there but dont run by default', function
 
     let count = 0;
     let recvNode = new MQRecv({ port: ports[0] });
+    recvNode.init();
     recvNode.on('message', function ({ message, sendAck }) {
       ++count;
       if (count == 900) done();
@@ -422,6 +433,7 @@ describe.skip('mq extreme case. Keep it there but dont run by default', function
     });
 
     let recvNode = new MQRecv({ port: ports[0] });
+    recvNode.init();
     recvNode.on('message', function ({ message, sendAck }) {
       // do nothing.
     });
@@ -460,6 +472,7 @@ describe.skip('mq extreme case. Keep it there but dont run by default', function
     fn2();
     let count = 0;
     let recvNode = new MQRecv({ port: ports[0] });
+    recvNode.init();
     recvNode.on('message', function ({ message, sendAck }) {
       ++count;
       if (count == 900) {
@@ -487,6 +500,7 @@ describe.skip('mq extreme case. Keep it there but dont run by default', function
 
     let sendNode = new MQSend({});
     let recvNode = new MQRecv({ port: ports[0] });
+    recvNode.init();
 
     recvNode.on('message', function ({ message, sendAck }) {
       expect(message).to.be.instanceof(Buffer);
@@ -507,6 +521,7 @@ describe.skip('mq extreme case. Keep it there but dont run by default', function
     // create proper one later
     let id = setTimeout(function () {
       let mqNode2 = new MQRecv({ port: ports[0] });
+      mqNode2.init();
       mqNode2.on('message', function ({ message, sendAck }) {
         assert.fail('this one should not receive no more');
       });

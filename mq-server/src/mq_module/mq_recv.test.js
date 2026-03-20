@@ -35,6 +35,7 @@ describe('Functional Test for MQ receiver with real socket', function () {
     let mqNode2 = new MQSend({});
     let mqNode3 = new MQSend({});
     let mqNodeRecv = new MQRecv({ port: ports[0] });
+    mqNodeRecv.init();
     let expectedResults = [1111111, 222222, 333333];
 
     mqNodeRecv.on('message', function ({ message, sendAck }) {
@@ -80,6 +81,7 @@ describe('Functional Test for MQ receiver with real socket', function () {
 
     this.timeout(10000);
     let mqRecvSmallSize = new MQRecv({ port: ports[0], maxMsgSize: 10 });
+    mqRecvSmallSize.init();
     mqRecvSmallSize.on('message', function () {
       assert.fail('there should not be message coming through');
     });
@@ -103,6 +105,7 @@ describe('Functional Test for MQ receiver with real socket', function () {
   it('should fire error but not die when receive wrong protocol message', function (done) {
     let ports = getPort(1);
     let mqNodeRecv = new MQRecv({ port: ports[0] });
+    mqNodeRecv.init();
     mqNodeRecv.on('error', function (error) {
       expect(error.getCode()).to.be.eql(
         errorType.WRONG_MESSAGE_QUEUE_PROTOCOL.code

@@ -95,6 +95,10 @@ export default class MQRecv extends EventEmitter {
     );
   }
 
+  init() {
+    return this.recvSocket.init();
+  }
+
   close() {
     this.recvSocket.close();
   }
