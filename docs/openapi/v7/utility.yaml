@@ -490,8 +490,25 @@ paths:
 
   /utility/services:
     get:
-      summary: Retrieve list of all available services
-      description: ''
+      summary: Retrieve list of all services
+      description: 'Retrieve list of all services including active and inactive services'
+      parameters:
+        - name: active
+          in: query
+          description: |-
+            Filter active/inactive services.
+            'true' for listing only active services otherwise, listing only inactive services.
+          required: false
+          schema:
+            type: string
+        - name: domain
+          in: query
+          description: |-
+            Filter by service's domain.
+            Empty string for listing only services with no domain.
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Service list
