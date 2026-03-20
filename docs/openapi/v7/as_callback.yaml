@@ -1,0 +1,468 @@
+openapi: 3.0.3
+info:
+  title: AS Service Offering API
+  description: API Spec for AS Providing Data to the NDID Network. AS MUST IMPLEMENT.
+  version: '7.0'
+servers:
+  - url: https://your-as-app-server
+    description: Your AS application server
+paths:
+  '/service/{service_id}':
+    post:
+      summary: Service X being offered by an AS to NDID
+      description: >-
+        {serivce_id} is NOT automatically append to the registered callback url.
+        This is just an example that you can register callback with service_id
+        as parameter
+      operationId: data_request
+      parameters:
+        - in: path
+          name: service_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataRequest'
+        description: data request format
+        required: true
+      responses:
+        '200':
+          description: Response with data
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    description: >-
+                      Data URI is supported for files e.g.
+                      'data:application/pdf;base64,Z9msE6b26FZYHbOsifdkZw=='.
+                      When sending a file, using data URL with base64 encoding
+                      helps reduce MQ message payload size. Although, data URL
+                      with base64 encoding like '   data:  application/pdf  ; 
+                      base64  ,   Z9msE6b26FZ   YHbOsifdkZw==   ' is valid, it
+                      is recommended to not having whitespaces in data URL since
+                      it may cause invalid data signature check
+                  error_code:
+                    type: number
+                    description: >-
+                      Error code will take precedence over data - if error code
+                      is present, the platform will consider as an error
+                      response and ignore data
+                  reference_id:
+                    type: string
+                  callback_url:
+                    type: string
+        '204':
+          description: Acknowledged
+
+  /as/service:
+    post:
+      summary: Callback from NDID to AS reporting add/update service result
+      description: Callback from NDID to AS reporting add/update service result
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CallbackAddUpdateService'
+                - $ref: '#/components/schemas/CallbackSetServicePrice'
+
+        required: true
+      responses:
+        '204':
+          description: Acknowledge
+
+  /as/response:
+    post:
+      summary: Callback from NDID to AS reporting response result
+      description: Callback from NDID to AS reporting response result
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackSendData'
+        required: true
+      responses:
+        '204':
+          description: Acknowledge
+
+  /as/request_status_update:
+    post:
+      summary: Request (which node is involved) status update
+      description: Request (which node is involved) status update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackRequestStatus'
+        description: request status update
+        required: true
+      responses:
+        '204':
+          description: Status Update Acknowledged
+
+  /as/error:
+    post:
+      summary: >-
+        [Optional] Implement this function to receive error from async
+        operations
+      description: Callback for async operations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackError'
+        description: error info
+        required: true
+      responses:
+        '204':
+          description: Acknowledge
+
+components:
+  schemas:
+    DataRequest:
+      type: object
+      required:
+        - node_id
+        - type
+        - request_id
+        - namespace
+        - identifier
+        - response_signature_list
+        - max_ial
+        - max_aal
+        - mode
+        - service_id
+        - requester_node_id
+        - creation_time
+        - creation_block_height
+        - request_timeout
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - data_request
+        request_id:
+          type: string
+        mode:
+          type: integer
+          enum:
+            - 1
+            - 2
+            - 3
+        namespace:
+          type: string
+        identifier:
+          type: string
+        service_id:
+          type: string
+        request_params:
+          type: string
+        requester_node_id:
+          type: string
+        response_signature_list:
+          type: array
+          items:
+            type: string
+            description: base64 encoded
+            example: base64_string
+        max_ial:
+          type: number
+          enum:
+            - 1.1
+            - 1.2
+            - 1.3
+            - 2.1
+            - 2.2
+            - 2.3
+            - 3
+        max_aal:
+          type: number
+          enum:
+            - 1
+            - 2.1
+            - 2.2
+            - 3
+        request_type:
+          type: string
+        creation_time:
+          type: number
+          example: 1533315873764
+          description: >-
+            Approximate request creation UNIX time stamp in milliseconds. Note
+            that this is the timestamp generated by requester node.
+        creation_block_height:
+          type: string
+          description: 'Block height when the request is created. <CHAIN_ID>:<BLOCK_HEIGHT>'
+        request_timeout:
+          type: integer
+          description: Timeout for the request. Unit in seconds.
+    CallbackAddUpdateService:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - add_or_update_service_result
+        reference_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackSetServicePrice:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        # - creation_block_height
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - set_service_price_result
+        reference_id:
+          type: string
+        # creation_block_height:
+        #   type: string
+        #   description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackSendData:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+        - request_id
+      properties:
+        request_id:
+          type: string
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - response_result
+        reference_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackRequestStatus:
+      type: object
+      required:
+        - node_id
+        - type
+        - request_id
+        - requester_node_id
+        - mode
+        - request_message_hash
+        - min_ial
+        - min_aal
+        - min_idp
+        - idp_id_list
+        - response_list
+        - data_request_list
+        - request_timeout
+        - closed
+        - timed_out
+        - status
+        - block_height
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - request_status
+        request_id:
+          type: string
+        requester_node_id:
+          type: string
+        mode:
+          type: integer
+          enum:
+            - 1
+            - 2
+            - 3
+        request_message_hash:
+          type: string
+        min_ial:
+          type: number
+          enum:
+            - 1.1
+            - 1.2
+            - 1.3
+            - 2.1
+            - 2.2
+            - 2.3
+            - 3
+        min_aal:
+          type: number
+          enum:
+            - 1
+            - 2.1
+            - 2.2
+            - 3
+        min_idp:
+          type: integer
+        idp_id_list:
+          type: array
+          items:
+            type: string
+        response_list:
+          type: array
+          items:
+            type: object
+            required:
+              - idp_id
+            properties:
+              ial:
+                type: number
+                enum:
+                  - 1.1
+                  - 1.2
+                  - 1.3
+                  - 2.1
+                  - 2.2
+                  - 2.3
+                  - 3
+              aal:
+                type: number
+                enum:
+                  - 1
+                  - 2.1
+                  - 2.2
+                  - 3
+              status:
+                type: string
+                enum:
+                  - accept
+                  - reject
+              error_code:
+                type: number
+              signature:
+                type: string
+              idp_id:
+                type: string
+              valid_signature:
+                type: boolean
+                description: Indicate if the response from IdP has a valid signature
+              valid_ial:
+                type: boolean
+                description: >-
+                  Indicate if the IAL in the response from IdP is less than or
+                  equal to current IAL of the identity
+        data_request_list:
+          type: array
+          items:
+            type: object
+            required:
+              - service_id
+              - as_id_list
+              - min_as
+              - request_params_hash
+              - response_list
+            properties:
+              service_id:
+                type: string
+              as_id_list:
+                type: array
+                items:
+                  type: string
+              min_as:
+                type: integer
+              request_params_hash:
+                type: string
+              response_list:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - as_id
+                  properties:
+                    as_id:
+                      type: string
+                    signed:
+                      type: boolean
+                    received_data:
+                      type: boolean
+                    error_code:
+                      type: number
+        request_timeout:
+          type: integer
+        closed:
+          type: boolean
+        timed_out:
+          type: boolean
+        request_type:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - confirmed
+            - rejected
+            - partial_completed
+            - completed
+            - complicated
+            - errored
+        block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+    CallbackError:
+      type: object
+      required:
+        - type
+        - error
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - error
+        action:
+          type: string
+        request_id:
+          type: string
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: number
+        message:
+          type: string

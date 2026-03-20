@@ -1,0 +1,498 @@
+openapi: 3.0.3
+info:
+  title: Relying Party API
+  description: API for RP specific functions and roles
+  version: '7.0'
+servers:
+  - url: http://localhost:8200
+    description: Local RP API server
+paths:
+  /rp/requests/{namespace}/{identifier}:
+    post:
+      summary: Send request to {namespace}/{identifier}
+      operationId: send_request_to_idp
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Additional identifiers for this ID to add
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Requests'
+        required: true
+      responses:
+        '202':
+          description: Request Accepted - Async processing, wait for result at callback URL
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                  initial_salt:
+                    type: string
+                    description: RP *MUST* store this value for later auditing
+                    example: base64_string
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /rp/request_references/{reference_id}:
+    get:
+      summary: Get request_id for the unfinished (not closed or timed out) request with reference_number
+      description: Get request_id for the unfinished (not closed or timed out) request with reference_id -- Only request from this RP will succeed, reference number is not propagated to other nodes.
+      operationId: get_request_id_from_reference_number
+      parameters:
+        - name: reference_id
+          in: path
+          description: reference ID
+          required: true
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          description: Call this API as node ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Requests exist
+          content:
+            '*/*':
+              schema:
+                required:
+                  - request_id
+                type: object
+                properties:
+                  request_id:
+                    type: string
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No reference ID in the system
+          content: {}
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /rp/request_data/{request_id}:
+    get:
+      summary: Get Data requested from IDP and AS
+      operationId: get_request_data
+      parameters:
+        - name: request_id
+          in: path
+          description: Request ID
+          required: true
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          description: Call this API as node ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Data found
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RequestsData'
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Request does not exist (Incorrect request_id)
+          content: {}
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /rp/request_data_removal/{request_id}:
+    post:
+      summary: Delete Data requested from AS
+      parameters:
+        - name: request_id
+          in: path
+          description: Request ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: object
+              properties:
+                node_id:
+                  type: string
+                  description: Call this API as node ID
+        required: false
+      responses:
+        '204':
+          description: Deleted
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /rp/request_data_removal:
+    post:
+      summary: Delete ALL Data requested from AS
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: object
+              properties:
+                node_id:
+                  type: string
+                  description: Call this API as node ID
+        required: false
+      responses:
+        '204':
+          description: Deleted
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /rp/request_close:
+    post:
+      summary: Close a request
+      description: RP should close a request when it is satisfied with the responses from IdP and/or the data received from AS. RP may close a request at anytime if it chooses to do so.
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              required:
+                - callback_url
+                - reference_id
+                - request_id
+              type: object
+              properties:
+                node_id:
+                  type: string
+                  description: Call this API as node ID
+                reference_id:
+                  type: string
+                request_id:
+                  type: string
+                callback_url:
+                  type: string
+        required: true
+      responses:
+        '202':
+          description: Accepted
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /rp/messages:
+    post:
+      summary: Send message to save in a blockchain
+      operationId: send_message_to_blockchain
+      requestBody:
+        description: Message to add
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Message'
+        required: true
+      responses:
+        '202':
+          description: Message Accepted
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  message_id:
+                    type: string
+                  initial_salt:
+                    type: string
+                    description: RP *MUST* store this value for later auditing if it's returned
+                    example: base64_string
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /rp/callback:
+    get:
+      summary: '[Optional] Retrieve current callback URLs'
+      operationId: get_callback_url
+      responses:
+        '200':
+          description: Callback URLs
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  error_url:
+                    type: string
+                    description: '[Optional] Callback URL for NDID to call when there is an error processing an asynchronous request'
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Callback URLs have not been set
+          content: {}
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: '[Optional] Set callback URLs'
+      operationId: set_callback_url
+      requestBody:
+        description: Callback URL endpoints
+        content:
+          '*/*':
+            schema:
+              type: object
+              properties:
+                error_url:
+                  type: string
+                  description: '[Optional] Callback URL for NDID to call when there is an error processing an asynchronous request'
+        required: true
+      responses:
+        '204':
+          description: Callback set
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Requests:
+      required:
+        - callback_url
+        - min_aal
+        - min_ial
+        - min_idp
+        - mode
+        - reference_id
+        - request_message
+        - request_timeout
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        mode:
+          type: integer
+        reference_id:
+          type: string
+        idp_id_list:
+          type: array
+          description: '[Optional for mode 2,3] if not provided or empty array, will send request to all IdPs that have onboarded this identity.'
+          items:
+            type: string
+        callback_url:
+          type: string
+          description: Callback URL for Asynchronous request
+        data_request_list:
+          type: array
+          items:
+            required:
+              - min_as
+              - service_id
+            type: object
+            properties:
+              service_id:
+                type: string
+              as_id_list:
+                type: array
+                items:
+                  type: string
+                  description: '[Optional] if not provided, request to all AS offering {service_id}.'
+              min_as:
+                type: integer
+                description: Number of data source to request
+              request_params:
+                type: string
+                description: Parameter expected by the AS to complete the request. (For example, a request for bank statement may request format, such as xml, json, pdf, etc...)
+        request_message:
+          type: string
+          description: "Data URI is supported for files e.g. 'data:application/pdf;base64,Z9msE6b26FZYHbOsifdkZw=='. Should look up for IdP's supported file types first using utility API. When sending a file, using data URL with base64 encoding helps reduce MQ message payload size. Although data URL with base64 encoding like '   data:  application/pdf  ;  base64  ,   Z9msE6b26FZ   YHbOsifdkZw==   ' is parsable, it is not supported since having whitespaces will cause invalid request message hash check"
+        min_ial:
+          type: number
+        min_aal:
+          type: number
+        min_idp:
+          type: integer
+        request_timeout:
+          type: integer
+          description: Timeout for the request transaction (not session).  Unit in seconds.
+        bypass_identity_check:
+          type: boolean
+          description: Required when mode is set to 2 or 3. If set to true, request will be sent to all IdPs in idp_id_list regardless of identity on those IdPs onboard status or IAL. However, those IdPs can response only when they have onboarded requested identity and IAL criteria (min_ial) is met
+        request_type:
+          type: string
+    RequestsData:
+      required:
+        - data
+        - data_salt
+        - service_id
+        - signature_signing_algorithm
+        - signature_signing_key_version
+        - source_node_id
+        - source_signature
+      type: object
+      properties:
+        source_node_id:
+          type: string
+          description: ID of IDP or AS that provided the data
+        service_id:
+          type: string
+          description: ID of the service requested
+        source_signature:
+          type: string
+          description: Digital Signature in base64
+          example: base64_string
+        signature_signing_algorithm:
+          type: string
+          enum:
+            - RSASSA_PKCS1_V1_5_SHA_256
+            - RSASSA_PKCS1_V1_5_SHA_384
+            - RSASSA_PKCS1_V1_5_SHA_512
+            - RSASSA_PSS_SHA_256
+            - RSASSA_PSS_SHA_384
+            - RSASSA_PSS_SHA_512
+            - ECDSA_SHA_256
+            - ECDSA_SHA_384
+            - Ed25519
+        signature_signing_key_version:
+          type: number
+          example: 1
+        data_salt:
+          type: string
+        data:
+          type: string
+    Message:
+      required:
+        - callback_url
+        - message
+        - purpose
+        - reference_id
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+          description: Callback URL for Asynchronous request
+        message:
+          type: string
+          description: Message to keep in blockchains
+        purpose:
+          type: string
+          description: Purpose for keeping the message
+        initial_salt:
+          type: string
+          description: Custom initial salt
+        hash_message:
+          type: boolean
+          description: Hash the message
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: number
+            message:
+              type: string

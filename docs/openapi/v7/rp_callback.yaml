@@ -1,0 +1,353 @@
+openapi: 3.0.3
+info:
+  title: RP Callback API
+  description: API that RP MUST IMPLEMENT to be called by the platform
+  version: '7.0'
+servers:
+  - url: https://your-rp-app-server
+    description: Your RP application server
+paths:
+  '/rp/request/{reference_id}':
+    post:
+      summary: Update from NDID
+      description: "Update from NDID to RP, there's been an update to the status. Note that {reference_id} is NOT automatically append to the registered callback url. This is just an example that you can register callback with reference_id as parameter"
+      operationId: request_update
+      parameters:
+        - name: reference_id
+          in: path
+          description: Reference ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Status Update Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CallbackCreateRequestResult'
+                - $ref: '#/components/schemas/CallbackRequestStatus'
+        description: Callback about request
+        required: true
+
+  '/rp/request/close':
+    post:
+      summary: Update from NDID
+      operationId: close_request
+      responses:
+        '204':
+          description: Acknowledged
+        '404':
+          description: >-
+            Error: Request ID does not exist (RP didn't ask about this Request ID)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackCloseRequest'
+        description: Callback reporting close request result
+        required: true
+
+  '/rp/message':
+    post:
+      summary: Update from NDID
+      description: "Update from NDID to RP, there's been an update to the status. Note that {reference_id} is NOT automatically append to the registered callback url. This is just an example that you can register callback with reference_id as parameter"
+      operationId: message_update
+      responses:
+        '204':
+          description: Status Update Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CallbackCreateMessageResult'
+        description: Callback about message
+        required: true
+
+  '/rp/error':
+    post:
+      summary: '[Optional] Implement this function to receive error from async operations'
+      description: Callback for async operations
+      responses:
+        204:
+          description: Acknowledge
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackError'
+        description: error info
+        required: true
+
+components:
+  schemas:
+    CallbackCreateRequestResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - request_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - create_request_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        creation_block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackCreateMessageResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - message_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - create_message_result
+        reference_id:
+          type: string
+        message_id:
+          type: string
+        creation_block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackRequestStatus:
+      type: object
+      required:
+        - node_id
+        - type
+        - request_id
+        - requester_node_id
+        - mode
+        - request_message_hash
+        - min_ial
+        - min_aal
+        - min_idp
+        - idp_id_list
+        - response_list
+        - data_request_list
+        - request_timeout
+        - closed
+        - timed_out
+        - status
+        - block_height
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - request_status
+        request_id:
+          type: string
+        requester_node_id:
+          type: string
+        mode:
+          type: integer
+          enum:
+            - 1
+            - 2
+            - 3
+        request_message_hash:
+          type: string
+        min_ial:
+          type: number
+          enum:
+            - 1.1
+            - 1.2
+            - 1.3
+            - 2.1
+            - 2.2
+            - 2.3
+            - 3
+        min_aal:
+          type: number
+          enum:
+            - 1
+            - 2.1
+            - 2.2
+            - 3
+        min_idp:
+          type: integer
+        idp_id_list:
+          type: array
+          items:
+            type: string
+        response_list:
+          type: array
+          items:
+            type: object
+            required:
+              - idp_id
+            properties:
+              ial:
+                type: number
+                enum:
+                  - 1.1
+                  - 1.2
+                  - 1.3
+                  - 2.1
+                  - 2.2
+                  - 2.3
+                  - 3
+              aal:
+                type: number
+                enum:
+                  - 1
+                  - 2.1
+                  - 2.2
+                  - 3
+              status:
+                type: string
+                enum:
+                  - accept
+                  - reject
+              error_code:
+                type: number
+              signature:
+                type: string
+              idp_id:
+                type: string
+              valid_signature:
+                type: boolean
+                description: 'Indicate if the response from IdP has a valid signature'
+              valid_ial:
+                type: boolean
+                description: 'Indicate if the IAL in the response from IdP is less than or equal to current IAL of the identity'
+        data_request_list:
+          type: array
+          items:
+            type: object
+            required:
+              - service_id
+              - as_id_list
+              - min_as
+              - request_params_hash
+              - response_list
+            properties:
+              service_id:
+                type: string
+              as_id_list:
+                type: array
+                items:
+                  type: string
+              min_as:
+                type: integer
+              request_params_hash:
+                type: string
+              response_list:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - as_id
+                  properties:
+                    as_id:
+                      type: string
+                    signed:
+                      type: boolean
+                    received_data:
+                      type: boolean
+                    error_code:
+                      type: number
+        request_timeout:
+          type: integer
+        closed:
+          type: boolean
+        timed_out:
+          type: boolean
+        request_type:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - confirmed
+            - rejected
+            - partial_completed
+            - completed
+            - complicated
+            - errored
+        block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+    CallbackCloseRequest:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - request_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - close_request_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackError:
+      type: object
+      required:
+        - error
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - error
+        action:
+          type: string
+        request_id:
+          type: string
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+        message:
+          type: string

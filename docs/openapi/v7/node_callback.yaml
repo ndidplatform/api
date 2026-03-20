@@ -1,0 +1,296 @@
+openapi: 3.0.3
+info:
+  title: Node callback function
+  description: >-
+    Functions that organization that wants to update node or use other methods
+    of signing data other than default must implement
+  version: '7.0'
+servers:
+  - url: https://your-app-server
+    description: Your application server
+paths:
+  /decrypt:
+    post:
+      summary: "Implement this function to decrypt using node's private key."
+      description: >-
+        Implement this function to decrypt using node's private key. (Must match
+        the node's public key registered to the NDID node)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/decrypt_request'
+        required: true
+      responses:
+        '200':
+          description: successful, returning encrypted message in the response body
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  decrypted_message:
+                    type: string
+                    description: base64 encoded
+                    example: base64_string
+
+  /sign:
+    post:
+      summary: "Implement this function to sign using node's private key."
+      description: >-
+        Implement this function to sign using node's private key. (Must match
+        the node's public key registered to the NDID node)
+      requestBody:
+        $ref: '#/components/requestBodies/sign_request'
+      responses:
+        '200':
+          description: successful, returning signature in the response body
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  signature:
+                    type: string
+                    description: base64 encoded
+                    example: base64_string
+
+  /master_sign:
+    post:
+      summary: "Implement this function to sign using node's private key."
+      description: >-
+        Implement this function to sign using node's private key. (Must match
+        the node's public key registered to the NDID node)
+      requestBody:
+        $ref: '#/components/requestBodies/sign_request'
+      responses:
+        '200':
+          description: successful, returning signature in the response body
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  signature:
+                    type: string
+                    description: base64 encoded
+                    example: base64_string
+
+  /node/update:
+    post:
+      summary: Callback to report update node result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackNodeUpdate'
+        required: true
+
+  /node/create:
+    post:
+      summary: (NDID only) Callback to report create node result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackNodeCreate'
+        required: true
+
+  /node/message_queue_send_success:
+    post:
+      summary: >-
+        Callback to notify message queue message send success (ACK received from
+        destination node)
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackMqSendSuccess'
+        required: true
+
+components:
+  requestBodies:
+    sign_request:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/sign_request'
+      required: true
+  schemas:
+    sign_request:
+      type: object
+      required:
+        - node_id
+        - request_message
+        - request_message_hash
+        - hash_algorithm
+        - key_algorithm
+        - signing_algorithm
+        - key_version
+      properties:
+        node_id:
+          type: string
+        request_message:
+          type: string
+          description: >-
+            Data that need signing, base64 encoded. Decode this into bytes array
+            before signing
+          example: base64_string
+        request_message_hash:
+          type: string
+          description: >-
+            Hash of request_message (data to sign). You can check it by hashing
+            the byte array from request_message using hash_method
+        hash_algorithm:
+          type: string
+          nullable: true
+          description: Name of the hash function used
+          enum:
+            - SHA256
+            - SHA384
+            - SHA512
+        key_algorithm:
+          type: string
+          description: >-
+            Algorithm of public key registered on the node key (or node master
+            key) at Node node_id
+          enum:
+            - RSA
+            - EC
+            - Ed25519
+        signing_algorithm:
+          type: string
+          description: Signature algorithm to use
+          enum:
+            - RSASSA_PKCS1_V1_5_SHA_256
+            - RSASSA_PKCS1_V1_5_SHA_384
+            - RSASSA_PKCS1_V1_5_SHA_512
+            - RSASSA_PSS_SHA_256
+            - RSASSA_PSS_SHA_384
+            - RSASSA_PSS_SHA_512
+            - ECDSA_SHA_256
+            - ECDSA_SHA_384
+            - Ed25519
+        key_version:
+          type: integer
+          nullable: true
+          example: 1
+    decrypt_request:
+      type: object
+      required:
+        - node_id
+        - encrypted_message
+        - key_algorithm
+        - encryption_algorithm
+        - key_version
+      properties:
+        node_id:
+          type: string
+        encrypted_message:
+          type: string
+          description: message that need decrypting in base64
+          example: base64_string
+        key_algorithm:
+          type: string
+          description: >-
+            Algorithm of public key registered on the node key (or node master
+            key) at Node node_id
+          enum:
+            - RSA
+        encryption_algorithm:
+          type: string
+          description: Encryption algorithm used to encrypt encrypted message
+          enum:
+            - RSAES_PKCS1_V1_5
+            - RSAES_OAEP_SHA_1
+            - RSAES_OAEP_SHA_256
+        key_version:
+          type: integer
+          nullable: true
+          example: 1
+    CallbackNodeCreate:
+      type: object
+      required:
+        - node_id
+        - success
+        - reference_id
+        - type
+      properties:
+        node_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          type: object
+          required:
+            - error
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+        reference_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - create_node_result
+    CallbackNodeUpdate:
+      type: object
+      required:
+        - node_id
+        - success
+        - reference_id
+        - type
+      properties:
+        node_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          type: object
+          required:
+            - error
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+        reference_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - update_node_result
+    CallbackMqSendSuccess:
+      type: object
+      required:
+        - node_id
+        - type
+        - destination_node_id
+        - destination_ip
+        - destination_port
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - message_queue_send_success
+        destination_node_id:
+          type: string
+        destination_ip:
+          type: string
+        destination_port:
+          type: number
+        request_id:
+          type: string

@@ -1,0 +1,381 @@
+openapi: 3.0.3
+info:
+  title: Node management API
+  description: Node management API
+  version: '7.0'
+servers:
+  - url: http://localhost:8080
+    description: Local NDID API server
+  - url: http://localhost:8200
+    description: Local RP API server
+  - url: http://localhost:8100
+    description: Local IdP API server
+  - url: http://localhost:8300
+    description: Local AS API server
+paths:
+  /node/create:
+    post:
+      summary: (NDID ONLY) create/register node to the platform
+      description: |-
+        NDID ONLY - used by NDID to add new organization node to the network. 
+        When an organization register to host NDID node, it must present the node_data 
+        to NDID (node_id, node_name, node_key, node_master_key) node_id must be 
+        unique.
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/node_data'
+        required: true
+      responses:
+        '202':
+          description: Accepted
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /node/update:
+    post:
+      summary: update node key
+      description:
+        Update node_key or node_master_key or supported request message
+        types
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/node_data_for_update'
+        required: true
+      responses:
+        '202':
+          description: Accepted
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /node/callback:
+    get:
+      summary: Query all callback locations that have been registered
+      responses:
+        '200':
+          description: Query Successful
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/CallbackUrls'
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Callback URLs have not been set
+          content: {}
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Register a callback location for NDID platform to call.
+      description:
+        Register a callback location for NDID node to call to get things
+        signed and decrypted. Required if want to use HSM or other methods of key
+        signing and storage other than default (store at node app data) (Selective
+        set - only set present properties)
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: object
+              properties:
+                sign_url:
+                  type: string
+                master_sign_url:
+                  type: string
+                decrypt_url:
+                  type: string
+                message_queue_send_success_url:
+                  type: string
+        required: true
+      responses:
+        '204':
+          description: Registration Successful
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    node_data:
+      required:
+        - callback_url
+        - encryption_algorithm
+        - encryption_key_algorithm
+        - encryption_public_key
+        - node_id
+        - node_name
+        - reference_id
+        - role
+        - signing_algorithm
+        - signing_key_algorithm
+        - signing_master_algorithm
+        - signing_master_key_algorithm
+        - signing_master_public_key
+        - signing_public_key
+      type: object
+      properties:
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+          description: callback url to receive creation result
+        node_id:
+          type: string
+        node_name:
+          type: string
+          description: |-
+            Human readable name of the node, publicly accessible. Possibly 
+            organization name.
+        signing_public_key:
+          type: string
+          description: Node's public key used for signing in PEM format
+        signing_key_algorithm:
+          type: string
+          description:
+            Node's public key algorithm used for signing. Supported EC
+            key curves are secp256r1/prime256v1 and secp384r1.
+          enum:
+            - RSA
+            - EC
+            - Ed25519
+        signing_algorithm:
+          type: string
+          description: Signature algorithm
+          enum:
+            - RSASSA_PKCS1_V1_5_SHA_256
+            - RSASSA_PKCS1_V1_5_SHA_384
+            - RSASSA_PKCS1_V1_5_SHA_512
+            - RSASSA_PSS_SHA_256
+            - RSASSA_PSS_SHA_384
+            - RSASSA_PSS_SHA_512
+            - ECDSA_SHA_256
+            - ECDSA_SHA_384
+            - Ed25519
+        signing_master_public_key:
+          type: string
+          description:
+            Node's Master Key for signing in PEM format. This is a public
+            key that is used to update node's other public keys. Master key can only
+            be updated using previous master key
+        signing_master_key_algorithm:
+          type: string
+          description:
+            Node's master public key algorithm used for signing. Supported
+            EC key curves are secp256r1/prime256v1 and secp384r1.
+          enum:
+            - RSA
+            - EC
+            - Ed25519
+        signing_master_algorithm:
+          type: string
+          description: Signature algorithm
+          enum:
+            - RSASSA_PKCS1_V1_5_SHA_256
+            - RSASSA_PKCS1_V1_5_SHA_384
+            - RSASSA_PKCS1_V1_5_SHA_512
+            - RSASSA_PSS_SHA_256
+            - RSASSA_PSS_SHA_384
+            - RSASSA_PSS_SHA_512
+            - ECDSA_SHA_256
+            - ECDSA_SHA_384
+            - Ed25519
+        encryption_public_key:
+          type: string
+          description: Node's public key used for encryption in PEM format
+        encryption_key_algorithm:
+          type: string
+          description: Node's public key algorithm used for encryption
+          enum:
+            - RSA
+        encryption_algorithm:
+          type: string
+          description: Encryption algorithm
+          enum:
+            - RSAES_PKCS1_V1_5
+            - RSAES_OAEP_SHA_1
+            - RSAES_OAEP_SHA_256
+        role:
+          type: string
+          enum:
+            - rp
+            - idp
+            - as
+            - proxy
+        max_ial:
+          type: number
+          description: Required when role=idp
+        max_aal:
+          type: number
+          description: Required when role=idp
+    node_data_for_update:
+      required:
+        - callback_url
+        - reference_id
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+          description: callback url to receive update result
+        signing_public_key:
+          type: string
+          description: Node's public key used for signing in PEM format
+        signing_key_algorithm:
+          type: string
+          description:
+            Node's public key algorithm used for signing. Supported EC
+            key curves are secp256r1/prime256v1 and secp384r1.
+          enum:
+            - RSA
+            - EC
+            - Ed25519
+        signing_algorithm:
+          type: string
+          description: Signature algorithm
+          enum:
+            - RSASSA_PKCS1_V1_5_SHA_256
+            - RSASSA_PKCS1_V1_5_SHA_384
+            - RSASSA_PKCS1_V1_5_SHA_512
+            - RSASSA_PSS_SHA_256
+            - RSASSA_PSS_SHA_384
+            - RSASSA_PSS_SHA_512
+            - ECDSA_SHA_256
+            - ECDSA_SHA_384
+            - Ed25519
+        signing_master_public_key:
+          type: string
+          description:
+            Node's Master Key for signing in PEM format. This is a public
+            key that is used to update node's other public keys. Master key can only
+            be updated using previous master key
+        signing_master_key_algorithm:
+          type: string
+          description:
+            Node's master public key algorithm used for signing. Supported
+            EC key curves are secp256r1/prime256v1 and secp384r1.
+          enum:
+            - RSA
+            - EC
+            - Ed25519
+        signing_master_algorithm:
+          type: string
+          description: Signature algorithm
+          enum:
+            - RSASSA_PKCS1_V1_5_SHA_256
+            - RSASSA_PKCS1_V1_5_SHA_384
+            - RSASSA_PKCS1_V1_5_SHA_512
+            - RSASSA_PSS_SHA_256
+            - RSASSA_PSS_SHA_384
+            - RSASSA_PSS_SHA_512
+            - ECDSA_SHA_256
+            - ECDSA_SHA_384
+            - Ed25519
+        encryption_public_key:
+          type: string
+          description: Node's public key used for encryption in PEM format
+        encryption_key_algorithm:
+          type: string
+          description: Node's public key algorithm used for encryption
+          enum:
+            - RSA
+        encryption_algorithm:
+          type: string
+          description: Encryption algorithm
+          enum:
+            - RSAES_PKCS1_V1_5
+            - RSAES_OAEP_SHA_1
+            - RSAES_OAEP_SHA_256
+        check_string:
+          type: string
+          description:
+            Plain text for checking if sign correctly. This is ensure that
+            updater actually has private key for public key that they're going to
+            update to the blockchain
+        signed_check_string:
+          type: string
+          description: Signature of plain text 'check_string' signed with node key
+          example: base64_string
+        master_signed_check_string:
+          type: string
+          description:
+            Signature of plain text 'check_string' signed with node master
+            key
+          example: base64_string
+        supported_request_message_data_url_type_list:
+          type: array
+          description:
+            For IdP nodes only. Supported request message data URL content
+            types.
+          example:
+            - text/plain
+            - application/pdf
+          items:
+            type: string
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: number
+            message:
+              type: string
+    CallbackUrls:
+      type: object
+      properties:
+        sign_url:
+          type: string
+        master_sign_url:
+          type: string
+        decrypt_url:
+          type: string
+        message_queue_send_success_url:
+          type: string

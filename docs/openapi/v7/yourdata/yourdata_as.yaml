@@ -118,7 +118,7 @@ paths:
           schema:
             type: string
           required: true
-        - name: as_node_id
+        - name: node_id
           in: query
           description: 'Call this API as node ID'
           schema:
@@ -183,6 +183,49 @@ paths:
           description: 'Bad request e.g., Invalid schema'
         '500':
           description: 'Server error'
+
+  /yourdata/as/auto_error_responses:
+    post:
+      summary: 'Set error code and error message for auto respond in specific cases'
+      description: ''
+      operationId: set_auto_error_responses
+      requestBody:
+        description: 'Error code and message'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YourDataASAutoErrorResponseConfig'
+      responses:
+        '204':
+          description: ''
+        '400':
+          description: 'Bad request e.g., Invalid schema'
+        '500':
+          description: 'Server error'
+    get:
+      summary: 'Get set error code and error message for auto respond in specific cases'
+      description: ''
+      operationId: get_set_auto_error_responses
+      parameters:
+        - name: node_id
+          in: query
+          description: 'Call this API as node ID'
+          schema:
+            type: string
+          required: false
+      responses:
+        '200':
+          description: Service Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YourDataASAutoErrorResponseConfigView'
+        '500':
+          description: 'Server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   schemas:
@@ -295,6 +338,43 @@ components:
         request_id:
           type: string
           example: '54302ae9453ec0738133b393e329963efdb6b39f8136aa24606fec4cd4a1cb33'
+        error_code:
+          type: integer
+        error_message:
+          type: string
+
+    YourDataASAutoErrorResponseConfig:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Call this API as AS node ID (for proxy)
+        bypass_error_code_check:
+          type: boolean
+        unsupported_service:
+          $ref: '#/components/schemas/YourDataASAutoErrorResponseConfigDetail'
+        service_not_available:
+          $ref: '#/components/schemas/YourDataASAutoErrorResponseConfigDetail'
+        unsupported_namespace:
+          $ref: '#/components/schemas/YourDataASAutoErrorResponseConfigDetail'
+        unsupported_authorization:
+          $ref: '#/components/schemas/YourDataASAutoErrorResponseConfigDetail'
+
+    YourDataASAutoErrorResponseConfigView:
+      type: object
+      properties:
+        unsupported_service:
+          $ref: '#/components/schemas/YourDataASAutoErrorResponseConfigDetail'
+        service_not_available:
+          $ref: '#/components/schemas/YourDataASAutoErrorResponseConfigDetail'
+        unsupported_namespace:
+          $ref: '#/components/schemas/YourDataASAutoErrorResponseConfigDetail'
+        unsupported_authorization:
+          $ref: '#/components/schemas/YourDataASAutoErrorResponseConfigDetail'
+
+    YourDataASAutoErrorResponseConfigDetail:
+      type: object
+      properties:
         error_code:
           type: integer
         error_message:

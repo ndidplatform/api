@@ -1,0 +1,86 @@
+openapi: 3.0.3
+info:
+  title: Proxy API
+  description: API for Proxy specific functions and roles
+  version: '7.0'
+servers:
+  - url: http://localhost:8400
+    description: Local Proxy API server
+paths:
+  /proxy/callback:
+    get:
+      summary: '[Optional] Retrieve current callback URLs'
+      operationId: get_callback_url
+      responses:
+        '200':
+          description: Callback URLs
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  error_url:
+                    type: string
+                    description:
+                      "[Optional] Callback URL for NDID to call when there\
+                      \ is an error processing an asynchronous request"
+        '404':
+          description: Callback URLs have not been set
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: '[Optional] Set callback URLs'
+      operationId: set_callback_url
+      requestBody:
+        description: Callback URL endpoints
+        content:
+          '*/*':
+            schema:
+              type: object
+              properties:
+                error_url:
+                  type: string
+                  description:
+                    "[Optional] Callback URL for NDID to call when there\
+                    \ is an error processing an asynchronous request"
+        required: true
+      responses:
+        '204':
+          description: Callback set
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: number
+            message:
+              type: string

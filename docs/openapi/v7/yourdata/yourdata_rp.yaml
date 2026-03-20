@@ -153,7 +153,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: rp_node_id
+        - name: node_id
           in: query
           description: Call this API as RP node ID (for proxy)
           schema:

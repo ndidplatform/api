@@ -1,0 +1,1371 @@
+openapi: 3.0.3
+info:
+  version: '7.0'
+  title: IDP Callback interface
+  description: API that IdP MUST IMPLEMENT on its side to be called from NDID
+servers:
+  - url: https://your-idp-app-server
+    description: Your IdP application server
+paths:
+  '/idp/request':
+    post:
+      summary: Request for Authentication from NDID to IDP
+      description: Request for Authentication from NDID to IDP
+      operationId: consent_request
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CallbackRequests'
+                - $ref: '#/components/schemas/CallbackRequestsMode1'
+        description: Requests
+        required: true
+
+  '/idp/request_status_update':
+    post:
+      summary: Request (which node is involved) status update
+      description: 'Request (which node is involved) status update'
+      responses:
+        '204':
+          description: Status Update Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackRequestStatus'
+        description: Callback about request
+        required: true
+
+  '/idp/response':
+    post:
+      summary: Notify response status
+      description: Notify response status
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackResponse'
+        description: Requests
+        required: true
+
+  '/idp/identity':
+    post:
+      summary: Callback from NDID to IDP reporting create identity (onboard) request result
+      description: Callback from NDID to IDP reporting create identity (onboard) request result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CallbackIdentityRequestResult'
+                - $ref: '#/components/schemas/CallbackIdentityResult'
+        description: Create Identity request result
+        required: true
+
+  '/idp/identity/notification':
+    post:
+      summary: Callback from NDID to IDP notifying modifications/changes to identity which associated to IDP
+      description: Callback from NDID to IDP notifying changes to identity which associated to IDP e.g. another IDP has onboarded an identity, another IDP revoked an identity, other IDP added/revoked an accessor key of an identity.
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackIdentityNotification'
+        description: Create Identity request result
+        required: true
+
+  '/idp/identity/identifiers':
+    post:
+      summary: Callback from NDID to IDP reporting add identifiers result
+      description: Callback from NDID to IDP reporting add identifiers result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CallbackAddIdentityRequestResult'
+                - $ref: '#/components/schemas/CallbackAddIdentityResult'
+        description: Add identifiers result
+        required: true
+
+  '/idp/identity/ial':
+    post:
+      summary: Callback from NDID to IDP reporting update IAL request result
+      description: Callback from NDID to IDP reporting update IAL request result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackUpdateIALResult'
+        description: Update IAL result
+        required: true
+
+  '/idp/identity/lial':
+    post:
+      summary: Callback from NDID to IDP reporting update LIAL request result
+      description: Callback from NDID to IDP reporting update LIAL request result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackUpdateLIALResult'
+        description: Update LIAL result
+        required: true
+
+  '/idp/identity/laal':
+    post:
+      summary: Callback from NDID to IDP reporting update LAAL request result
+      description: Callback from NDID to IDP reporting update LAAL request result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackUpdateLAALResult'
+        description: Update LAAL result
+        required: true
+
+  '/idp/identity/endorsement':
+    post:
+      summary: (NOT IN PHASE1) Callback from NDID to IDP reporting add endorsement result
+      description: (NOT IN PHASE1) Callback from NDID to IDP reporting add endorsement result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackAddEndorsementResult'
+        description: Add endorsement result
+        required: true
+
+  '/idp/identity/accessor':
+    post:
+      summary: Callback from NDID to IDP reporting add accessor result
+      description: Callback from NDID to IDP reporting add accessor result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CallbackAddAccessorResult'
+                - $ref: '#/components/schemas/CallbackAddAccessorRequestResult'
+        description: Add accessor request result
+        required: true
+
+  '/idp/identity/association_revoke':
+    post:
+      summary: Callback from NDID to IDP reporting revoke identity association result
+      description: Callback from NDID to IDP reporting revoke identity association result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CallbackRevokeIdentityAssociationResult'
+                - $ref: '#/components/schemas/CallbackRevokeIdentityAssociationRequestResult'
+        description: Revoke identity association request result
+        required: true
+
+  '/idp/identity/accessor_revoke':
+    post:
+      summary: Callback from NDID to IDP reporting revoke accessor result
+      description: Callback from NDID to IDP reporting revoke accessor result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CallbackRevokeAccessorResult'
+                - $ref: '#/components/schemas/CallbackRevokeAccessorRequestResult'
+        description: Revoke accessor request result
+        required: true
+
+  '/idp/identity/accessor_revoke_and_add':
+    post:
+      summary: Callback from NDID to IDP reporting revoke and add accessor result
+      description: Callback from NDID to IDP reporting revoke and add accessor result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CallbackRevokeAndAddAccessorResult'
+                - $ref: '#/components/schemas/CallbackRevokeAndAddAccessorRequestResult'
+        description: Revoke and add accessor request result
+        required: true
+
+  '/idp/identity/mode':
+    post:
+      summary: Callback from NDID to IDP reporting upgrade identity mode result
+      description: Callback from NDID to IDP reporting upgrade identity mode result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CallbackUpgradeIdentityModeResult'
+                - $ref: '#/components/schemas/CallbackUpgradeIdentityModeRequestResult'
+        description: Upgrade identity mode request result
+        required: true
+
+  '/idp/identity/close':
+    post:
+      summary: Callback from NDID to IDP reporting close create identity/add accessor request result
+      description: Callback from NDID to IDP reporting close create identity/add accessor request result
+      responses:
+        '204':
+          description: Acknowledged
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackCloseRequestResult'
+        description: Close request result
+        required: true
+
+  # '/idp/accessor/encrypt':
+  #   post:
+  #     summary: Implement this function to encrypt using accessor’s private key
+  #     description: Request for encrypt with accessor's private key
+  #     operationId: request_for_accessor_to_encrypt
+  #     responses:
+  #       200:
+  #         description: successful, returning signature in the response body
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               required:
+  #                 - signature
+  #               properties:
+  #                 signature:
+  #                   type: string
+  #                   description: base64 encoded
+  #                   example: "base64_string"
+  #     requestBody:
+  #       content:
+  #         application/json:
+  #           schema:
+  #             $ref: '#/components/schemas/AccessorEncrypt'
+  #       description: ''
+  #       required: true
+
+  '/idp/error':
+    post:
+      summary: '[Optional] Implement this function to receive error from async operations'
+      description: Callback for async operations
+      responses:
+        204:
+          description: Acknowledge
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackError'
+        description: error info
+        required: true
+
+components:
+  schemas:
+    CallbackResponse:
+      type: object
+      required:
+        - node_id
+        - type
+        - request_id
+        - success
+        - reference_id
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - response_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          type: object
+          required:
+            - error
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+    CallbackRequests:
+      type: object
+      required:
+        - node_id
+        - type
+        - request_id
+        - request_message
+        - request_message_hash
+        - request_message_salt
+        - requester_node_id
+        - min_ial
+        - min_aal
+        - mode
+        - initial_salt
+        - creation_time
+        - creation_block_height
+        - request_timeout
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - incoming_request
+        mode:
+          type: integer
+          enum:
+            - 2
+            - 3
+        request_id:
+          type: string
+        reference_group_code:
+          type: string
+          description: 'Present when IdP has onboarded this identity'
+        namespace:
+          type: string
+          description: 'Present when IdP has NOT onboarded this identity'
+        identifier:
+          type: string
+          description: 'Present when IdP has NOT onboarded this identity'
+        request_message:
+          type: string
+        request_message_hash:
+          type: string
+        request_message_salt:
+          type: string
+        requester_node_id:
+          type: string
+        min_ial:
+          type: number
+          enum:
+            - 1.1
+            - 1.2
+            - 1.3
+            - 2.1
+            - 2.2
+            - 2.3
+            - 3
+        min_aal:
+          type: number
+          enum:
+            - 1
+            - 2.1
+            - 2.2
+            - 3
+        data_request_list:
+          type: array
+          items:
+            type: object
+            required:
+              - service_id
+              - count
+              - params
+            properties:
+              service_id:
+                type: string
+              as_id_list:
+                type: array
+                items:
+                  type: string
+                  description: >-
+                    [Optional] if not provided, request from all AS offering
+                    {service_id}.
+              min_as:
+                type: integer
+                description: Number of data source to request
+        initial_salt:
+          type: string
+        request_type:
+          type: string
+        creation_time:
+          type: number
+          example: 1533315873764
+          description: >-
+            Approximate request creation UNIX time stamp in milliseconds. Note that this is the timestamp generated by requester node.
+        creation_block_height:
+          type: string
+          description: 'Block height when the request is created.  <CHAIN_ID>:<BLOCK_HEIGHT>'
+        request_timeout:
+          type: integer
+          description: 'Timeout for the request. Unit in seconds.'
+    CallbackRequestsMode1:
+      type: object
+      required:
+        - node_id
+        - type
+        - request_id
+        - namespace
+        - identifier
+        - request_message
+        - request_message_hash
+        - request_message_salt
+        - requester_node_id
+        - min_ial
+        - min_aal
+        - mode
+        - initial_salt
+        - creation_time
+        - creation_block_height
+        - request_timeout
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - incoming_request
+        mode:
+          type: integer
+          enum:
+            - 1
+        request_id:
+          type: string
+        namespace:
+          type: string
+        identifier:
+          type: string
+        request_message:
+          type: string
+        request_message_hash:
+          type: string
+        request_message_salt:
+          type: string
+        requester_node_id:
+          type: string
+        min_ial:
+          type: number
+          enum:
+            - 1.1
+            - 1.2
+            - 1.3
+            - 2.1
+            - 2.2
+            - 2.3
+            - 3
+        min_aal:
+          type: number
+          enum:
+            - 1
+            - 2.1
+            - 2.2
+            - 3
+        data_request_list:
+          type: array
+          items:
+            type: object
+            required:
+              - service_id
+              - count
+              - params
+            properties:
+              service_id:
+                type: string
+              as_id_list:
+                type: array
+                items:
+                  type: string
+                  description: >-
+                    [Optional] if not provided, request from all AS offering
+                    {service_id}.
+              min_as:
+                type: integer
+                description: Number of data source to request
+        initial_salt:
+          type: string
+        request_type:
+          type: string
+        creation_time:
+          type: number
+          example: 1533315873764
+          description: >-
+            Approximate request creation UNIX time stamp in milliseconds. Note that this is the timestamp generated by requester node.
+        creation_block_height:
+          type: string
+          description: 'Block height when the request is created.  <CHAIN_ID>:<BLOCK_HEIGHT>'
+        request_timeout:
+          type: integer
+          description: 'Timeout for the request. Unit in seconds.'
+    CallbackRequestStatus:
+      type: object
+      required:
+        - node_id
+        - type
+        - request_id
+        - requester_node_id
+        - mode
+        - request_message_hash
+        - min_ial
+        - min_aal
+        - min_idp
+        - idp_id_list
+        - response_list
+        - data_request_list
+        - request_timeout
+        - closed
+        - timed_out
+        - status
+        - block_height
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - request_status
+        request_id:
+          type: string
+        requester_node_id:
+          type: string
+        mode:
+          type: integer
+          enum:
+            - 1
+            - 2
+            - 3
+        request_message_hash:
+          type: string
+        min_ial:
+          type: number
+          enum:
+            - 1.1
+            - 1.2
+            - 1.3
+            - 2.1
+            - 2.2
+            - 2.3
+            - 3
+        min_aal:
+          type: number
+          enum:
+            - 1
+            - 2.1
+            - 2.2
+            - 3
+        min_idp:
+          type: integer
+        idp_id_list:
+          type: array
+          items:
+            type: string
+        response_list:
+          type: array
+          items:
+            type: object
+            required:
+              - idp_id
+            properties:
+              ial:
+                type: number
+                enum:
+                  - 1.1
+                  - 1.2
+                  - 1.3
+                  - 2.1
+                  - 2.2
+                  - 2.3
+                  - 3
+              aal:
+                type: number
+                enum:
+                  - 1
+                  - 2.1
+                  - 2.2
+                  - 3
+              status:
+                type: string
+                enum:
+                  - accept
+                  - reject
+              error_code:
+                type: number
+              signature:
+                type: string
+              idp_id:
+                type: string
+              valid_signature:
+                type: boolean
+                description: 'Indicate if the response from IdP has a valid signature'
+              valid_ial:
+                type: boolean
+                description: 'Indicate if the IAL in the response from IdP is less than or equal to current IAL of the identity'
+        data_request_list:
+          type: array
+          items:
+            type: object
+            required:
+              - service_id
+              - as_id_list
+              - min_as
+              - request_params_hash
+              - response_list
+            properties:
+              service_id:
+                type: string
+              as_id_list:
+                type: array
+                items:
+                  type: string
+              min_as:
+                type: integer
+              request_params_hash:
+                type: string
+              response_list:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - as_id
+                  properties:
+                    as_id:
+                      type: string
+                    signed:
+                      type: boolean
+                    received_data:
+                      type: boolean
+                    error_code:
+                      type: number
+        request_timeout:
+          type: integer
+        closed:
+          type: boolean
+        timed_out:
+          type: boolean
+        request_type:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - confirmed
+            - rejected
+            - partial_completed
+            - completed
+            - complicated
+            - errored
+        block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+    CallbackIdentityRequestResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - request_id
+        - accessor_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - create_identity_request_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        exist:
+          type: boolean
+        accessor_id:
+          type: string
+        creation_block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+        success:
+          type: boolean
+          description: 'Success if a request for consent to create identity is created'
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackIdentityResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - create_identity_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        reference_group_code:
+          type: string
+        success:
+          type: boolean
+          description: 'success if user gives a consent to create identity'
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackIdentityNotification:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_group_code
+        - action
+        - actor_node_id
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - identity_modification_notification
+        reference_group_code:
+          type: string
+        action:
+          type: string
+          enum:
+            - create_identity
+            - revoke_identity_association
+            - add_identity
+            - add_accessor
+            - revoke_accessor
+            - revoke_and_add_accessor
+            - upgrade_identity_mode
+        actor_node_id:
+          type: string
+    CallbackAddIdentityResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - add_identity_result
+        reference_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackAddIdentityRequestResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - request_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - add_identity_request_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        creation_block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+        success:
+          type: boolean
+          description: 'Success if a request for consent to add identity is created'
+        error:
+          $ref: '#/components/schemas/Error'
+
+    CallbackUpdateIALResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - update_ial_result
+        reference_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackUpdateLIALResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - update_lial_result
+        reference_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackUpdateLAALResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - update_laal_result
+        reference_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackAddEndorsementResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - add_endorsement_result
+        reference_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackAddAccessorRequestResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - request_id
+        - accessor_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - add_accessor_request_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        accessor_id:
+          type: string
+        creation_block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+        success:
+          type: boolean
+          description: 'Success if a request for consent to add accessor is created'
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackAddAccessorResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - add_accessor_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackRevokeIdentityAssociationRequestResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - request_id
+        - accessor_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - revoke_identity_association_request_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        creation_block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+        success:
+          type: boolean
+          description: 'Success if a request for consent to revoke identity is created'
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackRevokeIdentityAssociationResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - revoke_identity_association_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackRevokeAccessorRequestResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - request_id
+        - accessor_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - revoke_accessor_request_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        accessor_id:
+          type: string
+        creation_block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+        success:
+          type: boolean
+          description: 'Success if a request for consent to revoke accessor is created'
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackRevokeAccessorResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - revoke_accessor_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+
+    CallbackRevokeAndAddAccessorRequestResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - request_id
+        - revoking_accessor_id
+        - accessor_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - revoke_and_add_accessor_request_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        revoking_accessor_id:
+          type: string
+        accessor_id:
+          type: string
+        creation_block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+        success:
+          type: boolean
+          description: 'Success if a request for consent to revoke and add accessor is created'
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackRevokeAndAddAccessorResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - revoke_and_add_accessor_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+
+    CallbackUpgradeIdentityModeRequestResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - request_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - upgrade_identity_mode_request_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        creation_block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+        success:
+          type: boolean
+          description: 'Success if a request for consent to revoke accessor is created'
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackUpgradeIdentityModeResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - upgrade_identity_mode_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+
+    CallbackIdentityRemovalFromReferenceGroupRequestResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - request_id
+        - accessor_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - reference_group_identity_removal_request_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        creation_block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+        success:
+          type: boolean
+          description: 'Success if a request for consent to remove identity from reference group is created'
+        error:
+          $ref: '#/components/schemas/Error'
+
+    CallbackIdentityRemovalFromReferenceGroupResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - reference_group_identity_removal_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+
+    CallbackReferenceGroupMergeRequestResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - request_id
+        - accessor_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - reference_group_merge_request_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        creation_block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+        success:
+          type: boolean
+          description: 'Success if a request for consent to merge reference group is created'
+        error:
+          $ref: '#/components/schemas/Error'
+
+    CallbackReferenceGroupMergeResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - reference_group_merge_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+
+    CallbackCloseRequestResult:
+      type: object
+      required:
+        - node_id
+        - type
+        - reference_id
+        - request_id
+        - success
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - close_request_result
+        reference_id:
+          type: string
+        request_id:
+          type: string
+        success:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/Error'
+    CallbackError:
+      type: object
+      required:
+        - error
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - error
+        action:
+          type: string
+        request_id:
+          type: string
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+    AccessorEncrypt:
+      type: object
+      required:
+        - node_id
+        - type
+        - accessor_id
+        - request_message_padded_hash
+        - key_type
+        - padding
+        - reference_id
+        - request_id
+      properties:
+        node_id:
+          type: string
+        type:
+          type: string
+          enum:
+            - accessor_encrypt
+        accessor_id:
+          type: string
+          description: accessor_id of onboarding user
+        request_message_padded_hash:
+          type: string
+          description: 'Encrypt this and return. Request message salted hash with custom padding.'
+          example: base64_string
+        key_type:
+          type: string
+          description: 'Type of accessor public key registered with node/node_id. Make sure to encrypt using the right algorithm'
+          enum:
+            - RSA
+        padding:
+          type: string
+          description: 'RSA padding algorithm'
+          enum:
+            - none
+        reference_id:
+          type: string
+        request_id:
+          type: string
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+        message:
+          type: string

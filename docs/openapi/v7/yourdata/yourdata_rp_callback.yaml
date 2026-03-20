@@ -5,8 +5,8 @@ info:
     API related to Your Data feature. API that RP MUST IMPLEMENT to be called by the platform.
   version: '7.0'
 servers:
-  - description: Your RP application server
-    url: https://your-rp-app-server
+  - url: https://your-rp-app-server
+    description: Your RP application server
 
 tags:
   - name: Your Data

@@ -1,0 +1,472 @@
+openapi: 3.0.3
+info:
+  title: AS API
+  description: API for AS specific Roles
+  version: '7.0'
+servers:
+  - url: http://localhost:8300
+    description: Local AS API server
+paths:
+  /as/service/{service_id}:
+    get:
+      summary: Get information about service offered by this AS
+      operationId: get_service
+      parameters:
+        - name: service_id
+          in: path
+          description: service ID
+          required: true
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          description: Call this API as node ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Service Found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ASServices'
+        '404':
+          description: Service Not Found
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Add or Update service offered by this AS
+      operationId: register_service
+      parameters:
+        - name: service_id
+          in: path
+          description: service ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Service info
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/AddUpdateASServices'
+        required: true
+      responses:
+        '202':
+          description: Create or Update Successful
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /as/payment_received_log/{request_id}/{service_id}:
+    post:
+      summary: Log payment received to platform
+      operationId: log_payment_received
+      parameters:
+        - name: request_id
+          in: path
+          description: Request ID
+          required: true
+          schema:
+            type: string
+        - name: service_id
+          in: path
+          description: Service ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Payment Received Log
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PaymentReceivedLogMessage'
+        required: true
+      responses:
+        '204':
+          description: Logged
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /as/service_price/{service_id}:
+    post:
+      summary: Set AS fee of a specific service_id
+      parameters:
+        - name: service_id
+          in: path
+          description: Service ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Additional info for AS pricing
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/ASPricing'
+        required: true
+      responses:
+        '202':
+          description: Create or Update Successful
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /as/data/{request_id}/{service_id}:
+    post:
+      summary: Send data to platform
+      operationId: send_data
+      parameters:
+        - name: request_id
+          in: path
+          description: Request ID
+          required: true
+          schema:
+            type: string
+        - name: service_id
+          in: path
+          description: Service ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Data
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/DataMessage'
+        required: true
+      responses:
+        '202':
+          description: Data received
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /as/error/{request_id}/{service_id}:
+    post:
+      summary: Send error response to platform
+      operationId: send_error
+      parameters:
+        - name: request_id
+          in: path
+          description: Request ID
+          required: true
+          schema:
+            type: string
+        - name: service_id
+          in: path
+          description: Service ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Error Response
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+        required: true
+      responses:
+        '202':
+          description: Data received
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /as/callback:
+    get:
+      summary: '[Optional] Retrieve current callback URLs'
+      operationId: get_callback_url
+      responses:
+        '200':
+          description: Callback URLs
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  incoming_request_status_update_url:
+                    type: string
+                    description: |-
+                      [Optional] Callback URL for related request status updates
+                  error_url:
+                    type: string
+                    description: |-
+                      [Optional] Callback URL for NDID to call when there is an error processing an asynchronous request
+        '404':
+          description: Callback URL has not been set
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: '[Optional] Set callback URLs'
+      operationId: set_callback_url
+      requestBody:
+        description: Callback URL endpoints
+        content:
+          '*/*':
+            schema:
+              type: object
+              properties:
+                incoming_request_status_update_url:
+                  type: string
+                  description: |-
+                    [Optional] Callback URL for related request status updates
+                error_url:
+                  type: string
+                  description: |-
+                    [Optional] Callback URL for NDID to call when there 
+                    is an error processing an asynchronous request
+        required: true
+      responses:
+        '204':
+          description: Callback set
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    AddUpdateASServices:
+      required:
+        - callback_url
+        - reference_id
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+        min_ial:
+          type: number
+          description: |-
+            Minimum acceptable IAL, required for register new service, 
+            optional for update.
+        min_aal:
+          type: number
+          description: |-
+            Minimum acceptable AAL, required for register new service, 
+            optional for update.
+        url:
+          type: string
+          description: |-
+            Callback url for process service, required for register new 
+            service, optional for update.
+        supported_namespace_list:
+          type: array
+          items:
+            type: string
+    ASServices:
+      required:
+        - active
+        - min_aal
+        - min_ial
+        - supported_namespace_list
+        - suspended
+        - url
+      type: object
+      properties:
+        min_ial:
+          type: number
+          description: |-
+            Minimum acceptable IAL, required for register new service, 
+            optional for update.
+        min_aal:
+          type: number
+          description: |-
+            Minimum acceptable AAL, required for register new service, 
+            optional for update.
+        url:
+          type: string
+          description: |-
+            Callback url for process service, required for register new 
+            service, optional for update.
+        supported_namespace_list:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+        suspended:
+          type: boolean
+          description:
+            The service is suspeneded if NDID disable/revoke the right
+            to serve
+    ASPricing:
+      required:
+        - callback_url
+        - effective_datetime
+        - price_by_currency_list
+        - reference_id
+      type: object
+      properties:
+        node_id:
+          type: string
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+        price_by_currency_list:
+          type: array
+          items:
+            required:
+              - currency
+              - max_price
+              - min_price
+            type: object
+            properties:
+              currency:
+                type: string
+                enum:
+                  - THB
+              min_price:
+                type: number
+              max_price:
+                type: number
+        effective_datetime:
+          type: string
+          example: YYYY-MM-DDTHH:mm:ssZ
+        more_info_url:
+          type: string
+        detail:
+          type: string
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: number
+            message:
+              type: string
+    PaymentReceivedLogMessage:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+    DataMessage:
+      required:
+        - callback_url
+        - data
+        - reference_id
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+        data:
+          type: string
+          description: |-
+            Data URI is supported for files e.g. 'data:application/pdf;base64,Z9msE6b26FZYHbOsifdkZw=='.
+            When sending a file, using data URL with base64 encoding helps reduce 
+            MQ message payload size. Although data URL with base64 encoding like 
+            '   data:  application/pdf  ;  base64  ,   Z9msE6b26FZ   YHbOsifdkZw== 
+              ' is parsable, it is not supported since having whitespaces will cause 
+            invalid data signature check
+    ErrorResponse:
+      required:
+        - callback_url
+        - reference_id
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+        error_code:
+          type: number

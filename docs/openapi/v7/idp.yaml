@@ -1,0 +1,280 @@
+openapi: 3.0.3
+info:
+  title: Identity Provider API
+  description: API for IDP specific roles
+  version: '7.0'
+servers:
+  - url: http://localhost:8100
+    description: Local RP API server
+paths:
+  /idp/callback:
+    get:
+      summary: Retrieve current callback URLs
+      operationId: get_callback_url
+      responses:
+        '200':
+          description: Callback URLs
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  incoming_request_url:
+                    type: string
+                    description: Callback URL for incoming requests
+                  incoming_request_status_update_url:
+                    type: string
+                    description: |-
+                      [Optional] Callback URL for related request status updates
+                  identity_modification_notification_url:
+                    type: string
+                    description: Callback URL for notifying identity modifications/changes
+                  error_url:
+                    type: string
+                    description: |-
+                      [Optional] Callback URL for NDID to call when there 
+                      is an error processing an asynchronous request
+        '404':
+          description: Callback URLs have not been set
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Set callback URLs
+      description: Set callback URLs (Selective set - only set present properties)
+      operationId: set_callback_url
+      requestBody:
+        description: Callback URL endpoints
+        content:
+          '*/*':
+            schema:
+              type: object
+              properties:
+                incoming_request_url:
+                  type: string
+                  description: Callback URL for incoming requests
+                incoming_request_status_update_url:
+                  type: string
+                  description: |-
+                    [Optional] Callback URL for related request status updates
+                identity_modification_notification_url:
+                  type: string
+                  description: Callback URL for notifying identity modifications/changes
+                error_url:
+                  type: string
+                  description: |-
+                    [Optional] Callback URL for NDID to call when there 
+                    is an error processing an asynchronous request
+        required: true
+      responses:
+        '204':
+          description: Callback set
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /idp/request_message_padded_hash:
+    get:
+      summary:
+        Get request message padded hash for encrypting/signing with accessor
+        private key for response
+      operationId: get_request_message_padded_hash
+      parameters:
+        - name: node_id
+          in: query
+          description: Node ID (Required for proxy node)
+          schema:
+            type: string
+        - name: request_id
+          in: query
+          description: Request ID
+          required: true
+          schema:
+            type: string
+        - name: accessor_id
+          in: query
+          description: Accessor ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RequestMessagePaddedHash'
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /idp/response:
+    post:
+      summary: Respond to a request
+      operationId: respond_to_request
+      requestBody:
+        description: IdP response
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/IDPResponse'
+        required: true
+      responses:
+        '202':
+          description: Response Accepted
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /idp/error_response:
+    post:
+      summary: Respond an error to a request
+      operationId: respond_error_to_request
+      requestBody:
+        description: IdP response
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/IDPErrorResponse'
+        required: true
+      responses:
+        '202':
+          description: Response Accepted
+          content: {}
+        '400':
+          description: Client error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    IDPResponse:
+      required:
+        - aal
+        - callback_url
+        - ial
+        - reference_id
+        - request_id
+        - signature
+        - status
+      type: object
+      properties:
+        node_id:
+          type: string
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+        status:
+          type: string
+          description: 'Status, whether user accept or reject the request.'
+          enum:
+            - accept
+            - reject
+        request_id:
+          type: string
+        aal:
+          type: number
+        ial:
+          type: number
+        accessor_id:
+          type: string
+          description: |-
+            IDP must indicate which accessor method it uses by assigning
+            the right accessor_id. Required in mode 2,3
+        signature:
+          type: string
+          description: |-
+            base64 encoded string
+
+            Mode 1: Request message signed by node's private key, Mode
+            2,3: Request message padded hash encrypted with accessor private key.
+            Binary in base64 string format. If not provided, node will send callback
+            to get signature.
+          example: base64_string
+    IDPErrorResponse:
+      required:
+        - callback_url
+        - error_code
+        - reference_id
+        - request_id
+      type: object
+      properties:
+        node_id:
+          type: string
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+        error_code:
+          type: number
+        request_id:
+          type: string
+    RequestMessagePaddedHash:
+      required:
+        - request_message_padded_hash
+      type: object
+      properties:
+        request_message_padded_hash:
+          type: string
+          description:
+            Encrypt this and return. Request message salted hash with custom
+            padding.
+          example: base64_string
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: number
+            message:
+              type: string

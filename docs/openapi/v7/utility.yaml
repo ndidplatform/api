@@ -1,0 +1,1864 @@
+openapi: 3.0.3
+info:
+  title: Platform Utility function
+  description: Other functions needed by anyone using the platform
+  version: '7.0'
+servers:
+  - url: http://localhost:8080
+    description: Local NDID API server
+  - url: http://localhost:8200
+    description: Local RP API server
+  - url: http://localhost:8100
+    description: Local IdP API server
+  - url: http://localhost:8300
+    description: Local AS API server
+paths:
+  /utility/idp:
+    get:
+      summary: Retrieve all IdP nodes
+      description: ''
+      operationId: get_idp_list
+      parameters:
+        - name: min_ial
+          in: query
+          description: minimum ial supported by IDP looking for
+          required: false
+          schema:
+            type: number
+        - name: min_aal
+          in: query
+          description: minimum aal supported by IDP looking for
+          required: false
+          schema:
+            type: number
+        - name: agent
+          in: query
+          description: filter IdP agent type
+          required: false
+          schema:
+            type: boolean
+        - name: supported_feature_list
+          in: query
+          description: filter only IdP nodes that support specified feature. list of strings separated by comma (,).
+          required: false
+          schema:
+            type: boolean
+        - name: filter_for_node_id
+          in: query
+          description: result IdP must be included in node's whitelist
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: IDP found
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IDP'
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/idp/{namespace}/{identifier}':
+    get:
+      summary: >-
+        Retrieve all IdP nodes relevant to/authorized by/have onboarded this
+        {namespace}/{identifier}.
+      description: ''
+      operationId: get_idp_list_for_identifier
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+        - name: min_ial
+          in: query
+          description: minimum ial supported by IDP looking for
+          required: false
+          schema:
+            type: number
+        - name: min_aal
+          in: query
+          description: minimum aal supported by IDP looking for
+          required: false
+          schema:
+            type: number
+        - name: supported_feature_list
+          in: query
+          description: filter only IdP nodes that support specified feature. list of strings separated by comma (,).
+          required: false
+          schema:
+            type: boolean
+        - name: mode
+          in: query
+          description: mode at the time of identity creation
+          required: false
+          schema:
+            type: number
+            enum:
+              - 2
+              - 3
+        - name: filter_for_node_id
+          in: query
+          description: result IdP must be included in node's whitelist
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: IDP found
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IDPForIdentity'
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/as/{service_id}':
+    get:
+      summary: Retrieve list of id of all available as given a service id
+      operationId: get_as_id_list
+      parameters:
+        - name: service_id
+          in: path
+          description: Service ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Service ID found
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AS'
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Service ID not found
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/as/service_price/{service_id}':
+    get:
+      summary: Retrieve AS fee of a specific service_id
+      description: Retrieve AS fee history list sorted by latest first of a specific service_id
+      parameters:
+        - name: service_id
+          required: true
+          in: path
+          description: Service ID
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          description: Filter by node ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Service price list
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/ASPrice'
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Service ID not found
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/service_price_ceiling':
+    get:
+      summary: Get maximum price allowed for AS pricing
+      parameters:
+        - name: service_id
+          in: query
+          description: Service ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Price ceiling list
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/PriceCeiling'
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Service ID not found
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/service_price_min_effective_datetime_delay':
+    get:
+      summary: Get service price minimum effective datetime delay
+      parameters:
+        - name: service_id
+          in: query
+          description: Service ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Price ceiling list
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/PriceMinEffectiveDatetimeDelay'
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Service ID not found
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/requests/{request_id}':
+    get:
+      summary: Fetch Request info and status
+      description: Fetch Request info and status
+      operationId: get_request_status
+      parameters:
+        - name: request_id
+          in: path
+          description: request ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Requests Exist
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/RequestsStatus'
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No request Exist
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/accessors/{accessor_id}':
+    get:
+      summary: Retrieve information of accessor key
+      description: ''
+      operationId: get_accessor
+      parameters:
+        - name: accessor_id
+          in: path
+          description: accessor ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Accessor found
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/AccessorKeyInfo'
+        '404':
+          description: Accessor not found
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/nodes/{node_id}/token':
+    get:
+      summary: Retrieve available token for node ID
+      description: ''
+      parameters:
+        - name: node_id
+          in: path
+          description: Node ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Node ID found
+          content:
+            'application/json':
+              schema:
+                required:
+                  - amount
+                type: object
+                properties:
+                  amount:
+                    type: integer
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Node ID not found
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/nodes/{node_id}':
+    get:
+      summary: Retrieve information of node ID
+      description: ''
+      parameters:
+        - name: node_id
+          in: path
+          description: Node ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Node ID found
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/NodeInfo'
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Node ID not found
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/nodes/{node_id}/public_keys':
+    get:
+      summary: Retrieve information of node's all public keys including previous keys
+      description: ''
+      parameters:
+        - name: node_id
+          in: path
+          description: Node ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Node ID found
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/NodePublicKeys'
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Node ID not found
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /utility/namespaces:
+    get:
+      summary: Retrieve list of all available namespaces
+      description: ''
+      responses:
+        '200':
+          description: Namespace list
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - namespace
+                    - active
+                  properties:
+                    namespace:
+                      type: string
+                    description:
+                      type: string
+                    active:
+                      type: boolean
+                    allowed_identifier_count_in_reference_group:
+                      type: integer
+                    allowed_active_identifier_count_in_reference_group:
+                      type: integer
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /utility/services:
+    get:
+      summary: Retrieve list of all available services
+      description: ''
+      responses:
+        '200':
+          description: Service list
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - service_id
+                    - service_name
+                    - active
+                    - requester_node_whitelist_enabled
+                  properties:
+                    service_id:
+                      type: string
+                    service_name:
+                      type: string
+                    active:
+                      type: boolean
+                    domain:
+                      type: string
+                    requester_node_whitelist_enabled:
+                      type: boolean
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /utility/services/{service_id}:
+    get:
+      summary: Retrieve service details
+      description: ''
+      parameters:
+        - name: service_id
+          in: path
+          description: Service ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Service details
+          content:
+            'application/json':
+              schema:
+                type: object
+                required:
+                  - service_id
+                  - service_name
+                  - active
+                  - requester_node_whitelist_enabled
+                properties:
+                  service_id:
+                    type: string
+                  service_name:
+                    type: string
+                  data_schema:
+                    type: string
+                  data_schema_version:
+                    type: string
+                  active:
+                    type: boolean
+                  domain:
+                    type: string
+                  requester_node_whitelist_enabled:
+                    type: boolean
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Service ID does not exist
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /utility/idp_error_codes:
+    get:
+      summary: Retrieve list of all IdP error codes
+      description: ''
+      responses:
+        '200':
+          description: Error code list
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - error_code
+                    - description
+                  properties:
+                    error_code:
+                      type: number
+                    description:
+                      type: string
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /utility/as_error_codes:
+    get:
+      summary: Retrieve list of all AS error codes
+      description: ''
+      responses:
+        '200':
+          description: Error code list
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - error_code
+                    - description
+                  properties:
+                    error_code:
+                      type: number
+                    description:
+                      type: string
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/private_messages/{request_id}':
+    get:
+      summary: Get messages from MQ
+      description: Get messages received from message queue with specified request ID
+      parameters:
+        - name: request_id
+          in: path
+          description: Request ID
+          required: true
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          description: Call this API as node ID
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Messages received from MQ (see InboundPrivateMessage and OutboundPrivateMessage schemas for more details)
+          content:
+            'application/json':
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InboundPrivateMessage'
+                  - $ref: '#/components/schemas/OutboundPrivateMessage'
+        '404':
+          description: Request ID does not exist
+
+  /utility/private_message_removal:
+    post:
+      summary: Remove all messages from MQ
+      description: Remove all messages received from message queue
+      responses:
+        '204':
+          description: Deleted
+      requestBody:
+        $ref: '#/components/requestBodies/Node'
+
+  '/utility/private_message_removal/{request_id}':
+    post:
+      summary: Remove messages from MQ
+      description: Remove messages from MQ with specified request ID
+      parameters:
+        - name: request_id
+          in: path
+          description: Request ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+      requestBody:
+        $ref: '#/components/requestBodies/Node'
+
+  '/utility/messages/{message_id}':
+    get:
+      summary: Fetch Message info
+      description: Fetch Message info
+      operationId: get_message
+      parameters:
+        - name: message_id
+          in: path
+          description: message ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Message Exist
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No message Exist
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/request_types':
+    get:
+      summary: Get all valid request types
+      description: Get all valid request types
+      operationId: get_request_type_list
+      responses:
+        '200':
+          description: All valid request type list
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: Client error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/suppressed_identity_modification_notification_node_ids':
+    get:
+      summary: Get all suppressed identity modification notification node ID list
+      description: Get all suppressed identity modification notification node ID list
+      operationId: get_suppressed_identity_modification_notification_node_id_list
+      parameters:
+        - name: prefix
+          in: query
+          description: Node ID prefix
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: All suppressed identity modification notification node ID list
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  type: string
+        '404':
+          description: Not found / N/A
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/suppressed_identity_modification_notification_node_ids/{node_id}':
+    get:
+      summary: Get suppressed identity modification notification status
+      description: Get suppressed identity modification notification status by node ID
+      operationId: get_suppressed_identity_modification_notification_status
+      parameters:
+        - name: node_id
+          in: path
+          description: Node ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Suppressed identity modification notification status
+          content:
+            'application/json':
+              schema:
+                type: object
+                required:
+                  - suppressed
+                properties:
+                  suppressed:
+                    type: boolean
+        '404':
+          description: Node ID not found
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/node_supported_features':
+    get:
+      summary: Get all valid node supported features
+      description: Get all valid node supported features
+      operationId: get_node_supported_feature_list
+      responses:
+        '200':
+          description: All node supported features
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  type: string
+                  example: 'on_the_fly'
+        '404':
+          description: Not found / N/A
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/supported_ial':
+    get:
+      summary: Get all supported IAL list
+      description: Get all supported IAL list
+      operationId: get_supported_ial_list
+      responses:
+        '200':
+          description: All supported IAL list
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  type: number
+                example:
+                  - 1.1
+                  - 1.2
+                  - 1.3
+                  - 2.1
+                  - 2.2
+                  - 2.3
+                  - 3
+        '404':
+          description: Not found / N/A
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/supported_aal':
+    get:
+      summary: Get all supported AAL list
+      description: Get all supported AAL list
+      operationId: get_supported_aal_list
+      responses:
+        '200':
+          description: All supported AAL list
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  type: number
+                example:
+                  - 1
+                  - 2.1
+                  - 2.2
+                  - 3
+        '404':
+          description: Not found / N/A
+        '500':
+          description: Server error
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    IDP:
+      type: object
+      required:
+        - node_id
+        - node_name
+        - max_ial
+        - max_aal
+        - supported_request_message_data_url_type_list
+        - agent
+      properties:
+        node_id:
+          type: string
+        node_name:
+          type: string
+        max_ial:
+          type: number
+          enum:
+            - 1.1
+            - 1.2
+            - 1.3
+            - 2.1
+            - 2.2
+            - 2.3
+            - 3
+        max_aal:
+          type: number
+          enum:
+            - 1
+            - 2.1
+            - 2.2
+            - 3
+        supported_feature_list:
+          type: array
+          items:
+            type: string
+            example: ['on_the_fly']
+        supported_request_message_data_url_type_list:
+          type: array
+          description: 'IdP supported request message MIME types'
+          items:
+            type: string
+          example: ['text/plain', 'application/pdf']
+        agent:
+          type: boolean
+    IDPForIdentity:
+      type: object
+      required:
+        - node_id
+        - node_name
+        - max_ial
+        - max_aal
+        - supported_request_message_data_url_type_list
+        - mode_list
+        - ial
+        - agent
+      properties:
+        node_id:
+          type: string
+        node_name:
+          type: string
+        max_ial:
+          type: number
+          enum:
+            - 1.1
+            - 1.2
+            - 1.3
+            - 2.1
+            - 2.2
+            - 2.3
+            - 3
+        max_aal:
+          type: number
+          enum:
+            - 1
+            - 2.1
+            - 2.2
+            - 3
+        supported_feature_list:
+          type: array
+          items:
+            type: string
+            example: ['on_the_fly']
+        supported_request_message_data_url_type_list:
+          type: array
+          description: 'IdP supported request message MIME types'
+          items:
+            type: string
+          example: ['text/plain', 'application/pdf']
+        agent:
+          type: boolean
+        mode_list:
+          type: array
+          items:
+            type: integer
+            enum:
+              - 2
+              - 3
+        ial:
+          type: number
+          enum:
+            - 1.1
+            - 1.2
+            - 1.3
+            - 2.1
+            - 2.2
+            - 2.3
+            - 3
+        lial:
+          type: boolean
+        laal:
+          type: boolean
+    AS:
+      type: object
+      required:
+        - node_id
+        - node_name
+        - min_ial
+        - min_aal
+        - supported_namespace_list
+      properties:
+        node_id:
+          type: string
+        node_name:
+          type: string
+        min_ial:
+          type: number
+          enum:
+            - 1.1
+            - 1.2
+            - 1.3
+            - 2.1
+            - 2.2
+            - 2.3
+            - 3
+        min_aal:
+          type: number
+          enum:
+            - 1
+            - 2.1
+            - 2.2
+            - 3
+        supported_namespace_list:
+          type: array
+          items:
+            type: string
+    ASPrice:
+      type: array
+      items:
+        type: object
+        required:
+          - node_id
+          - price_list
+        properties:
+          node_id:
+            type: string
+          price_list:
+            type: array
+            items:
+              type: object
+              required:
+                - currency
+                - min_price
+                - max_price
+                - effective_datetime
+                - creation_block_height
+              properties:
+                price_by_currency_list:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - currency
+                      - min_price
+                      - max_price
+                    properties:
+                      currency:
+                        type: string
+                        enum:
+                          - THB
+                      min_price:
+                        type: number
+                      max_price:
+                        type: number
+                effective_datetime:
+                  type: string
+                  format: date
+                  example: YYYY-MM-DDTHH:mm:ssZ
+                more_info_url:
+                  type: string
+                detail:
+                  type: string
+                creation_block_height:
+                  type: string
+                  description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+    PriceCeiling:
+      type: object
+      required:
+        - service_id
+        - price_ceiling_by_currency_list
+      properties:
+        service_id:
+          type: string
+        price_ceiling_by_currency_list:
+          type: array
+          items:
+            type: object
+            required:
+              - currency
+              - price
+            properties:
+              currency:
+                type: string
+                enum:
+                  - THB
+              price:
+                type: number
+    PriceMinEffectiveDatetimeDelay:
+      type: object
+      required:
+        - duration_second
+      properties:
+        duration_second:
+          type: number
+    RequestsStatus:
+      type: object
+      required:
+        - request_id
+        - requester_node_id
+        - mode
+        - request_message_hash
+        - min_ial
+        - min_aal
+        - min_idp
+        - idp_id_list
+        - data_request_list
+        - status
+        - request_timeout
+        - timed_out
+        - closed
+        - creation_block_height
+        - response_list
+      properties:
+        request_id:
+          type: string
+        requester_node_id:
+          type: string
+        mode:
+          type: integer
+          enum:
+            - 1
+            - 2
+            - 3
+        request_message_hash:
+          type: string
+        min_ial:
+          type: number
+          enum:
+            - 1.1
+            - 1.2
+            - 1.3
+            - 2.1
+            - 2.2
+            - 2.3
+            - 3
+        min_aal:
+          type: number
+          enum:
+            - 1
+            - 2.1
+            - 2.2
+            - 3
+        min_idp:
+          type: integer
+        idp_id_list:
+          type: array
+          items:
+            type: string
+        response_list:
+          type: array
+          items:
+            type: object
+            required:
+              - idp_id
+            properties:
+              ial:
+                type: number
+                enum:
+                  - 1.1
+                  - 1.2
+                  - 1.3
+                  - 2.1
+                  - 2.2
+                  - 2.3
+                  - 3
+              aal:
+                type: number
+                enum:
+                  - 1
+                  - 2.1
+                  - 2.2
+                  - 3
+              status:
+                type: string
+                enum:
+                  - accept
+                  - reject
+              error_code:
+                type: number
+              signature:
+                type: string
+              idp_id:
+                type: string
+              valid_signature:
+                type: boolean
+                description: Whether response signature is correct
+              valid_ial:
+                type: boolean
+                description: Whether response IAL is less than or equal to identity IAL
+        data_request_list:
+          type: array
+          items:
+            type: object
+            required:
+              - service_id
+              - as_id_list
+              - min_as
+              - request_params_hash
+            properties:
+              service_id:
+                type: string
+              as_id_list:
+                type: array
+                items:
+                  type: string
+              min_as:
+                type: integer
+              request_params_hash:
+                type: string
+              response_list:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - as_id
+                  properties:
+                    as_id:
+                      type: string
+                    signed:
+                      type: boolean
+                    received_data:
+                      type: boolean
+                    error_code:
+                      type: number
+        request_timeout:
+          type: integer
+        timed_out:
+          type: boolean
+        closed:
+          type: boolean
+        request_type:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - confirmed
+            - rejected
+            - partial_completed
+            - completed
+            - complicated
+            - errored
+        creation_block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+    NodeInfo:
+      type: object
+      required:
+        - signing_public_key
+        - signing_master_public_key
+        - encryption_public_key
+        - node_name
+        - role
+        - active
+      properties:
+        signing_public_key:
+          type: object
+          required:
+            - public_key
+            - algorithm
+            - version
+            - active
+          properties:
+            public_key:
+              type: string
+              description: 'public key in PEM format'
+            algorithm:
+              type: string
+              enum:
+                - RSASSA_PKCS1_V1_5_SHA_256
+                - RSASSA_PKCS1_V1_5_SHA_384
+                - RSASSA_PKCS1_V1_5_SHA_512
+                - RSASSA_PSS_SHA_256
+                - RSASSA_PSS_SHA_384
+                - RSASSA_PSS_SHA_512
+                - ECDSA_SHA_256
+                - ECDSA_SHA_384
+                - Ed25519
+            version:
+              type: integer
+              example: 1
+            creation_block_height:
+              type: integer
+              nullable: true
+              example: 1
+            creation_chain_id:
+              type: string
+              nullable: true
+            active:
+              type: boolean
+        signing_master_public_key:
+          type: object
+          required:
+            - public_key
+            - algorithm
+            - version
+            - active
+          properties:
+            public_key:
+              type: string
+              description: 'public key in PEM format'
+            algorithm:
+              type: string
+              enum:
+                - RSASSA_PKCS1_V1_5_SHA_256
+                - RSASSA_PKCS1_V1_5_SHA_384
+                - RSASSA_PKCS1_V1_5_SHA_512
+                - RSASSA_PSS_SHA_256
+                - RSASSA_PSS_SHA_384
+                - RSASSA_PSS_SHA_512
+                - ECDSA_SHA_256
+                - ECDSA_SHA_384
+                - Ed25519
+            version:
+              type: integer
+              example: 1
+            creation_block_height:
+              type: integer
+              nullable: true
+              example: 1
+            creation_chain_id:
+              type: string
+              nullable: true
+            active:
+              type: boolean
+        encryption_public_key:
+          type: object
+          required:
+            - public_key
+            - algorithm
+            - version
+            - active
+          properties:
+            public_key:
+              type: string
+              description: 'public key in PEM format'
+            algorithm:
+              type: string
+              enum:
+                - RSAES_PKCS1_V1_5
+                - RSAES_OAEP_SHA_1
+                - RSAES_OAEP_SHA_256
+            version:
+              type: integer
+              example: 1
+            creation_block_height:
+              type: integer
+              nullable: true
+              example: 1
+            creation_chain_id:
+              type: string
+              nullable: true
+            active:
+              type: boolean
+        node_name:
+          type: string
+        role:
+          type: string
+          enum:
+            - IdP
+            - RP
+            - AS
+            - Proxy
+        max_ial:
+          type: number
+          description: Available when node's role is IdP
+          enum:
+            - 1.1
+            - 1.2
+            - 1.3
+            - 2.1
+            - 2.2
+            - 2.3
+            - 3
+        max_aal:
+          type: number
+          description: Available when node's role is IdP
+          enum:
+            - 1
+            - 2.1
+            - 2.2
+            - 3
+        supported_feature_list:
+          type: array
+          items:
+            type: string
+            example: ['on_the_fly']
+        supported_request_message_data_url_type_list:
+          type: array
+          description: 'Present only on IdP nodes. Supported request message MIME types.'
+          items:
+            type: string
+          example: ['text/plain', 'application/pdf']
+        agent:
+          type: boolean
+          description: 'Present only on IdP nodes'
+        node_id_whitelist:
+          type: array
+          description: 'Present only on RP and IdP nodes'
+          items:
+            type: string
+        node_id_whitelist_active:
+          type: boolean
+          description: 'Present only on RP and IdP nodes'
+        mq:
+          type: array
+          items:
+            type: object
+            properties:
+              ip:
+                type: string
+              port:
+                type: number
+        proxy:
+          type: object
+          required:
+            - node_id
+            - node_name
+            - signing_public_key
+            - signing_master_public_key
+            - encryption_public_key
+            - config
+          properties:
+            node_id:
+              type: string
+            node_name:
+              type: string
+            signing_public_key:
+              type: object
+              required:
+                - public_key
+                - algorithm
+                - version
+                - active
+              properties:
+                public_key:
+                  type: string
+                  description: 'public key in PEM format'
+                algorithm:
+                  type: string
+                  enum:
+                    - RSASSA_PKCS1_V1_5_SHA_256
+                    - RSASSA_PKCS1_V1_5_SHA_384
+                    - RSASSA_PKCS1_V1_5_SHA_512
+                    - RSASSA_PSS_SHA_256
+                    - RSASSA_PSS_SHA_384
+                    - RSASSA_PSS_SHA_512
+                    - ECDSA_SHA_256
+                    - ECDSA_SHA_384
+                    - Ed25519
+                version:
+                  type: integer
+                  example: 1
+                creation_block_height:
+                  type: integer
+                  nullable: true
+                  example: 1
+                creation_chain_id:
+                  type: string
+                  nullable: true
+                active:
+                  type: boolean
+            signing_master_public_key:
+              type: object
+              required:
+                - public_key
+                - algorithm
+                - version
+                - active
+              properties:
+                public_key:
+                  type: string
+                  description: 'public key in PEM format'
+                algorithm:
+                  type: string
+                  enum:
+                    - RSASSA_PKCS1_V1_5_SHA_256
+                    - RSASSA_PKCS1_V1_5_SHA_384
+                    - RSASSA_PKCS1_V1_5_SHA_512
+                    - RSASSA_PSS_SHA_256
+                    - RSASSA_PSS_SHA_384
+                    - RSASSA_PSS_SHA_512
+                    - ECDSA_SHA_256
+                    - ECDSA_SHA_384
+                    - Ed25519
+                version:
+                  type: integer
+                  example: 1
+                creation_block_height:
+                  type: integer
+                  nullable: true
+                  example: 1
+                creation_chain_id:
+                  type: string
+                  nullable: true
+                active:
+                  type: boolean
+            encryption_public_key:
+              type: object
+              required:
+                - public_key
+                - algorithm
+                - version
+                - active
+              properties:
+                public_key:
+                  type: string
+                  description: 'public key in PEM format'
+                algorithm:
+                  type: string
+                  enum:
+                    - RSAES_PKCS1_V1_5
+                    - RSAES_OAEP_SHA_1
+                    - RSAES_OAEP_SHA_256
+                version:
+                  type: integer
+                  example: 1
+                creation_block_height:
+                  type: integer
+                  nullable: true
+                  example: 1
+                creation_chain_id:
+                  type: string
+                  nullable: true
+                active:
+                  type: boolean
+            mq:
+              type: object
+              properties:
+                ip:
+                  type: string
+                port:
+                  type: number
+            config:
+              type: string
+        active:
+          type: boolean
+    NodePublicKeys:
+      type: object
+      required:
+        - signing_public_key_list
+        - signing_master_public_key_list
+        - encryption_public_key_list
+      properties:
+        signing_public_key_list:
+          type: array
+          items:
+            type: object
+            required:
+              - public_key
+              - algorithm
+              - version
+              - active
+            properties:
+              public_key:
+                type: string
+                description: 'public key in PEM format'
+              algorithm:
+                type: string
+                enum:
+                  - RSASSA_PKCS1_V1_5_SHA_256
+                  - RSASSA_PKCS1_V1_5_SHA_384
+                  - RSASSA_PKCS1_V1_5_SHA_512
+                  - RSASSA_PSS_SHA_256
+                  - RSASSA_PSS_SHA_384
+                  - RSASSA_PSS_SHA_512
+                  - ECDSA_SHA_256
+                  - ECDSA_SHA_384
+                  - Ed25519
+              version:
+                type: integer
+                example: 1
+              creation_block_height:
+                type: integer
+                nullable: true
+                example: 1
+              creation_chain_id:
+                type: string
+                nullable: true
+              active:
+                type: boolean
+        signing_master_public_key_list:
+          type: array
+          items:
+            type: object
+            required:
+              - public_key
+              - algorithm
+              - version
+              - active
+            properties:
+              public_key:
+                type: string
+                description: 'public key in PEM format'
+              algorithm:
+                type: string
+                enum:
+                  - RSASSA_PKCS1_V1_5_SHA_256
+                  - RSASSA_PKCS1_V1_5_SHA_384
+                  - RSASSA_PKCS1_V1_5_SHA_512
+                  - RSASSA_PSS_SHA_256
+                  - RSASSA_PSS_SHA_384
+                  - RSASSA_PSS_SHA_512
+                  - ECDSA_SHA_256
+                  - ECDSA_SHA_384
+                  - Ed25519
+              version:
+                type: integer
+                example: 1
+              creation_block_height:
+                type: integer
+                nullable: true
+                example: 1
+              creation_chain_id:
+                type: string
+                nullable: true
+              active:
+                type: boolean
+        encryption_public_key_list:
+          type: array
+          items:
+            type: object
+            required:
+              - public_key
+              - algorithm
+              - version
+              - active
+            properties:
+              public_key:
+                type: string
+                description: 'public key in PEM format'
+              algorithm:
+                type: string
+                enum:
+                  - RSAES_PKCS1_V1_5
+                  - RSAES_OAEP_SHA_1
+                  - RSAES_OAEP_SHA_256
+              version:
+                type: integer
+                example: 1
+              creation_block_height:
+                type: integer
+                nullable: true
+                example: 1
+              creation_chain_id:
+                type: string
+                nullable: true
+              active:
+                type: boolean
+    InboundPrivateMessage:
+      type: array
+      items:
+        type: object
+        required:
+          - message
+          - direction
+          - source
+          - signature
+          - timestamp
+        properties:
+          message:
+            type: object
+            properties:
+              type:
+                type: string
+              request_id:
+                type: string
+              mode:
+                type: number
+                enum:
+                  - 1
+                  - 2
+                  - 3
+              idp_id:
+                type: string
+              chain_id:
+                type: string
+              height:
+                type: number
+          direction:
+            type: string
+            enum:
+              - 'inbound'
+          source:
+            type: object
+            required:
+              - node_id
+            properties:
+              node_id:
+                type: string
+              proxy_node_id:
+                type: string
+              proxy_config:
+                type: string
+                enum:
+                  - 'KEY_ON_PROXY'
+                  - 'KEY_ON_NODE'
+          signature:
+            type: string
+          signature_for_proxy:
+            type: string
+          timestamp:
+            type: number
+    OutboundPrivateMessage:
+      type: array
+      items:
+        type: object
+        required:
+          - message
+          - direction
+          - destinations
+          - timestamp
+        properties:
+          message:
+            type: string
+          direction:
+            type: string
+            enum:
+              - 'outbound'
+          destinations:
+            type: array
+            items:
+              type: object
+              required:
+                - node_id
+                - public_key
+                - ip
+                - port
+              properties:
+                node_id:
+                  type: string
+                public_key:
+                  type: string
+                ip:
+                  type: string
+                port:
+                  type: number
+                proxy_node_id:
+                  type: string
+                proxy_public_key:
+                  type: string
+                proxy_config:
+                  type: string
+                  enum:
+                    - 'KEY_ON_PROXY'
+                    - 'KEY_ON_NODE'
+          timestamp:
+            type: number
+    Message:
+      type: object
+      required:
+        - request_id
+        - requester_node_id
+        - message
+        - message_hash
+        - purpose
+        - creation_block_height
+      properties:
+        message_id:
+          type: string
+        requester_node_id:
+          type: string
+        message:
+          type: string
+        purpose:
+          type: string
+        creation_block_height:
+          type: string
+          description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+    AccessorKeyInfo:
+      type: object
+      required:
+        - accessor_public_key
+        - accessor_type
+        - active
+        - owner_node_id
+      properties:
+        accessor_public_key:
+          type: string
+          description: 'public key in PEM format'
+        accessor_type:
+          type: string
+          description: 'key algorithm'
+          enum:
+            - RSA
+        active:
+          type: boolean
+        owner_node_id:
+          type: string
+          description: 'Node ID that registers/adds this accessor key'
+        creation_block_height:
+          type: integer
+          nullable: true
+          example: 1
+        creation_chain_id:
+          type: string
+          nullable: true
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: number
+            message:
+              type: string
+  requestBodies:
+    Node:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              node_id:
+                type: string
+                description: Call this API as node ID

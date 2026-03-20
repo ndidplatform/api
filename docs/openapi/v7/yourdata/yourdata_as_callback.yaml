@@ -5,8 +5,8 @@ info:
     API related to Your Data feature. API that AS MUST IMPLEMENT to be called by the platform.
   version: '7.0'
 servers:
-  - description: Your AS application server
-    url: https://your-as-app-server
+  - url: https://your-as-app-server
+    description: Your AS application server
 
 tags:
   - name: Your Data
