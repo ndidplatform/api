@@ -1,8 +1,8 @@
-version: 2
+version: 2.1
 jobs:
   build:
     docker:
-      - image: cimg/node:20.12
+      - image: cimg/node:24.14
       # - image: ndidplatform/did-tendermint:latest
       #   environment:
       #     TM_RPC_PORT: 45000
@@ -15,24 +15,24 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - node20-ndid-logger-dependencies-{{ checksum "ndid-logger/package-lock.json" }}
+            - node24-ndid-logger-dependencies-{{ checksum "ndid-logger/package-lock.json" }}
             # fallback to using the latest cache if no exact match is found
-            # - node20-ndid-logger-dependencies-
+            # - node24-ndid-logger-dependencies-
       - restore_cache:
           keys:
-            - node20-main-server-dependencies-{{ checksum "main-server/package-lock.json" }}
+            - node24-main-server-dependencies-{{ checksum "main-server/package-lock.json" }}
             # fallback to using the latest cache if no exact match is found
-            # - node20-main-server-dependencies-
+            # - node24-main-server-dependencies-
       - restore_cache:
           keys:
-            - node20-mq-server-dependencies-{{ checksum "mq-server/package-lock.json" }}
+            - node24-mq-server-dependencies-{{ checksum "mq-server/package-lock.json" }}
             # fallback to using the latest cache if no exact match is found
-            # - node20-mq-server-dependencies-
+            # - node24-mq-server-dependencies-
       - restore_cache:
           keys:
-            - node20-telemetry-dependencies-{{ checksum "telemetry/package-lock.json" }}
+            - node24-telemetry-dependencies-{{ checksum "telemetry/package-lock.json" }}
             # fallback to using the latest cache if no exact match is found
-            # - node20-telemetry-dependencies-
+            # - node24-telemetry-dependencies-
       - run:
           name: Install node modules for ndid-logger lib
           command: |
@@ -41,7 +41,7 @@ jobs:
       - save_cache:
           paths:
             - ndid-logger/node_modules
-          key: node20-ndid-logger-dependencies-{{ checksum "ndid-logger/package-lock.json" }}
+          key: node24-ndid-logger-dependencies-{{ checksum "ndid-logger/package-lock.json" }}
       - run:
           name: Install node modules for main-server
           command: |
@@ -50,7 +50,7 @@ jobs:
       - save_cache:
           paths:
             - main-server/node_modules
-          key: node20-main-server-dependencies-{{ checksum "main-server/package-lock.json" }}
+          key: node24-main-server-dependencies-{{ checksum "main-server/package-lock.json" }}
       - run:
           name: Install node modules for mq-server
           command: |
@@ -59,7 +59,7 @@ jobs:
       - save_cache:
           paths:
             - mq-server/node_modules
-          key: node20-mq-server-dependencies-{{ checksum "mq-server/package-lock.json" }}
+          key: node24-mq-server-dependencies-{{ checksum "mq-server/package-lock.json" }}
       - run:
           name: Install node modules for telemetry
           command: |
@@ -68,7 +68,7 @@ jobs:
       - save_cache:
           paths:
             - telemetry/node_modules
-          key: node20-telemetry-dependencies-{{ checksum "telemetry/package-lock.json" }}
+          key: node24-telemetry-dependencies-{{ checksum "telemetry/package-lock.json" }}
 
       - run:
           name: Start main-server unit testing
@@ -107,7 +107,7 @@ jobs:
       #       curl -v http://localhost:8080/utility/services
   push_to_docker_hub:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:current
     steps:
       - checkout
       # default remote docker
@@ -139,7 +139,7 @@ jobs:
             docker push $REPO_NAME/telemetry-client:$DOCKER_TAG
   push_dev_to_docker_hub:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:current
     steps:
       - checkout
       # default remote docker
