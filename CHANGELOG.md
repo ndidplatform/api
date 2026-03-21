@@ -2,7 +2,46 @@
 
 ## TBD
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v9.x.x_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_
+
+BREAKING CHANGES:
+
+- API version 7.0
+  - GET `/utility/services` returns list of all services regardless of their `active` status.
+  - GET `/private_messages/:request_id` no longer checks for valid request ID on the blockchain, therefore there is no response with status code `404`.
+
+- Telemetry data format change
+  - Add `event_id` (UUIDv7) to request events.
+
+FEATURES:
+
+- Your Data
+- API version 7.0
+  - Your Data
+    - New API: POST `/yourdata/rp/requests`: Create Your Data request.
+    - New API: GET `/yourdata/rp/request_references/:reference_id`: Get active/in-progress Your Data request by reference ID.
+    - New API: POST `/yourdata/rp/data_decryption_key_retry_requests`: Create Your Data data decryption key retry request.
+    - New API: GET `/yourdata/rp/data_decryption_key_retry_request_references/:reference_id`: Get active/in-progress Your Data data decryption key retry request by reference ID.
+    - New API: GET `/yourdata/rp/request_data/:request_id`: Get Your Data data received from AS by request ID.
+    - New API: POST `/yourdata/rp/request_data_removal`: Remove all Your Data data received from AS.
+    - New API: POST `/yourdata/rp/request_data_removal/:request_id`: Remove Your Data data received from AS by request ID.
+    - New API: POST `/yourdata/as/callback`: Set callbacks related to Your Data.
+    - New API: GET `/yourdata/as/callback`: Get callbacks related to Your Data.
+    - New API: POST `/yourdata/as/service/:service_id`: Add or update Your Data service offered by AS.
+    - New API: GET `/yourdata/as/service/:service_id`: Get Your Data service offered by AS.
+    - New API: POST `/yourdata/as/data`: Respond Your Data request with data to requester.
+    - New API: POST `/yourdata/as/error`: Respond Your Data request with error to requester.
+    - New API: POST `/yourdata/as/auto_error_responses`: Set auto error response (error code and error message) in specific cases.
+    - New API: GET `/yourdata/as/service/:service_id`: Get set auto error response (error code and error message) in specific cases.
+    - New API: POST `/yourdata/utility/token`: Create signed JWT / Your Data authorization token. Result token is signed by node's signing key. Mainly used by AS.
+    - New API: GET `/yourdata/utility/as_error_codes`: Get possible Your Data AS error codes.
+    - New API: GET `/yourdata/utility/node_whitelist`: Get Your Data node whitelist enabled status and a list of node IDs with Your Data permission.
+  - Add query string parameter `active` and `domain` to GET `/utility/services`
+
+IMPROVEMENTS:
+
+- Update dependencies.
+- [Docker] Change Node.js version used in images from 20 to 24.
 
 BUG FIXES:
 
