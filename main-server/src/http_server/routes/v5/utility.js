@@ -404,16 +404,21 @@ router.get('/private_messages/:request_id', async (req, res, next) => {
   try {
     const { request_id } = req.params;
     const { node_id, type } = req.query;
+
+    const request = await coreRequest.getRequestDetails({
+      requestId: request_id,
+    });
+    if (request == null) {
+      res.status(404).end();
+      next();
+      return;
+    }
+
     const messages = await privateMessage.getPrivateMessages({
       nodeId: node_id,
       requestId: request_id,
       type,
     });
-    if (messages == null) {
-      res.status(404).end();
-      next();
-      return;
-    }
     res.status(200).json(messages);
     next();
   } catch (error) {

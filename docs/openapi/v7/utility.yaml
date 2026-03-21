@@ -694,8 +694,6 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/InboundPrivateMessage'
                   - $ref: '#/components/schemas/OutboundPrivateMessage'
-        '404':
-          description: Request ID does not exist
 
   /utility/private_message_removal:
     post:

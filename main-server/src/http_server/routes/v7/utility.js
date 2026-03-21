@@ -416,11 +416,6 @@ router.get('/private_messages/:request_id', async (req, res, next) => {
       requestId: request_id,
       type,
     });
-    if (messages == null) {
-      res.status(404).end();
-      next();
-      return;
-    }
     res.status(200).json(messages);
     next();
   } catch (error) {
