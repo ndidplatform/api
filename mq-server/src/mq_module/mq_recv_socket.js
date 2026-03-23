@@ -37,6 +37,8 @@ export default class MQRecvSocket extends EventEmitter {
 
     this.port = config.port;
     this.closed = false;
+
+    this.sendChain = Promise.resolve();
   }
 
   // Initialize the socket and start the receive loop
@@ -64,6 +66,20 @@ export default class MQRecvSocket extends EventEmitter {
   async send(identity, payload) {
     // Router sockets require the [identity, empty, payload] structure
     await this.receivingSocket.send([identity, Buffer.alloc(0), payload]);
+  }
+
+  async safeSend(identity, payload) {
+    // Wait for previous send to finish before calling another send to prevent 
+    // Error: Socket is busy writing; only one send operation may be in progress at any time
+    this.sendChain = this.sendChain.then(async () => {
+      try {
+        await this.receivingSocket.send([identity, Buffer.alloc(0), payload]);
+      } catch (err) {
+        this.emit('error', err);
+      }
+    });
+
+    return this.sendChain;
   }
 
   close() {

@@ -76,7 +76,7 @@ export default class MQRecv extends EventEmitter {
           message: msg.message,
           msgId: msg.retryspec.msgId,
           senderId: msg.senderId,
-          sendAck: () => this.recvSocket.send(identity, ackMSG),
+          sendAck: () => this.recvSocket.safeSend(identity, ackMSG),
         });
       }.bind(this)
     );
