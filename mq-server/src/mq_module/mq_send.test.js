@@ -39,6 +39,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
       expect(message.toString()).to.equal('test message 1');
       sendAck();
       recvNode.close();
+      sendNode.closeAll();
       done();
     });
 
@@ -56,15 +57,18 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     let ports = getPort(1);
     let recvNode = new MQRecv({ port: ports[0] });
     recvNode.init();
+
+    let sendNode = new MQSend({});
+
     recvNode.on('message', function ({ message, sendAck }) {
       expect(message).to.be.instanceof(Buffer);
       expect(message.toString()).to.equal('นี่คือเทสแมสเซจ');
       sendAck();
       recvNode.close();
+      sendNode.closeAll();
       done();
     });
 
-    let sendNode = new MQSend({});
     sendNode.send(
       {
         ip: '127.0.0.1',
@@ -81,6 +85,8 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     recvNode.init();
     let alreadyRecv = [];
 
+    let sendNode = new MQSend({});
+
     recvNode.on('message', function ({ message, sendAck }) {
       expect(message).to.be.instanceof(Buffer);
       expect(parseInt(message.toString()))
@@ -90,11 +96,10 @@ describe('Functional Test for MQ Sender with real sockets', function () {
       sendAck();
       if (alreadyRecv.length == 3) {
         recvNode.close();
+        sendNode.closeAll();
         done();
       }
     });
-
-    let sendNode = new MQSend({});
 
     sendNode.send(
       { ip: '127.0.0.1', port: ports[0] },
@@ -136,6 +141,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
         mqNode1.close();
         mqNode2.close();
         mqNode3.close();
+        mqNode.closeAll();
         done();
       }
     });
@@ -150,6 +156,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
         mqNode1.close();
         mqNode2.close();
         mqNode3.close();
+        mqNode.closeAll();
         done();
       }
     });
@@ -164,6 +171,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
         mqNode1.close();
         mqNode2.close();
         mqNode3.close();
+        mqNode.closeAll();
         done();
       }
     });
@@ -215,6 +223,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
         sendAck();
         if (notDone == true) {
           mqNode2.close();
+          mqNode.closeAll();
           done();
           notDone = false;
         }
@@ -265,6 +274,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
         expect(message.toString()).to.equal('test');
         sendAck();
         mqNode2.close();
+        mqNode.closeAll();
         done();
       });
       mqNode2.on('error', function (err) {
@@ -301,6 +311,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     let mqNode = new MQSend({ timeout: 500, totalTimeout: 1500 });
     mqNode.on('error', function (msgId, err) {
       expect(err.code).to.equal(errorType.MQ_SEND_TIMEOUT.code);
+      mqNode.closeAll();
       done();
     });
 
@@ -321,6 +332,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
     mqNode.on('error', function (msgId, err) {
       expect(err.code).to.equal(errorType.MQ_SEND_TIMEOUT.code);
       mqRecvSmallSize.close();
+      mqNode.closeAll();
       done();
     });
 
@@ -381,6 +393,7 @@ describe('Functional Test for MQ Sender with real sockets', function () {
       setTimeout(() => {
         mqNode2.close();
         expect(alreadyTimeout).to.be.true;
+        mqNode.closeAll();
         done();
       }, 2000);
     }, 10000);

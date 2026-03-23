@@ -46,6 +46,9 @@ describe('Functional Test for MQ receiver with real socket', function () {
       count++;
       if (count == 3) {
         mqNodeRecv.close();
+        mqNode1.closeAll();
+        mqNode2.closeAll();
+        mqNode3.closeAll();
         done();
       }
     });
@@ -92,6 +95,7 @@ describe('Functional Test for MQ receiver with real socket', function () {
     let mqNode = new MQSend({ timeout: 500, totalTimeout: 1500 });
     mqNode.on('error', function (err) {
       mqRecvSmallSize.close();
+      mqNode.closeAll();
       done();
     });
 
