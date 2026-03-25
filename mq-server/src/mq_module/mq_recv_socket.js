@@ -63,17 +63,17 @@ export default class MQRecvSocket extends EventEmitter {
     }
   }
 
-  async send(identity, payload) {
+  unsafeSend(identity, payload) {
     // Router sockets require the [identity, empty, payload] structure
-    await this.receivingSocket.send([identity, Buffer.alloc(0), payload]);
+    return this.receivingSocket.send([identity, Buffer.alloc(0), payload]);
   }
 
-  async safeSend(identity, payload) {
+  async send(identity, payload) {
     // Wait for previous send to finish before calling another send to prevent 
     // Error: Socket is busy writing; only one send operation may be in progress at any time
     this.sendChain = this.sendChain.then(async () => {
       try {
-        await this.receivingSocket.send([identity, Buffer.alloc(0), payload]);
+        await this.unsafeSend(identity, payload);
       } catch (err) {
         this.emit('error', err);
       }
