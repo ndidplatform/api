@@ -53,4 +53,4 @@ COPY docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 
 WORKDIR /api/main-server
 
-ENTRYPOINT [ "/usr/bin/docker-entrypoint.sh", "node", "--security-revert=CVE-2023-46809", "/api/main-server/build/server.js" ]
+ENTRYPOINT [ "/usr/bin/docker-entrypoint.sh", "node", "/api/main-server/build/server.js" ]
