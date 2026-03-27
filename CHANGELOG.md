@@ -37,6 +37,39 @@ FEATURES:
     - New API: GET `/yourdata/utility/as_error_codes`: Get possible Your Data AS error codes.
     - New API: GET `/yourdata/utility/node_whitelist`: Get Your Data node whitelist enabled status and a list of node IDs with Your Data permission.
   - Add query string parameter `active` and `domain` to GET `/utility/services`
+  - Change response body JSON schema of GET `/utility/services`
+    - Add `domain`
+    - Add `requester_node_whitelist_enabled`
+  - Change response body JSON schema of GET `/utility/services/:service_id`
+    - Add `domain`
+    - Add `requester_node_whitelist_enabled`
+  - NDID only APIs
+    - Change request body JSON schema of POST `/ndid/create_service`.
+      - Add `domain`
+      - Add `requester_node_whitelist_enabled`
+    - Change request body JSON schema of POST `/ndid/update_service`.
+      - Add `domain`
+    - New API: POST `/ndid/add_node_to_service_requester_node_whitelist`: Add node ID to specified service requester whitelist.
+    - New API: POST `/ndid/remove_node_from_service_requester_node_whitelist`: Remove node ID from specified service requester whitelist.
+    - New API: POST `/ndid/enable_service_requester_node_whitelist`: Set service requester node whitelist active. (Use whitelist.)
+    - New API: POST `/ndid/disable_service_requester_node_whitelist`: Set service requester node whitelist inactive. (Don't use / ignore whitelist.)
+    - New API: POST `/ndid/add_domain`: Add new domain.
+    - New API: POST `/ndid/enable_domain`: Set domain active.
+    - New API: POST `/ndid/disable_domain`: Set domain inactive.
+    - New API: POST `/ndid/add_node_to_domain_node_whitelist`: Add node ID to specified domain whitelist.
+    - New API: POST `/ndid/remove_node_from_domain_node_whitelist`: Remove node ID from specified domain whitelist.
+    - New API: POST `/ndid/enable_domain_node_whitelist`: Set domain node whitelist active. (Use whitelist.)
+    - New API: POST `/ndid/disable_domain_node_whitelist`: Set domain node whitelist inactive. (Don't use / ignore whitelist.)
+    - New API: POST `/ndid/add_domain_error_code`: Add error code for specified domain.
+    - New API: POST `/ndid/remove_domain_error_code`: Remove error code for specified domain.
+- New MQ message types for Your Data request:
+  - `yourdata_data_request`
+  - `yourdata_as_response`
+  - `yourdata_decryption_key_request`
+  - `yourdata_data_decryption_key_response`
+  - `yourdata_status_sync`
+  - `yourdata_decryption_key_retry_request`
+  - `yourdata_data_decryption_key_retry_response`
 
 IMPROVEMENTS:
 
