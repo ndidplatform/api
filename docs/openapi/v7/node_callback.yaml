@@ -25,7 +25,7 @@ paths:
         '200':
           description: successful, returning encrypted message in the response body
           content:
-            '*/*':
+            application/json:
               schema:
                 type: object
                 properties:
@@ -46,7 +46,7 @@ paths:
         '200':
           description: successful, returning signature in the response body
           content:
-            '*/*':
+            application/json:
               schema:
                 type: object
                 properties:
@@ -67,7 +67,7 @@ paths:
         '200':
           description: successful, returning signature in the response body
           content:
-            '*/*':
+            application/json:
               schema:
                 type: object
                 properties:

@@ -1,0 +1,1069 @@
+openapi: 3.0.3
+info:
+  title: Identity API
+  description: Identity Management API Spec
+  version: '7.0'
+servers:
+  - url: http://localhost:8100
+    description: Local IdP API server
+paths:
+  /identity:
+    post:
+      summary: Create Identity Record
+      description: IDP calls this method to create a new identity
+      operationId: create_identity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Identity'
+        description: >-
+          Identity data needed to create identity.  Please note that
+          'namespace', 'identifier', and 'secret' are not stored directly. 
+          Rather, Hash(namespace, identifier, secret) are created and stored. 
+          Secret is not shared with any other IDP, rather is used by each IDP to
+          prove it knows this person after having been granted permission to
+          access this Identity.  In addition, this method provide privacy across
+          IDP, as each IDP does not know what other IDP knows about this same
+          person if IDP does not know the secret.
+        required: true
+      responses:
+        '202':
+          description: Identity Creation Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentityResponse'
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /identity/{namespace}/{identifier}:
+    get:
+      summary: Get identity info by namespace/identifier
+      description: ''
+      operationId: get_identity_info
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ID exist on platform
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - reference_group_code
+                properties:
+                  reference_group_code:
+                    type: string
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ID not found
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Submit new identities for {namespace}/{identifier}
+      description: ''
+      operationId: add_identifier
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Identifiers'
+        description: Additional identifiers for this ID to add
+        required: true
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    description: >-
+                      Present only if consent request is needed (user has been
+                      onboarded with mode 3 at other IdP(s) before)
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /identity/{namespace}/{identifier}/ial:
+    get:
+      summary: Get identity IAL
+      description: ''
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          description: Node ID of identity
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Identity exists
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ial
+                properties:
+                  ial:
+                    type: number
+                    enum:
+                      - 1.1
+                      - 1.2
+                      - 1.3
+                      - 2.1
+                      - 2.2
+                      - 2.3
+                      - 3
+        '404':
+          description: >-
+            Error: Identity has not been onboarded at input IdP (node_id) or
+            identity does not exist
+    post:
+      summary: Update identity IAL
+      description: ''
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - callback_url
+                - reference_id
+                - ial
+              properties:
+                node_id:
+                  type: string
+                  description: Call this API as node ID
+                callback_url:
+                  type: string
+                reference_id:
+                  type: string
+                ial:
+                  type: number
+                  enum:
+                    - 1.1
+                    - 1.2
+                    - 1.3
+                    - 2.1
+                    - 2.2
+                    - 2.3
+                    - 3
+        description: New ial
+        required: true
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /identity/{namespace}/{identifier}/lial:
+    get:
+      summary: Get identity LIAL
+      description: ''
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          description: Node ID of identity
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Identity exists
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - lial
+                properties:
+                  lial:
+                    type: boolean
+        '404':
+          description: >-
+            Error: Identity has not been onboarded at input IdP (node_id) or
+            identity does not exist
+    post:
+      summary: Update identity LIAL
+      description: ''
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - callback_url
+                - reference_id
+                - lial
+              properties:
+                node_id:
+                  type: string
+                  description: Call this API as node ID
+                callback_url:
+                  type: string
+                reference_id:
+                  type: string
+                lial:
+                  type: boolean
+        description: New LIAL
+        required: true
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /identity/{namespace}/{identifier}/laal:
+    get:
+      summary: Get identity LAAL
+      description: ''
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          description: Node ID of identity
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Identity exists
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - laal
+                properties:
+                  lial:
+                    type: boolean
+        '404':
+          description: >-
+            Error: Identity has not been onboarded at input IdP (node_id) or
+            identity does not exist
+    post:
+      summary: Update identity LAAL
+      description: ''
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - callback_url
+                - reference_id
+                - laal
+              properties:
+                node_id:
+                  type: string
+                  description: Call this API as node ID
+                callback_url:
+                  type: string
+                reference_id:
+                  type: string
+                laal:
+                  type: boolean
+        description: New LAAL
+        required: true
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /identity/{namespace}/{identifier}/accessors:
+    post:
+      summary: Add accessor method
+      description: ''
+      operationId: add_accessor_method
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Accessors'
+        description: New accessor
+        required: true
+      responses:
+        '202':
+          description: Accessor request accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - accessor_id
+                properties:
+                  request_id:
+                    type: string
+                    description: Present only if consent request is needed (mode 3)
+                  accessor_id:
+                    type: string
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /identity/{namespace}/{identifier}/association_revoke:
+    post:
+      summary: Revoke identity association from caller IdP
+      description: ''
+      operationId: revoke_identity
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentityAssociationRevoke'
+        description: identity to revoke
+        required: true
+      responses:
+        '202':
+          description: Revoke identity request accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    description: Present only if consent request is needed (mode 3)
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /identity/{namespace}/{identifier}/accessor_revoke:
+    post:
+      summary: Revoke accessor
+      description: ''
+      operationId: revoke_accessor
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessorsRevoke'
+        description: accessor to revoke
+        required: true
+      responses:
+        '202':
+          description: Revoke accessor request accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_id:
+                    type: string
+                    description: Present only if consent request is needed (mode 3)
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /identity/{namespace}/{identifier}/accessor_revoke_and_add:
+    post:
+      summary: Revoke and add accessor
+      description: ''
+      operationId: revoke_and_add_accessor
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessorsRevokeAndAdd'
+        description: accessors to revoke and add
+        required: true
+      responses:
+        '202':
+          description: Revoke and add accessor request accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - accessor_id
+                properties:
+                  request_id:
+                    type: string
+                    description: Present only if consent request is needed (mode 3)
+                  accessor_id:
+                    type: string
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /identity/{namespace}/{identifier}/mode:
+    post:
+      summary: Upgrade identity on IdP mode from mode 2 to mode 3
+      description: ''
+      operationId: upgrade_identity_mode
+      parameters:
+        - name: namespace
+          in: path
+          description: ID Namespace
+          required: true
+          schema:
+            type: string
+        - name: identifier
+          in: path
+          description: Identifier for the ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentityUpgradeMode'
+        description: identity to upgrade mode
+        required: true
+      responses:
+        '202':
+          description: Upgrade identity mode request accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - request_id
+                properties:
+                  request_id:
+                    type: string
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /identity_request/request_close:
+    post:
+      summary: Close an identity request
+      description: >-
+        IdP should close an identity request when it is satisfied with the
+        responses from another IdP. IdP may close an identity request at anytime
+        if it chooses to do so.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - request_id
+                - callback_url
+                - reference_id
+              properties:
+                node_id:
+                  type: string
+                  description: Call this API as node ID
+                request_id:
+                  type: string
+                callback_url:
+                  type: string
+                reference_id:
+                  type: string
+        required: true
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /identity_request/request_references/{reference_id}:
+    get:
+      summary: >-
+        Get request_id for the unfinished (not closed or timed out) create
+        identity request with reference_number
+      description: >-
+        Get request_id for the unfinished (not closed or timed out) create
+        identity request with reference_id -- Only request from this RP will
+        succeed, reference number is not propagated to other nodes.
+      operationId: get_request_id_from_reference_number
+      parameters:
+        - name: reference_id
+          in: path
+          description: reference ID
+          required: true
+          schema:
+            type: string
+        - name: node_id
+          in: query
+          description: Call this API as node ID
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Requests exist
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - request_id
+                properties:
+                  request_id:
+                    type: string
+                  accessor_id:
+                    type: string
+                  revoking_accessor_id:
+                    type: string
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No reference ID in the system
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    IdentityResponse:
+      type: object
+      required:
+        - exist
+        - accessor_id
+      properties:
+        request_id:
+          type: string
+          description: >-
+            Present only if consent request is needed (e.g. mode 3 and user has
+            been onboarded with other IdP before)
+        exist:
+          type: boolean
+          description: Identity exists on platform
+        accessor_id:
+          type: string
+    Identity:
+      type: object
+      required:
+        - reference_id
+        - identity_list
+        - mode
+        - accessor_type
+        - accessor_public_key
+        - ial
+        - callback_url
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        reference_id:
+          type: string
+        identity_list:
+          type: array
+          description: >-
+            If one of an identity in this list belongs to a reference group,
+            other identities will be merged into that reference group. If more
+            than one identities in this list belong to different reference
+            group, error will occur
+          required:
+            - namespace
+            - identifier
+          items:
+            type: object
+            properties:
+              namespace:
+                type: string
+              identifier:
+                type: string
+        mode:
+          type: integer
+          enum:
+            - 2
+            - 3
+        accessor_type:
+          type: string
+          enum:
+            - RSA
+        accessor_public_key:
+          type: string
+        accessor_id:
+          type: string
+          description: If not provided, platform will generate and return
+        callback_url:
+          type: string
+        ial:
+          type: number
+          enum:
+            - 1.1
+            - 1.2
+            - 1.3
+            - 2.1
+            - 2.2
+            - 2.3
+            - 3
+        lial:
+          type: boolean
+        laal:
+          type: boolean
+        request_message:
+          type: string
+          description: >-
+            Data URI is supported for files e.g.
+            'data:application/pdf;base64,Z9msE6b26FZYHbOsifdkZw=='. Should look
+            up for IdP's supported file types first using utility API, Required
+            if consent request is needed.
+    Endorsements:
+      type: object
+      required:
+        - endorsement_type
+        - endorsement_value
+      properties:
+        endorsement_type:
+          type: string
+        endorsement_value:
+          type: string
+    AddEndorsements:
+      type: object
+      required:
+        - reference_id
+        - callback_url
+        - endorsement_type
+        - endorsement_value
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+        endorsement_type:
+          type: string
+        endorsement_value:
+          type: string
+    Identifiers:
+      type: object
+      required:
+        - identity_list
+        - callback_url
+        - reference_id
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        identity_list:
+          type: array
+          items:
+            type: object
+            properties:
+              namespace:
+                type: string
+              identifier:
+                type: string
+        callback_url:
+          type: string
+        reference_id:
+          type: string
+        request_message:
+          type: string
+          description: >-
+            Data URI is supported for files e.g.
+            'data:application/pdf;base64,Z9msE6b26FZYHbOsifdkZw=='. Should look
+            up for IdP's supported file types first using utility API, Required
+            if consent request is needed.
+    Accessors:
+      type: object
+      required:
+        - accessor_type
+        - accessor_public_key
+        - callback_url
+        - reference_id
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        accessor_id:
+          type: string
+          description: If null or empty string, platform will generate and return
+        accessor_type:
+          type: string
+        accessor_public_key:
+          type: string
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+        request_message:
+          type: string
+          description: >-
+            Data URI is supported for files e.g.
+            'data:application/pdf;base64,Z9msE6b26FZYHbOsifdkZw=='. Should look
+            up for IdP's supported file types first using utility API, Required
+            if consent request is needed.
+    IdentityAssociationRevoke:
+      type: object
+      required:
+        - reference_id
+        - callback_url
+        - accessor_id
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+        request_message:
+          type: string
+          description: >-
+            Data URI is supported for files e.g.
+            'data:application/pdf;base64,Z9msE6b26FZYHbOsifdkZw=='. Should look
+            up for IdP's supported file types first using utility API, Required
+            if consent request is needed.
+    AccessorsRevoke:
+      type: object
+      required:
+        - reference_id
+        - callback_url
+        - accessor_id
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+        accessor_id:
+          type: string
+        request_message:
+          type: string
+          description: >-
+            Data URI is supported for files e.g.
+            'data:application/pdf;base64,Z9msE6b26FZYHbOsifdkZw=='. Should look
+            up for IdP's supported file types first using utility API, Required
+            if consent request is needed.
+    AccessorsRevokeAndAdd:
+      type: object
+      required:
+        - reference_id
+        - callback_url
+        - revoking_accessor_id
+        - accessor_type
+        - accessor_public_key
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+        revoking_accessor_id:
+          type: string
+        accessor_id:
+          type: string
+          description: If null or empty string, platform will generate and return
+        accessor_type:
+          type: string
+        accessor_public_key:
+          type: string
+        request_message:
+          type: string
+          description: >-
+            Data URI is supported for files e.g.
+            'data:application/pdf;base64,Z9msE6b26FZYHbOsifdkZw=='. Should look
+            up for IdP's supported file types first using utility API, Required
+            if consent request is needed.
+    IdentityUpgradeMode:
+      type: object
+      required:
+        - reference_id
+        - callback_url
+        - accessor_id
+      properties:
+        node_id:
+          type: string
+          description: Call this API as node ID
+        reference_id:
+          type: string
+        callback_url:
+          type: string
+        request_message:
+          type: string
+          description: >-
+            Data URI is supported for files e.g.
+            'data:application/pdf;base64,Z9msE6b26FZYHbOsifdkZw=='. Should look
+            up for IdP's supported file types first using utility API, Required
+            if consent request is needed.
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: number
+            message:
+              type: string

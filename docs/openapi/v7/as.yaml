@@ -27,7 +27,7 @@ paths:
         '200':
           description: Service Found
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/ASServices'
         '404':
@@ -36,13 +36,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
     post:
@@ -58,7 +58,7 @@ paths:
       requestBody:
         description: Service info
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/AddUpdateASServices'
         required: true
@@ -69,13 +69,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -99,7 +99,7 @@ paths:
       requestBody:
         description: Payment Received Log
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/PaymentReceivedLogMessage'
         required: true
@@ -110,13 +110,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -133,7 +133,7 @@ paths:
       requestBody:
         description: Additional info for AS pricing
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/ASPricing'
         required: true
@@ -144,13 +144,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -174,7 +174,7 @@ paths:
       requestBody:
         description: Data
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/DataMessage'
         required: true
@@ -185,13 +185,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -215,7 +215,7 @@ paths:
       requestBody:
         description: Error Response
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/ErrorResponse'
         required: true
@@ -226,13 +226,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -244,7 +244,7 @@ paths:
         '200':
           description: Callback URLs
           content:
-            '*/*':
+            application/json:
               schema:
                 type: object
                 properties:
@@ -262,13 +262,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
     post:
@@ -277,7 +277,7 @@ paths:
       requestBody:
         description: Callback URL endpoints
         content:
-          '*/*':
+          application/json:
             schema:
               type: object
               properties:
@@ -298,13 +298,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 

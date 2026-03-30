@@ -53,7 +53,7 @@ paths:
         '200':
           description: IDP found
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
@@ -61,13 +61,13 @@ paths:
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -128,7 +128,7 @@ paths:
         '200':
           description: IDP found
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
@@ -136,13 +136,13 @@ paths:
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -161,7 +161,7 @@ paths:
         '200':
           description: Service ID found
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
@@ -169,7 +169,7 @@ paths:
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -177,7 +177,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -201,13 +201,13 @@ paths:
         '200':
           description: Service price list
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/ASPrice'
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -215,7 +215,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -233,13 +233,13 @@ paths:
         '200':
           description: Price ceiling list
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/PriceCeiling'
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -247,7 +247,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -264,13 +264,13 @@ paths:
         '200':
           description: Price ceiling list
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/PriceMinEffectiveDatetimeDelay'
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -278,7 +278,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -298,13 +298,13 @@ paths:
         '200':
           description: Requests Exist
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/RequestsStatus'
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -312,7 +312,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -332,7 +332,7 @@ paths:
         '200':
           description: Accessor found
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/AccessorKeyInfo'
         '404':
@@ -340,7 +340,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -359,7 +359,7 @@ paths:
         '200':
           description: Node ID found
           content:
-            'application/json':
+            application/json:
               schema:
                 required:
                   - amount
@@ -370,7 +370,7 @@ paths:
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -378,7 +378,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -397,13 +397,13 @@ paths:
         '200':
           description: Node ID found
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/NodeInfo'
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -411,7 +411,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -430,13 +430,13 @@ paths:
         '200':
           description: Node ID found
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/NodePublicKeys'
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -444,7 +444,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -456,7 +456,7 @@ paths:
         '200':
           description: Namespace list
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
@@ -478,13 +478,13 @@ paths:
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -513,7 +513,7 @@ paths:
         '200':
           description: Service list
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
@@ -537,13 +537,13 @@ paths:
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -562,7 +562,7 @@ paths:
         '200':
           description: Service details
           content:
-            'application/json':
+            application/json:
               schema:
                 type: object
                 required:
@@ -588,7 +588,7 @@ paths:
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -596,7 +596,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -608,7 +608,7 @@ paths:
         '200':
           description: Error code list
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
@@ -624,13 +624,13 @@ paths:
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -642,7 +642,7 @@ paths:
         '200':
           description: Error code list
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
@@ -658,13 +658,13 @@ paths:
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -689,7 +689,7 @@ paths:
         '200':
           description: Messages received from MQ (see InboundPrivateMessage and OutboundPrivateMessage schemas for more details)
           content:
-            'application/json':
+            application/json:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/InboundPrivateMessage'
@@ -738,13 +738,13 @@ paths:
         '200':
           description: Message Exist
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Message'
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -752,7 +752,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -765,7 +765,7 @@ paths:
         '200':
           description: All valid request type list
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
@@ -773,13 +773,13 @@ paths:
         '400':
           description: Client error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -799,7 +799,7 @@ paths:
         '200':
           description: All suppressed identity modification notification node ID list
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
@@ -809,7 +809,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -829,7 +829,7 @@ paths:
         '200':
           description: Suppressed identity modification notification status
           content:
-            'application/json':
+            application/json:
               schema:
                 type: object
                 required:
@@ -842,7 +842,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -855,7 +855,7 @@ paths:
         '200':
           description: All node supported features
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
@@ -866,7 +866,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -879,7 +879,7 @@ paths:
         '200':
           description: All supported IAL list
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
@@ -897,7 +897,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -910,7 +910,7 @@ paths:
         '200':
           description: All supported AAL list
           content:
-            'application/json':
+            application/json:
               schema:
                 type: array
                 items:
@@ -925,7 +925,7 @@ paths:
         '500':
           description: Server error
           content:
-            'application/json':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 

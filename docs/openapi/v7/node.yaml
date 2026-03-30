@@ -23,7 +23,7 @@ paths:
         unique.
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/node_data'
         required: true
@@ -34,13 +34,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -52,7 +52,7 @@ paths:
         types
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/node_data_for_update'
         required: true
@@ -63,13 +63,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -80,13 +80,13 @@ paths:
         '200':
           description: Query Successful
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/CallbackUrls'
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -95,7 +95,7 @@ paths:
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
     post:
@@ -107,7 +107,7 @@ paths:
         set - only set present properties)
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: object
               properties:
@@ -127,13 +127,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 

@@ -15,7 +15,7 @@ paths:
         '200':
           description: Callback URLs
           content:
-            '*/*':
+            application/json:
               schema:
                 type: object
                 properties:
@@ -30,13 +30,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
     post:
@@ -45,7 +45,7 @@ paths:
       requestBody:
         description: Callback URL endpoints
         content:
-          '*/*':
+          application/json:
             schema:
               type: object
               properties:
@@ -62,13 +62,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 

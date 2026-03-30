@@ -27,7 +27,7 @@ paths:
       requestBody:
         description: Additional identifiers for this ID to add
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Requests'
         required: true
@@ -35,7 +35,7 @@ paths:
         '202':
           description: Request Accepted - Async processing, wait for result at callback URL
           content:
-            '*/*':
+            application/json:
               schema:
                 type: object
                 properties:
@@ -48,13 +48,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -79,7 +79,7 @@ paths:
         '200':
           description: Requests exist
           content:
-            '*/*':
+            application/json:
               schema:
                 required:
                   - request_id
@@ -90,7 +90,7 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -99,7 +99,7 @@ paths:
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -123,7 +123,7 @@ paths:
         '200':
           description: Data found
           content:
-            '*/*':
+            application/json:
               schema:
                 type: array
                 items:
@@ -131,7 +131,7 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -140,7 +140,7 @@ paths:
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -156,7 +156,7 @@ paths:
             type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: object
               properties:
@@ -171,13 +171,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -186,7 +186,7 @@ paths:
       summary: Delete ALL Data requested from AS
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: object
               properties:
@@ -201,13 +201,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -217,7 +217,7 @@ paths:
       description: RP should close a request when it is satisfied with the responses from IdP and/or the data received from AS. RP may close a request at anytime if it chooses to do so.
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               required:
                 - callback_url
@@ -242,13 +242,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -259,7 +259,7 @@ paths:
       requestBody:
         description: Message to add
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Message'
         required: true
@@ -267,7 +267,7 @@ paths:
         '202':
           description: Message Accepted
           content:
-            '*/*':
+            application/json:
               schema:
                 type: object
                 properties:
@@ -280,13 +280,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -298,7 +298,7 @@ paths:
         '200':
           description: Callback URLs
           content:
-            '*/*':
+            application/json:
               schema:
                 type: object
                 properties:
@@ -308,7 +308,7 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
@@ -317,7 +317,7 @@ paths:
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
     post:
@@ -326,7 +326,7 @@ paths:
       requestBody:
         description: Callback URL endpoints
         content:
-          '*/*':
+          application/json:
             schema:
               type: object
               properties:
@@ -341,13 +341,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 

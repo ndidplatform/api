@@ -1,11 +1,11 @@
 openapi: 3.0.3
 info:
   title: Identity Provider API
-  description: API for IDP specific roles
+  description: API for IdP specific roles
   version: '7.0'
 servers:
   - url: http://localhost:8100
-    description: Local RP API server
+    description: Local IdP API server
 paths:
   /idp/callback:
     get:
@@ -15,7 +15,7 @@ paths:
         '200':
           description: Callback URLs
           content:
-            '*/*':
+            application/json:
               schema:
                 type: object
                 properties:
@@ -40,13 +40,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
     post:
@@ -56,7 +56,7 @@ paths:
       requestBody:
         description: Callback URL endpoints
         content:
-          '*/*':
+          application/json:
             schema:
               type: object
               properties:
@@ -83,13 +83,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -121,19 +121,19 @@ paths:
         '200':
           description: OK
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/RequestMessagePaddedHash'
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -144,7 +144,7 @@ paths:
       requestBody:
         description: IdP response
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/IDPResponse'
         required: true
@@ -155,13 +155,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
@@ -172,7 +172,7 @@ paths:
       requestBody:
         description: IdP response
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/IDPErrorResponse'
         required: true
@@ -183,13 +183,13 @@ paths:
         '400':
           description: Client error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Server error
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 

@@ -32,7 +32,7 @@ paths:
         '200':
           description: Response with data
           content:
-            '*/*':
+            application/json:
               schema:
                 type: object
                 properties:
