@@ -61,6 +61,8 @@ const trueBase64 = Buffer.from('true').toString('base64');
 
 export const tendermintWsClient = new TendermintWsClient('main', false);
 
+let receivedNewBlockEventCount = 0;
+
 let handleTendermintNewBlock;
 
 let processingBlocks = {};
@@ -668,6 +670,23 @@ async function handleNewBlockEvent(error, result) {
       err: error,
     });
     return;
+  }
+
+  // NOTE: workaround for memory leak issue on websocket server (CometBFT) side.
+  // https://github.com/cometbft/cometbft/blob/v0.38.21/rpc/core/events.go#L61-L62
+  //
+  // Force websocket reconnect after receiving some number of events to have websocket server
+  // clears out context's cancel() defer calls (on function return) freeing memory back to the OS.
+  receivedNewBlockEventCount++;
+  if (
+    receivedNewBlockEventCount >=
+    config.forceWsReconnectReceivedNewBlockEventCountThreshold
+  ) {
+    logger.debug({
+      message: 'Forcing WS reconnect',
+    });
+    receivedNewBlockEventCount = 0;
+    tendermintWsClient.forceReconnect();
   }
 
   if (syncing !== false) {

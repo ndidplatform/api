@@ -41,6 +41,7 @@ export default class TendermintWsClient extends EventEmitter {
     this.connected = false;
     // this.isAlive = false;
     this.reconnect = true;
+    this.reconnectImmediately = false;
     this.rpcId = 0;
     this.queue = [];
     this.backoff = new ExponentialBackoff({
@@ -117,7 +118,10 @@ export default class TendermintWsClient extends EventEmitter {
       clearTimeout(this.pingTimeoutFn);
       this.pingTimeoutFn = null;
 
-      if (this.reconnect) {
+      if (this.reconnectImmediately) {
+        this.reconnectImmediately = false;
+        this.connect();
+      } else if (this.reconnect) {
         // Try reconnect
         const backoffTime = this.backoff.next();
         logger.debug({
@@ -291,6 +295,12 @@ export default class TendermintWsClient extends EventEmitter {
     this.reconnect = false;
     clearTimeout(this.reconnectTimeoutFn);
     this.reconnectTimeoutFn = null;
+    this.ws.close();
+  }
+
+  forceReconnect() {
+    if (!this.ws) return;
+    this.reconnectImmediately = true;
     this.ws.close();
   }
 
