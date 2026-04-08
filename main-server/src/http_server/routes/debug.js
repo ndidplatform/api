@@ -28,6 +28,7 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
 import * as config from '../../config';
+import * as testConfig from '../../test_config';
 
 const router = express.Router();
 
@@ -101,6 +102,25 @@ router.get('/error_callback_test/as', async (req, res) => {
   try {
     await testErrorCallback('as.getErrorCallbackUrl');
     res.status(204).end();
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+router.post('/set_test_config', async (req, res) => {
+  const newTestConfig = req.body;
+  try {
+    testConfig.setTestConfig(newTestConfig);
+    res.status(204).end();
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+router.post('/get_test_config', async (req, res) => {
+  try {
+    const result = testConfig.getTestConfig();
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).send(error);
   }

@@ -45,6 +45,7 @@ import TelemetryLogger, { YOURDATA_REQUEST_EVENTS } from '../../../telemetry';
 import logger from '../../../logger';
 
 import * as config from '../../../config';
+import * as testConfig from '../../../test_config';
 
 export async function processMessage(nodeId, messageId, message) {
   const requestId = message.request_id;
@@ -215,6 +216,12 @@ async function processASResponse(nodeId, message) {
       packed_data,
       data_for_retry,
     });
+
+    // FOR TESTING ONLY
+    // stop processing here (don't request for data decryption key), to test data decryption key retry request
+    if (testConfig.getDoNotRequestForYourDataDataDecryptionKeyConfig()) {
+      return;
+    }
 
     const encryptedPackedDataBuffer = Buffer.from(
       packed_data.buffer_base64,

@@ -51,6 +51,8 @@ import * as jwtUtils from '../../../utils/jwt';
 import TelemetryLogger, { YOURDATA_REQUEST_EVENTS } from '../../../telemetry';
 import logger from '../../../logger';
 
+import * as testConfig from '../../../test_config';
+
 export async function processMessage(nodeId, messageId, message) {
   const requestId = message.request_id;
   logger.debug({
@@ -892,6 +894,12 @@ async function processDataDecryptionKeyRetryRequest(nodeId, message) {
     rp_node_id: requesterNodeId,
     data_for_retry: dataForRetry,
   } = message;
+
+  // FOR TESTING ONLY
+  // stop processing here (don't process data decryption key retry request), to test data decryption key retry request timeout
+  if (testConfig.getDoNotProcessYourDataDataDecryptionKeyRetryRequestConfig()) {
+    return;
+  }
 
   // check request is still active / not timed out yet
   // -> get request data from cache if not exist assume timed out
