@@ -50,7 +50,6 @@ import * as config from './config';
 
 const MQ_SEND_TIMEOUT = 60000; // 1 min
 const MQ_SEND_TOTAL_TIMEOUT = 600000; // 10 min
-const MQ_RECV_MAX_MESSAGE_SIZE = 3300000; // in bytes
 
 let mqSend;
 let mqRecv;
@@ -207,7 +206,7 @@ async function initialize() {
   mqRecv = new MQRecv({
     senderId: config.nodeId,
     port: config.mqPort,
-    maxMsgSize: MQ_RECV_MAX_MESSAGE_SIZE,
+    maxMsgSize: config.maxMqReceivingMessageSize,
   });
 
   mqRecv.on('message', ({ message, msgId, senderId, sendAck }) => {

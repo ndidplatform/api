@@ -56,6 +56,7 @@
 - `SERVER_PORT`: gRPC server port [Default: `50051`]
 - `MAX_CONCURRENT_MESSAGES_PER_MQ_SOCKET`: Maximum concurrent messages for each MQ sending socket [Default: `16`]
 - `MAX_MQ_SOCKET`: Maximum limit for MQ sending sockets [Default: `10000`]
+- `MAX_MQ_RECV_MESSAGE_SIZE`: Maximum inbound message size (in bytes) on receiving socket [Default: `3300000` (~3.3MB)]
 - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds [Default: `300000`]
 - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds [Default: `20000`]
 <!-- - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than `GRPC_PING_INTERVAL_MS` config on API server pair. [Default: `30000`] -->
@@ -135,6 +136,8 @@
 - `AUTO_CLOSE_REQUEST_ON_COMPLICATED`: Automatically close a request as soon as status is `complicated` (and when all IdP response signatures are valid in mode 2 and 3). (For RP role) [Default: `false`]
 - `AUTO_CLOSE_REQUEST_ON_ERRORED`: Automatically close a request as soon as status is `errored`. (For RP role) [Default: `true`]
 - `AS_DATA_COMPRESS_MIN_LENGTH`: Minimum AS response data (to send over P2P/MQ) length in bytes to compress [Default: `1000`]
+- `AS_DATA_MAX_UNCOMPRESSED_LENGTH`: Maximum AS response data size (in bytes) when uncompressed (before compression / after decompression). This configuration should be the same on both sending and receiving parties. [Default: `10485760` (10 x 1024 x 1024 = 10MB)]
+- `AS_DATA_MAX_LENGTH`: Maximum AS response data size (in bytes) (after compression if compressed). This value should be less than `MAX_MQ_RECV_MESSAGE_SIZE` in MQ service configuration on receiving side (RP and proxy of RP). [Default: `3145728` (3 x 1024 x 1024 = 3MB)]
 - `HTTPS`: Use HTTPS server [Default: `false`]
 - `HTTPS_KEY_PATH`: HTTPS private key file path. Required when HTTPS=true [Default: pre-generated development key]
 - `HTTPS_CERT_PATH`: HTTPS certificate file path. Required when HTTPS=true [Default: pre-generated development cert]
