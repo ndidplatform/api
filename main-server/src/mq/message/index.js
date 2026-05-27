@@ -146,7 +146,7 @@ export async function deserializeMqMessage(
       throw new Error('Unsupported message compression algorithm');
     }
     uncompressedMessageBuffer = await unzip(messageBuffer, {
-      // Prevent large uncompressed file that is able to compressed to <= 3MB
+      // Prevent large uncompressed data that is able to compressed to small size
       maxOutputLength: config.mqMessageMaxUncompressedLength,
     });
   } else {

@@ -99,6 +99,8 @@
 - `MQ_SERVICE_SERVER_PORT`: Port of MQ service server [Default: `50051`]
 - `COMPRESS_MQ_MESSAGE`: Compress MQ message before sending to other nodes [Default: `false`]
 - `MQ_MESSAGE_COMPRESS_MIN_LENGTH`: Minimum message (to send over MQ) length in bytes to compress [Default: `1000`]
+- `MAX_MQ_MESSAGE_UNCOMPRESSED_LENGTH`: Maximum MQ message size (in bytes) when uncompressed (before compression / after decompression). This configuration should be the same on both sending and receiving parties. [Default: `26214400` (25 x 1024 x 1024 = 25MB)]
+- `MAX_MQ_MESSAGE_LENGTH`: Maximum MQ message size (in bytes) (after compression if compressed). This value must be less than `MAX_MQ_RECV_MESSAGE_SIZE` in MQ service configuration on receiving side. [Default: `3251200` (3175 x 1024 = 3.1MB)]
 - `SERVER_PORT`: API server port [Default: `8080`]
 - `PRIVATE_KEY_PATH`: Path to node's private key (if call back to create signature is not set) [Default: use pre-generated development key in development mode] (Deprecated. Use `SIGNING_PRIVATE_KEY_PATH` and `ENCRYPTION_PRIVATE_KEY_PATH` instead.)
 - `PRIVATE_KEY_PASSPHRASE`: Passphrase for node's private key (Deprecated. Use `SIGNING_PRIVATE_KEY_PASSPHRASE` and `ENCRYPTION_PRIVATE_KEY_PASSPHRASE` instead.)
@@ -137,7 +139,7 @@
 - `AUTO_CLOSE_REQUEST_ON_ERRORED`: Automatically close a request as soon as status is `errored`. (For RP role) [Default: `true`]
 - `AS_DATA_COMPRESS_MIN_LENGTH`: Minimum AS response data (to send over P2P/MQ) length in bytes to compress [Default: `1000`]
 - `AS_DATA_MAX_UNCOMPRESSED_LENGTH`: Maximum AS response data size (in bytes) when uncompressed (before compression / after decompression). This configuration should be the same on both sending and receiving parties. [Default: `10485760` (10 x 1024 x 1024 = 10MB)]
-- `AS_DATA_MAX_LENGTH`: Maximum AS response data size (in bytes) (after compression if compressed). This value should be less than `MAX_MQ_RECV_MESSAGE_SIZE` in MQ service configuration on receiving side (RP and proxy of RP). [Default: `3145728` (3 x 1024 x 1024 = 3MB)]
+- `AS_DATA_MAX_LENGTH`: Maximum AS response data size (in bytes) (after compression if compressed). This value must be less than `MAX_MQ_MESSAGE_LENGTH` to leave sufficient headroom for the rest of the message payload. [Default: `3145728` (3 x 1024 x 1024 = 3MB)]
 - `HTTPS`: Use HTTPS server [Default: `false`]
 - `HTTPS_KEY_PATH`: HTTPS private key file path. Required when HTTPS=true [Default: pre-generated development key]
 - `HTTPS_CERT_PATH`: HTTPS certificate file path. Required when HTTPS=true [Default: pre-generated development cert]

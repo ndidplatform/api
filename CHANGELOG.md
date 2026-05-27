@@ -7,8 +7,10 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 IMPROVEMENTS:
 
 - [Main] Add new environment variable options
+  - `MAX_MQ_MESSAGE_UNCOMPRESSED_LENGTH`: Maximum MQ message size (in bytes) when uncompressed (before compression / after decompression). This configuration should be the same on both sending and receiving parties. Default to `26214400` (25MB).
+  - `MAX_MQ_MESSAGE_LENGTH`: Maximum MQ message size (in bytes) (after compression if compressed). This value must be less than `MAX_MQ_RECV_MESSAGE_SIZE` in MQ service configuration on receiving side. Default to `3251200` (3.1MB).
   - `AS_DATA_MAX_UNCOMPRESSED_LENGTH`: Maximum AS response data size (in bytes) when uncompressed (before compression / after decompression). This configuration should be the same on both sending and receiving parties. Default to `10485760` (10MB).
-  - `AS_DATA_MAX_LENGTH`: Maximum AS response data size (in bytes) (after compression if compressed). This value should be less than `MAX_MQ_RECV_MESSAGE_SIZE` in MQ service configuration on receiving side (RP and proxy of RP). Default to `3145728` (3MB).
+  - `AS_DATA_MAX_LENGTH`: Maximum AS response data size (in bytes) (after compression if compressed). This value must be less than `MAX_MQ_MESSAGE_LENGTH` to leave sufficient headroom for the rest of the message payload. Default to `3145728` (3MB).
 - [MQ Service] Add new environment variable options
   - `MAX_MQ_RECV_MESSAGE_SIZE`: Maximum inbound message size (in bytes) on receiving socket. Default to `3300000`.
 
