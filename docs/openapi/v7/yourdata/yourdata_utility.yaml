@@ -72,24 +72,7 @@ paths:
 
 components:
   schemas:
-    YourDataConsentToken:
-      type: object
-      properties:
-        header:
-          type: object
-          properties:
-            alg:
-              type: string
-              example: 'HS256'
-            typ:
-              type: string
-              example: 'JWT'
-        payload:
-          $ref: '#/components/schemas/YourDataConsentTokenBody'
-        secret:
-          type: string
-
-    YourDataConsentTokenBody:
+    YourDataConsentTokenPayload:
       type: object
       description: >-
         This is part of JWT token (Payload part)
@@ -172,7 +155,6 @@ components:
           type: boolean
           description: >-
             For YourData, set to "True" if checking permission (in list) is needed
-
         usage_type:
           type: string
           enum:
@@ -270,7 +252,6 @@ components:
           type: boolean
           description: >-
             For YourData, set to "True" if checking permission (in list) is needed
-
         usage_type:
           type: string
           enum:
@@ -292,7 +273,7 @@ components:
         token:
           type: string
           description: >-
-            Signed JWT
+            Signed JWT. Refer to YourDataConsentTokenPayload for payload schema
 
     ErrorCodeList:
       type: array
