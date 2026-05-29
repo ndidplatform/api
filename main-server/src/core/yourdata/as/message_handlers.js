@@ -427,7 +427,7 @@ async function processDataRequest(nodeId, message) {
   }
 
   // validate data in "authorization"
-  await validateAuthorization({
+  validateAuthorization({
     parsedAuthorizationTokenPayload: parsedJwt.payload,
     requesterNodeId: requester_node_id,
     asNodeId: nodeId,

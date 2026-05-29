@@ -407,7 +407,14 @@ export default {
       request_id: { type: 'string', minLength: 1 },
       service_id: { type: 'string', minLength: 1 },
       service_version: { type: 'string', minLength: 1 },
-      service_extension: { type: 'string', minLength: 1 },
+      service_extension: {
+        type: 'array',
+        items: {
+          type: 'string',
+          minLength: 1,
+        },
+        uniqueItems: true,
+      },
       rp_node_id: { type: 'string', minLength: 1 },
       namespace: { type: 'string', minLength: 1 },
       identifier: { type: 'string', minLength: 1 },

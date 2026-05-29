@@ -160,7 +160,7 @@ export async function createRequest(
     // parse "authorization" JWT payload for subsequent checks
     const parsedJwt = jwtUtils.parseJWT(authorization);
 
-    await validateAuthorization({
+    validateAuthorization({
       parsedAuthorizationTokenPayload: parsedJwt.payload,
       requesterNodeId: node_id,
       asNodeId,

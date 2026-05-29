@@ -956,7 +956,14 @@ export default {
           callback_url: { $ref: 'defs#/definitions/url' },
           service_id: { type: 'string', minLength: 1 },
           service_version: { type: 'string', minLength: 1 },
-          service_extension: { type: 'string', minLength: 1 },
+          service_extension: {
+            type: 'array',
+            items: {
+              type: 'string',
+              minLength: 1,
+            },
+            uniqueItems: true,
+          },
           as_node_id: { type: 'string', minLength: 1 },
           namespace: { type: 'string', minLength: 1 },
           identifier: { type: 'string', minLength: 1 },
@@ -1162,6 +1169,7 @@ export default {
                 service_extension: {
                   type: 'array',
                   items: { type: 'string', minLength: 1 },
+                  uniqueItems: true,
                 },
               },
               required: [

@@ -31,14 +31,14 @@ export const USAGE_TYPE = {
   CONTINUOUS_NO_EXPIRE: 'continuous_no_expire',
 };
 
-export async function validateAuthorization({
+export function validateAuthorization({
   parsedAuthorizationTokenPayload: payload,
   requesterNodeId,
   asNodeId,
   namespace,
   identifier,
   serviceId,
-  serviceExtension,
+  serviceExtension, // array of string
 }) {
   // if "usage_type" is not "continuous_no_expire", check if it is not yet expired using "expiration_datetime"
   if (payload.usage_type !== USAGE_TYPE.CONTINUOUS_NO_EXPIRE) {
@@ -118,17 +118,13 @@ export async function validateAuthorization({
       });
     }
 
-    // if "validate_service_extension" is true, check if "service_extension" in the parameter exists in "service_id_list"."service_extension array
+    // if "validate_service_extension" is true, check if all items in "service_extension" in the parameter exist in "service_id_list"."service_extension array
     // "validate_service_extension" can only be true if and only if "validate_service_id" is true
     if (payload.validate_service_extension) {
-      const matchedServiceExtension = matchedService.service_extension.find(
-        (serviceExt) => {
-          if (serviceExt === serviceExtension) {
-            return true;
-          }
-        }
+      const result = serviceExtension.every((servExt) =>
+        matchedService.service_extension.includes(servExt)
       );
-      if (matchedServiceExtension == null) {
+      if (!result) {
         // no requested "service_extension" in service's service extension list
         throw new CustomError({
           errorType: errorType.REQUESTED_SERVICE_EXTENSION_NOT_FOUND_IN_TOKEN,

@@ -275,11 +275,13 @@ components:
           type: string
           example: 'v1'
         service_extension:
-          type: string
-          example: '[statement-detail]'
+          type: array
+          items:
+            type: string
           description: >-
             Supplement property of this service.
             For YourData = service permission
+          example: ['statement-basic', 'statement-detail']
         as_node_id:
           type: string
           example: 'as1'
