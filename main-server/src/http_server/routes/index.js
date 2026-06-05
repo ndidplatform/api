@@ -24,7 +24,7 @@ import path from 'path';
 import fs from 'fs';
 import express from 'express';
 
-import logger from '../../logger';
+import logger, { redactedLogger, levels } from '../../logger';
 
 import readyHandler from './middleware/ready_handler';
 import errorHandler from './middleware/error_handler';
@@ -45,15 +45,34 @@ import {
 } from '../../prometheus';
 import debugRouter from './debug';
 
+// import { maskUrl } from '../../utils/masking';
+
 import * as config from '../../config';
 
 const router = express.Router();
 
 // FOR DEBUG
 if (config.env === 'development') {
+  // const logLevelDebugOrHigher =
+  //   levels.labels[config.logLevel] >= levels.labels.debug;
+
   router.use((req, res, next) => {
     const { method, originalUrl, params, query, body } = req;
-    logger.debug({
+
+    // const maskedOriginalUrl =
+    //   config.logRedactSensitiveData && logLevelDebugOrHigher
+    //     ? maskUrl(originalUrl)
+    //     : originalUrl;
+
+    redactedLogger.debug({
+      message: 'Incoming HTTP request',
+      method,
+      originalUrl,
+      params,
+      query,
+      body,
+    });
+    logger.trace({
       message: 'Incoming HTTP request',
       method,
       originalUrl,
@@ -82,7 +101,14 @@ if (config.env === 'development') {
         }
       }
 
-      logger.debug({
+      redactedLogger.debug({
+        message: 'Outgoing HTTP response',
+        method,
+        originalUrl,
+        status: res.statusCode,
+        body: responseBody,
+      });
+      logger.trace({
         message: 'Outgoing HTTP response',
         method,
         originalUrl,

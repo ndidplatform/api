@@ -33,7 +33,7 @@ import errorType from 'ndid-error/type';
 import * as utils from '../../utils';
 import * as cryptoUtils from '../../utils/crypto';
 import { callbackToClient } from '../../callback';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 import * as config from '../../config';
@@ -145,9 +145,8 @@ function checkReceiverIntegrity({
   });
 
   for (let i = 0; i < requestFromBlockchain.data_request_list.length; i++) {
-    const { as_id_list, service_id } = requestFromBlockchain.data_request_list[
-      i
-    ];
+    const { as_id_list, service_id } =
+      requestFromBlockchain.data_request_list[i];
     if (!concernedServiceIdList[service_id]) continue;
 
     const filterAsList = as_id_list.filter((node_id) => {
@@ -306,7 +305,11 @@ export async function afterGotDataFromCallback(
       logger.info({
         message: 'Received data from AS',
       });
-      logger.debug({
+      redactedLogger.debug({
+        message: 'Data from AS',
+        result,
+      });
+      logger.trace({
         message: 'Data from AS',
         result,
       });
@@ -377,7 +380,13 @@ async function getDataAndSendBackToRP(
 ) {
   // Platform→AS
   // The AS replies with the requested data
-  logger.debug({
+  redactedLogger.debug({
+    message: 'AS process request for data',
+    request,
+    requestDetail,
+    responseDetails,
+  });
+  logger.trace({
     message: 'AS process request for data',
     request,
     requestDetail,
@@ -407,7 +416,12 @@ async function getDataAndSendBackToRP(
       logger.info({
         message: 'Sending callback to AS',
       });
-      logger.debug({
+      redactedLogger.debug({
+        message: 'Callback to AS',
+        service_id,
+        request_params,
+      });
+      logger.trace({
         message: 'Callback to AS',
         service_id,
         request_params,
@@ -486,11 +500,8 @@ async function getResponseDetails(requestId) {
 
 function checkServiceRequestParamsIntegrity(requestId, request, requestDetail) {
   for (let i = 0; i < request.service_data_request_list.length; i++) {
-    const {
-      service_id,
-      request_params,
-      request_params_salt,
-    } = request.service_data_request_list[i];
+    const { service_id, request_params, request_params_salt } =
+      request.service_data_request_list[i];
 
     const dataRequest = requestDetail.data_request_list.find(
       (dataRequest) => dataRequest.service_id === service_id
@@ -510,7 +521,6 @@ function checkServiceRequestParamsIntegrity(requestId, request, requestDetail) {
       logger.debug({
         message: 'Request data request params hash mismatched',
         requestId,
-        givenRequestParams: request_params,
         givenRequestParamsHashWithSalt: requestParamsHash,
         requestParamsHashFromBlockchain: dataRequest.request_params_hash,
       });
@@ -587,9 +597,10 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
 
   let valid = true;
   for (let i = 0; i < response_private_data_list.length; i++) {
-    const otherReferenceGroupCode = await tendermintNdid.getReferenceGroupCodeByAccessorId(
-      response_private_data_list[i].accessor_id
-    );
+    const otherReferenceGroupCode =
+      await tendermintNdid.getReferenceGroupCodeByAccessorId(
+        response_private_data_list[i].accessor_id
+      );
     if (otherReferenceGroupCode !== referenceGroupCode) {
       return false;
     }
@@ -611,6 +622,13 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
     );
 
     logger.debug({
+      message: 'Verify signature',
+      signatureValid,
+      accessor_public_key,
+      signature,
+      response_private_data_list,
+    });
+    logger.trace({
       message: 'Verify signature',
       signatureValid,
       request_message,

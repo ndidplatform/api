@@ -21,7 +21,7 @@
  */
 
 import { getFunction } from '../../functions';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
@@ -73,7 +73,7 @@ export async function revokeIdentityAssociationAfterCloseConsentRequest(
         true
       );
     } catch (error) {
-      logger.error({
+      redactedLogger.error({
         message: 'Revoke association error',
         tendermintResult: arguments[0],
         additionalArgs: arguments[1],
@@ -98,7 +98,7 @@ export async function revokeIdentityAssociationAfterCloseConsentRequest(
       }
     }
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Revoke association after close consent request error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],

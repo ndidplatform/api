@@ -29,7 +29,7 @@ import * as tendermint from '../../tendermint';
 import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 import * as tendermintNdid from '../../tendermint/ndid';
@@ -251,9 +251,8 @@ async function processDataForRPInternalAsync(
         service_id: serviceId,
         initial_salt,
       });
-      const signingPublicKey = await tendermintNdid.getNodeSigningPubKey(
-        nodeId
-      );
+      const signingPublicKey =
+        await tendermintNdid.getNodeSigningPubKey(nodeId);
       const signatureBuffer = await utils.createSignature(
         signingPublicKey.algorithm,
         signingPublicKey.version,
@@ -327,7 +326,7 @@ async function processDataForRPInternalAsync(
       );
     }
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Send data to RP internal async error',
       data,
       error_code,
@@ -433,7 +432,7 @@ export async function processDataForRPInternalAsyncAfterBlockchain(
     const dataRequestId = requestId + ':' + serviceId;
     cacheDb.removeRpIdFromDataRequestId(nodeId, dataRequestId);
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Send data to RP internal async after blockchain error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],

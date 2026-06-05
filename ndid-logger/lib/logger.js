@@ -96,6 +96,7 @@ function initLogger(config) {
 
   const logger = pinoms(
     {
+      messageKey: 'message',
       level: config.logLevel,
       // base: {
       //   pid: config.logPid ? process.pid : null,

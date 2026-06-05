@@ -34,7 +34,7 @@ import { callbackToClient } from '../../callback';
 import privateMessageType from '../../mq/message/type';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 import * as config from '../../config';
@@ -187,7 +187,13 @@ async function getASReceiverList(data_request) {
 }
 
 export async function sendRequestToAS(nodeId, requestData, height) {
-  logger.debug({
+  redactedLogger.debug({
+    message: 'Sending request to AS',
+    nodeId,
+    requestData,
+    height,
+  });
+  logger.trace({
     message: 'Sending request to AS',
     nodeId,
     requestData,

@@ -46,7 +46,7 @@ import { getErrorObjectForClient } from '../../utils/error';
 import { dataUrlRegex } from '../../data_url';
 
 import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 
 import * as config from '../../config';
 import { role } from '../../node';
@@ -736,7 +736,7 @@ export async function createRequest(
       message: 'Cannot create request',
       cause: error,
     });
-    logger.error({ err });
+    redactedLogger.error({ err });
 
     if (
       !(
@@ -891,7 +891,7 @@ async function createRequestInternalAsync(
       );
     }
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Create request internal async error',
       originalArgs: arguments[0],
       options: arguments[1],
@@ -1126,7 +1126,7 @@ export async function createRequestInternalAsyncAfterBlockchain(
       }
     }
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Create request internal async after blockchain error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],

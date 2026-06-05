@@ -22,7 +22,7 @@
 
 import { getFunction } from '../../functions';
 
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
@@ -75,7 +75,7 @@ export async function upgradeIdentityModeAfterCloseConsentRequest(
         true
       );
     } catch (error) {
-      logger.error({
+      redactedLogger.error({
         message: 'Upgrade identity mode error',
         tendermintResult: arguments[0],
         additionalArgs: arguments[1],
@@ -100,7 +100,7 @@ export async function upgradeIdentityModeAfterCloseConsentRequest(
       }
     }
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Upgrade identity mode after close consent request error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],

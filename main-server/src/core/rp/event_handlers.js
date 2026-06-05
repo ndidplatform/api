@@ -32,7 +32,7 @@ import { isYourDataMessageType } from '../../mq/message/type';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 
 import * as config from '../../config';
 
@@ -46,7 +46,11 @@ export async function handleMessageFromQueue(
     messageId,
     nodeId,
   });
-  logger.debug({
+  redactedLogger.debug({
+    message: 'Message from MQ',
+    messageJSON: message,
+  });
+  logger.trace({
     message: 'Message from MQ',
     messageJSON: message,
   });

@@ -22,7 +22,7 @@
 
 import { getFunction } from '../../functions';
 
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
@@ -74,7 +74,7 @@ export async function revokeAccessorAfterCloseConsentRequest(
         true
       );
     } catch (error) {
-      logger.error({
+      redactedLogger.error({
         message: 'Revoke accessor error',
         tendermintResult: arguments[0],
         additionalArgs: arguments[1],
@@ -100,7 +100,7 @@ export async function revokeAccessorAfterCloseConsentRequest(
       }
     }
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Revoke accessor after close consent request error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],

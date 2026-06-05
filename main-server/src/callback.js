@@ -31,7 +31,7 @@ import { delegateToWorker } from './master-worker-interface/server';
 
 import { wait } from './utils';
 import * as cacheDb from './db/cache';
-import logger from './logger';
+import logger, { redactedLogger } from './logger';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getFunction } from './functions';
@@ -90,7 +90,12 @@ async function httpPost(cbId, callbackUrl, body) {
     cbId,
     httpStatusCode: response.status,
   });
-  logger.debug({
+  redactedLogger.debug({
+    message: 'Callback response body',
+    cbId,
+    body: responseBody,
+  });
+  logger.trace({
     message: 'Callback response body',
     cbId,
     body: responseBody,
@@ -185,7 +190,12 @@ async function callbackWithRetry(
         url: _callbackUrl,
         cbId,
       });
-      logger.debug({
+      redactedLogger.debug({
+        message: 'Callback data in body',
+        body,
+        cbId,
+      });
+      logger.trace({
         message: 'Callback data in body',
         body,
         cbId,
@@ -375,7 +385,12 @@ export async function callbackToClient({
         url: callbackUrl,
         cbId,
       });
-      logger.debug({
+      redactedLogger.debug({
+        message: 'Callback data in body',
+        body,
+        cbId,
+      });
+      logger.trace({
         message: 'Callback data in body',
         body,
         cbId,

@@ -28,7 +28,7 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
 import { callbackToClient } from '../../callback';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 
 import * as config from '../../config';
 import { role } from '../../node';
@@ -87,7 +87,7 @@ export async function updateLaal(
       message: "Cannot update identity's LAAL",
       cause: error,
     });
-    logger.error({ err });
+    redactedLogger.error({ err });
     throw err;
   }
 }
@@ -114,7 +114,7 @@ async function updateLaalInternalAsync(
       );
     }
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: "Update identity's LAAL internal async error",
       originalArgs: arguments[0],
       options: arguments[1],

@@ -357,6 +357,11 @@ export async function getAndSaveIdpResponseValid({
 
         logger.debug({
           message: 'Verifying signature',
+          accessor_public_key,
+          signature,
+        });
+        logger.trace({
+          message: 'Verifying signature',
           request_message,
           initial_salt,
           accessor_public_key,

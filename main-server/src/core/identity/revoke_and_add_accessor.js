@@ -36,7 +36,7 @@ import { getErrorObjectForClient } from '../../utils/error';
 import * as utils from '../../utils';
 import { validateAccessorKey } from '../../utils/node_key';
 import { callbackToClient } from '../../callback';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 
 import * as config from '../../config';
 import { role } from '../../node';
@@ -204,7 +204,7 @@ export async function revokeAndAddAccessor(
       message: 'Cannot revoke and add accessor',
       cause: error,
     });
-    logger.error({ err });
+    redactedLogger.error({ err });
 
     if (
       !(
@@ -313,7 +313,7 @@ async function revokeAndAddAccessorInternalAsync(
       );
     }
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Revoke and add accessor internal async error',
       originalArgs: arguments[0],
       additionalArgs: arguments[1],
@@ -371,7 +371,7 @@ export async function revokeAndAddAccessorInternalAsyncAfterCreateRequestBlockch
     // save data for later use after got consent from user (in mode 3)
     await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Revoke accessor internal async after create request error',
       tendermintResult: arguments[0],
       originalArgs: arguments[1],

@@ -25,12 +25,13 @@ import http from 'http';
 import https from 'https';
 import express from 'express';
 import bodyParser from 'body-parser';
-import morgan from 'morgan';
+// import morgan from 'morgan';
+import pinoHttp from 'pino-http';
 
 import routes from './routes';
 import { bodyParserErrorHandler } from './routes/middleware/error_handler';
 
-import logger from '../logger';
+import logger, { redactedLogger } from '../logger';
 
 import * as config from '../config';
 
@@ -43,9 +44,19 @@ export function initialize() {
 
   const app = express();
 
+  // app.use(
+  //   morgan('combined', {
+  //     stream: { write: (message) => logger.info({ message: message.trim() }) },
+  //   })
+  // );
   app.use(
-    morgan('combined', {
-      stream: { write: (message) => logger.info({ message: message.trim() }) },
+    pinoHttp({
+      logger: redactedLogger,
+      customProps: (req, res) => {
+        return {
+          httpVersion: req.httpVersion,
+        };
+      },
     })
   );
 

@@ -22,7 +22,123 @@
 
 import { initLogger } from 'ndid-logger';
 
+import { maskIdentifier, maskUrl } from './utils/masking';
+
 import * as config from './config';
+
+const redactPaths = [
+  'req.url',
+  'originalUrl',
+  //
+  'body.identifier',
+  'body.identity_list[*].identifier',
+  'callbackAdditionalArgs[*].requestData.identifier',
+  'messageObject.identifier',
+  'messageJSON.identifier',
+  'requestData.identifier',
+  'request.identifier',
+  'callbackAdditionalArgs[*].identity.identifier',
+  // in error log
+  'originalArgs.identifier',
+  'additionalArgs.requestData.identifier',
+  'options.callbackAdditionalArgs[*].requestData.identifier',
+  'options.identity.identifier',
+  'additionalArgs.identity.identifier',
+  'additionalArgs.new_identity_list[*].identifier',
+  'options.identity.new_identity_list[*].identifier',
+  'additionalArgs.identity.new_identity_list[*].identifier',
+  'err.cause.details.identifier',
+  //
+  'options.existingIdentifier',
+  //
+  'body.request_message',
+  'callbackAdditionalArgs[*].requestData.request_message',
+  'additionalArgs.requestData.request_message',
+  'options.callbackAdditionalArgs[*].requestData.request_message',
+  'messageObject.request_message',
+  'messageJSON.request_message',
+  'requestData.request_message',
+  'request.request_message',
+  //
+  'body.request_params',
+  'body.data_request_list[*].request_params',
+  'callbackAdditionalArgs[*].requestData.data_request_list[*].request_params',
+  'additionalArgs.requestData.data_request_list[*].request_params',
+  'options.callbackAdditionalArgs[*].requestData.data_request_list[*].request_params',
+  'requestData.data_request_list[*].request_params',
+  'err.cause.details.data_request_list[*].request_params',
+  //
+  'messageObject.service_data_request_list[*].request_params',
+  'messageJSON.service_data_request_list[*].request_params',
+  'request.service_data_request_list[*].request_params',
+  //
+  'messageObject.service_data_request_list[*].request_params_salt',
+  'messageJSON.service_data_request_list[*].request_params_salt',
+  'request.service_data_request_list[*].request_params_salt',
+  //
+  'body.initial_salt',
+  'callbackAdditionalArgs[*].requestData.initial_salt',
+  'additionalArgs.requestData.initial_salt',
+  'options.callbackAdditionalArgs[*].requestData.initial_salt',
+  'messageObject.initial_salt',
+  'messageJSON.initial_salt',
+  'requestData.initial_salt',
+  'request.initial_salt',
+  //
+  'body.request_message_salt',
+  'callbackAdditionalArgs[*].requestData.request_message_salt',
+  'additionalArgs.requestData.request_message_salt',
+  'options.callbackAdditionalArgs[*].requestData.request_message_salt',
+  'messageObject.request_message_salt',
+  'messageJSON.request_message_salt',
+  'requestData.request_message_salt',
+  'request.request_message_salt',
+  //
+  'callbackAdditionalArgs[*].requestData.data_request_params_salt_list[*]',
+  'additionalArgs.requestData.data_request_params_salt_list[*]',
+  'options.callbackAdditionalArgs[*].requestData.data_request_params_salt_list[*]',
+  'messageObject.data_request_params_salt_list[*]',
+  'messageJSON.data_request_params_salt_list[*]',
+  'requestData.data_request_params_salt_list[*]',
+  //
+  'callbackAdditionalArgs[*].data_salt',
+  'additionalArgs.data_salt',
+  'options.callbackAdditionalArgs[*].data_salt',
+  'messageObject.data_salt',
+  'messageJSON.data_salt',
+  'body[*].data_salt',
+  //
+  'callbackAdditionalArgs[*].packedData.buffer_base64',
+  'additionalArgs.packedData.buffer_base64',
+  //
+  'messageObject.packed_data.buffer_base64',
+  'messageJSON.packed_data.buffer_base64',
+  //
+  'body.data',
+  'result.data',
+  'body[*].data',
+  //
+  'body[*].message.identifier',
+  'body[*].message.request_message',
+  'body[*].message.request_message_salt',
+  'body[*].message.initial_salt',
+  'body[*].message.data_request_params_salt_list[*]',
+  'body[*].message.service_data_request_list[*].request_params',
+  'body[*].message.service_data_request_list[*].request_params_salt',
+  'body[*].message.data_salt',
+  'body[*].message.packed_data.buffer_base64',
+];
+
+export const levels = {
+  labels: {
+    trace: 10,
+    debug: 20,
+    info: 30,
+    warn: 40,
+    error: 50,
+    fatal: 60,
+  },
+};
 
 let optionalErrorLogFn;
 
@@ -50,5 +166,28 @@ const logger = initLogger({
   //   }
   // },
 });
+
+export const redactedLogger = config.logRedactSensitiveData
+  ? logger.child(
+      {},
+      {
+        redact: {
+          paths: redactPaths,
+          censor: (value, path) => {
+            if (
+              path[0] === 'originalUrl' ||
+              (path[0] === 'req' && path[1] === 'url')
+            ) {
+              return maskUrl(value);
+            } else if (path[path.length - 1] === 'identifier') {
+              return maskIdentifier(value);
+            }
+
+            return '[REDACTED]';
+          },
+        },
+      }
+    )
+  : logger;
 
 export default logger;

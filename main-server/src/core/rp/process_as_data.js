@@ -27,7 +27,7 @@ import * as cacheDb from '../../db/cache';
 import * as utils from '../../utils';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 import * as config from '../../config';
 
@@ -41,15 +41,12 @@ export async function processAsResponse({
   packedData,
   errorCode,
 }) {
-  logger.debug({
+  redactedLogger.debug({
     message: 'Processing AS data response',
     nodeId,
     requestId,
     serviceId,
     asNodeId,
-    signature,
-    dataSalt,
-    packedData,
     errorCode,
   });
 
@@ -231,9 +228,16 @@ async function verifyDataSignature(asNodeId, signature, salt, data) {
     asNodeId,
     asNodePublicKey: signingPublicKey,
     signature,
+  });
+  logger.trace({
+    message: 'Verifying AS data signature',
+    asNodeId,
+    asNodePublicKey: signingPublicKey,
+    signature,
     salt,
     data,
   });
+
   if (
     !utils.verifySignature(
       signingPublicKey.algorithm,
@@ -250,5 +254,6 @@ async function verifyDataSignature(asNodeId, signature, salt, data) {
     });
     return { valid: false, signingPublicKey };
   }
+
   return { valid: true, signingPublicKey };
 }
