@@ -49,7 +49,7 @@ import * as utils from '../../../utils';
 import * as jwtUtils from '../../../utils/jwt';
 
 import TelemetryLogger, { YOURDATA_REQUEST_EVENTS } from '../../../telemetry';
-import logger from '../../../logger';
+import logger, { redactedLogger } from '../../../logger';
 
 import * as testConfig from '../../../test_config';
 
@@ -458,7 +458,12 @@ async function processDataRequest(nodeId, message) {
   logger.info({
     message: 'Sending callback to AS',
   });
-  logger.debug({
+  redactedLogger.debug({
+    message: 'Callback to AS',
+    service_id,
+    request_params,
+  });
+  logger.trace({
     message: 'Callback to AS',
     service_id,
     request_params,
@@ -525,7 +530,11 @@ export async function afterGotDataFromCallback(
       logger.info({
         message: 'Received data from AS',
       });
-      logger.debug({
+      redactedLogger.debug({
+        message: 'Data from AS',
+        result,
+      });
+      logger.trace({
         message: 'Data from AS',
         result,
       });
