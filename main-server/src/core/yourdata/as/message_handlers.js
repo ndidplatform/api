@@ -463,11 +463,6 @@ async function processDataRequest(nodeId, message) {
     service_id,
     request_params,
   });
-  logger.trace({
-    message: 'Callback to AS',
-    service_id,
-    request_params,
-  });
 
   // AS node -> AS member app / Proxy app
   await callbackToClient({
@@ -531,10 +526,6 @@ export async function afterGotDataFromCallback(
         message: 'Received data from AS',
       });
       redactedLogger.debug({
-        message: 'Data from AS',
-        result,
-      });
-      logger.trace({
         message: 'Data from AS',
         result,
       });
