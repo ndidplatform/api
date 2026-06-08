@@ -29,7 +29,7 @@ import { ExponentialBackoff } from 'simple-backoff';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
-import logger from '../logger';
+import logger, { redactedLogger } from '../logger';
 
 import TelemetryLogger from '../telemetry';
 
@@ -1237,7 +1237,19 @@ export async function transact({
 
   const waitForCommit = !callbackFnName;
 
-  logger.debug({
+  redactedLogger.debug({
+    message: 'Tendermint transact',
+    nodeId,
+    fnName,
+    params,
+    nonce: nonce.toString('base64'),
+    waitForCommit,
+    useMasterKey,
+    callbackFnName,
+    callbackAdditionalArgs,
+    retryCount,
+  });
+  logger.trace({
     message: 'Tendermint transact',
     nodeId,
     fnName,

@@ -64,10 +64,7 @@ export function maskUrl(urlStr) {
 
   if (idIndex !== -1 && segments[idIndex]) {
     const identifier = segments[idIndex];
-    if (identifier.length > 6) {
-      segments[idIndex] =
-        'x'.repeat(identifier.length - 4) + identifier.slice(-4);
-    }
+    segments[idIndex] = maskIdentifier(identifier);
   }
 
   return segments.join('/') + queryString;

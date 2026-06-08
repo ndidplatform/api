@@ -29,7 +29,7 @@ import * as config from './config';
 const redactPaths = [
   'req.url',
   'originalUrl',
-  //
+  // identifier
   'body.identifier',
   'body.identity_list[*].identifier',
   'callbackAdditionalArgs[*].requestData.identifier',
@@ -38,7 +38,9 @@ const redactPaths = [
   'requestData.identifier',
   'request.identifier',
   'callbackAdditionalArgs[*].identity.identifier',
-  // in error log
+  'callbackAdditionalArgs[*].callbackAdditionalArgs[*].identity.identifier',
+  'callbackAdditionalArgs[*].callbackAdditionalArgs[*].identity.identity_list[*].identifier',
+  // (in error log)
   'originalArgs.identifier',
   'additionalArgs.requestData.identifier',
   'options.callbackAdditionalArgs[*].requestData.identifier',
@@ -50,7 +52,8 @@ const redactPaths = [
   'err.cause.details.identifier',
   //
   'options.existingIdentifier',
-  //
+  'err.cause.details.requestIdentifier',
+  // request_message
   'body.request_message',
   'callbackAdditionalArgs[*].requestData.request_message',
   'additionalArgs.requestData.request_message',
@@ -59,32 +62,37 @@ const redactPaths = [
   'messageJSON.request_message',
   'requestData.request_message',
   'request.request_message',
-  //
+  // (in error log)
+  'originalArgs.request_message',
+  // request_params
   'body.request_params',
   'body.data_request_list[*].request_params',
   'callbackAdditionalArgs[*].requestData.data_request_list[*].request_params',
   'additionalArgs.requestData.data_request_list[*].request_params',
   'options.callbackAdditionalArgs[*].requestData.data_request_list[*].request_params',
   'requestData.data_request_list[*].request_params',
+  // (in error log)
+  'originalArgs.data_request_list[*].request_params',
   'err.cause.details.data_request_list[*].request_params',
   //
   'messageObject.service_data_request_list[*].request_params',
   'messageJSON.service_data_request_list[*].request_params',
   'request.service_data_request_list[*].request_params',
-  //
+  // request_params_salt
   'messageObject.service_data_request_list[*].request_params_salt',
   'messageJSON.service_data_request_list[*].request_params_salt',
   'request.service_data_request_list[*].request_params_salt',
-  //
+  // initial_salt
   'body.initial_salt',
   'callbackAdditionalArgs[*].requestData.initial_salt',
+  'callbackAdditionalArgs[*].messageData.initial_salt',
   'additionalArgs.requestData.initial_salt',
   'options.callbackAdditionalArgs[*].requestData.initial_salt',
   'messageObject.initial_salt',
   'messageJSON.initial_salt',
   'requestData.initial_salt',
   'request.initial_salt',
-  //
+  // request_message_salt
   'body.request_message_salt',
   'callbackAdditionalArgs[*].requestData.request_message_salt',
   'additionalArgs.requestData.request_message_salt',
@@ -93,14 +101,17 @@ const redactPaths = [
   'messageJSON.request_message_salt',
   'requestData.request_message_salt',
   'request.request_message_salt',
-  //
+  // (in error log)
+  'additionalArgs.request_message_salt',
+  // data_request_params_salt_list
   'callbackAdditionalArgs[*].requestData.data_request_params_salt_list[*]',
   'additionalArgs.requestData.data_request_params_salt_list[*]',
   'options.callbackAdditionalArgs[*].requestData.data_request_params_salt_list[*]',
   'messageObject.data_request_params_salt_list[*]',
   'messageJSON.data_request_params_salt_list[*]',
   'requestData.data_request_params_salt_list[*]',
-  //
+  // data_salt
+  'body.data_salt',
   'callbackAdditionalArgs[*].data_salt',
   'additionalArgs.data_salt',
   'options.callbackAdditionalArgs[*].data_salt',
@@ -108,16 +119,18 @@ const redactPaths = [
   'messageJSON.data_salt',
   'body[*].data_salt',
   //
+  'callbackAdditionalArgs[*].messageData.message_salt',
+  // packedData.buffer_base64
   'callbackAdditionalArgs[*].packedData.buffer_base64',
   'additionalArgs.packedData.buffer_base64',
-  //
+  // packed_data.buffer_base64
   'messageObject.packed_data.buffer_base64',
   'messageJSON.packed_data.buffer_base64',
-  //
+  // data
   'body.data',
   'result.data',
   'body[*].data',
-  //
+  // get private messages response
   'body[*].message.identifier',
   'body[*].message.request_message',
   'body[*].message.request_message_salt',

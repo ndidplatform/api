@@ -33,7 +33,7 @@ import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import * as utils from '../../utils';
 import { getErrorObjectForClient } from '../../utils/error';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 
 import * as config from '../../config';
@@ -293,7 +293,7 @@ export async function createResponse(createResponseParams, options = {}) {
       message: 'Cannot create IdP response',
       cause: error,
     });
-    logger.error({ err });
+    redactedLogger.error({ err });
     throw err;
   }
 }
