@@ -314,6 +314,15 @@ components:
       type: object
       required:
         - request_id
+      properties:
+        request_id:
+          type: string
+          example: '54302ae9453ec0738133b393e329963efdb6b39f8136aa24606fec4cd4a1cb33'
+
+    YourDataRPDataDecryptionRetryRequest:
+      type: object
+      required:
+        - request_id
         - reference_id
         - callback_url
         - request_timeout
@@ -335,15 +344,6 @@ components:
           type: integer
           description: >-
             Timeout for the retry request. Unit in seconds.
-
-    YourDataRPDataDecryptionRetryRequest:
-      type: object
-      required:
-        - request_id
-      properties:
-        request_id:
-          type: string
-          example: '54302ae9453ec0738133b393e329963efdb6b39f8136aa24606fec4cd4a1cb33'
 
     YourDataRPRequestData:
       type: object
