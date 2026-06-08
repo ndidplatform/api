@@ -40,6 +40,8 @@ const redactPaths = [
   'callbackAdditionalArgs[*].identity.identifier',
   'callbackAdditionalArgs[*].callbackAdditionalArgs[*].identity.identifier',
   'callbackAdditionalArgs[*].callbackAdditionalArgs[*].identity.identity_list[*].identifier',
+  // (Your Data)
+  'body.sub_identity_list[*].identifier',
   // (in error log)
   'originalArgs.identifier',
   'additionalArgs.requestData.identifier',
@@ -78,6 +80,9 @@ const redactPaths = [
   'messageObject.service_data_request_list[*].request_params',
   'messageJSON.service_data_request_list[*].request_params',
   'request.service_data_request_list[*].request_params',
+  // (Your Data)
+  'messageObject.request_params',
+  'messageJSON.request_params',
   // request_params_salt
   'messageObject.service_data_request_list[*].request_params_salt',
   'messageJSON.service_data_request_list[*].request_params_salt',
@@ -140,6 +145,8 @@ const redactPaths = [
   'body[*].message.service_data_request_list[*].request_params_salt',
   'body[*].message.data_salt',
   'body[*].message.packed_data.buffer_base64',
+  // (Your Data)
+  'body[*].message.request_params',
 ];
 
 export const levels = {
