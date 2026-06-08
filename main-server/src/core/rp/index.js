@@ -193,12 +193,6 @@ export async function sendRequestToAS(nodeId, requestData, height) {
     requestData,
     height,
   });
-  logger.trace({
-    message: 'Sending request to AS',
-    nodeId,
-    requestData,
-    height,
-  });
 
   if (requestData.data_request_list == null) return;
   if (requestData.data_request_list.length === 0) return;

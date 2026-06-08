@@ -95,11 +95,6 @@ async function httpPost(cbId, callbackUrl, body) {
     cbId,
     body: responseBody,
   });
-  logger.trace({
-    message: 'Callback response body',
-    cbId,
-    body: responseBody,
-  });
 
   return {
     response,
@@ -191,11 +186,6 @@ async function callbackWithRetry(
         cbId,
       });
       redactedLogger.debug({
-        message: 'Callback data in body',
-        body,
-        cbId,
-      });
-      logger.trace({
         message: 'Callback data in body',
         body,
         cbId,
@@ -386,11 +376,6 @@ export async function callbackToClient({
         cbId,
       });
       redactedLogger.debug({
-        message: 'Callback data in body',
-        body,
-        cbId,
-      });
-      logger.trace({
         message: 'Callback data in body',
         body,
         cbId,

@@ -38,8 +38,11 @@ const redactPaths = [
   'requestData.identifier',
   'request.identifier',
   'callbackAdditionalArgs[*].identity.identifier',
-  'callbackAdditionalArgs[*].callbackAdditionalArgs[*].identity.identifier',
-  'callbackAdditionalArgs[*].callbackAdditionalArgs[*].identity.identity_list[*].identifier',
+  // note: issue with fast-redact: "array[*].nestedArray[*].someProp.nestedProp" path pattern is not working
+  'callbackAdditionalArgs[*].callbackAdditionalArgs[0].identity.identifier',
+  'callbackAdditionalArgs[*].callbackAdditionalArgs[1].identity.identifier',
+  'callbackAdditionalArgs[*].callbackAdditionalArgs[0].identity.identity_list[*].identifier',
+  'callbackAdditionalArgs[*].callbackAdditionalArgs[1].identity.identity_list[*].identifier',
   // (Your Data)
   'body.sub_identity_list[*].identifier',
   // (in error log)
@@ -135,6 +138,9 @@ const redactPaths = [
   'body.data',
   'result.data',
   'body[*].data',
+  'callbackAdditionalArgs[*].data',
+  // (in error log)
+  'data',
   // get private messages response
   'body[*].message.identifier',
   'body[*].message.request_message',
@@ -187,27 +193,61 @@ const logger = initLogger({
   // },
 });
 
-export const redactedLogger = config.logRedactSensitiveData
+const REDACT_TEXT = '[REDACTED]';
+
+const maskHandlers = {
+  identifier: maskIdentifier,
+  existingIdentifier: maskIdentifier,
+  requestIdentifier: maskIdentifier,
+  originalUrl: maskUrl,
+  url: maskUrl,
+};
+
+const childRedactedLogger = config.logRedactSensitiveData
   ? logger.child(
       {},
       {
         redact: {
           paths: redactPaths,
           censor: (value, path) => {
-            if (
-              path[0] === 'originalUrl' ||
-              (path[0] === 'req' && path[1] === 'url')
-            ) {
-              return maskUrl(value);
-            } else if (path[path.length - 1] === 'identifier') {
-              return maskIdentifier(value);
+            const lastSegment = path[path.length - 1];
+            const handler = maskHandlers[lastSegment];
+
+            if (handler) {
+              if (lastSegment === 'url' && path[0] !== 'req') {
+                return REDACT_TEXT;
+              }
+              return handler(value);
             }
 
-            return '[REDACTED]';
+            return REDACT_TEXT;
           },
         },
       }
     )
   : logger;
+
+const shouldLogTraceWithoutRedact =
+  config.logRedactSensitiveData && config.logLevel === 'trace';
+
+export const redactedLogger = {
+  error: (...args) => {
+    childRedactedLogger.error(...args);
+    if (shouldLogTraceWithoutRedact) logger.trace(...args);
+  },
+  warn: (...args) => {
+    childRedactedLogger.warn(...args);
+    if (shouldLogTraceWithoutRedact) logger.trace(...args);
+  },
+  info: (...args) => {
+    childRedactedLogger.info(...args);
+    if (shouldLogTraceWithoutRedact) logger.trace(...args);
+  },
+  debug: (...args) => {
+    childRedactedLogger.debug(...args);
+    if (shouldLogTraceWithoutRedact) logger.trace(...args);
+  },
+  child: (...args) => childRedactedLogger.child(...args),
+};
 
 export default logger;

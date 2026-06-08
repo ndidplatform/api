@@ -655,11 +655,6 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
       receivers,
       payload: message,
     });
-    logger.trace({
-      message: 'No receivers for message queue to send to',
-      receivers,
-      payload: message,
-    });
     return;
   }
   const timestamp = Date.now();
@@ -699,11 +694,7 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
     messageObject: message,
     messageSignature: messageSignatureBuffer.toString('base64'),
     messageCompressionAlgorithm,
-  });
-  logger.trace({
-    message: 'Sending message over message queue details',
-    messageObject: message,
-    protoBuffer,
+    protoBufferLenth: protoBuffer.length,
   });
 
   await Promise.all(

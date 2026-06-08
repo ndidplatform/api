@@ -72,14 +72,6 @@ if (config.env === 'development') {
       query,
       body,
     });
-    logger.trace({
-      message: 'Incoming HTTP request',
-      method,
-      originalUrl,
-      params,
-      query,
-      body,
-    });
 
     const end = res.end;
     res.end = function (chunk, encoding) {
@@ -102,13 +94,6 @@ if (config.env === 'development') {
       }
 
       redactedLogger.debug({
-        message: 'Outgoing HTTP response',
-        method,
-        originalUrl,
-        status: res.statusCode,
-        body: responseBody,
-      });
-      logger.trace({
         message: 'Outgoing HTTP response',
         method,
         originalUrl,

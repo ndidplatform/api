@@ -1249,18 +1249,6 @@ export async function transact({
     callbackAdditionalArgs,
     retryCount,
   });
-  logger.trace({
-    message: 'Tendermint transact',
-    nodeId,
-    fnName,
-    params,
-    nonce,
-    waitForCommit,
-    useMasterKey,
-    callbackFnName,
-    callbackAdditionalArgs,
-    retryCount,
-  });
 
   let keyVersion = null;
   if (signingAlgorithm == null) {

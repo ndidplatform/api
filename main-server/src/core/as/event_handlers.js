@@ -51,10 +51,6 @@ export async function handleMessageFromQueue(
     message: 'Message from MQ',
     messageJSON: message,
   });
-  logger.trace({
-    message: 'Message from MQ',
-    messageJSON: message,
-  });
 
   common.incrementProcessingInboundMessagesCount();
   const startTime = Date.now();

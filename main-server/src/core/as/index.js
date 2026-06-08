@@ -309,10 +309,6 @@ export async function afterGotDataFromCallback(
         message: 'Data from AS',
         result,
       });
-      logger.trace({
-        message: 'Data from AS',
-        result,
-      });
     } catch (error) {
       throw new CustomError({
         errorType: errorType.CANNOT_PARSE_JSON,
@@ -386,12 +382,6 @@ async function getDataAndSendBackToRP(
     requestDetail,
     responseDetails,
   });
-  logger.trace({
-    message: 'AS process request for data',
-    request,
-    requestDetail,
-    responseDetails,
-  });
 
   await Promise.all(
     request.service_data_request_list.map(async (serviceData) => {
@@ -417,11 +407,6 @@ async function getDataAndSendBackToRP(
         message: 'Sending callback to AS',
       });
       redactedLogger.debug({
-        message: 'Callback to AS',
-        service_id,
-        request_params,
-      });
-      logger.trace({
         message: 'Callback to AS',
         service_id,
         request_params,
