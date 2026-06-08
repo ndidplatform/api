@@ -109,7 +109,7 @@ components:
               namespace:
                 type: string
                 example: 'account_no'
-              idenfifier:
+              identifier:
                 type: string
                 example: '123-45678-90'
                 description: This identifier must be unique across customers
@@ -207,7 +207,7 @@ components:
               namespace:
                 type: string
                 example: 'account_no'
-              idenfifier:
+              identifier:
                 type: string
                 example: '123-45678-90'
                 description: This identifier must be unique across customers
