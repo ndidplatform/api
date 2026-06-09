@@ -737,14 +737,7 @@ async function verifyDataSignature(asNodeId, signature, salt, data) {
     asNodePublicKey: signingPublicKey,
     signature,
   });
-  logger.trace({
-    message: 'Verifying AS data signature',
-    asNodeId,
-    asNodePublicKey: signingPublicKey,
-    signature,
-    salt,
-    data,
-  });
+
   if (
     !utils.verifySignature(
       signingPublicKey.algorithm,
