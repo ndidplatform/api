@@ -24,9 +24,10 @@ import path from 'path';
 import fs from 'fs';
 import express from 'express';
 
-import logger, { redactedLogger, levels } from '../../logger';
+import { levels } from '../../logger';
 
 import readyHandler from './middleware/ready_handler';
+import loggingHandler from './middleware/logging_handler';
 import errorHandler from './middleware/error_handler';
 import apiKeyHandler from './middleware/api_key_handler';
 import apiV4Router from './v4';
@@ -45,65 +46,15 @@ import {
 } from '../../prometheus';
 import debugRouter from './debug';
 
-// import { maskUrl } from '../../utils/masking';
-
 import * as config from '../../config';
 
 const router = express.Router();
 
-// FOR DEBUG
-if (config.env === 'development') {
-  // const logLevelDebugOrHigher =
-  //   levels.labels[config.logLevel] >= levels.labels.debug;
+const logLevelDebugOrLower =
+  levels.labels[config.logLevel] <= levels.labels.debug;
 
-  router.use((req, res, next) => {
-    const { method, originalUrl, params, query, body } = req;
-
-    // const maskedOriginalUrl =
-    //   config.logRedactSensitiveData && logLevelDebugOrHigher
-    //     ? maskUrl(originalUrl)
-    //     : originalUrl;
-
-    redactedLogger.debug({
-      message: 'Incoming HTTP request',
-      method,
-      originalUrl,
-      params,
-      query,
-      body,
-    });
-
-    const end = res.end;
-    res.end = function (chunk, encoding) {
-      res.end = end;
-      res.end(chunk, encoding);
-
-      const isJSON =
-        res.getHeaders() &&
-        res.getHeaders()['content-type'] &&
-        res.getHeaders()['content-type'].indexOf('json') >= 0;
-
-      const responseBodyString = chunk && chunk.toString();
-      let responseBody;
-      if (isJSON) {
-        try {
-          responseBody = JSON.parse(responseBodyString);
-        } catch (error) {
-          responseBody = responseBodyString;
-        }
-      }
-
-      redactedLogger.debug({
-        message: 'Outgoing HTTP response',
-        method,
-        originalUrl,
-        status: res.statusCode,
-        body: responseBody,
-      });
-    };
-
-    next();
-  });
+if (logLevelDebugOrLower) {
+  router.use(loggingHandler);
 }
 
 router.use(apiKeyHandler);
@@ -114,7 +65,7 @@ if (config.env === 'development') {
 
 router.get('/license', (req, res) => {
   const licenseText = fs.readFileSync(
-    path.join(__dirname, '..', '..', 'COPYING')
+    path.join(__dirname, '..', '..', '..', '..', 'COPYING')
   );
   res.set('Content-Type', 'text/plain');
   res.status(200).send(licenseText);

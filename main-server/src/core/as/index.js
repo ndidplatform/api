@@ -582,19 +582,18 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
 
   let valid = true;
   for (let i = 0; i < response_private_data_list.length; i++) {
+    const { idp_id, accessor_id } = response_private_data_list[i];
+
     const otherReferenceGroupCode =
-      await tendermintNdid.getReferenceGroupCodeByAccessorId(
-        response_private_data_list[i].accessor_id
-      );
+      await tendermintNdid.getReferenceGroupCodeByAccessorId(accessor_id);
     if (otherReferenceGroupCode !== referenceGroupCode) {
       return false;
     }
 
-    const accessor_public_key = await tendermintNdid.getAccessorPublicKey(
-      response_private_data_list[i].accessor_id
-    );
+    const accessor_public_key =
+      await tendermintNdid.getAccessorPublicKey(accessor_id);
     const response = requestDetail.response_list.find(
-      (response) => response.idp_id === response_private_data_list[i].idp_id
+      (response) => response.idp_id === idp_id
     );
     const signature = response.signature;
 
@@ -608,19 +607,11 @@ async function isIdpResponsesValid(request_id, dataFromMq) {
 
     logger.debug({
       message: 'Verify signature',
-      signatureValid,
+      request_id,
+      idp_id,
+      accessor_id,
       accessor_public_key,
-      signature,
-      response_private_data_list,
-    });
-    logger.trace({
-      message: 'Verify signature',
       signatureValid,
-      request_message,
-      initial_salt,
-      accessor_public_key,
-      signature,
-      response_private_data_list,
     });
 
     valid = valid && signatureValid;

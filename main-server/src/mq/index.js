@@ -505,15 +505,6 @@ export async function processRawMessage({
 
     logger.debug({
       message: 'Verifying signature',
-      messageSignature,
-      nodeId,
-      signingPublicKey,
-      signatureValid,
-    });
-    logger.trace({
-      message: 'Verifying signature',
-      messageBuffer,
-      messageSignature,
       nodeId,
       signingPublicKey,
       signatureValid,

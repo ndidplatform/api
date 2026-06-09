@@ -38,11 +38,8 @@ const redactPaths = [
   'requestData.identifier',
   'request.identifier',
   'callbackAdditionalArgs[*].identity.identifier',
-  // note: issue with fast-redact: "array[*].nestedArray[*].someProp.nestedProp" path pattern is not working
-  'callbackAdditionalArgs[*].callbackAdditionalArgs[0].identity.identifier',
-  'callbackAdditionalArgs[*].callbackAdditionalArgs[1].identity.identifier',
-  'callbackAdditionalArgs[*].callbackAdditionalArgs[0].identity.identity_list[*].identifier',
-  'callbackAdditionalArgs[*].callbackAdditionalArgs[1].identity.identity_list[*].identifier',
+  'callbackAdditionalArgs[*].callbackAdditionalArgs[*].identity.identifier',
+  'callbackAdditionalArgs[*].callbackAdditionalArgs[*].identity.identity_list[*].identifier',
   // (Your Data)
   'body.sub_identity_list[*].identifier',
   // (in error log)

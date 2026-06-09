@@ -24,7 +24,7 @@ import fs from 'fs';
 import http from 'http';
 import https from 'https';
 import express from 'express';
-import morgan from 'morgan';
+import pinoHttp from 'pino-http';
 
 import routes from './routes';
 
@@ -42,8 +42,13 @@ export function initialize() {
   const app = express();
 
   app.use(
-    morgan('combined', {
-      stream: { write: (message) => logger.info({ message: message.trim() }) },
+    pinoHttp({
+      logger,
+      customProps: (req, res) => {
+        return {
+          httpVersion: req.httpVersion,
+        };
+      },
     })
   );
 
