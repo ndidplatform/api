@@ -600,6 +600,49 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  '/utility/services/{service_id}/requester_node_whitelist':
+    get:
+      summary: Retrieve service's requester node whitelist details
+      description: ''
+      parameters:
+        - name: service_id
+          in: path
+          description: Service ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Service's requester node whitelist details
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - node_id_list
+                  - enabled
+                properties:
+                  node_id_list:
+                    type: array
+                    items:
+                      type: string
+                  enabled:
+                    type: boolean
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Service ID does not exist
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /utility/idp_error_codes:
     get:
       summary: Retrieve list of all IdP error codes

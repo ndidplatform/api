@@ -368,7 +368,11 @@ router.get(
           serviceId: service_id,
         });
 
-      res.status(200).json(requesterNodeWhitelist);
+      if (requesterNodeWhitelist == null) {
+        res.status(404).end();
+      } else {
+        res.status(200).json(requesterNodeWhitelist);
+      }
       next();
     } catch (error) {
       next(error);
