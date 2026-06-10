@@ -16,7 +16,7 @@ tags:
       url: https://www.bot.or.th
 
 paths:
-  /yourdata/rp/request:
+  /yourdata/rp/requests:
     post:
       summary: Outgoing data request from RP to AS node.
       description: Initial step for data request for Your Data request.
@@ -361,7 +361,7 @@ components:
           description: AS node ID that provided the data
         service_id:
           type: string
-          description: requested serivce ID
+          description: requested service ID
         source_signature:
           type: string
           description: Digital Signature signed by source node key in base64 encoded string

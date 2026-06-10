@@ -93,7 +93,7 @@ paths:
               $ref: '#/components/schemas/YourDataASServiceUpdate'
         required: true
       responses:
-        '200':
+        '204':
           description: Create or Update Successful
         '400':
           description: 'Client error'

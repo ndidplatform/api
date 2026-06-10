@@ -416,6 +416,9 @@ components:
         bypass_identity_check:
           type: boolean
           description: Required when mode is set to 2 or 3. If set to true, request will be sent to all IdPs in idp_id_list regardless of identity on those IdPs onboard status or IAL. However, those IdPs can response only when they have onboarded requested identity and IAL criteria (min_ial) is met
+        initial_salt:
+          type: string
+          description: Omit this property for system generated initial salt
         request_type:
           type: string
     RequestsData:
