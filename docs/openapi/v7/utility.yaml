@@ -42,7 +42,7 @@ paths:
           description: filter only IdP nodes that support specified feature. list of strings separated by comma (,).
           required: false
           schema:
-            type: boolean
+            type: string
         - name: filter_for_node_id
           in: query
           description: result IdP must be included in node's whitelist
@@ -108,7 +108,7 @@ paths:
           description: filter only IdP nodes that support specified feature. list of strings separated by comma (,).
           required: false
           schema:
-            type: boolean
+            type: string
         - name: mode
           in: query
           description: mode at the time of identity creation
@@ -963,6 +963,85 @@ paths:
                   - 2.1
                   - 2.2
                   - 3
+        '404':
+          description: Not found / N/A
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/domains':
+    get:
+      summary: Get all domain list
+      description: Get all domain list
+      operationId: get_domain_list
+      parameters:
+        - name: prefix
+          in: query
+          description: filter by domain name prefix 
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: All domain list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - domain
+                    - active
+                    - node_whitelist_enabled
+                  properties:
+                    domain:
+                      type: string
+                    active:
+                      type: boolean
+                    node_whitelist_enabled:
+                      type: boolean
+        '404':
+          description: Not found / N/A
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/domains/{domain}/node_whitelist':
+    get:
+      summary: Get domain node whitelist
+      description: Get domain node whitelist
+      operationId: get_domain_node_whitelist
+      parameters:
+        - name: domain
+          in: path
+          description: Domain name 
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Domain node whitelist
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - node_id_list
+                  - enabled
+                properties:
+                  node_id_list:
+                    type: array
+                    items:
+                      type: string
+                  enabled:
+                    type: boolean
         '404':
           description: Not found / N/A
         '500':
@@ -1854,10 +1933,9 @@ components:
     Message:
       type: object
       required:
-        - request_id
+        - message_id
         - requester_node_id
         - message
-        - message_hash
         - purpose
         - creation_block_height
       properties:

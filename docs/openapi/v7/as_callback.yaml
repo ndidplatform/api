@@ -11,7 +11,7 @@ paths:
     post:
       summary: Service X being offered by an AS to NDID
       description: >-
-        {serivce_id} is NOT automatically append to the registered callback url.
+        {service_id} is NOT automatically append to the registered callback url.
         This is just an example that you can register callback with service_id
         as parameter
       operationId: data_request
