@@ -244,7 +244,7 @@ export const encryptionPrivateKeyPath = useExternalCryptoService
         : process.env.ENCRYPTION_PRIVATE_KEY_PATH;
 export const encryptionPrivateKeyPassphrase = useExternalCryptoService
   ? null
-  : process.env.v_PRIVATE_KEY_PASSPHRASE == null
+  : process.env.PRIVATE_KEY_PASSPHRASE == null
     ? privateKeyPassphrase
     : process.env.ENCRYPTION_PRIVATE_KEY_PASSPHRASE;
 

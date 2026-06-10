@@ -89,16 +89,40 @@ if (
 }
 
 if (process.env.NODE_ENV === 'production') {
-  if (
-    process.env.USE_EXTERNAL_CRYPTO_SERVICE !== 'true' &&
-    (process.env.PRIVATE_KEY_PATH == null ||
-      process.env.MASTER_PRIVATE_KEY_PATH == null)
-  ) {
-    console.error(
-      'ERROR:',
-      '"PRIVATE_KEY_PATH" and/or "MASTER_PRIVATE_KEY_PATH" environment variables are not set. Process will now exit.'
-    );
-    process.exit(1);
+  if (process.env.USE_EXTERNAL_CRYPTO_SERVICE !== 'true') {
+    if (
+      !process.env.SIGNING_MASTER_PRIVATE_KEY_PATH &&
+      !process.env.MASTER_PRIVATE_KEY_PATH
+    ) {
+      console.error(
+        'ERROR:',
+        '"SIGNING_MASTER_PRIVATE_KEY_PATH" or "MASTER_PRIVATE_KEY_PATH" environment variable is not set. Process will now exit.'
+      );
+      process.exit(1);
+    }
+
+    if (
+      !process.env.SIGNING_MASTER_PRIVATE_KEY_PATH &&
+      !process.env.PRIVATE_KEY_PATH
+    ) {
+      console.error(
+        'ERROR:',
+        '"SIGNING_PRIVATE_KEY_PATH" or "PRIVATE_KEY_PATH" environment variable is not set. Process will now exit.'
+      );
+      process.exit(1);
+    }
+
+    if (
+      process.env.NDID_NODE !== 'true' &&
+      !process.env.ENCRYPTION_PRIVATE_KEY_PATH &&
+      !process.env.PRIVATE_KEY_PATH
+    ) {
+      console.error(
+        'ERROR:',
+        '"ENCRYPTION_PRIVATE_KEY_PATH" or "PRIVATE_KEY_PATH" environment variable is not set. Process will now exit.'
+      );
+      process.exit(1);
+    }
   }
 
   if (
