@@ -629,6 +629,7 @@ export default {
             minLength: 1,
           },
         },
+        required: ['node_id', 'service_id'],
       },
     },
     '/ndid/remove_node_from_service_requester_node_whitelist': {
@@ -644,6 +645,7 @@ export default {
             minLength: 1,
           },
         },
+        required: ['node_id', 'service_id'],
       },
     },
     '/ndid/enable_service_requester_node_whitelist': {
@@ -655,6 +657,7 @@ export default {
             minLength: 1,
           },
         },
+        required: ['service_id'],
       },
     },
     '/ndid/disable_service_requester_node_whitelist': {
@@ -666,6 +669,7 @@ export default {
             minLength: 1,
           },
         },
+        required: ['service_id'],
       },
     },
     // Domain
@@ -678,6 +682,7 @@ export default {
           },
           node_whitelist_enabled: { type: 'boolean' },
         },
+        required: ['domain'],
       },
     },
     '/ndid/enable_domain': {
@@ -688,6 +693,7 @@ export default {
             $ref: 'defs#/definitions/domain',
           },
         },
+        required: ['domain'],
       },
     },
     '/ndid/disable_domain': {
@@ -698,6 +704,7 @@ export default {
             $ref: 'defs#/definitions/domain',
           },
         },
+        required: ['domain'],
       },
     },
     '/ndid/add_node_to_domain_node_whitelist': {
@@ -712,6 +719,7 @@ export default {
             minLength: 1,
           },
         },
+        required: ['node_id', 'service_id'],
       },
     },
     '/ndid/remove_node_from_domain_node_whitelist': {
@@ -726,6 +734,7 @@ export default {
             minLength: 1,
           },
         },
+        required: ['node_id', 'service_id'],
       },
     },
     '/ndid/enable_domain_node_whitelist': {
@@ -736,6 +745,7 @@ export default {
             $ref: 'defs#/definitions/domain',
           },
         },
+        required: ['domain'],
       },
     },
     '/ndid/disable_domain_node_whitelist': {
@@ -746,6 +756,7 @@ export default {
             $ref: 'defs#/definitions/domain',
           },
         },
+        required: ['domain'],
       },
     },
     '/ndid/add_domain_error_code': {
