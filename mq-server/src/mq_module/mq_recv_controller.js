@@ -35,64 +35,58 @@ export default class MQRecv extends EventEmitter {
       port: config.port,
     });
 
-    this.recvSocket.on(
-      'message',
-      function(identity, messageBuffer) {
-        let msg;
-        try {
-          msg = MQProtocol.extractMsg(messageBuffer);
-        } catch (error) {
-          let err;
-          if (error.code === 'VERMISMATCH') {
-            err = new CustomError({
-              errorType: errorType.MQ_PROTOCOL_MESSAGE_VERSION_MISMATCH,
-              details: {
-                expected: error.expectedVersion,
-                got: error.gotVersion,
-              },
-              cause: error,
-            });
-          } else {
-            err = new CustomError({
-              errorType: errorType.WRONG_MESSAGE_QUEUE_PROTOCOL,
-              details: {
-                messageBuffer: Buffer.isBuffer(messageBuffer)
-                  ? messageBuffer.toString('base64')
-                  : messageBuffer,
-              },
-              cause: error,
-            });
-          }
-          this.emit('error', err);
-          return;
-        }
-        const ackMSG = MQProtocol.generateAckMsg(config.senderId, {
-          msgId: msg.retryspec.msgId,
-          seqId: msg.retryspec.seqId,
-        });
-
-        // this.recvSocket.send(identity, ackMSG);
-        this.emit('message', {
-          message: msg.message,
-          msgId: msg.retryspec.msgId,
-          senderId: msg.senderId,
-          sendAck: () => this.recvSocket.send(identity, ackMSG),
-        });
-      }.bind(this)
-    );
-
-    this.recvSocket.on(
-      'error',
-      function(error) {
-        this.emit(
-          'error',
-          new CustomError({
-            errorType: errorType.MQ_RECV_ERROR,
+    this.recvSocket.on('message', (identity, messageBuffer) => {
+      let msg;
+      try {
+        msg = MQProtocol.extractMsg(messageBuffer);
+      } catch (error) {
+        let err;
+        if (error.code === 'VERMISMATCH') {
+          err = new CustomError({
+            errorType: errorType.MQ_PROTOCOL_MESSAGE_VERSION_MISMATCH,
+            details: {
+              expected: error.expectedVersion,
+              got: error.gotVersion,
+            },
             cause: error,
-          })
-        );
-      }.bind(this)
-    );
+          });
+        } else {
+          err = new CustomError({
+            errorType: errorType.WRONG_MESSAGE_QUEUE_PROTOCOL,
+            details: {
+              messageBuffer: Buffer.isBuffer(messageBuffer)
+                ? messageBuffer.toString('base64')
+                : messageBuffer,
+            },
+            cause: error,
+          });
+        }
+        this.emit('error', err);
+        return;
+      }
+      const ackMSG = MQProtocol.generateAckMsg(config.senderId, {
+        msgId: msg.retryspec.msgId,
+        seqId: msg.retryspec.seqId,
+      });
+
+      // this.recvSocket.send(identity, ackMSG);
+      this.emit('message', {
+        message: msg.message,
+        msgId: msg.retryspec.msgId,
+        senderId: msg.senderId,
+        sendAck: () => this.recvSocket.send(identity, ackMSG),
+      });
+    });
+
+    this.recvSocket.on('error', (error) => {
+      this.emit(
+        'error',
+        new CustomError({
+          errorType: errorType.MQ_RECV_ERROR,
+          cause: error,
+        })
+      );
+    });
   }
 
   init() {

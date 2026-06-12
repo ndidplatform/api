@@ -38,11 +38,11 @@ import logger from '../../logger';
 
 import MODE from '../../mode';
 
-let pendingRequestTimeout = {};
+const pendingRequestTimeout = new Map(); // requestId -> { type, deadline }
 
 export const metricsEventEmitter = new EventEmitter();
 
-export let timeoutScheduler = {};
+export const timeoutScheduler = new Map(); // `${nodeId}:${requestId}` -> timeout object
 
 export async function resumeTimeoutScheduler(nodeIds) {
   if (nodeIds == null) return;
@@ -71,8 +71,8 @@ export async function resumeTimeoutScheduler(nodeIds) {
 }
 
 export function stopAllTimeoutScheduler() {
-  for (let nodeIdAndrequestId in timeoutScheduler) {
-    lt.clearTimeout(timeoutScheduler[nodeIdAndrequestId]);
+  for (const [nodeIdAndRequestId, scheduler] of timeoutScheduler) {
+    lt.clearTimeout(scheduler);
   }
 }
 
@@ -100,30 +100,35 @@ export function runTimeoutScheduler(nodeId, requestId, type, unixTimeout) {
     }
   } else {
     if (config.mode === MODE.WORKER) {
-      pendingRequestTimeout[requestId] = { type, deadline: unixTimeout };
+      pendingRequestTimeout.set(requestId, { type, deadline: unixTimeout });
     }
     const timeout = unixTimeout - now;
-    timeoutScheduler[`${nodeId}:${requestId}`] = lt.setTimeout(() => {
-      if (type === 'yourdata') {
-        yourDataRequestQueueManager.enqueue(
-          nodeId,
-          requestId,
-          timeoutYourDataRequest,
-          nodeId,
-          requestId
-        );
-      } else if (type === 'yourdata.data_decryption_key_retry_request') {
-        yourDataRequestQueueManager.enqueue(
-          nodeId,
-          requestId,
-          timeoutDataDecryptionKeyRetryRequest,
-          nodeId,
-          requestId
-        );
-      } else {
-        timeoutRequest(nodeId, requestId);
-      }
-    }, timeout);
+    const schedulerKey = `${nodeId}:${requestId}`;
+
+    timeoutScheduler.set(
+      schedulerKey,
+      lt.setTimeout(() => {
+        if (type === 'yourdata') {
+          yourDataRequestQueueManager.enqueue(
+            nodeId,
+            requestId,
+            timeoutYourDataRequest,
+            nodeId,
+            requestId
+          );
+        } else if (type === 'yourdata.data_decryption_key_retry_request') {
+          yourDataRequestQueueManager.enqueue(
+            nodeId,
+            requestId,
+            timeoutDataDecryptionKeyRetryRequest,
+            nodeId,
+            requestId
+          );
+        } else {
+          timeoutRequest(nodeId, requestId);
+        }
+      }, timeout)
+    );
   }
 }
 
@@ -143,7 +148,7 @@ export async function setTimeoutScheduler({
 export function removeTimeoutScheduler(nodeId, requestId) {
   if (
     config.mode === MODE.WORKER &&
-    timeoutScheduler[`${nodeId}:${requestId}`] == null
+    !timeoutScheduler.has(`${nodeId}:${requestId}`)
   ) {
     // Scheduler may be on another worker
     return broadcastRemoveRequestTimeoutScheduler({ nodeId, requestId });
@@ -153,12 +158,18 @@ export function removeTimeoutScheduler(nodeId, requestId) {
 }
 
 export async function removeTimeoutSchedulerInternal(nodeId, requestId) {
-  lt.clearTimeout(timeoutScheduler[`${nodeId}:${requestId}`]);
+  const schedulerKey = `${nodeId}:${requestId}`;
+  const scheduler = timeoutScheduler.get(schedulerKey);
+
+  if (scheduler) {
+    lt.clearTimeout(scheduler);
+  }
+
   await cacheDb.removeTimeoutScheduler(nodeId, requestId);
   if (config.mode === MODE.WORKER) {
-    delete pendingRequestTimeout[requestId];
+    pendingRequestTimeout.delete(requestId);
   }
-  delete timeoutScheduler[`${nodeId}:${requestId}`];
+  timeoutScheduler.delete(schedulerKey);
 }
 
 export function getPendingRequestTimeout() {

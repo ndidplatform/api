@@ -36,30 +36,29 @@ export default class MQSendSocket extends EventEmitter {
   constructor() {
     super();
     this.socketMap = new Map(); // seqId -> socket
-    this.socketUsedBy = {}; // socketId -> [seqIds]
-    this.socketDestMap = {}; // socketId -> destKey
-    this.socketListByDest = {}; // destKey -> [sockets]
-    this.seqIdList = {}; // msgId -> [seqIds]
+    this.socketUsedBy = new Map(); // socketId -> [seqIds]
+    this.socketDestMap = new Map(); // socketId -> destKey
+    this.socketListByDest = new Map(); // destKey -> [sockets]
+    this.seqIdList = new Map(); // msgId -> [seqIds]
   }
 
   async send(dest, payload, msgId, seqId) {
-    if (!this.seqIdList[msgId]) {
-      this.seqIdList[msgId] = [];
+    if (!this.seqIdList.has(msgId)) {
+      this.seqIdList.set(msgId, []);
     }
-    this.seqIdList[msgId].push(seqId);
+    this.seqIdList.get(msgId).push(seqId);
 
     const destKey = `${dest.ip}:${dest.port}`;
     let currentSocket = null;
 
-    if (!this.socketListByDest[destKey]) {
-      this.socketListByDest[destKey] = [];
+    if (!this.socketListByDest.has(destKey)) {
+      this.socketListByDest.set(destKey, []);
     }
 
-    for (const socket of this.socketListByDest[destKey]) {
-      if (
-        this.socketUsedBy[socket.id] &&
-        this.socketUsedBy[socket.id].length < maxConcurrentMessagesPerMqSocket
-      ) {
+    const socketsForDest = this.socketListByDest.get(destKey);
+    for (const socket of socketsForDest) {
+      const usedBy = this.socketUsedBy.get(socket.id);
+      if (usedBy && usedBy.length < maxConcurrentMessagesPerMqSocket) {
         currentSocket = socket;
         break;
       }
@@ -67,20 +66,20 @@ export default class MQSendSocket extends EventEmitter {
 
     if (!currentSocket) {
       currentSocket = this._init(dest, msgId);
-      this.socketDestMap[currentSocket.id] = destKey;
+      this.socketDestMap.set(currentSocket.id, destKey);
       count++;
       this.emit('new_socket_connection', count);
       if (count > maxConn) {
         maxConn = count;
       }
-      this.socketListByDest[destKey].push(currentSocket);
+      this.socketListByDest.get(destKey).push(currentSocket);
     }
 
-    if (!this.socketUsedBy[currentSocket.id]) {
-      this.socketUsedBy[currentSocket.id] = [];
+    if (!this.socketUsedBy.has(currentSocket.id)) {
+      this.socketUsedBy.set(currentSocket.id, []);
     }
 
-    this.socketUsedBy[currentSocket.id].push(seqId);
+    this.socketUsedBy.get(currentSocket.id).push(seqId);
     this.socketMap.set(seqId, currentSocket);
 
     // Dealer sockets usually expect [empty, payload]
@@ -92,11 +91,12 @@ export default class MQSendSocket extends EventEmitter {
   }
 
   cleanUp(msgId, ackSeqId) {
-    if (!this.seqIdList[msgId]) return; // ack for same msgId
-    this.seqIdList[msgId].forEach((seqId) => {
+    if (!this.seqIdList.has(msgId)) return; // ack for same msgId
+
+    this.seqIdList.get(msgId).forEach((seqId) => {
       this._cleanUp(seqId);
     });
-    delete this.seqIdList[msgId];
+    this.seqIdList.delete(msgId);
   }
 
   _cleanUp(seqId) {
@@ -104,30 +104,35 @@ export default class MQSendSocket extends EventEmitter {
     if (!socket) return;
 
     const socketId = socket.id;
-    const index = this.socketUsedBy[socketId].indexOf(seqId);
+    const usedByList = this.socketUsedBy.get(socketId);
 
-    if (index !== -1) {
-      this.socketUsedBy[socketId].splice(index, 1);
+    if (usedByList) {
+      const index = usedByList.indexOf(seqId);
 
-      if (this.socketUsedBy[socketId].length === 0) {
-        socket.instance.close();
-        count--;
-        this.emit('socket_connection_closed', count);
+      if (index !== -1) {
+        usedByList.splice(index, 1);
 
-        delete this.socketUsedBy[socketId];
-        const destKey = this.socketDestMap[socketId];
+        if (usedByList.length === 0) {
+          socket.instance.close();
+          count--;
+          this.emit('socket_connection_closed', count);
 
-        const listIndex = this.socketListByDest[destKey].findIndex(
-          (s) => s.id === socketId
-        );
-        if (listIndex !== -1) {
-          this.socketListByDest[destKey].splice(listIndex, 1);
+          this.socketUsedBy.delete(socketId);
+          const destKey = this.socketDestMap.get(socketId);
+
+          const destSockets = this.socketListByDest.get(destKey);
+          if (destSockets) {
+            const listIndex = destSockets.findIndex((s) => s.id === socketId);
+            if (listIndex !== -1) {
+              destSockets.splice(listIndex, 1);
+            }
+
+            if (destSockets.length === 0) {
+              this.socketListByDest.delete(destKey);
+            }
+          }
+          this.socketDestMap.delete(socketId);
         }
-
-        if (this.socketListByDest[destKey].length === 0) {
-          delete this.socketListByDest[destKey];
-        }
-        delete this.socketDestMap[socketId];
       }
     }
     this.socketMap.delete(seqId);

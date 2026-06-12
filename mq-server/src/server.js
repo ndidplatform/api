@@ -55,7 +55,7 @@ const MQ_RECV_MAX_MESSAGE_SIZE = 3300000; // in bytes
 let mqSend;
 let mqRecv;
 
-const sendACKs = {};
+const sendACKs = new Map();
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -82,7 +82,7 @@ const server = new grpc.Server({
 const SERVER_ADDRESS = `0.0.0.0:${config.serverPort}`;
 
 let recvSubscriberConnections = [];
-let sendCalls = {};
+let sendCalls = new Map();
 
 export const metricsEventEmitter = new EventEmitter();
 
@@ -120,9 +120,9 @@ function sendAckForRecvMessage(call, callback) {
     });
   });
 
-  if (sendACKs[msgId]) {
-    sendACKs[msgId]();
-    delete sendACKs[msgId];
+  if (sendACKs.has(msgId)) {
+    sendACKs.get(msgId)();
+    sendACKs.delete(msgId);
     callback(null);
   } else {
     callback({
@@ -166,7 +166,7 @@ function sendMessage(call, callback) {
     args: call.request,
   });
 
-  sendCalls[msgId] = { call, callback };
+  sendCalls.set(msgId, { call, callback });
 
   mqSend.send({ ip, port }, payload, msgId);
 
@@ -176,7 +176,7 @@ function sendMessage(call, callback) {
       msgId,
     });
     mqSend.stopSend(msgId);
-    delete sendCalls[msgId];
+    sendCalls.delete(msgId);
   });
 
   logger.debug({
@@ -218,19 +218,24 @@ async function initialize() {
         msgId,
         senderId,
       });
-      sendACKs[msgId] = sendAck;
+      // FIXME: change sendACKs key to "<senderId>:<msgId>" ?
+      //
+      // what if malicious actor floods message with other legitimate senderId and msgId?
+      // solution: generate new ID (random on start + counter) and use it for sendACK reference instead
+      //
+      sendACKs.set(msgId, sendAck);
       onRecvMessage({ message, msgId, senderId });
     });
 
     mqSend.on('error', (msgId, error) => {
       logger.error({ err: error });
-      if (sendCalls[msgId]) {
-        const { callback } = sendCalls[msgId];
+      if (sendCalls.has(msgId)) {
+        const { callback } = sendCalls.get(msgId);
         callback({
           code: error.code,
           message: error.message,
         });
-        delete sendCalls[msgId];
+        sendCalls.delete(msgId);
       }
       if (error.code === errorType.MQ_SEND_TIMEOUT.code) {
         metricsEventEmitter.emit('outgoing_message_send_timeout');
@@ -243,10 +248,10 @@ async function initialize() {
         message: 'MQ send socket ACK received',
         msgId,
       });
-      if (sendCalls[msgId]) {
-        const { callback } = sendCalls[msgId];
+      if (sendCalls.has(msgId)) {
+        const { callback } = sendCalls.get(msgId);
         callback(null);
-        delete sendCalls[msgId];
+        sendCalls.delete(msgId);
       }
       metricsEventEmitter.emit('outgoing_message_ack_received');
     });

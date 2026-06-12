@@ -75,11 +75,11 @@ const EncryptedMqMessage =
 
 const prefixMsgId = utils.randomBase64Bytes(8);
 let outboundMessageIdCounter = 1;
-const pendingOutboundMessages = {};
+const pendingOutboundMessages = new Map();
 let pendingOutboundMessagesCount = 0;
-const timer = {};
+const timers = new Map();
 
-const rawMessagesToRetry = [];
+const rawMessagesToRetry = new Map();
 
 let messageHandlerFunction;
 let errorHandlerFunction;
@@ -184,10 +184,13 @@ async function initDuplicateInboundMessageTimeout() {
         cacheDb.removeDuplicateMessageTimeout(config.nodeId, id)
       );
     } else {
-      timer[id] = setTimeout(() => {
-        cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
-        delete timer[id];
-      }, Date.now() - unixTimeout);
+      timers.set(
+        id,
+        setTimeout(() => {
+          cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
+          timers.delete(id);
+        }, Date.now() - unixTimeout)
+      );
     }
   });
   await Promise.all(promiseArray);
@@ -202,11 +205,11 @@ async function sendPendingOutboundMessage({ msgId, data }) {
   const { mqDestAddress, payloadBuffer: payloadBufferArr, sendTime } = data;
   if (sendTime + MQ_SEND_TOTAL_TIMEOUT > Date.now()) {
     const payloadBuffer = Buffer.from(payloadBufferArr);
-    pendingOutboundMessages[msgId] = {
+    pendingOutboundMessages.set(msgId, {
       mqDestAddress,
       payloadBuffer,
       sendTime,
-    };
+    });
     incrementPendingOutboundMessagesCount();
     mqService
       .sendMessage(
@@ -222,7 +225,7 @@ async function sendPendingOutboundMessage({ msgId, data }) {
       })
       .then(() => {
         // finally
-        delete pendingOutboundMessages[msgId];
+        pendingOutboundMessages.delete(msgId);
         decrementPendingOutboundMessagesCount();
       });
   }
@@ -257,14 +260,17 @@ async function onMessage({ message, msgId, senderId }) {
   // Check for duplicate message
   const timestamp = Date.now();
   const id = senderId + ':' + msgId;
-  if (timer[id] != null) return;
+  if (timers.has(id)) return;
 
   const unixTimeout = timestamp + MQ_RECV_DUPLICATE_CHECK_TIMEOUT;
   cacheDb.setDuplicateMessageTimeout(config.nodeId, id, unixTimeout);
-  timer[id] = setTimeout(() => {
-    cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
-    delete timer[id];
-  }, MQ_RECV_DUPLICATE_CHECK_TIMEOUT);
+  timers.set(
+    id,
+    setTimeout(() => {
+      cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
+      timers.delete(id);
+    }, MQ_RECV_DUPLICATE_CHECK_TIMEOUT)
+  );
 
   try {
     await cacheDb.setRawMessageFromMQ(config.nodeId, id, message);
@@ -285,7 +291,7 @@ async function onMessage({ message, msgId, senderId }) {
       !cacheDb.getRedisInstance().connected ||
       !longTermDb.getRedisInstance().connected
     ) {
-      rawMessagesToRetry[id] = message;
+      rawMessagesToRetry.set(id, message);
     } else {
       await processRawMessageSwitch(id, message, timestamp);
     }
@@ -593,10 +599,10 @@ function retryProcessMessages() {
     cacheDb.getRedisInstance().connected &&
     longTermDb.getRedisInstance().connected
   ) {
-    Object.entries(rawMessagesToRetry).map(([messageId, messageBuffer]) => {
+    for (const [messageId, messageBuffer] of rawMessagesToRetry) {
       processRawMessageSwitch(messageId, messageBuffer);
-      delete rawMessagesToRetry[messageId];
-    });
+      rawMessagesToRetry.delete(messageId);
+    }
   }
 }
 
@@ -772,11 +778,11 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
       }
 
       const msgId = `${prefixMsgId}_${outboundMessageIdCounter++}`;
-      pendingOutboundMessages[msgId] = {
+      pendingOutboundMessages.set(msgId, {
         mqDestAddress,
         payloadBuffer,
         sendTime: Date.now(),
-      };
+      });
       incrementPendingOutboundMessagesCount();
 
       logger.debug({
@@ -796,7 +802,7 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
           onSuccess({ msgId, mqDestAddress, receiverNodeId: receiver.node_id });
           metricsEventEmitter.emit(
             'mqSendMessageTime',
-            Date.now() - pendingOutboundMessages[msgId].sendTime
+            Date.now() - pendingOutboundMessages.get(msgId).sendTime
           );
         })
         .catch((error) => {
@@ -805,7 +811,7 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
         })
         .then(() => {
           // finally
-          delete pendingOutboundMessages[msgId];
+          pendingOutboundMessages.delete(msgId);
           decrementPendingOutboundMessagesCount();
         });
       /*if(config.mode === MODE.WORKER) {
@@ -859,21 +865,22 @@ export function stopInbound() {
 
 export async function close() {
   mqService.close();
-  if (Object.keys(pendingOutboundMessages).length > 0) {
+  if (pendingOutboundMessages.size > 0) {
     // Save pending outbound messages
     logger.info({
       message: 'Saving pending outbound messages',
-      pendingOutboundMessageCount: Object.keys(pendingOutboundMessages).length,
+      pendingOutboundMessageCount: pendingOutboundMessages.size,
     });
     await Promise.all(
-      Object.entries(pendingOutboundMessages).map(([msgId, data]) =>
+      [...pendingOutboundMessages].map(([msgId, data]) =>
         cacheDb.setPendingOutboundMessage(config.nodeId, msgId, data)
       )
     );
   }
-  for (let id in timer) {
-    clearTimeout(timer[id]);
+  for (const timerId of timers.values()) {
+    clearTimeout(timerId);
   }
+  timers.clear();
 }
 
 function incrementPendingOutboundMessagesCount() {

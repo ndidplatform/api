@@ -49,7 +49,7 @@ let getShouldRetryFn;
 let getResponseCallbackFn;
 
 let pendingCallbacksCount = 0;
-let pendingCallback = {};
+const pendingCallback = new Map(); // cbId -> { deadline }
 
 export const metricsEventEmitter = new EventEmitter();
 
@@ -159,9 +159,9 @@ async function callbackWithRetry(
   const startTime = Date.now();
 
   if (config.mode === MODE.WORKER) {
-    pendingCallback[cbId] = {
+    pendingCallback.set(cbId, {
       deadline: deadline || Date.now() + config.callbackRetryTimeout * 1000,
-    };
+    });
   }
 
   let _callbackUrl;
@@ -194,7 +194,7 @@ async function callbackWithRetry(
       const responseObj = await httpPost(cbId, _callbackUrl, body);
 
       if (config.mode === MODE.WORKER) {
-        delete pendingCallback[cbId];
+        pendingCallback.delete(cbId);
       }
       decrementPendingCallbacksCount();
       metricsEventEmitter.emit(
@@ -222,7 +222,7 @@ async function callbackWithRetry(
 
       if (error.name === 'FetchError' && error.type === 'max-size') {
         if (config.mode === MODE.WORKER) {
-          delete pendingCallback[cbId];
+          pendingCallback.delete(cbId);
         }
         decrementPendingCallbacksCount();
         cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
@@ -256,7 +256,7 @@ async function callbackWithRetry(
         }
         if (!shouldRetry) {
           if (config.mode === MODE.WORKER) {
-            delete pendingCallback[cbId];
+            pendingCallback.delete(cbId);
           }
           decrementPendingCallbacksCount();
           cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);
@@ -275,7 +275,7 @@ async function callbackWithRetry(
               cbId,
             });
             if (config.mode === MODE.WORKER) {
-              delete pendingCallback[cbId];
+              pendingCallback.delete(cbId);
             }
             decrementPendingCallbacksCount();
             cacheDb.removeCallbackWithRetryData(config.nodeId, cbId);

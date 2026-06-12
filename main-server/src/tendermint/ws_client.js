@@ -42,7 +42,7 @@ export default class TendermintWsClient extends EventEmitter {
     // this.isAlive = false;
     this.reconnect = true;
     this.rpcId = 0;
-    this.queue = [];
+    this.queue = new Map(); // rpcId -> { resolve, reject }
     this.backoff = new ExponentialBackoff({
       min: 1000,
       max: 15000,
@@ -96,16 +96,16 @@ export default class TendermintWsClient extends EventEmitter {
         });
 
         // Reject all `_call` promises
-        for (let rpcId in this.queue) {
+        for (const [rpcId, { reject }] of this.queue) {
           const error = new CustomError({
             message: 'Connection closed',
             details: {
               rpcId,
             },
           });
-          this.queue[rpcId].promise[1](error);
-          delete this.queue[rpcId];
+          reject(error);
         }
+        this.queue.clear();
 
         this.emit('disconnected');
       }
@@ -156,7 +156,9 @@ export default class TendermintWsClient extends EventEmitter {
       }
 
       const rpcId = message.id;
-      if (this.queue[rpcId]) {
+      if (this.queue.has(rpcId)) {
+        const pendingRequest = this.queue.get(rpcId);
+
         if (message.error) {
           let error;
           if (message.error.data === 'Mempool is full') {
@@ -176,12 +178,12 @@ export default class TendermintWsClient extends EventEmitter {
               },
             });
           }
-          this.queue[rpcId].promise[1](error);
+          pendingRequest.reject(error);
         } else {
-          this.queue[rpcId].promise[0](message.result);
+          pendingRequest.resolve(message.result);
         }
 
-        delete this.queue[rpcId];
+        this.queue.delete(rpcId);
         return;
       }
 
@@ -329,10 +331,12 @@ export default class TendermintWsClient extends EventEmitter {
         connectionName: this.name,
         payload: message,
       });
-      this.queue[id] = { promise: [resolve, reject] };
+
+      this.queue.set(id, { resolve, reject });
+
       this.ws.send(JSON.stringify(message), wsOpts, (error) => {
         if (error) {
-          delete this.queue[id];
+          this.queue.delete(id);
           return reject(
             new CustomError({
               message: 'Tendermint WS send error',

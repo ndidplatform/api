@@ -35,91 +35,74 @@ export default class MQSend extends EventEmitter {
     this.totalTimeout = config.totalTimeout || 120000;
     this.timeout = config.timeout || 30000;
     this.id = config.id || '';
-    this.callbacksAfterAck = {};
+    this.callbacksAfterAck = new Map(); // msgId -> callback function
 
     this.logic = new MQLogic({
       totalTimeout: this.totalTimeout,
       timeout: this.timeout,
     });
 
-    this.logic.on(
-      'PerformSend',
-      function(params) {
-        const message = MQProtocol.generateSendMsg(
-          config.senderId,
-          params.payload,
-          {
-            msgId: params.msgId,
-            seqId: params.seqId,
-          }
-        );
+    this.logic.on('PerformSend', (params) => {
+      const message = MQProtocol.generateSendMsg(
+        config.senderId,
+        params.payload,
+        {
+          msgId: params.msgId,
+          seqId: params.seqId,
+        }
+      );
 
-        this.emit('debug', this.id + ': sending msg' + params.msgId);
-        this.socket.send(params.dest, message, params.msgId, params.seqId);
-      }.bind(this)
-    );
+      this.emit('debug', `${this.id}: sending msg${params.msgId}`);
+      this.socket.send(params.dest, message, params.msgId, params.seqId);
+    });
 
-    this.logic.on(
-      'PerformCleanUp',
-      function(msgId, seqId) {
-        this._cleanUp(msgId, seqId);
-      }.bind(this)
-    );
+    this.logic.on('PerformCleanUp', (msgId, seqId) => {
+      this._cleanUp(msgId, seqId);
+    });
 
-    this.logic.on(
-      'RetrySend',
-      function({ msgId, retryCount }) {
-        this.emit('retry_send', msgId, retryCount);
-      }.bind(this)
-    );
+    this.logic.on('RetrySend', ({ msgId, retryCount }) => {
+      this.emit('retry_send', msgId, retryCount);
+    });
 
-    this.logic.on(
-      'PerformTotalTimeout',
-      function({ msgId }) {
-        this.emit(
-          'error',
-          msgId,
-          new CustomError({
-            errorType: errorType.MQ_SEND_TIMEOUT,
-            details: {
-              id: this.id,
-              msgId,
-            },
-          })
-        );
-      }.bind(this)
-    );
+    this.logic.on('PerformTotalTimeout', ({ msgId }) => {
+      this.emit(
+        'error',
+        msgId,
+        new CustomError({
+          errorType: errorType.MQ_SEND_TIMEOUT,
+          details: {
+            id: this.id,
+            msgId,
+          },
+        })
+      );
+    });
 
     this.socket = new MQSendSocket();
 
-    this.socket.on(
-      'error',
-      function(msgId, error) {
-        this.emit(
-          'error',
-          msgId,
-          new CustomError({
-            errorType: errorType.MQ_SEND_ERROR,
-            cause: error,
-          })
-        );
-      }.bind(this)
-    );
+    this.socket.on('error', (msgId, error) => {
+      this.emit(
+        'error',
+        msgId,
+        new CustomError({
+          errorType: errorType.MQ_SEND_ERROR,
+          cause: error,
+        })
+      );
+    });
 
-    this.socket.on(
-      'message',
-      function(messageBuffer) {
-        const msg = MQProtocol.extractMsg(messageBuffer);
-        const { msgId, seqId } = msg.retryspec;
-        this.emit('debug', 'Received ACK for ' + msgId + '/' + seqId);
-        this.logic.cleanUp(msgId);
-        if (this.callbacksAfterAck[msgId]) {
-          this.callbacksAfterAck[msgId]();
-          delete this.callbacksAfterAck[msgId];
-        }
-        this.emit('ack_received', msgId);
-      }.bind(this)
-    );
+    this.socket.on('message', (messageBuffer) => {
+      const msg = MQProtocol.extractMsg(messageBuffer);
+      const { msgId, seqId } = msg.retryspec;
+      this.emit('debug', `Received ACK for ${msgId}/${seqId}`);
+      this.logic.cleanUp(msgId);
+
+      if (this.callbacksAfterAck.has(msgId)) {
+        this.callbacksAfterAck.get(msgId)();
+        this.callbacksAfterAck.delete(msgId);
+      }
+      this.emit('ack_received', msgId);
+    });
 
     this.socket.on('new_socket_connection', (count) =>
       this.emit('new_socket_connection', count)
@@ -154,9 +137,9 @@ export default class MQSend extends EventEmitter {
       if (typeof callbackAfterAck !== 'function') {
         throw new Error('"callbackAfterAck" must be a function');
       }
-      this.callbacksAfterAck[msgId] = callbackAfterAck;
+      this.callbacksAfterAck.set(msgId, callbackAfterAck);
     }
-    // let the logic to dictate when\where it should send
+    // let the logic to dictate when/where it should send
     this.logic.send(dest, payload, msgId);
   }
 

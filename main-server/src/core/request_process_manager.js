@@ -37,9 +37,9 @@ import logger from '../logger';
 import MODE from '../mode';
 import * as config from '../config';
 
-const messageProcessLock = {};
-const requestQueue = {};
-const requestQueueRunning = {};
+const messageProcessLock = new Map(); // messageId -> boolean
+const requestQueue = new Map(); // requestId -> Array<taskData>
+const requestQueueRunning = new Map(); // requestId -> boolean
 
 let stopping = false;
 
@@ -79,13 +79,13 @@ export async function handleMessageFromMqWithBlockWait(
       tendermintLatestBlockHeight: latestBlockHeight,
       messageBlockHeight: message.height,
     });
-    messageProcessLock[messageId] = true;
+    messageProcessLock.set(messageId, true);
     await Promise.all([
       cacheDb.setMessageFromMQ(nodeId, messageId, message),
       cacheDb.addMessageIdToProcessAtBlock(nodeId, message.height, messageId),
     ]);
     if (tendermint.latestBlockHeight <= message.height) {
-      delete messageProcessLock[messageId];
+      messageProcessLock.delete(messageId);
       return false;
     } else {
       await Promise.all([
@@ -110,7 +110,7 @@ export async function processMessageInBlocks({
   );
   await Promise.all(
     messageIds.map(async (messageId) => {
-      if (messageProcessLock[messageId]) return;
+      if (messageProcessLock.has(messageId)) return;
       const message = await cacheDb.getMessageFromMQ(nodeId, messageId);
       if (message == null) return;
       const requestId = message.request_id;
@@ -127,7 +127,7 @@ export async function processMessageInBlocks({
 }
 
 function releaseLock(messageId) {
-  delete messageProcessLock[messageId];
+  messageProcessLock.delete(messageId);
 }
 
 function releaseLockAndCleanUp(nodeId, messageId) {
@@ -168,11 +168,10 @@ export async function addMqMessageTaskToQueue({
 }
 
 export async function restoreTaskFromPersistentQueue() {
-  const tasksInRequestProcessQueue = await cacheDb.getAllTasksInRequestProcessQueue(
-    config.nodeId
-  );
+  const tasksInRequestProcessQueue =
+    await cacheDb.getAllTasksInRequestProcessQueue(config.nodeId);
   tasksInRequestProcessQueue.forEach((requestId, tasks) => {
-    requestQueue[requestId] = tasks;
+    requestQueue.set(requestId, tasks);
     //TODO: batch incremental?
     tasks.forEach(() => {
       incrementPendingTasksInQueueCount();
@@ -212,12 +211,12 @@ export async function addTaskToQueue({
   if (stopping) return;
 
   let startQueue = false;
-  if (requestQueue[requestId] == null) {
-    requestQueue[requestId] = [];
+  if (!requestQueue.has(requestId)) {
+    requestQueue.set(requestId, []);
     startQueue = true;
     incrementRequestsInQueueCount();
   }
-  requestQueue[requestId].push(taskData);
+  requestQueue.get(requestId).push(taskData);
   incrementPendingTasksInQueueCount();
 
   if (startQueue) {
@@ -226,10 +225,13 @@ export async function addTaskToQueue({
 }
 
 function executeTaskInQueue(requestId) {
-  if (requestQueueRunning[requestId]) return;
-  const task = requestQueue[requestId].shift();
+  if (requestQueueRunning.has(requestId)) return;
+
+  const tasks = requestQueue.get(requestId);
+  const task = tasks ? tasks.shift() : null;
+
   if (task) {
-    requestQueueRunning[requestId] = true;
+    requestQueueRunning.set(requestId, true);
     const {
       nodeId,
       callbackFnName,
@@ -304,8 +306,10 @@ function onTaskExecutionFinished({
   if (onCallbackFinished) {
     onCallbackFinished(...onCallbackFinishedArgs);
   }
-  delete requestQueueRunning[requestId];
-  if (requestQueue[requestId].length === 0) {
+  requestQueueRunning.delete(requestId);
+
+  const tasks = requestQueue.get(requestId);
+  if (!tasks || tasks.length === 0) {
     cleanUpQueue(requestId);
   } else {
     setImmediate(executeTaskInQueue, requestId);
@@ -346,7 +350,7 @@ function cleanUpQueue(requestId) {
     message: 'Queue is empty, cleaning up',
     requestId,
   });
-  delete requestQueue[requestId];
+  requestQueue.delete(requestId);
   cacheDb
     .removeAllTasksFromRequestProcessQueue(config.nodeId, requestId)
     .catch((error) => {

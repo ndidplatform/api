@@ -63,11 +63,11 @@ export const tendermintWsClient = new TendermintWsClient('main', false);
 
 let handleTendermintNewBlock;
 
-let processingBlocks = {};
+const processingBlocks = new Set(); // Stores processingBlocksStr strings
 let processingBlocksCount = 0;
 
-const expectedTx = {};
-const expectedTxMetricsData = {};
+const expectedTx = new Map(); // txHash -> transactParams
+const expectedTxMetricsData = new Map(); // txHash -> { startTime, functionName }
 let expectedTxsCount = 0;
 let getTxResultCallbackFn;
 const txEventEmitter = new EventEmitter();
@@ -75,7 +75,7 @@ const txEventEmitter = new EventEmitter();
 let reconnecting = false; // Use when reconnect WS
 let pollingStatus = false;
 
-let cacheBlocks = {};
+const cacheBlocks = new Map(); // blockHeight -> block
 let lastKnownAppHash;
 
 export let tendermintVersion;
@@ -252,7 +252,7 @@ export async function loadExpectedTxFromDB() {
     }
     if (config.mode === MODE.STANDALONE) {
       savedExpectedTxs.forEach(({ tx: txHash, transactParams }) => {
-        expectedTx[txHash] = transactParams;
+        expectedTx.set(txHash, transactParams);
         incrementExpectedTxsCount();
       });
       // expectedTxsLoaded = true;
@@ -272,7 +272,7 @@ export async function loadExpectedTxFromDB() {
 
 export function loadExpectedTxOnWorker(savedExpectedTxs) {
   savedExpectedTxs.forEach(({ tx: txHash, transactParams }) => {
-    expectedTx[txHash] = transactParams;
+    expectedTx.set(txHash, transactParams);
     incrementExpectedTxsCount();
   });
   // expectedTxsLoaded = true;
@@ -281,7 +281,7 @@ export function loadExpectedTxOnWorker(savedExpectedTxs) {
 
 async function processMissingExpectedTxs() {
   await Promise.all(
-    Object.keys(expectedTx).map(async (txHash) => {
+    Array.from(expectedTx.keys()).map(async (txHash) => {
       try {
         const result = await tendermintWsPool
           .getConnection()
@@ -301,7 +301,7 @@ async function processMissingExpectedTxs() {
 
 async function processExpectedTx(txHash, result, fromEvent) {
   // Check for undefined again to prevent duplicate processing
-  if (expectedTx[txHash] == null) return;
+  if (!expectedTx.has(txHash)) return;
   logger.debug({
     message: 'Expected Tx is included in the block. Processing.',
     txHash,
@@ -310,18 +310,19 @@ async function processExpectedTx(txHash, result, fromEvent) {
   // Metrics
   // Need to check for in-mem metrics data since loaded expected Txs from cache
   // on server start doesn't have one and their durations shouldn't be collected
-  if (expectedTxMetricsData[txHash] != null) {
+  const metricsData = expectedTxMetricsData.get(txHash);
+  if (metricsData != null) {
     metricsEventEmitter.emit(
       'txCommitDuration',
-      expectedTxMetricsData[txHash].functionName,
-      Date.now() - expectedTxMetricsData[txHash].startTime
+      metricsData.functionName,
+      Date.now() - metricsData.startTime
     );
-    delete expectedTxMetricsData[txHash];
+    expectedTxMetricsData.delete(txHash);
   }
 
   try {
-    const transactParams = expectedTx[txHash];
-    delete expectedTx[txHash];
+    const transactParams = expectedTx.get(txHash);
+    expectedTx.delete(txHash);
     decrementExpectedTxsCount();
     let retVal = getTransactResultFromTx(result, fromEvent);
     const waitForCommit = !transactParams.callbackFnName;
@@ -516,7 +517,7 @@ async function handleNewChain(newChainId) {
   removeChainIdAndLatestBlockHeightFiles();
   saveChainId(newChainId);
   lastKnownAppHash = null;
-  cacheBlocks = {};
+  cacheBlocks.clear();
   latestBlockHeight = 1;
   latestProcessedBlockHeight = 0;
   saveLatestBlockHeight(1);
@@ -675,7 +676,7 @@ async function handleNewBlockEvent(error, result) {
   }
   const blockHeight = getBlockHeightFromNewBlockEvent(result);
   const block = result.data.value.block;
-  cacheBlocks[blockHeight] = block;
+  cacheBlocks.set(blockHeight, block);
 
   logger.debug({
     message: 'Tendermint NewBlock event received',
@@ -688,7 +689,7 @@ async function handleNewBlockEvent(error, result) {
     const appHash = getAppHashFromNewBlockEvent(result);
     await processNewBlock(blockHeight, appHash);
   }
-  delete cacheBlocks[blockHeight - 1];
+  cacheBlocks.delete(blockHeight - 1);
 }
 
 async function processTransactionsInBlock(blockHeight, block) {
@@ -708,7 +709,7 @@ async function processTransactionsInBlock(blockHeight, block) {
     txs.map(async (txBase64, index) => {
       const txProtoBuffer = Buffer.from(txBase64, 'base64');
       const txHash = sha256(txProtoBuffer).toString('hex');
-      if (expectedTx[txHash] == null) return;
+      if (!expectedTx.has(txHash)) return;
       let deliverTxResult;
       if (tendermintVersion.major === 0 && tendermintVersion.minor >= 33) {
         deliverTxResult = blockResult.txs_results[index];
@@ -770,7 +771,7 @@ async function processNewBlock(blockHeight, appHash) {
       } else {
         processingBlocksStr = `${fromHeight}-${toHeight}`;
       }
-      processingBlocks[processingBlocksStr] = null;
+      processingBlocks.add(processingBlocksStr);
       const blocksToProcess = toHeight - fromHeight + 1;
       addProcessingBlocksCount(blocksToProcess);
 
@@ -787,7 +788,7 @@ async function processNewBlock(blockHeight, appHash) {
         );
       }
 
-      delete processingBlocks[processingBlocksStr];
+      processingBlocks.delete(processingBlocksStr);
       subtractProcessingBlocksCount(blocksToProcess);
     }
     lastKnownAppHash = appHash;
@@ -891,8 +892,8 @@ export async function getBlocks(fromHeight, toHeight) {
   );
   const blocks = await Promise.all(
     heights.map(async (height) => {
-      if (cacheBlocks[height]) {
-        return cacheBlocks[height];
+      if (cacheBlocks.has(height)) {
+        return cacheBlocks.get(height);
       } else {
         const result = await tendermintWsPool.getConnection().block(height);
         return result.block;
@@ -1307,13 +1308,13 @@ export async function transact({
     useMasterKey,
     saveForRetryOnChainDisabled,
   };
-  expectedTx[txHash] = transactParams;
+  expectedTx.set(txHash, transactParams);
   incrementExpectedTxsCount();
   await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, transactParams);
-  expectedTxMetricsData[txHash] = {
+  expectedTxMetricsData.set(txHash, {
     startTime: Date.now(),
     functionName: fnName,
-  };
+  });
 
   if (retryOnFail) {
     if (retryCount === 0 && !retryPreviousTxHash) {
@@ -1354,8 +1355,8 @@ export async function transact({
     }
     return broadcastTxSyncResult;
   } catch (error) {
-    delete expectedTx[txHash];
-    delete expectedTxMetricsData[txHash];
+    expectedTx.delete(txHash);
+    expectedTxMetricsData.delete(txHash);
     decrementExpectedTxsCount();
     metricsEventEmitter.emit('txTransactFail');
     await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
@@ -1452,7 +1453,7 @@ export function getExpectedTxsCount() {
 }
 
 export function getExpectedTxHashes() {
-  return Object.keys(expectedTx);
+  return Array.from(expectedTx.keys());
 }
 
 function addProcessingBlocksCount(valueToAdd) {
@@ -1470,5 +1471,5 @@ export function getProcessingBlocksCount() {
 }
 
 export function getProcessingBlocks() {
-  return Object.keys(processingBlocks);
+  return Array.from(processingBlocks);
 }
