@@ -10,18 +10,21 @@ service MessageQueue {
 message InboundMessage {
   bytes message = 1;
   string message_id = 2;
-  string sender_id = 3;
-  Error error = 4;
+  string sender_id = 3; // node ID
+  string send_ack_ref_id = 4;
+  Error error = 5;
 }
 
 message InboundMessageAck {
-  string message_id = 1;
+  string send_ack_ref_id = 1;
 }
 
 message OutboundMessage {
   MqAddress mq_address = 1;
   bytes payload = 2;
   string message_id = 3;
+  string sender_id = 4; // node ID
+  string receiver_id = 5; // node ID
 }
 
 message MqAddress {

@@ -20,7 +20,8 @@
  *
  */
 
-import fs from 'fs';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
 
 export function readFileAsync(path, opts) {
   return new Promise((resolve, reject) => {
@@ -32,4 +33,14 @@ export function readFileAsync(path, opts) {
       resolve(data);
     });
   });
+}
+
+/**
+ *
+ * @param {number} length random bytes length
+ *
+ * @returns {string} base64 encoded string of random bytes
+ */
+export function randomBase64Bytes(length) {
+  return crypto.randomBytes(length).toString('base64');
 }

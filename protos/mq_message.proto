@@ -2,12 +2,13 @@ syntax = "proto3";
 
 message MqMessage {
   int32 version = 1;
-  string message_type = 2;
-  bytes message = 3;
-  bytes signature = 4;
-  string receiver_node_id = 5;
-  string sender_node_id = 6;
-  string message_compression_algorithm = 7;
+  string message_id = 2;
+  string message_type = 3;
+  bytes message = 4;
+  bytes signature = 5;
+  string receiver_node_id = 6;
+  string sender_node_id = 7;
+  string message_compression_algorithm = 8;
 }
 
 message ConsentRequestMqMessage {

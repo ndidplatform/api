@@ -64,7 +64,7 @@ export default class MQRecv extends EventEmitter {
         this.emit('error', err);
         return;
       }
-      const ackMSG = MQProtocol.generateAckMsg(config.senderId, {
+      const ackMSG = MQProtocol.generateAckMsg(config.senderId, msg.senderId, {
         msgId: msg.retryspec.msgId,
         seqId: msg.retryspec.seqId,
       });
@@ -74,6 +74,7 @@ export default class MQRecv extends EventEmitter {
         message: msg.message,
         msgId: msg.retryspec.msgId,
         senderId: msg.senderId,
+        receiverId: msg.receiverId,
         sendAck: () => this.recvSocket.send(identity, ackMSG),
       });
     });

@@ -44,7 +44,8 @@ export default class MQSend extends EventEmitter {
 
     this.logic.on('PerformSend', (params) => {
       const message = MQProtocol.generateSendMsg(
-        config.senderId,
+        params.senderId,
+        params.receiverId,
         params.payload,
         {
           msgId: params.msgId,
@@ -126,7 +127,7 @@ export default class MQSend extends EventEmitter {
     }
   }
 
-  send(dest, payload, msgId, callbackAfterAck) {
+  send(dest, payload, msgId, senderId, receiverId, callbackAfterAck) {
     if (!msgId) {
       throw new Error('Missing "msgId"');
     }
@@ -140,7 +141,7 @@ export default class MQSend extends EventEmitter {
       this.callbacksAfterAck.set(msgId, callbackAfterAck);
     }
     // let the logic to dictate when/where it should send
-    this.logic.send(dest, payload, msgId);
+    this.logic.send(dest, payload, msgId, senderId, receiverId);
   }
 
   stopSend(msgId) {

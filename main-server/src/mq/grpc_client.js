@@ -313,13 +313,13 @@ export function subscribeToRecvMessages() {
   });
 }
 
-export function sendAckForRecvMessage(msgId) {
+export function sendAckForRecvMessage(sendACKRefId) {
   if (!nodeIdMatched) {
     throw new Error('Node ID mismatch. Will NOT send');
   }
   return new Promise((resolve, reject) => {
     const call = client.sendAckForRecvMessage(
-      { message_id: msgId },
+      { send_ack_ref_id: sendACKRefId },
       { deadline: Date.now() + config.grpcCallTimeout },
       (error) => {
         if (error) {
@@ -335,7 +335,7 @@ export function sendAckForRecvMessage(msgId) {
                 details: {
                   module: 'mq_service',
                   function: 'sendAckForRecvMessage',
-                  msgId,
+                  sendACKRefId,
                 },
                 cause: error,
               })
@@ -364,6 +364,8 @@ export async function sendMessage(
   mqAddress,
   payload,
   msgId,
+  senderId,
+  receiverId,
   retryOnServerUnavailable,
   retryDuration
 ) {
@@ -383,7 +385,13 @@ export async function sendMessage(
     for (;;) {
       if (stopSendMessageRetry) return;
       try {
-        await sendMessageInternal(mqAddress, payload, msgId);
+        await sendMessageInternal(
+          mqAddress,
+          payload,
+          msgId,
+          senderId,
+          receiverId
+        );
         return;
       } catch (error) {
         logger.error({ err: error });
@@ -413,14 +421,20 @@ export async function sendMessage(
     }
   } else {
     try {
-      await sendMessageInternal(mqAddress, payload, msgId);
+      await sendMessageInternal(
+        mqAddress,
+        payload,
+        msgId,
+        senderId,
+        receiverId
+      );
     } catch (error) {
       throw error;
     }
   }
 }
 
-function sendMessageInternal(mqAddress, payload, msgId) {
+function sendMessageInternal(mqAddress, payload, msgId, senderId, receiverId) {
   if (client == null) {
     throw new CustomError({
       message: 'gRPC client is not initialized yet',
@@ -428,7 +442,13 @@ function sendMessageInternal(mqAddress, payload, msgId) {
   }
   return new Promise((resolve, reject) => {
     const call = client.sendMessage(
-      { mq_address: mqAddress, payload, message_id: msgId },
+      {
+        mq_address: mqAddress,
+        payload,
+        message_id: msgId,
+        sender_id: senderId,
+        receiver_id: receiverId,
+      },
       { deadline: Date.now() + MQ_SEND_TOTAL_TIMEOUT + config.grpcCallTimeout },
       (error) => {
         if (error) {
@@ -475,6 +495,7 @@ function onRecvMessage(message) {
     message: messageBuffer,
     message_id: msgId,
     sender_id: senderId,
+    send_ack_ref_id: sendACKRefId,
     error,
   } = message;
   if (error) {
@@ -508,5 +529,6 @@ function onRecvMessage(message) {
     message: messageBuffer,
     msgId,
     senderId,
+    sendACKRefId,
   });
 }

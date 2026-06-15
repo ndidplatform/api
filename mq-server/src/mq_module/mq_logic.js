@@ -47,7 +47,7 @@ export default class MQLogic extends EventEmitter {
     }
   }
 
-  _performSend(dest, payload, msgId, retryCount = 0) {
+  _performSend(dest, payload, msgId, senderId, receiverId, retryCount = 0) {
     this.maxSeqId++;
     const seqId = this.maxSeqId;
     const timerId = setTimeout(
@@ -56,38 +56,49 @@ export default class MQLogic extends EventEmitter {
       dest,
       payload,
       msgId,
+      senderId,
+      receiverId,
       seqId,
       ++retryCount
     );
     this.seqMap.set(seqId, {
-      seqId: seqId,
-      msgId: msgId,
-      timerId: timerId,
+      seqId,
+      msgId,
+      timerId,
     });
     this.emit('PerformSend', {
       id: this.id,
-      dest: dest,
-      payload: payload,
-      msgId: msgId,
-      seqId: seqId,
+      dest,
+      payload,
+      msgId,
+      seqId,
+      senderId,
+      receiverId,
     });
   }
 
-  _retry(dest, payload, msgId, seqId, retryCount) {
+  _retry(dest, payload, msgId, senderId, receiverId, seqId, retryCount) {
     if (this.seqMap.has(seqId)) {
       if (retryCount >= this.maxRetries) {
         this._cleanUp(msgId);
         this.emit('PerformTotalTimeout', {
           id: this.id,
-          msgId: msgId,
+          msgId,
         });
       } else {
         this.emit('RetrySend', {
           id: this.id,
-          msgId: msgId,
+          msgId,
           retryCount,
         });
-        this._performSend(dest, payload, msgId, retryCount);
+        this._performSend(
+          dest,
+          payload,
+          msgId,
+          senderId,
+          receiverId,
+          retryCount
+        );
       }
     }
   }
@@ -100,14 +111,20 @@ export default class MQLogic extends EventEmitter {
     this._cleanUp(msgId);
   }
 
-  send(dest, payload, msgId) {
+  send(dest, payload, msgId, senderId, receiverId) {
     if (!Buffer.isBuffer(payload)) {
       throw new Error('Expect payload to be Buffer');
     }
     if (!msgId) {
       throw new Error('Missing "msgId"');
     }
-    this._performSend(dest, payload, msgId);
+    if (!senderId) {
+      throw new Error('Missing "senderId"');
+    }
+    if (!receiverId) {
+      throw new Error('Missing "receiverId"');
+    }
+    this._performSend(dest, payload, msgId, senderId, receiverId);
   }
 
   stopAllRetries() {
