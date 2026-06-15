@@ -719,7 +719,7 @@ export default {
             minLength: 1,
           },
         },
-        required: ['node_id', 'service_id'],
+        required: ['domain', 'node_id'],
       },
     },
     '/ndid/remove_node_from_domain_node_whitelist': {
@@ -734,7 +734,7 @@ export default {
             minLength: 1,
           },
         },
-        required: ['node_id', 'service_id'],
+        required: ['domain', 'node_id'],
       },
     },
     '/ndid/enable_domain_node_whitelist': {
