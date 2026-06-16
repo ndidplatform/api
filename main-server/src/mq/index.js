@@ -540,7 +540,7 @@ export async function processRawMessage({
         outerLayerDecodedDecryptedMessage.message_compression_algorithm;
     }
 
-    const expectedEnvelopeMessageId = `${receiverNodeId}:${msgId}`;
+    const expectedEnvelopeMessageId = `${msgId}:${receiverNodeId}`;
     if (messageId !== expectedEnvelopeMessageId) {
       shouldACK = true;
       throw new CustomError({
@@ -908,7 +908,7 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
         firstTierReceiverNodeId = receiver.node_id;
       }
 
-      const destUniqueMsgId = `${receiverNodeId}:${msgId}`;
+      const destUniqueMsgId = `${msgId}:${receiverNodeId}`;
       pendingOutboundMessages.set(destUniqueMsgId, {
         mqDestAddress,
         payloadBuffer,
