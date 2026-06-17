@@ -285,9 +285,6 @@ async function initialize() {
       if (config.mode === MODE.STANDALONE || config.mode === MODE.WORKER) {
         await coreCommon.setMessageQueueAddress();
       }
-      if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {
-        await mq.loadAndProcessBacklogMessages();
-      }
     }
 
     if (config.mode === MODE.STANDALONE || config.mode === MODE.MASTER) {

@@ -41,7 +41,7 @@ import errorType from 'ndid-error/type';
 
 import * as prometheus from './prometheus';
 
-import { readFileAsync } from './utils';
+import { randomBase64Bytes, readFileAsync } from './utils';
 
 import logger from './logger';
 
@@ -55,6 +55,8 @@ const MQ_RECV_MAX_MESSAGE_SIZE = 3300000; // in bytes
 let mqSend;
 let mqRecv;
 
+const sendACKRefIdPrefix = randomBase64Bytes(8);
+let sendACKRefIdCounter = 1;
 const sendACKs = new Map();
 
 // Load protobuf
@@ -107,7 +109,7 @@ function subscribeToRecvMessages(call) {
 }
 
 function sendAckForRecvMessage(call, callback) {
-  const { message_id: msgId } = call.request;
+  const { send_ack_ref_id: sendACKRefId } = call.request;
   logger.debug({
     message: 'sendAckForRecvMessage',
     args: call.request,
@@ -116,25 +118,42 @@ function sendAckForRecvMessage(call, callback) {
   call.on('cancelled', () => {
     logger.debug({
       message: 'sendAckForRecvMessage cancelled',
-      msgId,
+      sendACKRefId,
     });
   });
 
-  if (sendACKs.has(msgId)) {
-    sendACKs.get(msgId)();
-    sendACKs.delete(msgId);
+  if (sendACKs.has(sendACKRefId)) {
+    sendACKs.get(sendACKRefId)();
+    sendACKs.delete(sendACKRefId);
     callback(null);
   } else {
     callback({
-      code: errorType.MQ_SEND_ACK_UNKNOWN_MESSAGE_ID.code,
-      message: errorType.MQ_SEND_ACK_UNKNOWN_MESSAGE_ID.message,
+      code: errorType.MQ_SEND_ACK_UNKNOWN_REF_ID.code,
+      message: errorType.MQ_SEND_ACK_UNKNOWN_REF_ID.message,
     });
   }
 
   metricsEventEmitter.emit('incoming_message_ack_sent');
 }
 
-function onRecvMessage({ message, msgId, senderId }) {
+function onRecvMessage({
+  message,
+  msgId,
+  senderId,
+  receiverId,
+  senderProxyId,
+  receiverProxyId,
+  sendAck,
+}) {
+  logger.debug({
+    message: 'Inbound message',
+    msgId,
+    senderId,
+    receiverId,
+    senderProxyId,
+    receiverProxyId,
+  });
+
   if (recvSubscriberConnections.length === 0) {
     logger.warn({
       message: 'Got inbound message but no subscribers/recipients',
@@ -143,8 +162,24 @@ function onRecvMessage({ message, msgId, senderId }) {
     });
     metricsEventEmitter.emit('incoming_message_without_subscriber');
   }
+
+  const sendACKRefId = `${sendACKRefIdPrefix}_${sendACKRefIdCounter++}`;
+
+  sendACKs.set(sendACKRefId, sendAck);
+
+  logger.debug({
+    message: 'Inbound message sendACK ref',
+    msgId,
+    sendACKRefId,
+  });
+
   recvSubscriberConnections.forEach((connection) => {
-    connection.write({ message, message_id: msgId, sender_id: senderId });
+    connection.write({
+      message,
+      message_id: msgId,
+      sender_id: senderId,
+      send_ack_ref_id: sendACKRefId,
+    });
   });
   metricsEventEmitter.emit('incoming_message');
 }
@@ -158,7 +193,15 @@ function onRecvError({ error }) {
 
 // Send
 function sendMessage(call, callback) {
-  const { mq_address: mqAddress, payload, message_id: msgId } = call.request;
+  const {
+    mq_address: mqAddress,
+    payload,
+    message_id: msgId,
+    sender_id: senderId,
+    receiver_id: receiverId,
+    sender_proxy_id: senderProxyId,
+    receiver_proxy_id: receiverProxyId,
+  } = call.request;
   const { ip, port } = mqAddress;
 
   logger.debug({
@@ -168,7 +211,15 @@ function sendMessage(call, callback) {
 
   sendCalls.set(msgId, { call, callback });
 
-  mqSend.send({ ip, port }, payload, msgId);
+  mqSend.send(
+    { ip, port },
+    payload,
+    msgId,
+    senderId,
+    receiverId,
+    senderProxyId,
+    receiverProxyId
+  );
 
   call.on('cancelled', () => {
     logger.debug({
@@ -212,20 +263,7 @@ async function initialize() {
     });
     await mqRecv.init();
 
-    mqRecv.on('message', ({ message, msgId, senderId, sendAck }) => {
-      logger.debug({
-        message: 'Inbound message',
-        msgId,
-        senderId,
-      });
-      // FIXME: change sendACKs key to "<senderId>:<msgId>" ?
-      //
-      // what if malicious actor floods message with other legitimate senderId and msgId?
-      // solution: generate new ID (random on start + counter) and use it for sendACK reference instead
-      //
-      sendACKs.set(msgId, sendAck);
-      onRecvMessage({ message, msgId, senderId });
-    });
+    mqRecv.on('message', onRecvMessage);
 
     mqSend.on('error', (msgId, error) => {
       logger.error({ err: error });

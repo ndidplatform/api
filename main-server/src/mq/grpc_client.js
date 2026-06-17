@@ -32,11 +32,11 @@ import { wait, readFileAsync } from '../utils';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
+import { MQ_SEND_TOTAL_TIMEOUT } from './constants';
+
 import logger from '../logger';
 
 import * as config from '../config';
-
-const MQ_SEND_TOTAL_TIMEOUT = 600000; // 10 min
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(
@@ -313,13 +313,13 @@ export function subscribeToRecvMessages() {
   });
 }
 
-export function sendAckForRecvMessage(msgId) {
+export function sendAckForRecvMessage(sendACKRefId) {
   if (!nodeIdMatched) {
     throw new Error('Node ID mismatch. Will NOT send');
   }
   return new Promise((resolve, reject) => {
     const call = client.sendAckForRecvMessage(
-      { message_id: msgId },
+      { send_ack_ref_id: sendACKRefId },
       { deadline: Date.now() + config.grpcCallTimeout },
       (error) => {
         if (error) {
@@ -335,7 +335,7 @@ export function sendAckForRecvMessage(msgId) {
                 details: {
                   module: 'mq_service',
                   function: 'sendAckForRecvMessage',
-                  msgId,
+                  sendACKRefId,
                 },
                 cause: error,
               })
@@ -364,6 +364,10 @@ export async function sendMessage(
   mqAddress,
   payload,
   msgId,
+  senderId,
+  receiverId,
+  senderProxyId,
+  receiverProxyId,
   retryOnServerUnavailable,
   retryDuration
 ) {
@@ -383,7 +387,15 @@ export async function sendMessage(
     for (;;) {
       if (stopSendMessageRetry) return;
       try {
-        await sendMessageInternal(mqAddress, payload, msgId);
+        await sendMessageInternal(
+          mqAddress,
+          payload,
+          msgId,
+          senderId,
+          receiverId,
+          senderProxyId,
+          receiverProxyId
+        );
         return;
       } catch (error) {
         logger.error({ err: error });
@@ -413,14 +425,30 @@ export async function sendMessage(
     }
   } else {
     try {
-      await sendMessageInternal(mqAddress, payload, msgId);
+      await sendMessageInternal(
+        mqAddress,
+        payload,
+        msgId,
+        senderId,
+        receiverId,
+        senderProxyId,
+        receiverProxyId
+      );
     } catch (error) {
       throw error;
     }
   }
 }
 
-function sendMessageInternal(mqAddress, payload, msgId) {
+function sendMessageInternal(
+  mqAddress,
+  payload,
+  msgId,
+  senderId,
+  receiverId,
+  senderProxyId,
+  receiverProxyId
+) {
   if (client == null) {
     throw new CustomError({
       message: 'gRPC client is not initialized yet',
@@ -428,7 +456,15 @@ function sendMessageInternal(mqAddress, payload, msgId) {
   }
   return new Promise((resolve, reject) => {
     const call = client.sendMessage(
-      { mq_address: mqAddress, payload, message_id: msgId },
+      {
+        mq_address: mqAddress,
+        payload,
+        message_id: msgId,
+        sender_id: senderId,
+        receiver_id: receiverId,
+        sender_proxy_id: senderProxyId,
+        receiver_proxy_id: receiverProxyId,
+      },
       { deadline: Date.now() + MQ_SEND_TOTAL_TIMEOUT + config.grpcCallTimeout },
       (error) => {
         if (error) {
@@ -475,6 +511,7 @@ function onRecvMessage(message) {
     message: messageBuffer,
     message_id: msgId,
     sender_id: senderId,
+    send_ack_ref_id: sendACKRefId,
     error,
   } = message;
   if (error) {
@@ -508,5 +545,6 @@ function onRecvMessage(message) {
     message: messageBuffer,
     msgId,
     senderId,
+    sendACKRefId,
   });
 }

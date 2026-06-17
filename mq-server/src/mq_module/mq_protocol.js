@@ -24,7 +24,7 @@ import path from 'path';
 
 import protobuf from 'protobufjs';
 
-const MQ_PROTOCOL_MESSAGE_VERSION = 1; // INCREMENT THIS WHENEVER SPEC CHANGES
+const MQ_PROTOCOL_MESSAGE_VERSION = 2; // INCREMENT THIS WHENEVER SPEC CHANGES
 
 const protobufRootInstance = new protobuf.Root();
 const protobufRoot = protobufRootInstance.loadSync(
@@ -33,13 +33,23 @@ const protobufRoot = protobufRootInstance.loadSync(
 );
 const MqProtocolMessage = protobufRoot.lookupType('MqProtocolMessage');
 
-function encodeMqProtocolMessage(senderId, message, retryspec) {
+function encodeMqProtocolMessage(
+  retryspec,
+  message,
+  senderId,
+  receiverId,
+  senderProxyId,
+  receiverProxyId
+) {
   const payload = {
     version: MQ_PROTOCOL_MESSAGE_VERSION,
     msg_id: retryspec.msgId,
     seq_id: retryspec.seqId,
-    message: message,
+    message,
     sender_id: senderId,
+    receiver_id: receiverId,
+    sender_proxy_id: senderProxyId,
+    receiver_proxy_id: receiverProxyId,
   };
   const errMsg = MqProtocolMessage.verify(payload);
   if (errMsg) {
@@ -60,13 +70,28 @@ function decodeMqProtocolMessage(message) {
     },
     message: decodedMessage.message,
     senderId: decodedMessage.sender_id,
+    receiverId: decodedMessage.receiver_id,
+    senderProxyId: decodedMessage.sender_proxy_id,
+    receiverProxyId: decodedMessage.receiver_proxy_id,
   };
 }
 
-export function generateSendMsg(senderId, payload, retryspec) {
-  let msg = payload;
-  msg = encodeMqProtocolMessage(senderId, msg, retryspec);
-  return msg;
+export function generateSendMsg(
+  retryspec,
+  message,
+  senderId,
+  receiverId,
+  senderProxyId,
+  receiverProxyId
+) {
+  return encodeMqProtocolMessage(
+    retryspec,
+    message,
+    senderId,
+    receiverId,
+    senderProxyId,
+    receiverProxyId
+  );
 }
 
 export function extractMsg(payload) {
@@ -86,7 +111,12 @@ export function extractMsg(payload) {
   return decodedMessage;
 }
 
-export function generateAckMsg(senderId, retryspec) {
-  const ack = encodeMqProtocolMessage(senderId, Buffer.from(''), retryspec);
+export function generateAckMsg(retryspec, senderId, receiverId) {
+  const ack = encodeMqProtocolMessage(
+    retryspec,
+    Buffer.from(''),
+    senderId,
+    receiverId
+  );
   return ack;
 }

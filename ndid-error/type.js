@@ -199,9 +199,9 @@ module.exports = {
     code: 10041,
     message: 'Message queue send retry timed out. Give up sending.',
   },
-  MQ_SEND_ACK_UNKNOWN_MESSAGE_ID: {
+  MQ_SEND_ACK_UNKNOWN_REF_ID: {
     code: 10042,
-    message: 'Cannot send ACK for unknown message ID',
+    message: 'Cannot send ACK for unknown ref ID',
   },
   INVALID_MESSAGE_TYPE: {
     code: 10043,
@@ -243,6 +243,14 @@ module.exports = {
   MQ_MESSAGE_VERSION_MISMATCH: {
     code: 10052,
     message: 'MQ message version mismatch',
+  },
+  MESSAGE_SENDER_MISMATCH: {
+    code: 10053,
+    message: 'Message sender mismatch',
+  },
+  MESSAGE_ID_MISMATCH: {
+    code: 10054,
+    message: 'Message ID mismatch',
   },
 
   // Client errors

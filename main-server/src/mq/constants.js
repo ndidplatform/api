@@ -20,27 +20,6 @@
  *
  */
 
-import fs from 'node:fs';
-import crypto from 'node:crypto';
-
-export function readFileAsync(path, opts) {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path, opts, (err, data) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve(data);
-    });
-  });
-}
-
-/**
- *
- * @param {number} length random bytes length
- *
- * @returns {string} base64 encoded string of random bytes
- */
-export function randomBase64Bytes(length) {
-  return crypto.randomBytes(length).toString('base64');
-}
+export const MQ_MESSAGE_VERSION = 3; // INCREMENT THIS WHENEVER SPEC CHANGES
+export const MQ_SEND_TOTAL_TIMEOUT = 600000; // 10 min in msec
+export const MQ_RECV_DUPLICATE_CHECK_TIMEOUT = MQ_SEND_TOTAL_TIMEOUT + 60000; // +1 min in msec

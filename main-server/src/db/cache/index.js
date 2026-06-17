@@ -229,49 +229,6 @@ export function removeTransactRequestForRetry(nodeId, id) {
 // Used by RP, IdP, and AS
 //
 
-export function setRawMessageFromMQ(nodeId, messageId, messageBuffer) {
-  return db.set({
-    nodeId,
-    dbName,
-    name: 'rawReceivedMessageFromMQ',
-    keyName: 'messageId',
-    key: messageId,
-    valueName: 'messageBuffer',
-    value: messageBuffer,
-    jsonStringifyValue: false,
-  });
-}
-
-export function getRawMessageFromMQ(nodeId, messageId) {
-  return db.getBuffer({
-    nodeId,
-    dbName,
-    name: 'rawReceivedMessageFromMQ',
-    keyName: 'messageId',
-    key: messageId,
-  });
-}
-
-export function removeRawMessageFromMQ(nodeId, messageId) {
-  return db.remove({
-    nodeId,
-    dbName,
-    name: 'rawReceivedMessageFromMQ',
-    keyName: 'messageId',
-    key: messageId,
-  });
-}
-
-export function getAllRawMessageFromMQ(nodeId) {
-  return db.getAllBuffer({
-    nodeId,
-    dbName,
-    name: 'rawReceivedMessageFromMQ',
-    keyName: 'messageId',
-    valueName: 'messageBuffer',
-  });
-}
-
 export function getAllDuplicateMessageTimeout(nodeId) {
   return db.getAll({
     nodeId,
@@ -293,7 +250,7 @@ export function getDuplicateMessageTimeout(nodeId, id) {
   });
 }
 
-export function setDuplicateMessageTimeout(nodeId, id, unixTimeout) {
+export function setDuplicateMessageTimeout(nodeId, id, unixTimeout, ttl) {
   return db.set({
     nodeId,
     dbName,
@@ -302,6 +259,8 @@ export function setDuplicateMessageTimeout(nodeId, id, unixTimeout) {
     key: id,
     valueName: 'unixTimeout',
     value: unixTimeout,
+    onlyIfNotExist: true,
+    ttl,
   });
 }
 
@@ -320,40 +279,40 @@ export function getAllPendingOutboundMessages(nodeId) {
     nodeId,
     dbName,
     name: 'pendingOutboundMessages',
-    keyName: 'msgId',
+    keyName: 'destUniqueMsgId',
     valueName: 'data',
   });
 }
 
-export function setPendingOutboundMessage(nodeId, msgId, data) {
+export function setPendingOutboundMessage(nodeId, destUniqueMsgId, data) {
   return db.set({
     nodeId,
     dbName,
     name: 'pendingOutboundMessages',
-    keyName: 'msgId',
-    key: msgId,
+    keyName: 'destUniqueMsgId',
+    key: destUniqueMsgId,
     valueName: 'data',
     value: data,
   });
 }
 
-export function getPendingOutboundMessage(nodeId, msgId) {
+export function getPendingOutboundMessage(nodeId, destUniqueMsgId) {
   return db.get({
     nodeId,
     dbName,
     name: 'pendingOutboundMessages',
-    keyName: 'msgId',
-    key: msgId,
+    keyName: 'destUniqueMsgId',
+    key: destUniqueMsgId,
   });
 }
 
-export function removePendingOutboundMessage(nodeId, msgId) {
+export function removePendingOutboundMessage(nodeId, destUniqueMsgId) {
   return db.remove({
     nodeId,
     dbName,
     name: 'pendingOutboundMessages',
-    keyName: 'msgId',
-    key: msgId,
+    keyName: 'destUniqueMsgId',
+    key: destUniqueMsgId,
   });
 }
 

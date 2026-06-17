@@ -1,15 +1,17 @@
 syntax = "proto3";
 
 message MqProcessRawMessageArgs {
-  string messageId = 1;
-  bytes messageProtobuf = 2;
-  int64 timestamp = 3;
+  string messageId       = 1;
+  bytes  messageProtobuf = 2;
+  string senderId        = 3;
+  string sendACKRefId    = 4;
+  int64  timestamp       = 5;
 }
 
 message RpProcessRequestUpdateArgs {
-  string nodeId = 1;
-  string requestId = 2;
-  int64 height = 3;
+  string nodeId      = 1;
+  string requestId   = 2;
+  int64  height      = 3;
   string callbackUrl = 4;
   string referenceId = 5;
 }
