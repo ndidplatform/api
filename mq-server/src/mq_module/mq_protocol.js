@@ -33,7 +33,14 @@ const protobufRoot = protobufRootInstance.loadSync(
 );
 const MqProtocolMessage = protobufRoot.lookupType('MqProtocolMessage');
 
-function encodeMqProtocolMessage(senderId, receiverId, message, retryspec) {
+function encodeMqProtocolMessage(
+  retryspec,
+  message,
+  senderId,
+  receiverId,
+  senderProxyId,
+  receiverProxyId
+) {
   const payload = {
     version: MQ_PROTOCOL_MESSAGE_VERSION,
     msg_id: retryspec.msgId,
@@ -41,6 +48,8 @@ function encodeMqProtocolMessage(senderId, receiverId, message, retryspec) {
     message,
     sender_id: senderId,
     receiver_id: receiverId,
+    sender_proxy_id: senderProxyId,
+    receiver_proxy_id: receiverProxyId,
   };
   const errMsg = MqProtocolMessage.verify(payload);
   if (errMsg) {
@@ -62,11 +71,27 @@ function decodeMqProtocolMessage(message) {
     message: decodedMessage.message,
     senderId: decodedMessage.sender_id,
     receiverId: decodedMessage.receiver_id,
+    senderProxyId: decodedMessage.sender_proxy_id,
+    receiverProxyId: decodedMessage.receiver_proxy_id,
   };
 }
 
-export function generateSendMsg(senderId, receiverId, payload, retryspec) {
-  return encodeMqProtocolMessage(senderId, receiverId, payload, retryspec);
+export function generateSendMsg(
+  retryspec,
+  message,
+  senderId,
+  receiverId,
+  senderProxyId,
+  receiverProxyId
+) {
+  return encodeMqProtocolMessage(
+    retryspec,
+    message,
+    senderId,
+    receiverId,
+    senderProxyId,
+    receiverProxyId
+  );
 }
 
 export function extractMsg(payload) {
@@ -86,7 +111,12 @@ export function extractMsg(payload) {
   return decodedMessage;
 }
 
-export function generateAckMsg(senderId, receiverId, retryspec) {
-  const ack = encodeMqProtocolMessage(senderId, receiverId, Buffer.from(''), retryspec);
+export function generateAckMsg(retryspec, senderId, receiverId) {
+  const ack = encodeMqProtocolMessage(
+    retryspec,
+    Buffer.from(''),
+    senderId,
+    receiverId
+  );
   return ack;
 }

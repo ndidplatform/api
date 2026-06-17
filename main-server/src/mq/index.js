@@ -456,15 +456,15 @@ export async function processRawMessage({
         cryptoUtils.hashAlgorithm.SHA256,
         proxyDecodedDecryptedMessage
       );
-      const proxySenderNodeId =
+      const firstTierSenderNodeId =
         outerLayerDecodedDecryptedMessage.sender_node_id;
       signatureForProxy = outerLayerDecodedDecryptedMessage.signature;
       receiverNodeId = outerLayerDecodedDecryptedMessage.receiver_node_id;
       if (
         receiverNodeId == null ||
         receiverNodeId === '' ||
-        proxySenderNodeId == null ||
-        proxySenderNodeId === ''
+        firstTierSenderNodeId == null ||
+        firstTierSenderNodeId === ''
       ) {
         shouldACK = true;
         throw new CustomError({
@@ -475,17 +475,18 @@ export async function processRawMessage({
       const messageToVerify = Buffer.concat([
         Buffer.from(outerMqMessageVersion.toString(), 'utf8'),
         Buffer.from(receiverNodeId, 'utf8'),
-        Buffer.from(proxySenderNodeId, 'utf8'),
+        Buffer.from(firstTierSenderNodeId, 'utf8'),
         Buffer.from(proxyMessageHashBase64, 'base64'),
       ]);
 
-      const proxyPublicKey =
-        await tendermintNdid.getNodeSigningPubKey(proxySenderNodeId);
+      const firstTierSenderPublicKey = await tendermintNdid.getNodeSigningPubKey(
+        firstTierSenderNodeId
+      );
 
       const signatureValid = utils.verifySignature(
-        proxyPublicKey.algorithm,
+        firstTierSenderPublicKey.algorithm,
         signatureForProxy,
-        proxyPublicKey.public_key,
+        firstTierSenderPublicKey.public_key,
         messageToVerify
       );
 
@@ -537,14 +538,14 @@ export async function processRawMessage({
         outerLayerDecodedDecryptedMessage.message_compression_algorithm;
     }
 
-    const expectedEnvelopeMessageId = `${msgId}:${receiverNodeId}`;
-    if (messageId !== expectedEnvelopeMessageId) {
+    const expectedDestUniqueMsgId = `${msgId}:${receiverNodeId}`;
+    if (messageId !== expectedDestUniqueMsgId) {
       shouldACK = true;
       throw new CustomError({
         errorType: errorType.MESSAGE_ID_MISMATCH,
         details: {
           messageId,
-          expectedEnvelopeMessageId,
+          expectedDestUniqueMsgId,
         },
       });
     }
@@ -814,6 +815,11 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
     protoBuffer,
   });
 
+  let senderProxyNodeId;
+  if (role === 'proxy') {
+    senderProxyNodeId = config.nodeId;
+  }
+
   await Promise.all(
     receivers.map(async (receiver) => {
       const { encryptedSymKey, encryptedMessage } = utils.encryptAsymetricKey(
@@ -838,26 +844,28 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
       let mqDestAddress;
       let payloadBuffer;
       let firstTierReceiverNodeId; // can be proxy
+      let receiverProxyNodeId;
       if (receiver.proxy != null) {
         // Encapsulate proxy layer
         const proxyMessageHashBase64 = utils.hash(
           cryptoUtils.hashAlgorithm.SHA256,
           protoEncryptedBuffer
         );
-        const proxySenderNodeId = config.nodeId;
-        const senderPublicKey =
-          await tendermintNdid.getNodeSigningPubKey(proxySenderNodeId);
+        const firstTierSenderNodeId = config.nodeId;
+        const senderPublicKey = await tendermintNdid.getNodeSigningPubKey(
+          firstTierSenderNodeId
+        );
         const messageToSign = Buffer.concat([
           Buffer.from(mqMessageVersion.toString(), 'utf8'),
           Buffer.from(receiverNodeId, 'utf8'),
-          Buffer.from(proxySenderNodeId, 'utf8'),
+          Buffer.from(firstTierSenderNodeId, 'utf8'),
           Buffer.from(proxyMessageHashBase64, 'base64'),
         ]);
         const proxySignatureBuffer = await utils.createSignature(
           senderPublicKey.algorithm,
           senderPublicKey.version,
           messageToSign,
-          proxySenderNodeId
+          firstTierSenderNodeId
         );
 
         const proxyMqMessageObject = {
@@ -865,7 +873,7 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
           message: protoEncryptedBuffer,
           signature: proxySignatureBuffer,
           receiver_node_id: receiverNodeId,
-          sender_node_id: proxySenderNodeId,
+          sender_node_id: firstTierSenderNodeId,
         };
         const proxyProtoMessage = MqMessage.create(proxyMqMessageObject);
         const proxyProtoBuffer = MqMessage.encode(proxyProtoMessage).finish();
@@ -896,6 +904,7 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
           port: receiver.proxy.port,
         };
         firstTierReceiverNodeId = receiver.proxy.node_id;
+        receiverProxyNodeId = receiver.proxy.node_id;
       } else {
         payloadBuffer = protoEncryptedBuffer;
         mqDestAddress = {
@@ -920,6 +929,8 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
         msgId,
         senderNodeId,
         receiverNodeId,
+        senderProxyNodeId,
+        receiverProxyNodeId,
         firstTierReceiverNodeId,
         mqDestAddress,
       });
@@ -930,6 +941,8 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
           destUniqueMsgId,
           senderNodeId,
           receiverNodeId,
+          senderProxyNodeId,
+          receiverProxyNodeId,
           true,
           MQ_SEND_TOTAL_TIMEOUT
         )
@@ -950,7 +963,6 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
           metricsEventEmitter.emit('mqSendMessageFail');
         })
         .then(() => {
-          // finally
           pendingOutboundMessages.delete(destUniqueMsgId);
           decrementPendingOutboundMessagesCount();
         });

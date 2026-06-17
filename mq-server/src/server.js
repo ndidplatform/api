@@ -136,12 +136,22 @@ function sendAckForRecvMessage(call, callback) {
   metricsEventEmitter.emit('incoming_message_ack_sent');
 }
 
-function onRecvMessage({ message, msgId, senderId, receiverId, sendAck }) {
+function onRecvMessage({
+  message,
+  msgId,
+  senderId,
+  receiverId,
+  senderProxyId,
+  receiverProxyId,
+  sendAck,
+}) {
   logger.debug({
     message: 'Inbound message',
     msgId,
     senderId,
     receiverId,
+    senderProxyId,
+    receiverProxyId,
   });
 
   if (recvSubscriberConnections.length === 0) {
@@ -156,6 +166,12 @@ function onRecvMessage({ message, msgId, senderId, receiverId, sendAck }) {
   const sendACKRefId = `${sendACKRefIdPrefix}_${sendACKRefIdCounter++}`;
 
   sendACKs.set(sendACKRefId, sendAck);
+
+  logger.debug({
+    message: 'Inbound message sendACK ref',
+    msgId,
+    sendACKRefId,
+  });
 
   recvSubscriberConnections.forEach((connection) => {
     connection.write({
@@ -183,6 +199,8 @@ function sendMessage(call, callback) {
     message_id: msgId,
     sender_id: senderId,
     receiver_id: receiverId,
+    sender_proxy_id: senderProxyId,
+    receiver_proxy_id: receiverProxyId,
   } = call.request;
   const { ip, port } = mqAddress;
 
@@ -193,7 +211,15 @@ function sendMessage(call, callback) {
 
   sendCalls.set(msgId, { call, callback });
 
-  mqSend.send({ ip, port }, payload, msgId, senderId, receiverId);
+  mqSend.send(
+    { ip, port },
+    payload,
+    msgId,
+    senderId,
+    receiverId,
+    senderProxyId,
+    receiverProxyId
+  );
 
   call.on('cancelled', () => {
     logger.debug({

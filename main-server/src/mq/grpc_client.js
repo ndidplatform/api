@@ -366,6 +366,8 @@ export async function sendMessage(
   msgId,
   senderId,
   receiverId,
+  senderProxyId,
+  receiverProxyId,
   retryOnServerUnavailable,
   retryDuration
 ) {
@@ -390,7 +392,9 @@ export async function sendMessage(
           payload,
           msgId,
           senderId,
-          receiverId
+          receiverId,
+          senderProxyId,
+          receiverProxyId
         );
         return;
       } catch (error) {
@@ -426,7 +430,9 @@ export async function sendMessage(
         payload,
         msgId,
         senderId,
-        receiverId
+        receiverId,
+        senderProxyId,
+        receiverProxyId
       );
     } catch (error) {
       throw error;
@@ -434,7 +440,15 @@ export async function sendMessage(
   }
 }
 
-function sendMessageInternal(mqAddress, payload, msgId, senderId, receiverId) {
+function sendMessageInternal(
+  mqAddress,
+  payload,
+  msgId,
+  senderId,
+  receiverId,
+  senderProxyId,
+  receiverProxyId
+) {
   if (client == null) {
     throw new CustomError({
       message: 'gRPC client is not initialized yet',
@@ -448,6 +462,8 @@ function sendMessageInternal(mqAddress, payload, msgId, senderId, receiverId) {
         message_id: msgId,
         sender_id: senderId,
         receiver_id: receiverId,
+        sender_proxy_id: senderProxyId,
+        receiver_proxy_id: receiverProxyId,
       },
       { deadline: Date.now() + MQ_SEND_TOTAL_TIMEOUT + config.grpcCallTimeout },
       (error) => {

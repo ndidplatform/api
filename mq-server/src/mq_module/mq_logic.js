@@ -47,7 +47,16 @@ export default class MQLogic extends EventEmitter {
     }
   }
 
-  _performSend(dest, payload, msgId, senderId, receiverId, retryCount = 0) {
+  _performSend(
+    dest,
+    payload,
+    msgId,
+    senderId,
+    receiverId,
+    senderProxyId,
+    receiverProxyId,
+    retryCount = 0
+  ) {
     this.maxSeqId++;
     const seqId = this.maxSeqId;
     const timerId = setTimeout(
@@ -58,6 +67,8 @@ export default class MQLogic extends EventEmitter {
       msgId,
       senderId,
       receiverId,
+      senderProxyId,
+      receiverProxyId,
       seqId,
       ++retryCount
     );
@@ -74,10 +85,22 @@ export default class MQLogic extends EventEmitter {
       seqId,
       senderId,
       receiverId,
+      senderProxyId,
+      receiverProxyId,
     });
   }
 
-  _retry(dest, payload, msgId, senderId, receiverId, seqId, retryCount) {
+  _retry(
+    dest,
+    payload,
+    msgId,
+    senderId,
+    receiverId,
+    senderProxyId,
+    receiverProxyId,
+    seqId,
+    retryCount
+  ) {
     if (this.seqMap.has(seqId)) {
       if (retryCount >= this.maxRetries) {
         this._cleanUp(msgId);
@@ -111,7 +134,15 @@ export default class MQLogic extends EventEmitter {
     this._cleanUp(msgId);
   }
 
-  send(dest, payload, msgId, senderId, receiverId) {
+  send(
+    dest,
+    payload,
+    msgId,
+    senderId,
+    receiverId,
+    senderProxyId,
+    receiverProxyId
+  ) {
     if (!Buffer.isBuffer(payload)) {
       throw new Error('Expect payload to be Buffer');
     }
@@ -124,7 +155,15 @@ export default class MQLogic extends EventEmitter {
     if (!receiverId) {
       throw new Error('Missing "receiverId"');
     }
-    this._performSend(dest, payload, msgId, senderId, receiverId);
+    this._performSend(
+      dest,
+      payload,
+      msgId,
+      senderId,
+      receiverId,
+      senderProxyId,
+      receiverProxyId
+    );
   }
 
   stopAllRetries() {

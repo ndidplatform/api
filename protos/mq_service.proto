@@ -1,18 +1,18 @@
 syntax = "proto3";
- 
+
 service MessageQueue {
   rpc subscribeToRecvMessages(Empty) returns (stream InboundMessage){}
   rpc sendAckForRecvMessage(InboundMessageAck) returns(Empty){}
   rpc sendMessage(OutboundMessage) returns (Empty){}
   rpc getInfo(Empty) returns (ServiceServerInfo){}
 }
- 
+
 message InboundMessage {
-  bytes message = 1;
-  string message_id = 2;
-  string sender_id = 3; // node ID
+  bytes  message         = 1;
+  string message_id      = 2;
+  string sender_id       = 3; // node ID
   string send_ack_ref_id = 4;
-  Error error = 5;
+  Error  error           = 5;
 }
 
 message InboundMessageAck {
@@ -20,27 +20,29 @@ message InboundMessageAck {
 }
 
 message OutboundMessage {
-  MqAddress mq_address = 1;
-  bytes payload = 2;
-  string message_id = 3;
-  string sender_id = 4; // node ID
-  string receiver_id = 5; // node ID
+  MqAddress mq_address        = 1;
+  bytes     payload           = 2;
+  string    message_id        = 3;
+  string    sender_id         = 4; // node ID
+  string    receiver_id       = 5; // node ID
+  string    sender_proxy_id   = 6; // node ID
+  string    receiver_proxy_id = 7; // node ID
 }
 
 message MqAddress {
-  string ip = 1;
-  int32 port = 2;
+  string ip   = 1;
+  int32  port = 2;
 }
 
 message Error {
-  int32 code = 1;
+  int32  code    = 1;
   string message = 2;
 }
 
 message ServiceServerInfo {
-  string node_id = 1;
-  int32 mq_binding_port = 2;
-  string version = 3;
+  string node_id         = 1;
+  int32  mq_binding_port = 2;
+  string version         = 3;
 }
 
 message Empty {

@@ -42,7 +42,7 @@ let server;
 let stoppingWorkerCount = 0;
 
 const workerList = [];
-const workerLostHandling = {};
+const workerLostHandling = new Map(); // workerId -> jobsDetail
 const lostWorkerIdsToHandle = [];
 
 export const eventEmitter = new EventEmitter();
@@ -63,7 +63,7 @@ const proto = grpc.loadPackageDefinition(packageDefinition);
 const grpcCallRefIdPrefix = randomBase64Bytes(8);
 let grpcCallRefIdCounter = 0;
 
-const grpcCall = {};
+const grpcCall = new Map(); // grpcRefId -> { fnName, callback, additionalCallbackArgs, worker }
 
 export async function initialize() {
   let grpcSslRootCert;
@@ -122,7 +122,7 @@ export async function initialize() {
   // server.start();
 
   logger.info({
-    message: 'Master gRPC server initialzed',
+    message: 'Master gRPC server initialized',
     masterId,
     port,
   });
@@ -171,11 +171,11 @@ function subscribe(call) {
 }
 
 function handleRequestTimeoutWorkerLost(workerId) {
-  const requestTimeout = workerLostHandling[workerId].find(
-    ({ type }) => type === 'requestTimeout'
-  );
+  const requestTimeout = workerLostHandling
+    .get(workerId)
+    .find(({ type }) => type === 'requestTimeout');
   const requestTimeoutTask = requestTimeout.tasks;
-  for (let requestId in requestTimeoutTask) {
+  for (const requestId in requestTimeoutTask) {
     const { domain, deadline } = requestTimeoutTask[requestId];
     if (Date.now() < deadline) {
       delegateToWorker({
@@ -187,11 +187,11 @@ function handleRequestTimeoutWorkerLost(workerId) {
 }
 
 function handleCallbackRetryWorkerLost(workerId) {
-  const callback = workerLostHandling[workerId].find(
-    ({ type }) => type === 'callback'
-  );
+  const callback = workerLostHandling
+    .get(workerId)
+    .find(({ type }) => type === 'callback');
   const callbackTask = callback.tasks;
-  for (let cbId in callbackTask) {
+  for (const cbId in callbackTask) {
     const { deadline } = callbackTask[cbId];
     if (Date.now() < deadline) {
       delegateToWorker({
@@ -203,7 +203,7 @@ function handleCallbackRetryWorkerLost(workerId) {
 }
 
 function handleMqRetryWorkerLost(workerId) {
-  const mq = workerLostHandling[workerId].find(({ type }) => type === 'mq');
+  const mq = workerLostHandling.get(workerId).find(({ type }) => type === 'mq');
   mq.tasks.forEach((msgId) =>
     delegateToWorker({
       fnName: 'mq.resumePendingOutboundMessageSendOnWorker',
@@ -213,7 +213,7 @@ function handleMqRetryWorkerLost(workerId) {
 }
 
 function handleWorkerLost(workerId) {
-  const remainingTasksAvailable = workerLostHandling[workerId] != null;
+  const remainingTasksAvailable = workerLostHandling.has(workerId);
   logger.info({
     message: 'Worker lost',
     workerId,
@@ -238,12 +238,12 @@ function handleLostWorkerRemainingTasks(workerId) {
   logger.debug({
     message: 'Handle lost worker remaining tasks',
     workerId,
-    tasks: workerLostHandling[workerId],
+    tasks: workerLostHandling.get(workerId),
   });
   handleRequestTimeoutWorkerLost(workerId);
   handleCallbackRetryWorkerLost(workerId);
   handleMqRetryWorkerLost(workerId);
-  delete workerLostHandling[workerId];
+  workerLostHandling.delete(workerId);
   lostWorkerIdsToHandle.splice(lostWorkerIdsToHandle.indexOf(workerId), 1);
 }
 
@@ -267,24 +267,36 @@ function tasksBeforeShutdown(call, done) {
     workerId,
     tasks: jobsDetail,
   });
-  workerLostHandling[workerId] = jobsDetail;
+  workerLostHandling.set(workerId, jobsDetail);
   done();
 }
 
 function returnResultCall(call, done) {
   const { grpcRefId, retValStr, error } = call.request;
-  if (grpcCall[grpcRefId]) {
-    const { callback, additionalCallbackArgs, worker } = grpcCall[grpcRefId];
+  if (grpcCall.has(grpcRefId)) {
+    const { callback, additionalCallbackArgs, worker } =
+      grpcCall.get(grpcRefId);
     if (callback) {
       let retVal;
       if (retValStr) {
         retVal = JSON.parse(retValStr);
-        retVal = retVal.map((val) => {
-          if (val.type === 'Buffer') {
-            return Buffer.from(val);
-          }
-          return val;
-        });
+        if (retVal && typeof retVal === 'object' && !Array.isArray(retVal)) {
+          retVal = Object.keys(retVal).reduce((accumulator, key) => {
+            if (retVal.type === 'Buffer') {
+              accumulator[key] = Buffer.from(retVal[key]);
+            } else {
+              accumulator[key] = retVal[key];
+            }
+            return accumulator;
+          }, {});
+        } else if (Array.isArray(retVal)) {
+          retVal = retVal.map((val) => {
+            if (val && val.type === 'Buffer') {
+              return Buffer.from(val);
+            }
+            return val;
+          });
+        }
       }
       callback(error, retVal, additionalCallbackArgs);
     } else {
@@ -293,7 +305,7 @@ function returnResultCall(call, done) {
       }
     }
     worker.jobCount--;
-    delete grpcCall[grpcRefId];
+    grpcCall.delete(grpcRefId);
   } else {
     const error = new CustomError({
       message: 'Unknown gRPC call ref ID',
@@ -375,7 +387,7 @@ export function delegateToWorker({
 
   const worker = getWorker(specificWorkerId);
 
-  grpcCall[grpcRefId] = { fnName, callback, additionalCallbackArgs, worker };
+  grpcCall.set(grpcRefId, { fnName, callback, additionalCallbackArgs, worker });
 
   worker.jobCount++;
 
@@ -428,7 +440,12 @@ export function remoteFnCallToWorkers({
       grpcRefId,
     });
 
-    grpcCall[grpcRefId] = { fnName, callback, additionalCallbackArgs, worker };
+    grpcCall.set(grpcRefId, {
+      fnName,
+      callback,
+      additionalCallbackArgs,
+      worker,
+    });
 
     worker.jobCount++;
 

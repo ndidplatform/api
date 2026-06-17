@@ -1,11 +1,12 @@
 syntax = "proto3";
 
 message MqProtocolMessage {
-  int32 version = 1;
-  string msg_id = 2;
-  int32 seq_id = 3;
-  bytes message = 4;
-  string sender_id = 5;
-  string receiver_id = 6;
-  // TODO: add proxy sender and proxy receiver
+  int32  version           = 1;
+  string msg_id            = 2;
+  int32  seq_id            = 3;
+  bytes  message           = 4;
+  string sender_id         = 5;
+  string receiver_id       = 6;
+  string sender_proxy_id   = 7;
+  string receiver_proxy_id = 8;
 }
