@@ -174,9 +174,14 @@ export const mqMessageCompressMinLength =
     : 1000;
 
 // in bytes
-export const mqMessageMaxUncompressedLength = 25 * 1024 * 1024; // 25 MB
+export const mqMessageMaxUncompressedLength = process.env
+  .MAX_MQ_MESSAGE_UNCOMPRESSED_LENGTH
+  ? parseInt(process.env.MAX_MQ_MESSAGE_UNCOMPRESSED_LENGTH)
+  : 25 * 1024 * 1024; // default: 25 MB
 // in bytes
-export const mqMessageMaxLength = 3125 * 1024; // ~3 MB
+export const mqMessageMaxLength = process.env.MAX_MQ_MESSAGE_LENGTH
+  ? parseInt(process.env.MAX_MQ_MESSAGE_LENGTH)
+  : 3175 * 1024; // default: 3.1 MB
 
 export const useExternalCryptoService =
   process.env.USE_EXTERNAL_CRYPTO_SERVICE === 'true';
@@ -331,9 +336,14 @@ export const asDataCompressMinLength =
     : 1000;
 
 // in bytes
-export const asDataMaxUncompressedLength = 10 * 1024 * 1024; // 10 MB
+export const asDataMaxUncompressedLength = process.env
+  .AS_DATA_MAX_UNCOMPRESSED_LENGTH
+  ? parseInt(process.env.AS_DATA_MAX_UNCOMPRESSED_LENGTH)
+  : 10 * 1024 * 1024; // default: 10 MB
 // in bytes
-export const asDataMaxLength = 3 * 1024 * 1024; // 3 MB
+export const asDataMaxLength = process.env.AS_DATA_MAX_LENGTH
+  ? parseInt(process.env.AS_DATA_MAX_LENGTH)
+  : 3 * 1024 * 1024; // default: 3 MB
 
 // Callback retry timeout in seconds
 export const callbackRetryTimeout = process.env.CALLBACK_RETRY_TIMEOUT

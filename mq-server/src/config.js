@@ -92,6 +92,11 @@ export const maxMqSockets = process.env.MAX_MQ_SOCKETS
   ? parseInt(process.env.MAX_MQ_SOCKETS)
   : 10000;
 
+// in bytes
+export const maxMqReceivingMessageSize = process.env.MAX_MQ_RECV_MESSAGE_SIZE
+  ? parseInt(process.env.MAX_MQ_RECV_MESSAGE_SIZE)
+  : 3300000;
+
 export const prometheusEnabled = process.env.PROMETHEUS === 'true';
 
 export const prometheusServerPort = process.env.PROMETHEUS_SERVER_PORT

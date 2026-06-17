@@ -71,7 +71,7 @@ FEATURES:
   - `yourdata_decryption_key_retry_request`
   - `yourdata_data_decryption_key_retry_response`
 - Sensitive data and PII redaction in log.
-- Add new environment variable options
+- [Main] Add new environment variable options
   - `LOG_REDACT_SENSITIVE_DATA`: Redact or mask sensitive data in logs. Defaults to `false`.
 
 IMPROVEMENTS:
@@ -83,6 +83,13 @@ IMPROVEMENTS:
   - Use locally generated keys for `sendACK` references instead of unverified message IDs.
   - Add routing IDs (receiver, sender proxy, receiver proxy) to the MQ message envelope.
   - The envelope sender ID is now always the actual sender node ID, not the proxy.
+- [Main] Add new environment variable options
+  - `MAX_MQ_MESSAGE_UNCOMPRESSED_LENGTH`: Maximum MQ message size (in bytes) when uncompressed (before compression / after decompression). This configuration should be the same on both sending and receiving parties. Default to `26214400` (25MB).
+  - `MAX_MQ_MESSAGE_LENGTH`: Maximum MQ message size (in bytes) (after compression if compressed). This value must be less than `MAX_MQ_RECV_MESSAGE_SIZE` in MQ service configuration on receiving side. Default to `3251200` (3.1MB).
+  - `AS_DATA_MAX_UNCOMPRESSED_LENGTH`: Maximum AS response data size (in bytes) when uncompressed (before compression / after decompression). This configuration should be the same on both sending and receiving parties. Default to `10485760` (10MB).
+  - `AS_DATA_MAX_LENGTH`: Maximum AS response data size (in bytes) (after compression if compressed). This value must be less than `MAX_MQ_MESSAGE_LENGTH` to leave sufficient headroom for the rest of the message payload. Default to `3145728` (3MB).
+- [MQ Service] Add new environment variable options
+  - `MAX_MQ_RECV_MESSAGE_SIZE`: Maximum inbound message size (in bytes) on receiving socket. Default to `3300000`.
 - Update dependencies.
 - [Docker] Change Node.js version used in images from 20 to 24.
 
