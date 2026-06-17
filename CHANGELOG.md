@@ -9,8 +9,8 @@ BREAKING CHANGES:
 - API version 7.0
   - GET `/utility/services` returns list of all services regardless of their `active` status.
   - GET `/private_messages/:request_id` no longer checks for valid request ID on the blockchain, therefore there is no response with status code `404`.
-
-- Telemetry data format change
+- MQ message protocol version change.
+- Telemetry data format change.
   - Add `event_id` (UUIDv7) to request events.
 
 FEATURES:
@@ -70,9 +70,19 @@ FEATURES:
   - `yourdata_status_sync`
   - `yourdata_decryption_key_retry_request`
   - `yourdata_data_decryption_key_retry_response`
+- Sensitive data and PII redaction in log.
+- Add new environment variable options
+  - `LOG_REDACT_SENSITIVE_DATA`: Redact or mask sensitive data in logs. Defaults to `false`.
 
 IMPROVEMENTS:
 
+- Revise MQ messaging logic to enhance security and verification:
+  - Include message ID and sender node ID in the signature to prevent MITM/forgery attacks.
+  - Move de-duplication logic to run after signature verification.
+  - ACK message after message data or metadata verification.
+  - Use locally generated keys for `sendACK` references instead of unverified message IDs.
+  - Add routing IDs (receiver, sender proxy, receiver proxy) to the MQ message envelope.
+  - The envelope sender ID is now always the actual sender node ID, not the proxy.
 - Update dependencies.
 - [Docker] Change Node.js version used in images from 20 to 24.
 
