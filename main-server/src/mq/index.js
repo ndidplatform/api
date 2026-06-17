@@ -37,6 +37,11 @@ import * as cryptoUtils from '../utils/crypto';
 import logger from '../logger';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
+import {
+  MQ_MESSAGE_VERSION,
+  MQ_RECV_DUPLICATE_CHECK_TIMEOUT,
+  MQ_SEND_TOTAL_TIMEOUT,
+} from './constants';
 import validate from './message/validator';
 
 import TelemetryLogger from '../telemetry';
@@ -46,10 +51,6 @@ import { delegateToWorker } from '../master-worker-interface/server';
 import { role } from '../node';
 import MODE from '../mode';
 import * as config from '../config';
-
-const MQ_MESSAGE_VERSION = 3; // INCREMENT THIS WHENEVER SPEC CHANGES
-const MQ_SEND_TOTAL_TIMEOUT = 600000; // 10 min in msec
-const MQ_RECV_DUPLICATE_CHECK_TIMEOUT = MQ_SEND_TOTAL_TIMEOUT + 60000; // +1 min in msec
 
 const mqMessageProtobufRootInstance = new protobuf.Root();
 const mqMessageProtobufRoot = mqMessageProtobufRootInstance.loadSync(
@@ -171,23 +172,19 @@ async function initDuplicateInboundMessageTimeout() {
   const timeoutList = await cacheDb.getAllDuplicateMessageTimeout(
     config.nodeId
   );
-  const promiseArray = [];
-  timeoutList.forEach(({ id: srcUniqueMsgId, unixTimeout }) => {
-    if (unixTimeout >= Date.now()) {
-      promiseArray.push(
-        cacheDb.removeDuplicateMessageTimeout(config.nodeId, srcUniqueMsgId)
-      );
-    } else {
+  timeoutList.forEach(({ id: srcUniqueMsgId, unixTimeout: timeoutAtMsec }) => {
+    if (timeoutAtMsec > Date.now()) {
+      const timeoutDurationMsec = timeoutAtMsec - Date.now();
       timers.set(
         srcUniqueMsgId,
         setTimeout(() => {
-          cacheDb.removeDuplicateMessageTimeout(config.nodeId, srcUniqueMsgId);
+          // cache DB (redis) has its TTL, manually deleting is not necessary
+          // cacheDb.removeDuplicateMessageTimeout(config.nodeId, srcUniqueMsgId);
           timers.delete(srcUniqueMsgId);
-        }, Date.now() - unixTimeout)
+        }, timeoutDurationMsec)
       );
     }
   });
-  await Promise.all(promiseArray);
 }
 
 export async function resumePendingOutboundMessageSendOnWorker(

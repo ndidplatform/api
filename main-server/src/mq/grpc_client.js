@@ -32,11 +32,11 @@ import { wait, readFileAsync } from '../utils';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 
+import { MQ_SEND_TOTAL_TIMEOUT } from './constants';
+
 import logger from '../logger';
 
 import * as config from '../config';
-
-const MQ_SEND_TOTAL_TIMEOUT = 600000; // 10 min
 
 // Load protobuf
 const packageDefinition = protoLoader.loadSync(

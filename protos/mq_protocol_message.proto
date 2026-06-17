@@ -7,4 +7,5 @@ message MqProtocolMessage {
   bytes message = 4;
   string sender_id = 5;
   string receiver_id = 6;
+  // TODO: add proxy sender and proxy receiver
 }
