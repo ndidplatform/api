@@ -37,6 +37,11 @@ import * as cryptoUtils from '../utils/crypto';
 import logger, { redactedLogger } from '../logger';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
+import {
+  MQ_MESSAGE_VERSION,
+  MQ_RECV_DUPLICATE_CHECK_TIMEOUT,
+  MQ_SEND_TOTAL_TIMEOUT,
+} from './constants';
 import validate from './message/validator';
 
 import TelemetryLogger from '../telemetry';
@@ -46,10 +51,6 @@ import { delegateToWorker } from '../master-worker-interface/server';
 import { role } from '../node';
 import MODE from '../mode';
 import * as config from '../config';
-
-const MQ_MESSAGE_VERSION = 2; // INCREMENT THIS WHENEVER SPEC CHANGES
-const MQ_SEND_TOTAL_TIMEOUT = 600000; // 10 min
-const MQ_RECV_DUPLICATE_CHECK_TIMEOUT = MQ_SEND_TOTAL_TIMEOUT + 60000; // +1 min
 
 const mqMessageProtobufRootInstance = new protobuf.Root();
 const mqMessageProtobufRoot = mqMessageProtobufRootInstance.loadSync(
@@ -77,9 +78,8 @@ const prefixMsgId = utils.randomBase64Bytes(8);
 let outboundMessageIdCounter = 1;
 const pendingOutboundMessages = new Map();
 let pendingOutboundMessagesCount = 0;
-const timers = new Map();
 
-const rawMessagesToRetry = new Map();
+const timers = new Map();
 
 let messageHandlerFunction;
 let errorHandlerFunction;
@@ -156,11 +156,6 @@ export async function initializeInbound({
 
   mqService.subscribeToRecvMessages();
 
-  tendermint.eventEmitter.on('ready', retryProcessMessages);
-
-  cacheDb.getRedisInstance().on('reconnect', retryProcessMessages);
-  longTermDb.getRedisInstance().on('reconnect', retryProcessMessages);
-
   logger.info({
     message: 'Message queue (inbound) initialized',
   });
@@ -177,37 +172,46 @@ async function initDuplicateInboundMessageTimeout() {
   const timeoutList = await cacheDb.getAllDuplicateMessageTimeout(
     config.nodeId
   );
-  const promiseArray = [];
-  timeoutList.forEach(({ id, unixTimeout }) => {
-    if (unixTimeout >= Date.now()) {
-      promiseArray.push(
-        cacheDb.removeDuplicateMessageTimeout(config.nodeId, id)
-      );
-    } else {
+  timeoutList.forEach(({ id: srcUniqueMsgId, unixTimeout: timeoutAtMsec }) => {
+    if (timeoutAtMsec > Date.now()) {
+      const timeoutDurationMsec = timeoutAtMsec - Date.now();
       timers.set(
-        id,
+        srcUniqueMsgId,
         setTimeout(() => {
-          cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
-          timers.delete(id);
-        }, Date.now() - unixTimeout)
+          // cache DB (redis) has its TTL, manually deleting is not necessary
+          // cacheDb.removeDuplicateMessageTimeout(config.nodeId, srcUniqueMsgId);
+          timers.delete(srcUniqueMsgId);
+        }, timeoutDurationMsec)
       );
     }
   });
-  await Promise.all(promiseArray);
 }
 
-export async function resumePendingOutboundMessageSendOnWorker(msgId) {
-  const data = await cacheDb.getPendingOutboundMessage(config.nodeId, msgId);
-  await sendPendingOutboundMessage({ msgId, data });
+export async function resumePendingOutboundMessageSendOnWorker(
+  destUniqueMsgId
+) {
+  const data = await cacheDb.getPendingOutboundMessage(
+    config.nodeId,
+    destUniqueMsgId
+  );
+  await sendPendingOutboundMessage({ destUniqueMsgId, data });
 }
 
-async function sendPendingOutboundMessage({ msgId, data }) {
-  const { mqDestAddress, payloadBuffer: payloadBufferArr, sendTime } = data;
+async function sendPendingOutboundMessage({ destUniqueMsgId, data }) {
+  const {
+    mqDestAddress,
+    payloadBuffer: payloadBufferArr,
+    senderNodeId,
+    receiverNodeId,
+    sendTime,
+  } = data;
   if (sendTime + MQ_SEND_TOTAL_TIMEOUT > Date.now()) {
     const payloadBuffer = Buffer.from(payloadBufferArr);
-    pendingOutboundMessages.set(msgId, {
+    pendingOutboundMessages.set(destUniqueMsgId, {
       mqDestAddress,
       payloadBuffer,
+      senderNodeId,
+      receiverNodeId,
       sendTime,
     });
     incrementPendingOutboundMessagesCount();
@@ -215,7 +219,9 @@ async function sendPendingOutboundMessage({ msgId, data }) {
       .sendMessage(
         mqDestAddress,
         payloadBuffer,
-        msgId,
+        destUniqueMsgId,
+        senderNodeId,
+        receiverNodeId,
         true,
         MQ_SEND_TOTAL_TIMEOUT
       )
@@ -225,11 +231,11 @@ async function sendPendingOutboundMessage({ msgId, data }) {
       })
       .then(() => {
         // finally
-        pendingOutboundMessages.delete(msgId);
+        pendingOutboundMessages.delete(destUniqueMsgId);
         decrementPendingOutboundMessagesCount();
       });
   }
-  await cacheDb.removePendingOutboundMessage(config.nodeId, msgId);
+  await cacheDb.removePendingOutboundMessage(config.nodeId, destUniqueMsgId);
 }
 
 async function sendSavedPendingOutboundMessages() {
@@ -249,51 +255,45 @@ async function sendSavedPendingOutboundMessages() {
   );
 }
 
-async function onMessage({ message, msgId, senderId }) {
+async function onMessage({ message, msgId, senderId, sendACKRefId }) {
   logger.info({
     message: 'Received message from message queue',
     msgId,
-    messageLength: message.length,
     senderId,
+    messageLength: message.length,
   });
 
-  // Check for duplicate message
   const timestamp = Date.now();
-  const id = senderId + ':' + msgId;
-  if (timers.has(id)) return;
 
-  const unixTimeout = timestamp + MQ_RECV_DUPLICATE_CHECK_TIMEOUT;
-  cacheDb.setDuplicateMessageTimeout(config.nodeId, id, unixTimeout);
-  timers.set(
-    id,
-    setTimeout(() => {
-      cacheDb.removeDuplicateMessageTimeout(config.nodeId, id);
-      timers.delete(id);
-    }, MQ_RECV_DUPLICATE_CHECK_TIMEOUT)
-  );
+  const senderNodeId = senderId;
+  const messageId = msgId;
+
+  // Check for duplicate messages
+  const srcUniqueMsgId = `${senderNodeId}:${messageId}`;
+  if (timers.has(srcUniqueMsgId)) {
+    // duplicate
+    logger.debug({
+      message: 'Received duplicate MQ messages',
+      senderNodeId,
+      messageId,
+    });
+    return;
+  }
 
   try {
-    await cacheDb.setRawMessageFromMQ(config.nodeId, id, message);
-    logger.debug({
-      message: 'Sending ACK for received MQ message',
-      msgId: id,
-    });
-    mqService.sendAckForRecvMessage(msgId).catch((error) =>
-      logger.error({
-        message: 'Send ACK for received message failed',
-        err: error,
-      })
-    );
-
     if (
-      !tendermint.connected ||
-      tendermint.syncing ||
-      !cacheDb.getRedisInstance().connected ||
-      !longTermDb.getRedisInstance().connected
+      tendermint.connected &&
+      !tendermint.syncing &&
+      cacheDb.getRedisInstance().connected &&
+      longTermDb.getRedisInstance().connected
     ) {
-      rawMessagesToRetry.set(id, message);
-    } else {
-      await processRawMessageSwitch(id, message, timestamp);
+      await processRawMessageSwitch(
+        msgId,
+        message,
+        senderId,
+        sendACKRefId,
+        timestamp
+      );
     }
   } catch (error) {
     if (errorHandlerFunction) {
@@ -329,18 +329,27 @@ async function getMessageFromProtobufMessage(messageProtobuf, nodeId) {
   return decodedDecryptedMessage;
 }
 
-async function processRawMessageSwitch(messageId, messageProtobuf, timestamp) {
+async function processRawMessageSwitch(
+  messageId,
+  messageProtobuf,
+  senderId,
+  sendACKRefId,
+  timestamp
+) {
   if (config.mode === MODE.STANDALONE) {
-    const [_messageId, message, receiverNodeId] = await processRawMessage({
+    const result = await processRawMessage({
       messageId,
       messageProtobuf,
+      senderId,
+      sendACKRefId,
       timestamp,
     });
-    handleProcessedRawMessage(null, [messageId, message, receiverNodeId]);
+    handleProcessedRawMessage(null, result, { messageId });
   } else if (config.mode === MODE.MASTER) {
     delegateToWorker({
       fnName: 'mq.processRawMessage',
-      args: { messageId, messageProtobuf, timestamp },
+      args: { messageId, messageProtobuf, senderId, sendACKRefId, timestamp },
+      additionalCallbackArgs: { messageId },
       callback: handleProcessedRawMessage,
     });
   } else {
@@ -348,7 +357,11 @@ async function processRawMessageSwitch(messageId, messageProtobuf, timestamp) {
   }
 }
 
-function handleProcessedRawMessage(error, processedRawMessage) {
+function handleProcessedRawMessage(
+  error,
+  processedRawMessage,
+  messageMetadata
+) {
   if (error) {
     // logger.error()
     if (errorHandlerFunction) {
@@ -357,7 +370,25 @@ function handleProcessedRawMessage(error, processedRawMessage) {
     return;
   }
 
-  const [messageId, message, receiverNodeId] = processedRawMessage;
+  if (processedRawMessage == null) {
+    return;
+  }
+
+  const { message, receiverNodeId, srcUniqueMsgId, timeoutAtMsec } =
+    processedRawMessage;
+  const { messageId } = messageMetadata;
+
+  const timeoutDurationMsec = timeoutAtMsec - Date.now();
+  if (timeoutDurationMsec > 0) {
+    timers.set(
+      srcUniqueMsgId,
+      setTimeout(() => {
+        // cache DB (redis) has its TTL, manually deleting is not necessary
+        // cacheDb.removeDuplicateMessageTimeout(config.nodeId, srcUniqueMsgId);
+        timers.delete(srcUniqueMsgId);
+      }, timeoutDurationMsec)
+    );
+  }
 
   if (messageHandlerFunction) {
     messageHandlerFunction(messageId, message, receiverNodeId);
@@ -371,6 +402,8 @@ function handleProcessedRawMessage(error, processedRawMessage) {
 export async function processRawMessage({
   messageId,
   messageProtobuf,
+  senderId,
+  sendACKRefId,
   timestamp,
 }) {
   logger.info({
@@ -378,6 +411,9 @@ export async function processRawMessage({
     messageId,
     messageLength: messageProtobuf.length,
   });
+
+  let shouldACK = false;
+
   try {
     const outerLayerDecodedDecryptedMessage =
       await getMessageFromProtobufMessage(messageProtobuf, config.nodeId);
@@ -388,6 +424,7 @@ export async function processRawMessage({
     });
 
     if (outerLayerDecodedDecryptedMessage.version !== MQ_MESSAGE_VERSION) {
+      shouldACK = true;
       throw new CustomError({
         errorType: errorType.MQ_MESSAGE_VERSION_MISMATCH,
         details: {
@@ -397,14 +434,19 @@ export async function processRawMessage({
       });
     }
 
+    let mqMessageVersion;
+    let msgId; // in payload
     let messageType;
     let messageBuffer;
     let messageSignature;
+    let senderNodeId; // actual sender node ID (not proxy)
     let receiverNodeId;
     let signatureForProxy;
     let messageCompressionAlgorithm;
 
     if (role === 'proxy') {
+      const outerMqMessageVersion = outerLayerDecodedDecryptedMessage.version;
+
       // Message is encapsulated with proxy layer
       const proxyDecodedDecryptedMessage =
         outerLayerDecodedDecryptedMessage.message;
@@ -414,33 +456,42 @@ export async function processRawMessage({
         cryptoUtils.hashAlgorithm.SHA256,
         proxyDecodedDecryptedMessage
       );
-      const senderNodeId = outerLayerDecodedDecryptedMessage.sender_node_id;
+      const firstTierSenderNodeId =
+        outerLayerDecodedDecryptedMessage.sender_node_id;
       signatureForProxy = outerLayerDecodedDecryptedMessage.signature;
       receiverNodeId = outerLayerDecodedDecryptedMessage.receiver_node_id;
       if (
         receiverNodeId == null ||
         receiverNodeId === '' ||
-        senderNodeId == null ||
-        senderNodeId === ''
+        firstTierSenderNodeId == null ||
+        firstTierSenderNodeId === ''
       ) {
+        shouldACK = true;
         throw new CustomError({
           errorType: errorType.MALFORMED_MESSAGE_FORMAT,
         });
       }
 
-      const stringToVerify = `${proxyMessageHashBase64}|${receiverNodeId}|${senderNodeId}`;
+      const messageToVerify = Buffer.concat([
+        Buffer.from(outerMqMessageVersion.toString(), 'utf8'),
+        Buffer.from(receiverNodeId, 'utf8'),
+        Buffer.from(firstTierSenderNodeId, 'utf8'),
+        Buffer.from(proxyMessageHashBase64, 'base64'),
+      ]);
 
-      const proxyPublicKey =
-        await tendermintNdid.getNodeSigningPubKey(senderNodeId);
+      const firstTierSenderPublicKey = await tendermintNdid.getNodeSigningPubKey(
+        firstTierSenderNodeId
+      );
 
       const signatureValid = utils.verifySignature(
-        proxyPublicKey.algorithm,
+        firstTierSenderPublicKey.algorithm,
         signatureForProxy,
-        proxyPublicKey.public_key,
-        stringToVerify
+        firstTierSenderPublicKey.public_key,
+        messageToVerify
       );
 
       if (!signatureValid) {
+        shouldACK = true;
         throw new CustomError({
           errorType: errorType.INVALID_MESSAGE_SIGNATURE,
         });
@@ -457,6 +508,7 @@ export async function processRawMessage({
       });
 
       if (decodedDecryptedMessage.version !== MQ_MESSAGE_VERSION) {
+        shouldACK = true;
         throw new CustomError({
           errorType: errorType.MQ_MESSAGE_VERSION_MISMATCH,
           details: {
@@ -466,13 +518,19 @@ export async function processRawMessage({
         });
       }
 
+      senderNodeId = decodedDecryptedMessage.sender_node_id;
+      mqMessageVersion = decodedDecryptedMessage.version;
+      msgId = decodedDecryptedMessage.message_id;
       messageType = decodedDecryptedMessage.message_type;
       messageBuffer = decodedDecryptedMessage.message;
       messageSignature = decodedDecryptedMessage.signature;
       messageCompressionAlgorithm =
         decodedDecryptedMessage.message_compression_algorithm;
     } else {
+      senderNodeId = outerLayerDecodedDecryptedMessage.sender_node_id;
       receiverNodeId = config.nodeId;
+      mqMessageVersion = outerLayerDecodedDecryptedMessage.version;
+      msgId = outerLayerDecodedDecryptedMessage.message_id;
       messageType = outerLayerDecodedDecryptedMessage.message_type;
       messageBuffer = outerLayerDecodedDecryptedMessage.message;
       messageSignature = outerLayerDecodedDecryptedMessage.signature;
@@ -480,7 +538,38 @@ export async function processRawMessage({
         outerLayerDecodedDecryptedMessage.message_compression_algorithm;
     }
 
+    const expectedDestUniqueMsgId = `${msgId}:${receiverNodeId}`;
+    if (messageId !== expectedDestUniqueMsgId) {
+      shouldACK = true;
+      throw new CustomError({
+        errorType: errorType.MESSAGE_ID_MISMATCH,
+        details: {
+          messageId,
+          expectedDestUniqueMsgId,
+        },
+      });
+    }
+
+    if (senderNodeId == null) {
+      shouldACK = true;
+      throw new CustomError({
+        errorType: errorType.MESSAGE_FROM_UNKNOWN_NODE,
+      });
+    }
+
+    if (senderNodeId !== senderId) {
+      shouldACK = true;
+      throw new CustomError({
+        errorType: errorType.MESSAGE_SENDER_MISMATCH,
+        details: {
+          senderNodeId,
+          senderId,
+        },
+      });
+    }
+
     if (messageBuffer == null || messageSignature == null) {
+      shouldACK = true;
       throw new CustomError({
         errorType: errorType.MALFORMED_MESSAGE_FORMAT,
       });
@@ -493,41 +582,80 @@ export async function processRawMessage({
     );
 
     const { idp_id, rp_id, rp_node_id, as_id, as_node_id } = message;
-    const nodeId = idp_id || rp_id || rp_node_id || as_id || as_node_id;
-    if (nodeId == null) {
+    const senderNodeIdInMessage =
+      idp_id || rp_id || rp_node_id || as_id || as_node_id;
+    if (senderNodeId !== senderNodeIdInMessage) {
+      shouldACK = true;
       throw new CustomError({
-        errorType: errorType.MESSAGE_FROM_UNKNOWN_NODE,
+        errorType: errorType.MESSAGE_SENDER_MISMATCH,
+        details: {
+          senderNodeId,
+          senderNodeIdInMessage,
+        },
       });
     }
-    const nodeInfo = await tendermintNdid.getNodeInfo(nodeId);
+
+    const nodeInfo = await tendermintNdid.getNodeInfo(senderNodeId);
     const signingPublicKey = nodeInfo.signing_public_key;
+
+    const messageToVerify = Buffer.concat([
+      Buffer.from(msgId, 'utf8'),
+      Buffer.from(mqMessageVersion.toString(), 'utf8'),
+      Buffer.from(senderNodeId, 'utf8'),
+      Buffer.from(messageType, 'utf8'),
+      messageBuffer,
+    ]);
 
     const signatureValid = utils.verifySignature(
       signingPublicKey.algorithm,
       messageSignature,
       signingPublicKey.public_key,
-      messageBuffer
+      messageToVerify
     );
 
     logger.debug({
       message: 'Verifying signature',
-      nodeId,
+      senderNodeId,
       signingPublicKey,
       signatureValid,
     });
 
     if (!signatureValid) {
+      shouldACK = true;
       throw new CustomError({
         errorType: errorType.INVALID_MESSAGE_SIGNATURE,
       });
     }
 
+    // Check for duplicate messages
+    const srcUniqueMsgId = `${senderNodeId}:${messageId}`;
+    const timeoutAtMsec = timestamp + MQ_RECV_DUPLICATE_CHECK_TIMEOUT;
+    const ttlSeconds = Math.floor((timeoutAtMsec - Date.now()) / 1000);
+    if (ttlSeconds > 0) {
+      const set = await cacheDb.setDuplicateMessageTimeout(
+        config.nodeId,
+        srcUniqueMsgId,
+        timeoutAtMsec,
+        ttlSeconds
+      );
+      if (!set) {
+        // duplicate
+        logger.debug({
+          message: 'Received duplicate MQ messages (in cache DB)',
+          senderNodeId,
+          messageId,
+        });
+        return null;
+      }
+    }
+
     const validationResult = validate({ type: message.type, message });
     if (!validationResult.valid) {
+      shouldACK = true;
       throw new CustomError({
         errorType: errorType.INVALID_MESSAGE_SCHEMA,
         details: {
-          fromNodeId: nodeId,
+          fromNodeId: senderNodeId,
           validationResult,
         },
       });
@@ -536,12 +664,12 @@ export async function processRawMessage({
     const source =
       nodeInfo.proxy != null
         ? {
-            node_id: nodeId,
+            node_id: senderNodeId,
             proxy_node_id: nodeInfo.proxy.node_id,
             proxy_config: nodeInfo.proxy.config,
           }
         : {
-            node_id: nodeId,
+            node_id: senderNodeId,
           };
     await longTermDb.addMessage(
       receiverNodeId,
@@ -561,7 +689,13 @@ export async function processRawMessage({
       }
     );
 
-    return [messageId, message, receiverNodeId];
+    shouldACK = true;
+    return {
+      message,
+      receiverNodeId,
+      srcUniqueMsgId,
+      timeoutAtMsec,
+    };
   } catch (error) {
     logger.warn({
       message:
@@ -570,80 +704,52 @@ export async function processRawMessage({
     });
     throw error;
   } finally {
-    removeRawMessageFromCache(messageId);
-  }
-}
-
-async function removeRawMessageFromCache(messageId) {
-  logger.debug({
-    message: 'Removing raw received message from MQ from cache DB',
-    messageId,
-  });
-  try {
-    await cacheDb.removeRawMessageFromMQ(config.nodeId, messageId);
-  } catch (error) {
-    logger.error({
-      message: 'Cannot remove raw received message from MQ from cache DB',
-      messageId,
-      err: error,
-    });
-  }
-}
-
-function retryProcessMessages() {
-  if (
-    tendermint.connected &&
-    !tendermint.syncing &&
-    cacheDb.getRedisInstance().connected &&
-    longTermDb.getRedisInstance().connected
-  ) {
-    for (const [messageId, messageBuffer] of rawMessagesToRetry) {
-      processRawMessageSwitch(messageId, messageBuffer);
-      rawMessagesToRetry.delete(messageId);
-    }
-  }
-}
-
-/**
- * Load and process backlog received (inbound) messages.
- * This function should be called once on server start.
- */
-export async function loadAndProcessBacklogMessages() {
-  logger.info({
-    message: 'Loading backlog messages received from MQ for processing',
-  });
-  try {
-    let rawMessages = await cacheDb.getAllRawMessageFromMQ(config.nodeId);
-    if (rawMessages.length === 0) {
-      logger.info({
-        message: 'No backlog messages received from MQ to process',
+    if (shouldACK) {
+      logger.debug({
+        message: 'Sending ACK for received MQ message',
+        sendACKRefId,
       });
+      mqService.sendAckForRecvMessage(sendACKRefId).catch((error) =>
+        logger.error({
+          message: 'Send ACK for received message failed',
+          err: error,
+        })
+      );
     }
-    rawMessages.map(({ messageId, messageBuffer }) =>
-      processRawMessageSwitch(messageId, messageBuffer)
-    );
-  } catch (error) {
-    logger.error({
-      message: 'Cannot get backlog messages received from MQ from cache DB',
-    });
   }
 }
 
 /**
+ * @typedef {Object} ProxyReceiver
+ * @property {string} node_id
+ * @property {Object} encryption_public_key
+ * @property {string} ip
+ * @property {number} port
+ * @property {string} config
+ */
+
+/**
+ * @typedef {Object} Receiver
+ * @property {string} node_id
+ * @property {Object} encryption_public_key
+ * @property {string} [ip] - Optional if node is behind proxy
+ * @property {number} [port] - Optional if node is behind proxy
+ * @property {ProxyReceiver} [proxy] - Proxy receiver configuration.
+ */
+
+/**
+ * @typedef {Object} SendOptions
+ * @property {Receiver[]} receivers - The list of intended recipients.
+ * @property {Object} message - The payload being transmitted.
+ * @property {string} senderNodeId
+ * @property {Function} [onSuccess] - Optional callback triggered upon success.
+ */
+
+/**
+ * Sends a message to multiple receivers through P2P/MQ.
  *
- * @param {Object[]} receivers
- * @param {string} receivers[].node_id
- * @param {Object} receivers[].encryption_public_key
- * @param {string} [receivers[].ip]
- * @param {number} [receivers[].port]
- * @param {Object} [receivers[].proxy]
- * @param {string} receivers[].proxy.node_id
- * @param {Object} receivers[].proxy.encryption_public_key
- * @param {string} receivers[].proxy.ip
- * @param {number} receivers[].proxy.port
- * @param {string} receivers[].proxy.config
- * @param {Object} message
- * @param {string} senderNodeId
+ * @param {SendOptions} options
+ * @returns {Promise<void>}
  */
 export async function send({ receivers, message, senderNodeId, onSuccess }) {
   if (receivers.length === 0) {
@@ -656,6 +762,8 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
   }
   const timestamp = Date.now();
 
+  const mqMessageVersion = MQ_MESSAGE_VERSION;
+
   const { messageType, messageBuffer, messageCompressionAlgorithm } =
     await serializeMqMessage(
       message,
@@ -665,17 +773,28 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
     );
   const senderPublicKey =
     await tendermintNdid.getNodeSigningPubKey(senderNodeId);
+  const msgId = `${prefixMsgId}_${outboundMessageIdCounter++}`;
+
+  const messageToSign = Buffer.concat([
+    Buffer.from(msgId, 'utf8'),
+    Buffer.from(mqMessageVersion.toString(), 'utf8'),
+    Buffer.from(senderNodeId, 'utf8'),
+    Buffer.from(messageType, 'utf8'),
+    messageBuffer,
+  ]);
   const messageSignatureBuffer = await utils.createSignature(
     senderPublicKey.algorithm,
     senderPublicKey.version,
-    messageBuffer,
+    messageToSign,
     senderNodeId
   );
   const mqMessageObject = {
-    version: MQ_MESSAGE_VERSION,
+    version: mqMessageVersion,
+    message_id: msgId,
     message_type: messageType,
     message: messageBuffer,
     signature: messageSignatureBuffer,
+    sender_node_id: senderNodeId,
     message_compression_algorithm: messageCompressionAlgorithm,
   };
   const protoMessage = MqMessage.create(mqMessageObject);
@@ -693,6 +812,11 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
     messageCompressionAlgorithm,
     protoBufferLenth: protoBuffer.length,
   });
+
+  let senderProxyNodeId;
+  if (role === 'proxy') {
+    senderProxyNodeId = config.nodeId;
+  }
 
   await Promise.all(
     receivers.map(async (receiver) => {
@@ -713,31 +837,41 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
         protoEncryptedMessage
       ).finish();
 
+      const receiverNodeId = receiver.node_id; // actual receiver node ID (not proxy)
+
       let mqDestAddress;
       let payloadBuffer;
+      let firstTierReceiverNodeId; // can be proxy
+      let receiverProxyNodeId;
       if (receiver.proxy != null) {
         // Encapsulate proxy layer
         const proxyMessageHashBase64 = utils.hash(
           cryptoUtils.hashAlgorithm.SHA256,
           protoEncryptedBuffer
         );
-        const receiverNodeId = receiver.node_id;
-        const senderNodeId = config.nodeId;
-        const senderPublicKey =
-          await tendermintNdid.getNodeSigningPubKey(senderNodeId);
+        const firstTierSenderNodeId = config.nodeId;
+        const senderPublicKey = await tendermintNdid.getNodeSigningPubKey(
+          firstTierSenderNodeId
+        );
+        const messageToSign = Buffer.concat([
+          Buffer.from(mqMessageVersion.toString(), 'utf8'),
+          Buffer.from(receiverNodeId, 'utf8'),
+          Buffer.from(firstTierSenderNodeId, 'utf8'),
+          Buffer.from(proxyMessageHashBase64, 'base64'),
+        ]);
         const proxySignatureBuffer = await utils.createSignature(
           senderPublicKey.algorithm,
           senderPublicKey.version,
-          `${proxyMessageHashBase64}|${receiverNodeId}|${senderNodeId}`,
-          senderNodeId
+          messageToSign,
+          firstTierSenderNodeId
         );
 
         const proxyMqMessageObject = {
-          version: MQ_MESSAGE_VERSION,
+          version: mqMessageVersion,
           message: protoEncryptedBuffer,
           signature: proxySignatureBuffer,
           receiver_node_id: receiverNodeId,
-          sender_node_id: senderNodeId,
+          sender_node_id: firstTierSenderNodeId,
         };
         const proxyProtoMessage = MqMessage.create(proxyMqMessageObject);
         const proxyProtoBuffer = MqMessage.encode(proxyProtoMessage).finish();
@@ -767,18 +901,23 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
           ip: receiver.proxy.ip,
           port: receiver.proxy.port,
         };
+        firstTierReceiverNodeId = receiver.proxy.node_id;
+        receiverProxyNodeId = receiver.proxy.node_id;
       } else {
         payloadBuffer = protoEncryptedBuffer;
         mqDestAddress = {
           ip: receiver.ip,
           port: receiver.port,
         };
+        firstTierReceiverNodeId = receiver.node_id;
       }
 
-      const msgId = `${prefixMsgId}_${outboundMessageIdCounter++}`;
-      pendingOutboundMessages.set(msgId, {
+      const destUniqueMsgId = `${msgId}:${receiverNodeId}`;
+      pendingOutboundMessages.set(destUniqueMsgId, {
         mqDestAddress,
         payloadBuffer,
+        senderNodeId,
+        receiverNodeId,
         sendTime: Date.now(),
       });
       incrementPendingOutboundMessagesCount();
@@ -786,21 +925,35 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
       logger.debug({
         message: 'Sending message to message queue service server',
         msgId,
+        senderNodeId,
+        receiverNodeId,
+        senderProxyNodeId,
+        receiverProxyNodeId,
+        firstTierReceiverNodeId,
         mqDestAddress,
       });
       mqService
         .sendMessage(
           mqDestAddress,
           payloadBuffer,
-          msgId,
+          destUniqueMsgId,
+          senderNodeId,
+          receiverNodeId,
+          senderProxyNodeId,
+          receiverProxyNodeId,
           true,
           MQ_SEND_TOTAL_TIMEOUT
         )
         .then(() => {
-          onSuccess({ msgId, mqDestAddress, receiverNodeId: receiver.node_id });
+          onSuccess?.({
+            msgId,
+            mqDestAddress,
+            senderNodeId,
+            receiverNodeId,
+          });
           metricsEventEmitter.emit(
             'mqSendMessageTime',
-            Date.now() - pendingOutboundMessages.get(msgId).sendTime
+            Date.now() - pendingOutboundMessages.get(destUniqueMsgId).sendTime
           );
         })
         .catch((error) => {
@@ -808,19 +961,9 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
           metricsEventEmitter.emit('mqSendMessageFail');
         })
         .then(() => {
-          // finally
-          pendingOutboundMessages.delete(msgId);
+          pendingOutboundMessages.delete(destUniqueMsgId);
           decrementPendingOutboundMessagesCount();
         });
-      /*if(config.mode === MODE.WORKER) {
-        await getClient().mqRetry({
-          msgId, 
-          deadline: Date.now() + MQ_SEND_TOTAL_TIMEOUT, 
-          destination: JSON.stringify(mqDestAddress), 
-          payload: payloadBuffer, 
-          retryOnServerUnavailable: true 
-        });
-      }*/
     })
   );
 

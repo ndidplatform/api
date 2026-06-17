@@ -64,16 +64,23 @@ export default class MQRecv extends EventEmitter {
         this.emit('error', err);
         return;
       }
-      const ackMSG = MQProtocol.generateAckMsg(config.senderId, {
-        msgId: msg.retryspec.msgId,
-        seqId: msg.retryspec.seqId,
-      });
+      const ackMSG = MQProtocol.generateAckMsg(
+        {
+          msgId: msg.retryspec.msgId,
+          seqId: msg.retryspec.seqId,
+        },
+        config.senderId,
+        msg.senderProxyId ? msg.senderProxyId : msg.senderId
+      );
 
       // this.recvSocket.send(identity, ackMSG);
       this.emit('message', {
         message: msg.message,
         msgId: msg.retryspec.msgId,
         senderId: msg.senderId,
+        receiverId: msg.receiverId,
+        senderProxyId: msg.senderProxyId ? msg.senderProxyId : null,
+        receiverProxyId: msg.receiverProxyId ? msg.receiverProxyId : null,
         sendAck: () => this.recvSocket.send(identity, ackMSG),
       });
     });
