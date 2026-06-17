@@ -770,7 +770,7 @@ export default {
           type: { type: 'string', enum: ['as'] },
           description: { type: 'string' },
         },
-        required: ['error_code', 'type', 'description'],
+        required: ['domain', 'error_code', 'type', 'description'],
       },
     },
     '/ndid/remove_domain_error_code': {
@@ -783,7 +783,7 @@ export default {
           error_code: { $ref: 'defs#/definitions/errorCode' },
           type: { type: 'string', enum: ['as'] },
         },
-        required: ['error_code', 'type'],
+        required: ['domain', 'error_code', 'type'],
       },
     },
   },
