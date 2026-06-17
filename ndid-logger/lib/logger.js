@@ -23,12 +23,7 @@
 const stream = require('node:stream');
 
 const pino = require('pino');
-const pinoms = require('pino-multi-stream');
 const pinoPretty = require('pino-pretty');
-
-function bufferToJSONForLogger() {
-  return { type: 'Buffer', data_base64: this.toString('base64') };
-}
 
 /**
  * Initialize logger
@@ -42,31 +37,25 @@ function bufferToJSONForLogger() {
  * @param {string} config.replaceForTooLongLog // Remove?
  * @param {number} config.logLengthThreshold // Remove?
  * @param {Function} config.optionalErrorLogFn
- * @returns {Object} logger
+ * @returns {pino.Logger} logger
  */
 function initLogger(config) {
-  const prettyStream = pinoms.prettyStream({
-    prettyPrint: {
-      messageKey: 'message',
-      colorize: config.logColor,
-      translateTime: 'SYS:standard',
-      errorProps: '*',
+  const oneLinerStream = new stream.Transform({
+    transform(chunk, encoding, callback) {
+      const chunkStr = chunk.toString();
+      this.push(chunkStr.replace(/\r?\n|\r/g, ' ') + '\n');
+      callback();
     },
-    prettifier: (options) => {
-      const pretty = pinoPretty(options);
-      return (inputData) => {
-        const tmp = Buffer.prototype.toJSON;
-        Buffer.prototype.toJSON = bufferToJSONForLogger;
-        const result = pretty(inputData);
-        Buffer.prototype.toJSON = tmp;
+  });
+  oneLinerStream.pipe(process.stdout);
 
-        if (config.logOneLine) {
-          return result.replace(/\r?\n|\r/g, ' ') + '\n';
-        }
-
-        return result;
-      };
-    },
+  const prettyStream = pinoPretty({
+    messageKey: 'message',
+    colorize: config.logColor,
+    translateTime: 'SYS:standard',
+    errorProps: '*',
+    // singleLine: config.logOneLine,
+    destination: config.logOneLine ? oneLinerStream : process.stdout,
   });
 
   const optionalErrLogWritable = new stream.Writable({
@@ -94,16 +83,16 @@ function initLogger(config) {
     streams.push({ level: 'error', stream: optionalErrLogWritable });
   }
 
-  const logger = pinoms(
+  const logger = pino(
     {
+      messageKey: 'message',
       level: config.logLevel,
       // base: {
       //   pid: config.logPid ? process.pid : null,
       //   hostname: config.logHostname ? os.hostname : null,
       // },
-      // streams,
     },
-    pinoms.multistream(streams)
+    pino.multistream(streams)
   );
 
   return logger;

@@ -19,6 +19,8 @@ docker run --rm -p 6379:6379 --name ndid_redis_1 redis:5-alpine &
 docker run --rm -p 6380:6379 --name ndid_redis_2 redis:5-alpine &
 docker run --rm -p 6381:6379 --name ndid_redis_3 redis:5-alpine &
 
+export LOG_LEVEL=trace
+
 cd mq-server
 
 npm run build

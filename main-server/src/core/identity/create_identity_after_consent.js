@@ -21,7 +21,7 @@
  */
 
 import { getFunction } from '../../functions';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
@@ -101,7 +101,7 @@ export async function createIdentityAfterCloseConsentRequest(
         true
       );
     } catch (error) {
-      logger.error({
+      redactedLogger.error({
         message: 'Register identity error',
         tendermintResult: arguments[0],
         additionalArgs: arguments[1],
@@ -127,7 +127,7 @@ export async function createIdentityAfterCloseConsentRequest(
       }
     }
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Create identity after close consent request error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],

@@ -47,9 +47,6 @@ export async function processAsResponse({
     requestId,
     serviceId,
     asNodeId,
-    signature,
-    dataSalt,
-    packedData,
     errorCode,
   });
 
@@ -231,9 +228,8 @@ async function verifyDataSignature(asNodeId, signature, salt, data) {
     asNodeId,
     asNodePublicKey: signingPublicKey,
     signature,
-    salt,
-    data,
   });
+
   if (
     !utils.verifySignature(
       signingPublicKey.algorithm,
@@ -250,5 +246,6 @@ async function verifyDataSignature(asNodeId, signature, salt, data) {
     });
     return { valid: false, signingPublicKey };
   }
+
   return { valid: true, signingPublicKey };
 }

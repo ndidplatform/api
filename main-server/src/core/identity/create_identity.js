@@ -36,7 +36,7 @@ import { getErrorObjectForClient } from '../../utils/error';
 import * as utils from '../../utils';
 import { validateAccessorKey } from '../../utils/node_key';
 import { callbackToClient } from '../../callback';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 
 import * as config from '../../config';
 import { role } from '../../node';
@@ -202,9 +202,8 @@ export async function createIdentity(
       accessor_id = uuidv4();
     }
 
-    const checkDuplicateAccessorId = await tendermintNdid.getAccessorPublicKey(
-      accessor_id
-    );
+    const checkDuplicateAccessorId =
+      await tendermintNdid.getAccessorPublicKey(accessor_id);
     if (checkDuplicateAccessorId != null) {
       throw new CustomError({
         errorType: errorType.DUPLICATE_ACCESSOR_ID,
@@ -285,7 +284,7 @@ export async function createIdentity(
       message: 'Cannot create new identity',
       cause: error,
     });
-    logger.error({ err });
+    redactedLogger.error({ err });
 
     if (
       !(
@@ -407,7 +406,7 @@ async function createIdentityInternalAsync(
       );
     }
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Create identity internal async error',
       originalArgs: arguments[0],
       options: arguments[1],
@@ -472,7 +471,7 @@ export async function createIdentityInternalAsyncAfterCreateRequestBlockchain(
     // save data for later use after got consent from user (in mode 3)
     await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Create identity internal async after create request error',
       tendermintResult: arguments[0],
       originalArgs: arguments[1],

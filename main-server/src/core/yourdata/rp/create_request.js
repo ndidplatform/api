@@ -42,7 +42,7 @@ import { callbackToClient } from '../../../callback';
 import * as utils from '../../../utils';
 import * as jwtUtils from '../../../utils/jwt';
 import TelemetryLogger, { YOURDATA_REQUEST_EVENTS } from '../../../telemetry';
-import logger from '../../../logger';
+import { redactedLogger } from '../../../logger';
 
 import * as config from '../../../config';
 import { role } from '../../../node';
@@ -334,7 +334,7 @@ export async function createRequest(
       message: 'Cannot create request',
       cause: error,
     });
-    logger.error({ err });
+    redactedLogger.error({ err });
 
     if (requestId) {
       await removeTimeoutScheduler(node_id, requestId);

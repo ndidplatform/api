@@ -163,7 +163,8 @@ function sendMessage(call, callback) {
 
   logger.debug({
     message: 'sendMessage',
-    args: call.request,
+    msgId,
+    mqAddress,
   });
 
   sendCalls.set(msgId, { call, callback });

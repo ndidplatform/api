@@ -34,7 +34,7 @@ import * as cacheDb from '../db/cache';
 import * as longTermDb from '../db/long_term';
 import * as utils from '../utils';
 import * as cryptoUtils from '../utils/crypto';
-import logger from '../logger';
+import logger, { redactedLogger } from '../logger';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import validate from './message/validator';
@@ -382,7 +382,7 @@ export async function processRawMessage({
     const outerLayerDecodedDecryptedMessage =
       await getMessageFromProtobufMessage(messageProtobuf, config.nodeId);
 
-    logger.debug({
+    logger.trace({
       message: 'Decrypted message from message queue',
       outerLayerDecodedDecryptedMessage,
     });
@@ -451,7 +451,7 @@ export async function processRawMessage({
         receiverNodeId
       );
 
-      logger.debug({
+      logger.trace({
         message: 'Decrypted message from message queue (inner layer)',
         decodedDecryptedMessage,
       });
@@ -511,8 +511,6 @@ export async function processRawMessage({
 
     logger.debug({
       message: 'Verifying signature',
-      messageBuffer,
-      messageSignature,
       nodeId,
       signingPublicKey,
       signatureValid,
@@ -649,7 +647,7 @@ export async function loadAndProcessBacklogMessages() {
  */
 export async function send({ receivers, message, senderNodeId, onSuccess }) {
   if (receivers.length === 0) {
-    logger.debug({
+    redactedLogger.debug({
       message: 'No receivers for message queue to send to',
       receivers,
       payload: message,
@@ -688,12 +686,12 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
     payloadLength: protoBuffer.length,
     receivers,
   });
-  logger.debug({
+  redactedLogger.debug({
     message: 'Sending message over message queue details',
     messageObject: message,
-    messageSignatureBuffer,
+    messageSignature: messageSignatureBuffer.toString('base64'),
     messageCompressionAlgorithm,
-    protoBuffer,
+    protoBufferLenth: protoBuffer.length,
   });
 
   await Promise.all(

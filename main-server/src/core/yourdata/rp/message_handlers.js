@@ -736,9 +736,8 @@ async function verifyDataSignature(asNodeId, signature, salt, data) {
     asNodeId,
     asNodePublicKey: signingPublicKey,
     signature,
-    salt,
-    data,
   });
+
   if (
     !utils.verifySignature(
       signingPublicKey.algorithm,

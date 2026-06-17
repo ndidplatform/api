@@ -118,6 +118,11 @@ export const logOneLine = process.env.LOG_ONE_LINE === 'true';
 // export const logLengthThreshold = Infinity; // 2000
 // export const replaceForTooLongLog = '<--- Too long, omitted --->';
 
+export const logRedactSensitiveData =
+  process.env.LOG_REDACT_SENSITIVE_DATA != null
+    ? process.env.LOG_REDACT_SENSITIVE_DATA === 'true'
+    : false;
+
 const defaultTendermintPort = 45000;
 
 export const tendermintIp =

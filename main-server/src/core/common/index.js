@@ -357,8 +357,7 @@ export async function getAndSaveIdpResponseValid({
 
         logger.debug({
           message: 'Verifying signature',
-          request_message,
-          initial_salt,
+          request_id,
           accessor_public_key,
           signature,
         });

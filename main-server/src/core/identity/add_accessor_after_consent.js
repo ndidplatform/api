@@ -22,7 +22,7 @@
 
 import { getFunction } from '../../functions';
 
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as cacheDb from '../../db/cache';
@@ -90,7 +90,7 @@ export async function addAccessorAfterCloseConsentRequest(
         true
       );
     } catch (error) {
-      logger.error({
+      redactedLogger.error({
         message: 'Add accessor error',
         tendermintResult: arguments[0],
         additionalArgs: arguments[1],
@@ -116,7 +116,7 @@ export async function addAccessorAfterCloseConsentRequest(
       }
     }
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Add accessor after close consent request error',
       tendermintResult: arguments[0],
       additionalArgs: arguments[1],

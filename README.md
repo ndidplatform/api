@@ -127,6 +127,7 @@
 - `LOG_PRETTY_PRINT`: Log prettifier (easy to read format). If not set to `true`, log will be in JSON format [Default: `true` in development, `false` otherwise]
 - `LOG_COLOR`: Log highlight color [Default: `true` in development, `false` otherwise]
 - `LOG_ONE_LINE`: Log one-line pretty print when `LOG_PRETTY_PRINT` is set to `true` [Default: `false`]
+- `LOG_REDACT_SENSITIVE_DATA`: Redact or mask sensitive data in logs [Default: `true`]
 - `CLIENT_HTTP_ERROR_CODE`: HTTP error code when responding a client error [Default: `400`]
 - `SERVER_HTTP_ERROR_CODE`: HTTP error code when responding a server error [Default: `500`]
 - `USE_EXTERNAL_CRYPTO_SERVICE`: Use external service (KMS) for decrypting and signing (e.g. HSM) [Default: `false`]

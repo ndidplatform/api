@@ -27,7 +27,7 @@ import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 
 import * as common from '../common';
 import * as identity from '../identity';
@@ -50,7 +50,7 @@ export async function handleMessageFromQueue(
     messageId,
     nodeId,
   });
-  logger.debug({
+  redactedLogger.debug({
     message: 'Message from MQ',
     messageJSON: message,
   });
@@ -61,11 +61,12 @@ export async function handleMessageFromQueue(
   const requestId = message.request_id;
 
   try {
-    const addToProcessQueue = await requestProcessManager.handleMessageFromMqWithBlockWait(
-      messageId,
-      message,
-      nodeId
-    );
+    const addToProcessQueue =
+      await requestProcessManager.handleMessageFromMqWithBlockWait(
+        messageId,
+        message,
+        nodeId
+      );
 
     if (addToProcessQueue) {
       await requestProcessManager.addMqMessageTaskToQueue({

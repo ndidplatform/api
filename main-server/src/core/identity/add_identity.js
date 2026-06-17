@@ -33,7 +33,7 @@ import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
 import * as utils from '../../utils';
 import { callbackToClient } from '../../callback';
-import logger from '../../logger';
+import logger, { redactedLogger } from '../../logger';
 
 import * as config from '../../config';
 import { role } from '../../node';
@@ -205,7 +205,7 @@ export async function addIdentity(
       message: 'Cannot add identity',
       cause: error,
     });
-    logger.error({ err });
+    redactedLogger.error({ err });
 
     if (
       !(
@@ -307,7 +307,7 @@ async function addIdentityInternalAsync(
       );
     }
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Add identity internal async error',
       originalArgs: arguments[0],
       options: arguments[1],
@@ -362,7 +362,7 @@ export async function addIdentityInternalAsyncAfterCreateRequestBlockchain(
     // save data for later use after got consent from user (in mode 3)
     await cacheDb.setIdentityFromRequestId(nodeId, request_id, identity);
   } catch (error) {
-    logger.error({
+    redactedLogger.error({
       message: 'Add identity internal async after create request error',
       tendermintResult: arguments[0],
       originalArgs: arguments[1],
