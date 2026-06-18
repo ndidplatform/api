@@ -44,6 +44,11 @@ export const httpsCertPath =
 export const clientHttpErrorCode = process.env.CLIENT_HTTP_ERROR_CODE || 400;
 export const serverHttpErrorCode = process.env.SERVER_HTTP_ERROR_CODE || 500;
 
+// in bytes
+export const httpRequestBodySizeLimit = process.env.HTTP_REQUEST_BODY_SIZE_LIMIT
+  ? parseInt(process.env.HTTP_REQUEST_BODY_SIZE_LIMIT)
+  : 25 * 1024 * 1024; // default: 25 MB
+
 let _defaultApiVersion = process.env.DEFAULT_API_VERSION
   ? process.env.DEFAULT_API_VERSION
   : '7.0';

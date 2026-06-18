@@ -54,7 +54,7 @@ export function initialize() {
     })
   );
 
-  app.use(bodyParser.json({ limit: '25mb' }));
+  app.use(bodyParser.json({ limit: config.httpRequestBodySizeLimit }));
   app.use(bodyParserErrorHandler);
 
   app.use(routes);
