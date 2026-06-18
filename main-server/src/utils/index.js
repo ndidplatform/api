@@ -806,3 +806,36 @@ export function getDetailedRequestStatusLegacy(requestDetail) {
     service_list: serviceList,
   };
 }
+
+/**
+ * Creates a new object or array with Buffer properties converted to base64 strings.
+ * Only shallow properties / elements are converted.
+ * @param {Object} obj
+ * @returns {Object} A new converted object or array.
+ */
+export function convertShallowBuffersToBase64(obj) {
+  if (obj === null || typeof obj !== 'object') return obj;
+
+  if (Array.isArray(obj)) {
+    const len = obj.length;
+    const newArr = new Array(len);
+
+    for (let i = 0; i < len; i++) {
+      const value = obj[i];
+      newArr[i] = Buffer.isBuffer(value) ? value.toString('base64') : value;
+    }
+    return newArr;
+  }
+
+  const newObj = {};
+
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const value = obj[key];
+
+      newObj[key] = Buffer.isBuffer(value) ? value.toString('base64') : value;
+    }
+  }
+
+  return newObj;
+}

@@ -480,7 +480,12 @@ function sendMessageInternal(
                 details: {
                   module: 'mq_service',
                   function: 'sendMessage',
-                  arguments: arguments,
+                  mqAddress,
+                  msgId,
+                  senderId,
+                  receiverId,
+                  senderProxyId,
+                  receiverProxyId,
                 },
                 cause: error,
               })

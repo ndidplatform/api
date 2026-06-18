@@ -92,7 +92,7 @@ export default class TendermintWsClient extends EventEmitter {
           message: 'Tendermint WS disconnected',
           connectionName: this.name,
           code,
-          reason,
+          reason: reason.toString('base64'),
         });
 
         // Reject all `_call` promises
