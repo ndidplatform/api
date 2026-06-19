@@ -298,6 +298,22 @@ router.get('/nodes/:node_id/token', async (req, res, next) => {
   }
 });
 
+router.get('/nodes/:node_id/requester_whitelisted_services', async (req, res, next) => {
+  try {
+    const { node_id } = req.params;
+
+    const result =
+      await tendermintNdid.getRequesterNodeWhitelistedServiceList({
+        nodeId: node_id,
+      });
+
+    res.status(200).json(result);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/namespaces', async (req, res, next) => {
   try {
     res.status(200).json(await tendermintNdid.getNamespaceList());

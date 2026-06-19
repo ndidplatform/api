@@ -43,6 +43,7 @@ FEATURES:
   - Change response body JSON schema of GET `/utility/services/:service_id`
     - Add `domain`
     - Add `requester_node_whitelist_enabled`
+  - New API: GET `/utility/nodes/:node_id/requester_whitelisted_services`: Get a list of services that explicitly include the specified node ID in their requester node whitelist, along with the current enforcement status (enabled flag) of that whitelist.
   - NDID only APIs
     - Change request body JSON schema of POST `/ndid/create_service`.
       - Add `domain`

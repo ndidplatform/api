@@ -2082,6 +2082,27 @@ export async function getServiceRequesterNodeWhitelistByServiceId({
   }
 }
 
+export async function getRequesterNodeWhitelistedServiceList({ nodeId }) {
+  try {
+    const result = await tendermint.query(
+      'GetRequesterNodeWhitelistedServiceList',
+      {
+        node_id: nodeId,
+      }
+    );
+    return result != null
+      ? result.service_permission_list != null
+        ? result.service_permission_list
+        : []
+      : [];
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get requester node whitelisted service list',
+      cause: error,
+    });
+  }
+}
+
 export async function getServiceRequesterNodePermission({ nodeId, serviceId }) {
   try {
     const result = await tendermint.query('GetServiceRequesterNodePermission', {
