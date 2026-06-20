@@ -59,7 +59,9 @@ describe('Functional Test for MQ receiver with real socket', function () {
         port: ports[0],
       },
       Buffer.from('1111111'),
-      getMsgId()
+      getMsgId(),
+      'node1',
+      'receiver'
     );
     mqNode2.send(
       {
@@ -67,7 +69,9 @@ describe('Functional Test for MQ receiver with real socket', function () {
         port: ports[0],
       },
       Buffer.from('222222'),
-      getMsgId()
+      getMsgId(),
+      'node2',
+      'receiver'
     );
     mqNode3.send(
       {
@@ -75,7 +79,9 @@ describe('Functional Test for MQ receiver with real socket', function () {
         port: ports[0],
       },
       Buffer.from('333333'),
-      getMsgId()
+      getMsgId(),
+      'node3',
+      'receiver'
     );
   });
 
@@ -102,7 +108,9 @@ describe('Functional Test for MQ receiver with real socket', function () {
     mqNode.send(
       { ip: '127.0.0.1', port: ports[0] },
       Buffer.from('testbigbig12345678901234567890'),
-      getMsgId()
+      getMsgId(),
+      'node',
+      'receiver'
     );
   });
 

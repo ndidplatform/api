@@ -13,10 +13,11 @@ const MqProtocolMessage = protobufRoot.lookup('MqProtocolMessage');
 describe('MQ Protocol Unit Test', function() {
   it('should perform GenerateSendMsg properly', function() {
     const senderId = 'unit-test';
+    const receiverId = 'unit-test';
     const payload = Buffer.from('test');
     const retryspec = { msgId: 'test-1', seqId: 22 };
 
-    let result = MQProtocol.generateSendMsg(senderId, payload, retryspec);
+    let result = MQProtocol.generateSendMsg(retryspec, payload, senderId, receiverId);
 
     expect(result).to.be.instanceof(Buffer);
 
@@ -27,11 +28,14 @@ describe('MQ Protocol Unit Test', function() {
     expect(decodedResult.message).to.be.instanceof(Buffer);
     expect(decodedResult.message.toString()).to.equal('test');
     expect(decodedResult.senderId).to.equal(senderId);
+    expect(decodedResult.receiverId).to.equal(receiverId);
+    expect(decodedResult.senderProxyId).to.equal('');
+    expect(decodedResult.receiverProxyId).to.equal('');
   });
 
   it('should perform ExtractMsg properly', function() {
     const payload = {
-      version: 1,
+      version: 2,
       msgId: 'test-1',
       seqId: 22,
       message: Buffer.from('test'),
@@ -41,7 +45,7 @@ describe('MQ Protocol Unit Test', function() {
 
     let result = MQProtocol.extractMsg(protoBuffer);
 
-    expect(result.version).to.equal(1);
+    expect(result.version).to.equal(2);
     expect(result.retryspec.msgId).to.equal('test-1');
     expect(result.retryspec.seqId).to.equal(22);
     expect(result.message).to.be.instanceof(Buffer);
@@ -50,9 +54,10 @@ describe('MQ Protocol Unit Test', function() {
 
   it('should perform GenerateAckMsg properly', function() {
     const senderId = 'unit-test';
+    const receiverId = 'unit-test';
     const retryspec = { msgId: 'test-1', seqId: 22 };
 
-    let result = MQProtocol.generateAckMsg(senderId, retryspec);
+    let result = MQProtocol.generateAckMsg(retryspec, senderId, receiverId);
 
     const decodedResult = MqProtocolMessage.decode(result);
     expect(decodedResult.version).to.be.a('number');
@@ -61,5 +66,8 @@ describe('MQ Protocol Unit Test', function() {
     expect(decodedResult.message).to.be.instanceof(Buffer);
     expect(decodedResult.message.toString()).to.equal('');
     expect(decodedResult.senderId).to.equal(senderId);
+    expect(decodedResult.receiverId).to.equal(receiverId);
+    expect(decodedResult.senderProxyId).to.equal('');
+    expect(decodedResult.receiverProxyId).to.equal('');
   });
 });

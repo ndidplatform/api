@@ -120,6 +120,8 @@ export default class MQLogic extends EventEmitter {
           msgId,
           senderId,
           receiverId,
+          senderProxyId,
+          receiverProxyId,
           retryCount
         );
       }
