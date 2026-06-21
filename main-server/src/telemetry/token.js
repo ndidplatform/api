@@ -20,6 +20,8 @@
  *
  */
 
+import crypto from 'node:crypto';
+
 import * as telemetryDb from '../db/telemetry';
 import * as telemetryEventsDb from '../db/telemetry_events';
 import * as node from '../node';
@@ -103,7 +105,7 @@ async function generateToken(timeoutSec = 6 * 60 * 60, extraInfo = {}) {
     exp: timeNow + timeoutSec + timePadding,
 
     node_id: nodeId,
-    nonce: Math.random(),
+    nonce: crypto.randomBytes(16).toString('base64url'),
     ...extraInfo,
   };
 
