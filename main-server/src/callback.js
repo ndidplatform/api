@@ -492,5 +492,5 @@ export function getPendingCallbacksCount() {
 }
 
 export function getPendingCallback() {
-  return pendingCallback;
+  return Object.fromEntries(pendingCallback);
 }
