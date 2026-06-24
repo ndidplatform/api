@@ -138,6 +138,12 @@ const redactPaths = [
   'callbackAdditionalArgs[*].data',
   // (in error log)
   'data',
+  // Your Data
+  'body.authorization',
+  'messageObject.authorization',
+  'messageJSON.authorization',
+  //
+  'body.token',
   // get private messages response
   'body[*].message.identifier',
   'body[*].message.request_message',
@@ -150,6 +156,7 @@ const redactPaths = [
   'body[*].message.packed_data.buffer_base64',
   // (Your Data)
   'body[*].message.request_params',
+  'body[*].message.authorization',
 ];
 
 export const levels = {
