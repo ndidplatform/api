@@ -513,11 +513,14 @@ function sendMessageInternal(
 //When server send a message
 function onRecvMessage(message) {
   const {
+    error,
     message: messageBuffer,
     message_id: msgId,
     sender_id: senderId,
+    receiver_id: receiverId,
+    sender_proxy_id: senderProxyId,
+    receiver_proxy_id: receiverProxyId,
     send_ack_ref_id: sendACKRefId,
-    error,
   } = message;
   if (error) {
     const errorTypeObj = Object.entries(errorType).find(([key, value]) => {
@@ -550,6 +553,9 @@ function onRecvMessage(message) {
     message: messageBuffer,
     msgId,
     senderId,
+    receiverId,
+    senderProxyId: senderProxyId ? senderProxyId : null,
+    receiverProxyId: receiverProxyId ? receiverProxyId : null,
     sendACKRefId,
   });
 }

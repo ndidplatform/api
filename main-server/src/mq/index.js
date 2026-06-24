@@ -255,11 +255,22 @@ async function sendSavedPendingOutboundMessages() {
   );
 }
 
-async function onMessage({ message, msgId, senderId, sendACKRefId }) {
+async function onMessage({
+  message,
+  msgId,
+  senderId,
+  receiverId,
+  senderProxyId,
+  receiverProxyId,
+  sendACKRefId,
+}) {
   logger.info({
     message: 'Received message from message queue',
     msgId,
     senderId,
+    receiverId,
+    senderProxyId,
+    receiverProxyId,
     messageLength: message.length,
   });
 
@@ -479,9 +490,8 @@ export async function processRawMessage({
         Buffer.from(proxyMessageHashBase64, 'base64'),
       ]);
 
-      const firstTierSenderPublicKey = await tendermintNdid.getNodeSigningPubKey(
-        firstTierSenderNodeId
-      );
+      const firstTierSenderPublicKey =
+        await tendermintNdid.getNodeSigningPubKey(firstTierSenderNodeId);
 
       const signatureValid = utils.verifySignature(
         firstTierSenderPublicKey.algorithm,

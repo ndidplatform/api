@@ -8,11 +8,14 @@ service MessageQueue {
 }
 
 message InboundMessage {
-  bytes  message         = 1;
-  string message_id      = 2;
-  string sender_id       = 3; // node ID
-  string send_ack_ref_id = 4;
-  Error  error           = 5;
+  Error  error             = 1;
+  bytes  message           = 2;
+  string message_id        = 3;
+  string sender_id         = 4; // node ID
+  string receiver_id       = 5; // node ID
+  string sender_proxy_id   = 6; // node ID
+  string receiver_proxy_id = 7; // node ID
+  string send_ack_ref_id   = 8;
 }
 
 message InboundMessageAck {

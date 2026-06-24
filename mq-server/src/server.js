@@ -177,6 +177,9 @@ function onRecvMessage({
       message,
       message_id: msgId,
       sender_id: senderId,
+      receiver_id: receiverId,
+      sender_proxy_id: senderProxyId,
+      receiver_proxy_id: receiverProxyId,
       send_ack_ref_id: sendACKRefId,
     });
   });
