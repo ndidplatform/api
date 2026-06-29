@@ -32,6 +32,7 @@ import yourDataRequestStatus, {
 
 import * as common from '../../common';
 import { unpackData } from '../../as_data_helper';
+import domain from '../../domain';
 import * as nodeCallback from '../../node_callback';
 
 import * as tendermintNdid from '../../../tendermint/ndid';
@@ -42,6 +43,7 @@ import privateMessageType from '../../../mq/message/type';
 import * as utils from '../../../utils';
 import * as cryptoUtils from '../../../utils/crypto';
 import TelemetryLogger, { YOURDATA_REQUEST_EVENTS } from '../../../telemetry';
+
 import logger from '../../../logger';
 
 import * as config from '../../../config';
@@ -120,6 +122,17 @@ async function processASResponse(nodeId, message) {
     return;
   }
 
+  // validate source AS node ID
+  // "as_node_id" in message is verified to match sender node ID in MQ message processing layer prior to this
+  if (as_node_id !== request.as_node_id) {
+    logger.warn({
+      message: 'AS node ID mismatched',
+      asNodeIdInResponse: as_node_id,
+      expectedAsNodeIdInRequest: request.as_node_id,
+    });
+    return;
+  }
+
   // possible cases:
   // 1. encrypted data
   // 2. error
@@ -146,26 +159,43 @@ async function processASResponse(nodeId, message) {
     // stop timeout timer
     common.removeTimeoutScheduler(nodeId, request_id);
 
-    // callback to RP app
-    const eventDataForCallback = {
-      node_id: nodeId,
-      type: 'yourdata.request_status',
-      requester_node_id: nodeId,
-      as_node_id: request.as_node_id,
-      request_id,
-      request_timeout: request.request_timeout,
-      timed_out: false,
-      status: yourDataRequestStatus.ERRORED,
-      error_code,
-      error_message,
-    };
-
-    const callbackUrl = request.callback_url;
-    await callbackToClient({
-      callbackUrl,
-      body: eventDataForCallback,
-      retry: true,
+    // validate error code
+    const errorCodeList = await tendermintNdid.getDomainErrorCodeList({
+      domain: domain.YOURDATA,
+      type: 'as',
     });
+
+    const validErrorCode = errorCodeList.some(
+      (error) => error.error_code === error_code
+    );
+
+    if (validErrorCode) {
+      // callback to RP app
+      const eventDataForCallback = {
+        node_id: nodeId,
+        type: 'yourdata.request_status',
+        requester_node_id: nodeId,
+        as_node_id: request.as_node_id,
+        request_id,
+        request_timeout: request.request_timeout,
+        timed_out: false,
+        status: yourDataRequestStatus.ERRORED,
+        error_code,
+        error_message,
+      };
+
+      const callbackUrl = request.callback_url;
+      await callbackToClient({
+        callbackUrl,
+        body: eventDataForCallback,
+        retry: true,
+      });
+    } else {
+      logger.warn({
+        message: 'Received Your Data AS error response with invalid error code',
+        error_code,
+      });
+    }
 
     // request's final state
     // remove request data from cache

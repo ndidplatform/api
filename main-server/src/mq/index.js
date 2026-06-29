@@ -591,9 +591,17 @@ export async function processRawMessage({
       messageCompressionAlgorithm
     );
 
+    const nodeInfo = await tendermintNdid.getNodeInfo(senderNodeId);
+
     const { idp_id, rp_id, rp_node_id, as_id, as_node_id } = message;
-    const senderNodeIdInMessage =
-      idp_id || rp_id || rp_node_id || as_id || as_node_id;
+    let senderNodeIdInMessage;
+    if (nodeInfo.role.toLowerCase() === 'rp') {
+      senderNodeIdInMessage = rp_id || rp_node_id;
+    } else if (nodeInfo.role.toLowerCase() === 'idp') {
+      senderNodeIdInMessage = idp_id || rp_id; // consent request uses "rp_id" property name for requester node ID
+    } else if (nodeInfo.role.toLowerCase() === 'as') {
+      senderNodeIdInMessage = as_id || as_node_id;
+    }
     if (senderNodeId !== senderNodeIdInMessage) {
       shouldACK = true;
       throw new CustomError({
@@ -605,7 +613,6 @@ export async function processRawMessage({
       });
     }
 
-    const nodeInfo = await tendermintNdid.getNodeInfo(senderNodeId);
     const signingPublicKey = nodeInfo.signing_public_key;
 
     const messageToVerify = Buffer.concat([
