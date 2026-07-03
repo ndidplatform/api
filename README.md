@@ -126,6 +126,11 @@
 - `DB_IP`: IP address of DB (redis) server [Default: `localhost`]
 - `DB_PORT`: Port of DB (redis) server [Default: `6379`]
 - `DB_PASSWORD`: Authentication password for DB (redis) connection
+- `DB_TLS`: Enable TLS encryption for the Redis connection [Default: `false`]
+- `DB_TLS_CA_PATH`: File path to the custom Root CA certificate used to validate the Redis server's identity.
+- `DB_TLS_REJECT_UNAUTHORIZED`: If `true`, strictly verifies the Redis server certificate against the CA. Set to `false` to bypass certificate verification errors. [Default: `true`]
+- `DB_TLS_KEY_PATH`: File path to the client private key (Required only if using **mTLS**).
+- `DB_TLS_CERT_PATH`: File path to the client public certificate (Required only if using **mTLS**).
 - `LOG_LEVEL`: Log level. Allowed values are `fatal`, `error`, `warn`, `info`, `debug`, `trace`, and `silent` [Default: `debug` in development, `info` in production]
 - `LOG_PRETTY_PRINT`: Log prettifier (easy to read format). If not set to `true`, log will be in JSON format [Default: `true` in development, `false` otherwise]
 - `LOG_COLOR`: Log highlight color [Default: `true` in development, `false` otherwise]
@@ -161,6 +166,11 @@
 - `TELEMETRY_DB_HOST`: Host/IP of Redis DB database for telemetry [Default: Same as `DB_IP`]
 - `TELEMETRY_DB_PORT`: Port of Redis DB database for telemetry [Default: Same as `DB_PORT`]
 - `TELEMETRY_DB_PASSWORD`: Password of Redis DB database for telemetry [Default: Same as `DB_PASSWORD`]
+- `TELEMETRY_DB_TLS`: Enable TLS encryption for the Redis connection [Default: Same as `DB_TLS`]
+- `TELEMETRY_DB_TLS_CA_PATH`: File path to the custom Root CA certificate used to validate the Redis server's identity. [Default: Same as `DB_TLS_CA_PATH`]
+- `TELEMETRY_DB_TLS_REJECT_UNAUTHORIZED`: If `true`, strictly verifies the Redis server certificate against the CA. Set to `false` to bypass certificate verification errors. [Default: Same as `DB_TLS_REJECT_UNAUTHORIZED`]
+- `TELEMETRY_DB_TLS_KEY_PATH`: File path to the client private key (Required only if using **mTLS**). [Default: Same as `DB_TLS_KEY_PATH`]
+- `TELEMETRY_DB_TLS_CERT_PATH`: File path to the client public certificate (Required only if using **mTLS**). [Default: Same as `DB_TLS_CERT_PATH`]
 - `DCONTRACT_REQUEST_TYPE`: Request type name for requests with dcontract document link(s) in request message. [Default: `dsign.dcontract`]
 - `DCONTRACT_VALIDATE`: Enable dcontract document validation automatically on IdP node. To disable this feature, set to `false` and IdP is required to validate document by themselves. [Default: `true`]
 - `DCONTRACT_FETCH_TIMEOUT`: Timeout for fetching documents from document source in miliseconds [Default: `30000`]

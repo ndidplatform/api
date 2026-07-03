@@ -20,6 +20,7 @@
  *
  */
 
+import fs from 'node:fs';
 import EventEmitter from 'events';
 
 import Redis from 'ioredis';
@@ -43,10 +44,34 @@ export default class RedisInstance extends EventEmitter {
     this.connected = false;
     this.reconnecting = false;
 
+    const tls = dbConfig.dbTls != null ? dbConfig.dbTls : config.dbTls;
+    const tlsCaPath =
+      dbConfig.dbTlsCaPath != null ? dbConfig.dbTlsCaPath : config.dbTlsCaPath;
+    const tlsRejectUnauthorized =
+      dbConfig.dbTlsRejectUnauthorized != null
+        ? dbConfig.dbTlsRejectUnauthorized
+        : config.dbTlsRejectUnauthorized;
+    const tlsKeyPath =
+      dbConfig.dbTlsKeyPath != null
+        ? dbConfig.dbTlsKeyPath
+        : config.dbTlsKeyPath;
+    const tlsCertPath =
+      dbConfig.dbTlsCertPath != null
+        ? dbConfig.dbTlsCertPath
+        : config.dbTlsCertPath;
+
     this.redis = new Redis({
       host: dbConfig.dbIp || config.dbIp,
       port: dbConfig.dbPort || config.dbPort,
       password: dbConfig.dbPassword || config.dbPassword,
+      tls: tls
+        ? {
+            ca: tlsCaPath ? fs.readFileSync(tlsCaPath) : undefined,
+            rejectUnauthorized: tlsRejectUnauthorized,
+            key: tlsKeyPath ? fs.readFileSync(tlsKeyPath) : undefined,
+            cert: tlsCertPath ? fs.readFileSync(tlsCertPath) : undefined,
+          }
+        : undefined,
       retryStrategy: (times) => {
         return this.backoff.next();
       },

@@ -72,8 +72,25 @@ FEATURES:
   - `yourdata_decryption_key_retry_request`
   - `yourdata_data_decryption_key_retry_response`
 - Sensitive data and PII redaction in log.
+- Support TLS / mTLS for Redis connection.
 - [Main] Add new environment variable options
-  - `LOG_REDACT_SENSITIVE_DATA`: Redact or mask sensitive data in logs. Defaults to `false`.
+  - `LOG_REDACT_SENSITIVE_DATA`: Redact or mask sensitive data in logs. Default to `false`.
+  - `DB_TLS`: Enable TLS encryption for the Redis connection. Default to `false`.
+  - `DB_TLS_CA_PATH`: File path to the custom Root CA certificate used to validate the Redis server's identity.
+  - `DB_TLS_REJECT_UNAUTHORIZED`: If `true`, strictly verifies the Redis server certificate against the CA. Set to `false` to bypass certificate verification errors. Default to `true`.
+  - `DB_TLS_KEY_PATH`: File path to the client private key (Required only if using **mTLS**).
+  - `DB_TLS_CERT_PATH`: File path to the client public certificate (Required only if using **mTLS**).
+  - `TELEMETRY_DB_TLS`: Enable TLS encryption for the Redis connection. Inherits value from `DB_TLS` if not set.
+  - `TELEMETRY_DB_TLS_CA_PATH`: File path to the custom Root CA certificate used to validate the Redis server's identity. Inherits value from `DB_TLS_CA_PATH` if not set.
+  - `TELEMETRY_DB_TLS_REJECT_UNAUTHORIZED`: If `true`, strictly verifies the Redis server certificate against the CA. Set to `false` to bypass certificate verification errors. Inherits value from `DB_TLS_REJECT_UNAUTHORIZED` if not set.
+  - `TELEMETRY_DB_TLS_KEY_PATH`: File path to the client private key (Required only if using **mTLS**). Inherits value from `DB_TLS_KEY_PATH` if not set
+  - `TELEMETRY_DB_TLS_CERT_PATH`: File path to the client public certificate (Required only if using **mTLS**). Inherits value from `DB_TLS_CERT_PATH` if not set.
+- [Telemetry Client] Add new environment variable options
+  - `TELEMETRY_DB_TLS`: Enable TLS encryption for the Redis connection. Default to `false`.
+  - `TELEMETRY_DB_TLS_CA_PATH`: File path to the custom Root CA certificate used to validate the Redis server's identity.
+  - `TELEMETRY_DB_TLS_REJECT_UNAUTHORIZED`: If `true`, strictly verifies the Redis server certificate against the CA. Set to `false` to bypass certificate verification errors. Default to `true`.
+  - `TELEMETRY_DB_TLS_KEY_PATH`: File path to the client private key (Required only if using **mTLS**).
+  - `TELEMETRY_DB_TLS_CERT_PATH`: File path to the client public certificate (Required only if using **mTLS**).
 
 IMPROVEMENTS:
 

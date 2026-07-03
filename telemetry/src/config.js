@@ -32,6 +32,17 @@ export const nodeIds = process.env.NODE_ID;
 export const redisDbHost = process.env.TELEMETRY_DB_HOST;
 export const redisDbPort = process.env.TELEMETRY_DB_PORT;
 export const redisDbPassword = process.env.TELEMETRY_DB_PASSWORD;
+export const redisTls =
+  process.env.TELEMETRY_DB_TLS != null
+    ? process.env.TELEMETRY_DB_TLS === 'true'
+    : false;
+export const redisTlsCaPath = process.env.TELEMETRY_DB_TLS_CA_PATH;
+export const redisTlsRejectUnauthorized =
+  process.env.TELEMETRY_DB_TLS_REJECT_UNAUTHORIZED?.toLowerCase() === 'false'
+    ? false
+    : true;
+export const redisTlsKeyPath = process.env.TELEMETRY_DB_TLS_KEY_PATH;
+export const redisTlsCertPath = process.env.TELEMETRY_DB_TLS_CERT_PATH;
 
 export const telemetryNodeGrpcHost = process.env.TELEMETRY_NODE_GRPC_HOST;
 export const telemetryNodeGrpcPort = process.env.TELEMETRY_NODE_GRPC_PORT;

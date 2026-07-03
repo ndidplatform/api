@@ -96,11 +96,21 @@ export const useApiKey =
   process.env.USE_API_KEY != null ? process.env.USE_API_KEY === 'true' : false;
 export const apiKeyHash = process.env.API_KEY_HASH;
 
+// redis
 export const dbIp = process.env.DB_IP || 'localhost';
 export const dbPort = process.env.DB_PORT
   ? parseInt(process.env.DB_PORT)
   : 6379;
 export const dbPassword = process.env.DB_PASSWORD;
+export const dbTls =
+  process.env.DB_TLS != null ? process.env.DB_TLS === 'true' : false;
+export const dbTlsCaPath = process.env.DB_TLS_CA_PATH;
+export const dbTlsRejectUnauthorized =
+  process.env.DB_TLS_REJECT_UNAUTHORIZED?.toLowerCase() === 'false'
+    ? false
+    : true;
+export const dbTlsKeyPath = process.env.DB_TLS_KEY_PATH;
+export const dbTlsCertPath = process.env.DB_TLS_CERT_PATH;
 
 export const dataDirectoryPath =
   process.env.DATA_DIRECTORY_PATH || path.join(__dirname, '..', 'data');
@@ -449,6 +459,20 @@ export const telemetryDbHost =
 export const telemetryDbPort = process.env.TELEMETRY_DB_PORT || dbPort;
 export const telemetryDbPassword =
   process.env.TELEMETRY_DB_PASSWORD || dbPassword;
+export const telemetryDbTls =
+  process.env.TELEMETRY_DB_TLS != null
+    ? process.env.TELEMETRY_DB_TLS === 'true'
+    : dbTls;
+export const telemetryDbTlsCaPath =
+  process.env.TELEMETRY_DB_TLS_CA_PATH || dbTlsCaPath;
+export const telemetryDbTlsRejectUnauthorized =
+  process.env.TELEMETRY_DB_TLS_REJECT_UNAUTHORIZED?.toLowerCase() === 'false'
+    ? false
+    : dbTlsRejectUnauthorized;
+export const telemetryDbTlsKeyPath =
+  process.env.TELEMETRY_DB_TLS_KEY_PATH || dbTlsKeyPath;
+export const telemetryDbTlsCertPath =
+  process.env.TELEMETRY_DB_TLS_CERT_PATH || dbTlsCertPath;
 export const telemetryTokenGenerationIntervalSec =
   process.env.TELEMETRY_TOKEN_TIMEOUT || 6 * 60 * 60; // also used as token expire duration
 

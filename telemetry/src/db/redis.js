@@ -20,7 +20,10 @@
  *
  */
 
+import fs from 'node:fs';
+
 import Redis from 'ioredis';
+
 import * as config from '../config';
 import logger from '../logger';
 
@@ -139,13 +142,28 @@ class RedisKVDb {
 
 export default class RedisTelemetryDb extends Redis {
   constructor({ backoff, onDisconnected, onConnected }) {
+    const tls = config.redisTls;
+    const tlsCaPath = config.redisTlsCaPath;
+    const tlsRejectUnauthorized = config.redisTlsRejectUnauthorized;
+    const tlsKeyPath = config.redisTlsKeyPath;
+    const tlsCertPath = config.redisTlsCertPath;
+
     super({
       host: config.redisDbHost,
       port: config.redisDbPort,
       password: config.redisDbPassword,
+      tls: tls
+        ? {
+            ca: tlsCaPath ? fs.readFileSync(tlsCaPath) : undefined,
+            rejectUnauthorized: tlsRejectUnauthorized,
+            key: tlsKeyPath ? fs.readFileSync(tlsKeyPath) : undefined,
+            cert: tlsCertPath ? fs.readFileSync(tlsCertPath) : undefined,
+          }
+        : undefined,
       retryStrategy: (times) => {
         return backoff.next();
       },
+      lazyConnect: true,
     });
 
     this.on('connect', () => {
@@ -156,6 +174,8 @@ export default class RedisTelemetryDb extends Redis {
       logger.error({ err: error });
       onDisconnected();
     });
+
+    this.connect();
   }
 
   createKVChannel(channelName) {

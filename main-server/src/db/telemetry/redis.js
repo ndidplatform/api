@@ -29,6 +29,11 @@ const redisInstance = new RedisInstance(dbName, {
   dbIp: config.telemetryDbHost,
   dbPort: config.telemetryDbPort,
   dbPassword: config.telemetryDbPassword,
+  dbTls: config.telemetryDbTls,
+  dbTlsCaPath: config.telemetryDbTlsCaPathtelemetryDbTls,
+  dbTlsRejectUnauthorized: config.telemetryDbTlsRejectUnauthorizedtelemetryDbTls,
+  dbTlsKeyPath: config.telemetryDbTlsKeyPathtelemetryDbTls,
+  dbTlsCertPath: config.telemetryDbTlsCertPathtelemetryDbTls,
 });
 
 export default redisInstance;

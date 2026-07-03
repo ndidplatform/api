@@ -55,6 +55,11 @@ Collect activities on NDID API server and forward to NDID telemetry server
 - `TELEMETRY_DB_HOST`: Host/IP of Redis DB database [Required]
 - `TELEMETRY_DB_PORT`: Port of Redis DB database [Required]
 - `TELEMETRY_DB_PASSWORD`: Password of Redis DB database
+- `TELEMETRY_DB_TLS`: Enable TLS encryption for the Redis connection [Default: `false`]
+- `TELEMETRY_DB_TLS_CA_PATH`: File path to the custom Root CA certificate used to validate the Redis server's identity.
+- `TELEMETRY_DB_TLS_REJECT_UNAUTHORIZED`: If `true`, strictly verifies the Redis server certificate against the CA. Set to `false` to bypass certificate verification errors. [Default: `true`]
+- `TELEMETRY_DB_TLS_KEY_PATH`: File path to the client private key (Required only if using **mTLS**).
+- `TELEMETRY_DB_TLS_CERT_PATH`: File path to the client public certificate (Required only if using **mTLS**).
 - `TELEMETRY_NODE_GRPC_HOST`: Host/IP of target telemetry node gRPC server (should be given by NDID) [Required]
 - `TELEMETRY_NODE_GRPC_PORT`: Port of target telemetry node gRPC server (should be given by NDID) [Required]
 - `GRPC_PING_INTERVAL_MS`: Ping interval in millisecond [Default: `60000`]
