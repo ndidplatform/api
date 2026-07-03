@@ -127,7 +127,7 @@
 - `DB_PORT`: Port of DB (redis) server [Default: `6379`]
 - `DB_PASSWORD`: Authentication password for DB (redis) connection
 - `DB_TLS`: Enable TLS encryption for the Redis connection [Default: `false`]
-- `DB_TLS_CA_PATH`: File path to the custom Root CA certificate used to validate the Redis server's identity.
+- `DB_TLS_CA_PATH`: File path to the custom Root CA certificate used to validate the Redis server's identity. [Default: Node.js built-in root certificates. More info: https://nodejs.org/api/tls.html#tls_tls_rootcertificates]
 - `DB_TLS_REJECT_UNAUTHORIZED`: If `true`, strictly verifies the Redis server certificate against the CA. Set to `false` to bypass certificate verification errors. [Default: `true`]
 - `DB_TLS_KEY_PATH`: File path to the client private key (Required only if using **mTLS**).
 - `DB_TLS_CERT_PATH`: File path to the client public certificate (Required only if using **mTLS**).
