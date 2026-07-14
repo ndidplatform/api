@@ -1,6 +1,12 @@
-FROM node:24-alpine3.23 AS build
+FROM node:24-alpine3.23 AS builder
 
-WORKDIR /tmp
+# Fix issue with dependency installation sometimes silently failing due to Node.js Happy Eyeballs issue. 
+# Node.js's fetch fails with "AggregateError [ETIMEDOUT]" when running "node-gyp rebuild" while downloading node headers from https://unofficial-builds.nodejs.org 
+# causing dependency install to not work properly.
+# More info: https://r1ch.net/blog/node-v20-aggregateeerror-etimedout-happy-eyeballs
+ENV NODE_OPTIONS="--no-network-family-autoselection"
+
+WORKDIR /api
 
 # RUN sed -i -e 's/http:/https:/' /etc/apk/repositories
 
@@ -10,20 +16,23 @@ RUN apk update && apk add --no-cache --virtual .build-deps \
   make \
   git
 
-COPY ./ndid-logger/package*.json /tmp/api/ndid-logger/
-COPY ./main-server/package*.json /tmp/api/main-server/
+COPY ./ndid-logger/package*.json /api/ndid-logger/
+COPY ./main-server/package*.json /api/main-server/
 
-WORKDIR /tmp/api/ndid-logger
-RUN npm install && npm prune --production
+WORKDIR /api/ndid-logger
+RUN npm ci
+RUN npm prune --production
 
-WORKDIR /tmp/api/main-server
-RUN npm install
+WORKDIR /api/main-server
+RUN npm ci
 
-COPY ./ndid-error /tmp/api/ndid-error
-COPY ./ndid-logger /tmp/api/ndid-logger
-COPY ./main-server /tmp/api/main-server
+COPY ./ndid-error /api/ndid-error
+COPY ./ndid-logger /api/ndid-logger
+COPY ./main-server /api/main-server
 
-RUN npm run build && npm prune --production
+RUN npm run build
+
+RUN npm prune --production
 
 RUN apk del .build-deps
 
@@ -38,12 +47,12 @@ ENV DATA_DIRECTORY_PATH=/api/data
 RUN umask 027 && echo "umask 0027" >> /etc/profile
 
 # RUN sed -i -e 's/http:/https:/' /etc/apk/repositories
-COPY --from=build /var/cache/apk /var/cache/apk
+COPY --from=builder /var/cache/apk /var/cache/apk
 RUN apk add --no-cache bash openssl && rm -rf /var/cache/apk
 
-COPY --from=build /tmp/api/ndid-error /api/ndid-error
-COPY --from=build /tmp/api/ndid-logger /api/ndid-logger
-COPY --from=build /tmp/api/main-server /api/main-server
+COPY --from=builder /api/ndid-error /api/ndid-error
+COPY --from=builder /api/ndid-logger /api/ndid-logger
+COPY --from=builder /api/main-server /api/main-server
 
 COPY ./protos /api/protos
 COPY COPYING /api/main-server/build

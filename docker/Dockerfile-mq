@@ -1,6 +1,12 @@
-FROM node:24-alpine3.23 AS build
+FROM node:24-alpine3.23 AS builder
 
-WORKDIR /tmp
+# Fix issue with dependency installation sometimes silently failing due to Node.js Happy Eyeballs issue. 
+# Node.js's fetch fails with "AggregateError [ETIMEDOUT]" when running "node-gyp rebuild" while downloading node headers from https://unofficial-builds.nodejs.org 
+# causing dependency install to not work properly.
+# More info: https://r1ch.net/blog/node-v20-aggregateeerror-etimedout-happy-eyeballs
+ENV NODE_OPTIONS="--no-network-family-autoselection"
+
+WORKDIR /api
 
 # RUN sed -i -e 's/http:/https:/' /etc/apk/repositories
 
@@ -11,20 +17,23 @@ RUN apk update && apk add --no-cache --virtual .build-deps \
   git \
   file
 
-COPY ./ndid-logger/package*.json /tmp/api/ndid-logger/
-COPY ./mq-server/package*.json /tmp/api/mq-server/
+COPY ./ndid-logger/package*.json /api/ndid-logger/
+COPY ./mq-server/package*.json /api/mq-server/
 
-WORKDIR /tmp/api/ndid-logger
-RUN npm install && npm prune --production
+WORKDIR /api/ndid-logger
+RUN npm ci
+RUN npm prune --production
 
-WORKDIR /tmp/api/mq-server
-RUN npm install
+WORKDIR /api/mq-server
+RUN npm ci
 
-COPY ./ndid-error /tmp/api/ndid-error
-COPY ./ndid-logger /tmp/api/ndid-logger
-COPY ./mq-server /tmp/api/mq-server
+COPY ./ndid-error /api/ndid-error
+COPY ./ndid-logger /api/ndid-logger
+COPY ./mq-server /api/mq-server
 
-RUN npm run build && npm prune --production
+RUN npm run build
+
+RUN npm prune --production
 
 RUN apk del .build-deps
 
@@ -36,12 +45,12 @@ LABEL maintainer="NDID IT Team <it@ndid.co.th>"
 RUN umask 027 && echo "umask 0027" >> /etc/profile
 
 # RUN sed -i -e 's/http:/https:/' /etc/apk/repositories
-COPY --from=build /var/cache/apk /var/cache/apk
+COPY --from=builder /var/cache/apk /var/cache/apk
 RUN apk add --no-cache bash openssl && rm -rf /var/cache/apk
 
-COPY --from=build /tmp/api/ndid-error /api/ndid-error
-COPY --from=build /tmp/api/ndid-logger /api/ndid-logger
-COPY --from=build /tmp/api/mq-server /api/mq-server
+COPY --from=builder /api/ndid-error /api/ndid-error
+COPY --from=builder /api/ndid-logger /api/ndid-logger
+COPY --from=builder /api/mq-server /api/mq-server
 
 COPY ./protos /api/protos
 COPY COPYING /api/
