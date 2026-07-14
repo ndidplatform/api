@@ -58,5 +58,9 @@
     "mocha": "^10.8.2",
     "rewire": "^7.0.0",
     "sinon": "^21.0.3"
+  },
+  "allowScripts": {
+    "bigint-buffer@1.1.5": true,
+    "protobufjs@7.6.4": true
   }
 }

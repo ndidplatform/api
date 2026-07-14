@@ -37,5 +37,9 @@
     "chai-http": "^4.4.0",
     "eslint": "^8.57.1",
     "mocha": "^10.8.2"
+  },
+  "allowScripts": {
+    "protobufjs@7.6.4": true,
+    "zeromq@6.5.0": true
   }
 }
