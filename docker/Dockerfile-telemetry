@@ -17,12 +17,15 @@ RUN apk update && apk add --no-cache --virtual .build-deps \
   git \
   file
 
+COPY ./ndid-error/package*.json /api/ndid-error/  
 COPY ./ndid-logger/package*.json /api/ndid-logger/
 COPY ./telemetry/package*.json /api/telemetry/
 
+WORKDIR /api/ndid-error
+RUN npm ci --omit=dev
+
 WORKDIR /api/ndid-logger
-RUN npm ci
-RUN npm prune --production
+RUN npm ci --omit=dev
 
 WORKDIR /api/telemetry
 RUN npm ci
