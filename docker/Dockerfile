@@ -39,7 +39,6 @@ RUN npm prune --production
 
 RUN apk del .build-deps
 
-RUN ls /api/main-server/node_modules/bigint-buffer
 
 FROM node:24-alpine3.23
 LABEL maintainer="NDID IT Team <it@ndid.co.th>"
