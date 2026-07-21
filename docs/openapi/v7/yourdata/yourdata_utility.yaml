@@ -163,8 +163,10 @@ components:
             - continuous_no_expire
         issue_datetime:
           type: number
+          description: UNIX timestamp in seconds.
         expiration_datetime:
           type: number
+          description: UNIX timestamp in seconds.
         source_request_id_list:
           type: array
           items:
@@ -260,6 +262,7 @@ components:
             - continuous_no_expire
         expiration_datetime:
           type: number
+          description: UNIX timestamp in seconds.
         source_request_id_list:
           type: array
           items:
