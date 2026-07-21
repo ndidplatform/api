@@ -1,6 +1,6 @@
 # Changelog
 
-## 9.0.0 (TBD)
+## 9.0.0 (July 21, 2026)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_
 
