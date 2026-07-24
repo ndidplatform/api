@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.1.0 (TBD)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_
+
+OTHERS:
+
+- Move telemetry logging for Your Data "AS sends response" event to after MQ message send success or failure and add `send_success` boolean flag to additional data.
+- Add telemetry logging Your Data "RP times out request" event
+
 ## 9.0.0 (July 21, 2026)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_
