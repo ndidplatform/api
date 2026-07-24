@@ -760,6 +760,7 @@ export async function processRawMessage({
  * @property {Object} message - The payload being transmitted.
  * @property {string} senderNodeId
  * @property {Function} [onSuccess] - Optional callback triggered upon success.
+ * @property {Function} [onError] - Optional callback triggered upon error / failure.
  */
 
 /**
@@ -768,7 +769,13 @@ export async function processRawMessage({
  * @param {SendOptions} options
  * @returns {Promise<void>}
  */
-export async function send({ receivers, message, senderNodeId, onSuccess }) {
+export async function send({
+  receivers,
+  message,
+  senderNodeId,
+  onSuccess,
+  onError,
+}) {
   if (receivers.length === 0) {
     redactedLogger.debug({
       message: 'No receivers for message queue to send to',
@@ -975,6 +982,7 @@ export async function send({ receivers, message, senderNodeId, onSuccess }) {
         })
         .catch((error) => {
           logger.error({ message: 'Send message failed', err: error });
+          onError?.({ error });
           metricsEventEmitter.emit('mqSendMessageFail');
         })
         .then(() => {

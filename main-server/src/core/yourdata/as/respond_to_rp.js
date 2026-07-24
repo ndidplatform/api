@@ -604,6 +604,23 @@ async function sendResponseToRequester(
     onSuccess: ({ mqDestAddress, receiverNodeId }) => {
       onSendSuccess();
 
+      TelemetryLogger.logYourDataRequestEvent(
+        data.request_id,
+        nodeId,
+        YOURDATA_REQUEST_EVENTS.AS_SENDS_RESPONSE,
+        {
+          send_success: true,
+          api_spec_version: apiVersion,
+          ndid_member_app_type: ndidMemberAppType,
+          ndid_member_app_version: ndidMemberAppVersion,
+          source_request_id_list: request.tokenPayload.sourceRequestIdList,
+          service_id: data.service_id,
+          requester_node_id: requesterNodeId,
+          error_code: data.error_code,
+          error_message: data.error_message,
+        }
+      );
+
       nodeCallback.notifyMessageQueueSuccessSend({
         nodeId,
         getCallbackUrlFnName:
@@ -614,21 +631,23 @@ async function sendResponseToRequester(
         requestId: data.request_id,
       });
     },
+    onError: () => {
+      TelemetryLogger.logYourDataRequestEvent(
+        data.request_id,
+        nodeId,
+        YOURDATA_REQUEST_EVENTS.AS_SENDS_RESPONSE,
+        {
+          send_success: false,
+          api_spec_version: apiVersion,
+          ndid_member_app_type: ndidMemberAppType,
+          ndid_member_app_version: ndidMemberAppVersion,
+          source_request_id_list: request.tokenPayload.sourceRequestIdList,
+          service_id: data.service_id,
+          requester_node_id: requesterNodeId,
+          error_code: data.error_code,
+          error_message: data.error_message,
+        }
+      );
+    },
   });
-
-  TelemetryLogger.logYourDataRequestEvent(
-    data.request_id,
-    nodeId,
-    YOURDATA_REQUEST_EVENTS.AS_SENDS_RESPONSE,
-    {
-      api_spec_version: apiVersion,
-      ndid_member_app_type: ndidMemberAppType,
-      ndid_member_app_version: ndidMemberAppVersion,
-      source_request_id_list: request.tokenPayload.sourceRequestIdList,
-      service_id: data.service_id,
-      requester_node_id: requesterNodeId,
-      error_code: data.error_code,
-      error_message: data.error_message,
-    }
-  );
 }

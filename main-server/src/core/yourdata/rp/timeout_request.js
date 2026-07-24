@@ -33,6 +33,7 @@ import * as cacheDb from '../../../db/cache';
 import { callbackToClient } from '../../../callback';
 import * as mq from '../../../mq';
 import privateMessageType from '../../../mq/message/type';
+import TelemetryLogger, { YOURDATA_REQUEST_EVENTS } from '../../../telemetry';
 import logger from '../../../logger';
 
 export async function timeoutRequest(nodeId, requestId) {
@@ -160,6 +161,15 @@ export async function timeoutRequest(nodeId, requestId) {
         });
       },
     });
+
+    TelemetryLogger.logYourDataRequestEvent(
+      requestId,
+      nodeId,
+      YOURDATA_REQUEST_EVENTS.RP_TIMES_OUT_REQUEST,
+      {
+        status: currentRequestStatus,
+      }
+    );
   } catch (error) {
     logger.error({
       message: 'Cannot timeout request',
