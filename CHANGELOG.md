@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.1.1 (TBD)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_
+
+BUG FIXES:
+
+- Fix invalid property name access when reading backlog expected Tx list loaded on server initialization.
+
 ## 9.1.0 (August 4, 2026)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_

@@ -251,7 +251,7 @@ export async function loadExpectedTxFromDB() {
       return;
     }
     if (config.mode === MODE.STANDALONE) {
-      savedExpectedTxs.forEach(({ tx: txHash, transactParams }) => {
+      savedExpectedTxs.forEach(({ tx: txHash, metadata: transactParams }) => {
         expectedTx.set(txHash, transactParams);
         incrementExpectedTxsCount();
       });
