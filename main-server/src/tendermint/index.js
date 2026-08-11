@@ -1308,13 +1308,6 @@ export async function transact({
     useMasterKey,
     saveForRetryOnChainDisabled,
   };
-  expectedTx.set(txHash, transactParams);
-  incrementExpectedTxsCount();
-  await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, transactParams);
-  expectedTxMetricsData.set(txHash, {
-    startTime: Date.now(),
-    functionName: fnName,
-  });
 
   if (retryOnFail) {
     if (retryCount === 0 && !retryPreviousTxHash) {
@@ -1333,6 +1326,14 @@ export async function transact({
   }
 
   try {
+    expectedTx.set(txHash, transactParams);
+    incrementExpectedTxsCount();
+    await cacheDb.setExpectedTxMetadata(config.nodeId, txHash, transactParams);
+    expectedTxMetricsData.set(txHash, {
+      startTime: Date.now(),
+      functionName: fnName,
+    });
+
     let promise;
     if (waitForCommit) {
       promise = new Promise((resolve, reject) =>
@@ -1355,9 +1356,11 @@ export async function transact({
     }
     return broadcastTxSyncResult;
   } catch (error) {
-    expectedTx.delete(txHash);
+    const expectedTxRemoved = expectedTx.delete(txHash);
     expectedTxMetricsData.delete(txHash);
-    decrementExpectedTxsCount();
+    if (expectedTxRemoved) {
+      decrementExpectedTxsCount();
+    }
     metricsEventEmitter.emit('txTransactFail');
     await cacheDb.removeExpectedTxMetadata(config.nodeId, txHash);
     if (

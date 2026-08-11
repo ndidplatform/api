@@ -6,7 +6,15 @@ import Redis from 'ioredis';
 import { slidingWindowScript } from './cache/redis';
 
 import * as redisCommon from './common';
-import { pushToList, getAllLists, checkRateLimit } from './redis_common';
+import {
+  pushToList,
+  getAllLists,
+  setToNewKey,
+  checkRateLimit,
+} from './redis_common';
+
+import CustomError from 'ndid-error/custom_error';
+import errorType from 'ndid-error/type';
 
 describe('Integration Test with Redis', () => {
   let redis;
@@ -27,6 +35,7 @@ describe('Integration Test with Redis', () => {
     });
 
     sinon.stub(redisCommon, 'getRedis').returns(redis);
+    sinon.stub(redisCommon, 'getRedisVersion').returns({ major: '5' });
   });
 
   after(async () => {
@@ -174,6 +183,133 @@ describe('Integration Test with Redis', () => {
       const resB = await callLimiter('request_B');
       expect(resB.allowed).to.be.true;
       expect(resB.remaining).to.equal(9);
+    });
+  });
+
+  describe('setToNewKey()', () => {
+    beforeEach(async () => {
+      // Ensure the test DB is empty before every test
+      await redis.flushdb();
+    });
+
+    it('should copy value from old key to new key and remove old key', async () => {
+      const name = 'setToNewKet_test';
+
+      const oldKey = 'user:1001';
+      const newKey = 'user:2002';
+
+      const fullOldKey = `${nodeId}:${testDbName}:${name}:${oldKey}`;
+      const fullNewKey = `${nodeId}:${testDbName}:${name}:${newKey}`;
+
+      // Seed initial data on Redis
+      const setRes = await redis.set(fullOldKey, 'sample_value');
+      expect(setRes).to.equal('OK');
+
+      await setToNewKey({
+        nodeId,
+        dbName: testDbName,
+        name,
+        key: oldKey,
+        newKey,
+      });
+
+      // Verify old key was unlinked/deleted and new key received the value
+      const oldVal = await redis.get(fullOldKey);
+      const newVal = await redis.get(fullNewKey);
+
+      expect(oldVal).to.be.null;
+      expect(newVal).to.equal('sample_value');
+    });
+
+    it('should fall back to DEL for Redis versions lower than 4', async () => {
+      // Temporarily mock Redis major version to 3
+      redisCommon.getRedisVersion.returns({ major: '3' });
+
+      const name = 'setToNewKet_test_old_ver';
+
+      const oldKey = 'legacy:old';
+      const newKey = 'legacy:new';
+
+      const fullOldKey = `${nodeId}:${testDbName}:${name}:${oldKey}`;
+      const fullNewKey = `${nodeId}:${testDbName}:${name}:${newKey}`;
+
+      await redis.set(fullOldKey, 'legacy_value');
+
+      await setToNewKey({
+        nodeId,
+        dbName: testDbName,
+        name,
+        key: oldKey,
+        newKey,
+      });
+
+      const oldVal = await redis.get(fullOldKey);
+      const newVal = await redis.get(fullNewKey);
+
+      expect(oldVal).to.be.null;
+      expect(newVal).to.equal('legacy_value');
+
+      // Reset stub version back to 5
+      redisCommon.getRedisVersion.returns({ major: '5' });
+    });
+
+    it('should set new key to null when old key does not exist', async () => {
+      const name = 'setToNewKet_test_no_oldKey';
+
+      const oldKey = 'non_existent_old';
+      const newKey = 'new_target';
+
+      const fullNewKey = `${nodeId}:${testDbName}:${name}:${newKey}`;
+
+      try {
+        await setToNewKey({
+          nodeId,
+          dbName: testDbName,
+          name: 'setToNewKet_test_no_oldKey',
+          key: oldKey,
+          newKey,
+        });
+        expect.fail('Should have thrown CustomError');
+      } catch (err) {
+        expect(err).to.be.an.instanceOf(CustomError);
+        expect(err.code).to.equal(errorType.DB_ERROR.code);
+        expect(err.details).to.deep.equal({
+          operation: 'setToNewKey',
+          dbName: testDbName,
+          name: 'setToNewKet_test_no_oldKey',
+        });
+      }
+
+      const newVal = await redis.get(fullNewKey);
+      expect(newVal).to.be.null;
+    });
+
+    it('should wrap Redis errors inside CustomError', async () => {
+      // Simulate connection issue by forcing getRedis to throw
+      redisCommon.getRedis.throws(new Error('Redis connection down'));
+
+      try {
+        await setToNewKey({
+          nodeId,
+          dbName: testDbName,
+          name: 'setToNewKet_test_err',
+          key: 'k1',
+          newKey: 'k2',
+        });
+        expect.fail('Should have thrown CustomError');
+      } catch (err) {
+        expect(err).to.be.an.instanceOf(CustomError);
+        expect(err.code).to.equal(errorType.DB_ERROR.code);
+        expect(err.cause.message).to.equal('Redis connection down');
+        expect(err.details).to.deep.equal({
+          operation: 'setToNewKey',
+          dbName: testDbName,
+          name: 'setToNewKet_test_err',
+        });
+      } finally {
+        // Restore normal getRedis implementation for subsequent tests
+        redisCommon.getRedis.returns(redis);
+      }
     });
   });
 });

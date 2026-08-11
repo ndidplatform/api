@@ -498,15 +498,17 @@ export async function getAll({ nodeId, dbName, name, keyName, valueName }) {
         if (keys.length) {
           stream.pause();
           redis.mget(...keys).then((resultPart) => {
-            const resultPartParsed = resultPart.map((item, index) => {
-              return {
-                [keyName]: keys[index].replace(
-                  `${nodeId}:${dbName}:${name}:`,
-                  ''
-                ),
-                [valueName]: JSON.parse(item),
-              };
-            });
+            const resultPartParsed = resultPart
+              .filter((item) => item != null) // Filter out keys that were deleted or expired between SCAN and MGET
+              .map((item, index) => {
+                return {
+                  [keyName]: keys[index].replace(
+                    `${nodeId}:${dbName}:${name}:`,
+                    ''
+                  ),
+                  [valueName]: JSON.parse(item),
+                };
+              });
             result = result.concat(resultPartParsed);
             stream.resume();
           });

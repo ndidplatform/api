@@ -7,6 +7,8 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 BUG FIXES:
 
 - Fix invalid property name access when reading backlog expected Tx list loaded on server initialization.
+- Fix expected Tx in memory and cache does not get removed when saving or updating retry transaction data in cache fails.
+- Fix redis function wrapper `getAll` to filter out key-values that were deleted or expired between `SCAN` and `MGET`.
 
 ## 9.1.0 (August 4, 2026)
 
