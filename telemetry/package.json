@@ -33,6 +33,6 @@
   "main": "index.js",
   "keywords": [],
   "allowScripts": {
-    "protobufjs@7.6.4": true
+    "protobufjs@7.6.5": true
   }
 }
