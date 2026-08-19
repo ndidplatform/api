@@ -4,6 +4,11 @@
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_
 
+OTHERS:
+
+- [Docker] Update base image.
+- [Docker] Remove non-essential package managers from runtime image.
+
 BUG FIXES:
 
 - Fix invalid property name access when reading backlog expected Tx list loaded on server initialization.

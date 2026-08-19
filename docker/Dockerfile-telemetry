@@ -1,4 +1,4 @@
-FROM node:24-alpine3.23 AS builder
+FROM node:24-alpine3.24 AS builder
 
 # Fix issue with dependency installation sometimes silently failing due to Node.js Happy Eyeballs issue. 
 # Node.js's fetch fails with "AggregateError [ETIMEDOUT]" when running "node-gyp rebuild" while downloading node headers from https://unofficial-builds.nodejs.org 
@@ -10,12 +10,11 @@ WORKDIR /api
 
 # RUN sed -i -e 's/http:/https:/' /etc/apk/repositories
 
-RUN apk update && apk add --no-cache --virtual .build-deps \
+RUN apk update && apk add --no-cache \
   python3 \
   g++ \
   make \
-  git \
-  file
+  git
 
 COPY ./ndid-error/package*.json /api/ndid-error/  
 COPY ./ndid-logger/package*.json /api/ndid-logger/
@@ -38,18 +37,26 @@ RUN npm run build
 
 RUN npm prune --production
 
-RUN apk del .build-deps
 
-
-FROM node:24-alpine3.23
+FROM node:24-alpine3.24
 LABEL maintainer="NDID IT Team <it@ndid.co.th>"
 
 # Set umask to 027
 RUN umask 027 && echo "umask 0027" >> /etc/profile
 
 # RUN sed -i -e 's/http:/https:/' /etc/apk/repositories
-COPY --from=builder /var/cache/apk /var/cache/apk
-RUN apk add --no-cache bash openssl && rm -rf /var/cache/apk
+RUN apk add --no-cache bash
+
+# Remove non-essential package management binaries
+RUN rm -rf /usr/local/bin/npm \
+           /usr/local/bin/npx \
+           /usr/local/bin/yarn \
+           /usr/local/bin/yarnpkg \
+           /usr/local/bin/corepack \
+           /usr/local/lib/node_modules/npm \
+           /usr/local/lib/node_modules/corepack \
+           /root/.npm \
+           /root/.yarn
 
 COPY --from=builder /api/ndid-error /api/ndid-error
 COPY --from=builder /api/ndid-logger /api/ndid-logger

@@ -1,11 +1,11 @@
 #!/bin/sh
 
-# Install jq and curl as they are required by this script
-if ! which jq || ! which curl; then
+# Install jq, curl, and openssl as they are required by this script
+if ! which jq || ! which curl || !which openssl; then
   sed -i -e 's/http:/https:/' /etc/apk/repositories
   mkdir -p /var/cache/apk
   apk update
-  apk add --no-cache curl jq
+  apk add --no-cache curl jq openssl
   rm -rf /var/cache/apk
 fi
 
