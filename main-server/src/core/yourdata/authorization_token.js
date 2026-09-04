@@ -120,7 +120,7 @@ export function validateAuthorization({
 
     // if "validate_service_extension" is true, check if all items in "service_extension" in the parameter exist in "service_id_list"."service_extension array
     // "validate_service_extension" can only be true if and only if "validate_service_id" is true
-    if (payload.validate_service_extension) {
+    if (payload.validate_service_extension && Array.isArray(serviceExtension)) {
       const result = serviceExtension.every((servExt) =>
         matchedService.service_extension.includes(servExt)
       );

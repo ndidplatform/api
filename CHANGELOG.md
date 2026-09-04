@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.1.2 (TBD)
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_
+
+BUG FIXES:
+
+- Fix error when validating Your Data request without service extension and `validate_service_extension` in authorization token is set to `true`.
+
 ## 9.1.1 (September 1, 2026)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_

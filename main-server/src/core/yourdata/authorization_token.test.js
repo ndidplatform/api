@@ -120,6 +120,17 @@ describe('validateAuthorization', () => {
 
       expect(() => validateAuthorization(mixedParams)).to.not.throw();
     });
+
+    it('should skip service extension validation if not provided when validate_service_extension is true', () => {
+      defaultPayload.validate_service_extension = true;
+
+      const mixedParams = {
+        ...defaultParams,
+      };
+      delete mixedParams.serviceExtension;
+
+      expect(() => validateAuthorization(mixedParams)).to.not.throw();
+    });
   });
 
   // =========================================================================
