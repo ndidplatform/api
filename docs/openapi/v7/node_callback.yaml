@@ -4,7 +4,7 @@ info:
   description: >-
     Functions that organization that wants to update node or use other methods
     of signing data other than default must implement
-  version: '7.0'
+  version: '7.1'
 servers:
   - url: https://your-app-server
     description: Your application server

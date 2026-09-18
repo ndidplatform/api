@@ -51,7 +51,7 @@ export const httpRequestBodySizeLimit = process.env.HTTP_REQUEST_BODY_SIZE_LIMIT
 
 let _defaultApiVersion = process.env.DEFAULT_API_VERSION
   ? process.env.DEFAULT_API_VERSION
-  : '7.0';
+  : '7.1';
 if (_defaultApiVersion === '4') {
   _defaultApiVersion = '4.0';
 } else if (_defaultApiVersion === '5') {
@@ -59,13 +59,13 @@ if (_defaultApiVersion === '4') {
 } else if (_defaultApiVersion === '6') {
   _defaultApiVersion = '6.0';
 } else if (_defaultApiVersion === '7') {
-  _defaultApiVersion = '7.0';
+  _defaultApiVersion = '7.1';
 }
 export const defaultApiVersion = _defaultApiVersion;
 
 let _callbackApiVersion = process.env.CALLBACK_API_VERSION
   ? process.env.CALLBACK_API_VERSION
-  : '7.0';
+  : '7.1';
 if (_callbackApiVersion === '4') {
   _callbackApiVersion = '4.0';
 } else if (_callbackApiVersion === '5') {
@@ -73,7 +73,7 @@ if (_callbackApiVersion === '4') {
 } else if (_callbackApiVersion === '6') {
   _callbackApiVersion = '6.0';
 } else if (_callbackApiVersion === '7') {
-  _callbackApiVersion = '7.0';
+  _callbackApiVersion = '7.1';
 }
 export const callbackApiVersion = _callbackApiVersion;
 
@@ -84,7 +84,7 @@ if (_externalCryptoServiceCallbackApiVersion === '5') {
 } else if (_externalCryptoServiceCallbackApiVersion === '6') {
   _externalCryptoServiceCallbackApiVersion = '6.0';
 } else if (_externalCryptoServiceCallbackApiVersion === '7') {
-  _externalCryptoServiceCallbackApiVersion = '7.0';
+  _externalCryptoServiceCallbackApiVersion = '7.1';
 } else {
   _externalCryptoServiceCallbackApiVersion = callbackApiVersion;
 }

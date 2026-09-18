@@ -886,6 +886,11 @@ module.exports = {
     message: 'Retry encrypted data key request is in progress',
     clientError: true,
   },
+  CROSS_SERVICE_DOMAIN_REQUEST_NOT_ALLOWED: {
+    code: 20122,
+    message: 'Cross service domain request is not allowed',
+    clientError: true,
+  },
 
   // Errors return from ABCI app
   // Server errors
@@ -1553,6 +1558,11 @@ module.exports = {
   ABCI_DOMAIN_CANNOT_BE_EMPTY: {
     code: 25103,
     message: 'Domain name cannot be empty',
+    clientError: true,
+  },
+  ABCI_CROSS_SERVICE_DOMAIN_REQUEST_NOT_ALLOWED: {
+    code: 25104,
+    message: 'Cross service domain request is not allowed',
     clientError: true,
   },
 

@@ -821,10 +821,12 @@ router.post(
 
 router.post('/add_domain', validateBody, async (req, res, next) => {
   try {
-    const { domain, node_whitelist_enabled } = req.body;
+    const { domain, node_whitelist_enabled, cross_domain_request_disabled } =
+      req.body;
     await ndid.addDomain({
       domain,
       nodeWhitelistEnabled: node_whitelist_enabled,
+      crossDomainRequestDisabled: cross_domain_request_disabled,
     });
     res.status(204).end();
     next();
@@ -910,6 +912,36 @@ router.post(
     try {
       const { domain } = req.body;
       await ndid.disableDomainNodeWhitelist({ domain });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/enable_domain_cross_domain_request',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { domain } = req.body;
+      await ndid.enableDomainCrossDomainRequest({ domain });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/disable_domain_cross_domain_request',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { domain } = req.body;
+      await ndid.disableDomainCrossDomainRequest({ domain });
       res.status(204).end();
       next();
     } catch (error) {

@@ -1,8 +1,22 @@
 # Changelog
 
-## 9.1.2 (TBD)
+## 9.2.0 (TBD)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_
+
+FEATURES:
+
+- Validation for cross service domains on create request.
+- API version 7.1
+  - Change response body JSON schema of GET `/utility/domains`
+    - Add `cross_domain_request_disabled`
+  - NDID only APIs
+    - Change request body JSON schema of POST `/ndid/add_domain`.
+      - Add `cross_domain_request_disabled`
+    - New API: POST `/ndid/enable_domain_cross_domain_request`: Set domain to allow its services to coexist with services from other domains (including services without a domain) in data request list when creating a request.
+    - New API: POST `/ndid/disable_domain_cross_domain_request`: Set domain to not allow its services to coexist with services from other domains (including services without a domain) in data request list when creating a request.
+    - Change request body JSON schema validation of POST `/ndid/update_service`.
+      - `domain` parameter now accepts an empty string, which is interpreted as no domain or not belonging to any domain.
 
 BUG FIXES:
 

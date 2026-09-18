@@ -2134,6 +2134,7 @@ export async function addDomain(
       params: {
         domain: params.domain,
         node_whitelist_enabled: params.nodeWhitelistEnabled,
+        cross_domain_request_disabled: params.crossDomainRequestDisabled,
       },
       callbackFnName,
       callbackAdditionalArgs,
@@ -2345,6 +2346,54 @@ export async function getDomainNodePermission({ nodeId, domain }) {
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get domain node permission',
+      cause: error,
+    });
+  }
+}
+
+export async function enableDomainCrossDomainRequest(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'EnableDomainCrossDomainRequest',
+      params: { domain: params.domain },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot enable domain cross domain request',
+      cause: error,
+    });
+  }
+}
+
+export async function disableDomainCrossDomainRequest(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'DisableDomainCrossDomainRequest',
+      params: { domain: params.domain },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot disable domain cross domain request',
       cause: error,
     });
   }

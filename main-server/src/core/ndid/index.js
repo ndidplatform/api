@@ -962,9 +962,13 @@ export async function disableServiceRequesterNodeWhitelist({ serviceId }) {
 
 // Domain
 
-export async function addDomain({ domain, nodeWhitelistEnabled }) {
+export async function addDomain({
+  domain,
+  nodeWhitelistEnabled,
+  crossDomainRequestDisabled,
+}) {
   return tendermintNdid.addDomain(
-    { domain, nodeWhitelistEnabled },
+    { domain, nodeWhitelistEnabled, crossDomainRequestDisabled },
     config.nodeId
   );
 }
@@ -997,6 +1001,20 @@ export async function enableDomainNodeWhitelist({ domain }) {
 
 export async function disableDomainNodeWhitelist({ domain }) {
   return tendermintNdid.disableDomainNodeWhitelist({ domain }, config.nodeId);
+}
+
+export async function enableDomainCrossDomainRequest({ domain }) {
+  return tendermintNdid.enableDomainCrossDomainRequest(
+    { domain },
+    config.nodeId
+  );
+}
+
+export async function disableDomainCrossDomainRequest({ domain }) {
+  return tendermintNdid.disableDomainCrossDomainRequest(
+    { domain },
+    config.nodeId
+  );
 }
 
 export async function addDomainErrorCode({

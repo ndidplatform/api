@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: RP Callback API
   description: API that RP MUST IMPLEMENT to be called by the platform
-  version: '7.0'
+  version: '7.1'
 servers:
   - url: https://your-rp-app-server
     description: Your RP application server

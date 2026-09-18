@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: AS Service Offering API
   description: API Spec for AS Providing Data to the NDID Network. AS MUST IMPLEMENT.
-  version: '7.0'
+  version: '7.1'
 servers:
   - url: https://your-as-app-server
     description: Your AS application server

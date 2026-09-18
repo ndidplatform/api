@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: AS API
   description: API for AS specific Roles
-  version: '7.0'
+  version: '7.1'
 servers:
   - url: http://localhost:8300
     description: Local AS API server

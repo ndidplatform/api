@@ -3,7 +3,7 @@ info:
   title: Your Data API
   description: |-
     API related to Your Data feature for RP.
-  version: '7.0'
+  version: '7.1'
 servers:
   - url: http://localhost:8200
     description: Local NDID RP role API server

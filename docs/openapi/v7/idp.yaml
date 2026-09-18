@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Identity Provider API
   description: API for IdP specific roles
-  version: '7.0'
+  version: '7.1'
 servers:
   - url: http://localhost:8100
     description: Local IdP API server

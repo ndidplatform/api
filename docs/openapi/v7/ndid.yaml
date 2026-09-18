@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: NDID Role API
   description: API specific to the National Digital ID (NDID) role for blockchain and node management.
-  version: '7.0'
+  version: '7.1'
 servers:
   - url: http://localhost:8080
     description: Local NDID API server
@@ -949,6 +949,8 @@ paths:
                   $ref: '#/components/schemas/Domain'
                 node_whitelist_enabled:
                   type: boolean
+                cross_domain_request_disabled:
+                  type: boolean
       responses:
         '204':
           description: Successfully added.
@@ -1057,6 +1059,44 @@ paths:
   /ndid/disable_domain_node_whitelist:
     post:
       summary: Disable domain node whitelist
+      tags:
+        - Domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domain]
+              properties:
+                domain:
+                  $ref: '#/components/schemas/Domain'
+      responses:
+        '204':
+          description: Successfully disabled.
+
+  /ndid/enable_domain_cross_domain_request:
+    post:
+      summary: Enable domain cross service domain request
+      tags:
+        - Domain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [domain]
+              properties:
+                domain:
+                  $ref: '#/components/schemas/Domain'
+      responses:
+        '204':
+          description: Successfully enabled.
+
+  /ndid/disable_domain_cross_domain_request:
+    post:
+      summary: Disable domain cross service domain request
       tags:
         - Domain
       requestBody:

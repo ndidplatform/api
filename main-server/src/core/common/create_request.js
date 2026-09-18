@@ -199,6 +199,7 @@ async function checkAsListCondition({
   const services = await tendermintNdid.getServiceList();
 
   // for node domain permission check (e.g. YourData)
+  let containsServiceWithNoDomain = false;
   const containsServiceDomains = new Set();
 
   // for destination (AS) node domain permission check (e.g. YourData)
@@ -229,6 +230,8 @@ async function checkAsListCondition({
       }
       if (service.domain != null) {
         containsServiceDomains.add(service.domain);
+      } else {
+        containsServiceWithNoDomain = true;
       }
 
       // check if requester node ID is allowed to create request with this service ID
@@ -355,6 +358,29 @@ async function checkAsListCondition({
       }
     })
   );
+
+  // check if cross service domain request is allowed
+  if (containsServiceWithNoDomain && containsServiceDomains.size > 0) {
+    const { domain_list } = await tendermintNdid.getDomainList();
+
+    const domainMap = new Map(domain_list.map((d) => [d.domain, d]));
+
+    const crossServiceDomainRequestAllowed = [...containsServiceDomains].every(
+      (requestedDomain) => {
+        const domain = domainMap.get(requestedDomain);
+        return domain && !domain.cross_domain_request_disabled;
+      }
+    );
+
+    if (!crossServiceDomainRequestAllowed) {
+      throw new CustomError({
+        errorType: errorType.CROSS_SERVICE_DOMAIN_REQUEST_NOT_ALLOWED,
+        details: {
+          requestedServiceDomains: [...containsServiceDomains],
+        },
+      });
+    }
+  }
 
   // If service IDs in data request list are in a domain (e.g. YourData),
   // check if caller node ID is allowed to use domains in request

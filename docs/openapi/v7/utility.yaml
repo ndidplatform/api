@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Platform Utility function
   description: Other functions needed by anyone using the platform
-  version: '7.0'
+  version: '7.1'
 servers:
   - url: http://localhost:8080
     description: Local NDID API server
@@ -1028,12 +1028,15 @@ paths:
                     - domain
                     - active
                     - node_whitelist_enabled
+                    - cross_domain_request_disabled
                   properties:
                     domain:
                       type: string
                     active:
                       type: boolean
                     node_whitelist_enabled:
+                      type: boolean
+                    cross_domain_request_disabled:
                       type: boolean
         '404':
           description: Not found / N/A

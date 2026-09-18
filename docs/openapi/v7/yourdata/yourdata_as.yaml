@@ -3,7 +3,7 @@ info:
   title: Your Data API
   description: |-
     API related to Your Data feature. for AS.
-  version: '7.0'
+  version: '7.1'
 servers:
   - url: http://localhost:8300
     description: Local NDID AS role API server

@@ -3,7 +3,7 @@ info:
   title: Your Data API (Callback)
   description: |-
     API related to Your Data feature. API that AS MUST IMPLEMENT to be called by the platform.
-  version: '7.0'
+  version: '7.1'
 servers:
   - url: https://your-as-app-server
     description: Your AS application server

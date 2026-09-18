@@ -333,7 +333,7 @@ export default {
           service_name: { type: 'string', minLength: 1 },
           data_schema: { type: 'string', minLength: 1 },
           data_schema_version: { type: 'string', minLength: 1 },
-          domain: { type: 'string', minLength: 1 },
+          domain: { type: 'string' },
         },
         required: ['service_id'],
       },
@@ -681,6 +681,7 @@ export default {
             $ref: 'defs#/definitions/domain',
           },
           node_whitelist_enabled: { type: 'boolean' },
+          cross_domain_request_disabled: { type: 'boolean' },
         },
         required: ['domain'],
       },
@@ -749,6 +750,28 @@ export default {
       },
     },
     '/ndid/disable_domain_node_whitelist': {
+      body: {
+        type: 'object',
+        properties: {
+          domain: {
+            $ref: 'defs#/definitions/domain',
+          },
+        },
+        required: ['domain'],
+      },
+    },
+    '/ndid/enable_domain_cross_domain_request': {
+      body: {
+        type: 'object',
+        properties: {
+          domain: {
+            $ref: 'defs#/definitions/domain',
+          },
+        },
+        required: ['domain'],
+      },
+    },
+    '/ndid/disable_domain_cross_domain_request': {
       body: {
         type: 'object',
         properties: {
