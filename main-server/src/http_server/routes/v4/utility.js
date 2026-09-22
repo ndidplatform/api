@@ -215,6 +215,7 @@ router.get('/services', async (req, res, next) => {
 
       delete svc.domain;
       delete svc.requester_node_whitelist_enabled;
+      delete svc.request_type_whitelist_enabled;
 
       return {
         ...svc,
@@ -246,6 +247,7 @@ router.get('/services/:service_id', async (req, res, next) => {
 
       delete serviceDetail.domain;
       delete serviceDetail.requester_node_whitelist_enabled;
+      delete serviceDetail.request_type_whitelist_enabled;
 
       res.status(200).json(serviceDetail);
     }

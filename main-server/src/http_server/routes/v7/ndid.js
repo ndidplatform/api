@@ -337,6 +337,7 @@ router.post('/create_service', validateBody, async (req, res, next) => {
       data_schema_version,
       domain,
       requester_node_whitelist_enabled,
+      request_type_whitelist_enabled,
     } = req.body;
 
     await ndid.addService({
@@ -346,6 +347,7 @@ router.post('/create_service', validateBody, async (req, res, next) => {
       data_schema_version,
       domain,
       requester_node_whitelist_enabled,
+      request_type_whitelist_enabled,
     });
     res.status(201).end();
     next();
@@ -749,6 +751,8 @@ router.post('/set_supported_aal_list', validateBody, async (req, res, next) => {
   }
 });
 
+// service's requester node
+
 router.post(
   '/add_node_to_service_requester_node_whitelist',
   validateBody,
@@ -807,6 +811,76 @@ router.post(
     try {
       const { service_id } = req.body;
       await ndid.disableServiceRequesterNodeWhitelist({
+        serviceId: service_id,
+      });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// service's request type
+
+router.post(
+  '/add_request_type_to_service_request_type_whitelist',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { request_type, service_id } = req.body;
+      await ndid.addRequestTypeToServiceRequestTypeWhitelist({
+        requestType: request_type,
+        serviceId: service_id,
+      });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/remove_request_type_from_service_request_type_whitelist',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { request_type, service_id } = req.body;
+      await ndid.removeRequestTypeFromServiceRequestTypeWhitelist({
+        requestType: request_type,
+        serviceId: service_id,
+      });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/enable_service_request_type_whitelist',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { service_id } = req.body;
+      await ndid.enableServiceRequestTypeWhitelist({ serviceId: service_id });
+      res.status(204).end();
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/disable_service_request_type_whitelist',
+  validateBody,
+  async (req, res, next) => {
+    try {
+      const { service_id } = req.body;
+      await ndid.disableServiceRequestTypeWhitelist({
         serviceId: service_id,
       });
       res.status(204).end();

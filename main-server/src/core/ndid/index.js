@@ -564,6 +564,7 @@ export async function addService({
   data_schema_version,
   domain,
   requester_node_whitelist_enabled,
+  request_type_whitelist_enabled,
 }) {
   try {
     if (data_schema != null && data_schema !== 'n/a') {
@@ -585,6 +586,7 @@ export async function addService({
         data_schema_version,
         domain,
         requester_node_whitelist_enabled,
+        request_type_whitelist_enabled,
       },
     });
   } catch (error) {
@@ -926,6 +928,8 @@ export async function setSupportedAALList({ supported_aal_list }) {
   }
 }
 
+//
+
 export async function addNodeToServiceRequesterNodeWhitelist({
   nodeId,
   serviceId,
@@ -955,6 +959,42 @@ export async function enableServiceRequesterNodeWhitelist({ serviceId }) {
 
 export async function disableServiceRequesterNodeWhitelist({ serviceId }) {
   return tendermintNdid.disableServiceRequesterNodeWhitelist(
+    { serviceId },
+    config.nodeId
+  );
+}
+
+//
+
+export async function addRequestTypeToServiceRequestTypeWhitelist({
+  requestType,
+  serviceId,
+}) {
+  return tendermintNdid.addRequestTypeToServiceRequestTypeWhitelist(
+    { requestType, serviceId },
+    config.nodeId
+  );
+}
+
+export async function removeRequestTypeFromServiceRequestTypeWhitelist({
+  requestType,
+  serviceId,
+}) {
+  return tendermintNdid.removeRequestTypeFromServiceRequestTypeWhitelist(
+    { requestType, serviceId },
+    config.nodeId
+  );
+}
+
+export async function enableServiceRequestTypeWhitelist({ serviceId }) {
+  return tendermintNdid.enableServiceRequestTypeWhitelist(
+    { serviceId },
+    config.nodeId
+  );
+}
+
+export async function disableServiceRequestTypeWhitelist({ serviceId }) {
+  return tendermintNdid.disableServiceRequestTypeWhitelist(
     { serviceId },
     config.nodeId
   );

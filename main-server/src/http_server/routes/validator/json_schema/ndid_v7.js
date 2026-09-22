@@ -320,6 +320,7 @@ export default {
           data_schema_version: { type: 'string', minLength: 1 },
           domain: { type: 'string', minLength: 1 },
           requester_node_whitelist_enabled: { type: 'boolean' },
+          request_type_whitelist_enabled: { type: 'boolean' },
         },
         required: ['service_id', 'service_name'],
       },
@@ -661,6 +662,60 @@ export default {
       },
     },
     '/ndid/disable_service_requester_node_whitelist': {
+      body: {
+        type: 'object',
+        properties: {
+          service_id: {
+            type: 'string',
+            minLength: 1,
+          },
+        },
+        required: ['service_id'],
+      },
+    },
+    '/ndid/add_request_type_to_service_request_type_whitelist': {
+      body: {
+        type: 'object',
+        properties: {
+          request_type: {
+            type: ['string', 'null'],
+          },
+          service_id: {
+            type: 'string',
+            minLength: 1,
+          },
+        },
+        required: ['request_type', 'service_id'],
+      },
+    },
+    '/ndid/remove_request_type_from_service_request_type_whitelist': {
+      body: {
+        type: 'object',
+        properties: {
+          request_type: {
+            type: ['string', 'null'],
+          },
+          service_id: {
+            type: 'string',
+            minLength: 1,
+          },
+        },
+        required: ['request_type', 'service_id'],
+      },
+    },
+    '/ndid/enable_service_request_type_whitelist': {
+      body: {
+        type: 'object',
+        properties: {
+          service_id: {
+            type: 'string',
+            minLength: 1,
+          },
+        },
+        required: ['service_id'],
+      },
+    },
+    '/ndid/disable_service_request_type_whitelist': {
       body: {
         type: 'object',
         properties: {

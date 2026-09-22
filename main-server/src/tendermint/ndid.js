@@ -1951,6 +1951,8 @@ export async function getSupportedAALList() {
   }
 }
 
+// service's requester node
+
 export async function addNodeToServiceRequesterNodeWhitelist(
   params,
   nodeId,
@@ -2113,6 +2115,176 @@ export async function getServiceRequesterNodePermission({ nodeId, serviceId }) {
   } catch (error) {
     throw new CustomError({
       message: 'Cannot get service requester node permission',
+      cause: error,
+    });
+  }
+}
+
+// service's request type
+
+export async function addRequestTypeToServiceRequestTypeWhitelist(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'AddRequestTypeToServiceRequestTypeWhitelist',
+      params: { request_type: params.requestType, service_id: params.serviceId },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot add request type to service request type whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function removeRequestTypeFromServiceRequestTypeWhitelist(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'RemoveRequestTypeFromServiceRequestTypeWhitelist',
+      params: { request_type: params.requestType, service_id: params.serviceId },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot remove request type from service request type whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function enableServiceRequestTypeWhitelist(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'EnableServiceRequestTypeWhitelist',
+      params: {
+        service_id: params.serviceId,
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot enable service request type whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function disableServiceRequestTypeWhitelist(
+  params,
+  nodeId,
+  callbackFnName,
+  callbackAdditionalArgs,
+  saveForRetryOnChainDisabled
+) {
+  try {
+    await tendermint.transact({
+      nodeId,
+      fnName: 'DisableServiceRequestTypeWhitelist',
+      params: {
+        service_id: params.serviceId,
+      },
+      callbackFnName,
+      callbackAdditionalArgs,
+      saveForRetryOnChainDisabled,
+    });
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot disable service request type whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function getServiceRequestTypeWhitelist() {
+  try {
+    const result = await tendermint.query('GetServiceRequestTypeWhitelist');
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get service request type whitelist',
+      cause: error,
+    });
+  }
+}
+
+export async function getServiceRequestTypeWhitelistByServiceId({ serviceId }) {
+  try {
+    const result = await tendermint.query(
+      'GetServiceRequestTypeWhitelistByServiceID',
+      {
+        service_id: serviceId,
+      }
+    );
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get service request type whitelist by service ID',
+      cause: error,
+    });
+  }
+}
+
+export async function getRequestTypeWhitelistedServiceList({ requestType }) {
+  try {
+    const result = await tendermint.query(
+      'GetRequestTypeWhitelistedServiceList',
+      {
+        request_type: requestType,
+      }
+    );
+    return result != null
+      ? result.service_permission_list != null
+        ? result.service_permission_list
+        : []
+      : [];
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get request type whitelisted service list',
+      cause: error,
+    });
+  }
+}
+
+export async function getServiceRequestTypePermission({
+  requestType,
+  serviceId,
+}) {
+  try {
+    const result = await tendermint.query('GetServiceRequestTypePermission', {
+      request_type: requestType,
+      service_id: serviceId,
+    });
+    return result;
+  } catch (error) {
+    throw new CustomError({
+      message: 'Cannot get service request type permission',
       cause: error,
     });
   }

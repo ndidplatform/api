@@ -461,7 +461,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Node ID found
+          description: List of services and current enforcement status
           content:
             application/json:
               schema:
@@ -554,6 +554,7 @@ paths:
                     - service_name
                     - active
                     - requester_node_whitelist_enabled
+                    - request_type_whitelist_enabled
                   properties:
                     service_id:
                       type: string
@@ -564,6 +565,8 @@ paths:
                     domain:
                       type: string
                     requester_node_whitelist_enabled:
+                      type: boolean
+                    request_type_whitelist_enabled:
                       type: boolean
         '400':
           description: Client error
@@ -601,6 +604,7 @@ paths:
                   - service_name
                   - active
                   - requester_node_whitelist_enabled
+                  - request_type_whitelist_enabled
                 properties:
                   service_id:
                     type: string
@@ -615,6 +619,8 @@ paths:
                   domain:
                     type: string
                   requester_node_whitelist_enabled:
+                    type: boolean
+                  request_type_whitelist_enabled:
                     type: boolean
         '400':
           description: Client error
@@ -657,6 +663,51 @@ paths:
                     type: array
                     items:
                       type: string
+                  enabled:
+                    type: boolean
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Service ID does not exist
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/services/{service_id}/request_type_whitelist':
+    get:
+      summary: Retrieve service's request type whitelist details
+      description: ''
+      parameters:
+        - name: service_id
+          in: path
+          description: Service ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Service's request type whitelist details
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - request_type_list
+                  - enabled
+                properties:
+                  request_type_list:
+                    type: array
+                    items:
+                      type: string
+                      nullable: true
+                      description: null represents a default request type (a request without request type)
                   enabled:
                     type: boolean
         '400':
@@ -844,6 +895,37 @@ paths:
                 type: array
                 items:
                   type: string
+        '400':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  '/utility/request_type_whitelisted_services':
+    get:
+      summary: Retrieve a list of services that explicitly include the specified request type in their request type whitelist, along with the current enforcement status (enabled flag) of that whitelist.
+      description: ''
+      parameters:
+        - name: request_type
+          in: query
+          description: Request Type. If request type is not specified or is an empty string, it will be considered as a default request type (a request without request type).
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of services and current enforcement status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestTypeWhitelistedServices'
         '400':
           description: Client error
           content:
@@ -1984,6 +2066,17 @@ components:
         creation_block_height:
           type: string
           description: '<CHAIN_ID>:<BLOCK_HEIGHT>'
+    
+    RequestTypeWhitelistedServices:
+      type: array
+      items:
+        type: object
+        properties:
+          service_id:
+            type: string
+          enabled:
+            type: boolean
+
     AccessorKeyInfo:
       type: object
       required:
@@ -2012,6 +2105,7 @@ components:
         creation_chain_id:
           type: string
           nullable: true
+
     NodeRequesterWhitelistedServices:
       type: array
       items:
@@ -2021,6 +2115,7 @@ components:
             type: string
           enabled:
             type: boolean
+
     Error:
       type: object
       properties:

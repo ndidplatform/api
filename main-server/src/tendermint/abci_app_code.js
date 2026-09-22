@@ -163,6 +163,7 @@ import errorType from 'ndid-error/type';
 // DomainNotActive                                               uint32 = 139
 // DomainCannotBeEmpty                                           uint32 = 140
 // CrossServiceDomainRequestNotAllowed                           uint32 = 141
+// RequestTypeCannotBeEmpty                                      uint32 = 142
 // UnknownError                                       uint32 = 999
 
 const codeMapping = {
@@ -307,6 +308,7 @@ const codeMapping = {
   139: errorType.ABCI_DOMAIN_NOT_ACTIVE,
   140: errorType.ABCI_DOMAIN_CANNOT_BE_EMPTY,
   141: errorType.ABCI_CROSS_SERVICE_DOMAIN_REQUEST_NOT_ALLOWED,
+  142: errorType.ABCI_REQUEST_TYPE_CANNOT_BE_EMPTY,
 
   999: errorType.UNKNOWN_ERROR,
 };

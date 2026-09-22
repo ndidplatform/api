@@ -180,6 +180,7 @@ async function checkAsListCondition({
   namespace,
   min_ial,
   min_aal,
+  request_type,
 }) {
   const serviceIds = data_request_list.map(
     (dataRequest) => dataRequest.service_id
@@ -232,6 +233,23 @@ async function checkAsListCondition({
         containsServiceDomains.add(service.domain);
       } else {
         containsServiceWithNoDomain = true;
+      }
+
+      // check if request type is allowed to create request with this service ID
+      if (service.request_type_whitelist_enabled) {
+        const { allowed } =
+          await tendermintNdid.getServiceRequestTypePermission({
+            requestType: request_type,
+            serviceId: service_id,
+          });
+        if (!allowed) {
+          throw new CustomError({
+            errorType: errorType.SERVICE_REQUEST_NOT_ALLOWED,
+            details: {
+              service_id,
+            },
+          });
+        }
       }
 
       // check if requester node ID is allowed to create request with this service ID
@@ -669,6 +687,7 @@ export async function createRequest(
         namespace,
         min_ial,
         min_aal,
+        request_type,
       });
     }
 

@@ -298,21 +298,24 @@ router.get('/nodes/:node_id/token', async (req, res, next) => {
   }
 });
 
-router.get('/nodes/:node_id/requester_whitelisted_services', async (req, res, next) => {
-  try {
-    const { node_id } = req.params;
+router.get(
+  '/nodes/:node_id/requester_whitelisted_services',
+  async (req, res, next) => {
+    try {
+      const { node_id } = req.params;
 
-    const result =
-      await tendermintNdid.getRequesterNodeWhitelistedServiceList({
-        nodeId: node_id,
-      });
+      const result =
+        await tendermintNdid.getRequesterNodeWhitelistedServiceList({
+          nodeId: node_id,
+        });
 
-    res.status(200).json(result);
-    next();
-  } catch (error) {
-    next(error);
+      res.status(200).json(result);
+      next();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 router.get('/namespaces', async (req, res, next) => {
   try {
@@ -388,6 +391,29 @@ router.get(
         res.status(404).end();
       } else {
         res.status(200).json(requesterNodeWhitelist);
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
+  '/services/:service_id/request_type_whitelist',
+  async (req, res, next) => {
+    try {
+      const { service_id } = req.params;
+
+      const requestTypeWhitelist =
+        await tendermintNdid.getServiceRequestTypeWhitelistByServiceId({
+          serviceId: service_id,
+        });
+
+      if (requestTypeWhitelist == null) {
+        res.status(404).end();
+      } else {
+        res.status(200).json(requestTypeWhitelist);
       }
       next();
     } catch (error) {
@@ -504,6 +530,21 @@ router.get('/request_types', async (req, res, next) => {
     } else {
       res.status(200).json(result);
     }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/request_type_whitelisted_services', async (req, res, next) => {
+  try {
+    const { request_type } = req.query;
+
+    const result = await tendermintNdid.getRequestTypeWhitelistedServiceList({
+      requestType: request_type != null ? request_type : null,
+    });
+
+    res.status(200).json(result);
     next();
   } catch (error) {
     next(error);

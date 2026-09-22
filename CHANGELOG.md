@@ -6,11 +6,24 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 
 FEATURES:
 
+- Validation for service request type permissions on create request.
 - Validation for cross service domains on create request.
 - API version 7.1
+  - Change response body JSON schema of GET `/utility/services`
+    - Add `request_type_whitelist_enabled`
+  - Change response body JSON schema of GET `/utility/services/:service_id`
+    - Add `request_type_whitelist_enabled`
+  - New API: GET `/utility/services/:service_id/request_type_whitelist`: Get a list of request types that are currently in service's request type whitelist and the current whitelist enforcement status (`enabled` flag).
+  - New API: GET `/utility/request_type_whitelisted_services`: Get a list of services that explicitly include the specified request type in their request type whitelist, along with the current enforcement status (`enabled` flag) of that whitelist.
   - Change response body JSON schema of GET `/utility/domains`
     - Add `cross_domain_request_disabled`
   - NDID only APIs
+    - Change request body JSON schema of POST `/ndid/create_service`.
+      - Add `domain`
+    - New API: POST `/ndid/add_request_type_to_service_request_type_whitelist`: Add request type to specified service request type whitelist.
+    - New API: POST `/ndid/remove_request_type_from_service_request_type_whitelist`: Remove request type from specified service request type whitelist.
+    - New API: POST `/ndid/enable_service_request_type_whitelist`: Set service request type whitelist active. (Use whitelist.)
+    - New API: POST `/ndid/disable_service_request_type_whitelist`: Set service request type whitelist inactive. (Don't use / ignore whitelist.)
     - Change request body JSON schema of POST `/ndid/add_domain`.
       - Add `cross_domain_request_disabled`
     - New API: POST `/ndid/enable_domain_cross_domain_request`: Set domain to allow its services to coexist with services from other domains (including services without a domain) in data request list when creating a request.

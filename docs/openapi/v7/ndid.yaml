@@ -929,6 +929,99 @@ paths:
       responses:
         '204':
           description: Successfully disabled.
+  # 
+
+  /ndid/add_request_type_to_service_request_type_whitelist:
+    post:
+      summary: Add request type to service request type whitelist
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - request_type
+                - service_id
+              properties:
+                request_type:
+                  type: string
+                  nullable: true
+                service_id:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully added.
+
+  /ndid/remove_request_type_from_service_request_type_whitelist:
+    post:
+      summary: Remove request type from service request type whitelist
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - request_type
+                - service_id
+              properties:
+                node_id:
+                  type: string
+                  nullable: true
+                service_id:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully removed.
+
+  /ndid/enable_service_request_type_whitelist:
+    post:
+      summary: Enable service request type whitelist
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - service_id
+              properties:
+                service_id:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully enabled.
+
+  /ndid/disable_service_request_type_whitelist:
+    post:
+      summary: Disable service request type whitelist
+      tags:
+        - Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - service_id
+              properties:
+                service_id:
+                  type: string
+                  minLength: 1
+      responses:
+        '204':
+          description: Successfully disabled.
 
   # Domain
 
@@ -1330,6 +1423,8 @@ components:
         domain:
           type: string
         requester_node_whitelist_enabled:
+          type: boolean
+        request_type_whitelist_enabled:
           type: boolean
 
     ServiceUpdate:

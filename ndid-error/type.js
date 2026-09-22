@@ -1565,6 +1565,11 @@ module.exports = {
     message: 'Cross service domain request is not allowed',
     clientError: true,
   },
+  ABCI_REQUEST_TYPE_CANNOT_BE_EMPTY: {
+    code: 25105,
+    message: 'Request type name cannot be empty',
+    clientError: true,
+  },
 
   ABCI_UNAUTHORIZED: {
     code: 35001,
