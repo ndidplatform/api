@@ -2,7 +2,7 @@
 
 ## 9.2.0 (September 23, 2026)
 
-_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.x.x_
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.1.x_
 
 FEATURES:
 
