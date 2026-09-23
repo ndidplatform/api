@@ -971,7 +971,7 @@ paths:
                 - request_type
                 - service_id
               properties:
-                node_id:
+                request_type:
                   type: string
                   nullable: true
                 service_id:
