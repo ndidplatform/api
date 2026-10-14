@@ -33,6 +33,7 @@ import * as config from '../../config';
 import logger from '../../logger';
 
 import { version } from '../../version';
+import { apiVersion } from './v7/version';
 
 const router = express.Router();
 
@@ -56,7 +57,7 @@ router.get('/info', async function getInfo(req, res, next) {
     res.status(200).json({
       env: config.env,
       version: version == null ? null : version,
-      api_version: '6.0', // Latest API spec version
+      api_version: apiVersion, // Latest API spec version
       node_id: config.nodeId,
       node_name: nodeInfo != null ? nodeInfo.node_name : undefined,
       node_public_key: nodeInfo != null ? nodeInfo.public_key : undefined,
@@ -117,7 +118,8 @@ router.get('/num_pending_client_callbacks', (req, res) => {
 // Pending callback to external decrypt and sign that have not received response
 router.get('/num_pending_external_crypto_callbacks', (req, res) => {
   res.status(200).json({
-    n_pending_external_crypto_callbacks: externalCryptoService.getPendingCallbacksCount(),
+    n_pending_external_crypto_callbacks:
+      externalCryptoService.getPendingCallbacksCount(),
   });
 });
 
