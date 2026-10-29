@@ -8,6 +8,10 @@ BUG FIXES:
 
 - Fix incorrect latest supported API version report in GET `/info` response.
 
+OTHERS:
+
+- Update dependencies.
+
 ## 9.2.0 (September 23, 2026)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.1.x_
