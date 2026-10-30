@@ -7,6 +7,14 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 BUG FIXES:
 
 - Fix incorrect latest supported API version report in GET `/info` response.
+- Re-subcribe to incoming messages when MQ service gRPC client subscription channel ended unexpectedly.
+
+IMPROVEMENTS:
+
+- [Main] Add new environment variable options
+  - `GRPC_MAX_RECEIVE_MESSAGE_LENGTH`: gRPC maximum message length that the channel can receive. Default to `4194304` (4MB).
+- [MQ Service] Add new environment variable options
+  - `GRPC_MAX_RECEIVE_MESSAGE_LENGTH`: gRPC maximum message length that the channel can receive. Default to `4194304` (4MB).
 
 OTHERS:
 

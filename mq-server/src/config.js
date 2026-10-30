@@ -68,6 +68,12 @@ export const grpcSslCertFilePath = process.env.GRPC_SSL_CERT_FILE_PATH
     ? path.join(__dirname, '..', '..', 'dev_cert', 'grpc', 'server.crt')
     : null;
 
+// in bytes
+export const grpcMaxReceiveMessageLength = process.env
+  .GRPC_MAX_RECEIVE_MESSAGE_LENGTH
+  ? parseInt(process.env.GRPC_MAX_RECEIVE_MESSAGE_LENGTH)
+  : 4 * 1024 * 1024; // default: 4 MB
+
 export const nodeId = process.env.NODE_ID;
 
 export const logLevel =

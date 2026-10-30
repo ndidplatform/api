@@ -79,6 +79,7 @@ const server = new grpc.Server({
   // 'grpc.http2.min_ping_interval_without_data_ms':
   //   config.grpcExpectedClientPingInterval,
   // 'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
+  'grpc.max_receive_message_length': config.grpcMaxReceiveMessageLength,
 });
 const SERVER_ADDRESS = `0.0.0.0:${config.serverPort}`;
 
@@ -89,15 +90,18 @@ export const metricsEventEmitter = new EventEmitter();
 
 // Recv
 function subscribeToRecvMessages(call) {
-  logger.debug({
+  const subscriptionId = call.metadata.get('subscription-id')[0] ?? null;
+  logger.info({
     message: 'subscribeToRecvMessages',
+    subscriptionId,
   });
   recvSubscriberConnections.push(call);
   metricsEventEmitter.emit('incoming_message_subscribe');
 
   call.on('cancelled', () => {
-    logger.debug({
+    logger.info({
       message: 'subscribeToRecvMessages subscriber/client call cancelled',
+      subscriptionId,
     });
     recvSubscriberConnections.splice(
       recvSubscriberConnections.indexOf(call),
@@ -147,6 +151,7 @@ function onRecvMessage({
   logger.debug({
     message: 'Inbound message',
     msgId,
+    messageSize: message.length,
     senderId,
     receiverId,
     senderProxyId,
@@ -210,6 +215,7 @@ function sendMessage(call, callback) {
     message: 'sendMessage',
     msgId,
     mqAddress,
+    messageSize: payload.length,
   });
 
   sendCalls.set(msgId, { call, callback });

@@ -60,6 +60,7 @@
 - `GRPC_PING_INTERVAL_MS`: gRPC ping interval in milliseconds [Default: `300000`]
 - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds [Default: `20000`]
 <!-- - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Must be less than `GRPC_PING_INTERVAL_MS` config on API server pair. [Default: `30000`] -->
+- `GRPC_MAX_RECEIVE_MESSAGE_LENGTH`: gRPC maximum message length that the channel can receive [Default: `4194304` (4 x 1024 x 1024 = 4MB)]
 - `LOG_LEVEL`: _Description below_
 - `LOG_PRETTY_PRINT`: _Description below_
 - `LOG_COLOR`: _Description below_
@@ -152,6 +153,7 @@
 - `GRPC_PING_TIMEOUT_MS`: gRPC ping timeout in milliseconds [Default: `20000`]
 <!-- - `GRPC_EXPECTED_CLIENT_PING_INTERVAL_MS`: gRPC expected client ping interval in milliseconds. Used by `master` mode process. Must be less than `GRPC_PING_INTERVAL_MS` config on worker processes. [Default: `30000`] -->
 - `GRPC_CALL_TIMEOUT_MS`: gRPC call timeout in milliseconds [Default: `60000`]
+- `GRPC_MAX_RECEIVE_MESSAGE_LENGTH`: gRPC maximum message length that the channel can receive [Default: `4194304` (4 x 1024 x 1024 = 4MB)]
 - `PROMETHEUS`: Enable prometheus metrics and HTTP server for querying metrics [Default: `false`]
 - `PROMETHEUS_SERVER_PORT`: HTTP server port for querying Prometheus metrics [Default: `8888`]
 - `PROMETHEUS_HTTPS`: Use HTTPS server for Prometheus metrics HTTP server [Default: `false`]

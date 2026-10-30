@@ -34,6 +34,7 @@ import errorType from 'ndid-error/type';
 
 import { MQ_SEND_TOTAL_TIMEOUT } from './constants';
 
+import * as utils from '../utils';
 import logger from '../logger';
 
 import * as config from '../config';
@@ -164,6 +165,7 @@ export async function initialize({
       // 'grpc.max_reconnect_backoff_ms': 120 * 1000, // default 120s
       // 'grpc.http2.max_pings_without_data': 0,
       // 'grpc.http2.min_time_between_pings_ms': config.grpcPingInterval,
+      'grpc.max_receive_message_length': config.grpcMaxReceiveMessageLength,
     }
   );
   await waitForReady(client);
@@ -278,10 +280,14 @@ export function subscribeToRecvMessages() {
     });
   }
   if (recvMessageChannel != null) return;
-  logger.debug({
+  const subscriptionId = utils.randomBase64Bytes(8);
+  logger.info({
     message: '[MQ Service] Subscribing to receiving/incoming messages',
+    subscriptionId,
   });
-  recvMessageChannel = client.subscribeToRecvMessages(null);
+  const metadata = new grpc.Metadata();
+  metadata.add('subscription-id', subscriptionId);
+  recvMessageChannel = client.subscribeToRecvMessages({}, metadata);
   subscribedToRecvMessages = true;
   recvMessageChannel.on('data', onRecvMessage);
   recvMessageChannel.on('end', function onRecvMessageChannelEnded() {
@@ -289,10 +295,19 @@ export function subscribeToRecvMessages() {
       recvMessageChannel.cancel();
       recvMessageChannel = null;
     }
-    logger.debug({
-      message:
-        '[MQ Service] Subscription to receive messages has ended due to server close (stream ended)',
+    logger.info({
+      message: '[MQ Service] Subscription to receive messages has ended',
+      subscriptionId,
     });
+
+    // resubscribe if not intentionally closing/ending connection (e.g. due to an error)
+    if (!closing) {
+      // check if still connected
+      const connectivityState = client.getChannel().getConnectivityState(false);
+      if (connectivityState === grpc.connectivityState.READY) {
+        setTimeout(() => subscribeToRecvMessages(), 1000);
+      }
+    }
   });
   recvMessageChannel.on('error', function onRecvMessageChannelError(error) {
     if (error.code !== grpc.status.CANCELLED) {
@@ -301,14 +316,6 @@ export function subscribeToRecvMessages() {
         cause: error,
       });
       logger.error({ err });
-      if (recvMessageChannel != null) {
-        recvMessageChannel.cancel();
-        recvMessageChannel = null;
-      }
-      logger.debug({
-        message:
-          '[MQ Service] Subscription to receive messages has ended due to error',
-      });
     }
   });
 }

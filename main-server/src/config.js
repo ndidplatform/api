@@ -419,6 +419,11 @@ export const grpcSslCertFilePath = process.env.GRPC_SSL_CERT_FILE_PATH
       )
     : null;
 
+export const grpcMaxReceiveMessageLength = process.env
+  .GRPC_MAX_RECEIVE_MESSAGE_LENGTH
+  ? parseInt(process.env.GRPC_MAX_RECEIVE_MESSAGE_LENGTH)
+  : 4 * 1024 * 1024; // default: 4 MB
+
 export const enableConfigHttpRoutePath =
   process.env.ENABLE_CONFIG_HTTP_ROUTE_PATH === 'true';
 
