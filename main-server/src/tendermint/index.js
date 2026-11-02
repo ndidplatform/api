@@ -26,6 +26,7 @@ import { EventEmitter } from 'events';
 
 import protobuf from 'protobufjs';
 import { ExponentialBackoff } from 'simple-backoff';
+import writeFileAtomic from 'write-file-atomic';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -107,18 +108,37 @@ export let chainId = null;
 export let latestBlockHeight = null;
 let latestProcessedBlockHeight = null;
 
+let writeBlockHeightInterval = null;
+let pendingWriteBlockHeight = null;
+let blockHeightWriteInProgress = false;
+let currentBlockHeightWritePromise = null;
+let stoppingBlockHeightWrite = false;
+
+const BLOCK_HEIGHT_WRITE_THROTTLE_INTERVAL_MS = 1000;
+
 export function loadSavedData() {
+  let chainIdFileNotFound = false;
+  let latestBlockHeightFileNotFound = false;
+
   try {
     chainId = fs.readFileSync(chainIdFilepath, 'utf8');
-    logger.info({
-      message: 'Chain ID read from file',
-      chainId,
-    });
+    if (chainId === '') {
+      logger.warn({
+        message: 'Unexpected chain ID read. File may have been corrupted.',
+        chainId,
+      });
+    } else {
+      logger.info({
+        message: 'Chain ID read from file',
+        chainId,
+      });
+    }
   } catch (error) {
     if (error.code === 'ENOENT') {
       logger.warn({
         message: 'Chain ID file not found',
       });
+      chainIdFileNotFound = true;
     } else {
       logger.error({
         message: 'Cannot read chain ID file',
@@ -129,17 +149,27 @@ export function loadSavedData() {
 
   try {
     const blockHeight = fs.readFileSync(latestBlockHeightFilepath, 'utf8');
-    latestBlockHeight = parseInt(blockHeight);
-    latestProcessedBlockHeight = parseInt(blockHeight);
-    logger.info({
-      message: 'Latest block height read from file',
-      blockHeight,
-    });
+    const parsedBlockHeight = parseInt(blockHeight);
+    if (isNaN(parsedBlockHeight)) {
+      logger.warn({
+        message:
+          'Unexpected latest block height read. File may have been corrupted.',
+        blockHeight,
+      });
+    } else {
+      latestBlockHeight = parsedBlockHeight;
+      latestProcessedBlockHeight = parsedBlockHeight;
+      logger.info({
+        message: 'Latest block height read from file',
+        blockHeight,
+      });
+    }
   } catch (error) {
     if (error.code === 'ENOENT') {
       logger.warn({
         message: 'Latest block height file not found',
       });
+      latestBlockHeightFileNotFound = true;
     } else {
       logger.error({
         message: 'Cannot read latest block height file',
@@ -149,14 +179,14 @@ export function loadSavedData() {
   }
 
   if (
-    (chainId == null && latestBlockHeight != null) ||
-    (chainId != null && latestBlockHeight == null)
+    (chainIdFileNotFound && !latestBlockHeightFileNotFound) ||
+    (!chainIdFileNotFound && latestBlockHeightFileNotFound)
   ) {
     const error = new CustomError({
       message: 'Missing data file',
       details: {
-        chainIdFileExist: chainId != null,
-        latestBlockHeightFileExist: latestBlockHeight != null,
+        chainIdFileExist: !chainIdFileNotFound,
+        latestBlockHeightFileExist: !latestBlockHeightFileNotFound,
       },
     });
     logger.error({ err: error });
@@ -165,6 +195,12 @@ export function loadSavedData() {
 }
 
 export async function initialize() {
+  // latest processed block height write with throttling
+  writeBlockHeightInterval = setInterval(
+    flushLatestBlockHeight,
+    BLOCK_HEIGHT_WRITE_THROTTLE_INTERVAL_MS
+  );
+
   tendermintWsClient.subscribeToNewBlockEvent();
 }
 
@@ -181,25 +217,85 @@ export async function connectWS() {
 }
 
 /**
- * Save last seen block height to file for loading it on server restart
+ * Queue save latest processed block height to file for loading it on server restart
  * @param {number} height Block height to save
  */
 function saveLatestBlockHeight(height) {
-  if (latestProcessedBlockHeight < height) {
-    fs.writeFile(latestBlockHeightFilepath, height.toString(), (err) => {
-      if (err) {
-        logger.error({
-          message: 'Cannot write latest block height file',
-          err,
-        });
-      }
-    });
-    latestProcessedBlockHeight = height;
+  if (stoppingBlockHeightWrite) return;
+
+  if (
+    latestProcessedBlockHeight === null ||
+    height > latestProcessedBlockHeight
+  ) {
+    if (pendingWriteBlockHeight === null || height > pendingWriteBlockHeight) {
+      pendingWriteBlockHeight = height;
+    }
+  }
+}
+
+/**
+ * Flush queued latest processed block height to file
+ */
+async function flushLatestBlockHeight() {
+  if (blockHeightWriteInProgress) {
+    return;
+  }
+
+  if (pendingWriteBlockHeight === null) {
+    return;
+  }
+
+  const heightToWrite = pendingWriteBlockHeight;
+  pendingWriteBlockHeight = null;
+  blockHeightWriteInProgress = true;
+
+  currentBlockHeightWritePromise = (async () => {
+    try {
+      await writeFileAtomic(
+        latestBlockHeightFilepath,
+        heightToWrite.toString()
+      );
+      latestProcessedBlockHeight = heightToWrite;
+    } catch (err) {
+      logger.error({ message: 'Cannot write latest block height file', err });
+    } finally {
+      blockHeightWriteInProgress = false;
+      currentBlockHeightWritePromise = null;
+    }
+  })();
+
+  await currentBlockHeightWritePromise;
+}
+
+export async function stopLatestProcessedBlockHeightWrite() {
+  if (stoppingBlockHeightWrite) return;
+  stoppingBlockHeightWrite = true;
+
+  logger.debug({
+    message: 'Flushing latest block height',
+  });
+
+  clearInterval(writeBlockHeightInterval);
+
+  try {
+    // wait for any write currently in flight
+    if (currentBlockHeightWritePromise) {
+      await currentBlockHeightWritePromise;
+    }
+
+    // flush final pending write to file
+    if (pendingWriteBlockHeight !== null) {
+      await flushLatestBlockHeight();
+    }
+
+    logger.debug({ message: 'Latest block height flushed' });
+  } catch (err) {
+    logger.error({ message: 'Error flushing latest block height', err });
   }
 }
 
 function saveChainId(chainIdToSave) {
-  fs.writeFile(chainIdFilepath, chainIdToSave, (err) => {
+  writeFileAtomic(chainIdFilepath, chainIdToSave, (err) => {
     if (err) {
       logger.error({
         message: 'Cannot write chain ID file',

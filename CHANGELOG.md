@@ -8,6 +8,8 @@ BUG FIXES:
 
 - Fix incorrect latest supported API version report in GET `/info` response.
 - Re-subcribe to incoming messages when MQ service gRPC client subscription channel ended unexpectedly.
+- Fix latest processed block height file write not atomic and may result in a corrupted or empty file on process crash or unexpected exit.
+- Fix operations depending on latest processed block height silently not working due to corrupted latest processed block height file read by using the current block height as latest processed block height instead on process start.
 
 IMPROVEMENTS:
 

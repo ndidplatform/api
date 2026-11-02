@@ -370,6 +370,7 @@ async function shutDown() {
   await mq.close();
   tendermint.tendermintWsClient.close();
   tendermintWsPool.closeAllConnections();
+  await tendermint.stopLatestProcessedBlockHeightWrite();
 
   await prometheus.stop();
 
