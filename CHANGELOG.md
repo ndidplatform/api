@@ -7,7 +7,7 @@ _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contr
 BUG FIXES:
 
 - Fix incorrect latest supported API version report in GET `/info` response.
-- Re-subcribe to incoming messages when MQ service gRPC client subscription channel ended unexpectedly.
+- Re-subscribe to incoming messages when MQ service gRPC client subscription channel ended unexpectedly.
 
 IMPROVEMENTS:
 
