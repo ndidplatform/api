@@ -1,5 +1,13 @@
 # Changelog
 
+## TBD
+
+_Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.1.x_
+
+BUG FIXES:
+
+- Change data URL parser to fix error when parsing large data URL.
+
 ## 9.2.1 (November 4, 2026)
 
 _Compatible with: [`smart-contract`](https://github.com/ndidplatform/smart-contract) v10.1.x_

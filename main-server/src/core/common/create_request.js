@@ -29,8 +29,6 @@ import {
   removeTimeoutScheduler,
 } from '.';
 
-import parseDataURL from 'data-urls';
-
 import * as tendermint from '../../tendermint';
 import * as tendermintNdid from '../../tendermint/ndid';
 import * as nodeCallback from '../node_callback';
@@ -39,11 +37,11 @@ import * as cacheDb from '../../db/cache';
 import privateMessageType from '../../mq/message/type';
 import * as utils from '../../utils';
 import * as cryptoUtils from '../../utils/crypto';
+import { parseDataURL } from '../../utils/data_urls';
 import { callbackToClient } from '../../callback';
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
 import { getErrorObjectForClient } from '../../utils/error';
-import { dataUrlRegex } from '../../data_url';
 
 import TelemetryLogger, { REQUEST_EVENTS } from '../../telemetry';
 import logger, { redactedLogger } from '../../logger';
@@ -647,11 +645,9 @@ export async function createRequest(
     const dataUrlParsedRequestMessage = parseDataURL(request_message);
     let requestMessageMimeType;
     if (dataUrlParsedRequestMessage != null) {
-      requestMessageMimeType = dataUrlParsedRequestMessage.mimeType.toString();
-      const match = request_message.match(dataUrlRegex);
+      requestMessageMimeType = dataUrlParsedRequestMessage.mimeType;
       if (
-        match[4] &&
-        match[4].endsWith('base64') &&
+        dataUrlParsedRequestMessage.isBase64 &&
         request_message.search(/\s/) >= 0
       ) {
         throw new CustomError({

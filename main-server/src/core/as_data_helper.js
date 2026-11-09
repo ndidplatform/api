@@ -23,9 +23,7 @@
 import util from 'util';
 import zlib from 'zlib';
 
-import parseDataURL from 'data-urls';
-
-import { dataUrlRegex } from '../data_url';
+import { parseDataURL } from '../utils/data_urls';
 
 import CustomError from 'ndid-error/custom_error';
 import errorType from 'ndid-error/type';
@@ -52,12 +50,11 @@ export async function packData({
     // this if block condition - string starts with "data:" - helps avoid data URL parse on every data input since it is slow
     const dataUrlParsedData = parseDataURL(data);
     if (dataUrlParsedData != null) {
-      const match = data.match(dataUrlRegex);
-      if (match[4] && match[4].endsWith('base64')) {
+      if (dataUrlParsedData.isBase64) {
         // Convert data with data URL format to Buffer for transferring over P2P
         // In case it is base64 encoded, MQ message payload size is reduced
-        const dataDataUrlPrefix = match[1];
-        dataBuffer = Buffer.from(dataUrlParsedData.body);
+        const dataDataUrlPrefix = `data:${dataUrlParsedData.meta},`;
+        dataBuffer = Buffer.from(dataUrlParsedData.buffer);
 
         metadata.base64_data_url = true;
         metadata.data_url_prefix = dataDataUrlPrefix;

@@ -25,11 +25,10 @@ import util from 'util';
 import zlib from 'zlib';
 
 import protobuf from 'protobufjs';
-import parseDataURL from 'data-urls';
 
 import messageTypes from './type';
 
-import { dataUrlRegex } from '../../data_url';
+import { parseDataURL } from '../../utils/data_urls';
 
 import * as config from '../../config';
 
@@ -65,12 +64,11 @@ export async function serializeMqMessage(
       let requestMessageDataUrlPrefix;
       let requestMessageBuffer;
       if (dataUrlParsedRequestMessage != null) {
-        const match = request_message.match(dataUrlRegex);
-        if (match[4] && match[4].endsWith('base64')) {
+        if (dataUrlParsedRequestMessage.isBase64) {
           // Convert request message with data URL format to Buffer for transfer over MQ
           // In case it is base64 encoded, MQ message payload size is reduced
-          requestMessageDataUrlPrefix = match[1];
-          requestMessageBuffer = Buffer.from(dataUrlParsedRequestMessage.body);
+          requestMessageDataUrlPrefix = `data:${dataUrlParsedRequestMessage.meta},`;
+          requestMessageBuffer = Buffer.from(dataUrlParsedRequestMessage.buffer);
         }
       }
       if (!requestMessageDataUrlPrefix && !requestMessageBuffer) {

@@ -20,8 +20,6 @@
  *
  */
 
-import parseDataURL from 'data-urls';
-
 import validateData from './data_validator';
 import { packData } from '../as_data_helper';
 import * as tendermint from '../../tendermint';
@@ -36,11 +34,11 @@ import * as tendermintNdid from '../../tendermint/ndid';
 import * as nodeCallback from '../node_callback';
 import * as mq from '../../mq';
 import * as utils from '../../utils';
+import { parseDataURL } from '../../utils/data_urls';
 import * as config from '../../config';
 import * as cacheDb from '../../db/cache';
 import { getErrorObjectForClient } from '../../utils/error';
 import privateMessageType from '../../mq/message/type';
-import { dataUrlRegex } from '../../data_url';
 
 import { role } from '../../node';
 
@@ -171,10 +169,8 @@ export async function processDataForRP(
         // this if block condition - string starts with "data:" - helps avoid data URL parse on every data input since it is slow
         const dataUrlParsedData = parseDataURL(data);
         if (dataUrlParsedData != null) {
-          const match = data.match(dataUrlRegex);
           if (
-            match[4] &&
-            match[4].endsWith('base64') &&
+            dataUrlParsedData.isBase64 &&
             data.search(/\s/) >= 0
           ) {
             throw new CustomError({
