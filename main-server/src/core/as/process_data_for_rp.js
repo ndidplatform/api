@@ -282,7 +282,6 @@ async function processDataForRPInternalAsync(
           {
             reference_id,
             callback_url,
-            data,
             requestId,
             serviceId,
             signature,
@@ -309,7 +308,6 @@ async function processDataForRPInternalAsync(
         {
           reference_id,
           callback_url,
-          data,
           requestId,
           serviceId,
           signature,
@@ -324,7 +322,6 @@ async function processDataForRPInternalAsync(
   } catch (error) {
     redactedLogger.error({
       message: 'Send data to RP internal async error',
-      data,
       error_code,
       originalArgs: arguments[1],
       options: arguments[2],
